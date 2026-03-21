@@ -16,7 +16,7 @@ describe('RestrictsService', () => {
         {
           provide: PrismaService,
           useValue: {
-            restrict: { create: jest.fn(), delete: jest.fn(), findMany: jest.fn(), findUnique: jest.fn() },
+            restrict: { create: jest.fn(), delete: jest.fn(), deleteMany: jest.fn(), findMany: jest.fn(), findUnique: jest.fn() },
             user: { findUnique: jest.fn().mockResolvedValue({ id: 'target' }), findMany: jest.fn().mockResolvedValue([]) },
           },
         },
@@ -30,7 +30,7 @@ describe('RestrictsService', () => {
     it('should create a restrict record', async () => {
       prisma.restrict.create.mockResolvedValue({ restricterId: 'u1', restrictedId: 'u2' });
       const result = await service.restrict('u1', 'u2');
-      expect(result.restricterId).toBe('u1');
+      expect(result).toEqual({ message: 'User restricted' });
     });
 
     it('should throw BadRequestException when restricting self', async () => {
@@ -42,24 +42,25 @@ describe('RestrictsService', () => {
       await expect(service.restrict('u1', 'u2')).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ConflictException on duplicate (P2002)', async () => {
+    it('should return success idempotently on duplicate (P2002)', async () => {
       const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
       prisma.restrict.create.mockRejectedValue(new PrismaClientKnownRequestError('', { code: 'P2002', clientVersion: '0' }));
-      await expect(service.restrict('u1', 'u2')).rejects.toThrow(ConflictException);
+      const result = await service.restrict('u1', 'u2');
+      expect(result).toEqual({ message: 'User restricted' });
     });
   });
 
   describe('unrestrict', () => {
-    it('should delete restrict record', async () => {
-      prisma.restrict.delete.mockResolvedValue({});
-      await service.unrestrict('u1', 'u2');
-      expect(prisma.restrict.delete).toHaveBeenCalled();
+    it('should delete restrict record idempotently', async () => {
+      prisma.restrict.deleteMany.mockResolvedValue({ count: 1 });
+      const result = await service.unrestrict('u1', 'u2');
+      expect(result).toEqual({ message: 'User unrestricted' });
     });
 
-    it('should throw NotFoundException if not found (P2025)', async () => {
-      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
-      prisma.restrict.delete.mockRejectedValue(new PrismaClientKnownRequestError('', { code: 'P2025', clientVersion: '0' }));
-      await expect(service.unrestrict('u1', 'u2')).rejects.toThrow(NotFoundException);
+    it('should return success even if not restricted', async () => {
+      prisma.restrict.deleteMany.mockResolvedValue({ count: 0 });
+      const result = await service.unrestrict('u1', 'u2');
+      expect(result).toEqual({ message: 'User unrestricted' });
     });
   });
 
@@ -121,9 +122,9 @@ describe('RestrictsService', () => {
     });
   });
 
-  describe('unrestrict — re-throws unknown errors', () => {
-    it('should re-throw non-P2025 errors', async () => {
-      prisma.restrict.delete.mockRejectedValue(new Error('Network error'));
+  describe('unrestrict — error handling', () => {
+    it('should re-throw deleteMany errors', async () => {
+      prisma.restrict.deleteMany.mockRejectedValue(new Error('Network error'));
       await expect(service.unrestrict('u1', 'u2')).rejects.toThrow('Network error');
     });
   });

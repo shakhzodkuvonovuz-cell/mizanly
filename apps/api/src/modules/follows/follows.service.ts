@@ -70,8 +70,13 @@ export class FollowsService {
           },
         },
       });
-      if (existingRequest && existingRequest.status === 'PENDING') {
-        return { type: 'request', request: existingRequest };
+      if (existingRequest) {
+        if (existingRequest.status === 'PENDING') {
+          return { type: 'request', request: existingRequest };
+        }
+        if (existingRequest.status === 'DECLINED') {
+          throw new BadRequestException('Follow request was declined. Please wait before requesting again.');
+        }
       }
 
       // Create follow request, handle P2002 race condition

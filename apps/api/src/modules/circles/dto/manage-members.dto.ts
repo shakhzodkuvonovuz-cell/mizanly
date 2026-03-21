@@ -1,10 +1,11 @@
-import { IsArray, IsUUID, ArrayMaxSize, ArrayMinSize } from 'class-validator';
+import { IsArray, IsString, ArrayMaxSize, ArrayMinSize, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ManageMembersDto {
   @ApiProperty({ description: 'User IDs to add/remove', type: [String] })
   @IsArray()
-  @IsUUID('4', { each: true })
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
   memberIds: string[];

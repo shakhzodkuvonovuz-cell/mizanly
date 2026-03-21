@@ -28,7 +28,7 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
         providers: [
           ...globalMockProviders, MessagesService,
           { provide: PrismaService, useValue: {
-            conversationMember: { findMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(mem), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), createMany: jest.fn(), delete: jest.fn() },
+            conversationMember: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn().mockResolvedValue(mem), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), createMany: jest.fn(), delete: jest.fn() },
             conversation: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
             message: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             block: { findFirst: jest.fn() }, messageReaction: { upsert: jest.fn(), deleteMany: jest.fn() },
@@ -221,14 +221,27 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
       expect(result.updated).toBe(true);
     });
 
-    it('verifyLockCode — correct code', async () => {
-      prisma.conversation.findUnique.mockResolvedValue({ lockCode: '1234' });
+    it('verifyLockCode — correct code (hashed)', async () => {
+      // Set a lock code first to get a real hash
+      let storedHash = '';
+      prisma.conversation.update.mockImplementation(async (args: any) => {
+        storedHash = args.data.lockCode;
+        return {};
+      });
+      await service.setLockCode('c-1', 'u1', '1234');
+      prisma.conversation.findUnique.mockResolvedValue({ lockCode: storedHash });
       const result = await service.verifyLockCode('c-1', 'u1', '1234');
       expect(result.valid).toBe(true);
     });
 
-    it('verifyLockCode — wrong code', async () => {
-      prisma.conversation.findUnique.mockResolvedValue({ lockCode: '1234' });
+    it('verifyLockCode — wrong code (hashed)', async () => {
+      let storedHash = '';
+      prisma.conversation.update.mockImplementation(async (args: any) => {
+        storedHash = args.data.lockCode;
+        return {};
+      });
+      await service.setLockCode('c-1', 'u1', '1234');
+      prisma.conversation.findUnique.mockResolvedValue({ lockCode: storedHash });
       const result = await service.verifyLockCode('c-1', 'u1', '0000');
       expect(result.valid).toBe(false);
     });
@@ -260,7 +273,7 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
         providers: [
           ...globalMockProviders, GiftsService,
           { provide: PrismaService, useValue: {
-            coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
+            coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
             giftRecord: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn() },
@@ -316,7 +329,7 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
 
     it('sendGift with valid gift type succeeds', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'u2' });
-      prisma.coinBalance.findUnique.mockResolvedValue({ userId: 'u1', coins: 1000 });
+      prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
       const result = await service.sendGift('u1', { receiverId: 'u2', giftType: 'rose' });
       expect(result.giftName).toBe('Rose');
       expect(result.coinCost).toBe(1);
@@ -324,7 +337,7 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
 
     it('sendGift calculates correct diamond conversion', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'u2' });
-      prisma.coinBalance.findUnique.mockResolvedValue({ userId: 'u1', coins: 1000 });
+      prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
       const result = await service.sendGift('u1', { receiverId: 'u2', giftType: 'mosque' });
       expect(result.coinCost).toBe(100);
       expect(result.diamondsEarned).toBe(70); // 100 * 0.7

@@ -80,6 +80,7 @@ describe('IslamicService', () => {
       user: { findMany: jest.fn().mockResolvedValue([]) },
       $queryRaw: jest.fn().mockResolvedValue([]),
       $executeRaw: jest.fn().mockResolvedValue(1),
+      $transaction: jest.fn().mockImplementation((args) => Promise.resolve(args)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -1429,14 +1430,15 @@ describe('IslamicService', () => {
       expect(result.amount).toBe(100);
     });
 
-    it('should create donation with valid campaign', async () => {
+    it('should create donation with valid campaign as pending', async () => {
       prisma.charityCampaign.findUnique.mockResolvedValue({ id: 'camp-1' });
-      prisma.charityDonation.create.mockResolvedValue({ id: 'don-1', amount: 50, campaignId: 'camp-1' });
-      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.charityDonation.create.mockResolvedValue({ id: 'don-1', amount: 50, campaignId: 'camp-1', status: 'pending' });
 
       const result = await service.createDonation('user-1', { amount: 50, campaignId: 'camp-1' } as any);
       expect(result.campaignId).toBe('camp-1');
-      expect(prisma.$executeRaw).toHaveBeenCalled();
+      expect(prisma.charityDonation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'pending' }) }),
+      );
     });
 
     it('should throw BadRequestException for zero amount', async () => {
@@ -1783,8 +1785,9 @@ describe('IslamicService', () => {
 
   describe('contributeToChallenge', () => {
     it('should contribute to challenge', async () => {
+      prisma.dhikrChallenge.findUnique.mockResolvedValue({ id: 'dc-1', expiresAt: null });
       prisma.dhikrChallengeParticipant.findUnique.mockResolvedValue({ userId: 'user-1', challengeId: 'dc-1' });
-      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.$transaction.mockResolvedValue([1, 1]);
 
       const result = await service.contributeToChallenge('user-1', 'dc-1', 33);
       expect(result).toEqual({ contributed: 33 });
@@ -1799,7 +1802,13 @@ describe('IslamicService', () => {
     });
 
     it('should throw BadRequestException when not a participant', async () => {
+      prisma.dhikrChallenge.findUnique.mockResolvedValue({ id: 'dc-1', expiresAt: null });
       prisma.dhikrChallengeParticipant.findUnique.mockResolvedValue(null);
+      await expect(service.contributeToChallenge('user-1', 'dc-1', 33)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for expired challenge', async () => {
+      prisma.dhikrChallenge.findUnique.mockResolvedValue({ id: 'dc-1', expiresAt: new Date('2020-01-01') });
       await expect(service.contributeToChallenge('user-1', 'dc-1', 33)).rejects.toThrow(BadRequestException);
     });
   });

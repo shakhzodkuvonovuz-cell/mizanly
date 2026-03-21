@@ -130,12 +130,12 @@ describe('EncryptionController', () => {
   });
 
   describe('getConversationStatus', () => {
-    it('should call encryptionService.getConversationEncryptionStatus', async () => {
+    it('should call encryptionService.getConversationEncryptionStatus with userId', async () => {
       service.getConversationEncryptionStatus.mockResolvedValue({ encrypted: true, allKeysValid: true } as any);
 
-      const result = await controller.getConversationStatus('conv-1');
+      const result = await controller.getConversationStatus('user-1', 'conv-1');
 
-      expect(service.getConversationEncryptionStatus).toHaveBeenCalledWith('conv-1');
+      expect(service.getConversationEncryptionStatus).toHaveBeenCalledWith('conv-1', 'user-1');
       expect(result).toEqual(expect.objectContaining({ encrypted: true }));
     });
   });

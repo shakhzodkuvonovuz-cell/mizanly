@@ -9,6 +9,11 @@ import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { AiService } from '../ai/ai.service';
 import { MessageType } from '@prisma/client';
+import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
+
+const scryptAsync = promisify(scrypt);
+const LOCK_KEY_LENGTH = 64;
 
 const CONVERSATION_SELECT = {
   id: true,
@@ -36,6 +41,7 @@ const CONVERSATION_SELECT = {
 
 const MESSAGE_SELECT = {
   id: true,
+  senderId: true,
   content: true,
   messageType: true,
   mediaUrl: true,
@@ -46,7 +52,16 @@ const MESSAGE_SELECT = {
   replyToId: true,
   isForwarded: true,
   isDeleted: true,
+  isSpoiler: true,
+  isViewOnce: true,
+  viewedAt: true,
+  isPinned: true,
+  isScheduled: true,
+  scheduledAt: true,
+  isEncrypted: true,
+  forwardCount: true,
   editedAt: true,
+  deliveredAt: true,
   transcription: true,
   createdAt: true,
   sender: {
@@ -81,6 +96,7 @@ export class MessagesService {
   ) {}
 
   async getConversations(userId: string, limit = 50) {
+    limit = Math.min(Math.max(limit, 1), 100);
     const memberships = await this.prisma.conversationMember.findMany({
       where: { userId },
       include: {
@@ -148,8 +164,47 @@ export class MessagesService {
   ) {
     await this.requireMembership(conversationId, senderId);
 
+    // Check if sender is blocked by any member in this conversation
+    const members = await this.prisma.conversationMember.findMany({
+      where: { conversationId, userId: { not: senderId } },
+      select: { userId: true },
+    });
+    const otherUserIds = members.map(m => m.userId);
+    if (otherUserIds.length > 0) {
+      const blockExists = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: senderId, blockedId: { in: otherUserIds } },
+            { blockedId: senderId, blockerId: { in: otherUserIds } },
+          ],
+        },
+      });
+      if (blockExists) {
+        throw new ForbiddenException('Cannot send messages due to a block');
+      }
+    }
+
     if (!data.content && !data.mediaUrl) {
       throw new BadRequestException('Message must have content or media');
+    }
+
+    // Fetch conversation settings for slow mode and disappearing messages
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { slowModeSeconds: true, disappearingDuration: true },
+    });
+    if (convo?.slowModeSeconds && convo.slowModeSeconds > 0) {
+      const lastMsg = await this.prisma.message.findFirst({
+        where: { conversationId, senderId },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      });
+      if (lastMsg) {
+        const elapsed = (Date.now() - lastMsg.createdAt.getTime()) / 1000;
+        if (elapsed < convo.slowModeSeconds) {
+          throw new BadRequestException(`Slow mode: wait ${Math.ceil(convo.slowModeSeconds - elapsed)} seconds`);
+        }
+      }
     }
 
     // Atomic: message create + conversation update + unread increment
@@ -165,6 +220,7 @@ export class MessagesService {
           replyToId: data.replyToId,
           isSpoiler: data.isSpoiler ?? false,
           isViewOnce: data.isViewOnce ?? false,
+          ...(convo?.disappearingDuration ? { expiresAt: new Date(Date.now() + convo.disappearingDuration * 1000) } : {}),
         },
         select: MESSAGE_SELECT,
       });
@@ -213,6 +269,7 @@ export class MessagesService {
   }
 
   async editMessage(messageId: string, userId: string, content: string) {
+    if (!content || content.trim().length === 0) throw new BadRequestException('Message content cannot be empty');
     const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message) throw new NotFoundException('Message not found');
     if (message.senderId !== userId) throw new ForbiddenException();
@@ -295,6 +352,20 @@ export class MessagesService {
       throw new BadRequestException(`Invalid user IDs: ${invalidIds.join(', ')}`);
     }
 
+    // Check blocks between creator and any member
+    const blocks = await this.prisma.block.findMany({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: { in: memberIds } },
+          { blockedId: userId, blockerId: { in: memberIds } },
+        ],
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+    if (blocks.length > 0) {
+      throw new BadRequestException('Cannot create group with blocked users');
+    }
+
     return this.prisma.conversation.create({
       data: {
         isGroup: true,
@@ -330,6 +401,28 @@ export class MessagesService {
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
     if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can add members');
 
+    // Validate member IDs exist
+    const existingUsers = await this.prisma.user.findMany({
+      where: { id: { in: memberIds } },
+      select: { id: true },
+    });
+    const existingIds = new Set(existingUsers.map(u => u.id));
+    const invalidIds = memberIds.filter(id => !existingIds.has(id));
+    if (invalidIds.length > 0) {
+      throw new BadRequestException(`Invalid user IDs: ${invalidIds.join(', ')}`);
+    }
+
+    // Check blocks
+    const blocks = await this.prisma.block.findMany({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: { in: memberIds } },
+          { blockedId: userId, blockerId: { in: memberIds } },
+        ],
+      },
+    });
+    if (blocks.length > 0) throw new BadRequestException('Cannot add blocked users');
+
     await this.prisma.conversationMember.createMany({
       data: memberIds.map((id) => ({ conversationId, userId: id })),
       skipDuplicates: true,
@@ -344,14 +437,21 @@ export class MessagesService {
     await this.prisma.conversationMember.delete({
       where: { conversationId_userId: { conversationId, userId: targetUserId } },
     });
-    return { removed: true };
+    // Return targetUserId so controller/gateway can evict from socket room
+    return { removed: true, conversationId, targetUserId };
   }
 
   async setLockCode(conversationId: string, userId: string, code: string | null) {
     await this.requireMembership(conversationId, userId);
+    let hashedCode: string | null = null;
+    if (code) {
+      const salt = randomBytes(16).toString('hex');
+      const derived = (await scryptAsync(code, salt, LOCK_KEY_LENGTH)) as Buffer;
+      hashedCode = `${salt}:${derived.toString('hex')}`;
+    }
     await this.prisma.conversation.update({
       where: { id: conversationId },
-      data: { lockCode: code },
+      data: { lockCode: hashedCode },
     });
     return { updated: true };
   }
@@ -363,7 +463,11 @@ export class MessagesService {
       select: { lockCode: true },
     });
     if (!convo) throw new NotFoundException('Conversation not found');
-    return { valid: convo.lockCode === code };
+    if (!convo.lockCode) return { valid: false };
+    const [salt, hash] = convo.lockCode.split(':');
+    const derived = (await scryptAsync(code, salt, LOCK_KEY_LENGTH)) as Buffer;
+    const storedBuf = Buffer.from(hash, 'hex');
+    return { valid: timingSafeEqual(derived, storedBuf) };
   }
 
   async setNewMemberHistoryCount(conversationId: string, userId: string, count: number) {
@@ -402,7 +506,7 @@ export class MessagesService {
     await this.prisma.conversationMember.delete({
       where: { conversationId_userId: { conversationId, userId } },
     });
-    return { left: true };
+    return { left: true, conversationId, userId };
   }
 
   async markRead(conversationId: string, userId: string) {
@@ -492,10 +596,11 @@ export class MessagesService {
       select: {
         conversationId: true, content: true, messageType: true, mediaUrl: true,
         mediaType: true, voiceDuration: true, fileName: true, fileSize: true,
-        forwardCount: true,
+        forwardCount: true, isViewOnce: true,
       },
     });
     if (!original) throw new NotFoundException('Message not found');
+    if (original.isViewOnce) throw new BadRequestException('View-once messages cannot be forwarded');
     await this.requireMembership(original.conversationId, userId);
 
     const results = [];
@@ -531,7 +636,11 @@ export class MessagesService {
     const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message) throw new NotFoundException('Message not found');
     await this.requireMembership(message.conversationId, userId);
-    return this.prisma.message.update({ where: { id: messageId }, data: { deliveredAt: new Date() } });
+    // Only set deliveredAt if not already set (idempotent)
+    if (!message.deliveredAt) {
+      return this.prisma.message.update({ where: { id: messageId }, data: { deliveredAt: new Date() } });
+    }
+    return message;
   }
 
   async getMediaGallery(conversationId: string, userId: string, cursor?: string, limit = 30) {
@@ -751,8 +860,8 @@ export class MessagesService {
     const member = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
     });
-    if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
-      throw new ForbiddenException('Only owner or admin can promote members');
+    if (!member || member.role !== 'owner') {
+      throw new ForbiddenException('Only the group owner can promote members to admin');
     }
     return this.prisma.conversationMember.update({
       where: { conversationId_userId: { conversationId, userId: targetUserId } },

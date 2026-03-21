@@ -774,13 +774,14 @@ export class UsersService {
     });
     if (!target) throw new NotFoundException("User not found");
 
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 50);
     const mutual = await this.prisma.$queryRaw<Array<{id: string, username: string, displayName: string, avatarUrl: string | null}>>`
-      SELECT u.id, u.username, u.displayName, u.avatarUrl
+      SELECT u.id, u.username, u."displayName", u."avatarUrl"
       FROM follows f1
-      INNER JOIN follows f2 ON f1.followerId = f2.followerId
-      INNER JOIN users u ON f1.followerId = u.id
-      WHERE f1.followingId = ${currentUserId} AND f2.followingId = ${target.id}
-      LIMIT ${limit}
+      INNER JOIN follows f2 ON f1."followerId" = f2."followerId"
+      INNER JOIN users u ON f1."followerId" = u.id
+      WHERE f1."followingId" = ${currentUserId} AND f2."followingId" = ${target.id}
+      LIMIT ${safeLimit}
     `;
     return {
       data: mutual,

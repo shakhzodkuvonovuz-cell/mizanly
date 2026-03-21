@@ -4,23 +4,23 @@ import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max, MaxLength, IsUrl } from 'class-validator';
 import { HalalService } from './halal.service';
 
 class CreateRestaurantDto {
-  @IsString() name: string;
-  @IsString() address: string;
-  @IsString() city: string;
-  @IsString() country: string;
-  @IsNumber() latitude: number;
-  @IsNumber() longitude: number;
-  @IsOptional() @IsString() cuisineType?: string;
+  @IsString() @MaxLength(200) name: string;
+  @IsString() @MaxLength(500) address: string;
+  @IsString() @MaxLength(100) city: string;
+  @IsString() @MaxLength(100) country: string;
+  @IsNumber() @Min(-90) @Max(90) latitude: number;
+  @IsNumber() @Min(-180) @Max(180) longitude: number;
+  @IsOptional() @IsString() @MaxLength(50) cuisineType?: string;
   @IsOptional() @IsNumber() @Min(1) @Max(4) priceRange?: number;
   @IsOptional() @IsBoolean() halalCertified?: boolean;
-  @IsOptional() @IsString() certifyingBody?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsOptional() @IsString() website?: string;
-  @IsOptional() @IsString() imageUrl?: string;
+  @IsOptional() @IsString() @MaxLength(200) certifyingBody?: string;
+  @IsOptional() @IsString() @MaxLength(30) phone?: string;
+  @IsOptional() @IsUrl() website?: string;
+  @IsOptional() @IsUrl() imageUrl?: string;
 }
 
 class AddReviewDto {

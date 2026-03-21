@@ -253,7 +253,7 @@ export class TelegramFeaturesService {
     return this.prisma.groupTopic.findMany({
       where: { conversationId },
       orderBy: [{ isPinned: 'desc' }, { lastMessageAt: 'desc' }],
-      take: 50,
+      take: 100,
     });
   }
 

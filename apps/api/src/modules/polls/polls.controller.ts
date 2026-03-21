@@ -73,8 +73,9 @@ export class PollsController {
   }
 
   @Get(':id/voters')
-  @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'List voters for a poll option' })
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List voters for a poll option (authenticated only)' })
   @ApiResponse({ status: 200, description: 'Paginated list of voters' })
   @ApiResponse({ status: 404, description: 'Poll or option not found' })
   async getVoters(

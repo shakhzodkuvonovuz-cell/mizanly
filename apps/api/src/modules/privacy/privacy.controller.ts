@@ -14,12 +14,14 @@ export class PrivacyController {
   constructor(private privacyService: PrivacyService) {}
 
   @Get('export')
+  @Throttle({ default: { limit: 2, ttl: 3600000 } })
   @ApiOperation({ summary: 'Export all user data (GDPR Article 20)' })
   exportData(@CurrentUser('id') userId: string) {
     return this.privacyService.exportUserData(userId);
   }
 
   @Delete('delete-all')
+  @Throttle({ default: { limit: 1, ttl: 86400000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete all user data permanently (GDPR Article 17)' })
   deleteAll(@CurrentUser('id') userId: string) {

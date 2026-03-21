@@ -11,17 +11,18 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { IsIn, IsBoolean } from 'class-validator';
 import { ChatExportService } from './chat-export.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
-interface GenerateExportBody {
-  format: 'json' | 'text';
-  includeMedia: boolean;
+class GenerateExportBody {
+  @IsIn(['json', 'text']) format: 'json' | 'text';
+  @IsBoolean() includeMedia: boolean;
 }
 
 @ApiTags('Chat Export (Risalah)')
-@Throttle({ default: { limit: 60, ttl: 60000 } })
+@Throttle({ default: { limit: 5, ttl: 3600000 } })
 @Controller('chat-export')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

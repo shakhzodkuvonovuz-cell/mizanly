@@ -28,7 +28,7 @@ describe('ReelsService — authorization matrix', () => {
             reel: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn() },
             reelReaction: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             reelInteraction: { upsert: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-            reelComment: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), delete: jest.fn() },
+            reelComment: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), delete: jest.fn(), update: jest.fn() },
             user: { update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },

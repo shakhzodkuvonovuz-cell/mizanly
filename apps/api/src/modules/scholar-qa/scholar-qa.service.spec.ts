@@ -26,6 +26,9 @@ describe('ScholarQAService', () => {
               create: jest.fn().mockResolvedValue({ id: 'q-1', question: 'What is wudu?', votes: 0 }),
               findMany: jest.fn().mockResolvedValue([]),
             },
+            scholarVerification: {
+              findFirst: jest.fn().mockResolvedValue({ id: 'sv-1', userId: 'u1', status: 'approved' }),
+            },
             $executeRaw: jest.fn().mockResolvedValue(1),
           },
         },

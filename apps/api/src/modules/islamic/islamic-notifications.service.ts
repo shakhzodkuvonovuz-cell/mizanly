@@ -20,33 +20,35 @@ export class IslamicNotificationsService {
 
   /**
    * Check if a user is in a prayer time window (auto-DND).
-   * Batches notifications and delivers between prayers.
+   * Uses the correct PrayerNotificationSetting model and dndDuringPrayer field.
    */
   async isInPrayerDND(userId: string): Promise<boolean> {
-    const settings = await this.prisma.prayerNotification.findUnique({
+    const settings = await this.prisma.prayerNotificationSetting.findUnique({
       where: { userId },
     });
-    if (!settings || !settings.autoDnd) return false;
+    if (!settings || !settings.dndDuringPrayer) return false;
 
-    // Get cached prayer times for user's location
     const prayerTimesKey = `prayer_times:${userId}`;
     const cached = await this.redis.get(prayerTimesKey);
     if (!cached) return false;
 
-    const times = JSON.parse(cached);
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
+    try {
+      const times = JSON.parse(cached);
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
 
-    // Check each prayer window (±15 minutes)
-    const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-    for (const prayer of prayers) {
-      const timeStr = times[prayer];
-      if (!timeStr) continue;
-      const [h, m] = timeStr.split(':').map(Number);
-      const prayerMinute = h * 60 + m;
-      if (Math.abs(currentTime - prayerMinute) <= 15) {
-        return true;
+      const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+      for (const prayer of prayers) {
+        const timeStr = times[prayer];
+        if (!timeStr) continue;
+        const [h, m] = timeStr.split(':').map(Number);
+        const prayerMinute = h * 60 + m;
+        if (Math.abs(currentTime - prayerMinute) <= 15) {
+          return true;
+        }
       }
+    } catch {
+      this.logger.warn(`Invalid cached prayer times for user ${userId}`);
     }
 
     return false;
@@ -62,52 +64,55 @@ export class IslamicNotificationsService {
   ): Promise<void> {
     const key = `prayer_queue:${userId}`;
     await this.redis.lpush(key, JSON.stringify(notification));
-    await this.redis.expire(key, 3600); // 1 hour max queue
+    await this.redis.expire(key, 3600);
   }
 
   // ── 80.2: "Pray first" nudge ──────────────────────────────
 
   /**
    * Check if we should show a gentle "pray first" reminder.
-   * Only shown if user has opted in and it's prayer time.
+   * Uses dndDuringPrayer as the opt-in flag (adhan enabled = cares about prayer times).
    */
   async shouldShowPrayFirstNudge(userId: string): Promise<{
     show: boolean;
     prayerName?: string;
   }> {
-    const settings = await this.prisma.prayerNotification.findUnique({
+    const settings = await this.prisma.prayerNotificationSetting.findUnique({
       where: { userId },
     });
-    if (!settings || !settings.prayFirstNudge) return { show: false };
+    if (!settings || !settings.adhanEnabled) return { show: false };
 
     const isInPrayer = await this.isInPrayerDND(userId);
     if (!isInPrayer) return { show: false };
 
-    // Determine which prayer
     const prayerTimesKey = `prayer_times:${userId}`;
     const cached = await this.redis.get(prayerTimesKey);
     if (!cached) return { show: false };
 
-    const times = JSON.parse(cached);
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
+    try {
+      const times = JSON.parse(cached);
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
 
-    const prayers = [
-      { name: 'Fajr', key: 'fajr' },
-      { name: 'Dhuhr', key: 'dhuhr' },
-      { name: 'Asr', key: 'asr' },
-      { name: 'Maghrib', key: 'maghrib' },
-      { name: 'Isha', key: 'isha' },
-    ];
+      const prayers = [
+        { name: 'Fajr', key: 'fajr' },
+        { name: 'Dhuhr', key: 'dhuhr' },
+        { name: 'Asr', key: 'asr' },
+        { name: 'Maghrib', key: 'maghrib' },
+        { name: 'Isha', key: 'isha' },
+      ];
 
-    for (const prayer of prayers) {
-      const timeStr = times[prayer.key];
-      if (!timeStr) continue;
-      const [h, m] = timeStr.split(':').map(Number);
-      const prayerMinute = h * 60 + m;
-      if (Math.abs(currentTime - prayerMinute) <= 15) {
-        return { show: true, prayerName: prayer.name };
+      for (const prayer of prayers) {
+        const timeStr = times[prayer.key];
+        if (!timeStr) continue;
+        const [h, m] = timeStr.split(':').map(Number);
+        const prayerMinute = h * 60 + m;
+        if (Math.abs(currentTime - prayerMinute) <= 15) {
+          return { show: true, prayerName: prayer.name };
+        }
       }
+    } catch {
+      this.logger.warn(`Invalid cached prayer times for user ${userId}`);
     }
 
     return { show: false };
@@ -117,12 +122,12 @@ export class IslamicNotificationsService {
 
   /**
    * Check if it's Friday and time for Jummah reminder.
-   * Returns nearest mosque info if available.
+   * Looks up user's mosque memberships for nearest mosque info.
    */
   async getJummahReminder(userId: string): Promise<{
     isJummahDay: boolean;
     nearPrayerTime: boolean;
-    nearestMosque?: { name: string; distance: string };
+    nearestMosque?: { name: string };
   }> {
     const now = new Date();
     const isJummahDay = now.getDay() === 5;
@@ -131,17 +136,17 @@ export class IslamicNotificationsService {
     const hour = now.getHours();
     const nearPrayerTime = hour >= 11 && hour <= 13;
 
-    // Get user's nearest mosque from saved locations
-    const mosqueLookup = await this.prisma.mosqueFinder?.findFirst?.({
+    // Get user's first mosque membership as proxy for "nearest"
+    const membership = await this.prisma.mosqueMembership.findFirst({
       where: { userId },
-      orderBy: { distance: 'asc' },
+      include: { mosque: { select: { name: true } } },
     }).catch(() => null);
 
     return {
       isJummahDay: true,
       nearPrayerTime,
-      nearestMosque: mosqueLookup
-        ? { name: mosqueLookup.name, distance: `${mosqueLookup.distance} km` }
+      nearestMosque: membership?.mosque
+        ? { name: membership.mosque.name }
         : undefined,
     };
   }
@@ -149,46 +154,32 @@ export class IslamicNotificationsService {
   // ── 80.5: Ramadan mode ────────────────────────────────────
 
   /**
-   * Get Ramadan-specific features and timers.
+   * Get Ramadan-specific features using Hijri calendar computation.
+   * No longer uses hardcoded year-specific dates.
    */
-  async getRamadanStatus(lat: number, lng: number): Promise<{
+  getRamadanStatus(): {
     isRamadan: boolean;
     dayNumber?: number;
-    iftarCountdown?: string;
-    suhoorCountdown?: string;
-  }> {
+    hijriMonth: number;
+    hijriDay: number;
+  } {
     const now = new Date();
-    const year = now.getFullYear();
+    const { month: hijriMonth, day: hijriDay } = this.getHijriDate(now);
 
-    // Approximate Ramadan dates (in production, use Hijri calendar library)
-    const ramadanDates: Record<number, { start: Date; end: Date }> = {
-      2026: { start: new Date(2026, 1, 18), end: new Date(2026, 2, 19) },
-      2027: { start: new Date(2027, 1, 8), end: new Date(2027, 2, 9) },
-    };
+    // Ramadan is the 9th month in the Hijri calendar
+    const isRamadan = hijriMonth === 9;
 
-    const dates = ramadanDates[year];
-    if (!dates || now < dates.start || now > dates.end) {
-      return { isRamadan: false };
-    }
-
-    const dayNumber = Math.ceil((now.getTime() - dates.start.getTime()) / (24 * 60 * 60 * 1000));
-
-    // Get today's prayer times for iftar/suhoor
-    // Maghrib = iftar time, Fajr = suhoor deadline
     return {
-      isRamadan: true,
-      dayNumber,
-      iftarCountdown: 'See prayer times for iftar',
-      suhoorCountdown: 'See prayer times for suhoor',
+      isRamadan,
+      dayNumber: isRamadan ? hijriDay : undefined,
+      hijriMonth,
+      hijriDay,
     };
   }
 
   // ── 80.6: Islamic content curation ────────────────────────
 
-  /**
-   * Tag content by Islamic category for curation.
-   */
-  async categorizeIslamicContent(text: string): Promise<string[]> {
+  categorizeIslamicContent(text: string): string[] {
     const categories: string[] = [];
     const lower = text.toLowerCase();
 
@@ -215,38 +206,61 @@ export class IslamicNotificationsService {
   // ── 80.9: Islamic calendar theming ─────────────────────────
 
   /**
-   * Get current Islamic period for app theming.
+   * Get current Islamic period for app theming using Hijri calendar.
+   * No longer hardcoded to 2026 only.
    */
   getIslamicPeriod(): {
     period: 'normal' | 'ramadan' | 'dhul_hijjah' | 'muharram' | 'eid';
     accent?: string;
   } {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const day = now.getDate();
+    const { month: hijriMonth, day: hijriDay } = this.getHijriDate(now);
 
-    // Approximate dates (production would use Hijri calendar)
-    // Ramadan 2026: Feb 18 - Mar 19
-    if (year === 2026 && ((month === 1 && day >= 18) || (month === 2 && day <= 19))) {
-      return { period: 'ramadan', accent: '#C8963E' }; // Gold accent
+    // Ramadan (month 9)
+    if (hijriMonth === 9) {
+      return { period: 'ramadan', accent: '#C8963E' };
     }
 
-    // Eid al-Fitr (day after Ramadan)
-    if (year === 2026 && month === 2 && day >= 20 && day <= 22) {
+    // Eid al-Fitr (Shawwal 1-3, month 10)
+    if (hijriMonth === 10 && hijriDay >= 1 && hijriDay <= 3) {
       return { period: 'eid', accent: '#C8963E' };
     }
 
-    // Dhul Hijjah (approx June 2026)
-    if (year === 2026 && month === 5 && day >= 7 && day <= 17) {
+    // Dhul Hijjah (month 12, first 13 days including Eid al-Adha on 10th)
+    if (hijriMonth === 12 && hijriDay >= 1 && hijriDay <= 13) {
       return { period: 'dhul_hijjah', accent: '#A0785A' };
     }
 
-    // Muharram (approx July 2026)
-    if (year === 2026 && month === 6 && day >= 7 && day <= 16) {
+    // Muharram (month 1)
+    if (hijriMonth === 1) {
       return { period: 'muharram', accent: '#4A6741' };
     }
 
     return { period: 'normal' };
+  }
+
+  // ── Hijri date computation (Kuwaiti algorithm) ─────────────
+
+  private getHijriDate(date: Date): { year: number; month: number; day: number } {
+    const d = date.getDate();
+    const m = date.getMonth();
+    const y = date.getFullYear();
+    let jd: number;
+    if (m < 2) {
+      jd = Math.floor(365.25 * (y - 1)) + Math.floor(30.6001 * (m + 13)) + d + 1720995;
+    } else {
+      jd = Math.floor(365.25 * y) + Math.floor(30.6001 * (m + 1 + 1)) + d + 1720995;
+    }
+    const a = Math.floor(y / 100);
+    jd = jd + 2 - a + Math.floor(a / 4);
+    const l = jd - 1948440 + 10632;
+    const n = Math.floor((l - 1) / 10631);
+    const remainder = l - 10631 * n + 354;
+    const j = Math.floor((10985 - remainder) / 5316) * Math.floor((50 * remainder) / 17719) + Math.floor(remainder / 5670) * Math.floor((43 * remainder) / 15238);
+    const rl = remainder - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) - Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
+    const hijriMonth = Math.floor((24 * rl) / 709);
+    const hijriDay = rl - Math.floor((709 * hijriMonth) / 24);
+    const hijriYear = 30 * n + j - 30;
+    return { year: hijriYear, month: hijriMonth, day: hijriDay };
   }
 }

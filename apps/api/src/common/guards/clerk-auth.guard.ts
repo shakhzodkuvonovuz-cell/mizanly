@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { verifyToken } from '@clerk/backend';
 import { ConfigService } from '@nestjs/config';
@@ -23,26 +24,43 @@ export class ClerkAuthGuard implements CanActivate {
       throw new UnauthorizedException('No authorization token provided');
     }
 
+    let clerkId: string;
     try {
-      const { sub: clerkId } = await verifyToken(token, {
+      const payload = await verifyToken(token, {
         secretKey: this.config.get('CLERK_SECRET_KEY'),
       });
-
-      // Attach user to request
-      const user = await this.prisma.user.findUnique({
-        where: { clerkId },
-        select: { id: true, clerkId: true, username: true, displayName: true },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
-      request.user = user;
-      return true;
-    } catch (error) {
+      clerkId = payload.sub;
+    } catch {
       throw new UnauthorizedException('Invalid token');
     }
+
+    const user = await this.prisma.user.findUnique({
+      where: { clerkId },
+      select: {
+        id: true,
+        clerkId: true,
+        username: true,
+        displayName: true,
+        isBanned: true,
+        isDeactivated: true,
+        isDeleted: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (user.isBanned) {
+      throw new ForbiddenException('Account has been banned');
+    }
+
+    if (user.isDeactivated || user.isDeleted) {
+      throw new ForbiddenException('Account has been deactivated');
+    }
+
+    request.user = user;
+    return true;
   }
 
   private extractToken(request: { headers: { authorization?: string } }): string | undefined {

@@ -4,9 +4,14 @@ import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { IsBoolean } from 'class-validator';
 import { BroadcastService } from './broadcast.service';
 import { CreateBroadcastChannelDto } from './dto/create-channel.dto';
 import { SendBroadcastDto } from './dto/send-broadcast.dto';
+
+class MuteChannelDto {
+  @IsBoolean() muted: boolean;
+}
 
 @ApiTags('Broadcast Channels')
 @Controller('broadcast')
@@ -146,8 +151,8 @@ export class BroadcastController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mute/unmute channel' })
-  async mute(@Param('id') id: string, @CurrentUser('id') userId: string, @Body('muted') muted: boolean) {
-    return this.broadcast.muteChannel(id, userId, muted);
+  async mute(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: MuteChannelDto) {
+    return this.broadcast.muteChannel(id, userId, dto.muted);
   }
 
   @Post(':id/promote/:targetUserId')

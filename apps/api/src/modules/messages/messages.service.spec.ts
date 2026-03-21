@@ -17,7 +17,7 @@ describe('MessagesService', () => {
           provide: PrismaService,
           useValue: {
             conversationMember: {
-              findMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
               findUnique: jest.fn().mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0 }),
               create: jest.fn(),
               update: jest.fn(),
@@ -41,6 +41,7 @@ describe('MessagesService', () => {
             },
             block: {
               findFirst: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
             },
             messageReaction: {
               upsert: jest.fn(),
@@ -462,6 +463,7 @@ describe('MessagesService', () => {
       prisma.user.findMany.mockResolvedValue([
         { id: 'user-123' }, { id: 'user-456' }, { id: 'user-789' },
       ]);
+      prisma.block.findMany.mockResolvedValue([]); // no blocks
       prisma.conversation.create.mockResolvedValue(mockConversation);
 
       const result = await service.createGroup(userId, groupName, memberIds);
@@ -543,6 +545,8 @@ describe('MessagesService', () => {
         createdById: userId,
       };
       prisma.conversation.findUnique.mockResolvedValue(mockConversation);
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-456' }, { id: 'user-789' }]);
+      prisma.block.findMany.mockResolvedValue([]);
       prisma.conversationMember.createMany.mockResolvedValue({} as any);
 
       const result = await service.addGroupMembers(conversationId, userId, memberIds);
@@ -588,7 +592,7 @@ describe('MessagesService', () => {
       expect(prisma.conversationMember.delete).toHaveBeenCalledWith({
         where: { conversationId_userId: { conversationId, userId: targetUserId } },
       });
-      expect(result).toEqual({ removed: true });
+      expect(result).toEqual({ removed: true, conversationId, targetUserId });
     });
 
     it('should throw NotFoundException if group not found', async () => {
@@ -620,7 +624,7 @@ describe('MessagesService', () => {
       expect(prisma.conversationMember.delete).toHaveBeenCalledWith({
         where: { conversationId_userId: { conversationId, userId } },
       });
-      expect(result).toEqual({ left: true });
+      expect(result).toEqual({ left: true, conversationId, userId });
     });
 
     it('should throw BadRequestException if owner tries to leave', async () => {
@@ -762,16 +766,19 @@ describe('MessagesService', () => {
   });
 
   describe('setLockCode', () => {
-    it('should set lock code on conversation', async () => {
+    it('should set hashed lock code on conversation', async () => {
       prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
-      prisma.conversation.update.mockResolvedValue({ lockCode: '1234' });
+      prisma.conversation.update.mockResolvedValue({});
 
       const result = await service.setLockCode('conv-1', 'user-1', '1234');
       expect(result).toEqual({ updated: true });
-      expect(prisma.conversation.update).toHaveBeenCalledWith({
-        where: { id: 'conv-1' },
-        data: { lockCode: '1234' },
-      });
+      // Lock code should be hashed (salt:hash format), not plaintext
+      expect(prisma.conversation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'conv-1' },
+          data: { lockCode: expect.stringContaining(':') },
+        }),
+      );
     });
 
     it('should remove lock code when null is passed', async () => {
@@ -788,16 +795,30 @@ describe('MessagesService', () => {
 
   describe('verifyLockCode', () => {
     it('should return valid: true for correct code', async () => {
+      // First set a lock code to get a real hash
       prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
-      prisma.conversation.findUnique.mockResolvedValue({ lockCode: 'secret123' });
+      let storedHash = '';
+      prisma.conversation.update.mockImplementation(async (args: any) => {
+        storedHash = args.data.lockCode;
+        return {};
+      });
+      await service.setLockCode('conv-1', 'user-1', '1234');
 
-      const result = await service.verifyLockCode('conv-1', 'user-1', 'secret123');
+      // Now verify with the stored hash
+      prisma.conversation.findUnique.mockResolvedValue({ lockCode: storedHash });
+      const result = await service.verifyLockCode('conv-1', 'user-1', '1234');
       expect(result).toEqual({ valid: true });
     });
 
     it('should return valid: false for wrong code', async () => {
       prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
-      prisma.conversation.findUnique.mockResolvedValue({ lockCode: 'secret123' });
+      let storedHash = '';
+      prisma.conversation.update.mockImplementation(async (args: any) => {
+        storedHash = args.data.lockCode;
+        return {};
+      });
+      await service.setLockCode('conv-1', 'user-1', '1234');
+      prisma.conversation.findUnique.mockResolvedValue({ lockCode: storedHash });
 
       const result = await service.verifyLockCode('conv-1', 'user-1', 'wrong');
       expect(result).toEqual({ valid: false });

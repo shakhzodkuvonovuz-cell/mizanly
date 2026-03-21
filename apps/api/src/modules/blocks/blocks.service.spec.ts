@@ -18,6 +18,7 @@ describe('BlocksService', () => {
           useValue: {
             block: {
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
               create: jest.fn(),
               delete: jest.fn(),
               findMany: jest.fn(),
@@ -197,26 +198,25 @@ describe('BlocksService', () => {
   });
 
   describe('isBlocked', () => {
-    it('should return true if block exists', async () => {
-      const blockerId = 'user-123';
-      const blockedId = 'user-456';
-      prisma.block.findUnique.mockResolvedValue({ blockerId, blockedId });
+    it('should return true if block exists in either direction', async () => {
+      prisma.block.findFirst.mockResolvedValue({ blockerId: 'user-123', blockedId: 'user-456' });
 
-      const result = await service.isBlocked(blockerId, blockedId);
-
-      expect(prisma.block.findUnique).toHaveBeenCalledWith({
-        where: { blockerId_blockedId: { blockerId, blockedId } },
-      });
+      const result = await service.isBlocked('user-123', 'user-456');
       expect(result).toBe(true);
+      expect(prisma.block.findFirst).toHaveBeenCalledWith({
+        where: {
+          OR: [
+            { blockerId: 'user-123', blockedId: 'user-456' },
+            { blockerId: 'user-456', blockedId: 'user-123' },
+          ],
+        },
+      });
     });
 
-    it('should return false if block does not exist', async () => {
-      const blockerId = 'user-123';
-      const blockedId = 'user-456';
-      prisma.block.findUnique.mockResolvedValue(null);
+    it('should return false if no block exists', async () => {
+      prisma.block.findFirst.mockResolvedValue(null);
 
-      const result = await service.isBlocked(blockerId, blockedId);
-
+      const result = await service.isBlocked('user-123', 'user-456');
       expect(result).toBe(false);
     });
   });

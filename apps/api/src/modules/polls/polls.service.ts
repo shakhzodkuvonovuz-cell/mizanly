@@ -156,6 +156,13 @@ export class PollsService {
   }
 
   async retractVote(pollId: string, userId: string) {
+    // Check if poll has expired
+    const poll = await this.prisma.poll.findUnique({ where: { id: pollId } });
+    if (!poll) throw new NotFoundException('Poll not found');
+    if (poll.expiresAt && poll.expiresAt < new Date()) {
+      throw new BadRequestException('Cannot retract vote from an expired poll');
+    }
+
     // Find the user's vote in this poll
     const vote = await this.prisma.pollVote.findFirst({
       where: {
@@ -179,22 +186,8 @@ export class PollsService {
           },
         },
       }),
-      this.prisma.pollOption.update({
-        where: { id: vote.optionId },
-        data: {
-          votesCount: {
-            decrement: 1,
-          },
-        },
-      }),
-      this.prisma.poll.update({
-        where: { id: pollId },
-        data: {
-          totalVotes: {
-            decrement: 1,
-          },
-        },
-      }),
+      this.prisma.$executeRaw`UPDATE "PollOption" SET "votesCount" = GREATEST("votesCount" - 1, 0) WHERE id = ${vote.optionId}`,
+      this.prisma.$executeRaw`UPDATE "Poll" SET "totalVotes" = GREATEST("totalVotes" - 1, 0) WHERE id = ${pollId}`,
     ]);
 
     return { success: true };

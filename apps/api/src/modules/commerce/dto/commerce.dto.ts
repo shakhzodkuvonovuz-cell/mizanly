@@ -1,6 +1,6 @@
 import {
   IsString, IsNumber, IsOptional, IsArray, IsBoolean,
-  MaxLength, Min, Max, IsInt, ArrayMaxSize, IsIn,
+  MaxLength, Min, Max, IsInt, ArrayMaxSize, IsIn, IsUrl,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -10,7 +10,7 @@ export class CreateProductDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiProperty() @IsString() @MaxLength(2000) description: string;
   @ApiProperty() @IsNumber() @Min(0.01) @Max(1_000_000) price: number;
-  @ApiProperty() @IsArray() @IsString({ each: true }) @ArrayMaxSize(10) images: string[];
+  @ApiProperty() @IsArray() @IsUrl({}, { each: true }) @ArrayMaxSize(10) images: string[];
   @ApiProperty() @IsString() category: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isHalal?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isMuslimOwned?: boolean;
@@ -44,8 +44,8 @@ export class CreateBusinessDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(500) address?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() lat?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() lng?: number;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() website?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(30) phone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUrl() website?: string;
 }
 
 // ── Zakat ───────────────────────────────────────────────

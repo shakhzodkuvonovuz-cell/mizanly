@@ -1,7 +1,7 @@
-import { IsString, IsOptional, IsEnum, IsUrl, IsUUID, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsUrl, IsUUID, MaxLength, IsBoolean } from 'class-validator';
 
 export class WsSendMessageDto {
-  @IsUUID()
+  @IsString()
   conversationId: string;
 
   @IsOptional()
@@ -23,6 +23,14 @@ export class WsSendMessageDto {
   mediaType?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   replyToId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isSpoiler?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isViewOnce?: boolean;
 }

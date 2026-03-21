@@ -50,7 +50,7 @@ describe('MessagesService — edge cases', () => {
           provide: PrismaService,
           useValue: {
             conversationMember: {
-              findMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
               findUnique: jest.fn().mockResolvedValue(mockMembership),
               create: jest.fn(),
               update: jest.fn(),

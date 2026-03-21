@@ -57,14 +57,22 @@ Islamic: prayer times (Aladhan API, 8 calc methods, 6 adhan reciters, local sola
 - `docs/audit/TEST_QUALITY_AUDIT.md` — Test suite quality analysis, anti-patterns found
 - `docs/COMPETITOR_DEEP_AUDIT_2026.md` — 15-dimension competitor audit with scoring
 
+**72-AGENT DEEP AUDIT (March 21, 2026) — MUST READ:**
+- `docs/audit/agents/` — 72 raw audit files (~4,300+ findings, 51K lines). One .md file per agent scope (01-islamic-services.md through 72-dead-code-unused.md). Each file contains every finding with file path, line number, severity, code snippet. Read the specific agent file before fixing its scope.
+- `docs/audit/DEFERRED_FIXES.md` — **READ BEFORE STARTING EVERY NEW AUDIT FILE.** Master tracker of all deferred/noted items across all 72 files. Contains: (1) items deferred because they cross into another file's scope, (2) items that need schema migration, (3) items that are acceptable risk. OPEN items MUST be resolved when their owning file is reached. Updated after each file is processed. This file prevents findings from being lost across sessions or context compression.
+- `docs/audit/DEEP_AUDIT_INDEX_2026_MARCH21.md` — Index of all 72 agents with scope descriptions, finding counts, top criticals per agent. Use to understand what each audit file covers and plan remediation order.
+- `docs/audit/SESSION_CONTINUATION_PROMPT.md` — **USE THIS TO START A NEW SESSION.** Contains full context, rules, patterns, and instructions for continuing the audit remediation from where we left off.
+- **Progress so far:** Files 01-06 complete. Next: file 07 (feed/algorithm). Total 3,759 tests, 0 failures.
+
 **USER'S BRAINSTORM FEATURES — Designed, not yet built:**
 - `docs/features/DATA_IMPORT_ARCHITECTURE.md` — Data import from Instagram/TikTok/X/YouTube/WhatsApp
 - `docs/features/EXIT_STORY_SPEC.md` — Shareable "I'm moving to Mizanly" story after data import
 
 **RALPH EXECUTION SYSTEM:**
 - `docs/ralph-instructions.md` — Behavioral rules for autonomous execution (no shortcuts, verify everything)
-- `docs/ralph-test-batch1.md` — Test batch 1 (service unit tests) — COMPLETE
-- `docs/ralph-test-batch2.md` — Test batch 2 (controllers + expansion) — RUNNING
+- `docs/ralph-test-batch1.md` — Test batch 1 (service unit tests) — COMPLETE (+548 tests)
+- `docs/ralph-test-batch2.md` — Test batch 2 (controllers + expansion) — COMPLETE (+742 tests, total 2,780)
+- `docs/ralph-test-batch3.md` — Test batch 3 (edge cases, auth matrix, error recovery, concurrency, abuse vectors) — 110 tasks, ~1,050 target tests
 - `docs/ralph-batch4.md` — Feature batch 4 (audit fix) — COMPLETE
 
 **STALE — Historical only, do NOT use as source of truth:**
@@ -246,6 +254,36 @@ mizanly/
 - **Real-time:** Socket.io `/chat` namespace (Clerk JWT auth on connect)
 - **Search:** Meilisearch | **Cache:** Upstash Redis
 - **npm NOT in shell PATH** — run all npm commands in Windows terminal
+
+## Credential Status (verified 2026-03-21)
+
+**READ THIS BEFORE ASSUMING ANY FEATURE WORKS.**
+
+| Service | Env Var(s) | Status | Impact |
+|---------|-----------|--------|--------|
+| Neon PostgreSQL | `DATABASE_URL`, `DIRECT_DATABASE_URL` | **SET** | DB works |
+| Clerk Auth | `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY` | **SET** | Auth works |
+| Clerk Webhooks | `CLERK_WEBHOOK_SECRET` | **EMPTY** | User sync from Clerk dashboard broken |
+| Upstash Redis | `REDIS_URL` | **SET** | Cache + queues work |
+| Stripe Payments | `STRIPE_SECRET_KEY` | **SET (test)** | Test payments work |
+| Stripe Webhooks | `STRIPE_WEBHOOK_SECRET` | **EMPTY** | Payment event processing broken |
+| Anthropic Claude | `ANTHROPIC_API_KEY` | **SET** | Moderation + translation work |
+| Cloudflare R2 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_R2_ACCESS_KEY`, `CLOUDFLARE_R2_SECRET_KEY` | **ALL EMPTY** | ALL file uploads dead (photos, avatars, media) |
+| Cloudflare Stream | `CF_STREAM_ACCOUNT_ID`, `CF_STREAM_API_TOKEN` | **MISSING** | Video hosting dead |
+| Meilisearch | `MEILISEARCH_HOST`, `MEILISEARCH_API_KEY` | **ALL EMPTY** | Search falls back to slow Prisma queries |
+| Sentry | `SENTRY_DSN` | **EMPTY** | No error monitoring |
+| Gemini (embeddings) | `GEMINI_API_KEY` | **NOT IN .env** | Embeddings/recommendations completely dead |
+| OpenAI Whisper | `OPENAI_API_KEY` | **NOT IN .env** | Voice transcription dead |
+| Resend Email | `RESEND_API_KEY` | **NOT IN .env** | No emails send |
+| TURN/STUN Server | `TURN_SERVER_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL` | **NOT IN .env** | Video calls behind NAT fail |
+| Gold/Silver prices | `GOLD_PRICE_PER_GRAM`, `SILVER_PRICE_PER_GRAM` | **NOT IN .env** | Zakat uses hardcoded fallback ($92/g, $1.05/g) |
+
+**Summary: 4 of 14 services work. R2 empty = no media uploads. Stream empty = no video. Gemini missing = no recommendations.**
+
+**ENV VAR NAME MISMATCH WARNING:** `.env.example` uses different names than actual `.env` and code:
+- `.env` has `CLOUDFLARE_ACCOUNT_ID` but code reads `R2_ACCOUNT_ID` and `CF_STREAM_ACCOUNT_ID`
+- `.env` has `CLOUDFLARE_R2_ACCESS_KEY` but code reads `R2_ACCESS_KEY_ID`
+- Must reconcile before filling in values — check `upload.service.ts` and `stream.service.ts` for actual var names
 
 ---
 

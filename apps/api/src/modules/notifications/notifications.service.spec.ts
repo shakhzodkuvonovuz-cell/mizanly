@@ -29,6 +29,8 @@ describe('NotificationsService', () => {
               create: jest.fn(),
               count: jest.fn(),
             },
+            block: { findFirst: jest.fn().mockResolvedValue(null) },
+            mute: { findFirst: jest.fn().mockResolvedValue(null) },
           },
         },
         {

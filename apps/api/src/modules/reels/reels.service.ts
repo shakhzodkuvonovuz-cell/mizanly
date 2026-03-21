@@ -82,8 +82,8 @@ export class ReelsService {
         hashtagNames.map((name) =>
           this.prisma.hashtag.upsert({
             where: { name },
-            create: { name, postsCount: 1 },
-            update: { postsCount: { increment: 1 } },
+            create: { name, reelsCount: 1 },
+            update: { reelsCount: { increment: 1 } },
           }),
         ),
       );
@@ -156,9 +156,9 @@ export class ReelsService {
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' });
     this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
 
-    // Content moderation (if description provided)
-    if (reel.description) {
-      this.queueService.addModerationJob({ content: reel.description, contentType: 'reel', contentId: reel.id }).catch(() => {});
+    // Content moderation (if caption provided)
+    if (reel.caption) {
+      this.queueService.addModerationJob({ content: reel.caption, contentType: 'reel', contentId: reel.id }).catch(() => {});
     }
 
     // Image moderation on thumbnail (async, non-blocking)
@@ -173,7 +173,7 @@ export class ReelsService {
       action: 'index',
       indexName: 'reels',
       documentId: reel.id,
-      document: { id: reel.id, description: reel.description, userId, hashtags: reel.hashtags },
+      document: { id: reel.id, description: reel.caption, userId, hashtags: reel.hashtags },
     }).catch(() => {});
 
     return {
@@ -233,9 +233,9 @@ export class ReelsService {
     // Sort by score descending
     scored.sort((a, b) => b._score - a._score);
 
-    // Paginate using createdAt as cursor
-    const startIdx = cursor ? scored.findIndex(p => new Date(p.createdAt).toISOString() < cursor) : 0;
-    const page = scored.slice(Math.max(0, startIdx), Math.max(0, startIdx) + limit + 1);
+    // Paginate using offset (score-sorted array can't use createdAt cursor)
+    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+    const page = scored.slice(offset, offset + limit + 1);
 
     const hasMore = page.length > limit;
     const data = hasMore ? page.slice(0, limit) : page;
@@ -273,7 +273,7 @@ export class ReelsService {
     const result = {
       data: enhancedData,
       meta: {
-        cursor: hasMore ? enhancedData[enhancedData.length - 1].createdAt : null,
+        cursor: hasMore ? String(offset + limit) : null,
         hasMore,
       },
     };
@@ -343,12 +343,42 @@ export class ReelsService {
     };
   }
 
+  async updateReel(reelId: string, userId: string, data: { caption?: string; hashtags?: string[] }) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
+    if (!reel) throw new NotFoundException('Reel not found');
+    if (reel.userId !== userId) throw new ForbiddenException();
+    if (reel.isRemoved) throw new BadRequestException('Reel has been removed');
+
+    return this.prisma.reel.update({
+      where: { id: reelId },
+      data: {
+        ...(data.caption !== undefined ? { caption: data.caption } : {}),
+        ...(data.hashtags ? { hashtags: data.hashtags } : {}),
+        editedAt: new Date(),
+      },
+      select: REEL_SELECT,
+    });
+  }
+
   async getById(reelId: string, userId?: string) {
     const reel = await this.prisma.reel.findUnique({
       where: { id: reelId },
       select: REEL_SELECT,
     });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
+
+    // Check block status
+    if (userId && userId !== reel.user.id) {
+      const blocked = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: reel.user.id },
+            { blockerId: reel.user.id, blockedId: userId },
+          ],
+        },
+      });
+      if (blocked) throw new NotFoundException('Reel not found');
+    }
 
     let isLiked = false;
     let isBookmarked = false;
@@ -394,7 +424,7 @@ export class ReelsService {
 
   async like(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
-    if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
+    if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     try {
       await this.prisma.$transaction([
@@ -430,7 +460,7 @@ export class ReelsService {
 
   async unlike(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
-    if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
+    if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     try {
       await this.prisma.$transaction([
@@ -460,7 +490,7 @@ export class ReelsService {
 
   async comment(reelId: string, userId: string, content: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
-    if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
+    if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     const [comment] = await this.prisma.$transaction([
       this.prisma.reelComment.create({
@@ -514,7 +544,7 @@ export class ReelsService {
     }
 
     await this.prisma.$transaction([
-      this.prisma.reelComment.delete({ where: { id: commentId } }),
+      this.prisma.reelComment.update({ where: { id: commentId }, data: { content: '[deleted]' } }),
       this.prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
     ]);
     return { deleted: true };
@@ -571,7 +601,7 @@ export class ReelsService {
 
   async share(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
-    if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
+    if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     // Use interactive transaction to atomically check-and-update, avoiding double-counting
     await this.prisma.$transaction(async (tx) => {
@@ -598,7 +628,7 @@ export class ReelsService {
 
   async bookmark(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
-    if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
+    if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     // Use interactive transaction to atomically check-and-update
     const alreadyBookmarked = await this.prisma.$transaction(async (tx) => {
@@ -652,7 +682,7 @@ export class ReelsService {
 
   async view(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
-    if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
+    if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     // Use interactive transaction to atomically check-and-update, avoiding double-counting
     await this.prisma.$transaction(async (tx) => {
@@ -726,6 +756,14 @@ export class ReelsService {
   }
 
   async report(reelId: string, userId: string, reason: string) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId }, select: { id: true } });
+    if (!reel) throw new NotFoundException('Reel not found');
+
+    const existing = await this.prisma.report.findFirst({
+      where: { reporterId: userId, description: `reel:${reelId}` },
+    });
+    if (existing) return { reported: true };
+
     const reasonMap: Record<string, string> = {
       SPAM: 'SPAM', MISINFORMATION: 'MISINFORMATION',
       INAPPROPRIATE: 'OTHER', HATE_SPEECH: 'HATE_SPEECH',
@@ -909,7 +947,9 @@ export class ReelsService {
     return { archived: false };
   }
 
-  getShareLink(reelId: string) {
+  async getShareLink(reelId: string) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId }, select: { id: true, isRemoved: true } });
+    if (!reel || reel.isRemoved) throw new NotFoundException('Reel not found');
     return { url: `https://mizanly.app/reel/${reelId}` };
   }
 

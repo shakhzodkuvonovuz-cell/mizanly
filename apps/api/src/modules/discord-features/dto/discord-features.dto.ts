@@ -1,5 +1,5 @@
 import {
-  IsString, IsOptional, IsArray, MaxLength, ArrayMaxSize,
+  IsString, IsOptional, IsArray, MaxLength, ArrayMaxSize, IsUrl,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -15,7 +15,7 @@ export class ForumReplyDto {
 
 export class CreateWebhookDto {
   @ApiProperty() @IsString() @MaxLength(100) name: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() avatarUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUrl() avatarUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() targetChannelId?: string;
 }
 

@@ -27,9 +27,20 @@ export class OptionalClerkAuthGuard implements CanActivate {
       });
       const user = await this.prisma.user.findUnique({
         where: { clerkId },
-        select: { id: true, clerkId: true, username: true, displayName: true },
+        select: {
+          id: true,
+          clerkId: true,
+          username: true,
+          displayName: true,
+          isBanned: true,
+          isDeactivated: true,
+          isDeleted: true,
+        },
       });
-      if (user) request.user = user;
+      // Don't attach banned/deactivated/deleted users
+      if (user && !user.isBanned && !user.isDeactivated && !user.isDeleted) {
+        request.user = user;
+      }
     } catch {
       // Invalid token → ignore, treat as unauthenticated
     }

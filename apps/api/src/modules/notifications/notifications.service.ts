@@ -110,6 +110,23 @@ export class NotificationsService {
     body?: string;
   }) {
     if (params.userId === params.actorId) return null; // No self-notifications
+
+    // Don't notify if recipient has blocked or muted the actor
+    const [blockExists, muteExists] = await Promise.all([
+      this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: params.userId, blockedId: params.actorId },
+            { blockedId: params.userId, blockerId: params.actorId },
+          ],
+        },
+      }),
+      this.prisma.mute.findFirst({
+        where: { userId: params.userId, mutedId: params.actorId },
+      }),
+    ]);
+    if (blockExists || muteExists) return null;
+
     const notification = await this.prisma.notification.create({
       data: {
         userId: params.userId,

@@ -81,9 +81,11 @@ describe('ReelsService', () => {
               findMany: jest.fn(),
               findUnique: jest.fn(),
               delete: jest.fn(),
+              update: jest.fn(),
             },
             block: {
-              findMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             mute: {
               findMany: jest.fn(),
@@ -93,6 +95,7 @@ describe('ReelsService', () => {
             },
             report: {
               create: jest.fn(),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             user: {
               findUnique: jest.fn(),
@@ -579,7 +582,7 @@ describe('ReelsService', () => {
         where: { id: commentId },
       });
       expect(prisma.$transaction).toHaveBeenCalledWith([
-        prisma.reelComment.delete({ where: { id: commentId } }),
+        prisma.reelComment.update({ where: { id: commentId }, data: { content: '[deleted]' } }),
         prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
       ]);
       expect(result).toEqual({ deleted: true });
@@ -846,6 +849,7 @@ describe('ReelsService', () => {
 
   describe('report', () => {
     it('should create report for reel', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1' });
       prisma.report.create.mockResolvedValue({});
 
       const result = await service.report('reel-1', 'user-1', 'SPAM');
@@ -856,6 +860,7 @@ describe('ReelsService', () => {
     });
 
     it('should handle unknown reason by mapping to OTHER', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1' });
       prisma.report.create.mockResolvedValue({});
       const result = await service.report('reel-1', 'user-1', 'UNKNOWN_REASON');
       expect(result).toEqual({ reported: true });

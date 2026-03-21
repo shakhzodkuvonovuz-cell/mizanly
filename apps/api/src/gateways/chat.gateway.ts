@@ -106,10 +106,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
       const user = await this.prisma.user.findUnique({
         where: { clerkId },
-        select: { id: true, username: true },
+        select: { id: true, username: true, isBanned: true, isDeactivated: true, isDeleted: true },
       });
 
-      if (!user) {
+      if (!user || user.isBanned || user.isDeactivated || user.isDeleted) {
         client.disconnect();
         return;
       }
@@ -133,8 +133,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }, this.HEARTBEAT_INTERVAL);
       this.heartbeatTimers.set(client.id, timer);
 
-      // Broadcast to all connected clients that this user is online
-      this.server.emit('user_online', { userId, isOnline: true });
+      // Broadcast online status only to user's conversations, not globally
+      const memberships = await this.prisma.conversationMember.findMany({
+        where: { userId: user.id },
+        select: { conversationId: true },
+        take: 100,
+      });
+      for (const m of memberships) {
+        client.to(`conversation:${m.conversationId}`).emit('user_online', { userId, isOnline: true });
+      }
 
       client.join(`user:${user.id}`);
     } catch {
@@ -164,7 +171,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         where: { id: userId },
         data: { lastSeenAt: new Date() },
       }).catch((e) => this.logger.error('Failed to update lastSeenAt', e));
-      this.server.emit('user_offline', { userId, isOnline: false, lastSeenAt: new Date().toISOString() });
+      // Broadcast offline only to user's conversations, not globally
+      const memberships = await this.prisma.conversationMember.findMany({
+        where: { userId },
+        select: { conversationId: true },
+        take: 100,
+      });
+      for (const m of memberships) {
+        this.server.to(`conversation:${m.conversationId}`).emit('user_offline', { userId, isOnline: false });
+      }
     }
   }
 
@@ -198,6 +213,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       mediaUrl?: string;
       mediaType?: string;
       replyToId?: string;
+      isSpoiler?: boolean;
+      isViewOnce?: boolean;
     },
   ) {
     if (!client.data.userId) throw new WsException('Unauthorized');
@@ -223,6 +240,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         mediaUrl: dto.mediaUrl,
         mediaType: dto.mediaType,
         replyToId: dto.replyToId,
+        isSpoiler: dto.isSpoiler,
+        isViewOnce: dto.isViewOnce,
       },
     );
 
@@ -275,8 +294,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { userIds: string[] },
   ) {
-    // Cap at 100 user IDs to prevent abuse
-    const userIds = (data.userIds || []).slice(0, 100);
+    if (!client.data.userId) throw new WsException('Unauthorized');
+    // Cap at 50 user IDs to prevent abuse
+    const userIds = (data.userIds || []).slice(0, 50);
     const pipeline = this.redis.pipeline();
     for (const id of userIds) {
       pipeline.scard(`presence:${id}`);
@@ -296,6 +316,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const errors = await validate(dto);
     if (errors.length > 0) {
       client.emit('error', { message: 'Invalid call_initiate data' });
+      return;
+    }
+    // Block check
+    const blocked = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: client.data.userId, blockedId: dto.targetUserId },
+          { blockerId: dto.targetUserId, blockedId: client.data.userId },
+        ],
+      },
+    });
+    if (blocked) {
+      client.emit('error', { message: 'Cannot call this user' });
       return;
     }
     const targetSockets = await this.getUserSockets(dto.targetUserId);

@@ -24,7 +24,7 @@ describe('MessagesService — concurrency (Task 88)', () => {
           provide: PrismaService,
           useValue: {
             conversationMember: {
-              findMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(mockMembership),
+              findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn().mockResolvedValue(mockMembership),
               create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), createMany: jest.fn(), delete: jest.fn(),
             },
             conversation: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },

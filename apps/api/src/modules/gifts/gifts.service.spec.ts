@@ -39,11 +39,12 @@ describe('GiftsService', () => {
   });
 
   describe('purchaseCoins', () => {
-    it('should add coins to balance', async () => {
-      prisma.coinBalance.upsert.mockResolvedValue({ coins: 200, diamonds: 0 });
-      prisma.coinTransaction.create.mockResolvedValue({});
+    it('should create pending purchase without crediting coins', async () => {
+      prisma.coinTransaction.create.mockResolvedValue({ id: 'tx-1' });
+      prisma.coinBalance.upsert.mockResolvedValue({ coins: 0, diamonds: 0 });
       const result = await service.purchaseCoins('u1', 200);
-      expect(result.coins).toBe(200);
+      expect(result.pendingPurchase).toBe(200);
+      expect(result.coins).toBe(0);
     });
 
     it('should throw on non-positive amount', async () => {
@@ -54,7 +55,7 @@ describe('GiftsService', () => {
 
   describe('sendGift', () => {
     it('should send a gift and deduct coins', async () => {
-      prisma.coinBalance.findUnique.mockResolvedValue({ coins: 100, diamonds: 0 });
+      prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
       const result = await service.sendGift('sender', { receiverId: 'receiver', giftType: 'star' });
       expect(result.giftName).toBe('Star');
       expect(result.coinCost).toBe(10);
@@ -70,7 +71,7 @@ describe('GiftsService', () => {
     });
 
     it('should throw for insufficient coins', async () => {
-      prisma.coinBalance.findUnique.mockResolvedValue({ coins: 0, diamonds: 0 });
+      prisma.coinBalance.updateMany.mockResolvedValue({ count: 0 });
       await expect(service.sendGift('u1', { receiverId: 'u2', giftType: 'crown' })).rejects.toThrow(BadRequestException);
     });
 
@@ -101,7 +102,9 @@ describe('GiftsService', () => {
 
   describe('cashout', () => {
     it('should convert diamonds to USD', async () => {
-      prisma.coinBalance.findUnique.mockResolvedValue({ diamonds: 500 });
+      prisma.coinBalance.findUnique
+        .mockResolvedValueOnce({ diamonds: 500 })  // initial balance check
+        .mockResolvedValueOnce({ diamonds: 300 });  // post-update re-read
       prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
       prisma.coinTransaction.create.mockResolvedValue({});
       const result = await service.cashout('u1', 200);

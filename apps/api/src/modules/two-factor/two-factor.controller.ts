@@ -35,19 +35,6 @@ class VerifyDto {
   code: string;
 }
 
-class ValidateDto {
-  @ApiProperty({ description: 'User ID' })
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
-
-  @ApiProperty({ description: '6-digit TOTP code' })
-  @IsString()
-  @IsNotEmpty()
-  @Length(6, 6)
-  code: string;
-}
-
 class DisableDto {
   @ApiProperty({ description: '6-digit TOTP code for confirmation' })
   @IsString()
@@ -56,12 +43,7 @@ class DisableDto {
   code: string;
 }
 
-class BackupDto {
-  @ApiProperty({ description: 'User ID' })
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
-
+class VerifyBackupDto {
   @ApiProperty({ description: 'Backup code (10-character alphanumeric)' })
   @IsString()
   @IsNotEmpty()
@@ -106,11 +88,13 @@ export class TwoFactorController {
   }
 
   @Post('validate')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Validate TOTP code during login' })
   @ApiResponse({ status: 200, description: 'Returns validation result' })
-  async validate(@Body() dto: ValidateDto) {
-    const valid = await this.twoFactorService.validate(dto.userId, dto.code);
+  async validate(@CurrentUser('id') userId: string, @Body() dto: VerifyDto) {
+    const valid = await this.twoFactorService.validate(userId, dto.code);
     return { valid };
   }
 
@@ -140,12 +124,14 @@ export class TwoFactorController {
   }
 
   @Post('backup')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Use a backup code for authentication' })
   @ApiResponse({ status: 200, description: 'Backup code accepted' })
   @ApiResponse({ status: 400, description: 'Invalid backup code' })
-  async backup(@Body() dto: BackupDto) {
-    const valid = await this.twoFactorService.useBackupCode(dto.userId, dto.backupCode);
+  async backup(@CurrentUser('id') userId: string, @Body() dto: VerifyBackupDto) {
+    const valid = await this.twoFactorService.useBackupCode(userId, dto.backupCode);
     if (!valid) {
       throw new BadRequestException('Invalid backup code');
     }

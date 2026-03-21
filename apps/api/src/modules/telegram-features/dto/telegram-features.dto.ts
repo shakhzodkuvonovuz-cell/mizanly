@@ -1,12 +1,12 @@
 import {
   IsString, IsNumber, IsOptional, IsBoolean, IsArray, IsIn, IsInt,
-  MaxLength, Min, Max, ArrayMaxSize,
+  MaxLength, Min, Max, ArrayMaxSize, IsUrl,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SaveMessageDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(10000) content?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() mediaUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUrl() mediaUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() mediaType?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['post', 'thread', 'reel', 'video', 'message']) forwardedFromType?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() forwardedFromId?: string;
@@ -55,6 +55,6 @@ export class CreateEmojiPackDto {
 
 export class AddEmojiDto {
   @ApiProperty() @IsString() @MaxLength(50) shortcode: string;
-  @ApiProperty() @IsString() imageUrl: string;
+  @ApiProperty() @IsUrl() imageUrl: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isAnimated?: boolean;
 }

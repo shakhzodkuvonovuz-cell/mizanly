@@ -176,6 +176,7 @@ export class VideosController {
 
   @Post(':id/view')
   @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
   @ApiOperation({ summary: 'Record a view for a video' })
   view(
     @Param('id') id: string,

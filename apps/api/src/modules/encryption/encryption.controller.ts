@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiProperty } from '@nestjs/swagger';
-import { IsString, IsArray, ValidateNested, MinLength, ArrayMinSize } from 'class-validator';
+import { IsString, IsArray, ValidateNested, MinLength, ArrayMinSize, Matches, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EncryptionService } from './encryption.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -19,6 +19,8 @@ class RegisterKeyDto {
   @ApiProperty({ description: 'Base64-encoded public key' })
   @IsString()
   @MinLength(32)
+  @MaxLength(2048)
+  @Matches(/^[A-Za-z0-9+/=]+$/, { message: 'Public key must be valid base64' })
   publicKey!: string;
 }
 
@@ -81,9 +83,9 @@ export class EncryptionController {
   }
 
   @Get('keys/bulk')
-  @ApiOperation({ summary: 'Get public keys for multiple users' })
+  @ApiOperation({ summary: 'Get public keys for multiple users (max 50)' })
   async getBulkKeys(@Query('userIds') userIds: string) {
-    const ids = userIds ? userIds.split(',').filter(Boolean) : [];
+    const ids = userIds ? userIds.split(',').filter(Boolean).slice(0, 50) : [];
     return this.encryptionService.getBulkKeys(ids);
   }
 
@@ -137,10 +139,11 @@ export class EncryptionController {
   }
 
   @Get('status/:conversationId')
-  @ApiOperation({ summary: 'Check encryption status for a conversation' })
+  @ApiOperation({ summary: 'Check encryption status for a conversation (members only)' })
   async getConversationStatus(
+    @CurrentUser('id') userId: string,
     @Param('conversationId') conversationId: string,
   ) {
-    return this.encryptionService.getConversationEncryptionStatus(conversationId);
+    return this.encryptionService.getConversationEncryptionStatus(conversationId, userId);
   }
 }

@@ -46,6 +46,11 @@ describe('ChatGateway', () => {
           useValue: {
             user: {
               findUnique: jest.fn(),
+              update: jest.fn().mockResolvedValue(undefined),
+            },
+            conversationMember: {
+              findMany: jest.fn().mockResolvedValue([]),
+              findUnique: jest.fn(),
             },
           },
         },
@@ -231,7 +236,7 @@ describe('ChatGateway', () => {
           auth: { token: 'fake-token' },
         },
       };
-      const user = { id: 'user-123', username: 'test' };
+      const user = { id: 'user-123', username: 'test', isBanned: false, isDeactivated: false, isDeleted: false };
       prisma.user.findUnique.mockResolvedValue(user);
       (verifyToken as jest.Mock).mockResolvedValue({ sub: 'clerk-123' });
 
@@ -240,7 +245,8 @@ describe('ChatGateway', () => {
       expect((client.data as any).userId).toBe('user-123');
       expect(redis.sadd).toHaveBeenCalledWith('presence:user-123', 'socket-123');
       expect(redis.expire).toHaveBeenCalledWith('presence:user-123', expect.any(Number));
-      expect(gateway.server.emit).toHaveBeenCalledWith('user_online', { userId: 'user-123', isOnline: true });
+      // user_online is now broadcast to conversation rooms, not globally
+      expect(prisma.conversationMember.findMany).toHaveBeenCalled();
     });
 
     it('removes user on disconnect and emits user_offline when last socket', async () => {
@@ -255,11 +261,8 @@ describe('ChatGateway', () => {
       expect(redis.srem).toHaveBeenCalledWith('presence:user-123', 'socket-123');
       expect(redis.scard).toHaveBeenCalledWith('presence:user-123');
       expect(redis.del).toHaveBeenCalledWith('presence:user-123');
-      expect(gateway.server.emit).toHaveBeenCalledWith('user_offline', expect.objectContaining({
-        userId: 'user-123',
-        isOnline: false,
-        lastSeenAt: expect.any(String),
-      }));
+      // user_offline is now broadcast to conversation rooms, not globally
+      expect(prisma.conversationMember.findMany).toHaveBeenCalled();
     });
 
     it('responds to get_online_status via Redis pipeline', async () => {
@@ -295,20 +298,19 @@ describe('ChatGateway', () => {
       expect(gateway.server.emit).not.toHaveBeenCalledWith('user_offline', expect.anything());
     });
 
-    it('caps get_online_status at 100 user IDs', async () => {
+    it('caps get_online_status at 50 user IDs', async () => {
       const client = { ...mockSocket, emit: jest.fn(), data: { userId: 'user-1' } };
       const manyIds = Array.from({ length: 150 }, (_, i) => `user-${i}`);
       const mockPipeline = {
         scard: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue(Array(100).fill([null, 0])),
+        exec: jest.fn().mockResolvedValue(Array(50).fill([null, 0])),
       };
       redis.pipeline.mockReturnValue(mockPipeline);
 
       await gateway.handleGetOnlineStatus(client as any, { userIds: manyIds });
-      // Should only emit 100 statuses (capped)
       expect(client.emit).toHaveBeenCalledWith('online_status', expect.any(Array));
       const emitted = client.emit.mock.calls[0][1];
-      expect(emitted).toHaveLength(100);
+      expect(emitted).toHaveLength(50);
     });
   });
 

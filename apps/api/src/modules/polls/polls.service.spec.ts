@@ -31,6 +31,7 @@ describe('PollsService', () => {
               findMany: jest.fn(),
             },
             $transaction: jest.fn(),
+            $executeRaw: jest.fn().mockResolvedValue(1),
           },
         },
       ],
@@ -188,6 +189,7 @@ describe('PollsService', () => {
       const pollId = 'poll-123';
       const userId = 'user-456';
       const mockVote = { optionId: 'opt1' };
+      prisma.poll.findUnique.mockResolvedValue({ id: pollId, expiresAt: null });
       prisma.pollVote.findFirst.mockResolvedValue(mockVote);
       prisma.$transaction.mockResolvedValue([{}, {}, {}]);
 
@@ -206,6 +208,7 @@ describe('PollsService', () => {
     it('should throw BadRequestException if user has not voted', async () => {
       const pollId = 'poll-123';
       const userId = 'user-456';
+      prisma.poll.findUnique.mockResolvedValue({ id: pollId, expiresAt: null });
       prisma.pollVote.findFirst.mockResolvedValue(null);
 
       await expect(service.retractVote(pollId, userId)).rejects.toThrow(

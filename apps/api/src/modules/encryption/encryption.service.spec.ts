@@ -74,9 +74,9 @@ describe('EncryptionService', () => {
   });
 
   describe('storeEnvelope', () => {
-    it('should store key envelope', async () => {
+    it('should store key envelope with new version', async () => {
       prisma.conversationKeyEnvelope.findFirst.mockResolvedValue(null);
-      prisma.conversationKeyEnvelope.upsert.mockResolvedValue({ conversationId: 'c1', userId: 'u2' });
+      prisma.conversationKeyEnvelope.create.mockResolvedValue({ conversationId: 'c1', userId: 'u2', version: 1 });
       const result = await service.storeEnvelope('u1', {
         conversationId: 'c1', recipientId: 'u2', encryptedKey: 'ek', nonce: 'n',
       });

@@ -12,6 +12,7 @@ describe('CallsService', () => {
     prisma = {
       callSession: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), update: jest.fn() },
       callParticipant: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
+      block: { findFirst: jest.fn().mockResolvedValue(null) },
     };
     const module = await Test.createTestingModule({
       providers: [...globalMockProviders, CallsService, { provide: PrismaService, useValue: prisma }],

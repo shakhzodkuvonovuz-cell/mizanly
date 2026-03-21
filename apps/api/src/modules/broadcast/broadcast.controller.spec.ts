@@ -143,7 +143,7 @@ describe('BroadcastController', () => {
   describe('muteChannel', () => {
     it('should call service.muteChannel', async () => {
       mockService.muteChannel.mockResolvedValue({ isMuted: true });
-      await controller.mute('channel-1', 'user-1', true);
+      await controller.mute('channel-1', 'user-1', { muted: true } as any);
       expect(service.muteChannel).toHaveBeenCalledWith('channel-1', 'user-1', true);
     });
   });

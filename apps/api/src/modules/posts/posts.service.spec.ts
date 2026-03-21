@@ -47,12 +47,21 @@ describe('PostsService', () => {
               findMany: jest.fn(),
             },
             block: {
-              findMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             mute: {
-              findMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
             },
             hashtag: {
+              upsert: jest.fn(),
+            },
+            report: {
+              create: jest.fn().mockResolvedValue({}),
+              findFirst: jest.fn().mockResolvedValue(null),
+            },
+            feedDismissal: {
+              findMany: jest.fn().mockResolvedValue([]),
               upsert: jest.fn(),
             },
             user: {
@@ -76,12 +85,6 @@ describe('PostsService', () => {
               findUnique: jest.fn(),
               findMany: jest.fn().mockResolvedValue([]),
               upsert: jest.fn(),
-            },
-            feedDismissal: {
-              upsert: jest.fn(),
-            },
-            report: {
-              create: jest.fn(),
             },
             circleMember: {
               findMany: jest.fn().mockResolvedValue([]),
@@ -392,7 +395,7 @@ describe('PostsService', () => {
       expect(prisma.post.findUnique).toHaveBeenCalledWith({ where: { id: postId } });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id: postId },
-        data: { content: updateData.content },
+        data: expect.objectContaining({ content: updateData.content, editedAt: expect.any(Date) }),
         select: expect.any(Object),
       });
       expect(result).toEqual({ ...mockPost, ...updateData });
@@ -672,7 +675,7 @@ describe('PostsService', () => {
       expect(prisma.comment.findUnique).toHaveBeenCalledWith({ where: { id: commentId } });
       expect(prisma.comment.update).toHaveBeenCalledWith({
         where: { id: commentId },
-        data: { content },
+        data: expect.objectContaining({ content, editedAt: expect.any(Date) }),
         include: {
           user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
         },
@@ -709,6 +712,7 @@ describe('PostsService', () => {
         id: commentId,
         userId,
         postId: 'post-789',
+        post: { userId: 'post-owner-1' },
       };
       prisma.comment.findUnique.mockResolvedValue(mockComment);
       prisma.comment.update.mockResolvedValue({ ...mockComment, isRemoved: true });
@@ -717,12 +721,10 @@ describe('PostsService', () => {
 
       const result = await service.deleteComment(commentId, userId);
 
-      expect(prisma.comment.findUnique).toHaveBeenCalledWith({ where: { id: commentId } });
-      expect(prisma.comment.update).toHaveBeenCalledWith({
-        where: { id: commentId },
-        data: { isRemoved: true },
-      });
-      expect(prisma.$executeRaw).toHaveBeenCalled();
+      expect(prisma.comment.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: commentId }, include: expect.any(Object) }),
+      );
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toEqual({ deleted: true });
     });
 

@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsBoolean, IsIn, IsArray, MaxLength } from 'class-validator';
+import { IsString, IsUUID, IsBoolean, IsIn, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
 
 export class WsJoinConversationDto {
   @IsUUID()
@@ -51,6 +51,7 @@ export class WsCallEndDto {
 
   @IsArray()
   @IsString({ each: true })
+  @ArrayMaxSize(20)
   participants: string[];
 }
 

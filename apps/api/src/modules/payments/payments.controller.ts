@@ -8,29 +8,27 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  Req,
-  RawBodyRequest,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { IsNumber, IsString, Min, Max, MaxLength, IsIn } from 'class-validator';
 import { PaymentsService } from './payments.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
-// DTOs defined inline
 class CreatePaymentIntentDto {
-  amount: number;
-  currency: string;
-  receiverId: string;
+  @IsNumber() @Min(50) @Max(10000000) amount: number;
+  @IsIn(['usd', 'gbp', 'eur', 'aud', 'cad']) currency: string;
+  @IsString() @MaxLength(50) receiverId: string;
 }
 
 class CreateSubscriptionDto {
-  tierId: string;
-  paymentMethodId: string;
+  @IsString() @MaxLength(50) tierId: string;
+  @IsString() @MaxLength(100) paymentMethodId: string;
 }
 
 class AttachPaymentMethodDto {
-  paymentMethodId: string;
+  @IsString() @MaxLength(100) paymentMethodId: string;
 }
 
 @ApiTags('Payments')

@@ -75,6 +75,19 @@ export class ReelsController {
 
   // --- Parameterized :id routes below ---
 
+  @Patch(':id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @ApiOperation({ summary: 'Update reel caption/hashtags' })
+  updateReel(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: { caption?: string; hashtags?: string[] },
+  ) {
+    return this.reelsService.updateReel(id, userId, dto);
+  }
+
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get reel by ID' })
@@ -162,6 +175,7 @@ export class ReelsController {
 
   @Post(':id/view')
   @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
   @ApiOperation({ summary: 'Record a view for a reel' })
   view(@Param('id') id: string, @CurrentUser('id') userId?: string) {
     // Only record view if user is authenticated

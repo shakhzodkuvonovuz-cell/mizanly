@@ -16,7 +16,7 @@ describe('GiftsService — abuse vectors (Task 98)', () => {
         {
           provide: PrismaService,
           useValue: {
-            coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
+            coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
             giftRecord: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn() },
@@ -37,7 +37,7 @@ describe('GiftsService — abuse vectors (Task 98)', () => {
 
   it('should reject gift with amount exceeding balance', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'user-2' });
-    prisma.coinBalance.findUnique.mockResolvedValue({ userId: 'user-1', coins: 0 });
+    prisma.coinBalance.updateMany.mockResolvedValue({ count: 0 });
     await expect(service.sendGift('user-1', { receiverId: 'user-2', giftType: 'rose' }))
       .rejects.toThrow(BadRequestException);
   });
@@ -67,7 +67,7 @@ describe('GiftsService — abuse vectors (Task 98)', () => {
 
   it('should reject gift when sender has no balance record', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'user-2' });
-    prisma.coinBalance.findUnique.mockResolvedValue(null);
+    prisma.coinBalance.updateMany.mockResolvedValue({ count: 0 });
     await expect(service.sendGift('user-1', { receiverId: 'user-2', giftType: 'rose' }))
       .rejects.toThrow(BadRequestException);
   });

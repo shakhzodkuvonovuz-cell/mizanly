@@ -17,31 +17,26 @@ export class RestrictsService {
       throw new NotFoundException('User not found');
     }
 
+    // Idempotent — return success if already restricted
     try {
-      return await this.prisma.restrict.create({
+      await this.prisma.restrict.create({
         data: { restricterId, restrictedId },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('User is already restricted');
+        return { message: 'User restricted' };
       }
       throw error;
     }
+    return { message: 'User restricted' };
   }
 
   async unrestrict(restricterId: string, restrictedId: string) {
-    try {
-      return await this.prisma.restrict.delete({
-        where: {
-          restricterId_restrictedId: { restricterId, restrictedId },
-        },
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundException('Restriction not found');
-      }
-      throw error;
-    }
+    // Idempotent — return success even if not restricted
+    await this.prisma.restrict.deleteMany({
+      where: { restricterId, restrictedId },
+    });
+    return { message: 'User unrestricted' };
   }
 
   async getRestrictedList(userId: string, cursor?: string, limit = 20) {

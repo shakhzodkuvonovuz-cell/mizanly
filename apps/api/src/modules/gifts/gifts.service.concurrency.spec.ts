@@ -16,11 +16,11 @@ describe('GiftsService — concurrency (Task 91)', () => {
         {
           provide: PrismaService,
           useValue: {
-            coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
+            coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
             giftRecord: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn() },
-            $transaction: jest.fn().mockResolvedValue([{ id: 'gift-1', senderId: 'u1', receiverId: 'u2' }, {}, {}, {}, {}]),
+            $transaction: jest.fn().mockResolvedValue([{ id: 'gift-1', senderId: 'u1', receiverId: 'u2' }, {}, {}, {}]),
           },
         },
       ],
@@ -32,9 +32,7 @@ describe('GiftsService — concurrency (Task 91)', () => {
 
   it('should handle two users sending gifts to same user simultaneously', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'receiver' });
-    prisma.coinBalance.findUnique
-      .mockResolvedValueOnce({ userId: 'sender-1', coins: 100 })
-      .mockResolvedValueOnce({ userId: 'sender-2', coins: 100 });
+    prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
 
     const [r1, r2] = await Promise.allSettled([
       service.sendGift('sender-1', { receiverId: 'receiver', giftType: 'rose' }),
@@ -47,7 +45,7 @@ describe('GiftsService — concurrency (Task 91)', () => {
 
   it('should reject gift when exact balance would go negative', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'receiver' });
-    prisma.coinBalance.findUnique.mockResolvedValue({ userId: 'sender', coins: 0 });
+    prisma.coinBalance.updateMany.mockResolvedValue({ count: 0 });
 
     await expect(service.sendGift('sender', { receiverId: 'receiver', giftType: 'rose' }))
       .rejects.toThrow(BadRequestException);
@@ -70,9 +68,9 @@ describe('GiftsService — concurrency (Task 91)', () => {
 
   it('should handle gift + purchase simultaneously', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: 'receiver' });
-    prisma.coinBalance.findUnique.mockResolvedValue({ userId: 'user-1', coins: 50 });
+    prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
     prisma.coinBalance.upsert.mockResolvedValue({ userId: 'user-1', coins: 150, diamonds: 0 });
-    prisma.coinTransaction.create.mockResolvedValue({});
+    prisma.coinTransaction.create.mockResolvedValue({ id: 'tx-1' });
 
     const [gift, purchase] = await Promise.allSettled([
       service.sendGift('user-1', { receiverId: 'receiver', giftType: 'rose' }),

@@ -73,10 +73,10 @@ describe('StoriesController', () => {
   });
 
   describe('getById', () => {
-    it('should call service.getById with id', async () => {
+    it('should call service.getById with id and userId', async () => {
       mockService.getById.mockResolvedValue({ id: 'story-1' });
-      await controller.getById('story-1');
-      expect(mockService.getById).toHaveBeenCalledWith('story-1');
+      await controller.getById('user-1', 'story-1');
+      expect(mockService.getById).toHaveBeenCalledWith('story-1', 'user-1');
     });
   });
 

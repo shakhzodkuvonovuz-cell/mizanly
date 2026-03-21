@@ -16,26 +16,27 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
-// DTOs defined inline
+import { IsString, IsNumber, IsOptional, IsArray, IsBoolean, IsIn, Min, Max, MaxLength, ArrayMaxSize } from 'class-validator';
+
 class CreateTipDto {
-  receiverId: string;
-  amount: number;
-  message?: string;
+  @IsString() @MaxLength(50) receiverId: string;
+  @IsNumber() @Min(0.01) @Max(10000) amount: number;
+  @IsOptional() @IsString() @MaxLength(500) message?: string;
 }
 
 class CreateTierDto {
-  name: string;
-  price: number;
-  benefits: string[];
-  level?: string; // defaults to 'bronze'
+  @IsString() @MaxLength(100) name: string;
+  @IsNumber() @Min(0.01) @Max(10000) price: number;
+  @IsArray() @IsString({ each: true }) @ArrayMaxSize(20) benefits: string[];
+  @IsOptional() @IsIn(['bronze', 'silver', 'gold', 'platinum']) level?: string;
 }
 
 class UpdateTierDto {
-  name?: string;
-  price?: number;
-  benefits?: string[];
-  level?: string;
-  isActive?: boolean;
+  @IsOptional() @IsString() @MaxLength(100) name?: string;
+  @IsOptional() @IsNumber() @Min(0.01) @Max(10000) price?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) @ArrayMaxSize(20) benefits?: string[];
+  @IsOptional() @IsIn(['bronze', 'silver', 'gold', 'platinum']) level?: string;
+  @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
 @ApiTags('Monetization')

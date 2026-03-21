@@ -56,13 +56,14 @@ describe('MutesService', () => {
       );
     });
 
-    it('should throw ConflictException if already muted', async () => {
+    it('should return success idempotently if already muted', async () => {
       const userId = 'user-123';
       const mutedId = 'user-456';
       const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
       prisma.mute.create.mockRejectedValue(new PrismaClientKnownRequestError('Unique constraint', { code: 'P2002', clientVersion: '0' }));
 
-      await expect(service.mute(userId, mutedId)).rejects.toThrow(ConflictException);
+      const result = await service.mute(userId, mutedId);
+      expect(result).toEqual({ message: 'User muted' });
     });
   });
 
@@ -78,12 +79,13 @@ describe('MutesService', () => {
       expect(result).toEqual({ message: 'User unmuted' });
     });
 
-    it('should throw NotFoundException if mute not found', async () => {
+    it('should return success idempotently even if not muted', async () => {
       const userId = 'user-123';
       const mutedId = 'user-456';
       prisma.mute.deleteMany.mockResolvedValue({ count: 0 });
 
-      await expect(service.unmute(userId, mutedId)).rejects.toThrow(NotFoundException);
+      const result = await service.unmute(userId, mutedId);
+      expect(result).toEqual({ message: 'User unmuted' });
     });
   });
 

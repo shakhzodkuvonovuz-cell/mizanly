@@ -7,7 +7,6 @@ import {
   HttpStatus,
   BadRequestException,
   Logger,
-  Injectable,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -22,7 +21,6 @@ interface RawBodyRequest extends Request {
 @ApiTags('Payments')
 @Controller('payments/webhooks')
 @SkipThrottle()
-@Injectable()
 export class StripeWebhookController {
   private readonly logger = new Logger(StripeWebhookController.name);
   private stripe: Stripe;
@@ -54,8 +52,8 @@ export class StripeWebhookController {
     let event: Stripe.Event;
     try {
       event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-    } catch (err) {
-      this.logger.warn('Invalid Stripe webhook signature', err.message);
+    } catch (err: unknown) {
+      this.logger.warn('Invalid Stripe webhook signature', err instanceof Error ? err.message : 'Unknown error');
       throw new BadRequestException('Invalid webhook signature');
     }
 

@@ -15,9 +15,44 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
-  IsString, IsOptional, IsArray, MaxLength, IsBoolean, IsEnum, IsUrl, IsUUID, ArrayMaxSize, IsNumber, IsISO8601,
+  IsString, IsOptional, IsArray, MaxLength, IsBoolean, IsEnum, IsUrl, IsUUID, ArrayMaxSize, IsNumber, IsISO8601, IsInt, Min, Max, Matches,
 } from 'class-validator';
 import { MessagesService } from './messages.service';
+
+class SetLockCodeDto {
+  @IsOptional() @IsString() @Matches(/^\d{4,8}$/, { message: 'Lock code must be 4-8 digits' }) code?: string | null;
+}
+
+class VerifyLockCodeDto {
+  @IsString() @Matches(/^\d{4,8}$/, { message: 'Lock code must be 4-8 digits' }) code: string;
+}
+
+class SetHistoryCountDto {
+  @IsInt() @Min(0) @Max(100) count: number;
+}
+
+class SetMemberTagDto {
+  @IsOptional() @IsString() @MaxLength(30) tag?: string | null;
+}
+
+class ForwardMessageDto {
+  @IsArray() @IsString({ each: true }) @ArrayMaxSize(5) conversationIds: string[];
+}
+
+class SendViewOnceDto {
+  @IsUrl() mediaUrl: string;
+  @IsOptional() @IsString() @MaxLength(50) mediaType?: string;
+  @IsOptional() @IsEnum(['IMAGE', 'VIDEO', 'VOICE']) messageType?: string;
+  @IsOptional() @IsString() @MaxLength(500) content?: string;
+}
+
+class SetWallpaperDto {
+  @IsOptional() @IsUrl() wallpaperUrl?: string | null;
+}
+
+class SetToneDto {
+  @IsOptional() @IsString() @MaxLength(100) tone?: string | null;
+}
 import { MuteConversationDto } from './dto/mute-conversation.dto';
 import { ArchiveConversationDto } from './dto/archive-conversation.dto';
 import { CreateDmDto } from './dto/create-dm.dto';
@@ -294,6 +329,13 @@ export class MessagesController {
     return this.messagesService.addGroupMembers(id, userId, dto.memberIds);
   }
 
+  @Delete('groups/:id/members/me')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Leave a group' })
+  leaveGroup(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.messagesService.leaveGroup(id, userId);
+  }
+
   @Delete('groups/:id/members/:userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Remove member from group (creator only)' })
@@ -305,22 +347,15 @@ export class MessagesController {
     return this.messagesService.removeGroupMember(id, userId, targetUserId);
   }
 
-  @Delete('groups/:id/members/me')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Leave a group' })
-  leaveGroup(@Param('id') id: string, @CurrentUser('id') userId: string) {
-    return this.messagesService.leaveGroup(id, userId);
-  }
-
   @Patch('conversations/:id/lock-code')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set or remove secret lock code for a conversation' })
   setLockCode(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('code') code: string | null,
+    @Body() dto: SetLockCodeDto,
   ) {
-    return this.messagesService.setLockCode(id, userId, code);
+    return this.messagesService.setLockCode(id, userId, dto.code ?? null);
   }
 
   @Post('conversations/:id/verify-lock')
@@ -329,9 +364,9 @@ export class MessagesController {
   verifyLockCode(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('code') code: string,
+    @Body() dto: VerifyLockCodeDto,
   ) {
-    return this.messagesService.verifyLockCode(id, userId, code);
+    return this.messagesService.verifyLockCode(id, userId, dto.code);
   }
 
   @Patch('groups/:id/history-count')
@@ -340,9 +375,9 @@ export class MessagesController {
   setHistoryCount(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('count') count: number,
+    @Body() dto: SetHistoryCountDto,
   ) {
-    return this.messagesService.setNewMemberHistoryCount(id, userId, count);
+    return this.messagesService.setNewMemberHistoryCount(id, userId, dto.count);
   }
 
   @Patch('groups/:id/members/me/tag')
@@ -351,9 +386,9 @@ export class MessagesController {
   setMemberTag(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('tag') tag: string | null,
+    @Body() dto: SetMemberTagDto,
   ) {
-    return this.messagesService.setMemberTag(id, userId, tag);
+    return this.messagesService.setMemberTag(id, userId, dto.tag ?? null);
   }
 
   @Get(':conversationId/search')
@@ -365,8 +400,8 @@ export class MessagesController {
   @Post('forward/:messageId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Forward message' })
-  async forward(@Param('messageId') mid: string, @CurrentUser('id') uid: string, @Body('conversationIds') cids: string[]) {
-    return this.messagesService.forwardMessage(mid, uid, cids);
+  async forward(@Param('messageId') mid: string, @CurrentUser('id') uid: string, @Body() dto: ForwardMessageDto) {
+    return this.messagesService.forwardMessage(mid, uid, dto.conversationIds);
   }
 
   @Post(':messageId/delivered')
@@ -471,9 +506,9 @@ export class MessagesController {
   async sendViewOnceMessage(
     @Param('conversationId') conversationId: string,
     @CurrentUser('id') userId: string,
-    @Body() body: { mediaUrl: string; mediaType?: string; messageType?: string; content?: string },
+    @Body() dto: SendViewOnceDto,
   ) {
-    return this.messagesService.sendViewOnceMessage(conversationId, userId, body);
+    return this.messagesService.sendViewOnceMessage(conversationId, userId, dto);
   }
 
   @Post('view-once/:messageId/viewed')
@@ -521,9 +556,9 @@ export class MessagesController {
   async setWallpaper(
     @Param('conversationId') conversationId: string,
     @CurrentUser('id') userId: string,
-    @Body() body: { wallpaperUrl: string | null },
+    @Body() dto: SetWallpaperDto,
   ) {
-    return this.messagesService.setConversationWallpaper(conversationId, userId, body.wallpaperUrl);
+    return this.messagesService.setConversationWallpaper(conversationId, userId, dto.wallpaperUrl ?? null);
   }
 
   @Patch(':conversationId/tone')
@@ -531,9 +566,9 @@ export class MessagesController {
   async setTone(
     @Param('conversationId') conversationId: string,
     @CurrentUser('id') userId: string,
-    @Body() body: { tone: string | null },
+    @Body() dto: SetToneDto,
   ) {
-    return this.messagesService.setCustomTone(conversationId, userId, body.tone);
+    return this.messagesService.setCustomTone(conversationId, userId, dto.tone ?? null);
   }
 
   // ── DM Notes ──

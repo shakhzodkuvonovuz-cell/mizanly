@@ -172,19 +172,18 @@ export class ThreadsService {
       });
 
       scored.sort((a, b) => b._score - a._score);
-      const startIdx = cursor ? scored.findIndex(t => new Date(t.createdAt).toISOString() < cursor) : 0;
-      const page = scored.slice(Math.max(0, startIdx), Math.max(0, startIdx) + limit + 1);
+      const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+      const page = scored.slice(offset, offset + limit + 1);
 
       const hasMore = page.length > limit;
       const result = hasMore ? page.slice(0, limit) : page;
 
-      // Strip internal score field
       const data = result.map(({ _score, ...thread }) => thread);
 
       return {
         data,
         meta: {
-          cursor: hasMore && data.length > 0 ? data[data.length - 1].createdAt : null,
+          cursor: hasMore ? String(offset + limit) : null,
           hasMore,
         },
       };
@@ -449,6 +448,19 @@ export class ThreadsService {
     return { ...thread, userReaction, isBookmarked };
   }
 
+  async updateThread(threadId: string, userId: string, content: string) {
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    if (!thread) throw new NotFoundException('Thread not found');
+    if (thread.userId !== userId) throw new ForbiddenException();
+    if (thread.isRemoved) throw new BadRequestException('Thread has been removed');
+
+    return this.prisma.thread.update({
+      where: { id: threadId },
+      data: { content: sanitizeText(content), editedAt: new Date() },
+      select: THREAD_SELECT,
+    });
+  }
+
   async delete(threadId: string, userId: string) {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread) throw new NotFoundException('Thread not found');
@@ -680,6 +692,20 @@ export class ThreadsService {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
 
+    // Enforce reply permission
+    if (thread.replyPermission && thread.replyPermission !== 'everyone' && thread.userId !== userId) {
+      if (thread.replyPermission === 'following') {
+        const isFollowing = await this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: thread.userId, followingId: userId } },
+        });
+        if (!isFollowing) throw new ForbiddenException('Only users followed by the author can reply');
+      } else if (thread.replyPermission === 'mentioned') {
+        throw new ForbiddenException('Only mentioned users can reply to this thread');
+      } else if (thread.replyPermission === 'none') {
+        throw new ForbiddenException('Replies are disabled for this thread');
+      }
+    }
+
     if (parentId) {
       const parent = await this.prisma.threadReply.findUnique({ where: { id: parentId } });
       if (!parent || parent.threadId !== threadId) throw new NotFoundException('Parent reply not found');
@@ -695,6 +721,9 @@ export class ThreadsService {
         data: { repliesCount: { increment: 1 } },
       }),
     ]);
+    // Gamification: award XP for thread reply
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_reply_created' }).catch(() => {});
+
     // Notify thread owner (skip self-notification)
     if (thread.userId !== userId) {
       this.notifications.create({
@@ -712,7 +741,7 @@ export class ThreadsService {
     if (reply.userId !== userId) throw new ForbiddenException();
 
     await this.prisma.$transaction([
-      this.prisma.threadReply.delete({ where: { id: replyId } }),
+      this.prisma.threadReply.update({ where: { id: replyId }, data: { content: '[deleted]' } }),
       this.prisma.$executeRaw`UPDATE "Thread" SET "repliesCount" = GREATEST("repliesCount" - 1, 0) WHERE id = ${reply.threadId}`,
     ]);
     return { deleted: true };
@@ -792,6 +821,12 @@ export class ThreadsService {
   async report(threadId: string, userId: string, reason: string) {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId }, select: { id: true, isRemoved: true } });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    // Prevent duplicate reports
+    const existing = await this.prisma.report.findFirst({
+      where: { reporterId: userId, description: `thread:${threadId}` },
+    });
+    if (existing) return { reported: true };
 
     const reasonMap: Record<string, ReportReason> = {
       SPAM: 'SPAM', MISINFORMATION: 'MISINFORMATION',

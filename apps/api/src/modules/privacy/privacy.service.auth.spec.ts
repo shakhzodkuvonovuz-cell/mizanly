@@ -16,7 +16,7 @@ describe('PrivacyService — authorization matrix', () => {
         {
           provide: PrismaService,
           useValue: {
-            user: { findUnique: jest.fn().mockResolvedValue({ id: userA }), delete: jest.fn() },
+            user: { findUnique: jest.fn().mockResolvedValue({ id: userA, username: 'usera', profileLinks: [] }), delete: jest.fn() },
             post: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             thread: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             reel: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
@@ -25,6 +25,7 @@ describe('PrivacyService — authorization matrix', () => {
             comment: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             message: { findMany: jest.fn().mockResolvedValue([]) },
             follow: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+            postReaction: { findMany: jest.fn().mockResolvedValue([]) },
             savedPost: { findMany: jest.fn().mockResolvedValue([]) },
             $queryRaw: jest.fn().mockResolvedValue([]),
           },

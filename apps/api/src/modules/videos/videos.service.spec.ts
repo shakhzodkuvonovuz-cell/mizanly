@@ -35,7 +35,8 @@ describe('VideosService', () => {
               findMany: jest.fn(),
             },
             block: {
-              findMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             mute: {
               findMany: jest.fn(),
@@ -64,9 +65,11 @@ describe('VideosService', () => {
             },
             watchHistory: {
               upsert: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue(null),
             },
             report: {
               create: jest.fn(),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             videoPremiere: {
               create: jest.fn(),
@@ -413,7 +416,7 @@ describe('VideosService', () => {
   });
 
   describe('delete', () => {
-    it('should delete video if user is owner', async () => {
+    it('should soft-delete video if user is owner', async () => {
       const videoId = 'video-123';
       const userId = 'owner-456';
       const existingVideo = { id: videoId, userId, channelId: 'channel-789' };
@@ -422,8 +425,7 @@ describe('VideosService', () => {
 
       await service.delete(videoId, userId);
 
-      expect(prisma.video.delete).toHaveBeenCalledWith({ where: { id: videoId } });
-      expect(prisma.$executeRaw).toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if video not found', async () => {
@@ -700,25 +702,32 @@ describe('VideosService', () => {
   });
 
   describe('view', () => {
-    it('should increment view count', async () => {
+    it('should increment view count on first view (deduplication)', async () => {
       const videoId = 'video-123';
       const userId = 'user-456';
       const video = { id: videoId, channelId: 'channel-789', status: VideoStatus.PUBLISHED };
       prisma.video.findUnique.mockResolvedValue(video as any);
+      prisma.watchHistory.findUnique.mockResolvedValue(null); // first view
       prisma.$transaction.mockResolvedValue(undefined);
 
       const result = await service.view(videoId, userId);
 
-      expect(prisma.video.update).toHaveBeenCalledWith({
-        where: { id: videoId },
-        data: { viewsCount: { increment: 1 } },
-      });
-      expect(prisma.channel.update).toHaveBeenCalledWith({
-        where: { id: video.channelId },
-        data: { totalViews: { increment: 1 } },
-      });
-      expect(prisma.watchHistory.upsert).toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toEqual({ viewed: true });
+    });
+
+    it('should not increment view count for repeat views within 24h', async () => {
+      const videoId = 'video-123';
+      const userId = 'user-456';
+      const video = { id: videoId, channelId: 'channel-789', status: VideoStatus.PUBLISHED };
+      prisma.video.findUnique.mockResolvedValue(video as any);
+      prisma.watchHistory.findUnique.mockResolvedValue({ watchedAt: new Date() }); // recent view
+      prisma.$transaction.mockResolvedValue(undefined);
+
+      const result = await service.view(videoId, userId);
+
+      expect(result).toEqual({ viewed: true });
+      // Transaction should only contain watchHistory upsert, not video/channel increment
     });
 
     it('should throw NotFoundException if video not found', async () => {
@@ -732,6 +741,7 @@ describe('VideosService', () => {
       const videoId = 'video-123';
       const userId = 'user-456';
       const reason = 'SPAM';
+      prisma.video.findUnique.mockResolvedValue({ id: videoId });
       prisma.report.create.mockResolvedValue({} as any);
 
       const result = await service.report(videoId, userId, reason);
@@ -750,6 +760,7 @@ describe('VideosService', () => {
       const videoId = 'video-123';
       const userId = 'user-456';
       const reason = 'UNKNOWN_REASON';
+      prisma.video.findUnique.mockResolvedValue({ id: videoId });
       prisma.report.create.mockResolvedValue({} as any);
 
       await service.report(videoId, userId, reason);

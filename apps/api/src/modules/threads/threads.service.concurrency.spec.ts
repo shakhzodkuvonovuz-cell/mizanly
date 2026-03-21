@@ -27,7 +27,7 @@ describe('ThreadsService — concurrency (Task 94)', () => {
             block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn() },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
             hashtag: { upsert: jest.fn() },
-            report: { create: jest.fn() },
+            report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
             feedDismissal: { upsert: jest.fn() },
             pollOption: { findUnique: jest.fn(), update: jest.fn() },
             pollVote: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn() },

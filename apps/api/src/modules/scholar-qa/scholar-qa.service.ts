@@ -12,6 +12,14 @@ export class ScholarQAService {
     language?: string;
     scheduledAt: string;
   }) {
+    // Verify the user is an approved scholar
+    const verification = await this.prisma.scholarVerification.findFirst({
+      where: { userId: scholarId, status: 'approved' },
+    });
+    if (!verification) {
+      throw new ForbiddenException('Only verified scholars can schedule Q&A sessions');
+    }
+
     const validCategories = ['fiqh', 'aqeedah', 'tafsir', 'seerah', 'family', 'youth', 'women', 'converts'];
     if (!validCategories.includes(data.category)) {
       throw new BadRequestException(`Category must be one of: ${validCategories.join(', ')}`);

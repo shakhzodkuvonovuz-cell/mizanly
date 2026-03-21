@@ -30,7 +30,7 @@ describe('StoriesService', () => {
               findMany: jest.fn(),
               findUnique: jest.fn(),
               create: jest.fn(),
-              upsert: jest.fn(),
+              upsert: jest.fn().mockResolvedValue({}),
             },
             user: {
               findMany: jest.fn(),
@@ -200,17 +200,33 @@ describe('StoriesService', () => {
   });
 
   describe('getById', () => {
-    it('should return story if found', async () => {
+    it('should return story if found and not expired', async () => {
       const storyId = 'story-123';
-      const mockStory = { id: storyId, mediaUrl: 'url', user: { id: 'user-1' } };
+      const mockStory = { id: storyId, mediaUrl: 'url', userId: 'user-1', isArchived: false, expiresAt: new Date(Date.now() + 86400000), user: { id: 'user-1' } };
       prisma.story.findUnique.mockResolvedValue(mockStory);
 
-      const result = await service.getById(storyId);
+      const result = await service.getById(storyId, 'viewer-1');
 
       expect(prisma.story.findUnique).toHaveBeenCalledWith({
         where: { id: storyId },
-        select: expect.any(Object),
       });
+      expect(result).toEqual(mockStory);
+    });
+
+    it('should throw NotFoundException for expired story viewed by non-owner', async () => {
+      const storyId = 'story-123';
+      const mockStory = { id: storyId, userId: 'user-1', isArchived: false, expiresAt: new Date(Date.now() - 86400000) };
+      prisma.story.findUnique.mockResolvedValue(mockStory);
+
+      await expect(service.getById(storyId, 'viewer-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return expired story to owner', async () => {
+      const storyId = 'story-123';
+      const mockStory = { id: storyId, userId: 'user-1', isArchived: false, expiresAt: new Date(Date.now() - 86400000) };
+      prisma.story.findUnique.mockResolvedValue(mockStory);
+
+      const result = await service.getById(storyId, 'user-1');
       expect(result).toEqual(mockStory);
     });
 
@@ -236,7 +252,7 @@ describe('StoriesService', () => {
         where: { id: storyId },
         data: { isArchived: true },
       });
-      expect(result).toEqual({ deleted: true });
+      expect(result).toEqual({ archived: true });
     });
 
     it('should throw ForbiddenException if user is not owner', async () => {

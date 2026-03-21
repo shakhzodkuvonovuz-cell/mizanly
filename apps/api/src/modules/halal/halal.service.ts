@@ -153,7 +153,12 @@ export class HalalService {
     const restaurant = await this.prisma.halalRestaurant.findUnique({ where: { id: restaurantId } });
     if (!restaurant) throw new NotFoundException('Restaurant not found');
 
-    // Increment verify votes; auto-verify at 5 votes
+    // Check if user already voted (use review as proxy for vote tracking)
+    const existingReview = await this.prisma.halalRestaurantReview.findUnique({
+      where: { restaurantId_userId: { restaurantId, userId } },
+    });
+    if (existingReview) throw new ConflictException('Already verified this restaurant');
+
     const updated = await this.prisma.halalRestaurant.update({
       where: { id: restaurantId },
       data: {

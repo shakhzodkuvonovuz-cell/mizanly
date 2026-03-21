@@ -36,6 +36,7 @@ export class MonetizationService {
     const platformFee = amount * 0.10; // 10% platform fee
     const netAmount = amount - platformFee;
 
+    // Tip is created as pending — should be confirmed via payment webhook
     const tip = await this.prisma.tip.create({
       data: {
         senderId,
@@ -44,7 +45,7 @@ export class MonetizationService {
         currency: 'USD',
         message,
         platformFee,
-        status: 'completed',
+        status: 'pending',
       },
       include: {
         sender: {
@@ -281,13 +282,14 @@ export class MonetizationService {
       throw new BadRequestException('Already subscribed to this tier');
     }
 
+    // Subscription created as pending — should be activated via payment webhook
     const subscription = await this.prisma.membershipSubscription.upsert({
       where: { tierId_userId: { tierId, userId } },
-      update: { status: 'active', startDate: new Date() },
+      update: { status: 'pending', startDate: new Date() },
       create: {
         tierId,
         userId,
-        status: 'active',
+        status: 'pending',
         startDate: new Date(),
       },
     });

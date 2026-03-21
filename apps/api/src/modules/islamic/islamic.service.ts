@@ -640,6 +640,8 @@ export class IslamicService {
       const campaign = await this.prisma.charityCampaign.findUnique({ where: { id: dto.campaignId } });
       if (!campaign) throw new NotFoundException('Campaign not found');
     }
+    // Create donation as pending — campaign totals should only be updated
+    // after payment confirmation via Stripe webhook
     const donation = await this.prisma.charityDonation.create({
       data: {
         userId,
@@ -647,19 +649,15 @@ export class IslamicService {
         recipientUserId: dto.recipientUserId,
         amount: dto.amount,
         currency: dto.currency || 'usd',
-        status: 'completed',
+        status: 'pending',
       },
     });
-
-    // Update campaign raised amount if applicable
-    if (dto.campaignId) {
-      await this.prisma.$executeRaw`UPDATE "charity_campaigns" SET "raisedAmount" = "raisedAmount" + ${dto.amount}, "donorCount" = "donorCount" + 1 WHERE id = ${dto.campaignId}`;
-    }
 
     return donation;
   }
 
   async getMyDonations(userId: string, cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(limit, 1), 50);
     const donations = await this.prisma.charityDonation.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -884,6 +882,7 @@ export class IslamicService {
   }
 
   async listActiveChallenges(cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(limit, 1), 50);
     const challenges = await this.prisma.dhikrChallenge.findMany({
       where: {
         OR: [
@@ -950,13 +949,22 @@ export class IslamicService {
       throw new BadRequestException('Count must be between 1 and 100,000');
     }
 
+    const challenge = await this.prisma.dhikrChallenge.findUnique({ where: { id: challengeId } });
+    if (!challenge) throw new NotFoundException('Challenge not found');
+    if (challenge.expiresAt && challenge.expiresAt < new Date()) {
+      throw new BadRequestException('Challenge has expired');
+    }
+
     const participant = await this.prisma.dhikrChallengeParticipant.findUnique({
       where: { userId_challengeId: { userId, challengeId } },
     });
     if (!participant) throw new BadRequestException('Not a participant');
 
-    await this.prisma.$executeRaw`UPDATE "dhikr_challenge_participants" SET contributed = contributed + ${count} WHERE "userId" = ${userId} AND "challengeId" = ${challengeId}`;
-    await this.prisma.$executeRaw`UPDATE "dhikr_challenges" SET "currentTotal" = "currentTotal" + ${count} WHERE id = ${challengeId}`;
+    // Use transaction to keep participant and challenge counters in sync
+    await this.prisma.$transaction([
+      this.prisma.$executeRaw`UPDATE "dhikr_challenge_participants" SET contributed = contributed + ${count} WHERE "userId" = ${userId} AND "challengeId" = ${challengeId}`,
+      this.prisma.$executeRaw`UPDATE "dhikr_challenges" SET "currentTotal" = "currentTotal" + ${count} WHERE id = ${challengeId}`,
+    ]);
 
     return { contributed: count };
   }
@@ -1001,13 +1009,27 @@ export class IslamicService {
   getQuranAudioUrl(surah: number, ayah: number, reciterId = 'mishary') {
     const reciters = this.getQuranReciters();
     const reciter = reciters.find(r => r.id === reciterId) ?? reciters[0];
-    const audioNumber = this.getAyahNumber(surah, ayah);
+    const audioNumber = this.getAudioAyahNumber(surah, ayah);
     return { url: `${reciter.audioBaseUrl}/${audioNumber}.mp3`, reciter: reciter.name };
   }
 
-  private getAyahNumber(surah: number, ayah: number): number {
-    // Cumulative ayah counts for each surah (simplified — surah 1 starts at 1)
-    const surahOffsets = [0, 1, 8, 35, 92, 148, 207, 252, 296, 382, 435, 466, 495, 538, 548, 558, 578, 601, 611, 621, 636, 648, 651, 669, 693, 710, 720, 754, 779, 790, 820, 833, 856, 869, 890, 926, 953, 978, 1012, 1086, 1098, 1123, 1158, 1213, 1270, 1305, 1340, 1379, 1411, 1430, 1459, 1510, 1554, 1604, 1664, 1715, 1772, 1855, 1920, 1958, 1970, 1985, 1993, 2004, 2008, 2012, 2018, 2025, 2030, 2048, 2066, 2071, 2099, 2113, 2121, 2147, 2166, 2179, 2219, 2226, 2232, 2261, 2283, 2292, 2311, 2318, 2325, 2341, 2359, 2360, 2375, 2386, 2392, 2413, 2422, 2431, 2436, 2452, 2460, 2468, 2471, 2476, 2479, 2487, 2496, 2503, 2508, 2511, 2514, 2518, 2523, 2527, 2530, 2533];
+  private getAudioAyahNumber(surah: number, ayah: number): number {
+    // Correct cumulative ayah offsets computed from canonical per-surah counts:
+    // [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, ...]
+    // surahOffsets[i] = sum of ayah counts for surahs 1..i
+    // So for surah N, the audio number = surahOffsets[N-1] + ayah
+    const surahOffsets = [
+      0, 7, 293, 493, 669, 789, 954, 1160, 1235, 1364, 1473, 1596, 1707, 1750,
+      1802, 1901, 2029, 2140, 2250, 2348, 2483, 2595, 2673, 2791, 2855, 2932,
+      3159, 3252, 3340, 3409, 3469, 3503, 3533, 3606, 3660, 3705, 3788, 3970,
+      4058, 4133, 4218, 4272, 4325, 4414, 4473, 4510, 4545, 4583, 4612, 4630,
+      4675, 4735, 4784, 4846, 4901, 4979, 5075, 5104, 5126, 5150, 5163, 5177,
+      5188, 5199, 5217, 5229, 5241, 5271, 5323, 5375, 5419, 5447, 5475, 5495,
+      5551, 5591, 5622, 5672, 5712, 5758, 5800, 5829, 5848, 5884, 5909, 5931,
+      5948, 5967, 5993, 6023, 6043, 6058, 6079, 6090, 6098, 6106, 6125, 6130,
+      6138, 6146, 6157, 6168, 6176, 6179, 6188, 6193, 6197, 6204, 6207, 6213,
+      6216, 6221, 6225, 6230,
+    ];
     if (surah < 1 || surah > 114) return ayah;
     return (surahOffsets[surah - 1] || 0) + ayah;
   }
@@ -1613,8 +1635,8 @@ export class IslamicService {
     const ayahOfTheDay = {
       surah: this.getAyahSurahName(ayahIndex),
       ayahNumber: this.getAyahNumber(ayahIndex),
-      arabic: hadith.arabic ? hadith.arabic.substring(0, 100) : '',
-      translation: `Reflect on verse ${ayahIndex + 1} of the Quran today`,
+      arabic: '',
+      translation: '',
     };
 
     // Get prayer times if location provided

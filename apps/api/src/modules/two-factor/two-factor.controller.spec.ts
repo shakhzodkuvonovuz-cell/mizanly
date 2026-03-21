@@ -65,12 +65,12 @@ describe('TwoFactorController', () => {
   });
 
   describe('validate', () => {
-    it('should call twoFactorService.validate with userId and code', async () => {
+    it('should call twoFactorService.validate with authenticated userId and code', async () => {
       service.validate.mockResolvedValue(true as any);
 
-      const result = await controller.validate({ userId: 'user-456', code: '123456' } as any);
+      const result = await controller.validate(userId, { code: '123456' } as any);
 
-      expect(service.validate).toHaveBeenCalledWith('user-456', '123456');
+      expect(service.validate).toHaveBeenCalledWith(userId, '123456');
       expect(result).toEqual({ valid: true });
     });
   });
@@ -101,16 +101,16 @@ describe('TwoFactorController', () => {
     it('should return success when backup code is valid', async () => {
       service.useBackupCode.mockResolvedValue(true as any);
 
-      const result = await controller.backup({ userId: 'user-456', backupCode: 'ABCDE12345' } as any);
+      const result = await controller.backup(userId, { backupCode: 'ABCDE12345' } as any);
 
-      expect(service.useBackupCode).toHaveBeenCalledWith('user-456', 'ABCDE12345');
+      expect(service.useBackupCode).toHaveBeenCalledWith(userId, 'ABCDE12345');
       expect(result).toEqual({ success: true, message: 'Backup code accepted' });
     });
 
     it('should throw BadRequestException when backup code is invalid', async () => {
       service.useBackupCode.mockResolvedValue(false as any);
 
-      await expect(controller.backup({ userId: 'user-456', backupCode: 'INVALID123' } as any)).rejects.toThrow(BadRequestException);
+      await expect(controller.backup(userId, { backupCode: 'INVALID123' } as any)).rejects.toThrow(BadRequestException);
     });
   });
 });

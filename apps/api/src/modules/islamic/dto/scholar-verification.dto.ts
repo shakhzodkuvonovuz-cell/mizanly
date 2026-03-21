@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsArray, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsArray, MaxLength, IsUrl } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ApplyScholarVerificationDto {
@@ -19,6 +19,6 @@ export class ApplyScholarVerificationDto {
 
   @ApiProperty()
   @IsArray()
-  @IsString({ each: true })
+  @IsUrl({}, { each: true })
   documentUrls: string[];
 }

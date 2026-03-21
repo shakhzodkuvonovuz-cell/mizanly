@@ -32,7 +32,7 @@ describe('VideosService — concurrency (Task 93)', () => {
             user: { update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
-            report: { create: jest.fn() },
+            report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
             premiere: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
             premiereReminder: { create: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             endScreen: { createMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
@@ -115,6 +115,7 @@ describe('VideosService — concurrency (Task 93)', () => {
   });
 
   it('should handle concurrent report submissions', async () => {
+    prisma.video.findUnique.mockResolvedValue({ id: 'video-1' });
     prisma.report.create.mockResolvedValue({});
     const [r1, r2] = await Promise.allSettled([
       service.report('video-1', 'user-1', 'SPAM'),

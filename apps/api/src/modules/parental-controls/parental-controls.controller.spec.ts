@@ -114,12 +114,12 @@ describe('ParentalControlsController', () => {
   });
 
   describe('getRestrictions', () => {
-    it('should call parentalControlsService.getRestrictions with childId', async () => {
+    it('should call parentalControlsService.getRestrictions with childId and parentId', async () => {
       service.getRestrictions.mockResolvedValue({ dmDisabled: true } as any);
 
-      await controller.getRestrictions('child-1');
+      await controller.getRestrictions('parent-1', 'child-1');
 
-      expect(service.getRestrictions).toHaveBeenCalledWith('child-1');
+      expect(service.getRestrictions).toHaveBeenCalledWith('child-1', 'parent-1');
     });
   });
 

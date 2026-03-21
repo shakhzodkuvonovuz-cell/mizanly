@@ -43,7 +43,6 @@ const POST_SELECT = {
   hideLikesCount: true,
   commentsDisabled: true,
   isSensitive: true,
-  isRemoved: true,
   createdAt: true,
   updatedAt: true,
   user: {
@@ -95,17 +94,17 @@ export class PostsService {
     }
 
     if (type === 'foryou') {
-      // Get blocked/muted users to exclude
-      const [blocks, mutes] = await Promise.all([
-        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
-    }),
-        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 50,
-    }),
+      // Get blocked/muted users to exclude (bidirectional for blocks) + dismissed posts
+      const [blocksOut, blocksIn, mutes, dismissals] = await Promise.all([
+        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 500 }),
+        this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 500 }),
+        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 500 }),
+        this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'post' }, select: { contentId: true }, take: 200 }),
       ]);
+      const dismissedPostIds = dismissals.map(d => d.contentId);
       const excludedIds = [
-        ...blocks.map((b) => b.blockedId),
+        ...blocksOut.map((b) => b.blockedId),
+        ...blocksIn.map((b) => b.blockerId),
         ...mutes.map((m) => m.mutedId),
       ];
 
@@ -114,9 +113,11 @@ export class PostsService {
         where: {
           createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
           isRemoved: false,
+          scheduledAt: null,
           user: { isPrivate: false, isBanned: false },
           visibility: 'PUBLIC',
           ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+          ...(dismissedPostIds.length ? { id: { notIn: dismissedPostIds } } : {}),
           ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
         },
         select: POST_SELECT,
@@ -132,10 +133,10 @@ export class PostsService {
         return { ...post, _score: score };
       });
 
-      // Sort by score descending, paginate
+      // Sort by score descending, paginate using offset (not createdAt cursor)
       scored.sort((a, b) => b._score - a._score);
-      const startIdx = cursor ? scored.findIndex(p => new Date(p.createdAt).toISOString() < cursor) : 0;
-      const page = scored.slice(Math.max(0, startIdx), Math.max(0, startIdx) + limit + 1);
+      const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+      const page = scored.slice(offset, offset + limit + 1);
 
       const hasMore = page.length > limit;
       const result = hasMore ? page.slice(0, limit) : page;
@@ -147,7 +148,7 @@ export class PostsService {
       const finalResult = {
         data: enriched,
         meta: {
-          cursor: hasMore ? data[data.length - 1].createdAt.toISOString() : null,
+          cursor: hasMore ? String(offset + limit) : null,
           hasMore,
         },
       };
@@ -160,22 +161,18 @@ export class PostsService {
     }
 
     // Following feed — with zero-follow fallback to trending
-    const [follows, blocks, mutes] = await Promise.all([
-      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true },
-      take: 50,
-    }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
-    }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 50,
-    }),
+    const [follows, blocksOut, blocksIn, mutes] = await Promise.all([
+      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true }, take: 50 }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 50 }),
+      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 50 }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 50 }),
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
     const followCount = followingIds.length;
     const excludedIds = [
-      ...blocks.map((b) => b.blockedId),
+      ...blocksOut.map((b) => b.blockedId),
+      ...blocksIn.map((b) => b.blockerId),
       ...mutes.map((m) => m.mutedId),
     ];
 
@@ -352,6 +349,12 @@ export class PostsService {
       where: {
         userId: { in: visibleUserIds },
         isRemoved: false,
+        scheduledAt: null,
+        OR: [
+          { userId },
+          { visibility: 'PUBLIC' },
+          { visibility: 'FOLLOWERS' },
+        ],
       },
       select: POST_SELECT,
       take: limit + 1,
@@ -394,6 +397,8 @@ export class PostsService {
       where: {
         userId: { in: favoriteIds },
         isRemoved: false,
+        scheduledAt: null,
+        visibility: { in: ['PUBLIC', 'FOLLOWERS'] },
       },
       select: POST_SELECT,
       take: limit + 1,
@@ -417,13 +422,11 @@ export class PostsService {
       this.prisma.postReaction.findMany({
         where: { userId, postId: { in: postIds } },
         select: { postId: true, reaction: true },
-      take: 50,
-    }),
+      }),
       this.prisma.savedPost.findMany({
         where: { userId, postId: { in: postIds } },
         select: { postId: true },
-      take: 50,
-    }),
+      }),
     ]);
     const reactionMap = new Map(reactions.map((r) => [r.postId, r.reaction]));
     const savedSet = new Set(saves.map((s) => s.postId));
@@ -551,10 +554,24 @@ export class PostsService {
       where: { id: postId },
       select: {
         ...POST_SELECT,
+        isRemoved: true,
         sharedPost: { select: { id: true, content: true, user: { select: { username: true } } } },
       },
     });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+
+    // Check block status
+    if (viewerId && viewerId !== post.user.id) {
+      const blocked = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: viewerId, blockedId: post.user.id },
+            { blockerId: post.user.id, blockedId: viewerId },
+          ],
+        },
+      });
+      if (blocked) throw new NotFoundException('Post not found');
+    }
 
     let userReaction: string | null = null;
     let isSaved = false;
@@ -589,6 +606,7 @@ export class PostsService {
         commentsDisabled: data.commentsDisabled,
         isSensitive: data.isSensitive,
         altText: data.altText,
+        editedAt: new Date(),
       },
       select: POST_SELECT,
     });
@@ -606,7 +624,16 @@ export class PostsService {
       }),
       this.prisma.$executeRaw`UPDATE "User" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
-    // Invalidate for-you feed cache for the author
+
+    // Decrement hashtag counters
+    if (post.hashtags && post.hashtags.length > 0) {
+      await Promise.all(
+        post.hashtags.map((name: string) =>
+          this.prisma.$executeRaw`UPDATE "Hashtag" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE name = ${name}`,
+        ),
+      );
+    }
+
     await this.redis.del(`feed:foryou:${userId}:first`);
     return { deleted: true };
   }
@@ -868,7 +895,7 @@ export class PostsService {
 
     return this.prisma.comment.update({
       where: { id: commentId },
-      data: { content: sanitizeText(content) },
+      data: { content: sanitizeText(content), editedAt: new Date() },
       include: {
         user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       },
@@ -876,9 +903,13 @@ export class PostsService {
   }
 
   async deleteComment(commentId: string, userId: string) {
-    const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+      include: { post: { select: { userId: true } } },
+    });
     if (!comment) throw new NotFoundException('Comment not found');
-    if (comment.userId !== userId) throw new ForbiddenException();
+    // Allow both comment author AND post owner to delete
+    if (comment.userId !== userId && comment.post?.userId !== userId) throw new ForbiddenException();
 
     await this.prisma.$transaction([
       this.prisma.comment.update({
@@ -937,6 +968,12 @@ export class PostsService {
   async report(postId: string, userId: string, reason: string) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
+
+    // Prevent duplicate reports
+    const existing = await this.prisma.report.findFirst({
+      where: { reporterId: userId, reportedPostId: postId },
+    });
+    if (existing) return { reported: true };
 
     const reasonMap: Record<string, string> = {
       SPAM: 'SPAM', MISINFORMATION: 'MISINFORMATION',
@@ -1126,6 +1163,12 @@ export class PostsService {
       });
       newPosts.push(newPost);
     }
+
+    // Increment user's post count for the cross-posted items
+    if (newPosts.length > 0) {
+      await this.prisma.$executeRaw`UPDATE "User" SET "postsCount" = "postsCount" + ${newPosts.length} WHERE id = ${userId}`;
+    }
+
     return newPosts;
   }
 

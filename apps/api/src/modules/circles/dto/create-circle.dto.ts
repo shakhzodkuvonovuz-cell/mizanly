@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, IsUUID, MaxLength, ArrayMaxSize } from 'class-validator';
+import { IsString, IsOptional, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCircleDto {
@@ -10,7 +10,8 @@ export class CreateCircleDto {
   @ApiProperty({ required: false, description: 'Initial member IDs', type: [String] })
   @IsOptional()
   @IsArray()
-  @IsUUID('4', { each: true })
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   @ArrayMaxSize(100)
   memberIds?: string[];
 }

@@ -4,26 +4,26 @@ import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { IsString, IsNumber, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsArray, MaxLength, Min, Max, IsUrl, ArrayMaxSize } from 'class-validator';
 import { MosquesService } from './mosques.service';
 
 class CreateMosqueDto {
-  @IsString() name: string;
-  @IsString() address: string;
-  @IsString() city: string;
-  @IsString() country: string;
-  @IsNumber() latitude: number;
-  @IsNumber() longitude: number;
-  @IsOptional() @IsString() madhab?: string;
-  @IsOptional() @IsString() language?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsOptional() @IsString() website?: string;
-  @IsOptional() @IsString() imageUrl?: string;
+  @IsString() @MaxLength(200) name: string;
+  @IsString() @MaxLength(500) address: string;
+  @IsString() @MaxLength(100) city: string;
+  @IsString() @MaxLength(100) country: string;
+  @IsNumber() @Min(-90) @Max(90) latitude: number;
+  @IsNumber() @Min(-180) @Max(180) longitude: number;
+  @IsOptional() @IsString() @MaxLength(50) madhab?: string;
+  @IsOptional() @IsString() @MaxLength(10) language?: string;
+  @IsOptional() @IsString() @MaxLength(30) phone?: string;
+  @IsOptional() @IsString() @IsUrl() website?: string;
+  @IsOptional() @IsString() @IsUrl() imageUrl?: string;
 }
 
 class CreateMosquePostDto {
-  @IsString() content: string;
-  @IsOptional() @IsArray() mediaUrls?: string[];
+  @IsString() @MaxLength(5000) content: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) mediaUrls?: string[];
 }
 
 @ApiTags('Mosque Communities')
@@ -57,6 +57,13 @@ export class MosquesController {
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   async create(@CurrentUser('id') userId: string, @Body() dto: CreateMosqueDto) {
     return this.mosquesService.create(userId, dto);
+  }
+
+  @UseGuards(ClerkAuthGuard)
+  @Get('my/memberships')
+  @ApiOperation({ summary: 'Get user mosque memberships' })
+  async getMyMosques(@CurrentUser('id') userId: string) {
+    return this.mosquesService.getMyMosques(userId);
   }
 
   @UseGuards(OptionalClerkAuthGuard)
@@ -107,12 +114,5 @@ export class MosquesController {
   @ApiQuery({ name: 'cursor', required: false, type: String })
   async getMembers(@Param('id') mosqueId: string, @Query('cursor') cursor?: string) {
     return this.mosquesService.getMembers(mosqueId, cursor);
-  }
-
-  @UseGuards(ClerkAuthGuard)
-  @Get('my/memberships')
-  @ApiOperation({ summary: 'Get user mosque memberships' })
-  async getMyMosques(@CurrentUser('id') userId: string) {
-    return this.mosquesService.getMyMosques(userId);
   }
 }

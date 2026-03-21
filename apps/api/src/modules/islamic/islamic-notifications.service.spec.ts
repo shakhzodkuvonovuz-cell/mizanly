@@ -24,7 +24,8 @@ describe('IslamicNotificationsService', () => {
         {
           provide: PrismaService,
           useValue: {
-            prayerNotification: { findUnique: jest.fn(), findMany: jest.fn(), upsert: jest.fn() },
+            prayerNotificationSetting: { findUnique: jest.fn(), findMany: jest.fn(), upsert: jest.fn() },
+            mosqueMembership: { findFirst: jest.fn().mockResolvedValue(null) },
             user: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
@@ -38,26 +39,26 @@ describe('IslamicNotificationsService', () => {
 
   describe('isInPrayerDND', () => {
     it('should return false when user has no prayer settings', async () => {
-      prisma.prayerNotification.findUnique.mockResolvedValue(null);
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue(null);
       const result = await service.isInPrayerDND('user-1');
       expect(result).toBe(false);
     });
 
     it('should return false when autoDnd is disabled', async () => {
-      prisma.prayerNotification.findUnique.mockResolvedValue({ autoDnd: false });
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue({ dndDuringPrayer: false });
       const result = await service.isInPrayerDND('user-1');
       expect(result).toBe(false);
     });
 
     it('should return false when no cached prayer times', async () => {
-      prisma.prayerNotification.findUnique.mockResolvedValue({ autoDnd: true });
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue({ dndDuringPrayer: true });
       redis.get.mockResolvedValue(null);
       const result = await service.isInPrayerDND('user-1');
       expect(result).toBe(false);
     });
 
     it('should return true when current time is within prayer window', async () => {
-      prisma.prayerNotification.findUnique.mockResolvedValue({ autoDnd: true });
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue({ dndDuringPrayer: true });
       const now = new Date();
       const h = now.getHours().toString().padStart(2, '0');
       const m = now.getMinutes().toString().padStart(2, '0');
@@ -69,7 +70,7 @@ describe('IslamicNotificationsService', () => {
     });
 
     it('should return false when outside prayer window', async () => {
-      prisma.prayerNotification.findUnique.mockResolvedValue({ autoDnd: true });
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue({ dndDuringPrayer: true });
       redis.get.mockResolvedValue(JSON.stringify({
         fajr: '04:00', dhuhr: '12:00', asr: '15:00', maghrib: '18:00', isha: '20:00',
       }));
@@ -110,33 +111,33 @@ describe('IslamicNotificationsService', () => {
   });
 
   describe('categorizeIslamicContent', () => {
-    it('should categorize fiqh content', async () => {
-      const result = await service.categorizeIslamicContent('Is this halal? I need a fatwa on this matter');
+    it('should categorize fiqh content', () => {
+      const result = service.categorizeIslamicContent('Is this halal? I need a fatwa on this matter');
       expect(result).toContain('fiqh');
     });
 
-    it('should categorize seerah content', async () => {
-      const result = await service.categorizeIslamicContent('The life of Prophet Muhammad and the companions');
+    it('should categorize seerah content', () => {
+      const result = service.categorizeIslamicContent('The life of Prophet Muhammad and the companions');
       expect(result).toContain('seerah');
     });
 
-    it('should categorize tafsir content', async () => {
-      const result = await service.categorizeIslamicContent('Tafsir of Surah Al-Baqarah ayah 255');
+    it('should categorize tafsir content', () => {
+      const result = service.categorizeIslamicContent('Tafsir of Surah Al-Baqarah ayah 255');
       expect(result).toContain('tafsir');
     });
 
-    it('should categorize hadith content', async () => {
-      const result = await service.categorizeIslamicContent('A hadith from Sahih Bukhari on sunnah practices');
+    it('should categorize hadith content', () => {
+      const result = service.categorizeIslamicContent('A hadith from Sahih Bukhari on sunnah practices');
       expect(result).toContain('hadith');
     });
 
-    it('should return multiple categories when applicable', async () => {
-      const result = await service.categorizeIslamicContent('The Prophet Muhammad taught this sunnah hadith about fiqh rulings');
+    it('should return multiple categories when applicable', () => {
+      const result = service.categorizeIslamicContent('The Prophet Muhammad taught this sunnah hadith about fiqh rulings');
       expect(result.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('should return empty for non-Islamic content', async () => {
-      const result = await service.categorizeIslamicContent('Today I had coffee and went for a walk');
+    it('should return empty for non-Islamic content', () => {
+      const result = service.categorizeIslamicContent('Today I had coffee and went for a walk');
       expect(result).toEqual([]);
     });
   });
@@ -150,16 +151,16 @@ describe('IslamicNotificationsService', () => {
   });
 
   describe('getRamadanStatus', () => {
-    it('should return isRamadan boolean', async () => {
-      const result = await service.getRamadanStatus(40.7, -74.0);
+    it('should return isRamadan boolean', () => {
+      const result = service.getRamadanStatus();
       expect(result).toHaveProperty('isRamadan');
       expect(typeof result.isRamadan).toBe('boolean');
+      expect(result).toHaveProperty('hijriMonth');
+      expect(result).toHaveProperty('hijriDay');
     });
 
-    it('should return dayNumber when in Ramadan', async () => {
-      // Force a date within Ramadan 2026 (Feb 18 - Mar 19)
-      const result = await service.getRamadanStatus(40.7, -74.0);
-      // Can't control Date.now easily, but we verify structure
+    it('should return dayNumber when in Ramadan', () => {
+      const result = service.getRamadanStatus();
       if (result.isRamadan) {
         expect(result.dayNumber).toBeGreaterThanOrEqual(1);
       }
@@ -168,13 +169,13 @@ describe('IslamicNotificationsService', () => {
 
   describe('shouldShowPrayFirstNudge — disabled', () => {
     it('should return show:false when prayFirstNudge is disabled', async () => {
-      prisma.prayerNotification.findUnique.mockResolvedValue({ autoDnd: true, prayFirstNudge: false });
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue({ dndDuringPrayer: true, adhanEnabled: false });
       const result = await service.shouldShowPrayFirstNudge('user-1');
       expect(result.show).toBe(false);
     });
 
     it('should return show:false when no settings exist', async () => {
-      prisma.prayerNotification.findUnique.mockResolvedValue(null);
+      prisma.prayerNotificationSetting.findUnique.mockResolvedValue(null);
       const result = await service.shouldShowPrayFirstNudge('user-1');
       expect(result.show).toBe(false);
     });

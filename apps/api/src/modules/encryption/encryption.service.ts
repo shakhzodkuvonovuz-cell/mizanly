@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
@@ -24,6 +25,8 @@ interface RotateEnvelopeItem {
 
 @Injectable()
 export class EncryptionService {
+  private readonly logger = new Logger(EncryptionService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async registerKey(userId: string, publicKey: string) {
@@ -101,7 +104,7 @@ export class EncryptionService {
    * Check encryption status for a conversation:
    * returns whether both members have registered encryption keys.
    */
-  async getConversationEncryptionStatus(conversationId: string): Promise<{
+  async getConversationEncryptionStatus(conversationId: string, requestingUserId?: string): Promise<{
     encrypted: boolean;
     members: { userId: string; hasKey: boolean }[];
   }> {
@@ -110,6 +113,11 @@ export class EncryptionService {
       select: { userId: true },
       take: 50,
     });
+
+    // Verify requesting user is a member of the conversation
+    if (requestingUserId && !members.some(m => m.userId === requestingUserId)) {
+      throw new ForbiddenException('Not a member of this conversation');
+    }
 
     const userIds = members.map(m => m.userId);
     const keys = await this.prisma.encryptionKey.findMany({
@@ -159,8 +167,8 @@ export class EncryptionService {
           },
         });
       }
-    } catch {
-      // Non-critical: notification failure shouldn't break key registration
+    } catch (err) {
+      this.logger.error('Failed to send key change notification', err instanceof Error ? err.message : 'Unknown error');
     }
   }
 
@@ -220,26 +228,15 @@ export class EncryptionService {
       },
       orderBy: { version: 'desc' },
     });
-    const version = existing ? existing.version : 1;
+    const version = existing ? existing.version + 1 : 1;
 
-    return this.prisma.conversationKeyEnvelope.upsert({
-      where: {
-        conversationId_userId_version: {
-          conversationId: data.conversationId,
-          userId: data.recipientId,
-          version,
-        },
-      },
-      create: {
+    return this.prisma.conversationKeyEnvelope.create({
+      data: {
         conversationId: data.conversationId,
         userId: data.recipientId,
         encryptedKey: data.encryptedKey,
         nonce: data.nonce,
         version,
-      },
-      update: {
-        encryptedKey: data.encryptedKey,
-        nonce: data.nonce,
       },
     });
   }

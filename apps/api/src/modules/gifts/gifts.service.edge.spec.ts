@@ -22,6 +22,7 @@ describe('GiftsService — edge cases', () => {
               findUnique: jest.fn(),
               upsert: jest.fn(),
               update: jest.fn(),
+              updateMany: jest.fn(),
             },
             giftRecord: {
               create: jest.fn(),
@@ -52,7 +53,7 @@ describe('GiftsService — edge cases', () => {
 
     it('should reject insufficient coins', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'other-user' });
-      prisma.coinBalance.findUnique.mockResolvedValue({ userId, coins: 0, diamonds: 0 });
+      prisma.coinBalance.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(service.sendGift(userId, {
         receiverId: 'other-user',

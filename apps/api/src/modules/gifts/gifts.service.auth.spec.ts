@@ -18,7 +18,7 @@ describe('GiftsService — authorization matrix', () => {
         {
           provide: PrismaService,
           useValue: {
-            coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
+            coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
             giftRecord: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn() },
@@ -39,10 +39,9 @@ describe('GiftsService — authorization matrix', () => {
 
   it('should deduct from sender balance and credit receiver', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: userB });
-    prisma.coinBalance.findUnique.mockResolvedValue({ userId: userA, coins: 100 });
+    prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
     prisma.$transaction.mockResolvedValue([
       { id: 'gift-1', senderId: userA, receiverId: userB },
-      {},
       {},
       {},
       {},
@@ -70,7 +69,7 @@ describe('GiftsService — authorization matrix', () => {
 
   it('should reject insufficient coins for gift', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: userB });
-    prisma.coinBalance.findUnique.mockResolvedValue({ userId: userA, coins: 0 });
+    prisma.coinBalance.updateMany.mockResolvedValue({ count: 0 });
     await expect(service.sendGift(userA, { receiverId: userB, giftType: 'rose' }))
       .rejects.toThrow(BadRequestException);
   });

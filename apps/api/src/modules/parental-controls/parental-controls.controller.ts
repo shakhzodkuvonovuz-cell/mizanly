@@ -100,9 +100,12 @@ export class ParentalControlsController {
   }
 
   @Get(':childId/restrictions')
-  @ApiOperation({ summary: 'Get restrictions for a child' })
-  getRestrictions(@Param('childId') childId: string) {
-    return this.parentalControlsService.getRestrictions(childId);
+  @ApiOperation({ summary: 'Get restrictions for a child (parent only)' })
+  getRestrictions(
+    @CurrentUser('id') parentUserId: string,
+    @Param('childId') childId: string,
+  ) {
+    return this.parentalControlsService.getRestrictions(childId, parentUserId);
   }
 
   @Get(':childId/digest')

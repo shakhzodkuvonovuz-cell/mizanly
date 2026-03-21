@@ -57,6 +57,9 @@ describe('DiscordFeaturesService', () => {
               findMany: jest.fn().mockResolvedValue([mockStage]),
               update: jest.fn().mockResolvedValue(mockStage),
             },
+            circleMember: {
+              findUnique: jest.fn().mockResolvedValue({ circleId: 'circle-1', userId: 'user-1' }),
+            },
           } as any,
         },
       ],

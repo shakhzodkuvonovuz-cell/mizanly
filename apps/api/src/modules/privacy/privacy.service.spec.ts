@@ -20,17 +20,34 @@ describe('PrivacyService', () => {
             post: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
             thread: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
             story: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+            reel: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
+            video: { updateMany: jest.fn() },
             message: { findMany: jest.fn().mockResolvedValue([]) },
-            follow: { findMany: jest.fn().mockResolvedValue([]) },
-            comment: { updateMany: jest.fn() },
+            follow: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+            comment: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
+            postReaction: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             profileLink: { deleteMany: jest.fn() },
+            twoFactorSecret: { deleteMany: jest.fn() },
+            encryptionKey: { deleteMany: jest.fn() },
+            device: { deleteMany: jest.fn() },
+            block: { deleteMany: jest.fn() },
+            bookmark: { deleteMany: jest.fn() },
             $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<void>) => fn({
               user: { update: jest.fn() },
               post: { updateMany: jest.fn() },
               thread: { updateMany: jest.fn() },
               comment: { updateMany: jest.fn() },
+              reel: { updateMany: jest.fn() },
+              video: { updateMany: jest.fn() },
               story: { deleteMany: jest.fn() },
               profileLink: { deleteMany: jest.fn() },
+              twoFactorSecret: { deleteMany: jest.fn() },
+              encryptionKey: { deleteMany: jest.fn() },
+              device: { deleteMany: jest.fn() },
+              follow: { deleteMany: jest.fn() },
+              block: { deleteMany: jest.fn() },
+              bookmark: { deleteMany: jest.fn() },
+              postReaction: { deleteMany: jest.fn() },
             })),
           },
         },
@@ -42,13 +59,16 @@ describe('PrivacyService', () => {
 
   describe('exportUserData', () => {
     it('should return user data export', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'u1', username: 'user1', profileLinks: [], channel: null });
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', username: 'user1', profileLinks: [] });
       const result = await service.exportUserData('u1');
       expect(result.profile).toBeDefined();
       expect(result.posts).toBeDefined();
       expect(result.threads).toBeDefined();
       expect(result.stories).toBeDefined();
+      expect(result.reels).toBeDefined();
       expect(result.messages).toBeDefined();
+      expect(result.comments).toBeDefined();
+      expect(result.reactions).toBeDefined();
       expect(result.following).toBeDefined();
       expect(result.exportedAt).toBeDefined();
     });

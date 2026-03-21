@@ -226,7 +226,7 @@ export class ParentalControlsService {
     });
   }
 
-  async getRestrictions(childUserId: string) {
+  async getRestrictions(childUserId: string, parentUserId?: string) {
     const control = await this.prisma.parentalControl.findUnique({
       where: { childUserId },
     });
@@ -242,6 +242,11 @@ export class ParentalControlsService {
         canPost: true,
         canComment: true,
       };
+    }
+
+    // Verify the requesting user is the parent
+    if (parentUserId && control.parentUserId !== parentUserId) {
+      throw new ForbiddenException('Only the parent can view restrictions');
     }
 
     return {

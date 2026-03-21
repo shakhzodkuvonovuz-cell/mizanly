@@ -49,8 +49,8 @@ describe('Additional Tests — reaching 3800+ total', () => {
             watchHistory: { upsert: jest.fn(), findUnique: jest.fn() },
             subscription: { findMany: jest.fn().mockResolvedValue([]) },
             user: { update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-            block: { findMany: jest.fn().mockResolvedValue([]) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
-            report: { create: jest.fn() },
+            block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
+            report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
             premiere: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
             premiereReminder: { create: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             endScreen: { createMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
@@ -130,6 +130,7 @@ describe('Additional Tests — reaching 3800+ total', () => {
     });
 
     it('should handle report with various reasons', async () => {
+      prisma.video.findUnique.mockResolvedValue({ id: 'v-1' });
       prisma.report.create.mockResolvedValue({});
       for (const reason of ['SPAM', 'HATE_SPEECH', 'VIOLENCE', 'NUDITY', 'OTHER']) {
         const result = await service.report('v-1', 'u1', reason);

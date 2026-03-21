@@ -4,19 +4,19 @@ import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsDateString, IsIn } from 'class-validator';
 import { ScholarQAService } from './scholar-qa.service';
 
 class ScheduleQADto {
-  @IsString() title: string;
-  @IsOptional() @IsString() description?: string;
-  @IsString() category: string;
-  @IsOptional() @IsString() language?: string;
-  @IsString() scheduledAt: string;
+  @IsString() @MaxLength(200) title: string;
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
+  @IsIn(['fiqh', 'aqeedah', 'tafsir', 'seerah', 'family', 'youth', 'women', 'converts']) category: string;
+  @IsOptional() @IsString() @MaxLength(10) language?: string;
+  @IsDateString() scheduledAt: string;
 }
 
 class SubmitQuestionDto {
-  @IsString() question: string;
+  @IsString() @MaxLength(1000) question: string;
 }
 
 @ApiTags('Scholar Q&A')

@@ -17,8 +17,19 @@ import { StoriesService } from './stories.service';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { CreateHighlightDto } from './dto/create-highlight.dto';
 import { UpdateHighlightDto } from './dto/update-highlight.dto';
+import { IsString, IsObject, MaxLength } from 'class-validator';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+
+class StoryReplyDto {
+  @IsString() @MaxLength(2000) content: string;
+}
+
+class StickerResponseDto {
+  @IsString() @MaxLength(50) stickerType: string;
+  @IsObject() responseData: Record<string, unknown>;
+}
 
 @ApiTags('Stories (Saf)')
 @Controller('stories')
@@ -43,6 +54,7 @@ export class StoriesController {
   }
 
   @Get('highlights/:userId')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: "Get user's highlight albums" })
   getHighlights(@Param('userId') userId: string) {
     return this.storiesService.getHighlights(userId);
@@ -57,9 +69,10 @@ export class StoriesController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get story by ID' })
-  getById(@Param('id') id: string) {
-    return this.storiesService.getById(id);
+  getById(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.storiesService.getById(id, userId);
   }
 
   @Delete(':id')
@@ -83,6 +96,7 @@ export class StoriesController {
   @Post(':id/view')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
   @ApiOperation({ summary: 'Mark story as viewed' })
   markViewed(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.storiesService.markViewed(id, userId);
@@ -107,9 +121,9 @@ export class StoriesController {
   replyToStory(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('content') content: string,
+    @Body() dto: StoryReplyDto,
   ) {
-    return this.storiesService.replyToStory(id, userId, content);
+    return this.storiesService.replyToStory(id, userId, dto.content);
   }
 
   @Get(':id/reaction-summary')
@@ -173,8 +187,8 @@ export class StoriesController {
   @Post(':id/sticker-response')
   @UseGuards(ClerkAuthGuard) @ApiBearerAuth() @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Submit sticker response' })
-  async submitStickerResponse(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() body: { stickerType: string; responseData: Record<string, unknown> }) {
-    return this.storiesService.submitStickerResponse(id, userId, body.stickerType, body.responseData);
+  async submitStickerResponse(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: StickerResponseDto) {
+    return this.storiesService.submitStickerResponse(id, userId, dto.stickerType, dto.responseData);
   }
 
   @Get(':id/sticker-responses')

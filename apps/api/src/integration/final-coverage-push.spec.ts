@@ -36,7 +36,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
   describe('PostsService — final coverage', () => {
     let service: PostsService;
     let prisma: any;
-    const mockPost = { id: 'p-1', userId: 'owner', content: 'test', postType: 'TEXT', visibility: 'PUBLIC', mediaUrls: [], mediaTypes: [], isRemoved: false, commentsDisabled: false, likesCount: 10, commentsCount: 5, sharesCount: 2, savesCount: 3, viewsCount: 100, space: 'SAF', sharedPostId: null };
+    const mockPost = { id: 'p-1', userId: 'owner', content: 'test', postType: 'TEXT', visibility: 'PUBLIC', mediaUrls: [], mediaTypes: [], isRemoved: false, commentsDisabled: false, likesCount: 10, commentsCount: 5, sharesCount: 2, savesCount: 3, viewsCount: 100, space: 'SAF', sharedPostId: null, user: { id: 'owner', username: 'owneruser' } };
 
     beforeEach(async () => {
       const module = await Test.createTestingModule({
@@ -47,12 +47,12 @@ describe('Final Coverage Push — 3800+ tests', () => {
             $executeRaw: jest.fn(),
             post: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
-            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
+            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
             hashtag: { upsert: jest.fn() }, user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             comment: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             commentReaction: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn() },
             savedPost: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },
-            feedDismissal: { upsert: jest.fn() }, report: { create: jest.fn() }, circleMember: { findMany: jest.fn().mockResolvedValue([]) },
+            feedDismissal: { upsert: jest.fn(), findMany: jest.fn().mockResolvedValue([]) }, report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) }, circleMember: { findMany: jest.fn().mockResolvedValue([]) },
           }},
           { provide: NotificationsService, useValue: { create: jest.fn() } },
           { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn() } },

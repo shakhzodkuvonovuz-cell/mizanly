@@ -11,6 +11,11 @@ export class DiscordFeaturesService {
   // ── Forum Threads ───────────────────────────────────────
 
   async createForumThread(userId: string, circleId: string, dto: { title: string; content: string; tags?: string[] }) {
+    // Verify user is a member of the circle
+    const membership = await this.prisma.circleMember.findUnique({
+      where: { circleId_userId: { circleId, userId } },
+    });
+    if (!membership) throw new ForbiddenException('Must be a member of this community to create threads');
     return this.prisma.forumThread.create({
       data: { circleId, authorId: userId, title: dto.title, content: dto.content, tags: dto.tags || [] },
       include: { author: { select: USER_SELECT } },
@@ -77,12 +82,16 @@ export class DiscordFeaturesService {
   }
 
   async lockForumThread(threadId: string, userId: string) {
+    const thread = await this.prisma.forumThread.findUnique({ where: { id: threadId } });
+    if (!thread) throw new NotFoundException('Thread not found');
+    if (thread.authorId !== userId) throw new ForbiddenException('Only the thread author can lock this thread');
     return this.prisma.forumThread.update({ where: { id: threadId }, data: { isLocked: true } });
   }
 
   async pinForumThread(threadId: string, userId: string) {
     const thread = await this.prisma.forumThread.findUnique({ where: { id: threadId } });
-    if (!thread) throw new NotFoundException();
+    if (!thread) throw new NotFoundException('Thread not found');
+    if (thread.authorId !== userId) throw new ForbiddenException('Only the thread author can pin this thread');
     return this.prisma.forumThread.update({
       where: { id: threadId },
       data: { isPinned: !thread.isPinned },
@@ -92,6 +101,12 @@ export class DiscordFeaturesService {
   // ── Webhooks ────────────────────────────────────────────
 
   async createWebhook(userId: string, circleId: string, dto: { name: string; avatarUrl?: string; targetChannelId?: string }) {
+    // Verify user is a member of the circle
+    const membership = await this.prisma.circleMember.findUnique({
+      where: { circleId_userId: { circleId, userId } },
+    });
+    if (!membership) throw new ForbiddenException('Must be a member to create webhooks');
+
     const count = await this.prisma.webhook.count({ where: { circleId } });
     if (count >= 15) throw new BadRequestException('Maximum 15 webhooks per community');
 
@@ -131,6 +146,10 @@ export class DiscordFeaturesService {
   // ── Stage Sessions (Moderated Audio) ────────────────────
 
   async createStageSession(userId: string, circleId: string, dto: { title: string; scheduledAt?: string }) {
+    const membership = await this.prisma.circleMember.findUnique({
+      where: { circleId_userId: { circleId, userId } },
+    });
+    if (!membership) throw new ForbiddenException('Must be a member to create stage sessions');
     return this.prisma.stageSession.create({
       data: {
         circleId,

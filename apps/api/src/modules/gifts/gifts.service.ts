@@ -64,25 +64,32 @@ export class GiftsService {
     if (!Number.isInteger(amount) || amount <= 0) {
       throw new BadRequestException('Amount must be a positive integer');
     }
+    if (amount > 100000) {
+      throw new BadRequestException('Maximum purchase is 100,000 coins');
+    }
 
-    const balance = await this.prisma.coinBalance.upsert({
-      where: { userId },
-      update: { coins: { increment: amount } },
-      create: { userId, coins: amount, diamonds: 0 },
-    });
-
-    await this.prisma.coinTransaction.create({
+    // Coins are NOT credited here. They must be credited via Stripe webhook
+    // after payment confirmation. This method creates a pending transaction record.
+    const transaction = await this.prisma.coinTransaction.create({
       data: {
         userId,
         type: 'purchase',
         amount,
-        description: `Purchased ${amount} coins`,
+        description: `Coin purchase pending payment (${amount} coins)`,
       },
+    });
+
+    const balance = await this.prisma.coinBalance.upsert({
+      where: { userId },
+      update: {},
+      create: { userId, coins: 0, diamonds: 0 },
     });
 
     return {
       coins: balance.coins,
       diamonds: balance.diamonds,
+      pendingPurchase: amount,
+      transactionId: transaction.id,
     };
   }
 
@@ -108,19 +115,21 @@ export class GiftsService {
       throw new NotFoundException('Receiver not found');
     }
 
-    // Check sender has enough coins
-    const senderBalance = await this.prisma.coinBalance.findUnique({
-      where: { userId: senderId },
+    const diamondsEarned = Math.floor(catalogItem.coins * DIAMOND_RATE);
+
+    // Use conditional updateMany with gte guard to prevent race conditions
+    // (same pattern as cashout — atomic balance check + decrement)
+    const deducted = await this.prisma.coinBalance.updateMany({
+      where: { userId: senderId, coins: { gte: catalogItem.coins } },
+      data: { coins: { decrement: catalogItem.coins } },
     });
-    if (!senderBalance || senderBalance.coins < catalogItem.coins) {
+
+    if (deducted.count === 0) {
       throw new BadRequestException('Insufficient coins');
     }
 
-    const diamondsEarned = Math.floor(catalogItem.coins * DIAMOND_RATE);
-
-    // Execute all operations in a transaction
+    // Execute remaining operations in a transaction
     const [giftRecord] = await this.prisma.$transaction([
-      // Create gift record
       this.prisma.giftRecord.create({
         data: {
           senderId,
@@ -131,18 +140,11 @@ export class GiftsService {
           contentType: contentType || null,
         },
       }),
-      // Deduct coins from sender
-      this.prisma.coinBalance.update({
-        where: { userId: senderId },
-        data: { coins: { decrement: catalogItem.coins } },
-      }),
-      // Add diamonds to receiver (upsert in case they have no balance yet)
       this.prisma.coinBalance.upsert({
         where: { userId: receiverId },
         update: { diamonds: { increment: diamondsEarned } },
         create: { userId: receiverId, coins: 0, diamonds: diamondsEarned },
       }),
-      // Transaction record for sender (debit)
       this.prisma.coinTransaction.create({
         data: {
           userId: senderId,
@@ -151,7 +153,6 @@ export class GiftsService {
           description: `Sent ${catalogItem.name} to user`,
         },
       }),
-      // Transaction record for receiver (credit)
       this.prisma.coinTransaction.create({
         data: {
           userId: receiverId,
@@ -176,6 +177,7 @@ export class GiftsService {
   }
 
   async getHistory(userId: string, cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(limit, 1), 50);
     const transactions = await this.prisma.coinTransaction.findMany({
       where: { userId },
       take: limit + 1,
@@ -241,10 +243,15 @@ export class GiftsService {
       },
     });
 
+    // Re-read balance to get the actual post-update value
+    const updatedBalance = await this.prisma.coinBalance.findUnique({
+      where: { userId },
+    });
+
     return {
       diamondsDeducted: diamonds,
       usdAmount,
-      remainingDiamonds: balance.diamonds - diamonds,
+      remainingDiamonds: updatedBalance?.diamonds ?? 0,
     };
   }
 

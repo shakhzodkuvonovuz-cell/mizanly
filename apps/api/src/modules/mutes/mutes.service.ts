@@ -23,12 +23,12 @@ export class MutesService {
     });
     if (!targetUser) throw new NotFoundException('User not found');
 
-    // Use create + P2002 handling for race-condition-safe idempotency
+    // Idempotent — return success if already muted
     try {
       await this.prisma.mute.create({ data: { userId, mutedId } });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('Already muted');
+        return { message: 'User muted' };
       }
       throw error;
     }
@@ -36,14 +36,10 @@ export class MutesService {
   }
 
   async unmute(userId: string, mutedId: string) {
-    const deleted = await this.prisma.mute.deleteMany({
+    // Idempotent — return success even if not muted
+    await this.prisma.mute.deleteMany({
       where: { userId, mutedId },
     });
-
-    if (deleted.count === 0) {
-      throw new NotFoundException('Mute not found');
-    }
-
     return { message: 'User unmuted' };
   }
 

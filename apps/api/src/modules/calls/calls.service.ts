@@ -27,6 +27,17 @@ export class CallsService {
       throw new BadRequestException('Cannot call yourself');
     }
 
+    // Check blocks bidirectionally
+    const blocked = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: targetUserId },
+          { blockerId: targetUserId, blockedId: userId },
+        ],
+      },
+    });
+    if (blocked) throw new ForbiddenException('Cannot call this user');
+
     // Check no active call for either user
     const activeCall = await this.prisma.callParticipant.findFirst({
       where: {

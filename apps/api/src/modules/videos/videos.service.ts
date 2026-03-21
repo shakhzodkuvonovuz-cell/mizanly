@@ -207,10 +207,10 @@ export class VideosService {
     };
 
     // If user has subscriptions, prioritize subscribed channels
-    const orderBy: Prisma.VideoOrderByWithRelationInput = {
-      publishedAt: 'desc',
-      viewsCount: 'desc'
-    };
+    const orderBy: Prisma.VideoOrderByWithRelationInput[] = [
+      { publishedAt: 'desc' },
+      { viewsCount: 'desc' },
+    ];
 
     const videos = await this.prisma.video.findMany({
       where,
@@ -272,7 +272,20 @@ export class VideosService {
       where: { id: videoId },
       select: VIDEO_SELECT,
     });
-    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
+
+    // Check block status
+    if (userId && userId !== video.user.id) {
+      const blocked = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: video.user.id },
+            { blockerId: video.user.id, blockedId: userId },
+          ],
+        },
+      });
+      if (blocked) throw new NotFoundException('Video not found');
+    }
 
     let isLiked = false;
     let isDisliked = false;
@@ -348,8 +361,9 @@ export class VideosService {
     if (video.userId !== userId) throw new ForbiddenException();
 
     await this.prisma.$transaction([
-      this.prisma.video.delete({
+      this.prisma.video.update({
         where: { id: videoId },
+        data: { isRemoved: true },
       }),
       this.prisma.$executeRaw`
         UPDATE "Channel"
@@ -575,6 +589,24 @@ export class VideosService {
     };
   }
 
+  async deleteComment(videoId: string, commentId: string, userId: string) {
+    const comment = await this.prisma.videoComment.findUnique({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException('Comment not found');
+    if (comment.videoId !== videoId) throw new NotFoundException('Comment not found');
+
+    // Allow both comment author AND video owner to delete
+    if (comment.userId !== userId) {
+      const video = await this.prisma.video.findUnique({ where: { id: videoId }, select: { userId: true } });
+      if (!video || video.userId !== userId) throw new ForbiddenException();
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.videoComment.update({ where: { id: commentId }, data: { content: '[deleted]' } }),
+      this.prisma.$executeRaw`UPDATE "Video" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${videoId}`,
+    ]);
+    return { deleted: true };
+  }
+
   async bookmark(videoId: string, userId: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
@@ -615,23 +647,36 @@ export class VideosService {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
 
-    // Check if already viewed recently? For simplicity, just increment.
-    await this.prisma.$transaction([
-      this.prisma.video.update({
-        where: { id: videoId },
-        data: { viewsCount: { increment: 1 } },
-      }),
-      this.prisma.channel.update({
-        where: { id: video.channelId },
-        data: { totalViews: { increment: 1 } },
-      }),
-      // Create or update watch history
+    // Deduplicate: only count view if user hasn't watched this video today
+    const existing = await this.prisma.watchHistory.findUnique({
+      where: { userId_videoId: { userId, videoId } },
+    });
+
+    const now = new Date();
+    const isNewView = !existing || (now.getTime() - existing.watchedAt.getTime() > 24 * 60 * 60 * 1000);
+
+    const ops = [
       this.prisma.watchHistory.upsert({
         where: { userId_videoId: { userId, videoId } },
-        create: { userId, videoId, watchedAt: new Date() },
-        update: { watchedAt: new Date() },
+        create: { userId, videoId, watchedAt: now },
+        update: { watchedAt: now },
       }),
-    ]);
+    ];
+
+    if (isNewView) {
+      ops.push(
+        this.prisma.video.update({
+          where: { id: videoId },
+          data: { viewsCount: { increment: 1 } },
+        }) as any,
+        this.prisma.channel.update({
+          where: { id: video.channelId },
+          data: { totalViews: { increment: 1 } },
+        }) as any,
+      );
+    }
+
+    await this.prisma.$transaction(ops);
     return { viewed: true };
   }
 
@@ -645,6 +690,14 @@ export class VideosService {
   }
 
   async report(videoId: string, userId: string, reason: string) {
+    const video = await this.prisma.video.findUnique({ where: { id: videoId }, select: { id: true } });
+    if (!video) throw new NotFoundException('Video not found');
+
+    const existing = await this.prisma.report.findFirst({
+      where: { reporterId: userId, description: `video:${videoId}` },
+    });
+    if (existing) return { reported: true };
+
     const reasonMap: Record<string, string> = {
       SPAM: 'SPAM',
       HARASSMENT: 'HARASSMENT',
@@ -782,10 +835,17 @@ export class VideosService {
     const premiere = await this.prisma.videoPremiere.findUnique({ where: { videoId } });
     if (!premiere) throw new NotFoundException('Premiere not found');
 
-    await this.prisma.premiereReminder.create({
-      data: { premiereId: premiere.id, userId },
-    });
-    await this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = "reminderCount" + 1 WHERE id = ${premiere.id}`;
+    try {
+      await this.prisma.premiereReminder.create({
+        data: { premiereId: premiere.id, userId },
+      });
+      await this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = "reminderCount" + 1 WHERE id = ${premiere.id}`;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return { success: true };
+      }
+      throw error;
+    }
     return { success: true };
   }
 
@@ -829,7 +889,15 @@ export class VideosService {
     const endScreens = await Promise.all(
       items.map(item =>
         this.prisma.endScreen.create({
-          data: { videoId, ...item },
+          data: {
+            videoId,
+            type: item.type,
+            targetId: item.targetId,
+            label: item.label,
+            url: item.url,
+            position: item.position,
+            showAtSeconds: item.showAtSeconds,
+          },
         })
       )
     );

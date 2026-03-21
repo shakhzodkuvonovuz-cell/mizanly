@@ -193,7 +193,7 @@ describe('Comprehensive Auth + Abuse — batch tests', () => {
           {
             provide: PrismaService,
             useValue: {
-              coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
+              coinBalance: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
               giftRecord: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
               coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
               user: { findUnique: jest.fn() },
@@ -230,7 +230,7 @@ describe('Comprehensive Auth + Abuse — batch tests', () => {
 
     it('should reject insufficient balance gift', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'u2' });
-      prisma.coinBalance.findUnique.mockResolvedValue({ userId: 'u1', coins: 0 });
+      prisma.coinBalance.updateMany.mockResolvedValue({ count: 0 });
       await expect(service.sendGift('u1', { receiverId: 'u2', giftType: 'diamond' }))
         .rejects.toThrow(BadRequestException);
     });
@@ -273,7 +273,7 @@ describe('Comprehensive Auth + Abuse — batch tests', () => {
           {
             provide: PrismaService,
             useValue: {
-              conversationMember: { findMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(mockMembership), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), createMany: jest.fn(), delete: jest.fn() },
+              conversationMember: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn().mockResolvedValue(mockMembership), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), createMany: jest.fn(), delete: jest.fn() },
               conversation: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
               message: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
               block: { findFirst: jest.fn() },

@@ -15,7 +15,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
-// class-validator imports removed (DTOs use @ApiProperty only)
+import { IsNumber, IsOptional, IsString, IsInt, Min, Max, IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
 import { IslamicService } from './islamic.service';
 import {
   PrayerTimesResponse,
@@ -38,54 +39,69 @@ import { SaveDhikrSessionDto, CreateDhikrChallengeDto, ContributeDhikrDto } from
 
 class PrayerTimesQueryDto {
   @ApiProperty({ description: 'Latitude', example: 24.7136 })
+  @Type(() => Number) @IsNumber() @Min(-90) @Max(90)
   lat: number;
 
   @ApiProperty({ description: 'Longitude', example: 46.6753 })
+  @Type(() => Number) @IsNumber() @Min(-180) @Max(180)
   lng: number;
 
-  @ApiProperty({ description: 'Calculation method (MWL, ISNA, Egypt, Makkah, Karachi)', example: 'MWL', required: false })
+  @ApiProperty({ description: 'Calculation method', example: 'MWL', required: false })
+  @IsOptional() @IsString()
   method?: string;
 
-  @ApiProperty({ description: 'Date in YYYY-MM-DD format (default today)', example: '2026-03-13', required: false })
+  @ApiProperty({ description: 'Date in YYYY-MM-DD format', example: '2026-03-13', required: false })
+  @IsOptional() @IsString()
   date?: string;
 }
 
 class MosquesQueryDto {
   @ApiProperty({ description: 'Latitude', example: 24.7136 })
+  @Type(() => Number) @IsNumber() @Min(-90) @Max(90)
   lat: number;
 
   @ApiProperty({ description: 'Longitude', example: 46.6753 })
+  @Type(() => Number) @IsNumber() @Min(-180) @Max(180)
   lng: number;
 
   @ApiProperty({ description: 'Search radius in kilometers', example: 10, required: false })
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(100)
   radius?: number;
 }
 
 class ZakatCalculationQueryDto {
   @ApiProperty({ description: 'Cash amount in base currency', example: 5000 })
+  @Type(() => Number) @IsNumber() @Min(0)
   cash: number;
 
   @ApiProperty({ description: 'Gold amount in grams', example: 50 })
+  @Type(() => Number) @IsNumber() @Min(0)
   gold: number;
 
   @ApiProperty({ description: 'Silver amount in grams', example: 200 })
+  @Type(() => Number) @IsNumber() @Min(0)
   silver: number;
 
   @ApiProperty({ description: 'Investment value', example: 10000 })
+  @Type(() => Number) @IsNumber() @Min(0)
   investments: number;
 
   @ApiProperty({ description: 'Debts owed', example: 2000 })
+  @Type(() => Number) @IsNumber() @Min(0)
   debts: number;
 }
 
 class RamadanInfoQueryDto {
   @ApiProperty({ description: 'Year (default current year)', example: 2026, required: false })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(2020) @Max(2100)
   year?: number;
 
-  @ApiProperty({ description: 'Latitude for prayer times', example: 24.7136, required: false })
+  @ApiProperty({ description: 'Latitude', example: 24.7136, required: false })
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90)
   lat?: number;
 
-  @ApiProperty({ description: 'Longitude for prayer times', example: 46.6753, required: false })
+  @ApiProperty({ description: 'Longitude', example: 46.6753, required: false })
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180)
   lng?: number;
 }
 

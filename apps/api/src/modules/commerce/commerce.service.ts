@@ -24,6 +24,7 @@ export class CommerceService {
   }
 
   async getProducts(cursor?: string, limit = 20, category?: string, search?: string) {
+    limit = Math.min(Math.max(limit, 1), 50);
     const where: Record<string, unknown> = { status: 'active' };
     if (category) where.category = category;
     if (search) where.title = { contains: search, mode: 'insensitive' };
@@ -55,6 +56,7 @@ export class CommerceService {
 
     const product = await this.prisma.product.findUnique({ where: { id: productId } });
     if (!product) throw new NotFoundException('Product not found');
+    if (product.sellerId === userId) throw new BadRequestException('Cannot review your own product');
 
     let review;
     try {
@@ -159,11 +161,11 @@ export class CommerceService {
       throw new BadRequestException(`Cannot transition from ${order.status} to ${status}`);
     }
 
-    // Restore stock on cancellation/refund
+    // Restore stock and decrement salesCount on cancellation/refund
     if ((status === 'cancelled' || status === 'refunded') && order.status !== 'cancelled' && order.status !== 'refunded') {
-      await this.prisma.product.update({
-        where: { id: order.productId },
-        data: { stock: { increment: order.quantity } },
+      await this.prisma.product.updateMany({
+        where: { id: order.productId, salesCount: { gt: 0 } },
+        data: { stock: { increment: order.quantity }, salesCount: { decrement: order.quantity } },
       });
     }
 
@@ -204,6 +206,7 @@ export class CommerceService {
 
     const business = await this.prisma.halalBusiness.findUnique({ where: { id: businessId } });
     if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId === userId) throw new BadRequestException('Cannot review your own business');
 
     let review;
     try {
@@ -260,22 +263,11 @@ export class CommerceService {
     const fund = await this.prisma.zakatFund.findUnique({ where: { id: fundId } });
     if (!fund || fund.status !== 'active') throw new NotFoundException('Fund not found or closed');
 
-    // Transaction: create donation + update fund atomically
-    const [donation] = await this.prisma.$transaction([
-      this.prisma.zakatDonation.create({
-        data: { fundId, donorId: userId, amount: dto.amount, isAnonymous: dto.isAnonymous || false },
-      }),
-      this.prisma.zakatFund.update({
-        where: { id: fundId },
-        data: { raisedAmount: { increment: dto.amount } },
-      }),
-    ]);
-
-    // Check if goal reached (separate query, non-critical)
-    const updated = await this.prisma.zakatFund.findUnique({ where: { id: fundId } });
-    if (updated && Number(updated.raisedAmount) >= Number(updated.goalAmount)) {
-      await this.prisma.zakatFund.update({ where: { id: fundId }, data: { status: 'completed' } });
-    }
+    // Create donation as pending — fund amounts should only be updated
+    // after payment is confirmed via Stripe webhook
+    const donation = await this.prisma.zakatDonation.create({
+      data: { fundId, donorId: userId, amount: dto.amount, isAnonymous: dto.isAnonymous || false },
+    });
 
     return donation;
   }
@@ -297,13 +289,9 @@ export class CommerceService {
     const treasury = await this.prisma.communityTreasury.findUnique({ where: { id: treasuryId } });
     if (!treasury || treasury.status !== 'active') throw new NotFoundException();
 
+    // Contribution created as pending — should be confirmed via payment webhook
     await this.prisma.treasuryContribution.create({
       data: { treasuryId, userId, amount },
-    });
-
-    await this.prisma.communityTreasury.update({
-      where: { id: treasuryId },
-      data: { raisedAmount: { increment: amount } },
     });
 
     return { success: true };
@@ -323,10 +311,11 @@ export class CommerceService {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + (plan === 'yearly' ? 12 : 1));
 
+    // Premium created as pending — should be activated via payment webhook
     return this.prisma.premiumSubscription.upsert({
       where: { userId },
-      create: { userId, plan, status: 'active', endDate },
-      update: { plan, status: 'active', endDate, autoRenew: true },
+      create: { userId, plan, status: 'pending', endDate },
+      update: { plan, status: 'pending', endDate },
     });
   }
 

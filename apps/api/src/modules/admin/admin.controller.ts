@@ -90,20 +90,23 @@ export class AdminController {
   // ── Feature Flags ───────────────────────────────────────
 
   @Get('flags')
-  @ApiOperation({ summary: 'Get all feature flags' })
-  getFlags() {
+  @ApiOperation({ summary: 'Get all feature flags (admin only)' })
+  async getFlags(@CurrentUser('id') adminId: string) {
+    await this.adminService.verifyAdmin(adminId);
     return this.featureFlags.getAllFlags();
   }
 
   @Patch('flags/:name')
-  @ApiOperation({ summary: 'Set a feature flag (true/false/percentage)' })
-  setFlag(@Param('name') name: string, @Body('value') value: string) {
+  @ApiOperation({ summary: 'Set a feature flag (admin only)' })
+  async setFlag(@CurrentUser('id') adminId: string, @Param('name') name: string, @Body('value') value: string) {
+    await this.adminService.verifyAdmin(adminId);
     return this.featureFlags.setFlag(name, value);
   }
 
   @Delete('flags/:name')
-  @ApiOperation({ summary: 'Delete a feature flag' })
-  deleteFlag(@Param('name') name: string) {
+  @ApiOperation({ summary: 'Delete a feature flag (admin only)' })
+  async deleteFlag(@CurrentUser('id') adminId: string, @Param('name') name: string) {
+    await this.adminService.verifyAdmin(adminId);
     return this.featureFlags.deleteFlag(name);
   }
 }

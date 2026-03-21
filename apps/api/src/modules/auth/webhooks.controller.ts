@@ -21,7 +21,6 @@ interface RawBodyRequest extends Request {
 
 @ApiTags('Webhooks')
 @Controller('webhooks')
-@SkipThrottle()
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 

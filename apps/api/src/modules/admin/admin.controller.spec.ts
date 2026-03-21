@@ -29,6 +29,7 @@ describe('AdminController', () => {
             getStats: jest.fn(),
             banUser: jest.fn(),
             unbanUser: jest.fn(),
+            verifyAdmin: jest.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -146,32 +147,34 @@ describe('AdminController', () => {
   });
 
   describe('getFlags', () => {
-    it('should delegate to featureFlags.getAllFlags', async () => {
+    it('should delegate to featureFlags.getAllFlags after admin check', async () => {
       const mockFlags = { dark_mode: 'true', beta_feature: '50' };
       featureFlags.getAllFlags.mockResolvedValue(mockFlags as any);
 
-      const result = await controller.getFlags();
+      const result = await controller.getFlags(adminId);
 
+      expect(adminService.verifyAdmin).toHaveBeenCalledWith(adminId);
       expect(featureFlags.getAllFlags).toHaveBeenCalled();
       expect(result).toEqual(mockFlags);
     });
   });
 
   describe('setFlag', () => {
-    it('should delegate to featureFlags.setFlag with name and value', async () => {
+    it('should delegate to featureFlags.setFlag after admin check', async () => {
       featureFlags.setFlag.mockResolvedValue(undefined as any);
 
-      await controller.setFlag('dark_mode', 'true');
+      await controller.setFlag(adminId, 'dark_mode', 'true');
 
+      expect(adminService.verifyAdmin).toHaveBeenCalledWith(adminId);
       expect(featureFlags.setFlag).toHaveBeenCalledWith('dark_mode', 'true');
     });
   });
 
   describe('deleteFlag', () => {
-    it('should delegate to featureFlags.deleteFlag with name', async () => {
+    it('should delegate to featureFlags.deleteFlag after admin check', async () => {
       featureFlags.deleteFlag.mockResolvedValue(undefined as any);
 
-      await controller.deleteFlag('dark_mode');
+      await controller.deleteFlag(adminId, 'dark_mode');
 
       expect(featureFlags.deleteFlag).toHaveBeenCalledWith('dark_mode');
     });

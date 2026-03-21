@@ -10,7 +10,7 @@ import { ReportStatus, ModerationAction } from '@prisma/client';
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
-  private async assertAdmin(userId: string) {
+  async verifyAdmin(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { role: true },
@@ -18,6 +18,10 @@ export class AdminService {
     if (!user || user.role !== 'ADMIN') {
       throw new ForbiddenException('Admin access required');
     }
+  }
+
+  private async assertAdmin(userId: string) {
+    return this.verifyAdmin(userId);
   }
 
   async getReports(adminId: string, status?: string, cursor?: string, limit = 20) {

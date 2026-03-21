@@ -139,10 +139,33 @@ export class BlocksService {
     };
   }
 
-  async isBlocked(blockerId: string, blockedId: string): Promise<boolean> {
-    const block = await this.prisma.block.findUnique({
-      where: { blockerId_blockedId: { blockerId, blockedId } },
+  async isBlocked(userA: string, userB: string): Promise<boolean> {
+    const block = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: userA, blockedId: userB },
+          { blockerId: userB, blockedId: userA },
+        ],
+      },
     });
     return !!block;
+  }
+
+  async getBlockedIds(userId: string): Promise<string[]> {
+    const blocks = await this.prisma.block.findMany({
+      where: {
+        OR: [
+          { blockerId: userId },
+          { blockedId: userId },
+        ],
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+    const ids = new Set<string>();
+    for (const b of blocks) {
+      if (b.blockerId !== userId) ids.add(b.blockerId);
+      if (b.blockedId !== userId) ids.add(b.blockedId);
+    }
+    return [...ids];
   }
 }

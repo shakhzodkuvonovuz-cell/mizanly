@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { Prisma, MessageType } from '@prisma/client';
+import { sanitizeText } from '../../common/utils/sanitize';
 
 const STORY_SELECT = {
   id: true,
@@ -46,6 +48,7 @@ export class StoriesService {
   constructor(
     private prisma: PrismaService,
     private ai: AiService,
+    private queueService: QueueService,
   ) {}
 
   async getFeedStories(userId: string) {
@@ -56,15 +59,25 @@ export class StoriesService {
     });
     const ids = [userId, ...follows.map((f) => f.followingId)];
 
-    const stories = await this.prisma.story.findMany({
+    const rawStories = await this.prisma.story.findMany({
       where: {
         userId: { in: ids },
         expiresAt: { gt: new Date() },
         isArchived: false,
       },
-      select: STORY_SELECT,
+      select: { ...STORY_SELECT, closeFriendsOnly: true, subscribersOnly: true },
       orderBy: { createdAt: 'desc' },
       take: 100,
+    });
+
+    // Filter out closeFriendsOnly stories unless viewer is in the author's close friends circle
+    // and subscribersOnly stories unless viewer is a subscriber
+    // For own stories, always show all
+    const stories = rawStories.filter((story) => {
+      if (story.userId === userId) return true;
+      if (story.closeFriendsOnly) return false; // TODO: check circle membership when circles are integrated
+      if (story.subscribersOnly) return false; // TODO: check subscription when subscriptions are integrated
+      return true;
     });
 
     // Group by user
@@ -147,6 +160,9 @@ export class StoriesService {
       });
     }
 
+    // Gamification: award XP for story creation
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'story_created' }).catch(() => {});
+
     return story;
   }
 
@@ -169,12 +185,27 @@ export class StoriesService {
     }
   }
 
-  async getById(storyId: string) {
+  async getById(storyId: string, viewerId?: string) {
     const story = await this.prisma.story.findUnique({
       where: { id: storyId },
-      select: STORY_SELECT,
     });
     if (!story) throw new NotFoundException('Story not found');
+
+    // Don't expose expired or archived stories to non-owners
+    if (viewerId !== story.userId) {
+      if (story.isArchived) throw new NotFoundException('Story not found');
+      if (story.expiresAt && story.expiresAt < new Date()) throw new NotFoundException('Story has expired');
+
+      // Record view if viewer is authenticated and not the owner
+      if (viewerId) {
+        this.prisma.storyView.upsert({
+          where: { storyId_viewerId: { storyId, viewerId } },
+          create: { storyId, viewerId },
+          update: {},
+        }).catch(() => {}); // non-blocking, don't fail the read
+      }
+    }
+
     return story;
   }
 
@@ -187,7 +218,7 @@ export class StoriesService {
       where: { id: storyId },
       data: { isArchived: true },
     });
-    return { deleted: true };
+    return { archived: true };
   }
 
   async unarchive(storyId: string, userId: string) {
@@ -205,6 +236,8 @@ export class StoriesService {
   async markViewed(storyId: string, viewerId: string) {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story) throw new NotFoundException('Story not found');
+    if (story.expiresAt && story.expiresAt < new Date()) throw new BadRequestException('Story has expired');
+    if (story.isArchived) throw new BadRequestException('Story is archived');
 
     const alreadyViewed = await this.prisma.storyView.findUnique({
       where: { storyId_viewerId: { storyId, viewerId } },
@@ -304,7 +337,7 @@ export class StoriesService {
       data: {
         conversationId: conversation.id,
         senderId,
-        content,
+        content: sanitizeText(content),
         messageType: MessageType.STORY_REPLY,
       },
       select: {
@@ -436,11 +469,10 @@ export class StoriesService {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story || story.userId !== ownerId) throw new ForbiddenException('Only story owner can view responses');
     return this.prisma.storyStickerResponse.findMany({
-      where: { storyId, ...(stickerType ? { stickerType } : {
-      take: 50,
-    }) },
+      where: { storyId, ...(stickerType ? { stickerType } : {}) },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 

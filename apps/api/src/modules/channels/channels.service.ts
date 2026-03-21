@@ -13,6 +13,7 @@ import { UpdateChannelDto } from './dto/update-channel.dto';
 import { Prisma, VideoStatus } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { cacheAside } from '../../common/utils/cache';
 import { sanitizeText } from '@/common/utils/sanitize';
 
@@ -58,6 +59,7 @@ export class ChannelsService {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
+    private queueService: QueueService,
   ) {}
 
   async create(userId: string, dto: CreateChannelDto) {
@@ -87,9 +89,12 @@ export class ChannelsService {
       select: CHANNEL_SELECT,
     });
 
+    // Gamification: award XP for channel creation
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'channel_created' }).catch(() => {});
+
     return {
       ...channel,
-      isSubscribed: false, // owner is not automatically subscribed
+      isSubscribed: false,
     };
   }
 
@@ -156,11 +161,10 @@ export class ChannelsService {
     if (!channel) throw new NotFoundException('Channel not found');
     if (channel.userId !== userId) throw new ForbiddenException();
 
-    // Soft delete: mark as removed? Currently no isRemoved field.
-    // Instead, delete all related records? Schema has onDelete: Cascade for relations.
-    // We'll delete the channel (cascade will clean up subscriptions, videos, etc.)
-    await this.prisma.channel.delete({
+    // Soft delete — preserve data for potential recovery
+    await this.prisma.channel.update({
       where: { handle },
+      data: { isActive: false },
     });
 
     return { deleted: true };

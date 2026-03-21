@@ -5,6 +5,7 @@ import {
   Get,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -44,6 +45,9 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Check if username is available' })
   checkUsername(@Query('username') username: string) {
+    if (!username || typeof username !== 'string' || username.length < 3 || username.length > 30 || !/^[a-zA-Z0-9._]+$/.test(username)) {
+      throw new BadRequestException('Username must be 3-30 characters (letters, numbers, dots, underscores)');
+    }
     return this.authService.checkUsername(username);
   }
 

@@ -50,7 +50,7 @@ describe('MonetizationService', () => {
   });
 
   describe('sendTip', () => {
-    it('should create tip successfully with platform fee', async () => {
+    it('should create tip as pending with platform fee', async () => {
       const mockReceiver = { id: 'receiver1', username: 'receiver' };
       const mockTip = {
         id: 'tip1',
@@ -60,7 +60,7 @@ describe('MonetizationService', () => {
         currency: 'USD',
         message: 'Thank you',
         platformFee: 10,
-        status: 'completed',
+        status: 'pending',
         sender: { id: 'sender1', username: 'sender', displayName: 'Sender', avatarUrl: null },
         receiver: { id: 'receiver1', username: 'receiver', displayName: 'Receiver', avatarUrl: null },
       };
@@ -80,7 +80,7 @@ describe('MonetizationService', () => {
           currency: 'USD',
           message: 'Thank you',
           platformFee: 10,
-          status: 'completed',
+          status: 'pending',
         },
         include: {
           sender: {
@@ -418,12 +418,12 @@ describe('MonetizationService', () => {
       isActive: true,
     };
 
-    it('should create subscription successfully', async () => {
+    it('should create subscription as pending', async () => {
       const mockSubscription = {
         id: 'sub1',
         tierId: 'tier1',
         userId: 'subscriber',
-        status: 'active',
+        status: 'pending',
         startDate: new Date(),
       };
       mockPrismaService.membershipTier.findUnique.mockResolvedValue(existingTier);
@@ -434,11 +434,11 @@ describe('MonetizationService', () => {
       expect(result).toEqual(mockSubscription);
       expect(mockPrismaService.membershipSubscription.upsert).toHaveBeenCalledWith({
         where: { tierId_userId: { tierId: 'tier1', userId: 'subscriber' } },
-        update: { status: 'active', startDate: expect.any(Date) },
+        update: { status: 'pending', startDate: expect.any(Date) },
         create: {
           tierId: 'tier1',
           userId: 'subscriber',
-          status: 'active',
+          status: 'pending',
           startDate: expect.any(Date),
         },
       });

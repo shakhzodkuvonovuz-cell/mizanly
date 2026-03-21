@@ -24,6 +24,7 @@ describe('MosquesService', () => {
                 memberships: [], posts: [],
               }),
               update: jest.fn().mockResolvedValue({}),
+              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
             },
             mosqueMembership: {
               create: jest.fn().mockResolvedValue({}),
@@ -35,6 +36,7 @@ describe('MosquesService', () => {
               findMany: jest.fn().mockResolvedValue([]),
             },
             $executeRaw: jest.fn().mockResolvedValue(1),
+            $transaction: jest.fn().mockImplementation((args) => Promise.resolve(args)),
           },
         },
       ],
@@ -76,17 +78,15 @@ describe('MosquesService', () => {
   describe('leave', () => {
     it('should leave mosque community', async () => {
       prisma.mosqueMembership.findUnique.mockResolvedValue({ userId: 'u1', mosqueId: 'mosque-1' });
-      prisma.mosqueMembership.delete.mockResolvedValue({});
-      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.$transaction.mockResolvedValue([{}, {}]);
 
       const result = await service.leave('u1', 'mosque-1');
       expect(result).toEqual({ left: true });
     });
 
-    it('should return left true even when not a member (graceful)', async () => {
-      prisma.mosqueMembership.delete.mockRejectedValue(new Error('Record not found'));
-      const result = await service.leave('u1', 'mosque-1');
-      expect(result).toEqual({ left: true });
+    it('should throw NotFoundException when not a member', async () => {
+      prisma.mosqueMembership.findUnique.mockResolvedValue(null);
+      await expect(service.leave('u1', 'mosque-1')).rejects.toThrow(NotFoundException);
     });
   });
 

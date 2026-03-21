@@ -43,7 +43,7 @@ describe('StoriesService — authorization matrix', () => {
     prisma.story.findUnique.mockResolvedValue(mockStoryByA);
     prisma.story.update.mockResolvedValue({});
     const result = await service.delete('story-1', userA);
-    expect(result.deleted).toBe(true);
+    expect(result.archived).toBe(true);
   });
 
   it('should throw ForbiddenException when non-owner deletes story', async () => {
