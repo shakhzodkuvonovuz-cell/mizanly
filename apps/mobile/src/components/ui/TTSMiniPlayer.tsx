@@ -57,7 +57,7 @@ export function TTSMiniPlayer() {
       <View style={[styles.contentRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         {/* Speaker icon */}
         <View style={styles.iconWrap}>
-          <Icon name="volume-x" size="sm" color={colors.emerald} />
+          <Icon name="volume-2" size="sm" color={colors.emerald} />
         </View>
 
         {/* Title / description */}

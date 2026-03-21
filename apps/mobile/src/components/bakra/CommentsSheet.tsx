@@ -31,6 +31,7 @@ interface CommentsSheetProps {
 }
 
 export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const queryClient = useQueryClient();
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });

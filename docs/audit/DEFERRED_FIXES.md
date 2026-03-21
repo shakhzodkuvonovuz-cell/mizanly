@@ -532,3 +532,19 @@ F16 (token failure documented, ApiError.isAuth handles 401), F22 (feedDismissedI
 - [23] F08 paymentsApi — Stripe payment flow wiring is a feature build, not a fix
 - [23] F34 Dead state values — screenTime for future wellbeing, PiP used by usePiP hook
 - [23] F36 DELETE with body — documented risk, works on current infrastructure
+
+## From Audit 24 (UI Components) — 52 findings
+### FIXED directly (30 findings):
+P0-1 through P0-6 (6 crashes: useTranslation hook call added to BottomSheet, VideoPlayer, VideoControls, MiniPlayer, LocationPicker; ScreenErrorBoundary changed to i18next.t() for class component), P1-1/P1-2 (ThreadCard + CommentsSheet: useTranslation hook call added), P1-3/P1-4 (corrupted imports: AlgorithmCard + StoryRow — removed duplicate `memo,` from every import line), P1-6 (font: DMSans-Medium → DMSans_500Medium in ImageCarousel, ImageGallery, VideoControls), P1-8 (bare comma syntax errors fixed in LinkPreview, StickerPicker, StickerPackBrowser), P1-9 (duplicate Pressable imports fixed in VideoPlayer, VideoControls), P1-10 (ErrorBoundary: hardcoded English → i18next.t()), P2-6 (VideoPlayer: unused Audio import removed), P2-12 (GlassHeader: 'Go back' → t('common.back')), P2-13 (MiniPlayer: wrong positionMillis calculation removed), P3-14 (TTSMiniPlayer: volume-x → volume-2 icon for playing state)
+
+### Deferred:
+- [24] P1-5 ToastNotification unused — wire into screens or delete — OPEN
+- [24] P1-7 LinkPreview mock data — needs real OG metadata fetching — OPEN
+- [24] P2-1 BottomSheet keyboard avoidance — needs UI work — OPEN
+- [24] P2-3/P2-4 Autocomplete + LocationPicker hardcoded English — needs i18n keys — NOTED
+- [24] P2-5 LocationPicker mock data — needs expo-location integration — NOTED
+- [24] P2-7/P2-10 EmptyState size + FadeIn delay unused props — cosmetic — NOTED
+- [24] P2-8 Icon unknown name warning — NOTED
+- [24] P2-9 BottomSheet iOS padding — NOTED
+- [24] P2-14 BottomSheet snapPoint API confusion — documented — NOTED
+- [24] P3-1 through P3-22 — i18n, accessibility, code duplication, minor — NOTED

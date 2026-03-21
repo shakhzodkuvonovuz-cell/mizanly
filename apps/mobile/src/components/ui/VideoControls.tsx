@@ -4,11 +4,9 @@ import {
   View,
   Text,
   StyleSheet,
-  ,
   Pressable,
   Platform,
   useWindowDimensions,
-  Pressable,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -60,6 +58,7 @@ export function VideoControls({
   onFullscreen,
   onMinimize,
 }: VideoControlsProps) {
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const { width: screenWidth } = useWindowDimensions();
 
@@ -351,7 +350,7 @@ const styles = StyleSheet.create({
   timeText: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans_500Medium',
   },
   topIcons: {
     flexDirection: 'row',
@@ -370,7 +369,7 @@ const styles = StyleSheet.create({
   iconLabel: {
     color: colors.text.primary,
     fontSize: fontSize.xs,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans_500Medium',
   },
   centerRow: {
     flexDirection: 'row',

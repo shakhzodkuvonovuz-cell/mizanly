@@ -39,6 +39,7 @@ const POPULAR_LOCATIONS: LocationResult[] = [
 ];
 
 export function LocationPicker({ visible, onClose, onSelect }: LocationPickerProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(false);

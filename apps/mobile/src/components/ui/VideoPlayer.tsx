@@ -4,13 +4,11 @@ import {
   View,
   Text,
   StyleSheet,
-  ,
   Pressable,
   Dimensions,
-  Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Video, AVPlaybackStatus, ResizeMode, Audio } from 'expo-av';
+import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -52,6 +50,7 @@ export const VideoPlayer = memo(function VideoPlayer({
   onComplete,
   onPiPEnter,
 }: VideoPlayerProps) {
+  const { t } = useTranslation();
   const videoRef = useRef<Video>(null);
   const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
   const [isPlaying, setIsPlaying] = useState(autoPlay);

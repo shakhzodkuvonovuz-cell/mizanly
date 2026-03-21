@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
   counterText: {
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans_500Medium',
     fontSize: 13,
     color: colors.text.secondary,
     letterSpacing: 0.5,

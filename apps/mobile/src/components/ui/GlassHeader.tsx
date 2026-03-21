@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
   Text,
@@ -88,13 +89,14 @@ export const GlassHeader = memo(function GlassHeader({
 }: GlassHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
 
   // Resolve left action: explicit leftAction > showBackButton/showBack
   const resolvedLeftAction = leftAction ?? (
     (showBackButton || showBack) ? {
       icon: 'arrow-left',
       onPress: onBack ?? (() => router.back()),
-      accessibilityLabel: 'Go back',
+      accessibilityLabel: t('common.back'),
     } : undefined
   );
 

@@ -32,6 +32,7 @@ interface Props {
 }
 
 export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();

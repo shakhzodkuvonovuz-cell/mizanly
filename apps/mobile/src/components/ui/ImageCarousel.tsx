@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
   countText: {
-    fontFamily: 'DMSans-Medium',
+    fontFamily: 'DMSans_500Medium',
     fontSize: 12,
     color: colors.text.secondary,
     letterSpacing: 0.5,

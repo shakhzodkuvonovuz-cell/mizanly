@@ -1,9 +1,9 @@
 import { memo, useState, useCallback } from 'react';
-import { memo, View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeOut, Layout } from 'react-native-reanimated';
-import { memo, Icon } from '@/components/ui/Icon';
-import { memo, colors, spacing, fontSize, radius, fonts } from '@/theme';
-import { memo, useTranslation } from '@/hooks/useTranslation';
+import { Icon } from '@/components/ui/Icon';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface AlgorithmCardProps {
   reasons: string[];

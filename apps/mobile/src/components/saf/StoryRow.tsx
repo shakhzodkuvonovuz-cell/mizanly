@@ -1,7 +1,8 @@
-import { memo, FlatList, View, StyleSheet } from 'react-native';
-import { memo, useUser } from '@clerk/clerk-expo';
-import { memo, StoryBubble } from './StoryBubble';
-import { memo, colors, spacing } from '@/theme';
+import { memo } from 'react';
+import { FlatList, View, StyleSheet } from 'react-native';
+import { useUser } from '@clerk/clerk-expo';
+import { StoryBubble } from './StoryBubble';
+import { colors, spacing } from '@/theme';
 import type { StoryGroup } from '@/types';
 
 interface Props {

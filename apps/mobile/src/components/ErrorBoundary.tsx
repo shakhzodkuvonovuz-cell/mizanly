@@ -2,6 +2,7 @@ import { Component, type ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
+import i18next from 'i18next';
 import { captureException } from '@/config/sentry';
 
 interface Props {
@@ -33,12 +34,12 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <View style={styles.container}>
         <Icon name="slash" size="xl" color={colors.text.secondary} />
-        <Text style={styles.title}>Something went wrong</Text>
+        <Text style={styles.title}>{i18next.t('common.somethingWentWrong')}</Text>
         <Text style={styles.message} numberOfLines={3}>
-          {this.state.error?.message ?? 'An unexpected error occurred.'}
+          {this.state.error?.message ?? i18next.t('common.error')}
         </Text>
         <Pressable style={styles.btn} onPress={this.handleReset}>
-          <Text style={styles.btnText}>Try again</Text>
+          <Text style={styles.btnText}>{i18next.t('common.retry')}</Text>
         </Pressable>
       </View>
     );

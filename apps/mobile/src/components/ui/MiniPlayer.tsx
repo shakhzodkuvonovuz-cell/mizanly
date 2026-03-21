@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ,
   Image,
   Platform,
   Pressable,
@@ -37,6 +36,7 @@ const DISMISS_Y_THRESHOLD = 150;
 const DISMISS_X_THRESHOLD = 150;
 
 export function MiniPlayer() {
+  const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
   const videoRef = useRef<Video>(null);
@@ -279,9 +279,7 @@ export function MiniPlayer() {
             resizeMode={ResizeMode.CONTAIN}
             shouldPlay={miniPlayerPlaying}
             onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-            positionMillis={
-              miniPlayerProgress > 0 ? Math.round(miniPlayerProgress * 1000 * 60) : undefined
-            }
+            positionMillis={undefined}
           />
         </Animated.View>
       </GestureDetector>

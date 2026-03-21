@@ -25,6 +25,7 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdrop }: BottomSheetProps) {
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const translateY = useSharedValue(SCREEN_HEIGHT);
