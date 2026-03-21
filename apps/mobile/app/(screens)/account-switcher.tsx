@@ -34,11 +34,11 @@ interface Account {
   isVerified: boolean;
 }
 
+import { formatCompactNumber } from '@/utils/localeFormat';
+
 function formatCount(n: number | undefined): string {
   if (!n) return '0';
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toString();
+  return formatCompactNumber(n);
 }
 
 function mapUserToAccount(user: User, sessionId: string, isActive: boolean): Account {

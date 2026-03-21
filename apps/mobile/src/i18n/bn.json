@@ -651,7 +651,10 @@
     },
     "video": "Video",
     "deleteThreadTitle": "থ্রেড মুছবেন?",
-    "reportThreadTitle": "থ্রেড রিপোর্ট করুন"
+    "reportThreadTitle": "থ্রেড রিপোর্ট করুন",
+    "pollVotes_one": "{{count}} ভোট",
+    "pollVotes_other": "{{count}} ভোট",
+    "pollEnds": "শেষ হয়"
   },
   "risalah": {
     "messages": "Messages",

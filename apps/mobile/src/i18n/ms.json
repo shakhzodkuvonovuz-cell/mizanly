@@ -651,7 +651,10 @@
     },
     "video": "Video",
     "deleteThreadTitle": "Padam utas?",
-    "reportThreadTitle": "Laporkan utas"
+    "reportThreadTitle": "Laporkan utas",
+    "pollVotes_one": "{{count}} undi",
+    "pollVotes_other": "{{count}} undi",
+    "pollEnds": "berakhir"
   },
   "risalah": {
     "messages": "Messages",

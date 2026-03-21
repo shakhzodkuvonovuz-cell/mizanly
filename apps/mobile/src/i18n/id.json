@@ -652,7 +652,10 @@
     },
     "video": "Video",
     "deleteThreadTitle": "Hapus utas?",
-    "reportThreadTitle": "Laporkan utas"
+    "reportThreadTitle": "Laporkan utas",
+    "pollVotes_one": "{{count}} suara",
+    "pollVotes_other": "{{count}} suara",
+    "pollEnds": "berakhir"
   },
   "risalah": {
     "messages": "Messages",

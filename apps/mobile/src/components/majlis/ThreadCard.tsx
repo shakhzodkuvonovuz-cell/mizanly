@@ -300,9 +300,9 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
                 );
               })}
               <Text style={styles.pollMeta}>
-                {localPoll.totalVotes} vote{localPoll.totalVotes !== 1 ? 's' : ''}
+                {t('majlis.pollVotes', { count: localPoll.totalVotes })}
                 {localPoll.endsAt
-                  ? ` · ends ${formatDistanceToNowStrict(new Date(localPoll.endsAt), { addSuffix: true })}`
+                  ? ` · ${t('majlis.pollEnds')} ${formatDistanceToNowStrict(new Date(localPoll.endsAt), { addSuffix: true })}`
                   : ''}
               </Text>
             </View>

@@ -652,7 +652,10 @@
     },
     "video": "Video",
     "deleteThreadTitle": "Supprimer le fil ?",
-    "reportThreadTitle": "Signaler le fil"
+    "reportThreadTitle": "Signaler le fil",
+    "pollVotes_one": "{{count}} vote",
+    "pollVotes_other": "{{count}} votes",
+    "pollEnds": "se termine"
   },
   "risalah": {
     "messages": "Messages",

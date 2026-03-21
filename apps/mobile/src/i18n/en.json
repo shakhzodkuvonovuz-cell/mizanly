@@ -602,7 +602,10 @@
     },
     "video": "Video",
     "deleteThreadTitle": "Delete thread?",
-    "reportThreadTitle": "Report thread"
+    "reportThreadTitle": "Report thread",
+    "pollVotes_one": "{{count}} vote",
+    "pollVotes_other": "{{count}} votes",
+    "pollEnds": "ends"
   },
   "risalah": {
     "messages": "Messages",

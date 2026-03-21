@@ -602,7 +602,10 @@
     "deleteReplyMessage": "سيتم حذف هذا الرد نهائياً.",
     "caughtUp": "أنت على اطلاع بكل جديد",
     "deleteThreadTitle": "حذف الموضوع؟",
-    "reportThreadTitle": "الإبلاغ عن الموضوع"
+    "reportThreadTitle": "الإبلاغ عن الموضوع",
+    "pollVotes_one": "صوت واحد",
+    "pollVotes_other": "{{count}} أصوات",
+    "pollEnds": "ينتهي"
   },
   "risalah": {
     "messages": "الرسائل",

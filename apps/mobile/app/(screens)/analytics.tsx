@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { formatCompactNumber } from '@/utils/localeFormat';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -165,12 +166,8 @@ export default function AnalyticsScreen() {
   const totalLikes = stats.reduce((sum, stat) => sum + stat.likes, 0);
   const totalFollowers = stats.reduce((sum, stat) => sum + stat.followers, 0);
 
-  // Format numbers
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-  };
+  // Format numbers (locale-aware)
+  const formatNumber = formatCompactNumber;
 
   if (error) {
     return (

@@ -602,7 +602,10 @@
     },
     "video": "Video",
     "deleteThreadTitle": "Konu silinsin mi?",
-    "reportThreadTitle": "Konuyu bildir"
+    "reportThreadTitle": "Konuyu bildir",
+    "pollVotes_one": "{{count}} oy",
+    "pollVotes_other": "{{count}} oy",
+    "pollEnds": "bitiyor"
   },
   "risalah": {
     "messages": "Mesajlar",

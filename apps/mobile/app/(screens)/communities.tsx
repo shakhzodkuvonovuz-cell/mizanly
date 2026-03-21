@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { formatCompactNumber } from '@/utils/localeFormat';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
   FlatList, TextInput, RefreshControl,
@@ -54,11 +55,7 @@ function CommunityCard({
     transform: [{ scale: scaleAnim.value }],
   }));
 
-  const formatCount = (count: number): string => {
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-    return count.toString();
-  };
+  const formatCount = formatCompactNumber;
 
   const emoji = community.emoji || '👥';
   const description = community.description || '';

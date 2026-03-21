@@ -538,7 +538,10 @@
     },
     "video": "Video",
     "deleteThreadTitle": "تھریڈ حذف کریں؟",
-    "reportThreadTitle": "تھریڈ کی رپورٹ کریں"
+    "reportThreadTitle": "تھریڈ کی رپورٹ کریں",
+    "pollVotes_one": "{{count}} ووٹ",
+    "pollVotes_other": "{{count}} ووٹ",
+    "pollEnds": "ختم ہوتا ہے"
   },
   "risalah": {
     "chats": "گفتگو",
