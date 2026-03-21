@@ -76,13 +76,15 @@ export const widgetData = {
   async getPrayerTimes(): Promise<PrayerTimesWidgetData | null> {
     const raw = await AsyncStorage.getItem(PRAYER_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as PrayerTimesWidgetData;
+    try { return JSON.parse(raw) as PrayerTimesWidgetData; }
+    catch { await AsyncStorage.removeItem(PRAYER_KEY); return null; }
   },
 
   /** Read cached unread-count widget data (or null). */
   async getUnreadCounts(): Promise<UnreadWidgetData | null> {
     const raw = await AsyncStorage.getItem(UNREAD_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as UnreadWidgetData;
+    try { return JSON.parse(raw) as UnreadWidgetData; }
+    catch { await AsyncStorage.removeItem(UNREAD_KEY); return null; }
   },
 };

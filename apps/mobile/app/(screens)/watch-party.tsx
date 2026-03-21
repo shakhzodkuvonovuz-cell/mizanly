@@ -15,8 +15,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+import { api } from '@/services/api';
 
 export default function WatchPartyScreen() {
   const router = useRouter();
@@ -31,21 +30,11 @@ export default function WatchPartyScreen() {
 
   const partiesQuery = useQuery({
     queryKey: ['watch-parties'],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/watch-parties`);
-      return res.json();
-    },
+    queryFn: () => api.get<Array<Record<string, unknown>>>('/watch-parties'),
   });
 
   const createMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${API_BASE}/watch-parties`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId: newVideoId, title: newTitle }),
-      });
-      return res.json();
-    },
+    mutationFn: () => api.post<Record<string, unknown>>('/watch-parties', { videoId: newVideoId, title: newTitle }),
     onSuccess: () => {
       setCreateSheetOpen(false);
       setNewTitle('');

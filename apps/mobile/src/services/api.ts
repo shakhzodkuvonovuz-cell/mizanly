@@ -128,6 +128,33 @@ type AccessibilitySettings = { reducedMotion?: boolean; fontSize?: string };
 type WellbeingSettings = { sensitiveContentFilter?: boolean; dailyTimeLimit?: number };
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const REQUEST_TIMEOUT_MS = 30000;
+
+/** Typed API error with HTTP status code for proper error handling */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code?: string,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+
+  get isAuth() { return this.status === 401; }
+  get isForbidden() { return this.status === 403; }
+  get isRateLimited() { return this.status === 429; }
+  get isServerError() { return this.status >= 500; }
+  get isNotFound() { return this.status === 404; }
+}
+
+/** Network-level error (no internet, DNS failure, timeout) */
+export class ApiNetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ApiNetworkError';
+  }
+}
 
 class ApiClient {
   private getToken: (() => Promise<string | null>) | null = null;
@@ -145,19 +172,35 @@ class ApiClient {
       console.error('[API] Token getter failed:', e);
     }
 
-    const res = await fetch(`${API_URL}${path}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
-    });
+    // Add timeout via AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    let res: Response;
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...options.headers,
+        },
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new ApiNetworkError('Request timed out');
+      }
+      throw new ApiNetworkError(err instanceof Error ? err.message : 'Network request failed');
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ message: 'Request failed' }));
       console.error(`[API] ${options.method || 'GET'} ${path} → ${res.status}`, error);
-      throw new Error(error.message || `HTTP ${res.status}`);
+      throw new ApiError(error.message || `HTTP ${res.status}`, res.status);
     }
 
     if (res.status === 204) return null as T;

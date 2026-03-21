@@ -129,7 +129,7 @@ const ReelItem = memo(function ReelItem({
   const followMutation = useMutation({
     mutationFn: (userId: string) => followsApi.follow(userId),
     onSuccess: (_, userId) => {
-      queryClient.invalidateQueries({ queryKey: ['reels'] });
+      queryClient.invalidateQueries({ queryKey: ['reels-feed'] });
     },
   });
 

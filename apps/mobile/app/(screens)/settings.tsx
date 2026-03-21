@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet,
   ScrollView, Switch, Alert, Linking, Pressable,
 import { useRouter } from 'expo-router';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
@@ -151,7 +151,8 @@ function SectionHeader({ title, icon }: { title: string; icon?: React.ComponentP
 export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useClerk();
-  const { theme, setTheme } = useStore();
+  const queryClient = useQueryClient();
+  const { theme, setTheme, logout: storeLogout } = useStore();
   const insets = useSafeAreaInsets();
   const { t, isRTL } = useTranslation();
 
@@ -208,7 +209,7 @@ export default function SettingsScreen() {
   const handleSignOut = () => {
     Alert.alert(t('settings.signOut'), t('settings.confirmSignOut'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('settings.signOut'), onPress: () => signOut() },
+      { text: t('settings.signOut'), onPress: () => { storeLogout(); queryClient.clear(); signOut(); } },
     ]);
   };
 

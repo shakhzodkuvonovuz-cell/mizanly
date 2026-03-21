@@ -15,8 +15,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+import { api } from '@/services/api';
 
 const MADHABS = [
   { id: 'any', label: 'Any Madhab' },
@@ -44,8 +43,7 @@ export default function FatwaQAScreen() {
       const params = new URLSearchParams();
       if (pageParam) params.set('cursor', pageParam as string);
       if (selectedMadhab !== 'any') params.set('madhab', selectedMadhab);
-      const res = await fetch(`${API_BASE}/fatwa?${params}`);
-      return res.json();
+      return api.get<{ data?: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/fatwa?${params}`);
     },
     getNextPageParam: (lastPage) =>
       lastPage?.meta?.hasMore ? lastPage.meta.cursor : undefined,
@@ -54,14 +52,7 @@ export default function FatwaQAScreen() {
   });
 
   const askMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${API_BASE}/fatwa`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, madhab: askMadhab !== 'any' ? askMadhab : undefined }),
-      });
-      return res.json();
-    },
+    mutationFn: () => api.post<Record<string, unknown>>('/fatwa', { question, madhab: askMadhab !== 'any' ? askMadhab : undefined }),
     onSuccess: () => {
       setQuestion('');
       setActiveTab('browse');

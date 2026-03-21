@@ -14,8 +14,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+import { api } from '@/services/api';
 
 const FOLDER_ICONS: IconName[] = ['users', 'heart', 'globe', 'layers', 'bell', 'bookmark', 'flag', 'lock'];
 const FOLDER_COLORS = [colors.emerald, colors.gold, '#58A6FF', '#9333EA', '#F85149', '#EC4899', '#F59E0B', '#10B981'];
@@ -34,21 +33,11 @@ export default function ChatFoldersScreen() {
 
   const foldersQuery = useQuery({
     queryKey: ['chat-folders'],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/chat-folders`);
-      return res.json();
-    },
+    queryFn: () => api.get<Array<Record<string, unknown>>>('/chat-folders'),
   });
 
   const createMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${API_BASE}/chat-folders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName, icon: FOLDER_ICONS[selectedIcon] }),
-      });
-      return res.json();
-    },
+    mutationFn: () => api.post<Record<string, unknown>>('/chat-folders', { name: newName, icon: FOLDER_ICONS[selectedIcon] }),
     onSuccess: () => {
       setCreateMode(false);
       setNewName('');
@@ -58,9 +47,7 @@ export default function ChatFoldersScreen() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await fetch(`${API_BASE}/chat-folders/${id}`, { method: 'DELETE' });
-    },
+    mutationFn: (id: string) => api.delete(`/chat-folders/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
       setMenuFolder(null);

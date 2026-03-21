@@ -73,6 +73,7 @@ export async function resumeDownload(
 ): Promise<FileSystem.DownloadResumable | null> {
   const resumable = activeDownloads.get(downloadId);
   if (!resumable) return null;
+  await resumable.resumeAsync();
   return resumable;
 }
 

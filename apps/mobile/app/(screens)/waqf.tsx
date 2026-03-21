@@ -13,8 +13,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+import { api } from '@/services/api';
 
 export default function WaqfScreen() {
   const router = useRouter();
@@ -26,8 +25,7 @@ export default function WaqfScreen() {
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams();
       if (pageParam) params.set('cursor', pageParam);
-      const res = await fetch(`${API_BASE}/waqf?${params}`);
-      return res.json();
+      return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/waqf?${params}`);
     },
     getNextPageParam: (lastPage: { meta?: { cursor: string | null; hasMore: boolean } }) =>
       lastPage?.meta?.hasMore ? lastPage.meta.cursor : undefined,

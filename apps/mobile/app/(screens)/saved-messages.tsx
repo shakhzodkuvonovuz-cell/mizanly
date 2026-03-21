@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
   TextInput, Keyboard,
-  Pressable,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut, SlideOutRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,14 +19,12 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+import { api } from '@/services/api';
 
 async function fetchSavedMessages(cursor?: string) {
   const params = new URLSearchParams();
   if (cursor) params.set('cursor', cursor);
-  const res = await fetch(`${API_BASE}/saved-messages?${params}`);
-  return res.json();
+  return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/saved-messages?${params}`);
 }
 
 export default function SavedMessagesScreen() {
@@ -51,14 +48,7 @@ export default function SavedMessagesScreen() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`${API_BASE}/saved-messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newMessage }),
-      });
-      return res.json();
-    },
+    mutationFn: () => api.post<Record<string, unknown>>('/saved-messages', { content: newMessage }),
     onSuccess: () => {
       setNewMessage('');
       Keyboard.dismiss();
@@ -68,9 +58,7 @@ export default function SavedMessagesScreen() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await fetch(`${API_BASE}/saved-messages/${id}`, { method: 'DELETE' });
-    },
+    mutationFn: (id: string) => api.delete(`/saved-messages/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-messages'] });
       setMenuItem(null);
@@ -79,9 +67,7 @@ export default function SavedMessagesScreen() {
   });
 
   const pinMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await fetch(`${API_BASE}/saved-messages/${id}/pin`, { method: 'PATCH' });
-    },
+    mutationFn: (id: string) => api.patch(`/saved-messages/${id}/pin`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-messages'] });
       setMenuItem(null);

@@ -13,9 +13,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
-
-// Using fetch directly since communityApi may not have boards in the client yet
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+import { api } from '@/services/api';
 
 export default function LocalBoardsScreen() {
   const router = useRouter();
@@ -29,8 +27,7 @@ export default function LocalBoardsScreen() {
       const params = new URLSearchParams();
       if (pageParam) params.set('cursor', pageParam);
       if (search) params.set('city', search);
-      const res = await fetch(`${API_BASE}/boards?${params}`);
-      return res.json();
+      return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/boards?${params}`);
     },
     getNextPageParam: (lastPage: { meta?: { cursor: string | null; hasMore: boolean } }) =>
       lastPage?.meta?.hasMore ? lastPage.meta.cursor : undefined,

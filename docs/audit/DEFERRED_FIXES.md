@@ -514,3 +514,21 @@ F1 (deep link utility wired — DeepLinkHandler component in root layout calls s
 ### NOTED:
 - [22] F10 remaining 3 orphan screens (camera, location-picker, voice-recorder) — used as components not screen routes
 - [22] F11/F15/F16/F19-F28 Architecture/cosmetic — minor
+
+## From Audit 23 (Mobile State Management) — 38 findings
+### FIXED directly (18 findings):
+F01 (ApiError class with status code: isAuth/isForbidden/isRateLimited/isServerError/isNotFound properties), F02 (7 raw fetch screens → api client: chat-folders, saved-messages, fatwa-qa, local-boards, waqf, watch-party, mentorship — 14 fetch calls replaced), F04 (store.logout() wired into settings sign-out), F06 (Bakra follow invalidates correct query key 'reels-feed'), F10 (queryClient.clear() added to settings sign-out), F11 (ApiNetworkError class: differentiates timeout/DNS/network from HTTP errors), F12 (mentorship fake getToken() removed — uses api client), F13 (saved-messages duplicate Pressable import fixed), F20 (7 raw fetch screens now use api client which checks res.ok), F24 (widgetData JSON.parse wrapped in try/catch with cleanup), F25 (resumeDownload now calls resumeAsync()), F30 (API client 30s timeout via AbortController)
+
+### Deferred — mobile architecture:
+- [23] F03 offlineCache dead code — wire or delete — OPEN
+- [23] F05 Story query key naming — works via prefix match, fragile — NOTED
+- [23] F07 No refetchOnFocus — needs QueryClient config change — OPEN
+- [23] F08 paymentsApi orphaned — needs payment screens wiring — OPEN
+- [23] F09 Tab error states — needs UI work on 5 screens — OPEN
+- [23] F14 No retry on direct API calls — NOTED
+- [23] F15 isOffline cosmetic only — needs UX decisions — NOTED
+- [23] F16 Token failure continues without auth — acceptable with ApiError class — NOTED
+- [23] F17 Video creation invalidation — functional — NOTED
+- [23] F18 No gcTime — TanStack default 5min is fine — NOTED
+- [23] F19 Global mutation error alert — needs per-mutation override — NOTED
+- [23] F21-F38 P2/P3 items — NOTED

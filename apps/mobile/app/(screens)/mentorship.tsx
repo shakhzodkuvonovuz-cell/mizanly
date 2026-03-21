@@ -14,11 +14,9 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { searchApi } from '@/services/api';
+import { api, searchApi } from '@/services/api';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
 const TOPICS: { id: string; label: string; icon: IconName }[] = [
   { id: 'new_muslim', label: 'New Muslim Guidance', icon: 'heart' },
@@ -43,12 +41,7 @@ export default function MentorshipScreen() {
 
   const myMentorshipsQuery = useQuery({
     queryKey: ['my-mentorships'],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/mentorship/me`, {
-        headers: { Authorization: `Bearer ${await getToken()}` },
-      });
-      return res.json();
-    },
+    queryFn: () => api.get<{ asMentor?: Array<Record<string, unknown>>; asMentee?: Array<Record<string, unknown>> }>('/mentorship/me'),
     enabled: activeTab === 'mine',
   });
 
@@ -201,11 +194,6 @@ export default function MentorshipScreen() {
       </View>
     </ScreenErrorBoundary>
   );
-}
-
-async function getToken() {
-  // Clerk token getter — in real app, use the auth context
-  return '';
 }
 
 const styles = StyleSheet.create({
