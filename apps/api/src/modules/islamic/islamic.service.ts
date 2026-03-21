@@ -214,8 +214,8 @@ export class IslamicService {
       if (cached) {
         return JSON.parse(cached);
       }
-    } catch {
-      // Redis unavailable — continue without cache
+    } catch (cacheErr) {
+      this.logger.debug(`Redis cache read failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
     }
 
     // 2. Try Aladhan API (free, no API key needed)
@@ -248,8 +248,8 @@ export class IslamicService {
         // Cache for 24 hours
         try {
           await this.redis.setex(cacheKey, 86400, JSON.stringify(result));
-        } catch {
-          // Redis write failed — non-critical
+        } catch (cacheErr) {
+          this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
         }
 
         return result;
@@ -278,8 +278,8 @@ export class IslamicService {
     // Cache local result for 1 hour (less reliable than API)
     try {
       await this.redis.setex(cacheKey, 3600, JSON.stringify(result));
-    } catch {
-      // Redis write failed — non-critical
+    } catch (cacheErr) {
+      this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
     }
 
     return result;
@@ -368,8 +368,8 @@ export class IslamicService {
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) return JSON.parse(cached);
-    } catch {
-      // Cache miss
+    } catch (cacheErr) {
+      this.logger.debug(`Redis cache read failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
     }
 
     try {
@@ -400,8 +400,8 @@ export class IslamicService {
       // Cache OSM results for 7 days
       try {
         await this.redis.setex(cacheKey, 604800, JSON.stringify(mosques));
-      } catch {
-        // Non-critical
+      } catch (cacheErr) {
+        this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
       }
 
       return mosques;
@@ -1071,8 +1071,8 @@ export class IslamicService {
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) return JSON.parse(cached);
-    } catch {
-      // Cache miss or Redis unavailable
+    } catch (cacheErr) {
+      this.logger.debug(`Redis cache read failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
     }
 
     // Fetch from Quran.com API v4
@@ -1111,8 +1111,8 @@ export class IslamicService {
       // Cache for 30 days (Quran text doesn't change)
       try {
         await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
-      } catch {
-        // Non-critical
+      } catch (cacheErr) {
+        this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
       }
 
       return result;
@@ -1143,8 +1143,8 @@ export class IslamicService {
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) return JSON.parse(cached);
-    } catch {
-      // Cache miss
+    } catch (cacheErr) {
+      this.logger.debug(`Redis cache read failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
     }
 
     try {
@@ -1168,8 +1168,8 @@ export class IslamicService {
 
       try {
         await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
-      } catch {
-        // Non-critical
+      } catch (cacheErr) {
+        this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
       }
 
       return result;
@@ -1194,8 +1194,8 @@ export class IslamicService {
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) return JSON.parse(cached);
-    } catch {
-      // Cache miss
+    } catch (cacheErr) {
+      this.logger.debug(`Redis cache read failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
     }
 
     try {
@@ -1229,8 +1229,8 @@ export class IslamicService {
 
       try {
         await this.redis.setex(cacheKey, 3600, JSON.stringify(result)); // 1h cache for search
-      } catch {
-        // Non-critical
+      } catch (cacheErr) {
+        this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
       }
 
       return result;
@@ -1274,7 +1274,8 @@ export class IslamicService {
         translation: result.verse.translation,
         audioUrl: result.audioUrl,
       };
-    } catch {
+    } catch (apiErr) {
+      this.logger.debug(`Quran API call failed, using fallback: ${apiErr instanceof Error ? apiErr.message : apiErr}`);
       // If API fails, return a placeholder with reference
       const surah = SURAH_METADATA.find(s => s.number === surahNumber);
       const audio = this.getQuranAudioUrl(surahNumber, ayahNumber);
@@ -1302,8 +1303,8 @@ export class IslamicService {
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) return JSON.parse(cached);
-    } catch {
-      // Cache miss
+    } catch (cacheErr) {
+      this.logger.debug(`Redis cache read failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
     }
 
     try {
@@ -1336,8 +1337,8 @@ export class IslamicService {
 
       try {
         await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
-      } catch {
-        // Non-critical
+      } catch (cacheErr) {
+        this.logger.debug(`Redis cache write failed: ${cacheErr instanceof Error ? cacheErr.message : cacheErr}`);
       }
 
       return result;
@@ -1394,8 +1395,9 @@ export class IslamicService {
       await this.prisma.duaBookmark.delete({
         where: { userId_duaId: { userId, duaId } },
       });
-    } catch {
-      // Already removed
+    } catch (err) {
+      // Already removed — idempotent
+      this.logger.debug(`Dua bookmark delete (may be already removed): ${err instanceof Error ? err.message : err}`);
     }
     return { removed: true };
   }
@@ -1645,8 +1647,8 @@ export class IslamicService {
       try {
         const pt = await this.getPrayerTimes({ lat, lng });
         prayerTimes = pt.timings;
-      } catch {
-        // Non-critical, continue without prayer times
+      } catch (ptErr) {
+        this.logger.debug(`Prayer times unavailable for morning briefing: ${ptErr instanceof Error ? ptErr.message : ptErr}`);
       }
     }
 

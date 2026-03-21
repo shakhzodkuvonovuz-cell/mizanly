@@ -59,6 +59,7 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
             ],
           }],
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) return { safe: false, confidence: 0, flags: ['api_error'], action: 'flag' };
@@ -107,6 +108,7 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
           system: 'You are a content moderation system for Mizanly, a social platform for the Muslim community. Flag hate speech, Islamophobia, sectarian attacks, profanity, and harmful content. Be culturally sensitive.',
           messages: [{ role: 'user', content: `Analyze: "${text}"\nRespond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"profanity"|"harassment"], "suggestion": "optional rephrasing suggestion"}` }],
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) return { safe: false, flags: ['api_error'] };
@@ -197,43 +199,44 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
     reason: string,
     flags: string[],
   ): Promise<void> {
-    // Remove the content
-    if (contentType === 'post') {
-      await this.prisma.post.update({
-        where: { id: contentId },
-        data: { isRemoved: true },
-      });
-    } else if (contentType === 'reel') {
-      await this.prisma.reel.update({
-        where: { id: contentId },
-        data: { isRemoved: true },
-      });
-    } else if (contentType === 'thread') {
-      await this.prisma.thread.update({
-        where: { id: contentId },
-        data: { isRemoved: true },
-      });
-    } else if (contentType === 'comment') {
-      await this.prisma.comment.update({
-        where: { id: contentId },
-        data: { isRemoved: true },
-      });
-    }
+    // Atomic: remove content + create audit log in a transaction
+    await this.prisma.$transaction(async (tx) => {
+      if (contentType === 'post') {
+        await tx.post.update({
+          where: { id: contentId },
+          data: { isRemoved: true },
+        });
+      } else if (contentType === 'reel') {
+        await tx.reel.update({
+          where: { id: contentId },
+          data: { isRemoved: true },
+        });
+      } else if (contentType === 'thread') {
+        await tx.thread.update({
+          where: { id: contentId },
+          data: { isRemoved: true },
+        });
+      } else if (contentType === 'comment') {
+        await tx.comment.update({
+          where: { id: contentId },
+          data: { isRemoved: true },
+        });
+      }
 
-    // Log the moderation action using actual ModerationLog schema fields
-    const targetField = contentType === 'post' ? 'targetPostId'
-      : contentType === 'comment' ? 'targetCommentId'
-      : contentType === 'reel' ? 'targetPostId' // reels use targetPostId as closest match
-      : 'targetPostId';
+      const targetField = contentType === 'post' ? 'targetPostId'
+        : contentType === 'comment' ? 'targetCommentId'
+        : contentType === 'reel' ? 'targetPostId'
+        : 'targetPostId';
 
-    await this.prisma.moderationLog.create({
-      data: {
-        moderatorId: 'system', // System auto-moderation
-        [targetField]: contentId,
-        action: 'CONTENT_REMOVED',
-        reason,
-        explanation: `Auto-removed: ${flags.join(', ')}`,
-      },
+      await tx.moderationLog.create({
+        data: {
+          moderatorId: 'system',
+          [targetField]: contentId,
+          action: 'CONTENT_REMOVED',
+          reason,
+          explanation: `Auto-removed: ${flags.join(', ')}`,
+        },
+      });
     });
   }
 

@@ -158,7 +158,9 @@ export class ReelsService {
 
     // Content moderation (if caption provided)
     if (reel.caption) {
-      this.queueService.addModerationJob({ content: reel.caption, contentType: 'reel', contentId: reel.id }).catch(() => {});
+      this.queueService.addModerationJob({ content: reel.caption, contentType: 'reel', contentId: reel.id }).catch((err: unknown) => {
+        this.logger.error(`Moderation queue failed for reel ${reel.id}`, err instanceof Error ? err.message : err);
+      });
     }
 
     // Image moderation on thumbnail (async, non-blocking)
@@ -174,7 +176,9 @@ export class ReelsService {
       indexName: 'reels',
       documentId: reel.id,
       document: { id: reel.id, description: reel.caption, userId, hashtags: reel.hashtags },
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      this.logger.error(`Search indexing failed for reel ${reel.id}`, err instanceof Error ? err.message : err);
+    });
 
     return {
       ...reel,

@@ -99,7 +99,7 @@ export class PushService {
         await this.handlePushResponse(batch, tickets);
         allTickets.push(...tickets);
       } catch (error) {
-        this.logger.error(`Failed to send push batch: ${error.message}`, error.stack);
+        this.logger.error(`Failed to send push batch: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
       }
     }
     return allTickets;
@@ -137,7 +137,7 @@ export class PushService {
       });
       this.logger.log(`Deactivated ${tokens.length} invalid device tokens`);
     } catch (error) {
-      this.logger.error(`Failed to deactivate tokens: ${error.message}`, error.stack);
+      this.logger.error(`Failed to deactivate tokens: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
     }
   }
 

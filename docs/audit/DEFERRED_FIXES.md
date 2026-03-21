@@ -391,6 +391,27 @@ C-06 (promotions DTOs validated), C-07 (subtitles @IsUrl/@MaxLength), C-08 remai
 - 52 MEDIUM @MaxLength/@ArrayMaxSize items
 - 21 LOW naming/documentation items
 
+## From Audit 17 (Error Handling Patterns) — 53 findings
+### Already fixed in previous files (16):
+F17-04/05 (moderation fail-open, file 10), F17-06 (tip status pending), F17-07/08/09/10/11 (all financial ops already use 'pending' status), F17-12 (SQL injection, file 07), F17-13 (JSON.parse validation, file 10), F17-26 (gift sendGift race, gte guard), F17-27 (unfollowSeries negative, file 08), F17-29 (ModerationLog fields, file 10), F17-34 (admin resolveReport, file 13), F17-35 (privacy export caps removed), F17-37/38 (JSON.parse trust, file 10)
+
+### FIXED directly (24 findings):
+F17-16 (webhook SSRF prevention — URL validation: HTTPS only, block private IPs), F17-17 (cancelSubscription inconsistent state — returns cancel_pending on Stripe failure), F17-18 (attachPaymentMethod try/catch + user-friendly error), F17-19 (listPaymentMethods throws on failure instead of returning []), F17-22 (push service error.message instanceof check), F17-23 (duplicate getAudienceDemographics renamed to getChannelDemographics), F17-25 (createSubscription status 'active'→'pending'), F17-28 (autoRemoveContent comment handling — already fixed), F17-30 (reports .catch(() => {}) → logs error), F17-31 (reels .catch(() => {}) → logs error for moderation + search indexing), F17-32 (webhook test() authorization check — createdById), F17-33 (Meilisearch silent catches → all 4 now log: delete warns, createIndex debug, updateSettings warns), F17-39 (API call timeouts — AbortSignal.timeout(30000) on Claude API in ai.service + content-safety.service, 60s on Stream), F17-40 (stream uploadFromUrl try/catch + timeout), F17-41 (handleInvoicePaid try/catch on stripe.subscriptions.retrieve), F17-44 (auth register try/catch on clerk.users.getUser), F17-47 (Islamic Redis catch blocks — all 16 silent catches now log at debug level), F17-49 (exception filter checks host.getType() for WebSocket), F17-50 (posts JSON.parse cache try/catch with corrupted key cleanup), F17-51 (hashtags counter already has logging), F17-52 (upload deleteFile try/catch + InternalServerErrorException), F17-53 (autoRemoveContent now atomic — $transaction wraps content removal + audit log)
+
+### Deferred — dead code or architecture:
+- [17] F17-01/02/03/36 stripe-connect.service.ts — Dead code (not registered in any module). All findings tracked in file 02 scope — NOTED
+- [17] F17-24 Dual balance systems — Architecture decision, tracked in file 02 (C-02) — NOTED
+- [17] F17-42 Redis subscription mapping 30-day TTL — Architecture pattern, payments scope — OPEN
+- [17] F17-43 Webhook handlers silent return on missing mapping — Architecture, payments scope — OPEN
+
+### NOTED (acceptable/by-design):
+- [17] F17-14/15 SSRF via imageUrl/audioUrl — URLs come from R2 storage (not user-controlled in production), noted in file 10
+- [17] F17-20 Dev mode stack traces — Already correctly gated behind NODE_ENV=production check
+- [17] F17-21 Stripe empty string key — Already has startup warning log
+- [17] F17-45 Two-factor validate returns true when 2FA not enabled — By design (no 2FA required)
+- [17] F17-46 Gamification non-atomic level update — Deferred in file 08 (F21)
+- [17] F17-48 Transform interceptor null data — Correct behavior (wraps in { success: true, data: null })
+
 ---
 
 ## Summary

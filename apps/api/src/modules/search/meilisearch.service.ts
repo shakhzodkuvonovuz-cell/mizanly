@@ -142,8 +142,8 @@ export class MeilisearchService implements OnModuleInit {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${this.apiKey}` },
       });
-    } catch {
-      // Ignore delete failures
+    } catch (error) {
+      this.logger.warn(`Meilisearch delete failed for ${indexName}/${documentId}`, error instanceof Error ? error.message : error);
     }
   }
 
@@ -157,8 +157,8 @@ export class MeilisearchService implements OnModuleInit {
         },
         body: JSON.stringify({ uid: name, primaryKey: 'id' }),
       });
-    } catch {
-      // Index may already exist
+    } catch (error) {
+      this.logger.debug(`Meilisearch createIndex ${name} (may already exist)`, error instanceof Error ? error.message : error);
     }
   }
 
@@ -172,8 +172,8 @@ export class MeilisearchService implements OnModuleInit {
         },
         body: JSON.stringify(settings),
       });
-    } catch {
-      // Settings update failure is non-fatal
+    } catch (error) {
+      this.logger.warn(`Meilisearch updateSettings failed for ${indexName}`, error instanceof Error ? error.message : error);
     }
   }
 }

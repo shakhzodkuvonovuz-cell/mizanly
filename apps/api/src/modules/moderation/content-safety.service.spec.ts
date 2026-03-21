@@ -36,6 +36,13 @@ describe('ContentSafetyService', () => {
             post: { findUnique: jest.fn(), update: jest.fn() },
             message: { findUnique: jest.fn().mockResolvedValue({ id: 'msg-1', forwardCount: 3 }) },
             blockedKeyword: { findMany: jest.fn().mockResolvedValue([]) },
+            $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<void>) => fn({
+              post: { update: jest.fn() },
+              reel: { update: jest.fn() },
+              thread: { update: jest.fn() },
+              comment: { update: jest.fn() },
+              moderationLog: { create: jest.fn().mockResolvedValue({ id: 'log-1' }) },
+            })),
           },
         },
       ],
@@ -136,21 +143,30 @@ describe('ContentSafetyService', () => {
   });
 
   describe('autoRemoveContent', () => {
-    it('should mark post as removed', async () => {
-      prisma.post.update.mockResolvedValue({ id: 'post-1', isRemoved: true });
+    it('should mark post as removed via transaction', async () => {
+      const txPost = { update: jest.fn() };
+      const txLog = { create: jest.fn().mockResolvedValue({ id: 'log-1' }) };
+      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) =>
+        fn({ post: txPost, reel: { update: jest.fn() }, thread: { update: jest.fn() }, comment: { update: jest.fn() }, moderationLog: txLog }),
+      );
       await service.autoRemoveContent('post-1', 'post', 'NSFW content detected', ['nudity']);
-      expect(prisma.post.update).toHaveBeenCalledWith(
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(txPost.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'post-1' },
           data: { isRemoved: true },
-        })
+        }),
       );
     });
 
-    it('should log moderation action', async () => {
-      prisma.post.update.mockResolvedValue({ id: 'post-1', isRemoved: true });
+    it('should log moderation action via transaction', async () => {
+      const txPost = { update: jest.fn() };
+      const txLog = { create: jest.fn().mockResolvedValue({ id: 'log-1' }) };
+      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) =>
+        fn({ post: txPost, reel: { update: jest.fn() }, thread: { update: jest.fn() }, comment: { update: jest.fn() }, moderationLog: txLog }),
+      );
       await service.autoRemoveContent('post-1', 'post', 'NSFW content', ['nudity']);
-      expect(prisma.moderationLog.create).toHaveBeenCalled();
+      expect(txLog.create).toHaveBeenCalled();
     });
   });
 

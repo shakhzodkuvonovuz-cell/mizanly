@@ -27,7 +27,13 @@ export class AuthService {
 
   async register(clerkId: string, dto: RegisterDto) {
     // Fetch email from Clerk
-    const clerkUser = await this.clerk.users.getUser(clerkId);
+    let clerkUser;
+    try {
+      clerkUser = await this.clerk.users.getUser(clerkId);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new BadRequestException(`Failed to verify account: ${msg}`);
+    }
     const email = clerkUser.emailAddresses[0]?.emailAddress;
     if (!email) throw new BadRequestException('No email address found in Clerk account');
 

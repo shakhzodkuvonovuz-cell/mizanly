@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -121,7 +121,13 @@ export class UploadService {
 
   async deleteFile(key: string) {
     const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key });
-    await this.s3.send(command);
+    try {
+      await this.s3.send(command);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to delete file ${key}: ${msg}`);
+      throw new InternalServerErrorException('Failed to delete file');
+    }
     return { deleted: true, key };
   }
 

@@ -250,9 +250,9 @@ export class CreatorService {
     };
   }
 
-  // ── Audience Demographics ─────────────────────────
+  // ── Channel Audience Demographics ─────────────────────────
 
-  async getAudienceDemographics(channelId: string) {
+  async getChannelDemographics(channelId: string) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     const [countries, ageRanges, genders, sources] = await Promise.all([

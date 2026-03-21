@@ -173,7 +173,7 @@ describe('WebhooksService', () => {
       const originalFetch = global.fetch;
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
 
-      prisma.webhook.findUnique.mockResolvedValue({ id: 'wh-1', url: 'https://example.com/hook', secret: 'sec' });
+      prisma.webhook.findUnique.mockResolvedValue({ id: 'wh-1', url: 'https://example.com/hook', secret: 'sec', createdById: 'u1' });
       const result = await service.test('wh-1', 'u1');
       expect(result.success).toBe(true);
 

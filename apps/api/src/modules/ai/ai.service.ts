@@ -65,6 +65,7 @@ export class AiService {
           system: systemPrompt,
           messages: [{ role: 'user', content: prompt }],
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) {

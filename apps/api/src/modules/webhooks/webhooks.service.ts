@@ -10,7 +10,26 @@ export class WebhooksService {
 
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Validate webhook URL: HTTPS only, no private/internal IPs
+   */
+  private validateWebhookUrl(url: string): void {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') {
+        throw new Error('Only HTTPS URLs are allowed');
+      }
+      const blockedPatterns = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
+      if (blockedPatterns.some(p => parsed.hostname.includes(p))) {
+        throw new Error('Internal URLs are not allowed');
+      }
+    } catch (err) {
+      throw new NotFoundException(`Invalid webhook URL: ${err instanceof Error ? err.message : 'malformed URL'}`);
+    }
+  }
+
   async create(userId: string, data: { circleId: string; name: string; url: string; events: string[] }) {
+    this.validateWebhookUrl(data.url);
     const secret = randomBytes(32).toString('hex');
     return this.prisma.webhook.create({
       data: {
@@ -42,6 +61,8 @@ export class WebhooksService {
   async test(webhookId: string, userId: string) {
     const webhook = await this.prisma.webhook.findUnique({ where: { id: webhookId } });
     if (!webhook || !webhook.url) throw new NotFoundException('Webhook not found');
+    // Authorization: only the webhook creator can trigger test deliveries
+    if (webhook.createdById !== userId) throw new NotFoundException('Webhook not found');
 
     const payload = { event: 'test', data: { message: 'Webhook test from Mizanly' }, timestamp: new Date().toISOString() };
     return this.deliver(webhook.url, webhook.secret ?? '', payload);
@@ -52,6 +73,7 @@ export class WebhooksService {
    * Retries 3 times with exponential backoff on failure.
    */
   async deliver(url: string, secret: string, payload: Record<string, unknown>): Promise<{ success: boolean; statusCode?: number }> {
+    this.validateWebhookUrl(url);
     const body = JSON.stringify(payload);
     const signature = createHmac('sha256', secret).update(body).digest('hex');
 

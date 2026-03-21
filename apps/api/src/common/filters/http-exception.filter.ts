@@ -14,6 +14,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
+    // Skip HTTP handling for WebSocket context — let WS handle its own errors
+    if (host.getType() === 'ws') {
+      this.logger.error('WebSocket exception', exception instanceof Error ? exception.stack : String(exception));
+      return;
+    }
+
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();

@@ -71,14 +71,22 @@ export class StreamService {
       throw new BadRequestException('Invalid video URL');
     }
 
-    const response = await fetch(`${this.baseUrl}/copy`, {
-      method: 'POST',
-      headers: this.headers(),
-      body: JSON.stringify({
-        url: r2PublicUrl,
-        meta: { name: meta.title, creator: meta.creatorId },
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}/copy`, {
+        method: 'POST',
+        headers: this.headers(),
+        body: JSON.stringify({
+          url: r2PublicUrl,
+          meta: { name: meta.title, creator: meta.creatorId },
+        }),
+        signal: AbortSignal.timeout(60000),
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Cloudflare Stream upload network error: ${msg}`);
+      throw new InternalServerErrorException('Video upload service unavailable');
+    }
 
     const data: CfStreamResponse = await response.json();
     if (!response.ok || !data.success) {

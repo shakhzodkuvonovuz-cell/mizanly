@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { QueueService } from '../../common/queue/queue.service';
@@ -12,6 +13,8 @@ import { Prisma, ReportStatus, ModerationAction, UserRole } from '@prisma/client
 
 @Injectable()
 export class ReportsService {
+  private readonly logger = new Logger(ReportsService.name);
+
   constructor(
     private prisma: PrismaService,
     private queueService: QueueService,
@@ -85,7 +88,9 @@ export class ReportsService {
       if (dto.reportedPostId) {
         const post = await this.prisma.post.findUnique({ where: { id: dto.reportedPostId }, select: { content: true } });
         if (post?.content) {
-          this.queueService.addModerationJob({ content: post.content, contentType: 'post', contentId: dto.reportedPostId }).catch(() => {});
+          this.queueService.addModerationJob({ content: post.content, contentType: 'post', contentId: dto.reportedPostId }).catch((err: unknown) => {
+            this.logger.error(`Moderation queue failed for report on post ${dto.reportedPostId}`, err instanceof Error ? err.message : err);
+          });
         }
       }
 

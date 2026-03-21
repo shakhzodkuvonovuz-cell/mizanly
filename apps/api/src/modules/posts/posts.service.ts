@@ -90,7 +90,14 @@ export class PostsService {
     if (type === 'foryou') {
       const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
       const cached = await this.redis.get(cacheKey);
-      if (cached) return JSON.parse(cached);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          // Corrupted cache — delete and fall through to DB
+          await this.redis.del(cacheKey);
+        }
+      }
     }
 
     if (type === 'foryou') {

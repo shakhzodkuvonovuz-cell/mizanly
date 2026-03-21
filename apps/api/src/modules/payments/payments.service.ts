@@ -235,7 +235,7 @@ export class PaymentsService {
       dbSubscription = await this.prisma.membershipSubscription.update({
         where: { id: existing.id },
         data: {
-          status: 'active',
+          status: 'pending',
           startDate: new Date(),
           endDate: null,
         },
@@ -245,7 +245,7 @@ export class PaymentsService {
         data: {
           tierId,
           userId,
-          status: 'active',
+          status: 'pending',
           startDate: new Date(),
           endDate: null,
         },
@@ -300,11 +300,16 @@ export class PaymentsService {
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
         this.logger.error(`Stripe subscription cancel failed: ${msg}`);
-        // Continue with local cancellation even if Stripe fails
+        // Mark as cancel_pending — don't complete local cancel until Stripe confirms
+        await this.prisma.membershipSubscription.update({
+          where: { id: internalId },
+          data: { status: 'cancel_pending' },
+        });
+        return { message: 'Cancellation pending — Stripe confirmation required' };
       }
     }
 
-    // Update our record
+    // Update our record only after Stripe confirms (or no Stripe subscription)
     await this.prisma.membershipSubscription.update({
       where: { id: internalId },
       data: { status: 'cancelled', endDate: new Date() },
@@ -338,13 +343,19 @@ export class PaymentsService {
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
       this.logger.error(`Stripe list payment methods failed: ${msg}`);
-      return [];
+      throw new BadRequestException('Failed to retrieve payment methods');
     }
   }
 
   async attachPaymentMethod(userId: string, paymentMethodId: string) {
     const customerId = await this.getOrCreateStripeCustomer(userId);
-    await this.stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+    try {
+      await this.stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Stripe attach payment method failed: ${msg}`);
+      throw new BadRequestException('Failed to attach payment method');
+    }
     return { success: true };
   }
 
@@ -385,14 +396,24 @@ export class PaymentsService {
     }
 
     // Update subscription end date (extend by one period)
-    const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
-    const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
-    const endDate = periodEnd ? new Date(periodEnd * 1000) : new Date();
+    try {
+      const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
+      const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
+      const endDate = periodEnd ? new Date(periodEnd * 1000) : new Date();
 
-    await this.prisma.membershipSubscription.update({
-      where: { id: dbSubscriptionId },
-      data: { endDate },
-    });
+      await this.prisma.membershipSubscription.update({
+        where: { id: dbSubscriptionId },
+        data: { status: 'active', endDate },
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to retrieve Stripe subscription ${subscriptionId}: ${msg}`);
+      // Still mark as active with current date — better than leaving stale
+      await this.prisma.membershipSubscription.update({
+        where: { id: dbSubscriptionId },
+        data: { status: 'active', endDate: new Date() },
+      });
+    }
   }
 
   async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
