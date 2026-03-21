@@ -139,6 +139,22 @@ export class AdminService {
       await this.banUser(adminId, report.reportedUserId, note || 'Banned via report resolution');
     }
 
+    // Create moderation log for audit trail
+    if (actionTaken !== 'NONE') {
+      await this.prisma.moderationLog.create({
+        data: {
+          moderatorId: adminId,
+          action: actionTaken,
+          targetUserId: report.reportedUserId,
+          targetPostId: report.reportedPostId,
+          targetCommentId: report.reportedCommentId,
+          reportId,
+          reason: note || `Report resolved: ${action}`,
+          explanation: `Admin resolved report ${reportId} with action: ${action}`,
+        },
+      }).catch(() => {}); // Don't fail the resolution if log fails
+    }
+
     return this.prisma.report.update({
       where: { id: reportId },
       data: {

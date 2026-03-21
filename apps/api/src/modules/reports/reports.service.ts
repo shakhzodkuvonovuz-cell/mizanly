@@ -169,7 +169,8 @@ export class ReportsService {
       throw new BadRequestException('Report already resolved or dismissed');
     }
 
-    const [updated] = await this.prisma.$transaction([
+    // Build transaction operations
+    const ops: any[] = [
       this.prisma.report.update({
         where: { id: reportId },
         data: {
@@ -192,7 +193,35 @@ export class ReportsService {
           explanation: `Resolved report ${reportId} with action: ${actionTaken}`,
         },
       }),
-    ]);
+    ];
+
+    // Actually remove content when action is CONTENT_REMOVED
+    if (actionTaken === ModerationAction.CONTENT_REMOVED) {
+      if (report.reportedPostId) {
+        ops.push(this.prisma.post.update({ where: { id: report.reportedPostId }, data: { isRemoved: true } }));
+      }
+      if (report.reportedCommentId) {
+        ops.push(this.prisma.comment.update({ where: { id: report.reportedCommentId }, data: { isRemoved: true } }));
+      }
+    }
+
+    // Actually ban user when action is PERMANENT_BAN or TEMP_BAN
+    if ((actionTaken === ModerationAction.PERMANENT_BAN || actionTaken === ModerationAction.TEMP_BAN) && report.reportedUserId) {
+      ops.push(this.prisma.user.update({
+        where: { id: report.reportedUserId },
+        data: { isBanned: true, banReason: `Report ${reportId}: ${report.reason}` },
+      }));
+    }
+
+    // Mute user when action is TEMP_MUTE
+    if (actionTaken === ModerationAction.TEMP_MUTE && report.reportedUserId) {
+      ops.push(this.prisma.user.update({
+        where: { id: report.reportedUserId },
+        data: { isMuted: true },
+      }));
+    }
+
+    const [updated] = await this.prisma.$transaction(ops);
     return updated;
   }
 

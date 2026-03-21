@@ -97,4 +97,23 @@ export class ModerationController {
   ) {
     return this.moderationService.submitAppeal(userId, dto);
   }
+
+  @Get('pending-appeals')
+  @ApiOperation({ summary: 'Get pending appeals (admin only)' })
+  getPendingAppeals(
+    @CurrentUser('id') adminId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.moderationService.getPendingAppeals(adminId, cursor);
+  }
+
+  @Patch('appeal/:logId/resolve')
+  @ApiOperation({ summary: 'Resolve an appeal (admin only)' })
+  resolveAppeal(
+    @CurrentUser('id') adminId: string,
+    @Param('logId') logId: string,
+    @Body() body: { accepted: boolean; result: string },
+  ) {
+    return this.moderationService.resolveAppeal(adminId, logId, body.accepted, body.result);
+  }
 }

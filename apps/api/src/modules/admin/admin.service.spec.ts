@@ -39,6 +39,12 @@ describe('AdminService', () => {
             video: {
               count: jest.fn(),
             },
+            moderationLog: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+            comment: {
+              update: jest.fn().mockResolvedValue({}),
+            },
           },
         },
       ],

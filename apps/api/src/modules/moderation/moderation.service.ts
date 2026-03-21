@@ -48,6 +48,7 @@ export class ModerationService {
     if (result.flagged) {
       await this.flagContent({
         reporterId: userId,
+        reportedUserId: userId,
         text: dto.text,
         context: dto.context,
         categories: result.categories,
@@ -139,7 +140,9 @@ export class ModerationService {
 
     await this.prisma.report.create({
       data: {
-        reporterId: data.reporterId,
+        // For auto-flagged content, the reporter is the system (use the content creator as reporter
+        // since a system user may not exist; the autoFlagged flag in description distinguishes it)
+        reporterId: data.autoFlagged ? (data.reportedUserId || data.reporterId) : data.reporterId,
         reportedUserId: data.reportedUserId,
         reportedPostId: data.reportedPostId,
         reportedCommentId: data.reportedCommentId,
@@ -361,6 +364,53 @@ export class ModerationService {
         appealText,
         appealResolved: false,
       },
+    });
+  }
+
+  /** Get pending appeals for admin review */
+  async getPendingAppeals(adminId: string, cursor?: string) {
+    await this.verifyAdminOrModerator(adminId);
+
+    const where: Record<string, unknown> = { isAppealed: true, appealResolved: false };
+    if (cursor) where.id = { lt: cursor };
+
+    const appeals = await this.prisma.moderationLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 21,
+      include: {
+        targetUser: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+    });
+
+    const hasMore = appeals.length > 20;
+    const data = hasMore ? appeals.slice(0, 20) : appeals;
+    return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
+  }
+
+  /** Resolve an appeal — accept (reverse action) or reject */
+  async resolveAppeal(adminId: string, logId: string, accepted: boolean, result: string) {
+    await this.verifyAdminOrModerator(adminId);
+
+    const log = await this.prisma.moderationLog.findUnique({ where: { id: logId } });
+    if (!log) throw new NotFoundException('Moderation log not found');
+    if (!log.isAppealed) throw new BadRequestException('No appeal submitted for this action');
+    if (log.appealResolved) throw new BadRequestException('Appeal already resolved');
+
+    // If accepted, reverse the action (un-remove content, un-ban user)
+    if (accepted) {
+      if (log.action === 'CONTENT_REMOVED') {
+        if (log.targetPostId) await this.prisma.post.update({ where: { id: log.targetPostId }, data: { isRemoved: false } }).catch(() => {});
+        if (log.targetCommentId) await this.prisma.comment.update({ where: { id: log.targetCommentId }, data: { isRemoved: false } }).catch(() => {});
+      }
+      if ((log.action === 'PERMANENT_BAN' || log.action === 'TEMP_BAN') && log.targetUserId) {
+        await this.prisma.user.update({ where: { id: log.targetUserId }, data: { isBanned: false, banExpiresAt: null } }).catch(() => {});
+      }
+    }
+
+    return this.prisma.moderationLog.update({
+      where: { id: logId },
+      data: { appealResolved: true, appealResult: result },
     });
   }
 

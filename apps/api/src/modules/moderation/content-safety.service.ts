@@ -213,6 +213,11 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
         where: { id: contentId },
         data: { isRemoved: true },
       });
+    } else if (contentType === 'comment') {
+      await this.prisma.comment.update({
+        where: { id: contentId },
+        data: { isRemoved: true },
+      });
     }
 
     // Log the moderation action using actual ModerationLog schema fields

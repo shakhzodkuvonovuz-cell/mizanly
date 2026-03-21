@@ -11,6 +11,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
@@ -100,6 +101,10 @@ export class AdminController {
   @ApiOperation({ summary: 'Set a feature flag (admin only)' })
   async setFlag(@CurrentUser('id') adminId: string, @Param('name') name: string, @Body('value') value: string) {
     await this.adminService.verifyAdmin(adminId);
+    // Validate flag value format
+    if (!value || !/^(true|false|[0-9]{1,3})$/.test(value)) {
+      throw new BadRequestException('Flag value must be "true", "false", or a number 0-100');
+    }
     return this.featureFlags.setFlag(name, value);
   }
 
