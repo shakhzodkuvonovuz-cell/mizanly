@@ -1221,7 +1221,7 @@ model ChannelMember {
 model BroadcastMessage {
   id             String           @id @default(cuid())
   channelId      String
-  senderId       String
+  senderId       String?
   content        String?          @db.VarChar(5000)
   messageType    MessageType      @default(TEXT)
   mediaUrl       String?
@@ -1232,7 +1232,7 @@ model BroadcastMessage {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   channel        BroadcastChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  sender         User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sender         User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
 
   @@index([channelId, createdAt(sort: Desc)])
   @@map("broadcast_messages")
@@ -1429,7 +1429,7 @@ model Notification {
 
 model Report {
   id                    String           @id @default(cuid())
-  reporterId            String
+  reporterId            String?
   reportedUserId        String?
   reportedPostId        String?
   reportedPost          Post?            @relation("reportedPosts", fields: [reportedPostId], references: [id], onDelete: SetNull)
@@ -1448,8 +1448,8 @@ model Report {
   explanationToReporter String?
   explanationToReported String?
   createdAt             DateTime         @default(now())
-  reporter              User             @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  reportedUser          User?            @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reporter              User?            @relation("Reporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  reportedUser          User?            @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
   moderationLogs        ModerationLog[]
 
   @@index([status, createdAt])
@@ -1592,7 +1592,6 @@ model Poll {
   createdAt     DateTime     @default(now())
   options       PollOption[]
 
-  @@index([threadId])
   @@map("polls")
 }
 
@@ -1818,6 +1817,8 @@ model CallSession {
   updatedAt         DateTime          @updatedAt
   participants      CallParticipant[]
 
+  @@index([status])
+  @@index([createdAt])
   @@map("call_sessions")
 }
 
@@ -2049,6 +2050,7 @@ model ChannelPost {
   updatedAt     DateTime @updatedAt
 
   @@index([channelId, createdAt(sort: Desc)])
+  @@index([userId])
   @@map("channel_posts")
 }
 
@@ -2117,6 +2119,7 @@ model Event {
 
   @@index([userId])
   @@index([startDate(sort: Desc)])
+  @@index([communityId])
   @@map("events")
 }
 
@@ -2269,6 +2272,7 @@ model StoryChainEntry {
 
   @@unique([chainId, userId])
   @@index([chainId])
+  @@index([storyId])
   @@map("story_chain_entries")
 }
 
@@ -2325,7 +2329,6 @@ model EncryptionKey {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@index([userId])
   @@map("encryption_keys")
 }
 
@@ -3087,7 +3090,7 @@ model Product {
   isMuslimOwned Boolean          @default(false)
   stock         Int              @default(0)
   status        String           @default("active") // active | sold_out | draft | removed
-  rating        Float            @default(0)
+  rating        Decimal          @default(0) @db.Decimal(3, 2)
   reviewCount   Int              @default(0)
   salesCount    Int              @default(0)
   tags          String[]
@@ -3168,7 +3171,7 @@ model HalalBusiness {
   coverUrl      String?
   isVerified    Boolean          @default(false)
   isMuslimOwned Boolean          @default(true)
-  rating        Float            @default(0)
+  rating        Decimal          @default(0) @db.Decimal(3, 2)
   reviewCount   Int              @default(0)
   halalCertUrl  String?
   openingHours  String?          @db.VarChar(500) // JSON
@@ -3433,6 +3436,7 @@ model VoicePost {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([createdAt])
   @@map("voice_posts")
 }
 
@@ -3451,6 +3455,7 @@ model WatchParty {
 
   @@index([hostId])
   @@index([videoId])
+  @@index([isActive])
   @@map("watch_parties")
 }
 
@@ -3466,6 +3471,7 @@ model SharedCollection {
   creator     User     @relation("CollectionCreator", fields: [createdById], references: [id], onDelete: Cascade)
 
   @@index([createdById])
+  @@index([isPublic])
   @@map("shared_collections")
 }
 
@@ -3534,6 +3540,7 @@ model AdminLog {
   createdAt DateTime     @default(now())
 
   @@index([groupId, createdAt(sort: Desc)])
+  @@index([adminId])
   @@map("admin_logs")
 }
 
@@ -3565,6 +3572,7 @@ model CustomEmoji {
   createdAt  DateTime        @default(now())
   pack       CustomEmojiPack @relation(fields: [packId], references: [id], onDelete: Cascade)
 
+  @@unique([packId, shortcode])
   @@index([packId])
   @@map("custom_emojis")
 }
@@ -3618,6 +3626,7 @@ model ForumReply {
   author     User        @relation("ForumReplyAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([threadId, createdAt])
+  @@index([authorId])
   @@map("forum_replies")
 }
 
@@ -3936,6 +3945,7 @@ model CommunityNoteRating {
   createdAt DateTime      @default(now())
 
   @@unique([noteId, userId])
+  @@index([noteId])
   @@map("community_note_ratings")
 }
 
@@ -3956,6 +3966,7 @@ model CollabInvite {
 
   @@unique([postId, inviteeId])
   @@index([inviteeId, status])
+  @@index([inviterId])
   @@map("collab_invites")
 }
 
@@ -4028,7 +4039,7 @@ model HalalRestaurant {
   phone          String?
   website        String?
   imageUrl       String?
-  averageRating  Float    @default(0)
+  averageRating  Decimal  @default(0) @db.Decimal(3, 2)
   reviewCount    Int      @default(0)
   verifyVotes    Int      @default(0)
   addedById      String?
