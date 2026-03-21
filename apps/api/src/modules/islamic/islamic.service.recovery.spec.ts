@@ -7,8 +7,13 @@ jest.mock('./data/hadiths.json', () => [
   { id: 1, arabic: 'حديث', english: 'Hadith', source: 'Bukhari', narrator: 'Abu Hurairah', chapter: 'Faith' },
 ], { virtual: true });
 
+const originalFetch = global.fetch;
 const mockFetch = jest.fn();
 global.fetch = mockFetch as any;
+
+afterAll(() => {
+  global.fetch = originalFetch;
+});
 
 describe('IslamicService — error recovery (Task 71)', () => {
   let service: IslamicService;

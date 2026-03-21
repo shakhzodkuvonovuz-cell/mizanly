@@ -11,8 +11,13 @@ jest.mock('./data/hadiths.json', () => [
 ], { virtual: true });
 
 // Mock fetch to prevent real API calls
+const originalFetch = global.fetch;
 const mockFetch = jest.fn().mockRejectedValue(new Error('Network disabled in tests'));
 global.fetch = mockFetch as any;
+
+afterAll(() => {
+  global.fetch = originalFetch;
+});
 
 describe('IslamicService — edge cases', () => {
   let service: IslamicService;
