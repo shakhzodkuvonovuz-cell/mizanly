@@ -130,7 +130,7 @@ interface AppState {
   setParentalRestrictions: (r: ParentalRestrictions | null) => void;
 
   // Story viewer (avoids JSON.stringify in route params)
-  storyViewerData: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null;
+  storyViewerData: { groups: Array<{ userId: string; username: string; avatarUrl: string | null; stories: Array<{ id: string; mediaUrl: string; mediaType: string; createdAt: string }> }>; startIndex: number; isOwn?: boolean } | null;
   setStoryViewerData: (data: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null) => void;
 
   // Islamic calendar themes
@@ -343,6 +343,12 @@ export const useStore = create<AppState>()(
         ttsTitle: null,
         ttsPlaying: false,
         ttsSpeed: 1,
+        reducedMotion: false,
+        highContrast: false,
+        followedHashtags: [],
+        screenTimeSessionStart: null,
+        pipVideoId: null,
+        isPiPActive: false,
       }),
     }),
     {
@@ -362,6 +368,7 @@ export const useStore = create<AppState>()(
         autoPlaySetting: state.autoPlaySetting,
         ambientModeEnabled: state.ambientModeEnabled,
         islamicThemeEnabled: state.islamicThemeEnabled,
+        feedDismissedIds: state.feedDismissedIds,
       }),
     }
   )

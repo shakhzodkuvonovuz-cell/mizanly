@@ -169,7 +169,9 @@ class ApiClient {
     try {
       token = this.getToken ? await this.getToken() : null;
     } catch (e) {
-      console.error('[API] Token getter failed:', e);
+      console.error('[API] Token getter failed — request will proceed without auth:', e);
+      // Don't throw here — unauthenticated endpoints should still work.
+      // Protected endpoints will return 401 which is now properly typed as ApiError.isAuth
     }
 
     // Add timeout via AbortController

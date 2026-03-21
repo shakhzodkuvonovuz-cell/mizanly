@@ -25,11 +25,21 @@ interface ContentData {
   bestTimes: { day: string; hour: string; engagement: number }[];
 }
 
+interface InsightsData {
+  likes: number; comments: number; shares: number; saves?: number;
+  views: number; createdAt: string; engagementRate: string;
+}
+
+interface GrowthData {
+  daily: Record<string, number>;
+  totalNewFollowers: number;
+}
+
 export const creatorApi = {
   getPostInsights: (postId: string) =>
-    api.get<Record<string, unknown>>(`/creator/insights/post/${postId}`),
+    api.get<InsightsData>(`/creator/insights/post/${postId}`),
   getReelInsights: (reelId: string) =>
-    api.get<Record<string, unknown>>(`/creator/insights/reel/${reelId}`),
+    api.get<InsightsData>(`/creator/insights/reel/${reelId}`),
   getOverview: () =>
     api.get<OverviewData>('/creator/analytics/overview'),
   getAudience: () =>
@@ -37,7 +47,7 @@ export const creatorApi = {
   getContent: () =>
     api.get<ContentData>('/creator/analytics/content'),
   getGrowth: () =>
-    api.get<Record<string, unknown>>('/creator/analytics/growth'),
+    api.get<GrowthData>('/creator/analytics/growth'),
   getRevenue: () =>
     api.get<RevenueData>('/creator/analytics/revenue'),
 };

@@ -15,6 +15,8 @@ export const twoFactorApi = {
 
   validate: (data: ValidateTwoFactorDto) => api.post<{ valid: boolean }>('/two-factor/validate', data),
 
+  // Uses DELETE with body — backend expects @Delete with @Body. Works on most infra;
+  // some proxies may strip DELETE bodies. If issues arise, change both client+server to POST.
   disable: (data: DisableTwoFactorDto) => api.delete('/two-factor/disable', data),
 
   status: () => api.get<TwoFactorStatus>('/two-factor/status'),

@@ -525,6 +525,10 @@ F03 (offlineCache dead code — deleted 157 lines), F05 (story query key: create
 ### FIXED in third pass (7 additional):
 F14 (withRetry() utility exported from api.ts — exponential backoff, skips 4xx), F15 (mutation error shows "offline" message for ApiNetworkError), F18 (explicit gcTime: 10min), F23 (qs() deduplicated: exported from api.ts, removed from 7 service files), F32 (giftsApi.getHistory paginated return type)
 
-### NOTED (genuinely acceptable):
-- [23] F08 paymentsApi → monetization Stripe wiring — feature integration
-- [23] F16/F21/F22/F26-F38 — minor patterns, type safety, client-only state
+### FIXED in fourth pass (8 additional):
+F16 (token failure documented, ApiError.isAuth handles 401), F22 (feedDismissedIds persisted to AsyncStorage), F27 (push importance cast fallback to DEFAULT), F28 (logout resets reducedMotion/highContrast/followedHashtags/screenTime/PiP), F29 (storyViewerData properly typed), F31 (creatorApi InsightsData/GrowthData types), F35 (encryptionApi getBulkKeys: GET→POST avoids URL length limits)
+
+### NOTED (3 remaining):
+- [23] F08 paymentsApi — Stripe payment flow wiring is a feature build, not a fix
+- [23] F34 Dead state values — screenTime for future wellbeing, PiP used by usePiP hook
+- [23] F36 DELETE with body — documented risk, works on current infrastructure

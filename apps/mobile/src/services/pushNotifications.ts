@@ -137,7 +137,7 @@ export async function configurePushChannels(): Promise<void> {
     for (const channel of channels) {
       await Notifications.setNotificationChannelAsync(channel.id, {
         name: channel.name,
-        importance: Notifications.AndroidImportance[channel.importance.toUpperCase() as keyof typeof Notifications.AndroidImportance],
+        importance: Notifications.AndroidImportance[channel.importance.toUpperCase() as keyof typeof Notifications.AndroidImportance] ?? Notifications.AndroidImportance.DEFAULT,
         vibrationPattern: channel.vibrationPattern ?? undefined,
         sound: channel.sound ? 'default' : null,
         enableLights: channel.lights ?? false,
