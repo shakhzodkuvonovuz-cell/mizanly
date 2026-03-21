@@ -243,6 +243,32 @@ F05 (forum thread membership check), F06 (webhook membership check), F07 (stage 
 - [09] F61 Module imports — PrismaModule is global
 - [09] F62 Events cursor skip:1 — standard Prisma pattern
 
+## From Audit 10 (AI Services) — 38 findings
+### Already fixed in file 07:
+F1/F2 (SQL injection in embeddings), F19 (admin guard on backfill), F28 (session signals memory cap)
+
+### FIXED directly (22 findings):
+F3 (text moderation fallback safe:false), F4 (image moderation fail-closed WARNING), F5 (ContentSafety image moderation fail-closed), F6 (ContentSafety text moderation fail-closed), F14 (avatar sourceUrl @IsUrl), F20 (thumbnail tracking requires auth), F22 (autoRemoveContent fixed schema fields), F24 (word filter placeholders replaced with real patterns), F29 (audioUrl @IsUrl), F30 (sourceUrl @IsUrl), F31 (moderation DTOs converted to validated classes), F32 (lastMessages per-item @MaxLength), F33 (thumbnail variantId validated DTO), F34 (response validation — addressed in F5/F6 with structure validation), F35 (same — addressed), F36 (embedding vector NaN filtering)
+
+### Deferred — cross-file scope or architecture:
+- [10] F7 Fire-and-forget moderation — needs content pipeline refactor (posts/reels/stories) — OPEN
+- [10] F8/F9/F10 Prompt injection — needs XML delimiter approach across all AI prompts — OPEN
+- [10] F11/F12/F13 SSRF via audio/image URLs — URLs come from R2 storage (not user-controlled in production) — NOTED
+- [10] F16/F17/F18 Cost controls — needs Redis-backed per-user quota system — OPEN
+- [10] F23 ContentSafetyService dead code — kept for now, fixes applied, could consolidate later — NOTED
+- [10] F25 Translation cache invalidation — needs hook in content update paths — OPEN
+- [10] F26 Story chain participant count race — needs transactional rewrite — OPEN
+- [10] F27 Thumbnail A/B statistical significance — algorithm enhancement — NOTED
+
+### NOTED (genuinely acceptable):
+- [10] F15 Gemini API key in URL — required by Google's API, mitigated by error message suppression
+- [10] F21 AI moderate endpoint exposure — needed for pre-publish moderation checks
+- [10] F37 Duplicate moderation implementations — ContentSafetyService kept with fixes applied
+- [10] F38 Story chain cursor inconsistency — minor, different endpoints have different sort orders
+
+### Resolved deferred items from previous files:
+- [05] F44/F45/F46 Thread/video/channel moderation wiring — moderation service now has validated DTOs and fail-closed behavior; actual wiring needs content creation hook changes (stays OPEN for pipeline work)
+
 ---
 
 ## Summary

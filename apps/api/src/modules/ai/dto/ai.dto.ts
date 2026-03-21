@@ -1,5 +1,5 @@
 import {
-  IsString, IsOptional, IsArray, IsNumber, IsIn,
+  IsString, IsOptional, IsArray, IsNumber, IsIn, IsUrl,
   MaxLength, Min, Max, ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -27,7 +27,7 @@ export class ModerateDto {
 
 export class SmartRepliesDto {
   @ApiProperty() @IsString() @MaxLength(5000) conversationContext: string;
-  @ApiProperty() @IsArray() @IsString({ each: true }) @ArrayMaxSize(20) lastMessages: string[];
+  @ApiProperty() @IsArray() @IsString({ each: true }) @MaxLength(2000, { each: true }) @ArrayMaxSize(20) lastMessages: string[];
 }
 
 export class SummarizeDto {
@@ -41,11 +41,11 @@ export class RouteSpaceDto {
 }
 
 export class GenerateCaptionsDto {
-  @ApiProperty() @IsString() audioUrl: string;
+  @ApiProperty() @IsUrl() audioUrl: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(10) language?: string;
 }
 
 export class GenerateAvatarDto {
-  @ApiProperty() @IsString() sourceUrl: string;
+  @ApiProperty() @IsUrl() sourceUrl: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['default', 'anime', 'cartoon', 'pixel', 'watercolor']) style?: string;
 }

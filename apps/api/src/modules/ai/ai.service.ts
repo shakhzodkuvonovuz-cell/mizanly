@@ -85,7 +85,7 @@ export class AiService {
     if (prompt.includes('caption')) return 'Share your thoughts with the world';
     if (prompt.includes('hashtag')) return JSON.stringify(['mizanly', 'community']);
     if (prompt.includes('translate')) return '[Translation unavailable]';
-    if (prompt.includes('moderate')) return JSON.stringify({ safe: true, flags: [], confidence: 0.5 });
+    if (prompt.includes('moderate')) return JSON.stringify({ safe: false, flags: ['moderation_unavailable'], confidence: 0, category: 'review_required', suggestion: 'Content queued for manual review' });
     if (prompt.includes('summarize')) return 'Summary unavailable';
     if (prompt.includes('reply')) return JSON.stringify([{text:'Thanks!',tone:'friendly'},{text:'I agree',tone:'brief'},{text:'Interesting',tone:'brief'}]);
     return '';
@@ -475,8 +475,8 @@ Only respond with the summary, nothing else.`;
     categories: string[];
   }> {
     if (!this.apiAvailable || !this.apiKey) {
-      this.logger.warn('AI not available for image moderation — defaulting to manual review');
-      return { classification: 'SAFE', reason: 'AI unavailable — queued for manual review', categories: [] };
+      this.logger.warn('AI not available for image moderation — flagging for manual review');
+      return { classification: 'WARNING', reason: 'AI unavailable — flagged for manual review', categories: ['moderation_unavailable'] };
     }
 
     try {
@@ -517,7 +517,7 @@ Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories":
 
       if (!response.ok) {
         this.logger.error(`Image moderation API error: ${response.status}`);
-        return { classification: 'SAFE', reason: 'Moderation check failed — queued for review', categories: [] };
+        return { classification: 'WARNING', reason: 'Moderation API error — flagged for review', categories: ['moderation_error'] };
       }
 
       const data = await response.json();
@@ -526,18 +526,18 @@ Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories":
       // Extract JSON from response (Claude sometimes wraps in markdown)
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        return { classification: 'SAFE', reason: 'Could not parse moderation result', categories: [] };
+        return { classification: 'WARNING', reason: 'Could not parse moderation result', categories: ['parse_error'] };
       }
 
       const result = JSON.parse(jsonMatch[0]);
       return {
-        classification: (['SAFE', 'WARNING', 'BLOCK'].includes(result.classification)) ? result.classification : 'SAFE',
+        classification: (['SAFE', 'WARNING', 'BLOCK'].includes(result.classification)) ? result.classification : 'WARNING',
         reason: result.reason || null,
         categories: Array.isArray(result.categories) ? result.categories : [],
       };
     } catch (error) {
       this.logger.error('Image moderation error', error instanceof Error ? error.message : error);
-      return { classification: 'SAFE', reason: 'Moderation check failed — queued for review', categories: [] };
+      return { classification: 'WARNING', reason: 'Moderation check failed — flagged for review', categories: ['moderation_error'] };
     }
   }
 

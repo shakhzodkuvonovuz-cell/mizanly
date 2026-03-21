@@ -81,9 +81,9 @@ describe('AiService — edge cases', () => {
   });
 
   describe('moderateImage — edge cases', () => {
-    it('should return SAFE classification by default (from mock)', async () => {
+    it('should return WARNING classification on API failure (fail-closed)', async () => {
       const result = await service.moderateImage('https://example.com/image.jpg');
-      expect(result.classification).toBe('SAFE');
+      expect(result.classification).toBe('WARNING');
     });
   });
 

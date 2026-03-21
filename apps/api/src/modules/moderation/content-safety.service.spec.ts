@@ -51,10 +51,11 @@ describe('ContentSafetyService', () => {
   });
 
   describe('moderateText', () => {
-    it('should return safe result for clean content', async () => {
+    it('should return fail-closed result when API unavailable', async () => {
       const result = await service.moderateText('Assalamu alaikum, how are you?');
       expect(result).toHaveProperty('safe');
-      expect(result.safe).toBe(true);
+      // API call fails (no real API in tests) → fail-closed returns safe: false
+      expect(result.safe).toBe(false);
     });
 
     it('should flag content with blocked keywords when configured', async () => {
@@ -71,10 +72,11 @@ describe('ContentSafetyService', () => {
       expect(result.safe).toBe(true);
     });
 
-    it('should handle Arabic text without false positives', async () => {
+    it('should handle Arabic text (fail-closed when API unavailable)', async () => {
       const result = await service.moderateText('بسم الله الرحمن الرحيم');
       expect(result).toHaveProperty('safe');
-      expect(result.safe).toBe(true);
+      // With fail-closed, API failure returns safe: false (not a false positive — just needs API)
+      expect(result.safe).toBe(false);
     });
   });
 
@@ -88,12 +90,11 @@ describe('ContentSafetyService', () => {
       expect(['allow', 'flag', 'remove']).toContain(result.action);
     });
 
-    it('should fallback to allow when API key not configured', async () => {
-      // Service constructor uses config.get('ANTHROPIC_API_KEY') which returns 'test-key'
-      // but the actual API call will fail, so it should fallback
+    it('should fail-closed when API call fails', async () => {
+      // API call will fail (no real API in tests) — fail-closed returns safe: false
       const result = await service.moderateImage('https://example.com/image.jpg');
-      expect(result.safe).toBe(true);
-      expect(result.action).toBe('allow');
+      expect(result.safe).toBe(false);
+      expect(result.action).toBe('flag');
     });
   });
 

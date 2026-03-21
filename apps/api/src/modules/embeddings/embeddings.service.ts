@@ -360,13 +360,15 @@ export class EmbeddingsService {
 
     if (!result.length || !result[0].avg_vector) return null;
 
-    // Parse vector string "[0.1,0.2,...]" to number array
+    // Parse vector string "[0.1,0.2,...]" to number array, filtering NaN values
     const parsed = result[0].avg_vector
       .replace('[', '')
       .replace(']', '')
       .split(',')
-      .map(Number);
+      .map(Number)
+      .map(v => Number.isFinite(v) ? v : 0);
 
+    if (parsed.length === 0) return null;
     return parsed;
   }
 }

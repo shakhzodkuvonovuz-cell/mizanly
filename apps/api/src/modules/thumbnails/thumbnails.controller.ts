@@ -1,10 +1,14 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
-import { IsString, IsArray, IsIn, ArrayMinSize, ArrayMaxSize } from 'class-validator';
+import { IsString, IsArray, IsIn, ArrayMinSize, ArrayMaxSize, MaxLength } from 'class-validator';
 import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { ThumbnailsService } from './thumbnails.service';
+
+class TrackVariantDto {
+  @ApiProperty() @IsString() @MaxLength(100) variantId: string;
+}
 
 class CreateVariantsDto {
   @ApiProperty()
@@ -64,18 +68,18 @@ export class ThumbnailsController {
   }
 
   @Post('impression')
-  @UseGuards(OptionalClerkAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 100 } })
   @ApiOperation({ summary: 'Track impression for a thumbnail variant' })
-  async trackImpression(@Body() body: { variantId: string }) {
+  async trackImpression(@Body() body: TrackVariantDto) {
     return this.thumbnails.trackImpression(body.variantId);
   }
 
   @Post('click')
-  @UseGuards(OptionalClerkAuthGuard)
+  @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 100 } })
   @ApiOperation({ summary: 'Track click for a thumbnail variant' })
-  async trackClick(@Body() body: { variantId: string }) {
+  async trackClick(@Body() body: TrackVariantDto) {
     return this.thumbnails.trackClick(body.variantId);
   }
 }

@@ -9,25 +9,26 @@ import { PrismaService } from '../../config/prisma.service';
 import { Prisma, ReportReason, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 import { checkText, TextCheckResult } from './word-filter';
 import { AiService } from '../ai/ai.service';
+import { IsString, IsOptional, IsIn, IsUrl, MaxLength } from 'class-validator';
 
-export interface CheckTextDto {
-  text: string;
-  context?: 'post' | 'comment' | 'message' | 'profile';
+export class CheckTextDto {
+  @IsString() @MaxLength(10000) text: string;
+  @IsOptional() @IsString() @IsIn(['post', 'comment', 'message', 'profile']) context?: 'post' | 'comment' | 'message' | 'profile';
 }
 
-export interface CheckImageDto {
-  imageUrl: string;
+export class CheckImageDto {
+  @IsUrl() imageUrl: string;
 }
 
-export interface ReviewActionDto {
-  action: 'approve' | 'remove' | 'warn';
-  note?: string;
+export class ReviewActionDto {
+  @IsString() @IsIn(['approve', 'remove', 'warn']) action: 'approve' | 'remove' | 'warn';
+  @IsOptional() @IsString() @MaxLength(1000) note?: string;
 }
 
-export interface SubmitAppealDto {
-  moderationLogId: string;
-  reason: 'no-violation' | 'out-of-context' | 'educational' | 'posted-by-mistake' | 'other';
-  details: string;
+export class SubmitAppealDto {
+  @IsString() moderationLogId: string;
+  @IsString() @IsIn(['no-violation', 'out-of-context', 'educational', 'posted-by-mistake', 'other']) reason: 'no-violation' | 'out-of-context' | 'educational' | 'posted-by-mistake' | 'other';
+  @IsString() @MaxLength(2000) details: string;
 }
 
 @Injectable()

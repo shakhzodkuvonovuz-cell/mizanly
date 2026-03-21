@@ -33,7 +33,7 @@ export class ContentSafetyService {
     action: 'allow' | 'flag' | 'remove';
   }> {
     if (!this.apiKey) {
-      return { safe: true, confidence: 0.5, flags: [], action: 'allow' };
+      return { safe: false, confidence: 0, flags: ['moderation_unavailable'], action: 'flag' };
     }
 
     try {
@@ -61,12 +61,22 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
         }),
       });
 
-      if (!response.ok) return { safe: true, confidence: 0.5, flags: [], action: 'allow' };
+      if (!response.ok) return { safe: false, confidence: 0, flags: ['api_error'], action: 'flag' };
       const data = await response.json();
       const text = data.content?.[0]?.text || '';
-      return JSON.parse(text);
+      try {
+        const parsed = JSON.parse(text);
+        return {
+          safe: typeof parsed.safe === 'boolean' ? parsed.safe : false,
+          confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0,
+          flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+          action: ['allow', 'flag', 'remove'].includes(parsed.action) ? parsed.action : 'flag',
+        };
+      } catch {
+        return { safe: false, confidence: 0, flags: ['parse_error'], action: 'flag' };
+      }
     } catch {
-      return { safe: true, confidence: 0.5, flags: [], action: 'allow' };
+      return { safe: false, confidence: 0, flags: ['moderation_error'], action: 'flag' };
     }
   }
 
@@ -80,7 +90,8 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
     flags: string[];
     suggestion?: string;
   }> {
-    if (!this.apiKey || !text) return { safe: true, flags: [] };
+    if (!text) return { safe: true, flags: [] };
+    if (!this.apiKey) return { safe: false, flags: ['moderation_unavailable'] };
 
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -98,11 +109,20 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
         }),
       });
 
-      if (!response.ok) return { safe: true, flags: [] };
+      if (!response.ok) return { safe: false, flags: ['api_error'] };
       const data = await response.json();
-      return JSON.parse(data.content?.[0]?.text || '{"safe":true,"flags":[]}');
+      try {
+        const parsed = JSON.parse(data.content?.[0]?.text || '{}');
+        return {
+          safe: typeof parsed.safe === 'boolean' ? parsed.safe : false,
+          flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+          suggestion: parsed.suggestion,
+        };
+      } catch {
+        return { safe: false, flags: ['parse_error'] };
+      }
     } catch {
-      return { safe: true, flags: [] };
+      return { safe: false, flags: ['moderation_error'] };
     }
   }
 
@@ -195,15 +215,19 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
       });
     }
 
-    // Log the moderation action
+    // Log the moderation action using actual ModerationLog schema fields
+    const targetField = contentType === 'post' ? 'targetPostId'
+      : contentType === 'comment' ? 'targetCommentId'
+      : contentType === 'reel' ? 'targetPostId' // reels use targetPostId as closest match
+      : 'targetPostId';
+
     await this.prisma.moderationLog.create({
       data: {
-        contentId,
-        contentType,
-        action: 'auto_removed',
+        moderatorId: 'system', // System auto-moderation
+        [targetField]: contentId,
+        action: 'CONTENT_REMOVED',
         reason,
-        flags,
-        status: 'resolved',
+        explanation: `Auto-removed: ${flags.join(', ')}`,
       },
     });
   }

@@ -168,10 +168,10 @@ describe('AiService', () => {
   });
 
   describe('moderateImage', () => {
-    it('should return SAFE classification when no API key (fallback)', async () => {
+    it('should return WARNING classification when no API key (fail-closed)', async () => {
       const result = await service.moderateImage('https://example.com/image.jpg');
-      expect(result.classification).toBe('SAFE');
-      expect(result.categories).toEqual([]);
+      expect(result.classification).toBe('WARNING');
+      expect(result.categories).toContain('moderation_unavailable');
     });
   });
 
