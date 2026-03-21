@@ -118,10 +118,11 @@ export class MosquesService {
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
-      take: limit,
+      take: limit + 1,
     });
 
-    const hasMore = posts.length === limit;
+    const hasMore = posts.length > limit;
+    if (hasMore) posts.pop();
     return {
       data: posts,
       meta: {
@@ -147,13 +148,14 @@ export class MosquesService {
     const members = await this.prisma.mosqueMembership.findMany({
       where: {
         mosqueId,
-        ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+        ...(cursor ? { createdAt: { gt: new Date(cursor) } } : {}),
       },
       orderBy: { createdAt: 'asc' },
-      take: limit,
+      take: limit + 1,
     });
 
-    const hasMore = members.length === limit;
+    const hasMore = members.length > limit;
+    if (hasMore) members.pop();
     return {
       data: members,
       meta: {

@@ -148,7 +148,7 @@ describe('EventsService', () => {
       expect(result.meta).toEqual({ cursor: null, hasMore: false });
       expect(mockPrismaService.event.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {},
+          where: { privacy: 'public' },
           take: 21,
           orderBy: { startDate: 'desc' },
         }),

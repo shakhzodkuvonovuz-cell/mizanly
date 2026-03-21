@@ -368,7 +368,7 @@ export class RecommendationsService {
     const myFollowing = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
-      take: 50,
+      take: 200,
     });
     const myFollowingIds = myFollowing.map(f => f.followingId);
 
@@ -378,7 +378,7 @@ export class RecommendationsService {
         followingId: { notIn: [...myFollowingIds, userId, ...excludedIds] },
       },
       select: { followingId: true },
-      take: 50,
+      take: 200,
     });
 
     const mutualCount = new Map<string, number>();

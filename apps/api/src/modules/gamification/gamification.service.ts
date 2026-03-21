@@ -19,10 +19,13 @@ const XP_REWARDS: Record<string, number> = {
   verified: 200,
 };
 
-// Level thresholds
+// Level thresholds (50 levels)
 const LEVEL_THRESHOLDS = [
   0, 100, 300, 600, 1000, 1500, 2200, 3000, 4000, 5500,
   7500, 10000, 13000, 17000, 22000, 28000, 35000, 43000, 52000, 65000,
+  80000, 100000, 125000, 155000, 190000, 230000, 275000, 325000, 380000, 440000,
+  510000, 590000, 680000, 780000, 890000, 1010000, 1150000, 1300000, 1470000, 1660000,
+  1870000, 2100000, 2360000, 2650000, 2970000, 3330000, 3730000, 4180000, 4680000, 5240000,
 ];
 
 function getLevelForXP(xp: number): number {
@@ -158,7 +161,7 @@ export class GamificationService {
     if (!xp) return { data: [], meta: { cursor: null, hasMore: false } };
 
     const where: Record<string, unknown> = { userXPId: xp.id };
-    if (cursor) where.id = { lt: cursor };
+    if (cursor) where.createdAt = { lt: new Date(cursor) };
 
     const history = await this.prisma.xPHistory.findMany({
       where,
@@ -171,7 +174,7 @@ export class GamificationService {
 
     return {
       data: history,
-      meta: { cursor: history[history.length - 1]?.id || null, hasMore },
+      meta: { cursor: history[history.length - 1]?.createdAt?.toISOString() || null, hasMore },
     };
   }
 
@@ -260,10 +263,12 @@ export class GamificationService {
     });
       const userMap = new Map(users.map(u => [u.id, u]));
 
-      return topCommenters.map(c => ({
-        user: userMap.get(c.userId),
-        score: c._sum.likesCount || 0,
-      }));
+      return topCommenters
+        .map(c => ({
+          user: userMap.get(c.userId),
+          score: c._sum.likesCount || 0,
+        }))
+        .filter(c => c.user); // Filter out deleted users
     }
 
     return [];

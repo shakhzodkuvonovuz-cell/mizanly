@@ -103,24 +103,32 @@ export class CommunitiesService {
 
     const privacy: CirclePrivacy = dto.isPrivate ? CirclePrivacy.PRIVATE : CirclePrivacy.PUBLIC;
 
-    const circle = await this.prisma.circle.create({
-      data: {
-        name: dto.name,
-        slug,
-        description: dto.description,
-        coverUrl: dto.coverUrl,
-        rules: dto.rules,
-        privacy,
-        ownerId: userId,
-        members: {
-          create: {
-            userId,
-            role: 'OWNER',
+    let circle;
+    try {
+      circle = await this.prisma.circle.create({
+        data: {
+          name: dto.name,
+          slug,
+          description: dto.description,
+          coverUrl: dto.coverUrl,
+          rules: dto.rules,
+          privacy,
+          ownerId: userId,
+          members: {
+            create: {
+              userId,
+              role: 'OWNER',
+            },
           },
         },
-      },
-      select: CIRCLE_SELECT,
-    });
+        select: CIRCLE_SELECT,
+      });
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
+        throw new ConflictException('Community with similar name already exists');
+      }
+      throw err;
+    }
 
     return { data: circle, success: true, timestamp: new Date().toISOString() };
   }

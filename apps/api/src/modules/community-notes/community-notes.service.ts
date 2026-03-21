@@ -33,6 +33,9 @@ export class CommunityNotesService {
     const note = await this.prisma.communityNote.findUnique({ where: { id: noteId } });
     if (!note) throw new NotFoundException('Note not found');
 
+    // Prevent self-rating
+    if (note.authorId === userId) throw new BadRequestException('Cannot rate your own note');
+
     // Check for existing rating
     const existing = await this.prisma.communityNoteRating.findUnique({
       where: { noteId_userId: { noteId, userId } },
@@ -44,11 +47,16 @@ export class CommunityNotesService {
     });
 
     // Update vote counts
-    const incrementField = rating === 'not_helpful' ? 'notHelpfulVotes' : 'helpfulVotes';
-    const updated = await this.prisma.communityNote.update({
-      where: { id: noteId },
-      data: { [incrementField]: { increment: 1 } },
-    });
+    // Only fully 'helpful' ratings count toward helpfulVotes; 'somewhat_helpful' is neutral
+    const incrementField = rating === 'helpful' ? 'helpfulVotes' : rating === 'not_helpful' ? 'notHelpfulVotes' : null;
+    const updated = incrementField
+      ? await this.prisma.communityNote.update({
+          where: { id: noteId },
+          data: { [incrementField]: { increment: 1 } },
+        })
+      : await this.prisma.communityNote.findUnique({ where: { id: noteId } });
+
+    if (!updated) return { rated: true };
 
     // Auto-promote or dismiss based on voting threshold
     const totalVotes = updated.helpfulVotes + updated.notHelpfulVotes;

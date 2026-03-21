@@ -169,6 +169,7 @@ describe('FeedService', () => {
       (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).contentFilterSetting = { findUnique: jest.fn().mockResolvedValue(null) };
     });
 
     it('should filter blocked/muted users when authenticated', async () => {

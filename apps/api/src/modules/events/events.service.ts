@@ -71,14 +71,11 @@ export class EventsService {
   ) {
     const where: Prisma.EventWhereInput = {};
 
-    // Privacy filter
+    // Privacy filter — default to public for all users unless explicitly requesting private
     if (privacy) {
       where.privacy = privacy;
     } else {
-      // If no user, only public events
-      if (!userId) {
-        where.privacy = 'public';
-      }
+      where.privacy = 'public';
     }
 
     if (eventType) {

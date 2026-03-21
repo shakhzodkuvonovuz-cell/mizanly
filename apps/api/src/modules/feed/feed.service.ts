@@ -185,13 +185,15 @@ export class FeedService {
   async getTrendingFeed(cursor?: string, limit = 20, userId?: string) {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    // Build block/mute filter when authenticated
+    // Build block/mute filter + content filter when authenticated
     let userFilter = {};
+    let contentFilter = {};
     if (userId) {
       const excludedIds = await this.getExcludedUserIds(userId);
       if (excludedIds.length > 0) {
         userFilter = { id: { notIn: excludedIds } };
       }
+      contentFilter = await this.buildContentFilterWhere(userId) as Record<string, unknown>;
     }
 
     // Parse cursor as page offset for score-sorted feeds
@@ -204,10 +206,11 @@ export class FeedService {
         scheduledAt: null,
         createdAt: { gte: sevenDaysAgo },
         user: { isDeactivated: false, isPrivate: false, ...userFilter },
+        ...contentFilter,
       },
       select: FEED_POST_SELECT,
       orderBy: { createdAt: 'desc' },
-      take: 200,
+      take: Math.min(offset + limit + 1, 100),
     });
 
     // Score by engagement RATE, not total

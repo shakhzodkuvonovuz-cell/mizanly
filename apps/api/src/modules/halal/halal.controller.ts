@@ -54,10 +54,13 @@ export class HalalController {
     @Query('certified') certified?: string,
     @Query('cursor') cursor?: string,
   ) {
+    const parsedLat = Math.max(-90, Math.min(90, parseFloat(lat) || 0));
+    const parsedLng = Math.max(-180, Math.min(180, parseFloat(lng) || 0));
+    const parsedRadius = Math.max(1, Math.min(500, radius ? parseFloat(radius) : 10));
     return this.halalService.findNearby(
-      parseFloat(lat),
-      parseFloat(lng),
-      radius ? parseInt(radius, 10) : 10,
+      parsedLat,
+      parsedLng,
+      parsedRadius,
       {
         cuisine,
         priceRange: priceRange ? parseInt(priceRange, 10) : undefined,

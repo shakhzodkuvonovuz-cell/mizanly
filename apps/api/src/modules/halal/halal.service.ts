@@ -30,8 +30,11 @@ export class HalalService {
     const restaurants = await this.prisma.halalRestaurant.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: limit + 1,
     });
+
+    const hasMore = restaurants.length > limit;
+    if (hasMore) restaurants.pop();
 
     // Calculate distances
     const withDistance = restaurants.map((r) => ({
@@ -41,8 +44,6 @@ export class HalalService {
 
     // Sort by distance
     withDistance.sort((a, b) => a.distanceKm - b.distanceKm);
-
-    const hasMore = restaurants.length === limit;
     return {
       data: withDistance,
       meta: {
@@ -136,10 +137,11 @@ export class HalalService {
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: limit + 1,
     });
 
-    const hasMore = reviews.length === limit;
+    const hasMore = reviews.length > limit;
+    if (hasMore) reviews.pop();
     return {
       data: reviews,
       meta: {

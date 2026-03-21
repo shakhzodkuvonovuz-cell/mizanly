@@ -7,9 +7,15 @@ type StickerStyle = 'cartoon' | 'calligraphy' | 'emoji' | 'geometric' | 'kawaii'
 
 // Inappropriate content filters for sticker generation
 const BLOCKED_TERMS = [
-  'nude', 'naked', 'sex', 'porn', 'violence', 'blood', 'gore',
-  'weapon', 'gun', 'drug', 'alcohol', 'beer', 'wine', 'gambling',
+  'nude', 'naked', 'sex', 'porn', 'pornography', 'xxx', 'nsfw',
+  'violence', 'violent', 'blood', 'gore', 'murder', 'kill', 'suicide',
+  'weapon', 'gun', 'knife', 'bomb', 'terrorist', 'terrorism',
+  'drug', 'cocaine', 'heroin', 'meth',
+  'alcohol', 'beer', 'wine', 'vodka', 'whiskey',
+  'gambling', 'casino', 'betting',
   'idol', 'shirk',
+  'racist', 'racism', 'hate', 'nazi', 'slur',
+  'hentai', 'fetish', 'erotic',
 ];
 
 @Injectable()

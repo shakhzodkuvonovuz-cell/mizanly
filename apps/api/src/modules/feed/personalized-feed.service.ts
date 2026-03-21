@@ -8,6 +8,7 @@ interface FeedItem {
   type: 'post' | 'reel' | 'thread';
   score: number;
   reasons: string[];
+  content?: Record<string, unknown>;
 }
 
 // Islamic content hashtags for boosting
@@ -329,13 +330,16 @@ export class PersonalizedFeedService {
       }
     }
 
+    // Hydrate feed items with actual content data
+    const hydrated = await this.hydrateItems(diversified, contentType);
+
     const hasMore = feedItems.length > diversified.length;
-    const nextCursor = diversified.length > 0
-      ? diversified[diversified.length - 1].id
+    const nextCursor = hydrated.length > 0
+      ? hydrated[hydrated.length - 1].id
       : undefined;
 
     return {
-      data: diversified,
+      data: hydrated,
       meta: { cursor: nextCursor, hasMore },
     };
   }
@@ -574,6 +578,36 @@ export class PersonalizedFeedService {
     }
 
     return map;
+  }
+
+  private async hydrateItems(items: FeedItem[], contentType: EmbeddingContentType): Promise<FeedItem[]> {
+    if (items.length === 0) return items;
+    const ids = items.map(i => i.id);
+    const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
+
+    if (contentType === EmbeddingContentType.POST) {
+      const posts = await this.prisma.post.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, content: true, mediaUrls: true, mediaTypes: true, postType: true, likesCount: true, commentsCount: true, createdAt: true, user: { select: USER_SELECT } },
+      });
+      const postMap = new Map(posts.map(p => [p.id, p]));
+      return items.map(item => ({ ...item, content: postMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
+    }
+    if (contentType === EmbeddingContentType.REEL) {
+      const reels = await this.prisma.reel.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, caption: true, videoUrl: true, thumbnailUrl: true, duration: true, likesCount: true, viewsCount: true, createdAt: true, user: { select: USER_SELECT } },
+      });
+      const reelMap = new Map(reels.map(r => [r.id, r]));
+      return items.map(item => ({ ...item, content: reelMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
+    }
+    // THREAD
+    const threads = await this.prisma.thread.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, content: true, mediaUrls: true, likesCount: true, repliesCount: true, createdAt: true, user: { select: USER_SELECT } },
+    });
+    const threadMap = new Map(threads.map(t => [t.id, t]));
+    return items.map(item => ({ ...item, content: threadMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
   }
 
   private async getAuthorMap(ids: string[], contentType: EmbeddingContentType): Promise<Map<string, string>> {

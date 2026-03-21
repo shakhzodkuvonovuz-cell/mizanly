@@ -198,8 +198,11 @@ export class RetentionService {
    */
   async trackNotificationSent(userId: string): Promise<void> {
     const key = `notif_count:${userId}:${new Date().toISOString().slice(0, 10)}`;
-    await this.redis.incr(key);
-    await this.redis.expire(key, 86400);
+    const count = await this.redis.incr(key);
+    // Only set TTL on first increment — prevents TTL reset on every notification
+    if (count === 1) {
+      await this.redis.expire(key, 86400);
+    }
   }
 
   // ── 76.7: Weekly analytics summary for creators ──────────
