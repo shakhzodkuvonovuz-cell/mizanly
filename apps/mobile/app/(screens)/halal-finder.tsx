@@ -128,13 +128,7 @@ export default function HalalFinderScreen() {
   const restaurantsQuery = useQuery({
     queryKey: ['halal-restaurants', currentLocation.lat, currentLocation.lng, selectedCuisine],
     queryFn: () =>
-      api.get('/halal/restaurants', {
-        params: {
-          lat: currentLocation.lat,
-          lng: currentLocation.lng,
-          radius: 25,
-          ...(selectedCuisine ? { cuisine: selectedCuisine } : {}),
-        },
+      api.get(`/halal/restaurants?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=25${selectedCuisine ? `&cuisine=${selectedCuisine}` : ''}`
       }).then((r) => r.data),
     enabled: !!currentLocation,
   });

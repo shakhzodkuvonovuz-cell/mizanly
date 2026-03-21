@@ -22,7 +22,7 @@ import { SavePostDto, MoveCollectionDto } from './dto/bookmark.dto';
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
 @Throttle({ default: { limit: 30, ttl: 60000 } })
-@Controller('api/v1/bookmarks')
+@Controller('bookmarks')
 export class BookmarksController {
   constructor(private service: BookmarksService) {}
 

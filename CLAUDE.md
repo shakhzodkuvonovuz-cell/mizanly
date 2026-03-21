@@ -262,6 +262,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 13. **Test files (*.spec.ts) MAY use `as any` for mocks** — this is the only exception
 14. **ALL design/UI work MUST use `frontend-design` and `ui-ux-pro-max` skills** — invoke these plugins before any screen, component, or visual implementation work
 15. **NEVER use Sonnet or Haiku as subagent models** — Opus only. No inferior models.
+16. **Tests cover the ENTIRE scope, not just fixes** — When working on an audit file, also add tests for untested parts of that scope. If a service has 0 tests, add them. Every audit file commit must include new tests.
 
 ---
 

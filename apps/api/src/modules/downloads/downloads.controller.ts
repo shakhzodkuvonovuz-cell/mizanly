@@ -22,7 +22,7 @@ import { CreateDownloadDto, UpdateProgressDto } from './dto/create-download.dto'
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
 @Throttle({ default: { limit: 60, ttl: 60000 } })
-@Controller('api/v1/downloads')
+@Controller('downloads')
 export class DownloadsController {
   constructor(private service: DownloadsService) {}
 

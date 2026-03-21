@@ -125,7 +125,7 @@ type NotificationSettings = {
   notifyMessages?: boolean;
 };
 type AccessibilitySettings = { reducedMotion?: boolean; fontSize?: string };
-type WellbeingSettings = { sensitiveContentFilter?: boolean; dailyTimeLimit?: number };
+type WellbeingSettings = { sensitiveContent?: boolean; dailyTimeLimit?: number };
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 const REQUEST_TIMEOUT_MS = 30000;
@@ -207,21 +207,18 @@ class ApiClient {
 
     if (res.status === 204) return null as T;
     const json = await res.json();
-    // Unwrap TransformInterceptor envelope
-    // Paginated responses have { success, data, meta, timestamp } — keep data + meta together
-    if (json.success && json.meta !== undefined) {
-      return { data: json.data, meta: json.meta } as T;
-    }
-    // Non-paginated: { success, data, timestamp } — return just data
-    const result = json.data !== undefined ? json.data : json;
 
-    // Log slow API calls in dev (>2s)
+    // Log slow API calls in dev (>2s) — before any return
     const duration = Date.now() - startTime;
     if (__DEV__ && duration > 2000) {
       console.warn(`[API] Slow: ${options.method || 'GET'} ${path} — ${duration}ms`);
     }
 
-    return result;
+    // Unwrap TransformInterceptor envelope
+    if (json.success && json.meta !== undefined) {
+      return { data: json.data, meta: json.meta } as T;
+    }
+    return json.data !== undefined ? json.data : json;
   }
 
   get<T>(path: string) { return this.request<T>(path); }
@@ -325,7 +322,7 @@ export const usersApi = {
     api.post('/users/me/delete-account'),
   cancelAccountDeletion: () =>
     api.post('/users/me/cancel-deletion'),
-  updateDailyReminder: (enabled: boolean, time?: string) => api.patch('/users/settings/daily-reminder', { enabled, time }),
+  updateDailyReminder: (enabled: boolean, time?: string) => api.patch('/settings/notifications', { notifyDailyReminder: enabled, dailyReminderTime: time }),
   updateNasheedMode: (nasheedMode: boolean) => api.patch<{ id: string; nasheedMode: boolean }>('/users/me/nasheed-mode', { nasheedMode }),
   syncContacts: (phoneNumbers: string[]) => api.post<Array<{ id: string; username: string; displayName: string; avatarUrl: string | null; isVerified: boolean; isFollowing: boolean }>>('/users/contacts/sync', { phoneNumbers }),
 };
@@ -802,7 +799,7 @@ export const settingsApi = {
   updateAccessibility: (data: AccessibilitySettings) => api.patch<Settings>('/settings/accessibility', data),
   updateWellbeing: (data: WellbeingSettings) => api.patch<Settings>('/settings/wellbeing', data),
   getBlockedKeywords: () => api.get<BlockedKeyword[]>('/settings/blocked-keywords'),
-  addBlockedKeyword: (word: string) => api.post<BlockedKeyword>('/settings/blocked-keywords', { word }),
+  addBlockedKeyword: (word: string) => api.post<BlockedKeyword>('/settings/blocked-keywords', { keyword: word }),
   deleteBlockedKeyword: (id: string) => api.delete(`/settings/blocked-keywords/${id}`),
   getQuietMode: () => api.get<{ isActive: boolean; autoReply: string | null; startTime: string | null; endTime: string | null; isScheduled: boolean }>('/settings/quiet-mode'),
   updateQuietMode: (data: { isActive?: boolean; autoReply?: string; startTime?: string; endTime?: string; isScheduled?: boolean }) =>
@@ -922,41 +919,41 @@ export const draftsApi = {
 // ── Broadcast Channels ──
 export const broadcastApi = {
   discover: (cursor?: string) =>
-    api.get<PaginatedResponse<BroadcastChannel>>(`/broadcast-channels/discover${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<BroadcastChannel>>(`/broadcast/discover${cursor ? `?cursor=${cursor}` : ''}`),
   getMyChannels: () =>
-    api.get<BroadcastChannel[]>('/broadcast-channels/mine'),
+    api.get<BroadcastChannel[]>('/broadcast/my'),
   getBySlug: (slug: string) =>
-    api.get<BroadcastChannel>(`/broadcast-channels/slug/${slug}`),
+    api.get<BroadcastChannel>(`/broadcast/slug/${slug}`),
   getById: (id: string) =>
-    api.get<BroadcastChannel>(`/broadcast-channels/${id}`),
+    api.get<BroadcastChannel>(`/broadcast/${id}`),
   create: (data: { name: string; slug: string; description?: string; avatarUrl?: string }) =>
     api.post<BroadcastChannel>('/broadcast-channels', data),
   subscribe: (id: string) =>
-    api.post(`/broadcast-channels/${id}/subscribe`),
+    api.post(`/broadcast/${id}/subscribe`),
   unsubscribe: (id: string) =>
-    api.delete(`/broadcast-channels/${id}/subscribe`),
+    api.delete(`/broadcast/${id}/subscribe`),
   mute: (id: string) =>
-    api.post(`/broadcast-channels/${id}/mute`),
+    api.post(`/broadcast/${id}/mute`),
   unmute: (id: string) =>
-    api.delete(`/broadcast-channels/${id}/mute`),
+    api.delete(`/broadcast/${id}/mute`),
   getMessages: (id: string, cursor?: string) =>
-    api.get<PaginatedResponse<BroadcastMessage>>(`/broadcast-channels/${id}/messages${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<BroadcastMessage>>(`/broadcast/${id}/messages${cursor ? `?cursor=${cursor}` : ''}`),
   sendMessage: (id: string, data: { content: string; mediaUrls?: string[]; mediaTypes?: string[] }) =>
-    api.post<BroadcastMessage>(`/broadcast-channels/${id}/messages`, data),
+    api.post<BroadcastMessage>(`/broadcast/${id}/messages`, data),
   pinMessage: (channelId: string, messageId: string) =>
-    api.post(`/broadcast-channels/${channelId}/messages/${messageId}/pin`),
+    api.post(`/broadcast/${channelId}/messages/${messageId}/pin`),
   unpinMessage: (channelId: string, messageId: string) =>
-    api.delete(`/broadcast-channels/${channelId}/messages/${messageId}/pin`),
+    api.delete(`/broadcast/${channelId}/messages/${messageId}/pin`),
   deleteMessage: (channelId: string, messageId: string) =>
-    api.delete(`/broadcast-channels/${channelId}/messages/${messageId}`),
+    api.delete(`/broadcast/${channelId}/messages/${messageId}`),
   getPinnedMessages: (id: string) =>
-    api.get<BroadcastMessage[]>(`/broadcast-channels/${id}/messages/pinned`),
+    api.get<BroadcastMessage[]>(`/broadcast/${id}/messages/pinned`),
   promoteToAdmin: (channelId: string, userId: string) =>
-    api.post(`/broadcast-channels/${channelId}/admins/${userId}`),
+    api.post(`/broadcast/${channelId}/admins/${userId}`),
   demoteFromAdmin: (channelId: string, userId: string) =>
-    api.delete(`/broadcast-channels/${channelId}/admins/${userId}`),
+    api.delete(`/broadcast/${channelId}/admins/${userId}`),
   removeSubscriber: (channelId: string, userId: string) =>
-    api.delete(`/broadcast-channels/${channelId}/subscribers/${userId}`),
+    api.delete(`/broadcast/${channelId}/subscribers/${userId}`),
 };
 
 // ── Live Sessions ──
@@ -1068,19 +1065,19 @@ export const collabsApi = {
 // ── Channel Posts (Community) ──
 export const channelPostsApi = {
   list: (channelId: string, cursor?: string) =>
-    api.get<PaginatedResponse<ChannelPost>>(`/channels/${channelId}/posts${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<ChannelPost>>(`/channel-posts/channel/${channelId}${cursor ? `?cursor=${cursor}` : ''}`),
   create: (channelId: string, data: { content: string; postType?: string; mediaUrls?: string[]; mediaTypes?: string[] }) =>
-    api.post<ChannelPost>(`/channels/${channelId}/posts`, data),
+    api.post<ChannelPost>(`/channel-posts/${channelId}`, data),
   like: (channelId: string, postId: string) =>
-    api.post(`/channels/${channelId}/posts/${postId}/like`),
+    api.post(`/channel-posts/${postId}/like`),
   unlike: (channelId: string, postId: string) =>
-    api.delete(`/channels/${channelId}/posts/${postId}/like`),
+    api.delete(`/channel-posts/${postId}/like`),
   delete: (channelId: string, postId: string) =>
-    api.delete(`/channels/${channelId}/posts/${postId}`),
+    api.delete(`/channel-posts/${postId}`),
   getComments: (channelId: string, postId: string, cursor?: string) =>
-    api.get<PaginatedResponse<Comment>>(`/channels/${channelId}/posts/${postId}/comments${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<Comment>>(`/channel-posts/${postId}/comments${cursor ? `?cursor=${cursor}` : ''}`),
   addComment: (channelId: string, postId: string, content: string) =>
-    api.post(`/channels/${channelId}/posts/${postId}/comments`, { content }),
+    api.post(`/channel-posts/${postId}/comments`, { content }),
 };
 
 // ── Audio Tracks ──
@@ -1204,11 +1201,11 @@ export const bookmarksApi = {
   moveToCollection: (bookmarkId: string, collectionName: string) =>
     api.patch(`/bookmarks/${bookmarkId}/collection`, { collectionName }),
   isPostSaved: (postId: string) =>
-    api.get<{ saved: boolean }>(`/bookmarks/posts/${postId}/saved`),
+    api.get<{ saved: boolean }>(`/bookmarks/posts/${postId}/status`),
   isThreadSaved: (threadId: string) =>
-    api.get<{ saved: boolean }>(`/bookmarks/threads/${threadId}/saved`),
+    api.get<{ saved: boolean }>(`/bookmarks/threads/${threadId}/status`),
   isVideoSaved: (videoId: string) =>
-    api.get<{ saved: boolean }>(`/bookmarks/videos/${videoId}/saved`),
+    api.get<{ saved: boolean }>(`/bookmarks/videos/${videoId}/status`),
 };
 
 // ── Watch History ──
@@ -1225,7 +1222,7 @@ export const watchHistoryApi = {
 
 // ── Account ──
 export const accountApi = {
-  requestDataExport: () => api.post('/account/export'),
+  requestDataExport: () => api.get('/privacy/export'),
 };
 
 // ── Downloads (Offline) ──

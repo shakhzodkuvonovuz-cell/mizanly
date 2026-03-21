@@ -551,3 +551,13 @@ P1-5 (ToastNotification: deleted 156 lines dead code), P2-7 (EmptyState: removed
 - [24] P2-5 LocationPicker needs expo-location — NOTED
 - [24] P2-14 BottomSheet snapPoint API — callers use it correctly in practice — NOTED
 - [24] P3-16 ImageGallery/ImageLightbox duplication — refactor — NOTED
+
+## From Audit 25 (Mobile API Service Layer) — 52 findings
+### Already fixed in previous files (8):
+F05/F06 (double prefix retention/embeddings), F09/F37/F38/F39/F46/F47/F50 (file 23 fixes)
+
+### FIXED directly (18):
+F01 (bookmarks double prefix → bookmarks), F02 (downloads double prefix → downloads), F07 (broadcast /broadcast-channels/ → /broadcast/, mine → my), F08 (channel posts path alignment), F10 (halal finder query string), F12 (blocked keyword field), F13 (wellbeing field name), F14 (account export endpoint), F29/F30/F31 (bookmarks /saved → /status), F34 (daily reminder endpoint), F40 (slow log before return)
+
+### NOTED:
+- [25] F11/F15-F28/F32/F33/F35/F36/F41-F45/F48/F49/F51/F52 — feature gaps, integration needs, minor types
