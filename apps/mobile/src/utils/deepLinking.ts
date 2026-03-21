@@ -178,7 +178,7 @@ export function navigateToDeepLink(url: string): boolean {
       } else if (params.id) {
         router.push(`/(screens)/profile/${params.id}` as never);
       } else {
-        router.push('/(screens)/profile' as never);
+        router.push('/(tabs)/saf' as never);
       }
       break;
 
@@ -200,9 +200,9 @@ export function navigateToDeepLink(url: string): boolean {
 
     case 'event':
       if (params.id) {
-        router.push(`/(screens)/event-detail/${params.id}` as never);
+        router.push(`/(screens)/event-detail?id=${params.id}` as never);
       } else {
-        router.push('/(screens)/events' as never);
+        router.push('/(tabs)/saf' as never);
       }
       break;
 
@@ -212,7 +212,7 @@ export function navigateToDeepLink(url: string): boolean {
 
     case 'audio-room':
       if (params.id) {
-        router.push(`/(screens)/audio-room/${params.id}` as never);
+        router.push(`/(screens)/audio-room?id=${params.id}` as never);
       } else {
         router.push('/(screens)/audio-rooms' as never);
       }

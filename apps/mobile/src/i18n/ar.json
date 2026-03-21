@@ -935,6 +935,12 @@
     "dhikr": "عداد الذكر",
     "zakat": "حاسبة الزكاة",
     "mosque": "المساجد القريبة",
+    "duaCollection": "مجموعة الأدعية",
+    "fastingTracker": "متتبع الصيام",
+    "halalFinder": "البحث عن حلال",
+    "hifzTracker": "متتبع الحفظ",
+    "morningBriefing": "إحاطة الصباح",
+    "namesOfAllah": "أسماء الله الحسنى",
     "ramadan": "رمضان",
     "quran": "القرآن",
     "surah": "سورة",
@@ -2937,7 +2943,13 @@
     "myMosques": "مساجدي",
     "nearbyMosques": "المساجد القريبة",
     "madhab": "المذهب",
-    "createMosque": "إنشاء صفحة مسجد"
+    "createMosque": "إنشاء صفحة مسجد",
+    "duaCollection": "مجموعة الأدعية",
+    "fastingTracker": "متتبع الصيام",
+    "halalFinder": "البحث عن حلال",
+    "hifzTracker": "متتبع الحفظ",
+    "morningBriefing": "إحاطة الصباح",
+    "namesOfAllah": "أسماء الله الحسنى"
   },
   "prayer": {
     "timeFor": "حان وقت {{prayer}}",

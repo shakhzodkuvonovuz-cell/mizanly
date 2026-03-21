@@ -791,6 +791,12 @@
     "dhikr": "ذکر کاؤنٹر",
     "zakat": "زکوٰة کیلکولیٹر",
     "mosque": "Nearby Mosques",
+    "duaCollection": "دعاؤں کا مجموعہ",
+    "fastingTracker": "روزے کا ٹریکر",
+    "halalFinder": "حلال فائنڈر",
+    "hifzTracker": "حفظ ٹریکر",
+    "morningBriefing": "صبح کی بریفنگ",
+    "namesOfAllah": "اللہ کے 99 نام",
     "ramadan": "Ramadan",
     "quran": "Quran",
     "surah": "Surah",
@@ -2938,7 +2944,13 @@
     "myMosques": "میری مساجد",
     "nearbyMosques": "قریبی مساجد",
     "madhab": "مذہب",
-    "createMosque": "مسجد کا صفحہ بنائیں"
+    "createMosque": "مسجد کا صفحہ بنائیں",
+    "duaCollection": "دعاؤں کا مجموعہ",
+    "fastingTracker": "روزے کا ٹریکر",
+    "halalFinder": "حلال فائنڈر",
+    "hifzTracker": "حفظ ٹریکر",
+    "morningBriefing": "صبح کی بریفنگ",
+    "namesOfAllah": "اللہ کے 99 نام"
   },
   "prayer": {
     "timeFor": "{{prayer}} کا وقت ہو گیا",

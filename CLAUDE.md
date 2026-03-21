@@ -261,6 +261,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 12. **NEVER add `as any` in non-test code** — find the correct type instead
 13. **Test files (*.spec.ts) MAY use `as any` for mocks** — this is the only exception
 14. **ALL design/UI work MUST use `frontend-design` and `ui-ux-pro-max` skills** — invoke these plugins before any screen, component, or visual implementation work
+15. **NEVER use Sonnet or Haiku as subagent models** — Opus only. No inferior models.
 
 ---
 

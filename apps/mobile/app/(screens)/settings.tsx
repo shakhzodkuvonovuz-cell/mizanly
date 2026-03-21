@@ -606,6 +606,48 @@ export default function SettingsScreen() {
               label={t('settings.ramadanMode')}
               icon={<Icon name="globe" size="sm" color={colors.gold} />}
               onPress={() => router.push('/(screens)/ramadan-mode' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.duaCollection')}
+              icon={<Icon name="heart" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/dua-collection' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.fastingTracker')}
+              icon={<Icon name="clock" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/fasting-tracker' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.halalFinder')}
+              icon={<Icon name="map-pin" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/halal-finder' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.hifzTracker')}
+              icon={<Icon name="layers" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/hifz-tracker' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.morningBriefing')}
+              icon={<Icon name="bell" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/morning-briefing' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.namesOfAllah')}
+              icon={<Icon name="globe" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/names-of-allah' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('wellbeing.windDown')}
+              icon={<Icon name="volume-x" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/wind-down' as never)}
               isLast
             />
           </LinearGradient>

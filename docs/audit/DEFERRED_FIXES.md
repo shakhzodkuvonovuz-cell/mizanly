@@ -508,7 +508,9 @@ C1 (SearchIndexingProcessor created — processes index/update/delete jobs via M
 ### FIXED directly (20 findings):
 F3 (8 broken routes: added /(screens)/ prefix to discover 4 routes, duet-create, stitch-create, green-screen-editor, search), F4 (series-detail: query params → path params for video/reel/post), F5 (series-detail + product-detail: profile?username= → profile/${username}), F6 (WebSidebar: profile route includes user.username), F7 (conversation-info: conversationId → id param match), F8 (leaderboard 2 + product + series: userId → username for profile), F9 (analytics: create redirect → create-post), F12 (sticker-browser: reads conversationId param), F13 (WebSidebar: removed wrong badge from Majlis), F14 (notifications: added reel/video/comment/conversation routes), F17 (i18n: Cancel/Next → t()), F18 (duplicate accessibilityRole removed)
 
-### Deferred:
-- [22] F1/F2 Deep link utility — needs comprehensive integration — OPEN
-- [22] F10 10 orphan screens — need nav paths — OPEN
-- [22] F11/F15/F16/F19-F28 Architecture/cosmetic — NOTED
+### FIXED in second pass (4 additional):
+F1 (deep link utility wired — DeepLinkHandler component in root layout calls setupDeepLinkListeners), F2 (deep link broken routes — event-detail/${id} → event-detail?id=, audio-room/${id} → audio-room?id=, profile without username → fallback to saf tab), F10 (7 orphan screens linked from Islamic settings: dua-collection, fasting-tracker, halal-finder, hifz-tracker, morning-briefing, names-of-allah, wind-down + i18n keys added to all 8 languages)
+
+### NOTED:
+- [22] F10 remaining 3 orphan screens (camera, location-picker, voice-recorder) — used as components not screen routes
+- [22] F11/F15/F16/F19-F28 Architecture/cosmetic — minor

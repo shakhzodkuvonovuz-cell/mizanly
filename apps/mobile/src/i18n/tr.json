@@ -935,6 +935,12 @@
     "dhikr": "Zikir Sayacı",
     "zakat": "Zekât Hesaplayıcı",
     "mosque": "Yakındaki Camiler",
+    "duaCollection": "Dua Koleksiyonu",
+    "fastingTracker": "Oruç Takipçisi",
+    "halalFinder": "Helal Bulucu",
+    "hifzTracker": "Hıfz Takipçisi",
+    "morningBriefing": "Sabah Brifing",
+    "namesOfAllah": "Esmaül Hüsna",
     "ramadan": "Ramazan",
     "quran": "Kur'an",
     "surah": "Sure",
@@ -2937,7 +2943,13 @@
     "myMosques": "Camilerim",
     "nearbyMosques": "Yakındaki Camiler",
     "madhab": "Mezhep",
-    "createMosque": "Cami Sayfası Oluştur"
+    "createMosque": "Cami Sayfası Oluştur",
+    "duaCollection": "Dua Koleksiyonu",
+    "fastingTracker": "Oruç Takipçisi",
+    "halalFinder": "Helal Bulucu",
+    "hifzTracker": "Hıfz Takipçisi",
+    "morningBriefing": "Sabah Brifing",
+    "namesOfAllah": "Esmaül Hüsna"
   },
   "prayer": {
     "timeFor": "{{prayer}} vakti geldi",

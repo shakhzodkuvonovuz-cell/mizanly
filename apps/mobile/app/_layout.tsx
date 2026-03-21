@@ -15,6 +15,7 @@ import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import { NotoNaskhArabic_400Regular, NotoNaskhArabic_700Bold } from "@expo-google-fonts/noto-naskh-arabic";
 import * as Linking from 'expo-linking';
+import { setupDeepLinkListeners } from '@/utils/deepLinking';
 import { api } from '@/services/api';
 import { widgetData } from '@/services/widgetData';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -287,6 +288,15 @@ const lockStyles = StyleSheet.create({
   },
 });
 
+/** Handles deep links (mizanly:// and https://mizanly.com URLs) */
+function DeepLinkHandler() {
+  useEffect(() => {
+    const cleanup = setupDeepLinkListeners();
+    return cleanup;
+  }, []);
+  return null;
+}
+
 /** Routes incoming share intents (text, images, videos from other apps) to the share-receive screen. */
 function ShareIntentHandler() {
   const router = useRouter();
@@ -348,6 +358,7 @@ export default function RootLayout() {
               <AuthGuard />
               <AppStateHandler />
               <ShareIntentHandler />
+              <DeepLinkHandler />
               <BiometricLockOverlay />
               <EidCelebrationOverlay />
               <Stack screenOptions={{ headerShown: false }}>
