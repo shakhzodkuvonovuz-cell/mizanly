@@ -103,6 +103,7 @@ export class ThreadsController {
     return this.threadsService.delete(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/like')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -120,6 +121,7 @@ export class ThreadsController {
     return this.threadsService.unlike(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/repost')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -137,6 +139,7 @@ export class ThreadsController {
     return this.threadsService.unrepost(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/bookmark')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -165,6 +168,7 @@ export class ThreadsController {
     return this.threadsService.getReplies(id, cursor, 20, viewerId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/replies/:replyId/like')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -190,6 +194,7 @@ export class ThreadsController {
     return this.threadsService.unlikeReply(threadId, replyId, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/replies')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

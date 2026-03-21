@@ -16,6 +16,7 @@ import {
 
 @ApiTags('Commerce')
 @Controller()
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class CommerceController {
   constructor(private commerceService: CommerceService) {}
 
@@ -57,6 +58,7 @@ export class CommerceController {
 
   @Post('orders')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Create order' })
   createOrder(@CurrentUser('id') userId: string, @Body() dto: CreateOrderDto) {
     return this.commerceService.createOrder(userId, dto);
@@ -124,6 +126,7 @@ export class CommerceController {
 
   @Post('zakat/funds/:id/donate')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Donate to zakat fund' })
   donateZakat(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: DonateZakatDto) {
     return this.commerceService.donateZakat(userId, id, dto);
@@ -140,6 +143,7 @@ export class CommerceController {
 
   @Post('treasury/:id/contribute')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Contribute to treasury' })
   contributeTreasury(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: ContributeTreasuryDto) {
     return this.commerceService.contributeTreasury(userId, id, dto.amount);

@@ -17,6 +17,13 @@ export class UserThrottlerGuard extends ThrottlerGuard {
       return `user:${user.id}`;
     }
     // Fall back to IP for unauthenticated requests
-    return (req as { ip?: string }).ip ?? 'unknown';
+    // Use forwarded IP header if behind proxy, then direct IP
+    const forwarded = (req as { headers?: Record<string, string> }).headers?.['x-forwarded-for'];
+    const ip = forwarded?.split(',')[0]?.trim() || (req as { ip?: string }).ip;
+    if (!ip) {
+      // Block requests with no identifiable source — prevents shared bucket abuse
+      throw new Error('Unable to identify request source for rate limiting');
+    }
+    return `ip:${ip}`;
   }
 }

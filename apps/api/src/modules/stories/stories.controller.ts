@@ -96,7 +96,7 @@ export class StoriesController {
   @Post(':id/view')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @Throttle({ default: { ttl: 60000, limit: 60 } })
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Mark story as viewed' })
   markViewed(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.storiesService.markViewed(id, userId);
@@ -114,6 +114,7 @@ export class StoriesController {
     return this.storiesService.getViewers(id, userId, cursor);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/reply')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -184,6 +185,7 @@ export class StoriesController {
     return this.storiesService.addStoryToHighlight(storyId, albumId, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/sticker-response')
   @UseGuards(ClerkAuthGuard) @ApiBearerAuth() @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Submit sticker response' })

@@ -97,6 +97,7 @@ export class VideosController {
     return this.videosService.delete(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/like')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -108,6 +109,7 @@ export class VideosController {
     return this.videosService.like(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/dislike')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -130,6 +132,7 @@ export class VideosController {
     return this.videosService.removeReaction(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/comment')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -152,6 +155,7 @@ export class VideosController {
     return this.videosService.getComments(id, cursor);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/bookmark')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -176,7 +180,7 @@ export class VideosController {
 
   @Post(':id/view')
   @UseGuards(OptionalClerkAuthGuard)
-  @Throttle({ default: { ttl: 60000, limit: 60 } })
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Record a view for a video' })
   view(
     @Param('id') id: string,
@@ -190,6 +194,7 @@ export class VideosController {
     return { viewed: true };
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Patch(':id/progress')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -227,6 +232,7 @@ export class VideosController {
     return this.videosService.getRecommended(id, limitNum, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/record-progress')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

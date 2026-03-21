@@ -406,6 +406,33 @@ F17-01 (stripe-connect purchaseCoins no longer credits coins before payment — 
 - [17] F17-46 Gamification non-atomic level update — Deferred in file 08 (F21)
 - [17] F17-48 Transform interceptor null data — Correct behavior (wraps in { success: true, data: null })
 
+## From Audit 18 (Rate Limiting) — 41 findings
+### FIXED directly (35 findings):
+F1 (chat lock verify-code 5/5min), F2 (2FA validate 5/5min from 5/1min), F3 (2FA backup 5/5min from 5/1min), F4 (parental PIN 3/5min), F5 (WebSocket: rate limits on join 20/min, typing 10/10s, read 30/min, online 10/min, call_initiate 3/min, call_signal 60/10s, message_delivered 60/min, join_quran_room 10/min), F6 (AI endpoints: suggest-posting-time 10/min, moderate 5/min, route-space 10/min, captions 5/min, avatars 20/min), F8 (feed endpoints — already had throttles from file 07), F9 (community — already had class-level 30/min), F10 (commerce: class-level 30/min + orders 10/min, zakat donate 5/min, treasury 5/min), F11 (gamification: class-level 30/min), F12 (discord features: class-level 30/min), F13 (messages: class-level 60/min + react 30/min, DM 10/min, forward 20/min, scheduled 10/min, view-once 10/min, ban 10/min, verify-lock 5/5min), F14 (posts: react/save/share/comment/comment-like all 30/min), F15 (threads: like/repost/bookmark/replies/reply-like all 30/min), F16 (reels: like/comment/share/bookmark 30/min, view 10/min), F17 (videos: like/dislike/comment/bookmark 30/min, view 10/min, progress 30/min), F18 (stories: view 10/min, reply/sticker 30/min), F19 (channels: subscribe 30/min), F25 (UserThrottlerGuard: reject unknown IP instead of shared bucket + x-forwarded-for support), F28 (account deletion 1/day on DELETE /users/me), F29 (privacy delete-all already 1/day), F30 (contact sync 5/hour)
+
+### Already fixed in previous files:
+F7 (embeddings admin guard — file 07), F8 partial (feed throttles — file 07), F24 (webhook SkipThrottle — no conflict exists, code correct), F41 (Stripe webhook SkipThrottle — correct pattern)
+
+### Deferred — architecture/design:
+- [18] F37 Per-target-user throttle keying for unauthenticated sensitive endpoints — needs custom decorator — OPEN
+- [18] F38 Per-event-type WebSocket rate limits — partially fixed (per-event keys now used) — NOTED
+- [18] F39 WebSocket connection rate limiting — needs IP tracking before auth — OPEN
+- [18] F40 IP-based WebSocket rate limiting — needs pre-auth middleware — OPEN
+
+### NOTED (acceptable/by-design/minor):
+- [18] F20 Telegram features — global limit sufficient for MVP
+- [18] F21 Broadcast — class throttle sufficient
+- [18] F22 Live — class throttle sufficient for MVP
+- [18] F23 Islamic writes — class 30/min acceptable since most writes are personal data
+- [18] F26 Creator AI 20/hour — acceptable cost control
+- [18] F27 Admin flags — admin role check already added in file 13
+- [18] F31 Health metrics info disclosure — dev/staging only, acceptable
+- [18] F32 OG scraping — 60/min is standard for metadata endpoints
+- [18] F33 Audio rooms — uniform 10/min is fine
+- [18] F34 Mosque/halal — method-level throttles present
+- [18] F35 Scholar Q&A — scholar role check needed, separate from rate limiting
+- [18] F36 Various controllers — global 100/min sufficient for low-traffic features
+
 ---
 
 ## Summary

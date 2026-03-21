@@ -15,6 +15,7 @@ import {
 
 @ApiTags('Discord Features')
 @Controller()
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class DiscordFeaturesController {
   constructor(private service: DiscordFeaturesService) {}
 

@@ -177,6 +177,7 @@ class ScheduleMessageDto {
 @Controller('messages')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 export class MessagesController {
   constructor(private messagesService: MessagesService) {}
 
@@ -247,6 +248,7 @@ export class MessagesController {
 
 
   @Post('conversations/:id/messages/:messageId/react')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'React to a message with emoji' })
   reactToMessage(
     @Param('messageId') messageId: string,
@@ -294,6 +296,7 @@ export class MessagesController {
   }
 
   @Post('dm')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Create or retrieve a DM conversation' })
   createDM(
     @CurrentUser('id') userId: string,
@@ -360,7 +363,8 @@ export class MessagesController {
 
   @Post('conversations/:id/verify-lock')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify lock code for a conversation' })
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
+  @ApiOperation({ summary: 'Verify lock code for a conversation (5 attempts per 5 min)' })
   verifyLockCode(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
@@ -399,6 +403,7 @@ export class MessagesController {
 
   @Post('forward/:messageId')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Forward message' })
   async forward(@Param('messageId') mid: string, @CurrentUser('id') uid: string, @Body() dto: ForwardMessageDto) {
     return this.messagesService.forwardMessage(mid, uid, dto.conversationIds);
@@ -446,6 +451,7 @@ export class MessagesController {
   }
 
   @Post('messages/scheduled')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Schedule a message' })
   async scheduleMessage(
     @CurrentUser('id') userId: string,
@@ -502,6 +508,7 @@ export class MessagesController {
 
   // ── View Once ──
   @Post(':conversationId/view-once')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Send a view-once message' })
   async sendViewOnceMessage(
     @Param('conversationId') conversationId: string,
@@ -542,6 +549,7 @@ export class MessagesController {
   }
 
   @Post(':conversationId/members/:targetUserId/ban')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Ban a member from group' })
   async banMember(
     @Param('conversationId') conversationId: string,

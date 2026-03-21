@@ -75,7 +75,8 @@ export class ParentalControlsController {
 
   @Post(':childId/pin')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify PIN' })
+  @Throttle({ default: { limit: 3, ttl: 300000 } })
+  @ApiOperation({ summary: 'Verify PIN (3 attempts per 5 min)' })
   verifyPin(
     @CurrentUser('id') parentUserId: string,
     @Param('childId') childId: string,

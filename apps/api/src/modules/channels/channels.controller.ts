@@ -91,6 +91,7 @@ export class ChannelsController {
     return this.channelsService.delete(handle, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':handle/subscribe')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

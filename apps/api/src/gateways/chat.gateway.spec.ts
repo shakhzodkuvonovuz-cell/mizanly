@@ -63,7 +63,7 @@ describe('ChatGateway', () => {
         {
           provide: 'REDIS',
           useValue: {
-            incr: jest.fn(),
+            incr: jest.fn().mockResolvedValue(1),
             expire: jest.fn().mockResolvedValue(1),
             get: jest.fn().mockResolvedValue(null),
             set: jest.fn().mockResolvedValue('OK'),

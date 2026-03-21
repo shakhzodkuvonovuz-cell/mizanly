@@ -90,8 +90,8 @@ export class TwoFactorController {
   @Post('validate')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Validate TOTP code during login' })
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
+  @ApiOperation({ summary: 'Validate TOTP code (5 attempts per 5 min)' })
   @ApiResponse({ status: 200, description: 'Returns validation result' })
   async validate(@CurrentUser('id') userId: string, @Body() dto: VerifyDto) {
     const valid = await this.twoFactorService.validate(userId, dto.code);
@@ -126,8 +126,8 @@ export class TwoFactorController {
   @Post('backup')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Use a backup code for authentication' })
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
+  @ApiOperation({ summary: 'Use a backup code (5 attempts per 5 min)' })
   @ApiResponse({ status: 200, description: 'Backup code accepted' })
   @ApiResponse({ status: 400, description: 'Invalid backup code' })
   async backup(@CurrentUser('id') userId: string, @Body() dto: VerifyBackupDto) {

@@ -74,7 +74,8 @@ export class UsersController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Permanently delete account (soft delete)' })
+  @Throttle({ default: { limit: 1, ttl: 86400000 } })
+  @ApiOperation({ summary: 'Permanently delete account (1/day)' })
   deleteAccount(@CurrentUser('id') userId: string) {
     return this.usersService.deleteAccount(userId);
   }
@@ -213,7 +214,8 @@ export class UsersController {
   @Post('contacts/sync')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Find friends from phone contacts' })
+  @Throttle({ default: { limit: 5, ttl: 3600000 } })
+  @ApiOperation({ summary: 'Find friends from phone contacts (5/hour)' })
   async syncContacts(@CurrentUser('id') userId: string, @Body() dto: ContactSyncDto) {
     return this.usersService.findByPhoneNumbers(userId, dto.phoneNumbers);
   }
@@ -232,7 +234,8 @@ export class UsersController {
   @Post('me/delete-account')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Request account deletion (30-day grace)' })
+  @Throttle({ default: { limit: 1, ttl: 86400000 } })
+  @ApiOperation({ summary: 'Request account deletion (1/day)' })
   requestAccountDeletion(@CurrentUser('id') userId: string) {
     return this.usersService.requestAccountDeletion(userId);
   }

@@ -36,6 +36,7 @@ export class AiController {
 
   @Get('suggest-posting-time')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get suggested best posting time' })
   suggestPostingTime(@CurrentUser('id') userId: string) {
     return this.aiService.suggestPostingTime(userId);
@@ -51,6 +52,7 @@ export class AiController {
 
   @Post('moderate')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Moderate content' })
   moderate(@Body() dto: ModerateDto) {
     return this.aiService.moderateContent(dto.text, dto.contentType);
@@ -74,6 +76,7 @@ export class AiController {
 
   @Post('route-space')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get recommended space for content' })
   routeSpace(@Body() dto: RouteSpaceDto) {
     return this.aiService.routeToSpace(dto.content, dto.mediaTypes);
@@ -81,6 +84,7 @@ export class AiController {
 
   @Post('videos/:videoId/captions')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Generate AI captions for video' })
   generateCaptions(@Param('videoId') videoId: string, @Body() dto: GenerateCaptionsDto) {
     return this.aiService.generateVideoCaptions(videoId, dto.audioUrl, dto.language);
@@ -103,6 +107,7 @@ export class AiController {
 
   @Get('avatars')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Get user AI avatars' })
   getUserAvatars(@CurrentUser('id') userId: string) {
     return this.aiService.getUserAvatars(userId);

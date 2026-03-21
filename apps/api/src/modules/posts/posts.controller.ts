@@ -114,6 +114,7 @@ export class PostsController {
     return this.postsService.delete(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/react')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -135,6 +136,7 @@ export class PostsController {
     return this.postsService.unreact(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/save')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -152,6 +154,7 @@ export class PostsController {
     return this.postsService.unsave(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/share')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -171,6 +174,7 @@ export class PostsController {
     return this.postsService.getComments(id, cursor);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/comments')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -229,6 +233,7 @@ export class PostsController {
     return this.postsService.deleteComment(commentId, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/comments/:commentId/like')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

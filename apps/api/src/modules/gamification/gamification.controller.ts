@@ -17,6 +17,7 @@ const VALID_STREAK_TYPES = ['posting', 'engagement', 'quran', 'dhikr', 'learning
 
 @ApiTags('Gamification')
 @Controller()
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class GamificationController {
   constructor(private gamificationService: GamificationService) {}
 

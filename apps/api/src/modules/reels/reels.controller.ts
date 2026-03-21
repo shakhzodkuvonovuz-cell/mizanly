@@ -105,6 +105,7 @@ export class ReelsController {
     return this.reelsService.delete(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/like')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Like a reel' })
@@ -119,6 +120,7 @@ export class ReelsController {
     return this.reelsService.unlike(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/comment')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Add a comment to a reel' })
@@ -152,6 +154,7 @@ export class ReelsController {
     return this.reelsService.deleteComment(id, commentId, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/share')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Share a reel' })
@@ -159,6 +162,7 @@ export class ReelsController {
     return this.reelsService.share(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/bookmark')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Bookmark a reel' })
@@ -175,7 +179,7 @@ export class ReelsController {
 
   @Post(':id/view')
   @UseGuards(OptionalClerkAuthGuard)
-  @Throttle({ default: { ttl: 60000, limit: 60 } })
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Record a view for a reel' })
   view(@Param('id') id: string, @CurrentUser('id') userId?: string) {
     // Only record view if user is authenticated
