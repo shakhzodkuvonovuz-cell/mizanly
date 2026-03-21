@@ -604,12 +604,11 @@ F1 (Bakra snap), F5/F6 (expo-image), F7/F9/F10/F12/F13 (React.memo on 5 list ite
 ### FIXED in second pass (17 additional):
 F2 (getItemLayout marked unused), F3 (currentIndex + reels refs to avoid renderItem re-create), F11 (CommentsSheet wrapped in memo), F15 (handleViewableItemsChanged uses currentIndexRef + reelsRef), F16 (FEED_TABS/TABS arrays wrapped in useMemo in saf/majlis/risalah), F23 (Bakra listEmpty/listFooter wrapped in useMemo), F25 (windowSize={7} added to 4 main feed FlashLists), F26 (maxToRenderPerBatch={5} added to 4 main feed FlashLists), F31 (Minbar handleVideoPress/handleChannelPress/handleMorePress wrapped in useCallback), F33 (PostCard: removed FadeInUp entrance animation on recycle), F34 (ThreadCard: removed FadeInUp entrance animation on recycle)
 
-### NOTED (14 remaining — micro-optimizations):
-- [28] F4/F14 Inline styles (50+ objects) — would need massive StyleSheet refactor
-- [28] F8 Conversation renderItem inline — complex closure dependencies
-- [28] F17 AnimatedThreadCard stagger — minor visual quirk
-- [28] F18-22 Hooks inside ReelItem — needs parent callback lift
-- [28] F24 AnimatedThreadCard useTranslation — needs prop drilling
-- [28] F27-30 Dimensions/unstable deps — minor
-- [28] F35-47 P3 items — formatDate, module state, animation overhead
+### FIXED in third pass (14 final):
+F8 (conversation renderItem → useCallback), F17 (AnimatedThreadCard: animation deps [] not [index]), F18 (doubleTapGesture → useMemo), F24 (AnimatedThreadCard: isRTL passed as prop instead of useTranslation in list item), F30 (Minbar listHeader: haptic extracted to handleCategoryPress useCallback), F35 (PostCard+ThreadCard: formatDistanceToNowStrict → useMemo), F36 (VideoPlayer: Dimensions.get → useWindowDimensions), F37/F38 (ImageCarousel: onScroll+renderItem → useCallback), F40 (FloatingHearts: module-level counter → useRef)
+
+### NOTED (3 remaining — massive refactors):
+- [28] F4/F14 Inline styles in Bakra+Conversation (50+ objects) — needs full StyleSheet extraction
+- [28] F19-22 Hooks inside ReelItem (useUser/useQueryClient/useRouter/useMutation) — needs parent callback architecture
+- [28] F27 Dimensions.get at module scope in 30+ files — needs codemod
 - [27] A9-01 remaining hardcoded labels: VideoControls, MiniPlayer, Autocomplete, LinkPreview

@@ -1,4 +1,4 @@
-import React, { useRef, useState, memo } from 'react';
+import React, { useRef, useState, useCallback, memo } from 'react';
 import {
   View,
   FlatList,
@@ -35,19 +35,17 @@ export const ImageCarousel = memo(function ImageCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Handle scroll to update current index
-  const onScroll = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
+  const onScroll = useCallback((event: { nativeEvent: { contentOffset: { x: number } } }) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / screenWidth);
-    if (index !== currentIndex) {
-      setCurrentIndex(index);
-    }
-  };
+    setCurrentIndex((prev) => (prev !== index ? index : prev));
+  }, [screenWidth]);
 
   const goToIndex = (index: number) => {
     flatListRef.current?.scrollToIndex({ index, animated: true });
   };
 
-  const renderItem = ({ item, index }: ListRenderItemInfo<string>) => (
+  const renderItem = useCallback(({ item, index }: ListRenderItemInfo<string>) => (
     <Pressable
       style={[styles.imageWrapper, { width: screenWidth, height }]}
       onPress={() => onImagePress?.(index)}
@@ -63,7 +61,7 @@ export const ImageCarousel = memo(function ImageCarousel({
         blurRadius={blurred ? 30 : 0}
       />
     </Pressable>
-  );
+  ), [screenWidth, height, onImagePress, images.length, borderRadius, blurred]);
 
   const scrollSnapInterval = screenWidth;
 

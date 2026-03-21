@@ -169,10 +169,10 @@ export default function MinbarScreen() {
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
 
-  const CATEGORIES = CATEGORY_KEYS.map((key) => ({
+  const CATEGORIES = useMemo(() => CATEGORY_KEYS.map((key) => ({
     key,
     label: key === 'all' ? t('minbar.categoryAll') : key === 'QURAN' ? t('minbar.categoryIslamic') : key === 'EDUCATION' ? t('minbar.categoryEducation') : key === 'VLOG' ? t('minbar.categoryLifestyle') : key === 'TECH' ? t('minbar.categoryTech') : t('minbar.categoryEntertainment'),
-  }));
+  })), [t]);
 
   const feedRef = useRef<FlashListRef<Video>>(null);
   useScrollToTop(feedRef);
@@ -258,6 +258,11 @@ export default function MinbarScreen() {
 
   const keyExtractor = useCallback((item: Video) => item.id, []);
 
+  const handleCategoryPress = useCallback((key: VideoCategory | 'all') => {
+    haptic.light();
+    setSelectedCategory(key);
+  }, [haptic]);
+
   const listHeader = useMemo(() => (
     <View>
       {/* Continue Watching */}
@@ -317,15 +322,12 @@ export default function MinbarScreen() {
             key={cat.key}
             cat={cat}
             isActive={selectedCategory === cat.key}
-            onPress={() => {
-              haptic.light();
-              setSelectedCategory(cat.key);
-            }}
+            onPress={() => handleCategoryPress(cat.key)}
           />
         ))}
       </ScrollView>
     </View>
-  ), [selectedCategory, haptic, continueWatchingQuery.data, router, feedType]);
+  ), [selectedCategory, handleCategoryPress, continueWatchingQuery.data, router, feedType, t, CATEGORIES]);
 
   const listEmpty = useMemo(() => {
     if (feedType === 'subscriptions') {

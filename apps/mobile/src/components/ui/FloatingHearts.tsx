@@ -25,8 +25,6 @@ interface FloatingHeartsProps {
   count?: number;
 }
 
-let nextId = 0;
-
 function Heart({
   particle,
   color,
@@ -87,6 +85,7 @@ function Heart({
 export function FloatingHearts({ trigger, color, count = 8 }: FloatingHeartsProps) {
   const [particles, setParticles] = useState<HeartParticle[]>([]);
   const prevTrigger = useRef(trigger);
+  const nextIdRef = useRef(0);
   const heartColor = color ?? colors.like;
 
   const removeParticle = useCallback((id: number) => {
@@ -98,7 +97,7 @@ export function FloatingHearts({ trigger, color, count = 8 }: FloatingHeartsProp
       const newParticles: HeartParticle[] = [];
       for (let i = 0; i < count; i++) {
         newParticles.push({
-          id: nextId++,
+          id: nextIdRef.current++,
           x: Math.random() * 40 - 20,
           rotation: Math.random() * 90 - 30,
           size: Math.round(Math.random() * 14 + 18),

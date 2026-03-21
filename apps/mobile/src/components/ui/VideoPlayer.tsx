@@ -5,7 +5,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
@@ -51,6 +51,7 @@ export const VideoPlayer = memo(function VideoPlayer({
   onPiPEnter,
 }: VideoPlayerProps) {
   const { t } = useTranslation();
+  const { width: windowWidth } = useWindowDimensions();
   const videoRef = useRef<Video>(null);
   const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -235,7 +236,7 @@ export const VideoPlayer = memo(function VideoPlayer({
         {/* Loading skeleton */}
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <Skeleton.Rect width={Dimensions.get('window').width} height={Dimensions.get('window').width * (9 / 16)} borderRadius={0} />
+            <Skeleton.Rect width={windowWidth} height={windowWidth * (9 / 16)} borderRadius={0} />
           </View>
         )}
 

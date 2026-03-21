@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, memo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Alert, Share, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -203,7 +203,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     opacity: overlayHeartOpacity.value,
   }));
 
-  const timeAgo = formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
+  const timeAgo = useMemo(() => formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true, locale: getDateFnsLocale() }), [post.createdAt]);
 
   if (dismissed) return null;
 

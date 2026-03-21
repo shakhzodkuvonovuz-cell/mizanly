@@ -38,9 +38,10 @@ interface AnimatedThreadCardProps {
   viewerId?: string;
   isOwn?: boolean;
   index: number;
+  isRTL?: boolean;
 }
 
-const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, isOwn, index }: AnimatedThreadCardProps) {
+const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, isOwn, index, isRTL: isRTLProp }: AnimatedThreadCardProps) {
   // Entrance animation
   const translateY = useSharedValue(4);
   const opacity = useSharedValue(0);
@@ -52,7 +53,8 @@ const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, 
       opacity.value = withTiming(1, { duration: 250 });
     }, delay);
     return () => clearTimeout(timer);
-  }, [index, translateY, opacity]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -60,11 +62,10 @@ const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, 
   }));
 
   // Engagement glow: high engagement gets gold start border
-  const { isRTL: isRTLLocal } = useTranslation();
   const hasHighEngagement = thread.likesCount > 50 || thread.repliesCount > 20;
 
   return (
-    <Animated.View style={[animStyle, hasHighEngagement && rtlBorderStart(isRTLLocal, 2, colors.gold)]}>
+    <Animated.View style={[animStyle, hasHighEngagement && rtlBorderStart(!!isRTLProp, 2, colors.gold)]}>
       <ThreadCard thread={thread} viewerId={viewerId} isOwn={isOwn} />
     </Animated.View>
   );
@@ -193,8 +194,9 @@ export default function MajlisScreen() {
       viewerId={user?.id}
       isOwn={user?.username === item.user.username}
       index={index}
+      isRTL={isRTL}
     />
-  ), [user?.id, user?.username]);
+  ), [user?.id, user?.username, isRTL]);
   const onEndReached = useCallback(() => {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) feedQuery.fetchNextPage();
   }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);

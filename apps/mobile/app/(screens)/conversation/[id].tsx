@@ -1258,6 +1258,47 @@ export default function ConversationScreen() {
     });
   });
 
+  const renderMessageItem = useCallback(({ item, index }: { item: typeof listItems[number]; index: number }) => {
+    if (item.type === 'date') return <DateSeparator label={item.label} />;
+    if (item.type === 'pending') {
+      return <PendingMessageRow pending={item.pending} />;
+    }
+    const readByMembers = convoQuery.data?.members?.filter(member =>
+      member.userId !== user?.id &&
+      member.lastReadAt &&
+      new Date(member.lastReadAt) >= new Date(item.message.createdAt)
+    ).slice(0, 3) ?? [];
+    const encMsg = item.message as EncryptedMessage;
+    const displayMessage = (encMsg.isEncrypted && decryptedContents.has(encMsg.id))
+      ? { ...item.message, content: decryptedContents.get(encMsg.id) ?? item.message.content }
+      : item.message;
+    return (
+      <Swipeable
+        renderRightActions={() => (
+          <View style={styles.swipeAction}>
+            <Icon name="message-circle" size="sm" color={colors.emerald} />
+          </View>
+        )}
+        onSwipeableWillOpen={() => handleSwipeReply(item.message)}
+        rightThreshold={40}
+      >
+        <MessageBubble
+          message={displayMessage}
+          isOwn={item.message.sender.id === user?.id}
+          isGroupStart={item.isGroupStart}
+          isGroupEnd={item.isGroupEnd}
+          onLongPress={handleContextMenu}
+          isNew={newMessageIdsRef.current.has(item.message.id)}
+          searchQuery={searchQuery}
+          readByMembers={readByMembers}
+          onSearchResultPress={() => handleSearchResultPress(index)}
+          conversationId={id}
+          deliveredMessages={deliveredMessages}
+        />
+      </Swipeable>
+    );
+  }, [convoQuery.data?.members, user?.id, decryptedContents, handleSwipeReply, handleContextMenu, searchQuery, handleSearchResultPress, id, deliveredMessages]);
+
   const glassHeaderHeight = insets.top + 52;
 
   if (convoQuery.isError) {
@@ -1410,49 +1451,7 @@ export default function ConversationScreen() {
             data={listItems}
             keyExtractor={(item) => item.key}
             removeClippedSubviews={true}
-            renderItem={({ item, index }) => {
-              if (item.type === 'date') return <DateSeparator label={item.label} />;
-              if (item.type === 'pending') {
-                // Render pending message with opacity/spinner
-                return <PendingMessageRow pending={item.pending} />;
-              }
-              const readByMembers = convoQuery.data?.members?.filter(member =>
-                member.userId !== user?.id &&
-                member.lastReadAt &&
-                new Date(member.lastReadAt) >= new Date(item.message.createdAt)
-              ).slice(0, 3) ?? [];
-              // Use decrypted content for encrypted messages
-              const encMsg = item.message as EncryptedMessage;
-              const displayMessage = (encMsg.isEncrypted && decryptedContents.has(encMsg.id))
-                ? { ...item.message, content: decryptedContents.get(encMsg.id) ?? item.message.content }
-                : item.message;
-              return (
-                  <Swipeable
-                    renderRightActions={() => (
-                      <View style={styles.swipeAction}>
-                        <Icon name="message-circle" size="sm" color={colors.emerald} />
-                      </View>
-                    )}
-                    onSwipeableWillOpen={() => handleSwipeReply(item.message)}
-                    rightThreshold={40}
-                  >
-                    <MessageBubble
-                      message={displayMessage}
-                      isOwn={item.message.sender.id === user?.id}
-                      isGroupStart={item.isGroupStart}
-                      isGroupEnd={item.isGroupEnd}
-                      onLongPress={handleContextMenu}
-                      isNew={newMessageIdsRef.current.has(item.message.id)}
-                      searchQuery={searchQuery}
-                      readByMembers={readByMembers}
-                      onSearchResultPress={() => handleSearchResultPress(index)}
-                      conversationId={id}
-                      deliveredMessages={deliveredMessages}
-                    />
-                  </Swipeable>
-              
-              );
-            }}
+            renderItem={renderMessageItem}
             onEndReached={() => {
               if (messagesQuery.hasNextPage && !messagesQuery.isFetchingNextPage) {
                 messagesQuery.fetchNextPage();

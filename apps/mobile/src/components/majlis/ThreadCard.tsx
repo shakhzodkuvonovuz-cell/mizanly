@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { View, Text, StyleSheet, Alert, Share , Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -166,7 +166,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
     // Optionally show a toast? Not needed.
   };
 
-  const timeAgo = formatDistanceToNowStrict(new Date(thread.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
+  const timeAgo = useMemo(() => formatDistanceToNowStrict(new Date(thread.createdAt), { addSuffix: true, locale: getDateFnsLocale() }), [thread.createdAt]);
 
   if (dismissed) return null;
 

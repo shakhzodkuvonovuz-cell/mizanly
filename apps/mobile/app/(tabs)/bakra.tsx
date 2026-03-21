@@ -649,7 +649,7 @@ export default function BakraScreen() {
     Alert.alert(t('bakra.linkCopiedAlert.title'), t('bakra.linkCopiedAlert.message'));
   };
 
-  const doubleTapGesture = Gesture.Tap()
+  const doubleTapGesture = useMemo(() => Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
       haptic.medium();
@@ -658,7 +658,7 @@ export default function BakraScreen() {
         handleLike(reel);
       }
       setHeartTrigger((prev) => prev + 1);
-    });
+    }), [haptic, reels, currentIndex, handleLike]);
 
   const renderItem = useCallback(({ item, index }: { item: Reel; index: number }) => (
     <ReelItem
