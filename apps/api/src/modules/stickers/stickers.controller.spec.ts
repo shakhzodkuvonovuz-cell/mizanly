@@ -40,12 +40,12 @@ describe('StickersController', () => {
   });
 
   describe('createPack', () => {
-    it('should call service.createPack', async () => {
+    it('should call service.createPack with userId', async () => {
       const dto = { name: 'Pack', description: 'desc', stickers: [] };
       const expected = { id: 'pack-1', ...dto };
       mockService.createPack.mockResolvedValue(expected);
-      const result = await controller.createPack(dto as any);
-      expect(service.createPack).toHaveBeenCalledWith(dto);
+      const result = await controller.createPack('user-1', dto as any);
+      expect(service.createPack).toHaveBeenCalledWith(dto, 'user-1');
       expect(result).toEqual(expected);
     });
   });
@@ -91,10 +91,10 @@ describe('StickersController', () => {
   });
 
   describe('deletePack', () => {
-    it('should call service.deletePack', async () => {
+    it('should call service.deletePack with userId', async () => {
       mockService.deletePack.mockResolvedValue({ deleted: true });
-      await controller.deletePack('pack-1');
-      expect(service.deletePack).toHaveBeenCalledWith('pack-1');
+      await controller.deletePack('user-1', 'pack-1');
+      expect(service.deletePack).toHaveBeenCalledWith('pack-1', 'user-1');
     });
   });
 

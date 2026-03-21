@@ -10,7 +10,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { GamificationService } from './gamification.service';
 import {
   CreateChallengeDto, UpdateProgressDto, CreateSeriesDto,
-  AddEpisodeDto, UpdateProfileCustomizationDto,
+  AddEpisodeDto, UpdateProfileCustomizationDto, UpdateSeriesProgressDto,
 } from './dto/gamification.dto';
 
 const VALID_STREAK_TYPES = ['posting', 'engagement', 'quran', 'dhikr', 'learning'];
@@ -31,6 +31,7 @@ export class GamificationController {
 
   @Post('streaks/:type')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Update streak for today' })
   updateStreak(@CurrentUser('id') userId: string, @Param('type') type: string) {
     if (!VALID_STREAK_TYPES.includes(type)) {
@@ -43,6 +44,7 @@ export class GamificationController {
 
   @Get('xp')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get XP and level info' })
   getXP(@CurrentUser('id') userId: string) {
     return this.gamificationService.getXP(userId);
@@ -52,7 +54,8 @@ export class GamificationController {
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Get XP history' })
   getXPHistory(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    return this.gamificationService.getXPHistory(userId, cursor, limit ? parseInt(limit) : undefined);
+    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit) : 20), 50);
+    return this.gamificationService.getXPHistory(userId, cursor, safeLimit);
   }
 
   // ── Achievements ──────────────────────────────────────
@@ -70,7 +73,10 @@ export class GamificationController {
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get leaderboard' })
   getLeaderboard(@Query('type') type = 'xp', @Query('limit') limit?: string) {
-    return this.gamificationService.getLeaderboard(type, limit ? parseInt(limit) : undefined);
+    const validTypes = ['xp', 'streaks', 'helpers'];
+    const safeType = validTypes.includes(type) ? type : 'xp';
+    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit) : 50), 100);
+    return this.gamificationService.getLeaderboard(safeType, safeLimit);
   }
 
   // ── Challenges ────────────────────────────────────────
@@ -79,7 +85,8 @@ export class GamificationController {
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Browse challenges' })
   getChallenges(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    return this.gamificationService.getChallenges(cursor, limit ? parseInt(limit) : undefined);
+    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit) : 20), 50);
+    return this.gamificationService.getChallenges(cursor, safeLimit);
   }
 
   @Post('challenges')
@@ -129,7 +136,15 @@ export class GamificationController {
     @Query('limit') limit?: string,
     @Query('category') category?: string,
   ) {
-    return this.gamificationService.getDiscoverSeries(cursor, limit ? parseInt(limit) : undefined, category);
+    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit) : 20), 50);
+    return this.gamificationService.getDiscoverSeries(cursor, safeLimit, category);
+  }
+
+  @Get('series/continue-watching')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Get continue watching list' })
+  continueWatching(@CurrentUser('id') userId: string) {
+    return this.gamificationService.getContinueWatching(userId);
   }
 
   @Get('series/:id')
@@ -165,10 +180,10 @@ export class GamificationController {
   @Put('series/:id/progress')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Update series watch progress' })
-  updateProgress(
+  updateSeriesProgress(
     @CurrentUser('id') userId: string,
     @Param('id') seriesId: string,
-    @Body() body: { episodeNum: number; timestamp: number },
+    @Body() body: UpdateSeriesProgressDto,
   ) {
     return this.gamificationService.updateSeriesProgress(userId, seriesId, body.episodeNum, body.timestamp);
   }
@@ -181,13 +196,6 @@ export class GamificationController {
     @Param('id') seriesId: string,
   ) {
     return this.gamificationService.getSeriesProgress(userId, seriesId);
-  }
-
-  @Get('series/continue-watching')
-  @UseGuards(ClerkAuthGuard)
-  @ApiOperation({ summary: 'Get continue watching list' })
-  continueWatching(@CurrentUser('id') userId: string) {
-    return this.gamificationService.getContinueWatching(userId);
   }
 
   // ── Profile Customization ───────────────────────────────

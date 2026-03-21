@@ -51,24 +51,20 @@ describe('GamificationService — edge cases', () => {
   });
 
   describe('awardXP — edge cases', () => {
-    it('should handle amount = 0 (uses default 5 XP for unknown reason)', async () => {
-      prisma.userXP.upsert.mockResolvedValue({ id: 'xp-1', userId, totalXP: 5, level: 1 });
-      prisma.xPHistory.create.mockResolvedValue({});
+    it('should reject customAmount=0 (returns current XP without awarding)', async () => {
+      prisma.userXP.findUnique.mockResolvedValue({ id: 'xp-1', userId, totalXP: 100, level: 2 });
 
-      // With customAmount=0, the || operator falls through to XP_REWARDS or default 5
       const result = await service.awardXP(userId, 'unknown_reason', 0);
       expect(result).toBeDefined();
-      expect(prisma.userXP.upsert).toHaveBeenCalled();
+      expect(prisma.userXP.upsert).not.toHaveBeenCalled();
     });
 
-    it('should handle negative customAmount (negative XP is allowed — increments by negative)', async () => {
-      // The service does NOT validate negative amounts — just increments by whatever is given
-      prisma.userXP.upsert.mockResolvedValue({ id: 'xp-1', userId, totalXP: -95, level: 1 });
-      prisma.xPHistory.create.mockResolvedValue({});
+    it('should reject negative customAmount (returns current XP without awarding)', async () => {
+      prisma.userXP.findUnique.mockResolvedValue({ id: 'xp-1', userId, totalXP: 100, level: 2 });
 
-      // This tests that the service does not crash on negative — it's a real edge case
       const result = await service.awardXP(userId, 'test', -100);
       expect(result).toBeDefined();
+      expect(prisma.userXP.upsert).not.toHaveBeenCalled();
     });
   });
 

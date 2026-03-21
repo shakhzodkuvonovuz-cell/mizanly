@@ -1,5 +1,5 @@
 import {
-  IsString, IsNumber, IsOptional, IsBoolean, IsIn, IsInt,
+  IsString, IsNumber, IsOptional, IsBoolean, IsIn, IsInt, IsUrl, IsDateString, Matches,
   MaxLength, Min, Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -7,13 +7,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class CreateChallengeDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiProperty() @IsString() @MaxLength(1000) description: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() coverUrl?: string;
-  @ApiProperty() @IsString() challengeType: string;
-  @ApiProperty() @IsString() category: string;
+  @ApiPropertyOptional() @IsOptional() @IsUrl() coverUrl?: string;
+  @ApiProperty() @IsString() @IsIn(['daily', 'weekly', 'monthly', 'custom']) challengeType: string;
+  @ApiProperty() @IsString() @IsIn(['quran', 'dhikr', 'photography', 'fitness', 'charity', 'community', 'learning', 'custom']) category: string;
   @ApiProperty() @IsInt() @Min(1) @Max(10000) targetCount: number;
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) @Max(500) xpReward?: number;
-  @ApiProperty() @IsString() startDate: string;
-  @ApiProperty() @IsString() endDate: string;
+  @ApiProperty() @IsDateString() startDate: string;
+  @ApiProperty() @IsDateString() endDate: string;
 }
 
 export class UpdateProgressDto {
@@ -23,8 +23,8 @@ export class UpdateProgressDto {
 export class CreateSeriesDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(1000) description?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() coverUrl?: string;
-  @ApiProperty() @IsString() category: string;
+  @ApiPropertyOptional() @IsOptional() @IsUrl() coverUrl?: string;
+  @ApiProperty() @IsString() @MaxLength(50) category: string;
 }
 
 export class AddEpisodeDto {
@@ -34,11 +34,16 @@ export class AddEpisodeDto {
   @ApiPropertyOptional() @IsOptional() @IsString() videoId?: string;
 }
 
+export class UpdateSeriesProgressDto {
+  @ApiProperty() @IsInt() @Min(1) @Max(10000) episodeNum: number;
+  @ApiProperty() @IsNumber() @Min(0) @Max(86400) timestamp: number;
+}
+
 export class UpdateProfileCustomizationDto {
-  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(7) accentColor?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @Matches(/^#[0-9a-fA-F]{6}$/, { message: 'accentColor must be a valid hex color (#RRGGBB)' }) accentColor?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['default', 'grid', 'magazine', 'minimal']) layoutStyle?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() backgroundUrl?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() backgroundMusic?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUrl() backgroundUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUrl() backgroundMusic?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() showBadges?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() showLevel?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() showStreak?: boolean;

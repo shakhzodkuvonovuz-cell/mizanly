@@ -51,26 +51,26 @@ export class RetentionService {
    * Find users whose streaks expire within the next 2 hours.
    * Returns user IDs that need a "Don't lose your streak!" push.
    */
-  async getUsersWithExpiringStreaks(): Promise<Array<{ userId: string; currentStreak: number }>> {
+  async getUsersWithExpiringStreaks(): Promise<Array<{ userId: string; currentDays: number }>> {
     const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
     const now = new Date();
 
     // Find streaks where the user hasn't done their daily action today
-    const activeStreaks = await this.prisma.streak.findMany({
+    const activeStreaks = await this.prisma.userStreak.findMany({
       where: {
-        currentStreak: { gte: 3 }, // Only warn for streaks of 3+ days
-        lastActivityAt: {
+        currentDays: { gte: 3 }, // Only warn for streaks of 3+ days
+        lastActiveDate: {
           // Last activity was yesterday (not today) — streak is at risk
           lt: new Date(new Date().setHours(0, 0, 0, 0)),
           gte: new Date(Date.now() - 48 * 60 * 60 * 1000), // Within last 48h (still valid)
         },
       },
-      select: { userId: true, currentStreak: true },
+      select: { userId: true, currentDays: true },
       take: 50,
     });
 
     // Filter out users we've already warned today
-    const results: Array<{ userId: string; currentStreak: number }> = [];
+    const results: Array<{ userId: string; currentDays: number }> = [];
     for (const streak of activeStreaks) {
       const key = `streak_warn:${streak.userId}:${new Date().toISOString().slice(0, 10)}`;
       const alreadyWarned = await this.redis.get(key);
@@ -92,12 +92,11 @@ export class RetentionService {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     // Find users inactive for 24h+
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const inactiveUsers = await this.prisma.user.findMany({
       where: {
         isDeactivated: false,
-        lastActiveAt: { lt: oneDayAgo },
-        // Must have been active at some point in the last week
-        lastActiveAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        lastActiveAt: { lt: oneDayAgo, gte: weekAgo },
       },
       select: { id: true },
       take: 50,
@@ -214,12 +213,12 @@ export class RetentionService {
 
     const [posts, reels, followers] = await Promise.all([
       this.prisma.post.aggregate({
-        where: { userId, createdAt: { gte: weekAgo } },
+        where: { userId, createdAt: { gte: weekAgo }, isRemoved: false },
         _sum: { likesCount: true, commentsCount: true, viewsCount: true },
         _count: true,
       }),
       this.prisma.reel.aggregate({
-        where: { userId, createdAt: { gte: weekAgo } },
+        where: { userId, createdAt: { gte: weekAgo }, isRemoved: false },
         _sum: { likesCount: true, commentsCount: true, viewsCount: true },
         _count: true,
       }),

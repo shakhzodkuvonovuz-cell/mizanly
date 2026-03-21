@@ -126,7 +126,8 @@ export class GamificationService {
   }
 
   async awardXP(userId: string, reason: string, customAmount?: number) {
-    const amount = customAmount || XP_REWARDS[reason] || 5;
+    const amount = customAmount ?? XP_REWARDS[reason] ?? 5;
+    if (amount <= 0) return this.getXP(userId); // Reject non-positive amounts
 
     // Use upsert + atomic increment to avoid race conditions
     // when multiple XP awards happen concurrently
@@ -220,10 +221,11 @@ export class GamificationService {
   // ── Leaderboards ────────────────────────────────────────
 
   async getLeaderboard(type: string, limit = 50) {
+    const safeLim = Math.min(Math.max(1, limit), 100);
     if (type === 'xp') {
       return this.prisma.userXP.findMany({
         orderBy: { totalXP: 'desc' },
-        take: limit,
+        take: safeLim,
         include: {
           user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
         },
@@ -234,7 +236,7 @@ export class GamificationService {
       return this.prisma.userStreak.findMany({
         where: { streakType: 'posting' },
         orderBy: { currentDays: 'desc' },
-        take: limit,
+        take: safeLim,
         include: {
           user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
         },
@@ -247,7 +249,7 @@ export class GamificationService {
         by: ['userId'],
         _sum: { likesCount: true },
         orderBy: { _sum: { likesCount: 'desc' } },
-        take: limit,
+        take: safeLim,
       });
 
       const userIds = topCommenters.map(c => c.userId);
@@ -453,15 +455,27 @@ export class GamificationService {
   }
 
   async unfollowSeries(userId: string, seriesId: string) {
-    await this.prisma.$transaction([
-      this.prisma.seriesFollower.delete({
-        where: { seriesId_userId: { seriesId, userId } },
-      }),
-      this.prisma.series.update({
-        where: { id: seriesId },
-        data: { followersCount: { decrement: 1 } },
-      }),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.seriesFollower.delete({
+          where: { seriesId_userId: { seriesId, userId } },
+        }),
+        this.prisma.series.update({
+          where: { id: seriesId },
+          data: { followersCount: { decrement: 1 } },
+        }),
+      ]);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'P2025') {
+        return { success: true }; // Already unfollowed — idempotent
+      }
+      throw err;
+    }
+    // Ensure followersCount doesn't go negative
+    await this.prisma.series.updateMany({
+      where: { id: seriesId, followersCount: { lt: 0 } },
+      data: { followersCount: 0 },
+    });
     return { success: true };
   }
 

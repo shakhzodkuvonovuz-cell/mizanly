@@ -1,10 +1,11 @@
-import { IsString, IsOptional, IsBoolean, IsArray, ValidateNested, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsArray, IsUrl, ValidateNested, MaxLength, ArrayMaxSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 class StickerItemDto {
   @ApiProperty()
   @IsString()
+  @MaxLength(500000)
   url: string;
 
   @ApiProperty({ required: false })
@@ -21,8 +22,8 @@ export class CreateStickerPackDto {
   name: string;
 
   @ApiProperty({ required: false })
-  @IsString()
   @IsOptional()
+  @IsUrl()
   coverUrl?: string;
 
   @ApiProperty({ default: true })
@@ -32,6 +33,7 @@ export class CreateStickerPackDto {
 
   @ApiProperty({ type: [StickerItemDto] })
   @IsArray()
+  @ArrayMaxSize(100)
   @ValidateNested({ each: true })
   @Type(() => StickerItemDto)
   stickers: StickerItemDto[];

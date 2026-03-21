@@ -24,7 +24,7 @@ describe('RetentionService', () => {
           provide: PrismaService,
           useValue: {
             reel: { findUnique: jest.fn() },
-            streak: { findMany: jest.fn().mockResolvedValue([]) },
+            userStreak: { findMany: jest.fn().mockResolvedValue([]) },
             user: { findMany: jest.fn().mockResolvedValue([]) },
             post: { count: jest.fn().mockResolvedValue(0) },
           },
@@ -78,19 +78,19 @@ describe('RetentionService', () => {
 
   describe('getUsersWithExpiringStreaks', () => {
     it('should return users with streaks at risk', async () => {
-      prisma.streak.findMany.mockResolvedValue([
-        { userId: 'u1', currentStreak: 5 },
+      prisma.userStreak.findMany.mockResolvedValue([
+        { userId: 'u1', currentDays: 5 },
       ]);
       redis.get.mockResolvedValue(null);
 
       const result = await service.getUsersWithExpiringStreaks();
       expect(result).toHaveLength(1);
-      expect(result[0].currentStreak).toBe(5);
+      expect(result[0].currentDays).toBe(5);
     });
 
     it('should skip already-warned users', async () => {
-      prisma.streak.findMany.mockResolvedValue([
-        { userId: 'u1', currentStreak: 5 },
+      prisma.userStreak.findMany.mockResolvedValue([
+        { userId: 'u1', currentDays: 5 },
       ]);
       redis.get.mockResolvedValue('1'); // Already warned
 
@@ -99,7 +99,7 @@ describe('RetentionService', () => {
     });
 
     it('should return empty array when no streaks at risk', async () => {
-      prisma.streak.findMany.mockResolvedValue([]);
+      prisma.userStreak.findMany.mockResolvedValue([]);
       const result = await service.getUsersWithExpiringStreaks();
       expect(result).toEqual([]);
     });

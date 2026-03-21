@@ -21,13 +21,14 @@ export class StickersService {
     private config: ConfigService,
   ) {}
 
-  async createPack(data: { name: string; coverUrl?: string; isFree?: boolean; stickers: { url: string; name?: string }[] }) {
+  async createPack(data: { name: string; coverUrl?: string; isFree?: boolean; stickers: { url: string; name?: string }[] }, userId?: string) {
     return this.prisma.stickerPack.create({
       data: {
         name: data.name,
         coverUrl: data.coverUrl,
         isFree: data.isFree ?? true,
         stickersCount: data.stickers.length,
+        ...(userId ? { createdById: userId } : {}),
         stickers: {
           createMany: {
             data: data.stickers.map((s, i) => ({ url: s.url, name: s.name, position: i })),
@@ -112,7 +113,23 @@ export class StickersService {
     });
   }
 
-  async deletePack(packId: string) {
+  async deletePack(packId: string, userId?: string) {
+    // Verify ownership or admin before deleting
+    if (userId) {
+      const pack = await this.prisma.stickerPack.findUnique({
+        where: { id: packId },
+        select: { createdById: true },
+      });
+      if (pack && pack.createdById && pack.createdById !== userId) {
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { role: true },
+        });
+        if (!user || user.role !== 'ADMIN') {
+          throw new BadRequestException('Not authorized to delete this pack');
+        }
+      }
+    }
     try {
       await this.prisma.stickerPack.delete({ where: { id: packId } });
     } catch (error) {
@@ -342,7 +359,23 @@ export class StickersService {
       throw new Error('No valid SVG in response');
     }
 
-    return svgMatch[0];
+    return this.sanitizeSvg(svgMatch[0]);
+  }
+
+  /** Strip dangerous elements and attributes from SVG to prevent XSS */
+  private sanitizeSvg(svg: string): string {
+    // Remove script tags and their content
+    let clean = svg.replace(/<script[\s\S]*?<\/script>/gi, '');
+    // Remove event handler attributes (onload, onerror, onclick, etc.)
+    clean = clean.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
+    clean = clean.replace(/\s+on\w+\s*=\s*\S+/gi, '');
+    // Remove javascript: and data: URIs in href/xlink:href attributes
+    clean = clean.replace(/(?:href|xlink:href)\s*=\s*["']?\s*(?:javascript|data):[^"'\s>]*/gi, '');
+    // Remove <foreignObject>, <embed>, <object>, <iframe>, <use> with external refs
+    clean = clean.replace(/<(?:foreignObject|embed|object|iframe)[\s\S]*?(?:<\/(?:foreignObject|embed|object|iframe)>|\/>)/gi, '');
+    // Remove <set>, <animate> with event handlers
+    clean = clean.replace(/<(?:set|animate)\s+[^>]*(?:onbegin|onend|onrepeat)[^>]*\/?>/gi, '');
+    return clean;
   }
 
   private generateFallbackSticker(prompt: string, style: StickerStyle): string {
@@ -355,7 +388,14 @@ export class StickersService {
       kawaii: { bg: '#FFB6C1', fg: '#FF69B4' },
     };
     const c = colors[style];
-    const displayText = prompt.length > 20 ? prompt.slice(0, 20) + '...' : prompt;
+    const rawText = prompt.length > 20 ? prompt.slice(0, 20) + '...' : prompt;
+    // XML-escape to prevent SVG injection
+    const displayText = rawText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
       <circle cx="256" cy="256" r="240" fill="${c.bg}" stroke="${c.fg}" stroke-width="8"/>

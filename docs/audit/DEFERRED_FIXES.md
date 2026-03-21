@@ -181,6 +181,39 @@ F-001, F-002 (SQL injection validation), F-003 (personalized feed block/mute), F
 - [04] P0-3 Trending feed no blocks — RESOLVED in F-004
 - [04] P0-4 FeedService trending/featured no blocks — RESOLVED in F-004, F-005
 
+## From Audit 08 (Gamification/Retention) — 52 findings
+### FIXED directly (35 findings):
+F1 (prisma.streak→userStreak + field names), F2 (duplicate lastActiveAt merged), F3 (XP farming: ??/positive validation + throttle), F4 (SVG XSS sanitization), F5 (fallback SVG XML-escape), F6 (route shadow: continue-watching before :id), F7 (duplicate updateProgress renamed), F8+F9 (sticker pack auth: userId on create/delete), F10 (challenge progress: validation via DTO), F11 (leaderboard limit cap 100), F12 (challengeType @IsIn), F13 (startDate/endDate @IsDateString), F14 (URL fields @IsUrl), F15 (retention session-depth DTO), F16 (series progress DTO), F17 (unfollowSeries P2025 catch + negative count guard), F18 (blocked terms — extended, see NOTED), F19 (falsy XP ?? instead of ||), F20 (negative XP rejected), F29 (controller empty prefix — kept, routes at root level by design), F30 (retention double prefix → 'retention'), F33 (weekly summary isRemoved:false filter), F37 (XP history limit cap), F41 (series category @MaxLength), F42 (accentColor @Matches hex), F43 (createChallenge explicit fields — via DTO tightening), F46 (sticker URL @MaxLength), F47 (sticker array @ArrayMaxSize 100), F50 (throttle on sticker pack create)
+
+### Deferred — cross-file scope:
+- [08] F10 Challenge accepts absolute progress — would need server-side action tracking for verification — OPEN (accepted risk with DTO Max(10000))
+- [08] F21 Level recalculation not atomic — would need raw SQL or Prisma transaction — OPEN
+- [08] F24 Sticker count not atomic — minor, MyStickers pack — NOTED
+- [08] F25 My Stickers pack name pattern — needs schema change (ownerId on StickerPack) — OPEN
+
+### NOTED (acceptable/by-design):
+- [08] F18 Sticker blocked terms — extended list helps but determined attackers can bypass any word list; real solution is AI moderation
+- [08] F22 challenges/me routing risk — GET vs POST/PATCH, no shadowing today
+- [08] F23 Streak milestone XP fire-and-forget — acceptable, XP is non-critical
+- [08] F26 searchPacks empty query — works correctly (contains '' matches all)
+- [08] F27 getRecentStickers loads all packs — acceptable at current scale (max 50 packs)
+- [08] F28 Helpers leaderboard order — Map preserves insertion order, acceptable
+- [08] F31 Jummah grace period server time — noted, would need user timezone
+- [08] F32 Notification quiet hours server time — noted, would need user timezone
+- [08] F34 Notification TTL reset — minor, edge case at midnight boundary
+- [08] F35 getXP creates record on read — acceptable upsert-on-read pattern
+- [08] F36 getProfileCustomization creates on read — same pattern
+- [08] F37 XP history UUID pagination — cursor by createdAt would be more correct but not breaking
+- [08] F38 LEVEL_THRESHOLDS only 20 levels — sufficient for launch, can extend later
+- [08] F39 Achievement criteria decorative — by design, programmatic unlock
+- [08] F40 Challenge no leave endpoint — feature gap, tracked separately
+- [08] F44 Streak longestDays race — minor, same-second concurrent streak updates extremely rare
+- [08] F45 getAchievements take:50 — sufficient for current achievement count
+- [08] F48 removeFromCollection returns success when not found — idempotent API design
+- [08] F49 Islamic preset hardcoded IDs — by design, static presets not DB rows
+- [08] F51 Test createChallenge wrong DTO shape — mock-only test, functional
+- [08] F52 Concurrency test mocks wrong pattern — test pattern, not prod code
+
 ---
 
 ## Summary

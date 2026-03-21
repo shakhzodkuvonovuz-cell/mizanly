@@ -30,9 +30,10 @@ export class StickersController {
   @Post('packs')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Create sticker pack' })
-  async createPack(@Body() dto: CreateStickerPackDto) {
-    return this.stickers.createPack(dto);
+  async createPack(@CurrentUser('id') userId: string, @Body() dto: CreateStickerPackDto) {
+    return this.stickers.createPack(dto, userId);
   }
 
   @Get('packs')
@@ -67,9 +68,9 @@ export class StickersController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete pack (admin)' })
-  async deletePack(@Param('id') id: string) {
-    return this.stickers.deletePack(id);
+  @ApiOperation({ summary: 'Delete pack (admin or owner)' })
+  async deletePack(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.stickers.deletePack(id, userId);
   }
 
   @Get('my')
