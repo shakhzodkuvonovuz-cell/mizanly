@@ -36,7 +36,17 @@ import {
 } from './dto/quran-room-events.dto';
 
 @WebSocketGateway({
-  cors: { origin: process.env.CORS_ORIGINS?.split(',') ?? [] },
+  cors: {
+    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Dynamic CORS check — reads env at request time, not decorator evaluation time
+      const allowed = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
+      if (!origin || allowed.length === 0 || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+  },
   namespace: '/chat',
   pingInterval: 25000,
   pingTimeout: 60000,

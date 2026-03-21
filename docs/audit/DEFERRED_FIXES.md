@@ -436,15 +436,13 @@ F1 (R2 env var names — upload service reads BOTH naming conventions, file 11),
 ### FIXED directly (22 findings):
 F3 (Redis error logging — errors+connection failures now logged instead of swallowed; proxy expanded to cover ALL Redis commands: hgetall/hset/hdel/pipeline/lpush/sadd/srem/scard/expire/mget/incrby/etc.), F9 (stripe webhook controller process.env → ConfigService for both STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET), F10 (Redis graceful shutdown provider added), F12 (7 missing env vars added to .env.example: OPENAI_API_KEY, GEMINI_API_KEY, APP_URL, GOLD_PRICE_PER_GRAM, SILVER_PRICE_PER_GRAM), F13 (phantom CF_IMAGES vars removed from .env.example), F15 (validateEnv expanded: R2 vars, CF_STREAM vars, MEILISEARCH_HOST, OPENAI_API_KEY, GEMINI_API_KEY, CORS_ORIGINS all checked at startup), F17 (og.service.ts: top-level process.env.APP_URL → ConfigService injected at constructor time), F18 (islamic.service.ts: process.env.GOLD/SILVER_PRICE → ConfigService), F19 (health.controller.ts: 6 process.env reads → ConfigService: R2_PUBLIC_URL, CF_STREAM_API_TOKEN, CF_STREAM_ACCOUNT_ID), F21 (Swagger exposure: changed from !=='production' to === 'development' — staging/test/etc. won't expose docs), F22 (Redis proxy expanded — all commonly used commands covered including hgetall, pipeline, sadd, srem, scard, expire, etc.), F23 (CORS origins trimmed — split+map(trim)+filter), F29 (duplicate slow-request logging removed from ResponseTimeMiddleware — only sets header now, RequestLoggerMiddleware handles warnings at 500ms)
 
-### Deferred — architecture/infrastructure:
-- [20] F4 Credentials in .env — .gitignored, not committed. Rotate test keys before production — NOTED
-- [20] F5 Duplicate Sentry — needs consolidation decision — OPEN
-- [20] F6 Socket.io Redis adapter dead code — needs decision (wire up or remove) — OPEN
-- [20] F7 Chat gateway CORS decorator timing — works in practice with dotenv loaded before NestJS — NOTED
-- [20] F8 enableImplicitConversion — standard NestJS pattern, removing could break existing clients — NOTED
-- [20] F14 Bucket name mismatch (.env vs .env.example) — documentation only, .env not committed — NOTED
-- [20] F16 ConfigModule no validation schema — enhancement, current validateEnv() covers critical vars — NOTED
-- [20] F20 CORS_ORIGINS not validated as URLs — trimming added, URL validation would be over-engineering — NOTED
+### FIXED in second pass (5 additional):
+F5 (duplicate Sentry: deleted dead common/sentry.config.ts — config/sentry.ts is canonical), F6 (Socket.io Redis adapter: wired up in main.ts via initRedisAdapter() — enables horizontal scaling), F7 (chat gateway CORS: changed from static process.env read to dynamic callback function that reads at request time), F8 (enableImplicitConversion: documented why it's needed — query params arrive as strings), F14 (bucket name: .env.example already matches code default 'mizanly-media')
+
+### NOTED (genuinely acceptable):
+- [20] F4 Credentials in .env — .gitignored, not committed. Rotate test keys before production
+- [20] F16 ConfigModule no validation schema — validateEnv() covers critical vars at startup
+- [20] F20 CORS_ORIGINS not validated as URLs — trimming added, sufficient
 
 ### NOTED (minor/acceptable):
 - [20] F24 Helmet CSP disabled — correct for mobile API

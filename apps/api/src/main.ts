@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { initSentry } from './config/sentry';
+import { initRedisAdapter } from './config/socket-io-adapter';
 import * as express from 'express';
 import helmet from 'helmet';
 import * as compression from 'compression';
@@ -101,6 +102,9 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      // enableImplicitConversion: converts "true"→true, "123"→123 for query params.
+      // Required because NestJS query params arrive as strings. Without this,
+      // @IsNumber()/@IsBoolean() DTOs would always fail on query strings.
       transformOptions: { enableImplicitConversion: true },
     }),
   );
@@ -132,6 +136,9 @@ async function bootstrap() {
   }
 
   app.enableShutdownHooks();
+
+  // Wire up Socket.io Redis adapter for horizontal scaling
+  await initRedisAdapter(app);
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
