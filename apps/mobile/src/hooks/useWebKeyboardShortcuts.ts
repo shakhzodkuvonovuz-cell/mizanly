@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 
 /**
  * Registers global keyboard shortcuts on web only.
@@ -22,14 +23,14 @@ export function useWebKeyboardShortcuts(): void {
       // Ctrl+K → search
       if (isCtrl && e.key === 'k') {
         e.preventDefault();
-        router.push('/(screens)/search' as never);
+        navigate('/(screens)/search');
         return;
       }
 
       // Ctrl+N → new post
       if (isCtrl && e.key === 'n') {
         e.preventDefault();
-        router.push('/(screens)/create-post' as never);
+        navigate('/(screens)/create-post');
         return;
       }
 

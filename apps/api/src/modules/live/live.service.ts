@@ -15,7 +15,7 @@ export class LiveService {
         title: data.title,
         description: data.description,
         thumbnailUrl: data.thumbnailUrl,
-        liveType: data.liveType as LiveType,
+        liveType: data.liveType as LiveType, // Validated by CreateLiveDto @IsEnum
         status: data.scheduledAt ? LiveStatus.SCHEDULED : LiveStatus.LIVE,
         streamKey,
         scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : undefined,
@@ -44,7 +44,13 @@ export class LiveService {
 
   async getActive(liveType?: string, cursor?: string, limit = 20) {
     const where: Record<string, unknown> = { status: LiveStatus.LIVE, isRehearsal: false };
-    if (liveType) where.liveType = liveType as LiveType;
+    if (liveType) {
+      const validLiveTypes = Object.values(LiveType);
+      if (!validLiveTypes.includes(liveType as LiveType)) {
+        throw new BadRequestException(`Invalid live type: ${liveType}`);
+      }
+      where.liveType = liveType as LiveType;
+    }
     if (cursor) where.id = { lt: cursor };
 
     const sessions = await this.prisma.liveSession.findMany({
@@ -271,7 +277,7 @@ export class LiveService {
         title: data.title,
         description: data.description,
         thumbnailUrl: data.thumbnailUrl,
-        liveType: 'VIDEO' as LiveType,
+        liveType: LiveType.VIDEO_STREAM,
         status: LiveStatus.LIVE,
         streamKey,
         startedAt: new Date(),

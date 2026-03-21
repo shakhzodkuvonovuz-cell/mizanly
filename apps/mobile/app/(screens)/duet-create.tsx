@@ -14,6 +14,7 @@ import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -462,7 +463,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(350).duration(400)}>
             <Pressable accessibilityRole="button"
               style={styles.nextButton}
-              onPress={() => router.push('/(screens)/create-reel' as never)}
+              onPress={() => navigate('/(screens)/create-reel')}
             >
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}

@@ -16,6 +16,7 @@ import type { HashtagInfo } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 export default function HashtagExploreScreen() {
   const router = useRouter();
@@ -68,7 +69,7 @@ export default function HashtagExploreScreen() {
         <Pressable
           accessibilityRole="button"
           style={styles.rowInner}
-          onPress={() => router.push(`/(screens)/search-results?q=${encodeURIComponent('#' + item.name)}` as never)}
+          onPress={() => navigate('/(screens)/search-results', { q: '#' + item.name })}
         >
           <LinearGradient
             colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}

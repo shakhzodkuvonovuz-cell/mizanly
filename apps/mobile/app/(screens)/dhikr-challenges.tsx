@@ -26,6 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import type { DhikrChallenge } from '@/types/islamic';
+import { navigate } from '@/utils/navigation';
 
 const PHRASE_OPTIONS = [
   { value: 'subhanallah', label: 'SubhanAllah' },
@@ -186,7 +187,7 @@ export default function DhikrChallengesScreen() {
     <Animated.View entering={FadeInUp.delay(index * 50).duration(300)}>
       <ChallengeCard
         challenge={item}
-        onPress={() => router.push(`/(screens)/dhikr-challenge-detail?id=${item.id}` as never)}
+        onPress={() => navigate('/(screens)/dhikr-challenge-detail', { id: item.id })}
       />
     </Animated.View>
   ), [router]);

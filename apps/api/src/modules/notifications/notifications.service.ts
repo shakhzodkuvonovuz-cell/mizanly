@@ -121,6 +121,13 @@ export class NotificationsService {
   }) {
     if (params.userId === params.actorId) return null; // No self-notifications
 
+    // Validate notification type at runtime (internal callers pass string literals)
+    const validTypes = Object.values(NotificationType);
+    if (!validTypes.includes(params.type as NotificationType)) {
+      this.logger.warn(`Invalid notification type: ${params.type}`);
+      return null;
+    }
+
     // Check user's per-type notification settings
     const settings = await this.prisma.settings.findUnique({
       where: { userId: params.userId },
@@ -166,7 +173,7 @@ export class NotificationsService {
       data: {
         userId: params.userId,
         actorId: params.actorId,
-        type: params.type as NotificationType,
+        type: params.type as NotificationType, // Validated above via Object.values check
         postId: params.postId,
         threadId: params.threadId,
         commentId: params.commentId,

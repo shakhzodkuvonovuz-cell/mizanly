@@ -25,6 +25,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { creatorApi } from '@/services/creatorApi';
+import { navigate } from '@/utils/navigation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.4;
@@ -226,7 +227,7 @@ function CreatorDashboardContent() {
                   <Pressable
                     style={styles.postGridItem}
                     onPress={() =>
-                      router.push(`/(screens)/post-insights?postId=${post.id}&postType=${post.postType}` as never)
+                      navigate('/(screens)/post-insights', { postId: post.id, postType: post.postType })
                     }
                     accessibilityRole="button"
                     accessibilityLabel={`${t('creatorDashboard.postInsights', 'Post insights')}: ${formatNumber(post.views)} ${t('creatorDashboard.views', 'views')}`}

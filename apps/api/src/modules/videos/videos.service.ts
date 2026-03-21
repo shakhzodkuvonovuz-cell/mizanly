@@ -200,7 +200,13 @@ export class VideosService {
       status: VideoStatus.PUBLISHED,
       user: { isPrivate: false },
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
-      ...(category && category !== 'all' ? { category: category as VideoCategory } : {}),
+      ...(category && category !== 'all' ? (() => {
+        const validCategories = Object.values(VideoCategory);
+        if (!validCategories.includes(category as VideoCategory)) {
+          throw new BadRequestException(`Invalid video category: ${category}`);
+        }
+        return { category: category as VideoCategory };
+      })() : {}),
     };
 
     // If user has subscriptions, prioritize subscribed channels
@@ -709,7 +715,7 @@ export class VideosService {
       data: {
         reporterId: userId,
         description: `video:${videoId}`,
-        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
+        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason, // Safe: reasonMap fallback guarantees valid ReportReason
       },
     });
     return { reported: true };

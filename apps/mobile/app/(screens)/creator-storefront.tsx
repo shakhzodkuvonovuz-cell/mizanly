@@ -24,6 +24,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { api } from '@/services/api';
+import { navigate } from '@/utils/navigation';
 
 interface StorefrontProduct {
   id: string;
@@ -95,7 +96,7 @@ function CreatorStorefrontContent() {
 
   const handleProductPress = useCallback((productId: string) => {
     haptic.light();
-    router.push(`/(screens)/product-detail?productId=${productId}` as never);
+    navigate('/(screens)/product-detail', { productId });
   }, [haptic, router]);
 
   const handleAddProduct = useCallback(() => {

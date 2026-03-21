@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform, Dimensions } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
 import { useStore } from '@/store';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius, fontWeight, shadow } from '@/theme';
+import { navigate } from '@/utils/navigation';
 
 type IconName = React.ComponentProps<typeof Icon>['name'];
 
@@ -24,7 +25,6 @@ interface WebSidebarProps {
 
 export function WebSidebar({ collapsed = false }: WebSidebarProps) {
   const { t } = useTranslation();
-  const router = useRouter();
   const pathname = usePathname();
   const unreadNotifications = useStore(s => s.unreadNotifications);
   const unreadMessages = useStore(s => s.unreadMessages);
@@ -54,7 +54,7 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
   };
 
   const handleNav = (route: string) => {
-    router.push(route as never);
+    navigate(route);
   };
 
   const renderNavItem = (item: NavItem) => {

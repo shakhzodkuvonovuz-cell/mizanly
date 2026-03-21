@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet,
   ScrollView, Switch, Alert, Linking, Pressable,
 import { useRouter } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
@@ -318,13 +319,13 @@ export default function SettingsScreen() {
             <Row
               label={t('downloads.title')}
               icon={<Icon name="layers" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/downloads' as never)}
+              onPress={() => navigate('/(screens)/downloads')}
             />
             <View style={styles.divider} />
             <Row
               label={t('nasheed.settingsLabel')}
               icon={<Icon name="mic" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/nasheed-mode' as never)}
+              onPress={() => navigate('/(screens)/nasheed-mode')}
               isLast
             />
           </LinearGradient>
@@ -403,14 +404,14 @@ export default function SettingsScreen() {
             <Row
               label={t('biometric.settingsLabel')}
               icon={<Icon name="lock" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/biometric-lock' as never)}
+              onPress={() => navigate('/(screens)/biometric-lock')}
             />
             <View style={styles.divider} />
             <Row
               label={t('parentalControls.settingsLabel')}
               icon={<Icon name="users" size="sm" color={colors.gold} />}
               hint={t('parentalControls.settingsHint')}
-              onPress={() => router.push('/(screens)/parental-controls' as never)}
+              onPress={() => navigate('/(screens)/parental-controls')}
               isLast
             />
           </LinearGradient>
@@ -461,7 +462,7 @@ export default function SettingsScreen() {
             <Row
               label={t('settings.notificationTones')}
               icon={<Icon name="bell" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/notification-tones' as never)}
+              onPress={() => navigate('/(screens)/notification-tones')}
               isLast
             />
           </LinearGradient>
@@ -486,33 +487,33 @@ export default function SettingsScreen() {
               label={t('quietMode.settingsLabel')}
               icon={<Icon name="volume-x" size="sm" color={colors.emerald} />}
               hint={t('quietMode.settingsHint')}
-              onPress={() => router.push('/(screens)/quiet-mode' as never)}
+              onPress={() => navigate('/(screens)/quiet-mode')}
             />
             <View style={styles.divider} />
             <Row
               label={t('screenTime.settingsLabel')}
               icon={<Icon name="clock" size="sm" color={colors.gold} />}
               hint={t('screenTime.settingsHint')}
-              onPress={() => router.push('/(screens)/screen-time' as never)}
+              onPress={() => navigate('/(screens)/screen-time')}
             />
             <View style={styles.divider} />
             <Row
               label={t('nasheed.settingsLabel')}
               icon={<Icon name="volume-x" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/nasheed-mode' as never)}
+              onPress={() => navigate('/(screens)/nasheed-mode')}
             />
             <View style={styles.divider} />
             <Row
               label={t('contentFilter.title')}
               icon={<Icon name="filter" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/content-filter-settings' as never)}
+              onPress={() => navigate('/(screens)/content-filter-settings')}
             />
             <View style={styles.divider} />
             <Row
               label={t('autoPlaySettings.title')}
               icon={<Icon name="play" size="sm" color={colors.emerald} />}
               hint={t('autoPlaySettings.hint')}
-              onPress={() => router.push('/(screens)/media-settings' as never)}
+              onPress={() => navigate('/(screens)/media-settings')}
               isLast
             />
           </LinearGradient>
@@ -528,127 +529,127 @@ export default function SettingsScreen() {
             <Row
               label={t('islamic.prayerTimes')}
               icon={<Icon name="clock" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/prayer-times' as never)}
+              onPress={() => navigate('/(screens)/prayer-times')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.qibla')}
               icon={<Icon name="map-pin" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/qibla-compass' as never)}
+              onPress={() => navigate('/(screens)/qibla-compass')}
             />
             <View style={styles.divider} />
             <Row
               label={t('hijri.title')}
               icon={<Icon name="calendar" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/islamic-calendar' as never)}
+              onPress={() => navigate('/(screens)/islamic-calendar')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.dhikr')}
               icon={<Icon name="heart" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/dhikr-counter' as never)}
+              onPress={() => navigate('/(screens)/dhikr-counter')}
             />
             <View style={styles.divider} />
             <Row
               label={t('quranPlan.title')}
               icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/quran-reading-plan' as never)}
+              onPress={() => navigate('/(screens)/quran-reading-plan')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.hadith')}
               icon={<Icon name="bookmark" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/hadith' as never)}
+              onPress={() => navigate('/(screens)/hadith')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.mosque')}
               icon={<Icon name="map-pin" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/mosque-finder' as never)}
+              onPress={() => navigate('/(screens)/mosque-finder')}
             />
             <View style={styles.divider} />
             <Row
               label={t('hajj.title')}
               icon={<Icon name="globe" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/hajj-companion' as never)}
+              onPress={() => navigate('/(screens)/hajj-companion')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.zakat')}
               icon={<Icon name="heart" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/zakat-calculator' as never)}
+              onPress={() => navigate('/(screens)/zakat-calculator')}
             />
             <View style={styles.divider} />
             <Row
               label={t('eidCards.title')}
               icon={<Icon name="smile" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/eid-cards' as never)}
+              onPress={() => navigate('/(screens)/eid-cards')}
             />
             <View style={styles.divider} />
             <Row
               label={t('scholar.title')}
               icon={<Icon name="check-circle" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/scholar-verification' as never)}
+              onPress={() => navigate('/(screens)/scholar-verification')}
             />
             <View style={styles.divider} />
             <Row
               label={t('quranRoom.title')}
               icon={<Icon name="bookmark" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/quran-room' as never)}
+              onPress={() => navigate('/(screens)/quran-room')}
             />
             <View style={styles.divider} />
             <Row
               label={t('charity.title')}
               icon={<Icon name="heart" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/charity-campaign' as never)}
+              onPress={() => navigate('/(screens)/charity-campaign')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.ramadanMode')}
               icon={<Icon name="globe" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/ramadan-mode' as never)}
+              onPress={() => navigate('/(screens)/ramadan-mode')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.duaCollection')}
               icon={<Icon name="heart" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/dua-collection' as never)}
+              onPress={() => navigate('/(screens)/dua-collection')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.fastingTracker')}
               icon={<Icon name="clock" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/fasting-tracker' as never)}
+              onPress={() => navigate('/(screens)/fasting-tracker')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.halalFinder')}
               icon={<Icon name="map-pin" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/halal-finder' as never)}
+              onPress={() => navigate('/(screens)/halal-finder')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.hifzTracker')}
               icon={<Icon name="layers" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/hifz-tracker' as never)}
+              onPress={() => navigate('/(screens)/hifz-tracker')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.morningBriefing')}
               icon={<Icon name="bell" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/morning-briefing' as never)}
+              onPress={() => navigate('/(screens)/morning-briefing')}
             />
             <View style={styles.divider} />
             <Row
               label={t('islamic.namesOfAllah')}
               icon={<Icon name="globe" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/names-of-allah' as never)}
+              onPress={() => navigate('/(screens)/names-of-allah')}
             />
             <View style={styles.divider} />
             <Row
               label={t('wellbeing.windDown')}
               icon={<Icon name="volume-x" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/wind-down' as never)}
+              onPress={() => navigate('/(screens)/wind-down')}
               isLast
             />
           </LinearGradient>
@@ -694,19 +695,19 @@ export default function SettingsScreen() {
             <Row
               label={t('settings.restrictedAccounts')}
               icon={<Icon name="eye-off" size="sm" color={colors.text.tertiary} />}
-              onPress={() => router.push('/(screens)/restricted' as never)}
+              onPress={() => navigate('/(screens)/restricted')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.collabRequests')}
               icon={<Icon name="users" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/collab-requests' as never)}
+              onPress={() => navigate('/(screens)/collab-requests')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.appealModeration')}
               icon={<Icon name="flag" size="sm" color={colors.text.secondary} />}
-              onPress={() => router.push('/(screens)/appeal-moderation' as never)}
+              onPress={() => navigate('/(screens)/appeal-moderation')}
               isLast
             />
           </LinearGradient>
@@ -739,13 +740,13 @@ export default function SettingsScreen() {
             <Row
               label={t('ai.title')}
               icon={<Icon name="loader" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/ai-assistant' as never)}
+              onPress={() => navigate('/(screens)/ai-assistant')}
             />
             <View style={styles.divider} />
             <Row
               label={t('ai.avatar.title')}
               icon={<Icon name="user" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/ai-avatar' as never)}
+              onPress={() => navigate('/(screens)/ai-avatar')}
             />
           </LinearGradient>
 
@@ -778,31 +779,31 @@ export default function SettingsScreen() {
             <Row
               label={t('settings.creatorDashboard')}
               icon={<Icon name="bar-chart-2" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/creator-dashboard' as never)}
+              onPress={() => navigate('/(screens)/creator-dashboard')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.revenue')}
               icon={<Icon name="trending-up" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/revenue' as never)}
+              onPress={() => navigate('/(screens)/revenue')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.creatorStorefront')}
               icon={<Icon name="shopping-bag" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/creator-storefront' as never)}
+              onPress={() => navigate('/(screens)/creator-storefront')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.enableTips')}
               icon={<Icon name="heart" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/enable-tips' as never)}
+              onPress={() => navigate('/(screens)/enable-tips')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.membershipTiers')}
               icon={<Icon name="users" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/membership-tiers' as never)}
+              onPress={() => navigate('/(screens)/membership-tiers')}
               isLast
             />
           </LinearGradient>
@@ -818,61 +819,61 @@ export default function SettingsScreen() {
             <Row
               label={t('community.localBoards')}
               icon={<Icon name="map-pin" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/local-boards' as never)}
+              onPress={() => navigate('/(screens)/local-boards')}
             />
             <View style={styles.divider} />
             <Row
               label={t('community.mentorship')}
               icon={<Icon name="users" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/mentorship' as never)}
+              onPress={() => navigate('/(screens)/mentorship')}
             />
             <View style={styles.divider} />
             <Row
               label={t('community.fatwaQA')}
               icon={<Icon name="help-circle" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/fatwa-qa' as never)}
+              onPress={() => navigate('/(screens)/fatwa-qa')}
             />
             <View style={styles.divider} />
             <Row
               label={t('community.waqfEndowments')}
               icon={<Icon name="heart" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/waqf' as never)}
+              onPress={() => navigate('/(screens)/waqf')}
             />
             <View style={styles.divider} />
             <Row
               label={t('community.watchParties')}
               icon={<Icon name="play" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/watch-party' as never)}
+              onPress={() => navigate('/(screens)/watch-party')}
             />
             <View style={styles.divider} />
             <Row
               label={t('community.voicePost')}
               icon={<Icon name="mic" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/voice-post-create' as never)}
+              onPress={() => navigate('/(screens)/voice-post-create')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.volunteerBoard')}
               icon={<Icon name="heart" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/volunteer-board' as never)}
+              onPress={() => navigate('/(screens)/volunteer-board')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.events')}
               icon={<Icon name="calendar" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/create-event' as never)}
+              onPress={() => navigate('/(screens)/create-event')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.giftShop')}
               icon={<Icon name="heart" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/gift-shop' as never)}
+              onPress={() => navigate('/(screens)/gift-shop')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.followedTopics')}
               icon={<Icon name="hash" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/followed-topics' as never)}
+              onPress={() => navigate('/(screens)/followed-topics')}
               isLast
             />
           </LinearGradient>
@@ -888,37 +889,37 @@ export default function SettingsScreen() {
             <Row
               label={t('gamification.settingsStreaks')}
               icon={<Icon name="trending-up" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/streaks' as never)}
+              onPress={() => navigate('/(screens)/streaks')}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsAchievements')}
               icon={<Icon name="check-circle" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/achievements' as never)}
+              onPress={() => navigate('/(screens)/achievements')}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsLeaderboard')}
               icon={<Icon name="bar-chart-2" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/leaderboard' as never)}
+              onPress={() => navigate('/(screens)/leaderboard')}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsChallenges')}
               icon={<Icon name="flag" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/challenges' as never)}
+              onPress={() => navigate('/(screens)/challenges')}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsXPHistory')}
               icon={<Icon name="star" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/xp-history' as never)}
+              onPress={() => navigate('/(screens)/xp-history')}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsProfile')}
               icon={<Icon name="user" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/profile-customization' as never)}
+              onPress={() => navigate('/(screens)/profile-customization')}
               isLast
             />
           </LinearGradient>
@@ -941,49 +942,49 @@ export default function SettingsScreen() {
             <Row
               label={t('settings.twoFactor')}
               icon={<Icon name="lock" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/2fa-setup' as never)}
+              onPress={() => navigate('/(screens)/2fa-setup')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.accountSwitcher')}
               icon={<Icon name="users" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/account-switcher' as never)}
+              onPress={() => navigate('/(screens)/account-switcher')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.contactSync')}
               icon={<Icon name="phone" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/contact-sync' as never)}
+              onPress={() => navigate('/(screens)/contact-sync')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.closeFriends')}
               icon={<Icon name="heart" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/close-friends' as never)}
+              onPress={() => navigate('/(screens)/close-friends')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.statusPrivacy')}
               icon={<Icon name="eye-off" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/status-privacy' as never)}
+              onPress={() => navigate('/(screens)/status-privacy')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.disappearingDefault')}
               icon={<Icon name="clock" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/disappearing-default' as never)}
+              onPress={() => navigate('/(screens)/disappearing-default')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.storageManagement')}
               icon={<Icon name="settings" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/storage-management' as never)}
+              onPress={() => navigate('/(screens)/storage-management')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.manageData')}
               icon={<Icon name="layers" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/manage-data' as never)}
+              onPress={() => navigate('/(screens)/manage-data')}
             />
             <View style={styles.divider} />
             <Row

@@ -17,6 +17,7 @@ import type { AudioTrack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 export default function TrendingAudioScreen() {
   const { t, isRTL } = useTranslation();
@@ -91,7 +92,7 @@ export default function TrendingAudioScreen() {
           style={styles.useButton}
           onPress={() => {
             haptic.light();
-            router.push(`/(screens)/create-reel?audioId=${item.id}` as never);
+            navigate('/(screens)/create-reel', { audioId: item.id });
           }}
         >
           <LinearGradient

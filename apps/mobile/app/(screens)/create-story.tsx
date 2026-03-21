@@ -27,6 +27,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 import { EidFrame } from '@/components/islamic/EidFrame';
 import type { Occasion } from '@/components/islamic/EidFrame';
 
@@ -666,11 +667,11 @@ export default function CreateStoryScreen() {
             </Pressable>
           </View>
           <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
-            <Pressable onPress={() => router.push('/(screens)/disposable-camera' as never)} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.disposable')} accessibilityRole="button">
+            <Pressable onPress={() => navigate('/(screens)/disposable-camera')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.disposable')} accessibilityRole="button">
               <Icon name="camera" size="sm" color={colors.gold} />
               <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.disposable')}</Text>
             </Pressable>
-            <Pressable onPress={() => router.push('/(screens)/photo-music' as never)} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.photoMusic')} accessibilityRole="button">
+            <Pressable onPress={() => navigate('/(screens)/photo-music')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.photoMusic')} accessibilityRole="button">
               <Icon name="volume-x" size="sm" color={colors.gold} />
               <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.photoMusic')}</Text>
             </Pressable>

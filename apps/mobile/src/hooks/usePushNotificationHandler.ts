@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { router } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 
 type NotificationType =
   | 'like'
@@ -116,7 +116,7 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
   const handleNotificationNavigation = (data: NotificationData) => {
     if (!data.type) {
       // Fallback to notifications screen
-      router.push('/(screens)/notifications' as never);
+      navigate('/(screens)/notifications');
       return;
     }
 
@@ -124,95 +124,95 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
       case 'like':
       case 'comment':
         if (data.postId) {
-          router.push(`/(screens)/post/${data.postId}` as never);
+          navigate(`/(screens)/post/${data.postId}`);
         } else if (data.threadId) {
-          router.push(`/(screens)/thread/${data.threadId}` as never);
+          navigate(`/(screens)/thread/${data.threadId}`);
         } else if (data.reelId) {
-          router.push(`/(screens)/reel/${data.reelId}` as never);
+          navigate(`/(screens)/reel/${data.reelId}`);
         } else if (data.videoId) {
-          router.push(`/(screens)/video/${data.videoId}` as never);
+          navigate(`/(screens)/video/${data.videoId}`);
         } else {
-          router.push('/(screens)/notifications' as never);
+          navigate('/(screens)/notifications');
         }
         break;
 
       case 'follow':
         if (data.username) {
-          router.push(`/(screens)/profile/${data.username}` as never);
+          navigate(`/(screens)/profile/${data.username}`);
         } else if (data.userId) {
-          router.push(`/(screens)/profile/${data.userId}` as never);
+          navigate(`/(screens)/profile/${data.userId}`);
         } else {
-          router.push('/(screens)/notifications' as never);
+          navigate('/(screens)/notifications');
         }
         break;
 
       case 'message':
         if (data.conversationId) {
-          router.push(`/(screens)/conversation/${data.conversationId}` as never);
+          navigate(`/(screens)/conversation/${data.conversationId}`);
         } else {
-          router.push('/(tabs)/risalah' as never);
+          navigate('/(tabs)/risalah');
         }
         break;
 
       case 'mention':
         if (data.postId) {
-          router.push(`/(screens)/post/${data.postId}` as never);
+          navigate(`/(screens)/post/${data.postId}`);
         } else if (data.threadId) {
-          router.push(`/(screens)/thread/${data.threadId}` as never);
+          navigate(`/(screens)/thread/${data.threadId}`);
         } else if (data.reelId) {
-          router.push(`/(screens)/reel/${data.reelId}` as never);
+          navigate(`/(screens)/reel/${data.reelId}`);
         } else if (data.videoId) {
-          router.push(`/(screens)/video/${data.videoId}` as never);
+          navigate(`/(screens)/video/${data.videoId}`);
         } else {
-          router.push('/(screens)/notifications' as never);
+          navigate('/(screens)/notifications');
         }
         break;
 
       case 'live':
         if (data.videoId) {
-          router.push(`/(screens)/live/${data.videoId}` as never);
+          navigate(`/(screens)/live/${data.videoId}`);
         } else {
-          router.push('/(tabs)/minbar' as never);
+          navigate('/(tabs)/minbar');
         }
         break;
 
       case 'prayer':
-        router.push('/(screens)/prayer-times' as never);
+        navigate('/(screens)/prayer-times');
         break;
 
       case 'event':
         if (data.eventId) {
-          router.push(`/(screens)/event-detail/${data.eventId}` as never);
+          navigate(`/(screens)/event-detail/${data.eventId}`);
         } else {
-          router.push('/(screens)/events' as never);
+          navigate('/(screens)/events');
         }
         break;
 
       case 'tip':
       case 'membership':
-        router.push('/(screens)/monetization' as never);
+        navigate('/(screens)/monetization');
         break;
 
       case 'audio_room':
         if (data.audioRoomId) {
-          router.push(`/(screens)/audio-room/${data.audioRoomId}` as never);
+          navigate(`/(screens)/audio-room/${data.audioRoomId}`);
         } else {
-          router.push('/(screens)/audio-rooms' as never);
+          navigate('/(screens)/audio-rooms');
         }
         break;
 
       case 'rsvp':
         if (data.eventId) {
-          router.push(`/(screens)/event-detail/${data.eventId}` as never);
+          navigate(`/(screens)/event-detail/${data.eventId}`);
         } else {
-          router.push('/(screens)/events' as never);
+          navigate('/(screens)/events');
         }
         break;
 
       case 'admin':
       case 'system':
       default:
-        router.push('/(screens)/notifications' as never);
+        navigate('/(screens)/notifications');
         break;
     }
   };

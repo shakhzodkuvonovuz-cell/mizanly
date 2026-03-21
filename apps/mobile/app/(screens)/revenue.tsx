@@ -20,6 +20,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { api } from '@/services/api';
+import { navigate } from '@/utils/navigation';
 
 // ── Local types ──
 
@@ -339,7 +340,7 @@ function RevenueContent() {
         <GradientButton
           label={t('revenue.cashOut', 'Cash Out')}
           icon="send"
-          onPress={() => router.push('/(screens)/cashout' as never)}
+          onPress={() => navigate('/(screens)/cashout')}
           fullWidth
           size="lg"
         />

@@ -28,6 +28,7 @@ import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 
@@ -408,7 +409,7 @@ export default function CreatePostScreen() {
                         const editorScreen = item.type === 'video'
                           ? '/(screens)/video-editor'
                           : '/(screens)/image-editor';
-                        router.push(`${editorScreen}?uri=${encodeURIComponent(item.uri)}` as never);
+                        navigate(editorScreen, { uri: item.uri });
                       }}
                       hitSlop={4}
                     >
@@ -632,7 +633,7 @@ export default function CreatePostScreen() {
 
             <Pressable
               style={styles.toolbarBtn}
-              onPress={() => router.push('/(screens)/schedule-post?space=saf' as never)}
+              onPress={() => navigate('/(screens)/schedule-post', { space: 'saf' })}
               accessibilityLabel={t('screens.schedule-post.title')}
               accessibilityRole="button"
             >
@@ -646,7 +647,7 @@ export default function CreatePostScreen() {
 
             <Pressable
               style={styles.toolbarBtn}
-              onPress={() => router.push('/(screens)/branded-content' as never)}
+              onPress={() => navigate('/(screens)/branded-content')}
               accessibilityLabel={t('saf.brandedContent')}
               accessibilityRole="button"
             >

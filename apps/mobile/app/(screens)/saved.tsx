@@ -20,6 +20,7 @@ import { useUser } from '@clerk/clerk-expo';
 import type { Post, Thread, Reel, Video } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 2) / 3;
@@ -277,8 +278,8 @@ export default function SavedScreen() {
           title={t('screens.saved.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
           rightActions={[
-            { icon: 'layers', onPress: () => router.push('/(screens)/bookmark-collections' as never), accessibilityLabel: t('common.collections') },
-            { icon: 'bookmark', onPress: () => router.push('/(screens)/bookmark-folders' as never), accessibilityLabel: t('common.folders') },
+            { icon: 'layers', onPress: () => navigate('/(screens)/bookmark-collections'), accessibilityLabel: t('common.collections') },
+            { icon: 'bookmark', onPress: () => navigate('/(screens)/bookmark-folders'), accessibilityLabel: t('common.folders') },
           ]}
         />
         <View style={styles.headerSpacer} />

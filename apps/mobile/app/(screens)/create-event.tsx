@@ -30,6 +30,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Alert , Pressable } from 'react-native';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const { width } = Dimensions.get('window');
 
@@ -115,7 +116,7 @@ export default function CreateEventScreen() {
       };
       const response = await eventsApi.create(dto);
       const eventId = (response as { id?: string }).id ?? '';
-      router.push(`/(screens)/event-detail?id=${eventId}` as never);
+      navigate('/(screens)/event-detail', { id: eventId });
     } catch (err) {
       const message = err instanceof Error ? err.message : t('events.createFailed');
       setError(message);

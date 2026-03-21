@@ -774,7 +774,7 @@ export class ReelsService {
       data: {
         reporterId: userId,
         description: `reel:${reelId}`,
-        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
+        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason, // Safe: reasonMap fallback guarantees valid ReportReason
       },
     });
     return { reported: true };

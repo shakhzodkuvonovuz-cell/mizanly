@@ -117,7 +117,7 @@ export class BroadcastService {
         channelId,
         senderId: userId,
         content: data.content,
-        messageType: (data.messageType as MessageType) ?? MessageType.TEXT,
+        messageType: (data.messageType as MessageType) ?? MessageType.TEXT, // Validated by SendBroadcastDto @IsEnum
         mediaUrl: data.mediaUrl,
         mediaType: data.mediaType,
       },

@@ -22,6 +22,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, videosApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const CATEGORIES = [
   'EDUCATION', 'QURAN', 'LECTURE', 'VLOG', 'NEWS', 'DOCUMENTARY',
@@ -405,14 +406,14 @@ export default function CreateVideoScreen() {
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
               <Pressable
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.dark.border }}
-                onPress={() => router.push(`/(screens)/caption-editor?videoUri=${encodeURIComponent(video.uri)}` as never)}
+                onPress={() => navigate('/(screens)/caption-editor', { videoUri: video.uri })}
               >
                 <Icon name="edit" size="sm" color={colors.emerald} />
                 <Text style={{ color: colors.text.primary, fontSize: fontSize.sm }}>{t('ai.captions.title')}</Text>
               </Pressable>
               <Pressable
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.dark.border }}
-                onPress={() => router.push(`/(screens)/video-editor?uri=${encodeURIComponent(video.uri)}` as never)}
+                onPress={() => navigate('/(screens)/video-editor', { uri: video.uri })}
               >
                 <Icon name="video" size="sm" color={colors.gold} />
                 <Text style={{ color: colors.text.primary, fontSize: fontSize.sm }}>{t('common.edit')}</Text>

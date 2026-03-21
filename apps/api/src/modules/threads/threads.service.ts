@@ -343,7 +343,7 @@ export class ThreadsService {
         data: {
           userId,
           content: sanitizeText(dto.content),
-          visibility: (dto.visibility as ThreadVisibility) ?? 'PUBLIC',
+          visibility: (dto.visibility as ThreadVisibility) ?? 'PUBLIC', // Validated by CreateThreadDto @IsEnum
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
           mediaTypes: dto.mediaTypes ?? [],

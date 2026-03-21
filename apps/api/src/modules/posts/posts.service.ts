@@ -463,9 +463,9 @@ export class PostsService {
       const post = await tx.post.create({
         data: {
           userId,
-          postType: dto.postType as PostType,
+          postType: dto.postType as PostType, // Validated by CreatePostDto @IsEnum
           content: dto.content ? sanitizeText(dto.content) : dto.content,
-          visibility: (dto.visibility as PostVisibility) ?? PostVisibility.PUBLIC,
+          visibility: (dto.visibility as PostVisibility) ?? PostVisibility.PUBLIC, // Validated by CreatePostDto @IsEnum
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
           mediaTypes: dto.mediaTypes ?? [],
@@ -655,13 +655,13 @@ export class PostsService {
       // Update reaction type
       await this.prisma.postReaction.update({
         where: { userId_postId: { userId, postId } },
-        data: { reaction: reaction as ReactionType },
+        data: { reaction: reaction as ReactionType }, // Validated by ReactDto @IsEnum
       });
     } else {
       try {
         await this.prisma.$transaction([
           this.prisma.postReaction.create({
-            data: { userId, postId, reaction: reaction as ReactionType },
+            data: { userId, postId, reaction: reaction as ReactionType }, // Validated by ReactDto @IsEnum
           }),
           this.prisma.post.update({
             where: { id: postId },
@@ -988,7 +988,7 @@ export class PostsService {
       data: {
         reporterId: userId,
         reportedPostId: postId,
-        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
+        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason, // Safe: reasonMap fallback guarantees valid ReportReason
       },
     });
     return { reported: true };
@@ -1160,7 +1160,7 @@ export class PostsService {
           mediaWidth: post.mediaWidth,
           mediaHeight: post.mediaHeight,
           postType: post.postType,
-          space: space as ContentSpace,
+          space: space as ContentSpace, // Safe: filtered by validSpaces whitelist above
           hashtags: post.hashtags,
           mentions: post.mentions,
         },

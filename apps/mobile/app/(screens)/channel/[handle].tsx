@@ -27,6 +27,7 @@ import type { Video, Playlist } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const BANNER_HEIGHT = Dimensions.get('window').width / 2.5; // 2.5:1 ratio for cinematic look
 const FEATURED_HEIGHT = Dimensions.get('window').width * 0.56; // 16:9 ratio
@@ -632,7 +633,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                 icon={<Icon name="pencil" size="sm" color={colors.text.primary} />}
                 onPress={() => {
                   setShowMenu(false);
-                  router.push(`/(screens)/edit-channel?handle=${handle}` as never);
+                  navigate('/(screens)/edit-channel', { handle });
                 }}
               />
               <BottomSheetItem
@@ -640,7 +641,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                 icon={<Icon name="settings" size="sm" color={colors.text.primary} />}
                 onPress={() => {
                   setShowMenu(false);
-                  router.push(`/(screens)/manage-broadcast?channelId=${channel?.id}` as never);
+                  navigate('/(screens)/manage-broadcast', { channelId: channel?.id ?? '' });
                 }}
               />
               <BottomSheetItem
@@ -648,7 +649,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                 icon={<Icon name="globe" size="sm" color={colors.emerald} />}
                 onPress={() => {
                   setShowMenu(false);
-                  router.push('/(screens)/schedule-live' as never);
+                  navigate('/(screens)/schedule-live');
                 }}
               />
             </>

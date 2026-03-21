@@ -19,6 +19,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import type { OfflineDownload } from '@/types';
+import { navigate } from '@/utils/navigation';
 
 // ── Helpers ──
 
@@ -406,7 +407,7 @@ export default function DownloadsScreen() {
                   : sheetItem.contentType === 'video'
                   ? `/(screens)/video/${sheetItem.contentId}`
                   : `/(screens)/reel/${sheetItem.contentId}`;
-                router.push(route as never);
+                navigate(route);
               }
             }}
           />

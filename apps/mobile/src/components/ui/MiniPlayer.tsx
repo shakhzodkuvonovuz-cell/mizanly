@@ -28,6 +28,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation, tabBar, glass } from '@/theme';
+import { navigate } from '@/utils/navigation';
 
 const PROGRESS_BAR_HEIGHT = 3;
 const CONTENT_HEIGHT = 64;
@@ -111,7 +112,7 @@ export function MiniPlayer() {
     const videoId = miniPlayerVideo.id;
     // Close mini player first, then navigate
     closeMiniPlayer();
-    router.push(`/(screens)/video/${videoId}` as never);
+    navigate(`/(screens)/video/${videoId}`);
   }, [haptic, miniPlayerVideo, closeMiniPlayer, router]);
 
   // Gesture: pan to dismiss

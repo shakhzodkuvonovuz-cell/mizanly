@@ -23,6 +23,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import type { ParentalControl } from '@/types';
+import { navigate } from '@/utils/navigation';
 
 // ── PIN Pad ──
 function PinPad({
@@ -607,7 +608,7 @@ export default function ParentalControlsScreen() {
               <GradientButton
                 label={t('parentalControls.linkChildAccount')}
                 icon="plus"
-                onPress={() => router.push('/(screens)/link-child-account' as never)}
+                onPress={() => navigate('/(screens)/link-child-account')}
               />
             </View>
           }

@@ -1,5 +1,5 @@
 import { Linking } from 'react-native';
-import { router } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 
 export type DeepLinkScreen =
   | 'post'
@@ -166,100 +166,100 @@ export function navigateToDeepLink(url: string): boolean {
   switch (screen) {
     case 'post':
       if (params.id) {
-        router.push(`/(screens)/post/${params.id}` as never);
+        navigate(`/(screens)/post/${params.id}`);
       } else {
-        router.push('/(tabs)/saf' as never);
+        navigate('/(tabs)/saf');
       }
       break;
 
     case 'profile':
       if (params.username) {
-        router.push(`/(screens)/profile/${params.username}` as never);
+        navigate(`/(screens)/profile/${params.username}`);
       } else if (params.id) {
-        router.push(`/(screens)/profile/${params.id}` as never);
+        navigate(`/(screens)/profile/${params.id}`);
       } else {
-        router.push('/(tabs)/saf' as never);
+        navigate('/(tabs)/saf');
       }
       break;
 
     case 'conversation':
       if (params.id) {
-        router.push(`/(screens)/conversation/${params.id}` as never);
+        navigate(`/(screens)/conversation/${params.id}`);
       } else {
-        router.push('/(tabs)/risalah' as never);
+        navigate('/(tabs)/risalah');
       }
       break;
 
     case 'live':
       if (params.id) {
-        router.push(`/(screens)/live/${params.id}` as never);
+        navigate(`/(screens)/live/${params.id}`);
       } else {
-        router.push('/(tabs)/minbar' as never);
+        navigate('/(tabs)/minbar');
       }
       break;
 
     case 'event':
       if (params.id) {
-        router.push(`/(screens)/event-detail?id=${params.id}` as never);
+        navigate(`/(screens)/event-detail?id=${params.id}`);
       } else {
-        router.push('/(tabs)/saf' as never);
+        navigate('/(tabs)/saf');
       }
       break;
 
     case 'prayer-times':
-      router.push('/(screens)/prayer-times' as never);
+      navigate('/(screens)/prayer-times');
       break;
 
     case 'audio-room':
       if (params.id) {
-        router.push(`/(screens)/audio-room?id=${params.id}` as never);
+        navigate(`/(screens)/audio-room?id=${params.id}`);
       } else {
-        router.push('/(screens)/audio-rooms' as never);
+        navigate('/(screens)/audio-rooms');
       }
       break;
 
     case 'thread':
       if (params.id) {
-        router.push(`/(screens)/thread/${params.id}` as never);
+        navigate(`/(screens)/thread/${params.id}`);
       } else {
-        router.push('/(tabs)/majlis' as never);
+        navigate('/(tabs)/majlis');
       }
       break;
 
     case 'reel':
       if (params.id) {
-        router.push(`/(screens)/reel/${params.id}` as never);
+        navigate(`/(screens)/reel/${params.id}`);
       } else {
-        router.push('/(tabs)/bakra' as never);
+        navigate('/(tabs)/bakra');
       }
       break;
 
     case 'video':
       if (params.id) {
-        router.push(`/(screens)/video/${params.id}` as never);
+        navigate(`/(screens)/video/${params.id}`);
       } else {
-        router.push('/(tabs)/minbar' as never);
+        navigate('/(tabs)/minbar');
       }
       break;
 
     case 'hashtag':
       if (params.tag) {
-        router.push(`/(screens)/hashtag/${params.tag}` as never);
+        navigate(`/(screens)/hashtag/${params.tag}`);
       } else {
-        router.push('/(screens)/search' as never);
+        navigate('/(screens)/search');
       }
       break;
 
     case 'notifications':
-      router.push('/(screens)/notifications' as never);
+      navigate('/(screens)/notifications');
       break;
 
     case 'settings':
-      router.push('/(screens)/settings' as never);
+      navigate('/(screens)/settings');
       break;
 
     case 'search':
-      router.push('/(screens)/search' as never);
+      navigate('/(screens)/search');
       break;
 
     default:

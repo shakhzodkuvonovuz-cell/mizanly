@@ -37,6 +37,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import * as Clipboard from 'expo-clipboard';
 import { useVideoPreloader } from '@/hooks/useVideoPreloader';
@@ -611,7 +612,7 @@ export default function BakraScreen() {
   }, [queryClient]);
 
   const handleNavigate = useCallback((path: string) => {
-    router.push(path as never);
+    navigate(path);
   }, [router]);
 
   const doubleTapGesture = useMemo(() => Gesture.Tap()
@@ -715,7 +716,7 @@ export default function BakraScreen() {
       <View style={styles.shortcutRow}>
         <Pressable
           style={styles.shortcutPill}
-          onPress={() => { haptic.light(); router.push('/(screens)/go-live' as never); }}
+          onPress={() => { haptic.light(); navigate('/(screens)/go-live'); }}
           accessibilityLabel={t('tabs.live')}
           accessibilityRole="button"
         >
@@ -724,7 +725,7 @@ export default function BakraScreen() {
         </Pressable>
         <Pressable
           style={styles.shortcutPill}
-          onPress={() => { haptic.light(); router.push('/(screens)/series-discover' as never); }}
+          onPress={() => { haptic.light(); navigate('/(screens)/series-discover'); }}
           accessibilityLabel={t('series.discoverTitle')}
           accessibilityRole="button"
         >

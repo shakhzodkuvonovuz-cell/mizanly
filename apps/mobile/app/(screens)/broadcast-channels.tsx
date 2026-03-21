@@ -31,6 +31,7 @@ import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: boolean; isMuted?: boolean };
 
@@ -55,7 +56,7 @@ export default function BroadcastChannelsScreen() {
       setNewChannelName('');
       setNewChannelDesc('');
       loadMyChannels(true);
-      router.push(`/(screens)/broadcast/${data.id}` as never);
+      navigate(`/(screens)/broadcast/${data.id}`);
     },
     onError: () => Alert.alert(t('common.error'), t('broadcastChannels.createError')),
   });
@@ -127,7 +128,7 @@ export default function BroadcastChannelsScreen() {
   }, [searchQuery]);
 
   const handleChannelPress = useCallback((channel: BroadcastChannelWithSubscription) => {
-    router.push(`/(screens)/broadcast/${channel.id}` as never);
+    navigate(`/(screens)/broadcast/${channel.id}`);
   }, [navigation]);
 
   const handleSubscribe = useCallback(async (channel: BroadcastChannelWithSubscription) => {

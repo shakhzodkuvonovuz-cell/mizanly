@@ -214,7 +214,7 @@ export class MessagesService {
           conversationId,
           senderId,
           content: data.content,
-          messageType: (data.messageType as MessageType) ?? 'TEXT',
+          messageType: (data.messageType as MessageType) ?? 'TEXT', // Validated by SendMessageDto @IsEnum
           mediaUrl: data.mediaUrl,
           mediaType: data.mediaType,
           replyToId: data.replyToId,
@@ -738,7 +738,7 @@ export class MessagesService {
         conversationId,
         senderId: userId,
         content,
-        messageType: (messageType as MessageType) ?? 'TEXT',
+        messageType: (messageType as MessageType) ?? 'TEXT', // Validated by ScheduleMessageDto @IsEnum
         isScheduled: true,
         scheduledAt,
       },

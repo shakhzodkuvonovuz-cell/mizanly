@@ -21,6 +21,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, animation, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 function SignInScreenContent() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -60,7 +61,7 @@ function SignInScreenContent() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
       } else if (result.status === 'needs_second_factor') {
-        router.push('/(screens)/2fa-verify' as never);
+        navigate('/(screens)/2fa-verify');
       }
     } catch (err: unknown) {
       if (__DEV__) console.error('Sign in error:', JSON.stringify(err, null, 2));
@@ -156,7 +157,7 @@ function SignInScreenContent() {
 
           {/* Forgot password */}
           <Pressable
-            onPress={() => router.push('/(auth)/forgot-password' as never)}
+            onPress={() => navigate('/(auth)/forgot-password')}
             style={styles.forgotBtn}
             hitSlop={8}
           >

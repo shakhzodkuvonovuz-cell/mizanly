@@ -19,6 +19,7 @@ import { useResponsive } from '@/hooks/useResponsive';
 import { useWebKeyboardShortcuts } from '@/hooks/useWebKeyboardShortcuts';
 import { colors, tabBar, spacing, fontSize, animation, radius, glass, shadow } from '@/theme';
 import { useStore } from '@/store';
+import { navigate as navTo } from '@/utils/navigation';
 import { useState } from 'react';
 
 type TabName = 'saf' | 'bakra' | 'minbar' | 'majlis' | 'risalah';
@@ -90,7 +91,7 @@ function CreateButton() {
   const navigate = (path: string) => {
     haptic.light();
     setOpen(false);
-    router.push(path as never);
+    navTo(path);
   };
 
   return (

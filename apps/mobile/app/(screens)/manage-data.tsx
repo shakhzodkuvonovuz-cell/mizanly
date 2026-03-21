@@ -24,6 +24,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, accountApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 
 function InfoRow({
@@ -296,7 +297,7 @@ export default function ManageDataScreen() {
 
           <Text style={styles.footerNote}>
             {t('settings.morePrivacySettingsPrefix')}{' '}
-            <Text style={styles.link} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel={t('settings.goToSettings')} accessibilityRole="link">
+            <Text style={styles.link} onPress={() => navigate('/(screens)/settings')} accessibilityLabel={t('settings.goToSettings')} accessibilityRole="link">
               {t('common.settings')}
             </Text>{' '}
             {t('settings.morePrivacySettingsSuffix')}

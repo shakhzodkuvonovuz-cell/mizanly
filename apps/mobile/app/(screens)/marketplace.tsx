@@ -26,6 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { commerceApi } from '@/services/api';
+import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth } = Dimensions.get('window');
 const GRID_GAP = spacing.sm;
@@ -130,7 +131,7 @@ function MarketplaceContent() {
 
   const handleProductPress = (product: Product) => {
     haptic.light();
-    router.push(`/(screens)/product-detail?id=${product.id}` as never);
+    navigate('/(screens)/product-detail', { id: product.id });
   };
 
   const renderCategoryChips = () => (

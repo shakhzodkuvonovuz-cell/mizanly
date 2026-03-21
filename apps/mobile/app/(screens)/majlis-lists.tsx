@@ -18,6 +18,7 @@ import type { MajlisList } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { navigate } from '@/utils/navigation';
 
 export default function MajlisListsScreen() {
   const { t, isRTL } = useTranslation();
@@ -94,7 +95,7 @@ export default function MajlisListsScreen() {
 
   const renderItem = ({ item, index }: { item: MajlisList; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-      <Pressable onPress={() => router.push(`/(screens)/majlis-list/${item.id}` as never)}>
+      <Pressable onPress={() => navigate(`/(screens)/majlis-list/${item.id}`)}>
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           style={styles.card}

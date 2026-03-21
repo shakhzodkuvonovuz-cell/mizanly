@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl } from 'rea
 import { useScrollToTop } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useNavigation } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useUser, useAuth } from '@clerk/clerk-expo';
@@ -381,7 +382,7 @@ export default function RisalahScreen() {
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/saved-messages' as never); }}
+            onPress={() => { haptic.light(); navigate('/(screens)/saved-messages'); }}
             accessibilityLabel={t('risalah.savedMessages')}
             accessibilityRole="button"
           >
@@ -389,7 +390,7 @@ export default function RisalahScreen() {
           </Pressable>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/call-history' as never); }}
+            onPress={() => { haptic.light(); navigate('/(screens)/call-history'); }}
             accessibilityLabel={t('risalah.call')}
             accessibilityRole="button"
           >
@@ -429,7 +430,7 @@ export default function RisalahScreen() {
           icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
-            router.push('/(screens)/chat-folders' as never);
+            navigate('/(screens)/chat-folders');
           }}
         />
         <BottomSheetItem
@@ -437,7 +438,7 @@ export default function RisalahScreen() {
           icon={<Icon name="edit" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
-            router.push('/(screens)/dm-note-editor' as never);
+            navigate('/(screens)/dm-note-editor');
           }}
         />
         <BottomSheetItem
@@ -445,7 +446,7 @@ export default function RisalahScreen() {
           icon={<Icon name="globe" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
-            router.push('/(screens)/create-broadcast' as never);
+            navigate('/(screens)/create-broadcast');
           }}
         />
       </BottomSheet>

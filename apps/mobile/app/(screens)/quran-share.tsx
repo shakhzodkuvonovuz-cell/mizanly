@@ -16,6 +16,7 @@ import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { QuranSurah, QuranVerse } from '@/types/islamic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -314,7 +315,7 @@ export default function QuranShareScreen() {
                     {/* Tafsir Button */}
                     <Pressable
                       accessibilityRole="button"
-                      onPress={() => router.push(`/(screens)/tafsir-viewer?surah=${selectedSurahNumber}&verse=${currentVerse}` as never)}
+                      onPress={() => navigate('/(screens)/tafsir-viewer', { surah: selectedSurahNumber, verse: currentVerse })}
                       style={styles.tafsirButton}
                     >
                       <Icon name="book-open" size="sm" color={colors.gold} />

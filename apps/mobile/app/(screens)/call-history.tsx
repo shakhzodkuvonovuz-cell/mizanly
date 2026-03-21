@@ -20,6 +20,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import type { CallSession } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 export default function CallHistoryScreen() {
   const router = useRouter();
@@ -91,7 +92,7 @@ export default function CallHistoryScreen() {
           <Pressable
             accessibilityRole="button"
             style={styles.rowInner}
-            onPress={() => router.push(`/(screens)/profile/${otherUser.username}` as never)}
+            onPress={() => navigate(`/(screens)/profile/${otherUser.username}`)}
           >
             <Avatar uri={otherUser.avatarUrl} name={otherUser.displayName || otherUser.username} size="md" />
             <View style={styles.info}>
@@ -120,7 +121,7 @@ export default function CallHistoryScreen() {
           <Pressable
             accessibilityRole="button"
             hitSlop={8}
-            onPress={() => router.push(`/(screens)/call/${item.id}` as never)}
+            onPress={() => navigate(`/(screens)/call/${item.id}`)}
           >
             <LinearGradient
               colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}

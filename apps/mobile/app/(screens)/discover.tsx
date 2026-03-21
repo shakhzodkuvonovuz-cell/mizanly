@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -75,7 +76,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         renderItem={({ item }) => (
           <Pressable
             style={styles.hashtagChipGold}
-            onPress={() => router.push(`/(screens)/search?q=${encodeURIComponent(item.name)}` as never)}
+            onPress={() => navigate(`/(screens)/search?q=${encodeURIComponent(item.name)}`)}
             accessibilityRole="button"
             accessibilityLabel={`Search for hashtag ${item.name}`}
           >
@@ -236,13 +237,13 @@ const ExploreGridItem = memo(function ExploreGridItem({ item }: { item: ExploreI
 
   const handlePress = () => {
     if (isReel) {
-      router.push(`/(screens)/reel/${item.id}` as never);
+      navigate(`/(screens)/reel/${item.id}`);
     } else if (isPost) {
-      router.push(`/(screens)/post/${item.id}` as never);
+      navigate(`/(screens)/post/${item.id}`);
     } else if (isThread) {
-      router.push(`/(screens)/thread/${item.id}` as never);
+      navigate(`/(screens)/thread/${item.id}`);
     } else if (isVideo) {
-      router.push(`/(screens)/video/${item.id}` as never);
+      navigate(`/(screens)/video/${item.id}`);
     }
   };
 
@@ -381,7 +382,7 @@ export default function DiscoverScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('discover.title')}
-          rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: t('common.search') }]}
+          rightActions={[{ icon: 'search', onPress: () => navigate('/(screens)/search'), accessibilityLabel: t('common.search') }]}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
@@ -400,7 +401,7 @@ export default function DiscoverScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('discover.title')}
-          rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: t('common.search') }]}
+          rightActions={[{ icon: 'search', onPress: () => navigate('/(screens)/search'), accessibilityLabel: t('common.search') }]}
         />
 
         <View style={styles.headerSpacer} />
@@ -421,14 +422,14 @@ export default function DiscoverScreen() {
               <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.md }}>
                 <Pressable
                   style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.dark.border }}
-                  onPress={() => router.push('/(screens)/hashtag-explore' as never)}
+                  onPress={() => navigate('/(screens)/hashtag-explore')}
                 >
                   <Icon name="hash" size="sm" color={colors.emerald} />
                   <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('screens.hashtag-explore.title')}</Text>
                 </Pressable>
                 <Pressable
                   style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.dark.border }}
-                  onPress={() => router.push('/(screens)/series-discover' as never)}
+                  onPress={() => navigate('/(screens)/series-discover')}
                 >
                   <Icon name="layers" size="sm" color={colors.gold} />
                   <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('series.discoverTitle')}</Text>
@@ -444,7 +445,7 @@ export default function DiscoverScreen() {
                 title={t('discover.nothingYet')}
                 subtitle={t('discover.followMoreCreators')}
                 actionLabel={t('discover.findPeople')}
-                onAction={() => router.push('/(screens)/search' as never)}
+                onAction={() => navigate('/(screens)/search')}
               />
             ) : null
           }

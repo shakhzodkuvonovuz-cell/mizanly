@@ -72,7 +72,7 @@ export class FeedService {
       data: {
         userId,
         postId: data.postId,
-        space: data.space as ContentSpace,
+        space: data.space as ContentSpace, // Validated by LogInteractionDto @IsEnum
         viewed: data.viewed ?? false,
         viewDurationMs: data.viewDurationMs ?? 0,
         completionRate: data.completionRate,

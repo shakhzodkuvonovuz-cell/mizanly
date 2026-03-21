@@ -19,6 +19,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { HajjStep, HajjProgress } from '@/types/islamic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const TOTAL_STEPS = 7;
 
@@ -247,7 +248,7 @@ function HajjCompanionContent() {
                   style={styles.stepRow}
   
                   onPress={() =>
-                    router.push(`/(screens)/hajj-step?step=${step.step}` as never)
+                    navigate('/(screens)/hajj-step', { step: step.step })
                   }
                 >
                   {/* Timeline line */}

@@ -28,6 +28,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { commerceApi } from '@/services/api';
+import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -112,7 +113,7 @@ function ProductDetailContent() {
     onSuccess: () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['my-orders'] });
-      router.push('/(screens)/orders' as never);
+      navigate('/(screens)/orders');
     },
   });
 
@@ -129,7 +130,7 @@ function ProductDetailContent() {
 
   const handleRelatedPress = (productId: string) => {
     haptic.light();
-    router.push(`/(screens)/product-detail?id=${productId}` as never);
+    navigate('/(screens)/product-detail', { id: productId });
   };
 
   const handleImageScroll = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
@@ -293,7 +294,7 @@ function ProductDetailContent() {
         <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.sellerCard}>
           <Pressable
             style={styles.sellerInner}
-            onPress={() => router.push(`/(screens)/profile/${product.seller.username}` as never)}
+            onPress={() => navigate(`/(screens)/profile/${product.seller.username}`)}
             accessibilityRole="button"
           >
             <Avatar

@@ -26,6 +26,7 @@ import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
+import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth } = Dimensions.get('window');
 const HERO_HEIGHT = 240;
@@ -212,7 +213,7 @@ function SeriesDetailScreen() {
       {/* Creator info */}
       <Animated.View entering={FadeIn.duration(400)} style={styles.creatorCard}>
         <Pressable
-          onPress={() => router.push(`/(screens)/profile/${data.creator.username}` as never)}
+          onPress={() => navigate(`/(screens)/profile/${data.creator.username}`)}
           style={[styles.creatorRow, { flexDirection: rtlFlexRow(isRTL) }]}
           accessibilityLabel={`View ${data.creator.displayName}'s profile`}
           accessibilityRole="button"

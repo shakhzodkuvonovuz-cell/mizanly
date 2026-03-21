@@ -28,6 +28,7 @@ import { commerceApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
+import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth } = Dimensions.get('window');
 const IMAGE_HEIGHT = 300;
@@ -213,7 +214,7 @@ function ProductDetailScreen() {
       }),
     onSuccess: () => {
       haptic.success();
-      router.push('/(screens)/orders' as `/${string}` as never);
+      navigate('/(screens)/orders');
     },
   });
 
@@ -354,7 +355,7 @@ function ProductDetailScreen() {
               Seller
             </Text>
             <Pressable
-              onPress={() => router.push(`/(screens)/profile/${data.seller.username}` as never)}
+              onPress={() => navigate(`/(screens)/profile/${data.seller.username}`)}
               accessibilityLabel={`View ${data.seller.displayName}'s profile`}
             >
               <LinearGradient

@@ -14,6 +14,7 @@ import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -112,11 +113,11 @@ function SeriesDetailContent() {
   const handleEpisodePress = (episode: Episode) => {
     haptic.light();
     if (episode.videoId) {
-      router.push(`/(screens)/video/${episode.videoId}` as never);
+      navigate(`/(screens)/video/${episode.videoId}`);
     } else if (episode.reelId) {
-      router.push(`/(screens)/reel/${episode.reelId}` as never);
+      navigate(`/(screens)/reel/${episode.reelId}`);
     } else if (episode.postId) {
-      router.push(`/(screens)/post/${episode.postId}` as never);
+      navigate(`/(screens)/post/${episode.postId}`);
     }
   };
 
@@ -244,7 +245,7 @@ function SeriesDetailContent() {
         {/* Creator Card */}
         <Pressable
           style={styles.creatorCard}
-          onPress={() => router.push(`/(screens)/profile/${series.creator.username}` as never)}
+          onPress={() => navigate(`/(screens)/profile/${series.creator.username}`)}
           accessibilityRole="button"
         >
           <Avatar

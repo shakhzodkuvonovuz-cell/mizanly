@@ -22,6 +22,7 @@ import { communitiesApi } from '@/services/communitiesApi';
 import type { Community } from '@/types/communities';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const CATEGORIES = [
   'All', 'Islamic', 'Tech', 'Sports', 'Art', 'Food', 'Local', 'Education', 'Health'
@@ -234,7 +235,7 @@ export default function CommunitiesScreen() {
   }, [communities]);
 
   const handleCommunityPress = useCallback((community: Community) => {
-    router.push(`/(screens)/community-posts?communityId=${community.id}` as never);
+    navigate('/(screens)/community-posts', { communityId: community.id });
   }, [router]);
 
   const handleCreateCommunity = useCallback(() => {

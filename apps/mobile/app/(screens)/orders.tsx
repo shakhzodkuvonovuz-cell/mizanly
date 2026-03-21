@@ -20,6 +20,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { commerceApi } from '@/services/api';
+import { navigate } from '@/utils/navigation';
 
 type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
 
@@ -80,7 +81,7 @@ function OrdersContent() {
 
   const handleOrderPress = (order: OrderItem) => {
     haptic.light();
-    router.push(`/(screens)/product-detail?id=${order.productId}` as never);
+    navigate('/(screens)/product-detail', { id: order.productId });
   };
 
   const getStatusConfig = (status: string) => {

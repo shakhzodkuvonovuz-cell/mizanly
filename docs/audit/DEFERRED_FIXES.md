@@ -639,8 +639,9 @@ Cat 7: 11 untyped response.json() calls given proper type annotations (stripe-co
 ### FIXED in third pass (36 additional):
 Cat 1: 22 non-null assertions replaced with proper null guards (stream.service throw, encryption.service ??, stories.service guard, 7 mobile files with optional chaining/early returns). Cat 2: 10 of 12 `as unknown as` eliminated (4 Stripe: `in` check + property access, 2 Islamic JSON: simplified to single cast, 5 web CSS: Dimensions.get instead of '100%', 1 VideoPlayer: `in` guard). Cat 5: 2 Record<string,any> → typed ClerkWebhookEvent interface.
 
-### NOTED (patterns — framework/platform limitations):
-- 227 `as never` — Expo Router framework limitation (typed navigation.ts helper exists but migration is 164-file refactor)
-- 2 remaining `as unknown as` — web CSS fallback (component-level, web-only)
-- 28 string-to-enum casts — validated by service layer before Prisma
+### FIXED in fourth pass (255 additional):
+Cat 3: ALL 227 `as never` casts eliminated — migrated 60 files to use `navigate()` from `@/utils/navigation.ts` (zero `as never` remain in codebase). Cat 8: 28 string-to-enum casts: 3 got runtime validation (videos category, live type query params, notifications type), 1 bug fixed (live.service 'VIDEO' → LiveType.VIDEO_STREAM), 24 confirmed validated by DTO @IsEnum decorators.
+
+### NOTED (0 remaining):
+All 398 TypeScript safety findings addressed.
 - 2 Record<string, any> — Clerk webhook data

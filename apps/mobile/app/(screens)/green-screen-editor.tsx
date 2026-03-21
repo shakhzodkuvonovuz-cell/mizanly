@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -523,7 +524,7 @@ export default function GreenScreenEditorScreen() {
             <Pressable style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable style={styles.applyButton} onPress={() => router.push('/(screens)/camera' as never)}>
+            <Pressable style={styles.applyButton} onPress={() => navigate('/(screens)/camera')}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.applyButtonGradient}

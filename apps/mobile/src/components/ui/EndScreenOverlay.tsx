@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
+import { navigate } from '@/utils/navigation';
 import { colors, fonts, fontSize, spacing, radius, glass } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { EndScreen } from '@/types';
@@ -99,8 +99,6 @@ export function EndScreenOverlay({
   currentTime,
   totalDuration,
 }: EndScreenOverlayProps) {
-  const router = useRouter();
-
   const visibleCards = useMemo(() => {
     if (totalDuration <= 0 || currentTime <= 0) return [];
     const remainingTime = totalDuration - currentTime;
@@ -113,17 +111,17 @@ export function EndScreenOverlay({
     switch (item.type) {
       case 'subscribe':
         if (item.targetId) {
-          router.push(`/(screens)/channel/${item.targetId}` as never);
+          navigate(`/(screens)/channel/${item.targetId}`);
         }
         break;
       case 'watch_next':
         if (item.targetId) {
-          router.push(`/(screens)/video/${item.targetId}` as never);
+          navigate(`/(screens)/video/${item.targetId}`);
         }
         break;
       case 'playlist':
         if (item.targetId) {
-          router.push(`/(screens)/playlist/${item.targetId}` as never);
+          navigate(`/(screens)/playlist/${item.targetId}`);
         }
         break;
       case 'link':

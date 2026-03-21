@@ -28,6 +28,7 @@ import type { Notification } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { rtlFlexRow, rtlTextAlign, rtlMargin, rtlBorderStart, rtlAbsoluteStart } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 type NotifIconName = React.ComponentProps<typeof Icon>['name'];
 
@@ -215,7 +216,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
     haptic.light();
     if (!notification.isRead) readMutation.mutate();
     const target = notificationTarget(notification);
-    if (target) router.push(target as never);
+    if (target) navigate(target);
   };
 
   const timeAgo = formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true, locale: getDateFnsLocale() });

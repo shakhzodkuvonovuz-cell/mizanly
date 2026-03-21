@@ -19,6 +19,7 @@ import * as Location from 'expo-location';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatHijriDate } from '@/utils/hijri';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -422,7 +423,7 @@ export default function PrayerTimesScreen() {
 
           {/* Qibla Compass */}
           <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.qiblaContainer}>
-            <Pressable onPress={() => router.push('/(screens)/qibla-compass' as never)}>
+            <Pressable onPress={() => navigate('/(screens)/qibla-compass')}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
                 style={styles.qiblaCard}

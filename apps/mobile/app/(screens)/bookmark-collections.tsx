@@ -17,6 +17,7 @@ import type { BookmarkCollection } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -46,7 +47,7 @@ export default function BookmarkCollectionsScreen() {
         style={styles.card}
         onPress={() => {
           haptic.light();
-          router.push(`/(screens)/saved?collection=${encodeURIComponent(item.name)}` as never);
+          navigate('/(screens)/saved', { collection: item.name });
         }}
       >
         <LinearGradient

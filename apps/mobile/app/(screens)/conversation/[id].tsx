@@ -43,6 +43,7 @@ import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
 import { io, Socket } from 'socket.io-client';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 interface TenorGifResult {
   id: string;
@@ -1594,7 +1595,7 @@ export default function ConversationScreen() {
             <Pressable
               style={styles.gifBtn}
               hitSlop={8}
-              onPress={() => router.push(`/(screens)/sticker-browser?conversationId=${id}` as never)}
+              onPress={() => navigate('/(screens)/sticker-browser', { conversationId: id })}
               accessibilityLabel={t('risalah.stickers')}
               accessibilityRole="button"
             >

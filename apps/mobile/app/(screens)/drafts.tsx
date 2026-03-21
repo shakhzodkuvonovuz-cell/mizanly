@@ -14,6 +14,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { draftsApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 type DraftItem = {
   id: string;
@@ -68,7 +69,7 @@ export default function DraftsScreen() {
       MINBAR: '/(screens)/create-video',
     };
     const screen = screenMap[draft.space] ?? '/(screens)/create-post';
-    router.push({ pathname: screen, params: { draftId: draft.id } } as never);
+    navigate(screen, { draftId: draft.id });
   };
 
   const renderDraft = ({ item, index }: { item: DraftItem; index: number }) => {

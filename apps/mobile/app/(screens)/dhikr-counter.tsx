@@ -32,6 +32,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
+import { navigate } from '@/utils/navigation';
 
 const { width } = Dimensions.get('window');
 
@@ -387,7 +388,7 @@ export default function DhikrCounterScreen() {
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => router.push('/(screens)/dhikr-challenges' as never)}
+                onPress={() => navigate('/(screens)/dhikr-challenges')}
 
                 style={styles.actionButtonWrapper}
               >

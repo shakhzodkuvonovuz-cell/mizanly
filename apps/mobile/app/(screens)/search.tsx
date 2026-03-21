@@ -25,6 +25,7 @@ import type { User, TrendingHashtag, Reel, Video, Channel } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { rtlFlexRow, rtlTextAlign, rtlArrow } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const SEARCH_TAB_KEYS = ['people', 'hashtags', 'posts', 'threads', 'reels', 'videos', 'channels'] as const;
 
@@ -681,7 +682,7 @@ export default function SearchScreen() {
               renderItem={({ item }) => (
                 <Pressable
                   style={styles.exploreItem}
-                  onPress={() => router.push(`/(screens)/post/${item.id}` as never)}
+                  onPress={() => navigate(`/(screens)/post/${item.id}`)}
                   accessibilityRole="button"
                   accessibilityLabel={t('accessibility.viewPost')}
                 >

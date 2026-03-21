@@ -32,6 +32,7 @@ import { reelsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Comment, Reel } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_H * 0.7;
@@ -437,9 +438,9 @@ export default function ReelDetailScreen() {
           title={t('bakra.reel')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
           rightActions={[
-            { icon: 'layers', onPress: () => router.push(`/(screens)/duet-create?reelId=${id}` as never), accessibilityLabel: t('bakra.duet') },
-            { icon: 'repeat', onPress: () => router.push(`/(screens)/reel-remix?reelId=${id}` as never), accessibilityLabel: t('bakra.remix') },
-            { icon: 'share', onPress: () => router.push(`/(screens)/stitch-create?reelId=${id}` as never), accessibilityLabel: t('bakra.stitch') },
+            { icon: 'layers', onPress: () => navigate('/(screens)/duet-create', { reelId: id }), accessibilityLabel: t('bakra.duet') },
+            { icon: 'repeat', onPress: () => navigate('/(screens)/reel-remix', { reelId: id }), accessibilityLabel: t('bakra.remix') },
+            { icon: 'share', onPress: () => navigate('/(screens)/stitch-create', { reelId: id }), accessibilityLabel: t('bakra.stitch') },
           ]}
         />
 

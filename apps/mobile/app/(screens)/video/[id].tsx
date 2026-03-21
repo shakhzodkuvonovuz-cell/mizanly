@@ -5,6 +5,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-expo';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
@@ -894,7 +895,7 @@ export default function VideoDetailScreen() {
             icon={<Icon name="scissors" size="sm" color={colors.text.primary} />}
             onPress={() => {
               setShowMenu(false);
-              router.push(`/(screens)/create-clip?videoId=${video.id}` as never);
+              navigate(`/(screens)/create-clip?videoId=${video.id}`);
             }}
           />
           {video.userId === user?.id && (
@@ -904,7 +905,7 @@ export default function VideoDetailScreen() {
                 icon={<Icon name="layers" size="sm" color={colors.gold} />}
                 onPress={() => {
                   setShowMenu(false);
-                  router.push(`/(screens)/end-screen-editor?videoId=${video.id}` as never);
+                  navigate(`/(screens)/end-screen-editor?videoId=${video.id}`);
                 }}
               />
               <BottomSheetItem
@@ -912,7 +913,7 @@ export default function VideoDetailScreen() {
                 icon={<Icon name="clock" size="sm" color={colors.emerald} />}
                 onPress={() => {
                   setShowMenu(false);
-                  router.push(`/(screens)/video-premiere?videoId=${video.id}` as never);
+                  navigate(`/(screens)/video-premiere?videoId=${video.id}`);
                 }}
               />
             </>
@@ -922,7 +923,7 @@ export default function VideoDetailScreen() {
             icon={<Icon name="flag" size="sm" color={colors.error} />}
             onPress={() => {
               setShowMenu(false);
-              router.push(`/(screens)/report?type=video&id=${video.id}` as never);
+              navigate(`/(screens)/report?type=video&id=${video.id}`);
             }}
             destructive
           />

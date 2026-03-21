@@ -10,6 +10,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -402,17 +403,17 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
             <BottomSheetItem
               label={t('saf.crossPost')}
               icon={<Icon name="repeat" size="sm" color={colors.text.primary} />}
-              onPress={() => { setShowMenu(false); router.push(`/(screens)/cross-post?postId=${post.id}` as never); }}
+              onPress={() => { setShowMenu(false); navigate(`/(screens)/cross-post?postId=${post.id}`); }}
             />
             <BottomSheetItem
               label={t('saf.boostPost')}
               icon={<Icon name="trending-up" size="sm" color={colors.gold} />}
-              onPress={() => { setShowMenu(false); router.push(`/(screens)/boost-post?postId=${post.id}` as never); }}
+              onPress={() => { setShowMenu(false); navigate(`/(screens)/boost-post?postId=${post.id}`); }}
             />
             <BottomSheetItem
               label={t('saf.postInsights')}
               icon={<Icon name="bar-chart-2" size="sm" color={colors.text.primary} />}
-              onPress={() => { setShowMenu(false); router.push(`/(screens)/post-insights?postId=${post.id}` as never); }}
+              onPress={() => { setShowMenu(false); navigate(`/(screens)/post-insights?postId=${post.id}`); }}
             />
             <BottomSheetItem
               label={t('common.delete')}
@@ -441,7 +442,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
             <BottomSheetItem
               label={t('saf.whyShowing')}
               icon={<Icon name="help-circle" size="sm" color={colors.text.primary} />}
-              onPress={() => { setShowMenu(false); router.push(`/(screens)/why-showing?postId=${post.id}` as never); }}
+              onPress={() => { setShowMenu(false); navigate(`/(screens)/why-showing?postId=${post.id}`); }}
             />
             <BottomSheetItem
               label={t('common.report')}

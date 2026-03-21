@@ -24,6 +24,7 @@ import { reelsApi, uploadApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 import { MusicPicker } from '@/components/story/MusicPicker';
 import type { AudioTrack } from '@/types';
 
@@ -466,7 +467,7 @@ export default function CreateReelScreen() {
 
               <Pressable
                 style={styles.toolbarButton}
-                onPress={() => router.push('/(screens)/reel-templates' as never)}
+                onPress={() => navigate('/(screens)/reel-templates')}
                 accessibilityRole="button"
               >
                 <LinearGradient
@@ -480,7 +481,7 @@ export default function CreateReelScreen() {
 
               <Pressable
                 style={styles.toolbarButton}
-                onPress={() => router.push('/(screens)/schedule-post?space=bakra' as never)}
+                onPress={() => navigate('/(screens)/schedule-post', { space: 'bakra' })}
                 accessibilityRole="button"
               >
                 <LinearGradient
@@ -494,7 +495,7 @@ export default function CreateReelScreen() {
 
               <Pressable
                 style={styles.toolbarButton}
-                onPress={() => router.push('/(screens)/green-screen-editor' as never)}
+                onPress={() => navigate('/(screens)/green-screen-editor')}
                 accessibilityRole="button"
               >
                 <LinearGradient
@@ -508,7 +509,7 @@ export default function CreateReelScreen() {
 
               <Pressable
                 style={styles.toolbarButton}
-                onPress={() => router.push('/(screens)/audio-library' as never)}
+                onPress={() => navigate('/(screens)/audio-library')}
                 accessibilityRole="button"
               >
                 <LinearGradient

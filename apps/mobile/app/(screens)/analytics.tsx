@@ -15,6 +15,7 @@ import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { CreatorStat } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 
 interface AnalyticsResponse {
   stats: CreatorStat[];
@@ -231,7 +232,7 @@ export default function AnalyticsScreen() {
               title={t('analytics.noDataYet')}
               subtitle={t('analytics.noDataSubtitle')}
               actionLabel={t('analytics.startCreating')}
-              onAction={() => router.push('/(screens)/create-post' as never)}
+              onAction={() => navigate('/(screens)/create-post')}
             />
           ) : (
             <>

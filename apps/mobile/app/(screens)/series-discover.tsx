@@ -23,6 +23,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { navigate } from '@/utils/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
@@ -119,7 +120,7 @@ function SeriesDiscoverContent() {
 
   const handleSeriesPress = (series: SeriesItem) => {
     haptic.light();
-    router.push(`/(screens)/series-detail?id=${series.id}` as never);
+    navigate('/(screens)/series-detail', { id: series.id });
   };
 
   const handleFollowToggle = (series: SeriesItem) => {

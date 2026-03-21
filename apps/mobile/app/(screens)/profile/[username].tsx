@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet,
   FlatList, RefreshControl, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -554,13 +555,13 @@ export default function ProfileScreen() {
         <StatItem
           num={profile._count?.followers ?? 0}
           label={t('profile.followers')}
-          onPress={() => router.push(`/(screens)/followers/${profile.id}` as never)}
+          onPress={() => navigate(`/(screens)/followers/${profile.id}`)}
         />
         <View style={styles.statDivider} />
         <StatItem
           num={profile._count?.following ?? 0}
           label={t('profile.following')}
-          onPress={() => router.push(`/(screens)/following/${profile.id}` as never)}
+          onPress={() => navigate(`/(screens)/following/${profile.id}`)}
         />
         <View style={styles.statDivider} />
         <StatItem num={profile._count?.posts ?? 0} label={t('profile.posts')} />
@@ -569,7 +570,7 @@ export default function ProfileScreen() {
       {/* Mutual followers */}
       {!isOwnProfile && mutualFollowers && mutualFollowers.length > 0 && (
         <Pressable
-          onPress={() => router.push(`/(screens)/mutual-followers?username=${username}` as never)}
+          onPress={() => navigate(`/(screens)/mutual-followers?username=${username}`)}
           style={{
             flexDirection: rtlFlexRow(isRTL), alignItems: 'center',
             paddingHorizontal: spacing.base, marginTop: spacing.sm,
@@ -605,7 +606,7 @@ export default function ProfileScreen() {
               <Pressable
                 key={thread.id}
                 style={styles.pinnedItem}
-                onPress={() => router.push(`/(screens)/thread/${thread.id}` as never)}
+                onPress={() => navigate(`/(screens)/thread/${thread.id}`)}
                 accessibilityLabel={t('profile.viewPinnedThread')}
                 accessibilityRole="button"
               >
@@ -657,14 +658,14 @@ export default function ProfileScreen() {
         </Pressable>
         {isOwnProfile ? (
           <>
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/saved' as never)} accessibilityLabel={t('profile.savedPosts')} accessibilityRole="link">
+            <Pressable hitSlop={8} onPress={() => navigate('/(screens)/saved')} accessibilityLabel={t('profile.savedPosts')} accessibilityRole="link">
               <Icon name="bookmark" size="sm" color={colors.text.primary} />
             </Pressable>
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/archive' as never)} accessibilityLabel={t('profile.archive')} accessibilityRole="link">
+            <Pressable hitSlop={8} onPress={() => navigate('/(screens)/archive')} accessibilityLabel={t('profile.archive')} accessibilityRole="link">
               <Icon name="clock" size="sm" color={colors.text.primary} />
             </Pressable>
 
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel={t('common.settings')} accessibilityRole="link">
+            <Pressable hitSlop={8} onPress={() => navigate('/(screens)/settings')} accessibilityLabel={t('common.settings')} accessibilityRole="link">
               <Icon name="settings" size="sm" color={colors.text.primary} />
             </Pressable>
           </>
@@ -683,7 +684,7 @@ export default function ProfileScreen() {
       return (
         <Pressable
           style={styles.threadRow}
-          onPress={() => router.push(`/(screens)/thread/${thread.id}` as never)}
+          onPress={() => navigate(`/(screens)/thread/${thread.id}`)}
           accessibilityLabel={`View thread by ${thread.user?.username}`}
           accessibilityRole="button"
         >
@@ -707,7 +708,7 @@ export default function ProfileScreen() {
       return (
         <Pressable
           style={styles.gridItem}
-          onPress={() => router.push(`/(screens)/reel/${reel.id}` as never)}
+          onPress={() => navigate(`/(screens)/reel/${reel.id}`)}
           accessibilityLabel={`View reel ${reel.id}`}
           accessibilityRole="button"
         >
@@ -739,7 +740,7 @@ export default function ProfileScreen() {
     return (
       <GridItem
         post={item as Post}
-        onPress={() => router.push(`/(screens)/post/${item.id}` as never)}
+        onPress={() => navigate(`/(screens)/post/${item.id}`)}
       />
     );
   };
@@ -814,7 +815,7 @@ export default function ProfileScreen() {
         <BottomSheetItem
           label={t('monetization.sendTip')}
           icon={<Icon name="heart" size="sm" color={colors.gold} />}
-          onPress={() => { setShowMenu(false); router.push(`/(screens)/send-tip?userId=${profile?.id}` as never); }}
+          onPress={() => { setShowMenu(false); navigate(`/(screens)/send-tip?userId=${profile?.id}`); }}
         />
         <BottomSheetItem
           label={t('profile.muteUser', { username })}
@@ -849,7 +850,7 @@ export default function ProfileScreen() {
           icon={<Icon name="hash" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowShareSheet(false);
-            router.push(`/(screens)/qr-code?username=${username}` as never);
+            navigate(`/(screens)/qr-code?username=${username}`);
           }}
         />
       </BottomSheet>

@@ -30,6 +30,7 @@ import { useStore } from '@/store';
 import { colors } from '@/theme';
 import { useIslamicTheme, useIsEidToday } from '@/hooks/useIslamicTheme';
 import { initSentry, setSentryUser } from '@/config/sentry';
+import { navigate } from '@/utils/navigation';
 
 // Allow the OS to flip layouts to RTL for Arabic and Urdu.
 I18nManager.allowRTL(true);
@@ -332,10 +333,7 @@ function ShareIntentHandler() {
       const parsed = Linking.parse(event.url);
       const params = parsed.queryParams ?? {};
       if (params.sharedText || params.sharedImage || params.sharedVideo || params.sharedUrl) {
-        router.push({
-          pathname: '/(screens)/share-receive' as never,
-          params: params as Record<string, string>,
-        } as never);
+        navigate('/(screens)/share-receive', params as Record<string, string>);
       }
     };
 

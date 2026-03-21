@@ -17,6 +17,7 @@ import { encryptionService } from '@/services/encryption';
 import { encryptionApi } from '@/services/encryptionApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { navigate } from '@/utils/navigation';
 
 const VERIFIED_KEY_PREFIX = 'verified_';
 
@@ -183,7 +184,7 @@ function VerifyEncryptionContent() {
 
   const handleScanQr = useCallback(() => {
     haptic.light();
-    router.push('/(screens)/qr-scanner' as never);
+    navigate('/(screens)/qr-scanner');
   }, [haptic, router]);
 
   const formattedMyFp = formatFingerprint(myFingerprint);

@@ -23,6 +23,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { islamicApi } from '@/services/islamicApi';
 import type { QuranRoomState } from '@/types/islamic';
+import { navigate } from '@/utils/navigation';
 import type { QuranVerse } from '@/types/islamic';
 
 const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
@@ -215,7 +216,7 @@ export default function QuranRoomScreen() {
           rightActions={[
             {
               icon: 'share',
-              onPress: () => router.push('/(screens)/quran-share' as never),
+              onPress: () => navigate('/(screens)/quran-share'),
               accessibilityLabel: t('tafsir.share'),
             },
             {
