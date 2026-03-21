@@ -185,7 +185,7 @@ export const Avatar = memo(function Avatar({
     );
   }
 
-  return <View style={styles.container}>{content}</View>;
+  return <View style={styles.container} accessibilityLabel={name || undefined}>{content}</View>;
 });
 
 const styles = StyleSheet.create({

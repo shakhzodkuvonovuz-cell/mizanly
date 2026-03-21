@@ -56,7 +56,7 @@ function HeaderButton({ icon, onPress, accessibilityLabel, badge }: HeaderAction
       onPressOut={onPressOut}
       style={[styles.headerButton, animatedStyle]}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? (typeof icon === 'string' ? icon : 'action')}
+      accessibilityLabel={accessibilityLabel ?? (typeof icon === 'string' ? icon : undefined)}
       hitSlop={8}
     >
       {typeof icon === 'string' ? (

@@ -25,11 +25,18 @@ export function FadeIn({ children, duration = 300, delay = 0, style }: FadeInPro
   const opacity = useSharedValue(0);
 
   useEffect(() => {
-    opacity.value = withTiming(1, {
-      duration,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [opacity, duration]);
+    const startFade = () => {
+      opacity.value = withTiming(1, {
+        duration,
+        easing: Easing.out(Easing.cubic),
+      });
+    };
+    if (delay > 0) {
+      const timer = setTimeout(startFade, delay);
+      return () => clearTimeout(timer);
+    }
+    startFade();
+  }, [opacity, duration, delay]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

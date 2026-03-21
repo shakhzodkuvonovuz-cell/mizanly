@@ -13,7 +13,6 @@ export interface EmptyStateProps {
   actionLabel?: string;
   onAction?: () => void;
   style?: StyleProp<ViewStyle>;
-  size?: 'sm' | 'md' | 'lg';
 }
 
 export function EmptyState({ icon, title, subtitle, actionLabel, onAction, style }: EmptyStateProps) {

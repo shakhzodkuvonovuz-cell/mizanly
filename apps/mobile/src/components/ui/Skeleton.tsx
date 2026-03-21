@@ -83,7 +83,7 @@ function TextLine({ width = '100%', style }: { width?: DimensionValue; style?: o
 
 function PostCard() {
   return (
-    <View style={skeletonStyles.postCard}>
+    <View style={skeletonStyles.postCard} accessibilityLabel="Loading post" accessibilityRole="progressbar">
       <View style={skeletonStyles.postHeader}>
         <Circle size={40} />
         <View style={skeletonStyles.postHeaderText}>
@@ -105,7 +105,7 @@ function PostCard() {
 
 function ThreadCard() {
   return (
-    <View style={skeletonStyles.threadCard}>
+    <View style={skeletonStyles.threadCard} accessibilityLabel="Loading thread" accessibilityRole="progressbar">
       <Circle size={40} />
       <View style={skeletonStyles.threadContent}>
         <View style={skeletonStyles.threadHeader}>
@@ -126,7 +126,7 @@ function ThreadCard() {
 
 function ConversationItem() {
   return (
-    <View style={skeletonStyles.convoItem}>
+    <View style={skeletonStyles.convoItem} accessibilityLabel="Loading conversation" accessibilityRole="progressbar">
       <Circle size={52} />
       <View style={skeletonStyles.convoContent}>
         <View style={skeletonStyles.convoRow}>
@@ -141,7 +141,7 @@ function ConversationItem() {
 
 function ProfileHeader() {
   return (
-    <View style={skeletonStyles.profileHeader}>
+    <View style={skeletonStyles.profileHeader} accessibilityLabel="Loading profile" accessibilityRole="progressbar">
       <Rect width="100%" height={140} borderRadius={0} />
       <View style={skeletonStyles.profileAvatarRow}>
         <Circle size={96} />

@@ -19,7 +19,7 @@ import Animated, {
   runOnJS,
   withTiming,
   interpolate,
-  Extrapolate,
+  Extrapolation,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, spacing, radius, animation, glass } from '@/theme';
@@ -213,7 +213,7 @@ export const ImageGallery = memo(function ImageGallery({
           entranceProgress.value,
           [0, 1],
           [30, 0],
-          Extrapolate.CLAMP
+          Extrapolation.CLAMP
         ),
       },
     ],

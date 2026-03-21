@@ -542,9 +542,12 @@ P0-1 through P0-6 (6 crashes: useTranslation hook call added to BottomSheet, Vid
 ### FIXED in second pass (4 additional):
 P2-3 (Autocomplete: added useTranslation hook), P2-8 (Icon: console.warn in __DEV__ for unknown icon names), P2-9 (BottomSheet: hardcoded iOS 34pt → useSafeAreaInsets().bottom with Math.max fallback)
 
-### Remaining:
-- [24] P1-5/P1-7 Toast + LinkPreview — feature builds — OPEN
-- [24] P2-1 BottomSheet keyboard avoidance — needs KeyboardAvoidingView — OPEN
-- [24] P2-5 LocationPicker mock data — needs expo-location — NOTED
-- [24] P2-7/P2-10/P2-14 Unused props, API confusion — cosmetic — NOTED
-- [24] P3 items — minor i18n, accessibility, code duplication — NOTED
+### FIXED in third pass (12 additional):
+P1-5 (ToastNotification: deleted 156 lines dead code), P2-7 (EmptyState: removed unused size prop), P2-10 (FadeIn: delay prop now implemented with setTimeout), P3-5 (GlassHeader: removed unhelpful 'action' fallback label), P3-7 (Avatar: non-pressable variant gets accessibilityLabel from name), P3-8 (Skeleton: all 4 variants — PostCard/ThreadCard/ConversationItem/ProfileHeader — get accessibilityLabel + progressbar role), P3-17 (ImageGallery: Extrapolate → Extrapolation for reanimated v3), P3-22 (EidFrame: removed redundant default export)
+
+### Remaining (5 — genuinely need feature work):
+- [24] P1-7 LinkPreview needs real OG metadata API — OPEN
+- [24] P2-1 BottomSheet keyboard avoidance — OPEN
+- [24] P2-5 LocationPicker needs expo-location — NOTED
+- [24] P2-14 BottomSheet snapPoint API — callers use it correctly in practice — NOTED
+- [24] P3-16 ImageGallery/ImageLightbox duplication — refactor — NOTED

@@ -111,5 +111,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bg,
   },
 });
-
-export default EidFrame;
