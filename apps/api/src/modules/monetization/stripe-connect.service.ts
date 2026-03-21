@@ -4,6 +4,13 @@ import { PrismaService } from '../../config/prisma.service';
 
 /**
  * Stripe Connect service for creator monetization.
+ *
+ * WARNING: This service is NOT registered in any module and is DEAD CODE.
+ * The active coin/diamond system uses CoinBalance table (gifts.service.ts).
+ * This service uses User.coinBalance/diamondBalance fields which are a SEPARATE
+ * balance system. Do NOT register this service without first migrating to use
+ * CoinBalance table to avoid dual-balance inconsistencies.
+ *
  * Handles:
  * - Connected account creation & onboarding
  * - 70/30 revenue split processing

@@ -128,21 +128,22 @@ export class GamificationService {
     const amount = customAmount ?? XP_REWARDS[reason] ?? 5;
     if (amount <= 0) return this.getXP(userId); // Reject non-positive amounts
 
-    // Use upsert + atomic increment to avoid race conditions
-    // when multiple XP awards happen concurrently
+    // Upsert + atomic increment
     const xp = await this.prisma.userXP.upsert({
       where: { userId },
       create: { userId, totalXP: amount, level: getLevelForXP(amount) },
       update: { totalXP: { increment: amount } },
     });
 
-    // Recalculate level from the atomically-updated totalXP
+    // Atomically recalculate level from totalXP in a single query
+    // This prevents race conditions where concurrent awardXP calls
+    // read the same totalXP and try to set the same level
     const newLevel = getLevelForXP(xp.totalXP);
     if (newLevel !== xp.level) {
-      await this.prisma.userXP.update({
-        where: { userId },
-        data: { level: newLevel },
-      });
+      await this.prisma.$executeRaw`
+        UPDATE "UserXP" SET "level" = ${newLevel}
+        WHERE "userId" = ${userId} AND "level" < ${newLevel}
+      `;
     }
 
     await this.prisma.xPHistory.create({

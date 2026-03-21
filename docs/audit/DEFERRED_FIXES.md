@@ -398,13 +398,8 @@ F17-04/05 (moderation fail-open, file 10), F17-06 (tip status pending), F17-07/0
 ### FIXED directly (38 findings):
 F17-01 (stripe-connect purchaseCoins no longer credits coins before payment — returns pending), F17-02 (stripe-connect cashout: Stripe transfer before diamond deduction, response.ok check), F17-03 (stripe-connect createConnectedAccount: response.ok checks on both fetch calls, accountId validation), F17-14/15 (SSRF prevention: validateMediaUrl blocks private IPs/non-HTTPS on moderateImage, generateAltText, generateVideoCaptions, transcribeVoiceMessage), F17-16 (webhook SSRF prevention — URL validation: HTTPS only, block private IPs), F17-17 (cancelSubscription inconsistent state — returns cancel_pending on Stripe failure), F17-18 (attachPaymentMethod try/catch + user-friendly error), F17-19 (listPaymentMethods throws on failure instead of returning []), F17-20 (stack traces removed from ALL API responses — dev + prod), F17-21 (Stripe ensureStripeAvailable() fails fast instead of deferred error), F17-22 (push service error.message instanceof check), F17-23 (duplicate getAudienceDemographics renamed to getChannelDemographics), F17-25 (createSubscription status 'active'→'pending'), F17-28 (autoRemoveContent comment handling — already fixed), F17-30 (reports .catch → logs error), F17-31 (reels .catch → logs error), F17-32 (webhook test() authorization check), F17-33 (Meilisearch silent catches → all 4 now log), F17-36 (stripe-connect response.ok checks), F17-39 (API call timeouts — AbortSignal.timeout(30s) on Claude, Gemini, Meilisearch; 60s on Whisper, Stream, batch embeddings), F17-40 (stream uploadFromUrl try/catch + timeout), F17-41 (handleInvoicePaid try/catch), F17-42 (Redis subscription TTL 30d→1yr, payment_intent 7d→30d), F17-43 (DB fallback on all 3 webhook handlers when Redis mapping missing + re-stores mapping), F17-44 (auth register try/catch), F17-47 (Islamic Redis 16 silent catches → debug logging), F17-49 (exception filter WebSocket check), F17-50 (posts JSON.parse cache try/catch), F17-51 (hashtags counter already has logging), F17-52 (upload deleteFile try/catch), F17-53 (autoRemoveContent atomic $transaction)
 
-### Deferred:
-- [17] F17-24 Dual balance systems — Architecture decision, tracked in file 02 (C-02) — NOTED
-
-### NOTED (acceptable/by-design):
-- [17] F17-45 Two-factor validate returns true when 2FA not enabled — By design (no 2FA required)
-- [17] F17-46 Gamification non-atomic level update — Deferred in file 08 (F21)
-- [17] F17-48 Transform interceptor null data — Correct behavior (wraps in { success: true, data: null })
+### FIXED in third pass (4 additional):
+F17-24 (dual balance documented — stripe-connect.service.ts marked as dead code with WARNING about dual-balance systems), F17-45 (added validateStrict() method for sensitive operations that REQUIRE 2FA — validate() kept for login flow), F17-46 (gamification level update now atomic — uses $executeRaw with WHERE level < newLevel guard), F17-48 (transform interceptor normalizes null/undefined to empty object)
 
 ## From Audit 18 (Rate Limiting) — 41 findings
 ### FIXED directly (35 findings):

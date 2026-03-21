@@ -176,17 +176,33 @@ export class TwoFactorService {
   }
 
   /**
-   * Validate a TOTP code for a user (login flow)
+   * Validate a TOTP code for login flow.
+   * Returns true if 2FA is not enabled (user doesn't need to provide code).
+   * For sensitive operations that REQUIRE 2FA, use validateStrict() instead.
    */
   async validate(userId: string, code: string): Promise<boolean> {
     const secretRecord = await this.prisma.twoFactorSecret.findUnique({
       where: { userId },
     });
     if (!secretRecord || !secretRecord.isEnabled) {
-      // If 2FA not enabled, treat as valid (no 2FA required)
+      // If 2FA not enabled, treat as valid (no 2FA required for login)
       return true;
     }
 
+    return verifyTotp(code, secretRecord.secret);
+  }
+
+  /**
+   * Strictly validate a TOTP code — returns false if 2FA is not enabled.
+   * Use this for sensitive operations that must verify the user has 2FA.
+   */
+  async validateStrict(userId: string, code: string): Promise<boolean> {
+    const secretRecord = await this.prisma.twoFactorSecret.findUnique({
+      where: { userId },
+    });
+    if (!secretRecord || !secretRecord.isEnabled) {
+      return false; // 2FA not enabled — cannot verify
+    }
     return verifyTotp(code, secretRecord.secret);
   }
 

@@ -27,9 +27,10 @@ export class TransformInterceptor<T>
         if (data && typeof data === 'object' && 'data' in data && 'meta' in data) {
           return { success: true, ...data, timestamp: new Date().toISOString() };
         }
+        // Normalize null/undefined to empty object so clients always get { data: {} }
         return {
           success: true,
-          data,
+          data: data ?? {},
           timestamp: new Date().toISOString(),
         };
       }),
