@@ -3090,5 +3090,19 @@
     "submitReflection": "Submit Reflection",
     "allComplete": "All Tasks Complete!",
     "loadError": "Could not load briefing"
+  },
+  "chatExport": {
+    "errorTitle": "Error",
+    "errorLoadStats": "Failed to load chat statistics"
+  },
+  "disappearingDefault": {
+    "errorTitle": "Error"
+  },
+  "cashout": {
+    "title": "Cash Out",
+    "errorTitle": "Error"
+  },
+  "chatLock": {
+    "removeLockMessage": "Are you sure you want to remove the chat lock?"
   }
 }

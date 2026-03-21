@@ -575,6 +575,9 @@ F1 (isRTL includes Urdu: ar || ur), F2 (changeLanguage type: all 8 languages + S
 ### FIXED in third pass (2 additional):
 F6 (date-fns locale: getDateFnsLocale() utility created in localeFormat.ts + wired into ALL 22 files with 24 formatDistanceToNow calls — supports ar/tr/fr/id/ms/bn with ur→ar fallback), F11 (poll pluralization: pollVotes_one/pollVotes_other added to all 8 languages)
 
-### NOTED (translation completeness — user responsibility):
+### FIXED in fourth pass (3 additional):
+F14 (English flash eliminated: all 8 languages bundled synchronously — no async flash), F15 (missing i18n keys added: chatExport, disappearingDefault, cashout, chatLock sections), F16 (loading indicator not needed — languages load synchronously now)
+
+### NOTED (4 remaining — human translation work):
 - [26] F3/F4/F18 Translation completeness — requires human translator
-- [26] F14/F15/F16/F17 — async loading, fallback strings, key bloat — low priority
+- [26] F17 Key bloat/duplicates — 200+ references, refactor risk too high
