@@ -14,6 +14,7 @@ import Redis from 'ioredis';
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
   private stripe: Stripe;
+  private readonly stripeAvailable: boolean;
 
   constructor(
     private prisma: PrismaService,
@@ -21,12 +22,19 @@ export class PaymentsService {
     private configService: ConfigService,
   ) {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    this.stripeAvailable = !!secretKey;
     if (!secretKey) {
-      this.logger.warn('STRIPE_SECRET_KEY environment variable is not set');
+      this.logger.warn('STRIPE_SECRET_KEY not set — payment operations will fail');
     }
     this.stripe = new Stripe(secretKey || '', {
       apiVersion: '2026-02-25.clover',
     });
+  }
+
+  private ensureStripeAvailable(): void {
+    if (!this.stripeAvailable) {
+      throw new BadRequestException('Payment service is not configured');
+    }
   }
 
   // ==================== Helper Methods ====================
@@ -73,15 +81,18 @@ export class PaymentsService {
    * Store mapping between Stripe payment intent and our tip ID
    */
   private async storePaymentIntentMapping(paymentIntentId: string, tipId: string) {
-    await this.redis.setex(`payment_intent:${paymentIntentId}`, 60 * 60 * 24 * 7, tipId);
+    // 30-day TTL — payment intents are short-lived
+    await this.redis.setex(`payment_intent:${paymentIntentId}`, 60 * 60 * 24 * 30, tipId);
   }
 
   /**
    * Store mapping between Stripe subscription and our subscription ID (both directions)
    */
   private async storeSubscriptionMapping(stripeSubscriptionId: string, subscriptionId: string) {
-    await this.redis.setex(`subscription:${stripeSubscriptionId}`, 60 * 60 * 24 * 30, subscriptionId);
-    await this.redis.setex(`subscription:internal:${subscriptionId}`, 60 * 60 * 24 * 30, stripeSubscriptionId);
+    // 1-year TTL — subscriptions are long-lived, must survive multiple renewal cycles
+    const ONE_YEAR = 60 * 60 * 24 * 365;
+    await this.redis.setex(`subscription:${stripeSubscriptionId}`, ONE_YEAR, subscriptionId);
+    await this.redis.setex(`subscription:internal:${subscriptionId}`, ONE_YEAR, stripeSubscriptionId);
   }
 
   /**
@@ -106,6 +117,7 @@ export class PaymentsService {
     amount: number,
     currency: string,
   ) {
+    this.ensureStripeAvailable();
     // Validate amount
     if (amount <= 0) {
       throw new BadRequestException('Amount must be positive');
@@ -170,6 +182,7 @@ export class PaymentsService {
   }
 
   async createSubscription(userId: string, tierId: string, paymentMethodId: string) {
+    this.ensureStripeAvailable();
     // Validate tier
     const tier = await this.prisma.membershipTier.findUnique({ where: { id: tierId } });
     if (!tier) {
@@ -362,10 +375,22 @@ export class PaymentsService {
   // ==================== Webhook Handlers ====================
 
   async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-    const tipId = await this.redis.get(`payment_intent:${paymentIntent.id}`);
+    let tipId = await this.redis.get(`payment_intent:${paymentIntent.id}`);
     if (!tipId) {
-      this.logger.warn(`No tip found for payment intent ${paymentIntent.id}`);
-      return;
+      // Redis mapping expired or lost — try DB fallback via metadata
+      const senderId = paymentIntent.metadata?.senderId;
+      if (senderId) {
+        const tip = await this.prisma.tip.findFirst({
+          where: { senderId, status: 'pending' },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true },
+        });
+        tipId = tip?.id ?? null;
+      }
+      if (!tipId) {
+        this.logger.warn(`No tip found for payment intent ${paymentIntent.id} (Redis + DB fallback failed)`);
+        return;
+      }
     }
 
     // Update tip status to completed
@@ -389,10 +414,26 @@ export class PaymentsService {
     const subscriptionId = String((invoice as unknown as { subscription?: string }).subscription ?? '');
     if (!subscriptionId) return;
 
-    const dbSubscriptionId = await this.redis.get(`subscription:${subscriptionId}`);
+    let dbSubscriptionId = await this.redis.get(`subscription:${subscriptionId}`);
     if (!dbSubscriptionId) {
-      this.logger.warn(`No subscription found for Stripe subscription ${subscriptionId}`);
-      return;
+      // Redis mapping expired — try DB fallback via Stripe metadata
+      const userId = invoice.metadata?.userId || invoice.metadata?.mizanlyUserId;
+      const tierId = invoice.metadata?.tierId || invoice.metadata?.mizanlyTierId;
+      if (userId && tierId) {
+        const sub = await this.prisma.membershipSubscription.findUnique({
+          where: { tierId_userId: { tierId, userId } },
+          select: { id: true },
+        });
+        dbSubscriptionId = sub?.id ?? null;
+        if (dbSubscriptionId) {
+          // Re-store the mapping for future webhooks
+          await this.storeSubscriptionMapping(subscriptionId, dbSubscriptionId);
+        }
+      }
+      if (!dbSubscriptionId) {
+        this.logger.warn(`No subscription found for Stripe subscription ${subscriptionId} (Redis + DB fallback failed)`);
+        return;
+      }
     }
 
     // Update subscription end date (extend by one period)
@@ -417,10 +458,22 @@ export class PaymentsService {
   }
 
   async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-    const dbSubscriptionId = await this.redis.get(`subscription:${subscription.id}`);
+    let dbSubscriptionId = await this.redis.get(`subscription:${subscription.id}`);
     if (!dbSubscriptionId) {
-      this.logger.warn(`No subscription found for deleted Stripe subscription ${subscription.id}`);
-      return;
+      // Redis mapping expired — try DB fallback via Stripe metadata
+      const userId = subscription.metadata?.userId || subscription.metadata?.mizanlyUserId;
+      const tierId = subscription.metadata?.tierId || subscription.metadata?.mizanlyTierId;
+      if (userId && tierId) {
+        const sub = await this.prisma.membershipSubscription.findUnique({
+          where: { tierId_userId: { tierId, userId } },
+          select: { id: true },
+        });
+        dbSubscriptionId = sub?.id ?? null;
+      }
+      if (!dbSubscriptionId) {
+        this.logger.warn(`No subscription found for deleted Stripe subscription ${subscription.id} (Redis + DB fallback failed)`);
+        return;
+      }
     }
 
     // Update our record

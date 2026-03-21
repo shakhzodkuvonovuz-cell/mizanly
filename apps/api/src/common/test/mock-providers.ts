@@ -154,6 +154,7 @@ export const mockConfigService = {
       const config: Record<string, string> = {
         CLERK_SECRET_KEY: 'test_secret_key',
         CLERK_PUBLISHABLE_KEY: 'test_pub_key',
+        STRIPE_SECRET_KEY: 'sk_test_mock',
         MEILISEARCH_HOST: 'http://localhost:7700',
         MEILISEARCH_API_KEY: 'test_key',
       };

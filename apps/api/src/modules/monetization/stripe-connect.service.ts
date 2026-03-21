@@ -56,8 +56,17 @@ export class StripeConnectService {
       }),
     });
 
+    if (!response.ok) {
+      const errorBody = await response.text();
+      this.logger.error(`Stripe Connect account creation failed: ${response.status} ${errorBody}`);
+      throw new BadRequestException('Failed to create payment account');
+    }
+
     const account = await response.json();
     const accountId = account.id;
+    if (!accountId) {
+      throw new BadRequestException('Stripe returned invalid account');
+    }
 
     // Store the connected account ID
     await this.prisma.user.update({
@@ -79,6 +88,11 @@ export class StripeConnectService {
         type: 'account_onboarding',
       }),
     });
+
+    if (!linkResponse.ok) {
+      this.logger.error(`Stripe account link creation failed: ${linkResponse.status}`);
+      throw new BadRequestException('Failed to generate onboarding link');
+    }
 
     const link = await linkResponse.json();
     return { accountId, onboardingUrl: link.url };
@@ -123,17 +137,21 @@ export class StripeConnectService {
           'metadata[coins]': String(pkg.coins),
         }),
       });
+
+      if (!response.ok) {
+        this.logger.error(`Stripe payment intent creation failed: ${response.status}`);
+        throw new BadRequestException('Payment processing failed');
+      }
+
       const pi = await response.json();
       paymentIntentId = pi.id;
     }
 
-    // Credit coins (in production, do this in the webhook after payment succeeds)
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { coinBalance: { increment: pkg.coins } },
-    });
+    // Coins are NOT credited here — they must be credited in the
+    // payment_intent.succeeded webhook handler after payment confirms.
+    // Return pending status with the payment intent for client-side confirmation.
 
-    return { coins: pkg.coins, paymentIntentId };
+    return { coins: pkg.coins, paymentIntentId, status: 'pending' };
   }
 
   /**
@@ -197,15 +215,9 @@ export class StripeConnectService {
     const amountUsd = diamondAmount * 0.01;
     const amountCents = Math.round(amountUsd * 100);
 
-    // Deduct diamonds
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { diamondBalance: { decrement: diamondAmount } },
-    });
-
-    // Create Stripe transfer + payout
+    // Create Stripe transfer FIRST, then deduct diamonds on success
     if (this.apiAvailable && user.stripeConnectAccountId) {
-      await fetch('https://api.stripe.com/v1/transfers', {
+      const transferResponse = await fetch('https://api.stripe.com/v1/transfers', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.stripeKey}`,
@@ -219,7 +231,19 @@ export class StripeConnectService {
           'metadata[diamonds]': String(diamondAmount),
         }),
       });
+
+      if (!transferResponse.ok) {
+        const errorBody = await transferResponse.text();
+        this.logger.error(`Stripe transfer failed: ${transferResponse.status} ${errorBody}`);
+        throw new BadRequestException('Cashout transfer failed — diamonds not deducted');
+      }
     }
+
+    // Deduct diamonds only AFTER transfer succeeds (or if no Stripe configured)
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { diamondBalance: { decrement: diamondAmount } },
+    });
 
     // Track for tax reporting (79.8)
     await this.prisma.creatorEarning.create({

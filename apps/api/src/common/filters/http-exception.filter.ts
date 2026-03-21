@@ -48,7 +48,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
           timestamp: new Date().toISOString(),
         });
       } else {
-        // In development, return full error details
+        // In development, log stack to server but don't leak in API response
+        this.logger.error(`[${status}] ${error['message'] ?? exception.message}`, exception.stack);
         response.status(status).json({
           success: false,
           statusCode: status,
@@ -56,7 +57,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
           message: error['message'] ?? exception.message,
           path: request.url,
           timestamp: new Date().toISOString(),
-          stack: exception.stack,
         });
       }
     } else {
@@ -76,6 +76,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
           timestamp: new Date().toISOString(),
         });
       } else {
+        // Stack already logged above — never include in API response
         response.status(500).json({
           success: false,
           statusCode: 500,
@@ -83,7 +84,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
           message: 'An unexpected error occurred',
           path: request.url,
           timestamp: new Date().toISOString(),
-          stack: exception instanceof Error ? exception.stack : String(exception),
         });
       }
     }

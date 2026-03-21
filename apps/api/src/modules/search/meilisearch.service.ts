@@ -104,6 +104,7 @@ export class MeilisearchService implements OnModuleInit {
           filter: options?.filter,
           sort: options?.sort,
         }),
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {

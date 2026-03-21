@@ -370,6 +370,7 @@ ${topPostsSummary || 'No posts in the last 30 days.'}
             { role: 'user', content: `Analytics data:\n${context}\n\nQuestion: ${question}` },
           ],
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) {

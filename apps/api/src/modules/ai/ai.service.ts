@@ -44,6 +44,26 @@ export class AiService {
     }
   }
 
+  /**
+   * Validate that a URL is safe to fetch (prevent SSRF).
+   * Only allows HTTPS URLs and blocks private/internal IPs.
+   */
+  private validateMediaUrl(url: string): void {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') {
+        throw new BadRequestException('Only HTTPS URLs are allowed');
+      }
+      const blocked = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
+      if (blocked.some(p => parsed.hostname.includes(p))) {
+        throw new BadRequestException('Internal URLs are not allowed');
+      }
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException('Invalid URL');
+    }
+  }
+
   // ── Core Claude API call ────────────────────────────────
 
   private async callClaude(prompt: string, systemPrompt: string, maxTokens = 500): Promise<string> {
@@ -314,6 +334,7 @@ Only respond with the summary, nothing else.`;
   // ── Video Caption Generation (Whisper) ──────────────────
 
   async generateVideoCaptions(videoId: string, audioUrl: string, language = 'en'): Promise<string> {
+    this.validateMediaUrl(audioUrl);
     const whisperKey = this.config.get<string>('OPENAI_API_KEY');
 
     if (!whisperKey) {
@@ -380,6 +401,7 @@ Only respond with the summary, nothing else.`;
    * Returns the transcription text or null on failure.
    */
   async transcribeVoiceMessage(messageId: string, audioUrl: string): Promise<string | null> {
+    this.validateMediaUrl(audioUrl);
     const whisperKey = this.config.get<string>('OPENAI_API_KEY');
 
     if (!whisperKey) {
@@ -388,7 +410,7 @@ Only respond with the summary, nothing else.`;
     }
 
     try {
-      const audioResponse = await fetch(audioUrl);
+      const audioResponse = await fetch(audioUrl, { signal: AbortSignal.timeout(30000) });
       if (!audioResponse.ok) {
         this.logger.warn(`Failed to fetch voice message audio: ${audioResponse.status}`);
         return null;
@@ -400,13 +422,12 @@ Only respond with the summary, nothing else.`;
       formData.append('file', audioBlob, 'voice.m4a');
       formData.append('model', 'whisper-1');
       formData.append('response_format', 'text');
-      // No language specified — Whisper auto-detects
-      // Supports: Arabic, English, Turkish, Urdu, Bengali, French, Indonesian, Malay
 
       const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
         headers: { Authorization: `Bearer ${whisperKey}` },
         body: formData,
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!whisperResponse.ok) {
@@ -475,6 +496,8 @@ Only respond with the summary, nothing else.`;
     reason: string | null;
     categories: string[];
   }> {
+    this.validateMediaUrl(imageUrl);
+
     if (!this.apiAvailable || !this.apiKey) {
       this.logger.warn('AI not available for image moderation — flagging for manual review');
       return { classification: 'WARNING', reason: 'AI unavailable — flagged for manual review', categories: ['moderation_unavailable'] };
@@ -514,6 +537,7 @@ Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories":
             ],
           }],
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) {
@@ -556,6 +580,7 @@ Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories":
    * Returns a concise, descriptive alt text for screen readers.
    */
   async generateAltText(imageUrl: string): Promise<string> {
+    this.validateMediaUrl(imageUrl);
     if (!this.apiAvailable || !this.apiKey) {
       return 'Image';
     }
@@ -585,6 +610,7 @@ Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories":
             ],
           }],
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) {

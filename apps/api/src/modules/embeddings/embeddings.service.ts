@@ -55,6 +55,7 @@ export class EmbeddingsService {
             content: { parts: [{ text: truncated }] },
             outputDimensionality: this.DIMENSION,
           }),
+          signal: AbortSignal.timeout(30000),
         },
       );
 
@@ -91,6 +92,7 @@ export class EmbeddingsService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ requests }),
+          signal: AbortSignal.timeout(60000),
         },
       );
 
