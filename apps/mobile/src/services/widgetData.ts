@@ -49,9 +49,13 @@ function getWidgetModule(): WidgetNativeModule | null {
 function pushToNative(method: keyof WidgetNativeModule, json: string): void {
   try {
     const mod = getWidgetModule();
-    mod?.[method]?.(json);
-  } catch {
-    // Widget native module may not be available in Expo Go / dev builds
+    if (!mod) {
+      if (__DEV__) console.debug('[WidgetData] Native widget module not available — data saved to AsyncStorage only');
+      return;
+    }
+    mod[method]?.(json);
+  } catch (err) {
+    console.warn('[WidgetData] Failed to push to native widget:', err instanceof Error ? err.message : err);
   }
 }
 

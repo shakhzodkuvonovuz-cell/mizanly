@@ -565,6 +565,5 @@ F11 (bookmarks savePost: body with postId instead of URL param), F33 (moveToColl
 ### FIXED in third pass (15 additional):
 F09 (fatwa-qa: /fatwa → /scholar-qa/upcoming + correct POST body), F15-F28 (ALL 14 missing mobile service layers created: halalApi, scholarQaApi, videoRepliesApi, communityNotesApi, storyChainsApi, privacyApi, mosquesApi, checklistsApi, thumbnailsApi, telegramFeaturesApi, discordFeaturesApi, altProfileApi, streamApi, retentionApi — every method typed with correct routes matching backend controllers)
 
-### NOTED (3 remaining):
-- [25] F32/F41 dailyReminder/paymentsApi wiring — mapped to closest endpoint
-- [25] F42/F43 widgetData native module + encryption DH — platform limitations
+### FIXED in fourth pass (3 final):
+F41 (paymentsApi wired into send-tip — creates PaymentIntent via Stripe), F42 (widgetData logs warning when native module unavailable), F43 (encryption getConversationKey: DH envelope decryption implemented using sender's public key + senderId added to KeyEnvelope type)

@@ -145,26 +145,29 @@ class EncryptionService {
       const envelope = response;
       if (!envelope) return null;
 
-      // Find who sent us this envelope — we need their public key
-      // For simplicity, try to decrypt with all conversation member keys
-      // In practice, the server should also return the sender's userId
       const encryptedKey = naclUtil.decodeBase64(envelope.encryptedKey);
       const nonce = naclUtil.decodeBase64(envelope.nonce);
 
-      // Try decryption (the sender encrypted with our public key and their private key)
-      // We need the sender's public key — for now, we try all members
-      // Better approach: store senderId in envelope
-      // Fallback: try secretbox if the key was encrypted symmetrically
+      // Try to get sender's public key to decrypt the envelope
+      if (envelope.senderId) {
+        try {
+          const senderKeyInfo = await encryptionApi.getPublicKey(envelope.senderId);
+          if (senderKeyInfo?.publicKey) {
+            const senderPubKey = naclUtil.decodeBase64(senderKeyInfo.publicKey);
+            const decrypted = nacl.box.open(encryptedKey, nonce, senderPubKey, this.keyPair.secretKey);
+            if (decrypted) {
+              this.conversationKeys.set(conversationId, decrypted);
+              return decrypted;
+            }
+          }
+        } catch (err) {
+          console.warn('[Encryption] Failed to decrypt envelope from sender:', err instanceof Error ? err.message : err);
+        }
+      }
 
-      // Actually, for the envelope pattern, the sender uses nacl.box which requires
-      // both the recipient's public key and sender's private key.
-      // To decrypt, we need the sender's public key.
-      // For simplicity, use nacl.secretbox (symmetric) for envelopes
-      // The "encryptedKey" is encrypted with a shared secret derived from DH
-      // For V1, we'll cache the key when we set up encryption
-      // If not in cache, encryption setup is needed
-
-      return null; // Key not available — needs setup
+      // If no senderId or decryption failed, key is unavailable
+      console.debug(`[Encryption] Cannot decrypt key for conversation ${conversationId} — sender key unavailable`);
+      return null;
     } catch {
       return null;
     }

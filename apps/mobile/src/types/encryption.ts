@@ -6,6 +6,7 @@ export interface EncryptionKeyInfo {
 
 export interface KeyEnvelope {
   conversationId: string;
+  senderId?: string;
   encryptedKey: string;
   nonce: string;
   version: number;
