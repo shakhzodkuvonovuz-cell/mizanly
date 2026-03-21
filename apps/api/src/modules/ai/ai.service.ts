@@ -96,7 +96,7 @@ export class AiService {
       const data = await response.json();
       return data.content?.[0]?.text || this.getFallbackResponse(prompt);
     } catch (error) {
-      this.logger.error('Claude API call failed', error);
+      this.logger.error('Claude API call failed', error instanceof Error ? error.message : error);
       return this.getFallbackResponse(prompt);
     }
   }

@@ -251,8 +251,8 @@ export class PushTriggerService {
       await this.push.sendToUser(userId, notification);
     } catch (error) {
       this.logger.error(
-        `Failed to send push to user ${userId}: ${error.message}`,
-        error.stack,
+        `Failed to send push to user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
     }
   }

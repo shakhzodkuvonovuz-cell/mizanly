@@ -162,7 +162,8 @@ export default function SearchScreen() {
   const addSearchToHistory = useCallback(async (term: string) => {
     if (term.trim().length < 2) return;
     const stored = await AsyncStorage.getItem('search-history');
-    const history = stored ? JSON.parse(stored) : [];
+    let history: string[] = [];
+    try { history = stored ? JSON.parse(stored) : []; } catch { /* corrupted */ }
     const updated = [term, ...history.filter((h: string) => h !== term)].slice(0, 20);
     await AsyncStorage.setItem('search-history', JSON.stringify(updated));
     setSearchHistory(updated);

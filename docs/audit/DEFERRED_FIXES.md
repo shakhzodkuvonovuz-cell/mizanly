@@ -625,3 +625,20 @@ F52 (webhook events validated against VALID_EVENTS whitelist)
 - [29] F6 TOTP plaintext — needs encryption (tracked in file 03)
 - [29] F18 Prompt injection — needs XML delimiters (tracked in file 10)
 - [29] F28/F50 Gemini API key in URL — Google API requirement
+
+## From Audit 30 (TypeScript Safety) — 398 findings
+### FIXED directly (8):
+F4.2 (push-trigger error instanceof check), F4.4 (ai.service error logging typed), F4.5 (posts.service mention error typed), F6.1 (useChatLock JSON.parse try/catch), F6.3 (schedule-post JSON.parse try/catch), F6.4 (search addToHistory JSON.parse try/catch)
+
+### Already fixed in prior files:
+F4.1 (push.service — file 17), F4.3 (stripe-webhook — file 20), F6.2 (widgetData — file 23), F11.1 (SQL injection — file 07)
+
+### NOTED (patterns, not bugs):
+- 227 `as never` — Expo Router framework limitation (standard workaround)
+- 22 non-null assertions — most guarded by enabled/has checks
+- 12 `as unknown as` — Stripe types, web CSS, JSON imports
+- 15 untyped response.json() — should add type annotations
+- 28 unsafe type assertions — mostly string-to-enum (validated by service)
+- 26 `as IconName` — some invalid names, Icon component warns in __DEV__
+- 55 console.* — mobile-side logging (6 gated by __DEV__)
+- 2 Record<string, any> — Clerk webhook data

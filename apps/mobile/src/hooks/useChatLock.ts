@@ -10,7 +10,8 @@ const LOCKED_CHATS_KEY = 'mizanly_locked_chats';
 async function getLockedIds(): Promise<string[]> {
   const stored = await SecureStore.getItemAsync(LOCKED_CHATS_KEY);
   if (!stored) return [];
-  return JSON.parse(stored) as string[];
+  try { return JSON.parse(stored) as string[]; }
+  catch { await SecureStore.deleteItemAsync(LOCKED_CHATS_KEY); return []; }
 }
 
 async function saveLockedIds(ids: string[]): Promise<void> {

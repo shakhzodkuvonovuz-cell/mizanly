@@ -97,7 +97,8 @@ export default function SchedulePostScreen() {
         return;
       }
 
-      const mediaUrls = params.mediaUrls ? JSON.parse(params.mediaUrls) : [];
+      let mediaUrls: string[] = [];
+      try { mediaUrls = params.mediaUrls ? JSON.parse(params.mediaUrls) : []; } catch { /* malformed param */ }
       const space = postData.space;
 
       // Call the appropriate API based on the content space

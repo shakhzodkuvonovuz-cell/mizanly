@@ -516,7 +516,7 @@ export class PostsService {
               this.queueService.addPushNotificationJob({ notificationId: notification.id });
             }
           } catch (err) {
-            this.logger.error('Failed to create mention notification', err);
+            this.logger.error('Failed to create mention notification', err instanceof Error ? err.message : err);
           }
         }
       }
