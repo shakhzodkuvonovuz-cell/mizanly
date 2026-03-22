@@ -17,6 +17,8 @@ import Animated, {
   withSequence,
   Easing,
   runOnJS,
+  FadeIn,
+  FadeOut,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, type TapGesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -134,9 +136,35 @@ const ReelItem = memo(function ReelItem({
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const haptic = useHaptic();
 
   const spin = useSharedValue(0);
+  const marqueeAnim = useSharedValue(0);
+
+  // Tap-to-pause: toggle video playback
+  const togglePause = useCallback(() => {
+    if (isPaused) {
+      localVideoRef.current?.playAsync();
+      setIsPaused(false);
+    } else {
+      localVideoRef.current?.pauseAsync();
+      setIsPaused(true);
+    }
+  }, [isPaused]);
+
+  // Single-tap gesture for pause/resume
+  const singleTapGesture = useMemo(() => Gesture.Tap()
+    .onEnd(() => {
+      'worklet';
+      runOnJS(togglePause)();
+    }), [togglePause]);
+
+  // Combine: double-tap takes priority over single-tap
+  const combinedGesture = useMemo(
+    () => Gesture.Exclusive(doubleTapGesture, singleTapGesture),
+    [doubleTapGesture, singleTapGesture],
+  );
 
   useEffect(() => {
     if (isActive) {
@@ -145,14 +173,32 @@ const ReelItem = memo(function ReelItem({
         -1,
         false
       );
+      // Marquee: scroll audio title
+      marqueeAnim.value = 0;
+      marqueeAnim.value = withRepeat(
+        withTiming(-200, { duration: 8000, easing: Easing.linear }),
+        -1,
+        false,
+      );
     } else {
       spin.value = 0;
+      marqueeAnim.value = 0;
+      // Reset pause state when reel goes off-screen
+      if (isPaused) {
+        setIsPaused(false);
+      }
     }
-  }, [isActive, spin]);
+  }, [isActive, spin, marqueeAnim, isPaused]);
 
   const spinStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${spin.value * 360}deg` }],
   }));
+
+  const audioMarqueeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: marqueeAnim.value }],
+  }));
+
+  const audioString = `${item.audioTitle || t('bakra.originalAudio')} — ${item.audioArtist || item.user?.displayName || t('bakra.unknown')}`;
 
   const handleVideoRef = (ref: Video | null) => {
     localVideoRef.current = ref;
@@ -162,14 +208,14 @@ const ReelItem = memo(function ReelItem({
   };
 
   return (
-    <GestureDetector gesture={doubleTapGesture}>
+    <GestureDetector gesture={combinedGesture}>
       <View style={styles.videoContainer}>
         <Video
           ref={handleVideoRef}
           source={{ uri: item.hlsUrl || item.videoUrl }}
           style={styles.video}
           resizeMode={ResizeMode.COVER}
-          shouldPlay={isActive}
+          shouldPlay={isActive && !isPaused}
           isLooping={item.isLooping ?? true}
           useNativeControls={false}
           onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
@@ -178,8 +224,8 @@ const ReelItem = memo(function ReelItem({
                 const newProgress = status.positionMillis / status.durationMillis;
                 runOnJS(setProgress)(newProgress);
               }
-              if (!status.isPlaying && isActive) {
-                // Auto-play if paused but should be playing
+              if (!status.isPlaying && isActive && !isPaused) {
+                // Auto-play if paused but should be playing (not user-paused)
                 localVideoRef.current?.playAsync();
               }
             }
@@ -189,6 +235,13 @@ const ReelItem = memo(function ReelItem({
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
+
+        {/* Pause overlay */}
+        {isPaused && (
+          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.pauseOverlay}>
+            <Icon name="play" size={48} color="rgba(255,255,255,0.7)" />
+          </Animated.View>
+        )}
 
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']}
@@ -204,11 +257,12 @@ const ReelItem = memo(function ReelItem({
         {/* Audio info bar */}
         <View style={styles.audioInfoBar}>
           <Icon name="volume-x" size="xs" color="#fff" />
-          <Animated.View style={styles.audioInfoContent}>
-            <Text numberOfLines={1} style={styles.audioTitle}>
-              {item.audioTitle || t('bakra.originalAudio')} — {item.audioArtist || item.user?.displayName || t('bakra.unknown')}
-            </Text>
-          </Animated.View>
+          <View style={styles.audioInfoContentClip}>
+            <Animated.View style={[styles.audioInfoContentRow, audioMarqueeStyle]}>
+              <Text style={styles.audioTitle}>{audioString}</Text>
+              <Text style={[styles.audioTitle, { marginLeft: 40 }]}>{audioString}</Text>
+            </Animated.View>
+          </View>
           <Pressable
             onPress={() => {
               if (item.audioTrackId) {
@@ -221,7 +275,7 @@ const ReelItem = memo(function ReelItem({
               {item.audioCoverUrl ? (
                 <Image source={{ uri: item.audioCoverUrl }} style={styles.audioDiscImage} />
               ) : (
-                <Icon name="music" size={12} color="#fff" />
+                <Icon name="music" size={18} color="#fff" />
               )}
             </Animated.View>
           </Pressable>
@@ -807,13 +861,20 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     zIndex: 20,
   },
   progressFill: {
-    height: '100%',
+    height: 3,
     backgroundColor: colors.emerald,
+    borderRadius: 1.5,
+  },
+  pauseOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
   },
   video: {
     width: SCREEN_W,
@@ -954,19 +1015,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.base,
   },
-  audioInfoContent: {
+  audioInfoContentClip: {
     flex: 1,
-    marginLeft: spacing.xs,
     overflow: 'hidden',
+    marginHorizontal: spacing.sm,
+  },
+  audioInfoContentRow: {
+    flexDirection: 'row',
   },
   audioTitle: {
     color: '#fff',
     fontSize: fontSize.xs,
   },
   audioDisc: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: '#fff',
     overflow: 'hidden',
@@ -979,15 +1043,16 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   audioDiscInner: {
-    width: '100%',
-    height: '100%',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   audioDiscImage: {
-    width: 14,
-    height: 14,
-    borderRadius: radius.full,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   trendingBadge: {
     position: 'absolute',
