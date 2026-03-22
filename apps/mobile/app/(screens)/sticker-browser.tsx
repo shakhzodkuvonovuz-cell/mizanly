@@ -474,7 +474,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = 375) 
     gap: spacing.sm,
   },
   gridItem: {
-    width: (SCREEN_WIDTH - spacing.base * 2 - spacing.sm * 2) / 3,
+    width: (screenWidth - spacing.base * 2 - spacing.sm * 2) / 3,
     aspectRatio: 1,
     backgroundColor: tc.surface,
     borderRadius: radius.md,

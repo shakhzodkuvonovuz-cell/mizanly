@@ -15,7 +15,6 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
-import { Alert } from 'react-native';
 
 export default function WaqfScreen() {
   const tc = useThemeColors();

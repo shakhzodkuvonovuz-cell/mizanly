@@ -302,6 +302,9 @@ function QuranReadingPlanContent() {
     );
   }, [activePlan, deleteMutation, t]);
 
+  const historyPlans = (historyData as { data?: QuranReadingPlan[] } | undefined)?.data ?? [];
+  const plan = activePlan as QuranReadingPlan | null | undefined;
+
   // Heat map data derived from plan progress — shows reading consistency
   // TODO: Fetch actual daily reading history from API when endpoint is available
   const heatMapDays = useMemo(() => {
@@ -322,9 +325,6 @@ function QuranReadingPlanContent() {
       return 0;
     });
   }, [plan]);
-
-  const historyPlans = (historyData as { data?: QuranReadingPlan[] } | undefined)?.data ?? [];
-  const plan = activePlan as QuranReadingPlan | null | undefined;
 
   if (loadingActive) {
     return (

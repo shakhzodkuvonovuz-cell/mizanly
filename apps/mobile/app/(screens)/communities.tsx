@@ -3,7 +3,6 @@ import { formatCompactNumber } from '@/utils/localeFormat';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
   FlatList, TextInput, RefreshControl,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -171,6 +170,7 @@ function FAB({ onPress }: { onPress: () => void }) {
 
 export default function CommunitiesScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');

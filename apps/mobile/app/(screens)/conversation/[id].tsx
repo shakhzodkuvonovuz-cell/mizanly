@@ -598,10 +598,8 @@ const MessageBubble = memo(function MessageBubble({
           {isOwn && (
             <View style={styles.receiptRow}>
               <ReadReceiptIcon status={getMessageStatus(message, readByMembers, deliveredMessages)} />
-              {readByMembers.length > 0 && (
-                {readByMembers[0]?.lastReadAt && (
-                  <Text style={styles.readTime}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
-                )}
+              {readByMembers.length > 0 && readByMembers[0]?.lastReadAt && (
+                <Text style={styles.readTime}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
               )}
             </View>
           )}

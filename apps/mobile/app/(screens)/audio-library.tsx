@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput,
   FlatList, Dimensions, RefreshControl,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -55,45 +54,42 @@ function mapApiTrack(track: ApiAudioTrack): AudioTrackDisplay {
   };
 }
 
-function Waveform({ isPlaying, color = colors.emerald }: { isPlaying: boolean; color?: string }) {
-  const bars = 8;
-  const animations = Array.from({ length: bars }).map(() =>
-    useSharedValue(0.3)
-  );
+function WaveformBar({ isPlaying, color, delay }: { isPlaying: boolean; color: string; delay: number }) {
+  const anim = useSharedValue(0.3);
 
-  // Start animation when playing
   if (isPlaying) {
-    animations.forEach((anim, i) => {
-      anim.value = withRepeat(
-        withTiming(1, { duration: 400 + i * 50 }),
-        -1,
-        true
-      );
-    });
+    anim.value = withRepeat(
+      withTiming(1, { duration: 400 + delay }),
+      -1,
+      true
+    );
   } else {
-    animations.forEach((anim) => {
-      anim.value = withTiming(0.3, { duration: 200 });
-    });
+    anim.value = withTiming(0.3, { duration: 200 });
   }
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    height: `${30 + anim.value * 70}%`,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.waveformBar,
+        { backgroundColor: color },
+        animatedStyle,
+      ]}
+    />
+  );
+}
+
+function Waveform({ isPlaying, color = colors.emerald }: { isPlaying: boolean; color?: string }) {
+  const bars = [0, 1, 2, 3, 4, 5, 6, 7];
 
   return (
     <View style={styles.waveform}>
-      {animations.map((anim, i) => {
-        const animatedStyle = useAnimatedStyle(() => ({
-        const tc = useThemeColors();
-          height: `${30 + anim.value * 70}%`,
-        }));
-        return (
-          <Animated.View
-            key={i}
-            style={[
-              styles.waveformBar,
-              { backgroundColor: color },
-              animatedStyle,
-            ]}
-          />
-        );
-      })}
+      {bars.map((i) => (
+        <WaveformBar key={i} isPlaying={isPlaying} color={color} delay={i * 50} />
+      ))}
     </View>
   );
 }
@@ -166,6 +162,7 @@ function AudioCard({
 export default function AudioLibraryScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Trending');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
