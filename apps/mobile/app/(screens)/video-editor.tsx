@@ -12,8 +12,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
+import { uploadApi } from '@/services/api';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -44,7 +46,7 @@ export default function VideoEditorScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ videoUri?: string }>();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const videoRef = useRef<Video>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -102,7 +104,7 @@ export default function VideoEditorScreen() {
 
   // Toggle play/pause with real video
   const togglePlayback = useCallback(async () => {
-    haptic('light');
+    haptic.navigate();
     if (!videoRef.current) return;
     if (isPlaying) {
       await videoRef.current.pauseAsync();
@@ -133,7 +135,7 @@ export default function VideoEditorScreen() {
   }, [originalVolume, videoLoaded]);
 
   const cyclePlaybackSpeed = () => {
-    haptic('light');
+    haptic.tick();
     const speeds: SpeedOption[] = [0.5, 1, 1.5, 2];
     const currentIndex = speeds.indexOf(playbackSpeed);
     const nextIndex = (currentIndex + 1) % speeds.length;
@@ -142,7 +144,7 @@ export default function VideoEditorScreen() {
 
   // FFmpeg export pipeline
   const handleExport = useCallback(async () => {
-    haptic('medium');
+    haptic.send();
     setIsExporting(true);
     setExportProgress(0);
     exportProgressAnim.value = 0;
@@ -152,15 +154,55 @@ export default function VideoEditorScreen() {
       const FFmpegKit = await import('ffmpeg-kit-react-native').catch(() => null);
 
       if (!FFmpegKit || !videoUri) {
-        // Simulate export progress for demo/development — FFmpeg not available
-        for (let i = 0; i <= 100; i += 5) {
-          await new Promise(r => setTimeout(r, 100));
-          setExportProgress(i);
-          exportProgressAnim.value = withTiming(i, { duration: 80 });
+        // FFmpeg not available — upload original video with edit metadata
+        // Server-side processing can apply edits (trim, speed, caption) later
+        try {
+          const editMetadata = {
+            trimStart: startTime,
+            trimEnd: endTime,
+            speed: playbackSpeed,
+            filter: selectedFilter,
+            caption: captionText,
+            captionColor: selectedTextColor,
+            captionFont: selectedFont,
+            volume: originalVolume,
+            quality: selectedQuality,
+          };
+
+          setExportProgress(5);
+          exportProgressAnim.value = withTiming(5, { duration: 200 });
+
+          const { data: presign } = await uploadApi.getPresignUrl('video/mp4', 'videos');
+
+          setExportProgress(15);
+          exportProgressAnim.value = withTiming(15, { duration: 200 });
+
+          const blob = await fetch(videoUri).then(r => r.blob());
+
+          setExportProgress(30);
+          exportProgressAnim.value = withTiming(30, { duration: 200 });
+
+          const uploadRes = await fetch(presign.uploadUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'video/mp4',
+              'x-amz-meta-edit': JSON.stringify(editMetadata),
+            },
+            body: blob,
+          });
+
+          if (!uploadRes.ok) throw new Error('Upload failed');
+
+          setExportProgress(100);
+          exportProgressAnim.value = withTiming(100, { duration: 200 });
+
+          showToast({ message: t('videoEditor.videoSaved'), variant: 'success' });
+          setTimeout(() => router.back(), 800);
+        } catch {
+          showToast({ message: t('videoEditor.saveFailed'), variant: 'error' });
+        } finally {
+          setIsExporting(false);
         }
-        Alert.alert(t('videoEditor.exportSimulated'), t('videoEditor.ffmpegNotAvailable'), [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
         return;
       }
 
@@ -230,7 +272,7 @@ export default function VideoEditorScreen() {
     }
 
     setIsExporting(false);
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, originalVolume, exportProgressAnim, t, router]);
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, exportProgressAnim, t, router]);
 
   const renderToolPanel = () => {
     switch (selectedTool) {
