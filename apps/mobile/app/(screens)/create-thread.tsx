@@ -480,26 +480,20 @@ export default function CreateThreadScreen() {
           </Pressable>
         </View>
 
-        {showVisibility && (
-          <View style={[styles.visMenu, { backgroundColor: tc.bgSheet, borderColor: tc.border }]}>
-            {VISIBILITY_KEYS.map((opt) => (
-              <Pressable
-                accessibilityRole="button"
-                key={opt.value}
-                style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
-                onPress={() => {
-                  setVisibility(opt.value);
-                  setShowVisibility(false);
-                  if (opt.value === 'CIRCLE') setShowCirclePicker(true);
-                }}
-              >
-                <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
-                <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>{t(opt.labelKey)}</Text>
-                {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
-              </Pressable>
-            ))}
-          </View>
-        )}
+        <BottomSheet visible={showVisibility} onClose={() => setShowVisibility(false)}>
+          {VISIBILITY_KEYS.map((opt) => (
+            <BottomSheetItem
+              key={opt.value}
+              label={t(opt.labelKey)}
+              icon={<Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />}
+              onPress={() => {
+                setVisibility(opt.value);
+                setShowVisibility(false);
+                if (opt.value === 'CIRCLE') setShowCirclePicker(true);
+              }}
+            />
+          ))}
+        </BottomSheet>
 
         {/* Circle picker */}
         <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>

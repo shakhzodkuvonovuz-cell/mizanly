@@ -720,6 +720,7 @@ export default function ConversationScreen() {
   }, [pendingMessages]);
   const [isTyping, setIsTyping] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Voice recording
@@ -1502,6 +1503,12 @@ export default function ConversationScreen() {
               }
             }}
             onEndReachedThreshold={0.1}
+            onScroll={(event) => {
+              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+              const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
+              setShowScrollToBottom(distanceFromBottom > 200);
+            }}
+            scrollEventThrottle={100}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -1520,6 +1527,19 @@ export default function ConversationScreen() {
             onScrollToIndexFailed={({ index }) => flatListRef.current?.scrollToOffset({ offset: index * 100 })}
             onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
           />
+          {showScrollToBottom && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('accessibility.scrollToBottom')}
+              onPress={() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+                setShowScrollToBottom(false);
+              }}
+              style={styles.scrollToBottomFab}
+            >
+              <Icon name="chevron-down" size="sm" color={colors.text.primary} />
+            </Pressable>
+          )}
           </>
         )}
 
@@ -2020,6 +2040,24 @@ const styles = StyleSheet.create({
 
   loaderWrap: { flex: 1, padding: spacing.base, justifyContent: 'center' },
   messageList: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, flexGrow: 1 },
+  scrollToBottomFab: {
+    position: 'absolute',
+    right: spacing.base,
+    bottom: 80,
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.bgSheet,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+    borderWidth: 0.5,
+    borderColor: colors.glass.border,
+  },
 
   dateSep: {
     flexDirection: 'row', alignItems: 'center',

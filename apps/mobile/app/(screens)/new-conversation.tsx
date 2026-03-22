@@ -17,7 +17,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { searchApi, messagesApi } from '@/services/api';
+import { searchApi, messagesApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -46,7 +46,15 @@ export default function NewConversationScreen() {
     enabled: debouncedQuery.trim().length >= 2,
   });
 
+  const suggestionsQuery = useQuery({
+    queryKey: ['dm-suggestions'],
+    queryFn: () => followsApi.suggestions(),
+    enabled: debouncedQuery.trim().length < 2,
+  });
+
+  const isSearching = debouncedQuery.trim().length >= 2;
   const people: User[] = searchQuery.data?.people ?? [];
+  const suggestions: User[] = suggestionsQuery.data ?? [];
 
   const dmMutation = useMutation({
     mutationFn: (targetUserId: string) => messagesApi.createDM(targetUserId),
@@ -105,7 +113,7 @@ export default function NewConversationScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {searchQuery.isLoading ? (
+        {(isSearching ? searchQuery.isLoading : suggestionsQuery.isLoading) ? (
           <View style={styles.skeletonList}>
             {Array.from({ length: 5 }).map((_, i) => (
               <View key={i} style={styles.skeletonRow}>
@@ -117,7 +125,7 @@ export default function NewConversationScreen() {
               </View>
             ))}
           </View>
-        ) : searchQuery.isError ? (
+        ) : searchQuery.isError && isSearching ? (
           <EmptyState
             icon="flag"
             title={t('messages.searchFailed')}
@@ -128,14 +136,19 @@ export default function NewConversationScreen() {
         ) : (
           <FlatList
             removeClippedSubviews={true}
-            data={people}
+            data={isSearching ? people : suggestions}
             keyExtractor={(item) => item.id}
             refreshControl={
               <RefreshControl
                 refreshing={false}
-                onRefresh={() => searchQuery.refetch()}
+                onRefresh={() => isSearching ? searchQuery.refetch() : suggestionsQuery.refetch()}
                 tintColor={colors.emerald}
               />
+            }
+            ListHeaderComponent={
+              !isSearching && suggestions.length > 0 ? (
+                <Text style={styles.suggestionsLabel}>{t('messages.suggestions')}</Text>
+              ) : null
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
@@ -168,7 +181,7 @@ export default function NewConversationScreen() {
               </Animated.View>
             )}
             ListEmptyComponent={() =>
-              debouncedQuery.trim().length >= 2 ? (
+              isSearching ? (
                 <EmptyState
                   icon="search"
                   title={t('messages.noUsersFound', { query: debouncedQuery })}
@@ -231,6 +244,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center', justifyContent: 'center',
   },
 
+  suggestionsLabel: {
+    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
+    textTransform: 'uppercase' as const, letterSpacing: 0.5,
+    paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm,
+  },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
   hint: { alignItems: 'center', paddingTop: 80 },

@@ -18,7 +18,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { useHaptic } from '@/hooks/useHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { searchApi, postsApi } from '@/services/api';
+import { searchApi, postsApi, feedApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import type { User, TrendingHashtag, Reel, Video, Channel } from '@/types';
@@ -244,8 +244,8 @@ export default function SearchScreen() {
 
   const showExplore = query.length === 0 && !isFocused;
   const exploreQuery = useInfiniteQuery({
-    queryKey: ['explore'],
-    queryFn: ({ pageParam }) => postsApi.getFeed('foryou', pageParam as string | undefined),
+    queryKey: ['explore-trending'],
+    queryFn: ({ pageParam }) => feedApi.getTrending(pageParam as string | undefined),
     enabled: showExplore,
     getNextPageParam: (last) => last.meta?.cursor ?? undefined,
     initialPageParam: undefined as string | undefined,
@@ -729,19 +729,23 @@ export default function SearchScreen() {
           <View style={styles.discoverSection}>
             <Text style={[styles.discoverTitle, { textAlign: rtlTextAlign(isRTL) }]}>{t('search.trending')}</Text>
             {trending.length > 0 ? (
-              <View style={styles.trendingChips}>
+              <View style={styles.trendingList}>
                 {trending.map((item, i) => (
                   <Pressable
                     accessibilityRole="button"
                     key={i}
-                    style={styles.trendingChip}
+                    style={[styles.trendingItem, { flexDirection: rtlFlexRow(isRTL) }]}
                     onPress={() => {
                       haptic.light();
                       if (item.name) router.push(`/(screens)/hashtag/${item.name}`);
                     }}
                   >
-                    <Icon name="trending-up" size={14} color={colors.emerald} />
-                    <Text style={styles.trendingChipText}>#{item.name}</Text>
+                    <Text style={styles.trendRank}>{i + 1}</Text>
+                    <View style={styles.trendingItemContent}>
+                      <Text style={[styles.trendName, { textAlign: rtlTextAlign(isRTL) }]}>#{item.name}</Text>
+                      <Text style={[styles.trendCount, { textAlign: rtlTextAlign(isRTL) }]}>{formatCount(item.postsCount)} {t('search.posts')}</Text>
+                    </View>
+                    <Icon name="trending-up" size={16} color={colors.emerald} />
                   </Pressable>
                 ))}
               </View>
@@ -813,17 +817,20 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.md,
   },
   discoverSub: { color: colors.text.secondary, fontSize: fontSize.base },
-  trendingChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  trendingChip: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    backgroundColor: tc.bgElevated,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 0.5,
-    borderColor: tc.border,
+  trendingList: { gap: spacing.xs },
+  trendingItem: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: tc.border,
   },
-  trendingChipText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
+  trendingItemContent: { flex: 1 },
+  trendRank: {
+    color: colors.text.tertiary, fontSize: fontSize.lg, fontWeight: '700',
+    width: 28, textAlign: 'center',
+  },
+  trendName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  trendCount: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
   historySection: { paddingHorizontal: spacing.base, paddingTop: spacing['2xl'] },
   historyTitle: {
     color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',

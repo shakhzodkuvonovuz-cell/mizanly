@@ -20,6 +20,45 @@ import { api } from '@/services/api';
 const FOLDER_ICONS: IconName[] = ['users', 'heart', 'globe', 'layers', 'bell', 'bookmark', 'flag', 'lock'];
 const FOLDER_COLORS = [colors.emerald, colors.gold, colors.extended.blue, '#9333EA', '#F85149', '#EC4899', colors.extended.orange, '#10B981'];
 
+interface PredefinedFilter {
+  key: string;
+  labelKey: string;
+  icon: IconName;
+  color: string;
+  filter: (conv: Record<string, unknown>) => boolean;
+}
+
+const PREDEFINED_FILTERS: PredefinedFilter[] = [
+  {
+    key: 'unread',
+    labelKey: 'risalah.unread',
+    icon: 'bell',
+    color: colors.extended.blue,
+    filter: (c) => ((c.unreadCount as number) ?? 0) > 0,
+  },
+  {
+    key: 'groups',
+    labelKey: 'risalah.groups',
+    icon: 'users',
+    color: colors.emerald,
+    filter: (c) => c.isGroup === true,
+  },
+  {
+    key: 'channels',
+    labelKey: 'risalah.channels',
+    icon: 'globe',
+    color: colors.gold,
+    filter: (c) => c.isChannel === true,
+  },
+  {
+    key: 'personal',
+    labelKey: 'risalah.personal',
+    icon: 'user',
+    color: '#9333EA',
+    filter: (c) => c.isGroup !== true && c.isChannel !== true,
+  },
+];
+
 export default function ChatFoldersScreen() {
   const router = useRouter();
   const tc = useThemeColors();
@@ -117,6 +156,34 @@ export default function ChatFoldersScreen() {
             </Text>
           </LinearGradient>
         </Animated.View>
+
+        {/* Predefined filters */}
+        <View style={styles.predefinedSection}>
+          <Text style={styles.sectionLabel}>{t('risalah.quickFilters')}</Text>
+          <View style={styles.predefinedGrid}>
+            {PREDEFINED_FILTERS.map((pf) => (
+              <Pressable
+                accessibilityRole="button"
+                key={pf.key}
+                style={[styles.predefinedCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+                onPress={() => {
+                  haptic.light();
+                  router.push(`/(screens)/chat-folder-view?filter=${pf.key}`);
+                }}
+              >
+                <View style={[styles.predefinedIconWrap, { backgroundColor: pf.color + '15' }]}>
+                  <Icon name={pf.icon} size="sm" color={pf.color} />
+                </View>
+                <Text style={styles.predefinedLabel}>{t(pf.labelKey)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {/* Custom folders label */}
+        <View style={styles.predefinedSection}>
+          <Text style={styles.sectionLabel}>{t('risalah.customFolders')}</Text>
+        </View>
 
         {/* Create form */}
         {createMode && (
@@ -253,4 +320,16 @@ const styles = StyleSheet.create({
   folderIcon: { width: 48, height: 48, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center' },
   folderName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   folderMeta: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  predefinedSection: { paddingHorizontal: spacing.base, marginBottom: spacing.md },
+  sectionLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.sm, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  predefinedGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  predefinedCard: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.dark.bgCard, borderRadius: radius.md,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.md,
+    borderWidth: 1, borderColor: colors.dark.border,
+    width: '48%' as unknown as number,
+  },
+  predefinedIconWrap: { width: 36, height: 36, borderRadius: radius.sm, justifyContent: 'center', alignItems: 'center' },
+  predefinedLabel: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600', flex: 1 },
 });
