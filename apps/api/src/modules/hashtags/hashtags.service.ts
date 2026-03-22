@@ -8,6 +8,7 @@ import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { Prisma } from '@prisma/client';
 import { cacheAside } from '../../common/utils/cache';
+import { enrichPostsForUser, enrichReelsForUser } from '../../common/utils/enrich';
 
 const POST_SELECT = {
   id: true,
@@ -327,46 +328,14 @@ export class HashtagsService {
     }
   }
 
+  /** Enrich posts with user-specific reaction/saved status (delegates to shared utility) */
   private async enrichPosts(posts: PostWithUser[], userId: string): Promise<EnrichedPost[]> {
-    const postIds = posts.map(p => p.id);
-    const [reactions, saved] = await Promise.all([
-      this.prisma.postReaction.findMany({
-        where: { userId, postId: { in: postIds } },
-      take: 50,
-    }),
-      this.prisma.savedPost.findMany({
-        where: { userId, postId: { in: postIds } },
-      take: 50,
-    }),
-    ]);
-    const reactionMap = new Map(reactions.map((r: { postId: string; reaction: string }) => [r.postId, r.reaction]));
-    const savedSet = new Set(saved.map((s: { postId: string }) => s.postId));
-    return posts.map(post => ({
-      ...post,
-      userReaction: reactionMap.get(post.id) ?? null,
-      isSaved: savedSet.has(post.id),
-    }));
+    return enrichPostsForUser(this.prisma, posts, userId) as Promise<EnrichedPost[]>;
   }
 
+  /** Enrich reels with user-specific reaction/saved status (delegates to shared utility) */
   private async enrichReels(reels: ReelWithUser[], userId: string): Promise<EnrichedReel[]> {
-    const reelIds = reels.map(r => r.id);
-    const [reactions, saved] = await Promise.all([
-      this.prisma.reelReaction.findMany({
-        where: { userId, reelId: { in: reelIds } },
-      take: 50,
-    }),
-      this.prisma.reelInteraction.findMany({
-        where: { userId, reelId: { in: reelIds }, saved: true },
-      take: 50,
-    }),
-    ]);
-    const reactionMap = new Map(reactions.map((r: { reelId: string; reaction: string }) => [r.reelId, r.reaction]));
-    const savedSet = new Set(saved.map((s: { reelId: string }) => s.reelId));
-    return reels.map(reel => ({
-      ...reel,
-      userReaction: reactionMap.get(reel.id) ?? null,
-      isSaved: savedSet.has(reel.id),
-    }));
+    return enrichReelsForUser(this.prisma, reels, userId) as Promise<EnrichedReel[]>;
   }
 
   async followHashtag(userId: string, hashtagId: string) {

@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   ConflictException,
   BadRequestException,
   NotFoundException,
@@ -13,6 +14,7 @@ import { RegisterDto } from './dto/register.dto';
 import { SetInterestsDto } from './dto/set-interests.dto';
 import { AnalyticsService } from '../../common/services/analytics.service';
 import { randomBytes } from 'crypto';
+import Redis from 'ioredis';
 
 /** Minimum age required to register (COPPA compliance) */
 const MINIMUM_AGE = 13;
@@ -28,6 +30,7 @@ export class AuthService {
     private prisma: PrismaService,
     private config: ConfigService,
     private analytics: AnalyticsService,
+    @Inject('REDIS') private redis: Redis,
   ) {
     this.clerk = createClerkClient({
       secretKey: this.config.get('CLERK_SECRET_KEY'),
@@ -50,6 +53,14 @@ export class AuthService {
   }
 
   async register(clerkId: string, dto: RegisterDto) {
+    // Rate-limit registration attempts per Clerk ID (brute-force prevention)
+    const attemptKey = `register_attempts:${clerkId}`;
+    const attempts = await this.redis.incr(attemptKey);
+    if (attempts === 1) await this.redis.expire(attemptKey, 900); // 15 min window
+    if (attempts > 5) {
+      throw new ForbiddenException('Too many registration attempts. Try again in 15 minutes.');
+    }
+
     // COPPA/GDPR Age Verification (Finding 1, 15)
     const age = this.calculateAge(dto.dateOfBirth);
     if (age < MINIMUM_AGE) {
@@ -125,6 +136,9 @@ export class AuthService {
     if (isMinor) {
       this.logger.log(`Minor registered (age ${age}): user ${user.id} — child protections active`);
     }
+
+    // Clear attempt counter on successful registration
+    await this.redis.del(attemptKey);
 
     // Track user registration
     this.analytics.track('user_registered', user.id, {

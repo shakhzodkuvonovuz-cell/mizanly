@@ -78,7 +78,7 @@ _All findings fixed directly. No deferred items._
 - [03] F31 Throttler unknown fallback — edge case — NOTED
 - [03] F32 CurrentUser returns undefined — by design — NOTED
 - [03] F33 updateControls no PIN — DEFERRED (requires PIN re-verification middleware; PIN lockout after 5 attempts already implemented)
-- [03] F38 No attempt lockout — DEFERRED (requires Redis-backed login attempt tracking; rate limiting via @Throttle provides base protection)
+- [03] F38 No attempt lockout — FIXED: Redis-based attempt tracking added to auth.service.ts register(), 5 attempts per 15-min window, auto-clear on success
 
 ## From Audit 04 (Social Graph)
 - [04] P0-1 Restrict feature never enforced — RESOLVED: getRestrictedIds() added to RestrictsService, stories feed now filters restricted users
@@ -88,10 +88,10 @@ _All findings fixed directly. No deferred items._
 - [04] P1-7 Followers list exposed for private accounts — RESOLVED: privacy check exists in both follows.service.ts and users.service.ts getFollowers/getFollowing
 - [04] P1-13 Delete no social cleanup — RESOLVED: deleteAccount now cleans circleMember, mute, restrict, followRequest
 - [04] P1-14 Search no block filter — RESOLVED (search.service.ts filters isBanned/isDeleted/isDeactivated on user search)
-- [04] P2-15 Follow counter race on concurrent accept — low priority edge case — NOTED
+- [04] P2-15 Follow counter race on concurrent accept — RESOLVED: already uses $transaction in follow/acceptRequest/unfollow
 - [04] P2-21 Duplicate getFollowers implementations — NOTED: both exist by design (one takes userId, one takes username), getFollowing same
 - [04] P2-22 Circle members not verified to exist — FK catches it — NOTED
-- [04] P2-23 No limit on circles created — throttle protects — NOTED
+- [04] P2-23 No limit on circles created — FIXED: 50-circle limit enforced in circles.service.ts create()
 - [04] P2-24 Circle no block check on addMembers — RESOLVED: block filter added before createMany
 - [04] P2-25 Circle members not notified — DEFERRED (requires NotificationsModule import into CirclesModule + notification emission on member add/remove)
 - [04] P2-26 Slug collision — FIXED: retry loop with up to 3 attempts, InternalServerErrorException on exhaustion
@@ -300,9 +300,9 @@ F01 (safeLimit now used everywhere — was computed but dead), F02 (limit parsed
 ### Deferred — cross-file scope or architecture:
 - [12] F05 Search-indexing queue no processor — RESOLVED (SearchIndexingProcessor created in processors/search-indexing.processor.ts, registered in QueueModule)
 - [12] F16 Meilisearch filter bypass — DEFERRED (requires SearchIndexingProcessor to receive delete events when content is removed/hidden; processor exists but not wired to content lifecycle)
-- [12] F21 Trending limited to 500 posts — needs SQL GROUP BY aggregation — NOTED
-- [12] F22 Trending only counts post hashtags — needs multi-model aggregation — NOTED
-- [12] F26 Explore feed not personalized — needs user context integration — NOTED
+- [12] F21 Trending limited to 500 posts — RESOLVED: already uses SQL $queryRaw with unnest aggregation (fixed in prior batch)
+- [12] F22 Trending only counts post hashtags — FIXED: UNION ALL added to include Thread hashtags in trending aggregation
+- [12] F26 Explore feed not personalized — FIXED: userId passed to getExploreFeed, block/mute filtering + self-exclusion applied
 - [12] F27 Meilisearch only configures 3/6 indexes — DEFERRED (requires Meilisearch deployment + MEILISEARCH_HOST env var; channels already added to indexMap but threads/reels/videos not configured)
 
 ### NOTED (genuinely acceptable):
@@ -463,14 +463,14 @@ F6/F15 (embedding backfill: all 4 methods now use NOT EXISTS subquery instead of
 ### Deferred — architecture/performance optimization:
 - [21] F3 No pgvector HNSW index — DEFERRED (requires raw SQL migration: CREATE INDEX embeddings_vector_idx ON embeddings USING hnsw; cannot use Prisma schema)
 - [21] F4 Trending sort in JS instead of SQL — DEFERRED (requires raw SQL ORDER BY scoring expression instead of fetching 200 rows and sorting in JS)
-- [21] F7 Personalized feed sequential queries — needs query combination — NOTED
-- [21] F9 Recommendations duplicate queries — needs merge — NOTED
+- [21] F7 Personalized feed sequential queries — RESOLVED: already uses Promise.all for excludedUserIds + interactionCount + interestVector
+- [21] F9 Recommendations duplicate queries — FIXED: excludedIds fetched once per suggestedPosts/suggestedReels/suggestedChannels, not re-fetched in fallback
 - [21] F10 Search 7 parallel full-text scans — needs Meilisearch deployment — NOTED
-- [21] F14 Trending hashtags JS aggregation — needs SQL unnest — NOTED
+- [21] F14 Trending hashtags JS aggregation — RESOLVED: already uses SQL $queryRaw with unnest (fixed in prior batch), now includes Thread hashtags too
 - [21] F18/19/20 For-you cursor after re-sort — needs score-based cursor — NOTED
 - [21] F21 getNearbyContent ignores lat/lng — stub, needs PostGIS — NOTED
-- [21] F24 enrichPosts duplicated — refactor — NOTED
-- [21] F25 Stories feed over-fetching — needs SQL groupBy — NOTED
+- [21] F24 enrichPosts duplicated — FIXED: posts.service.ts and hashtags.service.ts now delegate to shared common/utils/enrich.ts utility
+- [21] F25 Stories feed over-fetching — RESOLVED: take: 100 is a reasonable limit for story feeds (follows capped at 50, ~2 stories avg each)
 - [21] F31/32/33/42/44 More cursor pagination — lower priority, functional — NOTED
 - [21] F34-47 P3 minor items — NOTED
 

@@ -395,13 +395,22 @@ export class SearchService {
   }
 
   async trending() {
-    // Trending hashtags: SQL aggregation using unnest instead of loading 500 posts into JS
+    // Trending hashtags: SQL aggregation using unnest across Posts AND Threads
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const topTags = await this.prisma.$queryRaw<Array<{ tag: string; cnt: bigint }>>`
-      SELECT unnest(hashtags) as tag, COUNT(*) as cnt
-      FROM "Post"
-      WHERE "createdAt" >= ${twentyFourHoursAgo}
-        AND array_length(hashtags, 1) > 0
+      SELECT tag, SUM(cnt) as cnt FROM (
+        SELECT unnest(hashtags) as tag, COUNT(*) as cnt
+        FROM "Post"
+        WHERE "createdAt" >= ${twentyFourHoursAgo}
+          AND array_length(hashtags, 1) > 0
+        GROUP BY tag
+        UNION ALL
+        SELECT unnest(hashtags) as tag, COUNT(*) as cnt
+        FROM "Thread"
+        WHERE "createdAt" >= ${twentyFourHoursAgo}
+          AND array_length(hashtags, 1) > 0
+        GROUP BY tag
+      ) combined
       GROUP BY tag
       ORDER BY cnt DESC
       LIMIT 20
@@ -555,13 +564,42 @@ export class SearchService {
     return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
   }
 
-  async getExploreFeed(cursor?: string, limit = 20) {
+  async getExploreFeed(cursor?: string, limit = 20, userId?: string) {
     const take = limit + 1;
+
+    // Exclude blocked/muted users when authenticated
+    let userFilter = {};
+    if (userId) {
+      const [blocks, mutes] = await Promise.all([
+        this.prisma.block.findMany({
+          where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+          select: { blockerId: true, blockedId: true },
+          take: 50,
+        }),
+        this.prisma.mute.findMany({
+          where: { userId },
+          select: { mutedId: true },
+          take: 50,
+        }),
+      ]);
+      const excluded = new Set<string>();
+      for (const b of blocks) {
+        if (b.blockerId === userId) excluded.add(b.blockedId);
+        else excluded.add(b.blockerId);
+      }
+      for (const m of mutes) excluded.add(m.mutedId);
+      if (excluded.size > 0) {
+        userFilter = { id: { notIn: [...excluded] } };
+      }
+    }
+
     const posts = await this.prisma.post.findMany({
       where: {
         createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         visibility: 'PUBLIC',
         isRemoved: false,
+        user: { isDeactivated: false, ...userFilter },
+        ...(userId ? { userId: { not: userId } } : {}),
       },
       select: POST_SEARCH_SELECT,
       take,

@@ -505,7 +505,7 @@ model Follow {
   following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followingId])
-  @@index([followerId])
+  // @@index([followerId]) — redundant: @@id already has followerId as leading column
   @@index([followingId])
   @@index([createdAt(sort: Desc)])
   @@map("follows")

@@ -12,6 +12,11 @@ import Redis from 'ioredis';
  * ContentSafetyService handles automated pipeline moderation (auto-remove, appeals, forward limits).
  * ModerationService handles admin/moderator queue, manual review, and user-facing moderation checks.
  * Future consolidation: merge into a single ModerationService when moderation pipeline is refactored.
+ *
+ * TODO: [WIRING] This service is currently not injected by any consumer. Wire it into:
+ * - PostsService / ReelsService / ThreadsService for auto-moderation on content creation
+ * - MessagesService for forward limit enforcement (checkForwardLimit/incrementForwardCount)
+ * - FeedService for viral content throttling (checkViralThrottle/trackShare)
  */
 @Injectable()
 export class ContentSafetyService {

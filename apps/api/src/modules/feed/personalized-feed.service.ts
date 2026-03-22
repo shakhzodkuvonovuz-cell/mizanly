@@ -657,21 +657,6 @@ export class PersonalizedFeedService {
     return items.map(item => ({ ...item, content: threadMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
   }
 
-  private async getAuthorMap(ids: string[], contentType: EmbeddingContentType): Promise<Map<string, string>> {
-    const map = new Map<string, string>();
-    if (ids.length === 0) return map;
-
-    if (contentType === EmbeddingContentType.POST) {
-      const items = await this.prisma.post.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.userId));
-    } else if (contentType === EmbeddingContentType.REEL) {
-      const items = await this.prisma.reel.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.userId));
-    } else if (contentType === EmbeddingContentType.THREAD) {
-      const items = await this.prisma.thread.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.userId));
-    }
-
-    return map;
-  }
+  // getAuthorMap — REMOVED: userId is now included in getContentMetadata() response,
+  // eliminating the need for a separate query (see line 583).
 }

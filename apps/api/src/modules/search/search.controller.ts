@@ -98,9 +98,10 @@ export class SearchController {
   exploreFeed(
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @CurrentUser('id') userId?: string,
   ) {
     const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 20 : 20), 50);
-    return this.searchService.getExploreFeed(cursor, safeLimit);
+    return this.searchService.getExploreFeed(cursor, safeLimit, userId);
   }
 
   @Get('suggestions')

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 
@@ -27,6 +27,12 @@ export class CirclesService {
   }
 
   async create(userId: string, name: string, memberIds?: string[]) {
+    // Enforce circle limit per user (max 50)
+    const circleCount = await this.prisma.circle.count({ where: { ownerId: userId } });
+    if (circleCount >= 50) {
+      throw new BadRequestException('You can create a maximum of 50 circles');
+    }
+
     const extraMemberIds = (memberIds ?? []).filter(id => id !== userId);
     const totalMembers = 1 + extraMemberIds.length;
     const MAX_SLUG_RETRIES = 3;

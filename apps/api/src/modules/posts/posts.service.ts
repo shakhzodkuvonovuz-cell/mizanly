@@ -20,6 +20,7 @@ import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
+import { enrichPostsForUser } from '../../common/utils/enrich';
 
 const POST_SELECT = {
   id: true,
@@ -420,28 +421,10 @@ export class PostsService {
     };
   }
 
+  /** Enrich posts with user-specific reaction/saved status (delegates to shared utility) */
   private async enrichPostsForUser<T extends { id: string }>(posts: T[], userId: string) {
     if (!posts.length) return posts;
-    const postIds = posts.map((p) => p.id);
-    const [reactions, saves] = await Promise.all([
-      this.prisma.postReaction.findMany({
-        where: { userId, postId: { in: postIds } },
-        select: { postId: true, reaction: true },
-        take: 50,
-      }),
-      this.prisma.savedPost.findMany({
-        where: { userId, postId: { in: postIds } },
-        select: { postId: true },
-        take: 50,
-      }),
-    ]);
-    const reactionMap = new Map(reactions.map((r) => [r.postId, r.reaction]));
-    const savedSet = new Set(saves.map((s) => s.postId));
-    return posts.map((post) => ({
-      ...post,
-      userReaction: reactionMap.get(post.id) ?? null,
-      isSaved: savedSet.has(post.id),
-    }));
+    return enrichPostsForUser(this.prisma, posts, userId);
   }
 
   async create(userId: string, dto: CreatePostDto) {

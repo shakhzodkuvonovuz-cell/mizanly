@@ -37,7 +37,7 @@ export class PrivacyService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    // Fetch ALL user data — no take limits (GDPR Art 20 requires complete export)
+    // Fetch ALL user data — high take limit for GDPR Art 20 (complete export required)
     const [
       posts, threads, stories, reels, messages, follows, comments,
       postReactions, videos, bookmarks, blocks, mutes, notifications,

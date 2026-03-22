@@ -45,31 +45,6 @@ export class QueueService implements OnModuleDestroy {
     return job.id!;
   }
 
-  async addBulkPushJob(data: { userIds: string[]; title: string; body: string; pushData?: Record<string, string> }): Promise<string> {
-    const job = await this.notificationsQueue.add('bulk-push', data, {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 1000 },
-    });
-    return job.id!;
-  }
-
-  // ── Media Processing Jobs ─────────────────────────────────
-
-  async addMediaProcessingJob(data: {
-    type: 'image-resize' | 'blurhash' | 'video-transcode';
-    mediaUrl: string;
-    mediaKey: string;
-    userId: string;
-    contentType?: string;
-    contentId?: string;
-  }): Promise<string> {
-    const job = await this.mediaQueue.add(data.type, data, {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 2000 },
-    });
-    return job.id!;
-  }
-
   // ── Analytics Jobs ────────────────────────────────────────
 
   async addGamificationJob(data: {
@@ -80,19 +55,6 @@ export class QueueService implements OnModuleDestroy {
     const job = await this.analyticsQueue.add(data.type, data, {
       attempts: 2,
       backoff: { type: 'exponential', delay: 1000 },
-    });
-    return job.id!;
-  }
-
-  async addEngagementTrackingJob(data: {
-    type: 'view' | 'like' | 'comment' | 'share';
-    userId: string;
-    contentType: string;
-    contentId: string;
-  }): Promise<string> {
-    const job = await this.analyticsQueue.add('track-engagement', data, {
-      attempts: 2,
-      backoff: { type: 'exponential', delay: 500 },
     });
     return job.id!;
   }
@@ -139,18 +101,6 @@ export class QueueService implements OnModuleDestroy {
     contentId: string;
   }): Promise<string> {
     const job = await this.aiTasksQueue.add('moderate', data, {
-      attempts: 2,
-      backoff: { type: 'exponential', delay: 3000 },
-    });
-    return job.id!;
-  }
-
-  async addCaptionGenerationJob(data: {
-    contentId: string;
-    contentType: string;
-    mediaUrl: string;
-  }): Promise<string> {
-    const job = await this.aiTasksQueue.add('generate-caption', data, {
       attempts: 2,
       backoff: { type: 'exponential', delay: 3000 },
     });

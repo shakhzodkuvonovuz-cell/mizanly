@@ -62,6 +62,14 @@ describe('AuthService', () => {
             get: jest.fn(),
           },
         },
+        {
+          provide: 'REDIS',
+          useValue: {
+            incr: jest.fn().mockResolvedValue(1),
+            expire: jest.fn().mockResolvedValue(1),
+            del: jest.fn().mockResolvedValue(1),
+          },
+        },
       ],
     }).compile();
 

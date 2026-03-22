@@ -417,6 +417,9 @@ export class RecommendationsService {
   }
 
   async suggestedPosts(userId?: string, limit = 20) {
+    // Fetch excluded IDs once (avoids duplicate query in multiStageRank + fallback)
+    const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
+
     // Try pgvector multi-stage ranking for authenticated users
     if (userId) {
       const rankedIds = await this.multiStageRank(userId, EmbeddingContentType.POST, limit);
@@ -442,7 +445,6 @@ export class RecommendationsService {
     };
     if (userId) {
       where.userId = { not: userId };
-      const excludedIds = await this.getExcludedUserIds(userId);
       if (excludedIds.length) {
         where.user = { ...(where.user as Prisma.UserWhereInput), id: { notIn: excludedIds } };
       }
@@ -462,6 +464,9 @@ export class RecommendationsService {
   }
 
   async suggestedReels(userId?: string, limit = 20) {
+    // Fetch excluded IDs once
+    const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
+
     // Try pgvector multi-stage ranking for authenticated users
     if (userId) {
       const rankedIds = await this.multiStageRank(userId, EmbeddingContentType.REEL, limit);
@@ -486,7 +491,6 @@ export class RecommendationsService {
     };
     if (userId) {
       where.userId = { not: userId };
-      const excludedIds = await this.getExcludedUserIds(userId);
       if (excludedIds.length) {
         where.user = { ...(where.user as Prisma.UserWhereInput), id: { notIn: excludedIds } };
       }
@@ -506,12 +510,14 @@ export class RecommendationsService {
   }
 
   async suggestedChannels(userId?: string, limit = 20) {
+    // Fetch excluded IDs once
+    const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
+
     const where: Prisma.ChannelWhereInput = {
       user: { isDeactivated: false },
     };
     if (userId) {
       where.userId = { not: userId };
-      const excludedIds = await this.getExcludedUserIds(userId);
       if (excludedIds.length) {
         where.user = { ...(where.user as Prisma.UserWhereInput), id: { notIn: excludedIds } };
       }
