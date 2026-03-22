@@ -26,7 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { PostMedia } from './PostMedia';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { SocialProof } from '@/components/ui/SocialProof';
-import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { colors, spacing, fontSize, animation, radius, lineHeight, letterSpacing } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { aiApi } from '@/services/api';
 import { postsApi, feedApi } from '@/services/api';
@@ -508,8 +508,8 @@ const styles = StyleSheet.create({
   },
   userInfo: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  name: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base },
-  handle: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
+  name: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base, lineHeight: lineHeight.base },
+  handle: { color: colors.text.secondary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: 1 },
   sponsoredLabel: { color: colors.text.tertiary, fontSize: fontSize.xs, fontWeight: '600' },
   moreBtn: { padding: spacing.sm },
   content: {
@@ -529,6 +529,7 @@ const styles = StyleSheet.create({
   translateText: {
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
     fontWeight: '500',
   },
   mediaContainer: {
@@ -567,11 +568,13 @@ const styles = StyleSheet.create({
   sensitiveText: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     fontWeight: '600',
   },
   sensitiveSubtext: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
   },

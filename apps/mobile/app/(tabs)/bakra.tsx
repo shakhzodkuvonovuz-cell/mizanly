@@ -22,7 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, type TapGesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, radius, animation, fontSizeExt, fonts } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fontSizeExt, fonts, lineHeight, letterSpacing } from '@/theme';
 import { useStore } from '@/store';
 import { reelsApi, feedApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
@@ -914,11 +914,13 @@ const styles = StyleSheet.create({
   username: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     fontWeight: '700', // Making it pop more
   },
   time: {
     color: 'rgba(255,255,255,0.85)',
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     marginTop: 2,
   },
   caption: {
@@ -937,6 +939,7 @@ const styles = StyleSheet.create({
   soundText: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     marginLeft: spacing.xs,
   },
   actionColumn: {
@@ -960,6 +963,7 @@ const styles = StyleSheet.create({
   actionCount: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     fontWeight: '700',
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },

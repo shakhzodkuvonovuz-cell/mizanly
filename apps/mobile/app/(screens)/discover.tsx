@@ -20,7 +20,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, lineHeight, letterSpacing } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
@@ -529,6 +529,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     color: colors.text.primary,
     fontWeight: '500',
   },
@@ -566,6 +567,8 @@ const styles = StyleSheet.create({
   featuredTitle: {
     color: '#fff',
     fontSize: fontSize.md,
+    lineHeight: lineHeight.md,
+    letterSpacing: letterSpacing.snug,
     fontWeight: '700',
     marginBottom: spacing.sm,
   },
@@ -596,6 +599,7 @@ const styles = StyleSheet.create({
   featuredCreatorName: {
     color: colors.text.secondary,
     fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
     flex: 1,
   },
   featuredViews: {
@@ -606,6 +610,7 @@ const styles = StyleSheet.create({
   featuredViewsText: {
     color: colors.text.secondary,
     fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
   },
   trendingSection: {
     marginTop: spacing.lg,
@@ -613,6 +618,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     color: colors.text.primary,
     fontWeight: '600',
     marginBottom: spacing.md,
@@ -654,6 +660,7 @@ const styles = StyleSheet.create({
   },
   hashtagTextGold: {
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     color: colors.gold,
     fontWeight: '600',
   },
@@ -665,6 +672,7 @@ const styles = StyleSheet.create({
   },
   hashtagCountGold: {
     fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
     color: colors.gold,
     fontWeight: '500',
     opacity: 0.8,
@@ -716,6 +724,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     color: colors.text.tertiary,
     fontWeight: '500',
   },

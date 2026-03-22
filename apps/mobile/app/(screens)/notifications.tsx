@@ -16,7 +16,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, lineHeight, letterSpacing } from '@/theme';
 import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
@@ -452,6 +452,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionHeader: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     fontWeight: '700',
     paddingHorizontal: spacing.base,
     paddingTop: spacing.lg,
@@ -511,8 +512,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   rowContent: { flex: 1 },
   rowText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 20 },
   rowActor: { fontWeight: '700' },
-  rowBody: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
-  rowTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.xs },
+  rowBody: { color: colors.text.secondary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: 2 },
+  rowTime: { color: colors.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: spacing.xs },
 
   requestDone: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   requestActions: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center' },

@@ -31,7 +31,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fontSizeExt, lineHeight, letterSpacing } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
 import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
@@ -939,9 +939,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   nameSection: { paddingHorizontal: spacing.base, marginTop: spacing.md },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  displayName: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
-  handle: { color: colors.text.tertiary, fontSize: fontSize.sm, marginTop: 2 },
-  bio: { marginTop: spacing.sm, color: colors.text.primary, fontSize: fontSize.base },
+  displayName: { color: colors.text.primary, fontSize: fontSize.lg, lineHeight: lineHeight.lg, letterSpacing: letterSpacing.snug, fontWeight: '700' },
+  handle: { color: colors.text.tertiary, fontSize: fontSize.sm, lineHeight: lineHeight.sm, marginTop: 2 },
+  bio: { marginTop: spacing.sm, color: colors.text.primary, fontSize: fontSize.base, lineHeight: lineHeight.base },
   websiteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
   websiteLink: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '500' },
   channelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
@@ -985,12 +985,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
   },
   stat: { gap: 2 },
-  statNum: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  statLabel: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  statNum: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: lineHeight.base, fontWeight: '700' },
+  statLabel: { color: colors.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs },
   statDivider: { width: 1, height: 24, backgroundColor: tc.border, alignSelf: 'center' },
   pinnedSection: { marginTop: spacing.xl },
   sectionTitle: {
     color: colors.text.primary, fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     fontWeight: '700', paddingHorizontal: spacing.base,
     marginBottom: spacing.sm,
   },

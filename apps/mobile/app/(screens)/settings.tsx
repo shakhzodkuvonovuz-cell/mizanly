@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, lineHeight, letterSpacing } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -1161,9 +1161,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: 32,
   },
   rowText: { flex: 1, marginRight: spacing.md },
-  rowLabel: { color: colors.text.primary, fontSize: fontSize.base },
-  rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
-  rowRightText: { color: colors.text.tertiary, fontSize: fontSize.sm },
+  rowLabel: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: lineHeight.base },
+  rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: 2 },
+  rowRightText: { color: colors.text.tertiary, fontSize: fontSize.sm, lineHeight: lineHeight.sm },
   rowChevron: {
     width: 28,
     height: 28,
@@ -1214,7 +1214,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginHorizontal: spacing.base, marginTop: spacing.xl,
   },
   signOutLabel: {
-    color: colors.error, fontSize: fontSize.base, fontWeight: '600',
+    color: colors.error, fontSize: fontSize.base, lineHeight: lineHeight.base, fontWeight: '600',
   },
   signOutGradient: {
     flexDirection: 'row',
@@ -1228,6 +1228,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
 
   version: {
-    color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.xl,
+    color: colors.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, textAlign: 'center', marginTop: spacing.xl,
   },
 });

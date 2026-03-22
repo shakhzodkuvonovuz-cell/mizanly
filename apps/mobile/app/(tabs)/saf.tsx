@@ -16,7 +16,7 @@ import Animated, {
   FadeOut,
   SlideOutRight,
 } from 'react-native-reanimated';
-import { colors, spacing, fontSize, radius, animation, fonts, tabBar } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fonts, tabBar, lineHeight, letterSpacing } from '@/theme';
 import { CaughtUpCard } from '@/components/ui/CaughtUpCard';
 import { useStore } from '@/store';
 import { postsApi, storiesApi, notificationsApi, feedApi, followsApi } from '@/services/api';
@@ -602,6 +602,7 @@ const styles = StyleSheet.create({
   hijriDate: {
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
     marginTop: 2,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
@@ -616,6 +617,7 @@ const styles = StyleSheet.create({
   },
   commentPreviewText: {
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     fontFamily: fonts.body,
   },
   // TODO: colors.dark.border overridden by inline style with tc.border from useThemeColors()
@@ -639,6 +641,7 @@ const suggestedStyles = StyleSheet.create({
   title: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     fontFamily: fonts.bodyBold,
     marginBottom: spacing.md,
   },
@@ -665,11 +668,13 @@ const suggestedStyles = StyleSheet.create({
   displayName: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     fontFamily: fonts.bodyMedium,
   },
   bio: {
     color: colors.text.secondary,
     fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
     marginTop: 2,
   },
   followBtn: {
@@ -705,11 +710,13 @@ const bannerStyles = StyleSheet.create({
   title: {
     color: colors.emerald,
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     fontFamily: fonts.bodyBold,
   },
   subtitle: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
     marginTop: 2,
   },
 });

@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt, lineHeight, letterSpacing } from '@/theme';
 
 import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo, PrayerNotificationSetting } from '@/types/islamic';
@@ -754,6 +754,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   locationText: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     fontWeight: '500',
   },
   changeLocation: {
@@ -782,12 +783,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   currentPrayerName: {
     color: '#fff',
     fontSize: fontSize['2xl'],
+    lineHeight: lineHeight['2xl'],
+    letterSpacing: letterSpacing.snug,
     fontWeight: '700',
     marginBottom: spacing.xs,
   },
   currentPrayerArabic: {
     color: 'rgba(255,255,255,0.9)',
     fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
     marginBottom: spacing.md,
   },
   currentPrayerTimeRow: {
@@ -951,6 +955,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sectionTitle: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     fontWeight: '600',
   },
   prayerCard: {
@@ -997,6 +1002,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   prayerName: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     fontWeight: '600',
   },
   prayerNameCurrent: {
@@ -1088,18 +1094,23 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   dateText: {
     color: colors.gold,
     fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    letterSpacing: letterSpacing.snug,
     fontWeight: '600',
     marginBottom: spacing.xs,
   },
   dateSubtext: {
     color: colors.text.tertiary,
     fontSize: fontSize.sm,
+    lineHeight: lineHeight.sm,
   },
 
   // Settings
   settingsTitle: {
     color: colors.text.primary,
     fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
+    letterSpacing: letterSpacing.snug,
     fontWeight: '700',
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.md,
@@ -1120,11 +1131,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   settingsLabel: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
     fontWeight: '500',
   },
   settingsDescription: {
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
     marginTop: 2,
   },
 });
