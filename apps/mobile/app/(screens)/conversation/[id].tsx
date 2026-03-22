@@ -40,13 +40,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
-import { messagesApi, uploadApi, aiApi } from '@/services/api';
+import { messagesApi, uploadApi, aiApi, SOCKET_URL } from '@/services/api';
 import { encryptionService } from '@/services/encryption';
 import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
 import { io, Socket } from 'socket.io-client';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { navigate } from '@/utils/navigation';
 
 interface TenorGifResult {
@@ -60,7 +59,7 @@ interface EncryptedMessage extends Message {
   encNonce?: string | null;
 }
 
-const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
+
 const QUICK_REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🤲'];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -922,7 +921,20 @@ export default function ConversationScreen() {
     const connect = async () => {
       const token = await getToken();
       if (!token || !mounted) return;
-      const socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'] });
+      const socket = io(SOCKET_URL, {
+        auth: { token },
+        transports: ['websocket'],
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+      });
+      socket.on('connect_error', async () => {
+        if (!mounted) return;
+        const freshToken = await getToken({ skipCache: true });
+        if (freshToken && socket) {
+          socket.auth = { token: freshToken };
+        }
+      });
       socket.on('connect', () => {
         socket.emit('join_conversation', { conversationId: id });
         // Refetch messages to catch any missed during disconnection
@@ -988,7 +1000,14 @@ export default function ConversationScreen() {
       socketRef.current = socket;
     };
     connect();
-    return () => { mounted = false; socketRef.current?.disconnect(); socketRef.current = null; };
+    return () => {
+      mounted = false;
+      if (socketRef.current) {
+        socketRef.current.emit('leave_conversation', { conversationId: id });
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, [id, getToken, user?.id, queryClient]);
 
   useEffect(() => {

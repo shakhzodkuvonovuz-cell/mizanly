@@ -26,11 +26,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
+import { SOCKET_URL } from '@/services/api';
 import type { QuranRoomState } from '@/types/islamic';
 import { navigate } from '@/utils/navigation';
 import type { QuranVerse } from '@/types/islamic';
 
-const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
+// SOCKET_URL imported from @/services/api
 
 interface VerseChangeEvent {
   surahNumber: number;
@@ -155,6 +156,17 @@ export default function QuranRoomScreen() {
         const socket = io(SOCKET_URL, {
           auth: { token },
           transports: ['websocket'],
+          reconnection: true,
+          reconnectionAttempts: 10,
+          reconnectionDelay: 1000,
+        });
+
+        socket.on('connect_error', async () => {
+          if (!mounted) return;
+          const freshToken = await getTokenRef.current();
+          if (freshToken && socket) {
+            socket.auth = { token: freshToken };
+          }
         });
 
         socket.on('connect', () => {

@@ -24,7 +24,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
-import { api, callsApi } from '@/services/api';
+import { api, callsApi, SOCKET_URL } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -46,7 +46,7 @@ interface Call {
   callee?: { id: string; username: string; displayName: string; avatarUrl?: string };
 }
 
-const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
+// SOCKET_URL imported from @/services/api
 
 export default function CallScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -121,9 +121,20 @@ export default function CallScreen() {
       const socket = io(SOCKET_URL, {
         transports: ['websocket'],
         auth: { token },
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
       });
 
-      socket.on('call_accepted', () => {
+      socket.on('connect_error', async () => {
+        if (!mounted) return;
+        const freshToken = await getToken({ skipCache: true });
+        if (freshToken && socket) {
+          socket.auth = { token: freshToken };
+        }
+      });
+
+      socket.on('call_answered', () => {
         setCallStatus('connected');
       });
       socket.on('call_ended', () => {
@@ -131,15 +142,13 @@ export default function CallScreen() {
         if (intervalRef.current) clearInterval(intervalRef.current);
         setTimeout(() => router.back(), 2000);
       });
-      socket.on('call_ringing', () => {
+      socket.on('incoming_call', () => {
         setCallStatus('ringing');
       });
-      socket.on('call_missed', () => {
+      socket.on('call_rejected', () => {
         setCallStatus('missed');
       });
 
-      // Join the call room so signaling events reach this client
-      socket.emit('join_call', { callId: id });
       socketRef.current = socket;
     };
     connect();

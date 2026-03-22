@@ -128,6 +128,7 @@ type AccessibilitySettings = { reducedMotion?: boolean; fontSize?: string };
 type WellbeingSettings = { sensitiveContent?: boolean; dailyTimeLimit?: number };
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+export const SOCKET_URL = `${API_URL.replace('/api/v1', '')}/chat`;
 const REQUEST_TIMEOUT_MS = 30000;
 
 /** Typed API error with HTTP status code for proper error handling */

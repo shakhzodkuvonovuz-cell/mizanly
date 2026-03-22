@@ -30,7 +30,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius, animation, fonts, tabBar } from '@/theme';
 import { useStore } from '@/store';
-import { messagesApi } from '@/services/api';
+import { messagesApi, SOCKET_URL } from '@/services/api';
 import type { Conversation } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -198,7 +198,7 @@ export default function RisalahScreen() {
   useEffect(() => {
     let mounted = true;
     let socket: Socket | null = null;
-    const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
+    // SOCKET_URL imported from @/services/api
 
     const connect = async () => {
       const token = await getToken();
