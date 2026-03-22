@@ -33,7 +33,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
-import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
 
 const { width } = Dimensions.get('window');
@@ -59,7 +58,6 @@ export default function CreateEventScreen() {
   const [reminder1d, setReminder1d] = useState(true);
   const [hasCover, setHasCover] = useState(false);
   const [coverUri, setCoverUri] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date>(new Date());
@@ -85,11 +83,6 @@ export default function CreateEventScreen() {
       setHasCover(true);
     }
   };
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
 
   useEffect(() => {
     const fetchCommunities = async () => {
@@ -185,7 +178,6 @@ export default function CreateEventScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Cover Image Section */}

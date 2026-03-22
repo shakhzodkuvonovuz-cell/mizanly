@@ -56,7 +56,10 @@ export default function VoiceRecorderScreen() {
     }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const rec = new Audio.Recording();
-    await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    await rec.prepareToRecordAsync({
+      ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+      isMeteringEnabled: true,
+    });
     await rec.startAsync();
     recording.current = rec;
     setState('recording');
@@ -72,12 +75,22 @@ export default function VoiceRecorderScreen() {
       }
       setTime(timeRef.value);
     }, 1000);
-    levelTimer.current = setInterval(() => {
-      setLevels((l) => {
-        const updated = [...l, Math.random() * 100];
-        if (updated.length > 20) updated.shift();
-        return updated;
-      });
+    levelTimer.current = setInterval(async () => {
+      if (!recording.current) return;
+      try {
+        const status = await recording.current.getStatusAsync();
+        if (status.isRecording && status.metering != null) {
+          // Normalize metering (dBFS, typically -160..0) to 0..100 range
+          const normalized = Math.max(0, Math.min(100, (status.metering + 60) * (100 / 60)));
+          setLevels((l) => {
+            const updated = [...l, normalized];
+            if (updated.length > 20) updated.shift();
+            return updated;
+          });
+        }
+      } catch {
+        // Recording may have stopped between interval ticks
+      }
     }, 100);
   }, [haptic]); // stop is accessed via stopRef to avoid stale closure
 

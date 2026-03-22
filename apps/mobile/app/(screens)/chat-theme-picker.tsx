@@ -308,7 +308,7 @@ export default function ChatThemePickerScreen() {
                 style={[StyleSheet.absoluteFill, { opacity: 0.3 }]}
               />
             )}
-            {/* Mock Chat Messages */}
+            {/* Sample messages for theme preview */}
             <View style={styles.chatPreview}>
               <View style={styles.messageRow}>
                 <LinearGradient

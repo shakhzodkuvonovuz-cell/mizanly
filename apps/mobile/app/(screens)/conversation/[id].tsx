@@ -205,9 +205,9 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
   const [playing, setPlaying] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
 
-  // Memoize waveform bar heights to prevent flickering on re-render
+  // Deterministic waveform bar heights — no Math.random to avoid re-render flicker
   const waveformHeights = useMemo(() =>
-    Array.from({ length: 20 }, (_, i) => 4 + Math.sin(i * 0.8) * 8 + Math.random() * 4),
+    Array.from({ length: 20 }, (_, i) => 4 + Math.sin(i * 0.8) * 8 + Math.cos(i * 1.3) * 3),
   []);
 
   const toggle = useCallback(async () => {

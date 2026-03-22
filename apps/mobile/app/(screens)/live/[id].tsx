@@ -110,12 +110,16 @@ export default function LiveViewerScreen() {
     );
   }, []);
 
-  // Animated audio bars for audio space
+  // Animated audio bars for audio space — deterministic oscillation, no Math.random
   useEffect(() => {
     if (live?.liveType === 'AUDIO') {
       const interval = setInterval(() => {
-        audioBars.forEach((bar) => {
-          bar.value = withSpring(0.2 + Math.random() * 0.8, { damping: 10, stiffness: 100 });
+        const now = Date.now();
+        audioBars.forEach((bar, barIndex) => {
+          bar.value = withSpring(
+            0.2 + 0.6 * Math.abs(Math.sin(now / 300 + barIndex * 0.8)),
+            { damping: 10, stiffness: 100 }
+          );
         });
       }, 200);
       return () => clearInterval(interval);

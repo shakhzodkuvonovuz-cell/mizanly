@@ -67,8 +67,13 @@ export default function VideoEditorScreen() {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoUri = params.videoUri || null;
 
-  // Memoize waveform data to prevent re-randomizing on each render (FINDING 38-013)
-  const waveformData = useMemo(() => Array.from({ length: 40 }, () => Math.random() * 30 + 10), []);
+  // Deterministic waveform pattern that looks like real audio (no Math.random)
+  const waveformData = useMemo(() =>
+    Array.from({ length: 40 }, (_, i) => {
+      const t = i / 40;
+      return 10 + 15 * Math.abs(Math.sin(t * Math.PI * 4)) + 8 * Math.abs(Math.sin(t * Math.PI * 7));
+    }),
+  []);
 
   // Animated export progress
   const exportProgressAnim = useSharedValue(0);

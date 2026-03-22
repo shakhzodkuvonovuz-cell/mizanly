@@ -330,15 +330,27 @@ function SignUpScreenContent() {
               <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
             </View>
 
-            {/* Social auth — coming soon */}
+            {/* Social auth — disabled until OAuth configured */}
             <View style={styles.socialRow}>
-              <Pressable style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]} disabled>
+              <Pressable
+                style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.4 }]}
+                disabled={true}
+                accessibilityLabel={t('auth.signInWith') + ' Google'}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: true }}
+              >
                 <Text style={[styles.socialText, { color: tc.text.primary }]}>{t('auth.google')}</Text>
-                <Text style={[styles.comingSoonText, { color: tc.text.tertiary }]}>{t('common.comingSoon')}</Text>
+                <Text style={[styles.comingSoonBadge, { color: tc.text.tertiary }]}>{t('common.availableSoon')}</Text>
               </Pressable>
-              <Pressable style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]} disabled>
+              <Pressable
+                style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.4 }]}
+                disabled={true}
+                accessibilityLabel={t('auth.signInWith') + ' Apple'}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: true }}
+              >
                 <Text style={[styles.socialText, { color: tc.text.primary }]}>{t('auth.apple')}</Text>
-                <Text style={[styles.comingSoonText, { color: tc.text.tertiary }]}>{t('common.comingSoon')}</Text>
+                <Text style={[styles.comingSoonBadge, { color: tc.text.tertiary }]}>{t('common.availableSoon')}</Text>
               </Pressable>
             </View>
           </View>
@@ -450,6 +462,7 @@ const styles = StyleSheet.create({
   socialBtnPressed: { opacity: 0.7, transform: [{ scale: 0.97 }] },
   socialText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
   comingSoonText: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  comingSoonBadge: { color: colors.text.tertiary, fontSize: 10 },
   verifyBackBtn: { alignSelf: 'flex-start', padding: spacing.sm, marginBottom: spacing.md },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing['2xl'] },
   footerText: { color: colors.text.secondary, fontSize: fontSize.sm },
