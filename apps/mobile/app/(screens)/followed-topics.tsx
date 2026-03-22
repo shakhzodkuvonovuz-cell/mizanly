@@ -150,7 +150,7 @@ function FollowedTopicsContent() {
               <Icon name="hash" size="md" color={colors.emerald} />
             </View>
             <View style={styles.hashtagInfo}>
-              <Text style={styles.hashtagName} numberOfLines={1}>
+              <Text style={[styles.hashtagName, { color: tc.text.primary }]} numberOfLines={1}>
                 #{item.name}
               </Text>
               <Text style={styles.hashtagCount}>
@@ -198,7 +198,7 @@ function FollowedTopicsContent() {
       suggestedTopics.length > 0 && !searchQuery ? (
         <View style={styles.sectionHeader}>
           <Icon name="trending-up" size="sm" color={colors.gold} />
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>
             {t('followedTopics.suggested', 'Suggested Topics')}
           </Text>
         </View>
@@ -211,7 +211,7 @@ function FollowedTopicsContent() {
       followedTopics.length > 0 && !searchQuery ? (
         <View style={styles.sectionHeader}>
           <Icon name="check-circle" size="sm" color={colors.emerald} />
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>
             {t('followedTopics.yourTopics', 'Your Topics')}
           </Text>
         </View>
@@ -230,11 +230,11 @@ function FollowedTopicsContent() {
       <View>
         {/* Search bar */}
         <View style={[styles.searchContainer, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-          <Icon name="search" size="sm" color={colors.text.tertiary} />
+          <Icon name="search" size="sm" color={tc.text.tertiary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: tc.text.primary }]}
             placeholder={t('followedTopics.searchPlaceholder', 'Search topics...')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             value={searchQuery}
             onChangeText={handleSearch}
             autoCapitalize="none"
@@ -242,7 +242,7 @@ function FollowedTopicsContent() {
           />
           {searchQuery ? (
             <Pressable onPress={() => handleSearch('')} hitSlop={8}>
-              <Icon name="x" size="xs" color={colors.text.tertiary} />
+              <Icon name="x" size="xs" color={tc.text.tertiary} />
             </Pressable>
           ) : null}
         </View>

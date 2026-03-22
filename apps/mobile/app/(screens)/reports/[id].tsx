@@ -21,6 +21,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reportsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 
@@ -62,6 +63,7 @@ interface CreateReportDto {
 
 export default function ReportScreen() {
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
   const params = useLocalSearchParams<{ contentType: string; id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -143,7 +145,7 @@ export default function ReportScreen() {
               style={styles.promptCard}
             >
               <Icon name="flag" size="lg" color={colors.error} />
-              <Text style={styles.prompt}>
+              <Text style={[styles.prompt, { color: tc.text.primary }]}>
                 {t('screens.report.whyReporting', { type: contentType })}
               </Text>
             </LinearGradient>
@@ -188,11 +190,11 @@ export default function ReportScreen() {
               colors={colors.gradient.cardDark}
               style={styles.detailsCard}
             >
-              <Text style={styles.detailsLabel}>{t('screens.reports-detail.additionalDetails')}</Text>
+              <Text style={[styles.detailsLabel, { color: tc.text.primary }]}>{t('screens.reports-detail.additionalDetails')}</Text>
               <TextInput
-                style={styles.detailsInput}
+                style={[styles.detailsInput, { color: tc.text.primary, backgroundColor: tc.bgElevated, borderColor: tc.border }]}
                 placeholder={t('screens.reports-detail.detailsPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={details}
                 onChangeText={setDetails}
                 multiline

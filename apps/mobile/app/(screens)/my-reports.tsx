@@ -89,7 +89,7 @@ export default function MyReportsScreen() {
             >
               <Icon name={statusIcon} size="xs" color={statusColor} />
             </LinearGradient>
-            <Text style={styles.reason} numberOfLines={1}>
+            <Text style={[styles.reason, { color: tc.text.primary }]} numberOfLines={1}>
               {item.reason.replace(/_/g, ' ')}
             </Text>
             <LinearGradient
@@ -99,8 +99,8 @@ export default function MyReportsScreen() {
               <Text style={[styles.badgeText, { color: statusColor }]}>{item.status}</Text>
             </LinearGradient>
           </View>
-          <Text style={styles.target} numberOfLines={1}>{getTargetText(item)}</Text>
-          <Text style={styles.date}>
+          <Text style={[styles.target, { color: tc.text.secondary }]} numberOfLines={1}>{getTargetText(item)}</Text>
+          <Text style={[styles.date, { color: tc.text.tertiary }]}>
             {format(new Date(item.createdAt), 'PPP', { locale: getDateFnsLocale() })} • {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </LinearGradient>

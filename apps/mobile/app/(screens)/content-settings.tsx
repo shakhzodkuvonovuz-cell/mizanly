@@ -49,6 +49,7 @@ function Row({
   destructive?: boolean;
   icon?: IconName;
 }) {
+  const tc = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
@@ -70,13 +71,13 @@ function Row({
             </LinearGradient>
           )}
           <View style={styles.rowText}>
-            <Text style={[styles.rowLabel, destructive && styles.destructive]}>{label}</Text>
-            {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
+            <Text style={[styles.rowLabel, { color: tc.text.primary }, destructive && styles.destructive]}>{label}</Text>
+            {hint ? <Text style={[styles.rowHint, { color: tc.text.tertiary }]}>{hint}</Text> : null}
           </View>
         </View>
         {onToggle !== undefined && value !== undefined ? (
           <Pressable
-            style={[styles.toggleTrack, value && styles.toggleTrackActive]}
+            style={[styles.toggleTrack, { backgroundColor: tc.border }, value && styles.toggleTrackActive]}
             onPress={() => onToggle(!value)}
           >
             <View style={[styles.toggleThumb, value && styles.toggleThumbActive]}>
@@ -87,7 +88,7 @@ function Row({
             </View>
           </Pressable>
         ) : onPress ? (
-          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+          <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
         ) : null}
       </LinearGradient>
     </Pressable>
@@ -106,7 +107,7 @@ function SectionHeader({ title }: { title: string }) {
       >
         <Icon name={icon} size="xs" color={colors.emerald} />
       </LinearGradient>
-      <Text style={styles.sectionHeaderText}>{t(`settings.sections.${title}`)}</Text>
+      <Text style={[styles.sectionHeaderText, { color: tc.text.secondary }]}>{t(`settings.sections.${title}`)}</Text>
     </View>
   );
 }
@@ -122,6 +123,7 @@ export default function ContentSettingsScreen() {
   const setSafFeedType = useStore((s) => s.setSafFeedType);
   const setMajlisFeedType = useStore((s) => s.setMajlisFeedType);
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   // Settings from API
   const settingsQuery = useQuery({
@@ -250,8 +252,8 @@ export default function ContentSettingsScreen() {
                     <Icon name="trending-up" size="xs" color={colors.emerald} />
                   </LinearGradient>
                   <View style={styles.rowText}>
-                    <Text style={styles.rowLabel}>{t('settings.safDefault')}</Text>
-                    <Text style={styles.rowHint}>{t('settings.hints.safDefault')}</Text>
+                    <Text style={[styles.rowLabel, { color: tc.text.primary }]}>{t('settings.safDefault')}</Text>
+                    <Text style={[styles.rowHint, { color: tc.text.tertiary }]}>{t('settings.hints.safDefault')}</Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
@@ -259,11 +261,11 @@ export default function ContentSettingsScreen() {
                     colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
                     style={styles.valueBadge}
                   >
-                    <Text style={styles.valueText}>
+                    <Text style={[styles.valueText, { color: tc.text.primary }]}>
                       {safFeedType === 'following' ? t('feed.following') : t('feed.forYou')}
                     </Text>
                   </LinearGradient>
-                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                 </View>
               </Pressable>
               <View style={styles.divider} />
@@ -281,8 +283,8 @@ export default function ContentSettingsScreen() {
                     <Icon name="hash" size="xs" color={colors.gold} />
                   </LinearGradient>
                   <View style={styles.rowText}>
-                    <Text style={styles.rowLabel}>{t('settings.majlisDefault')}</Text>
-                    <Text style={styles.rowHint}>{t('settings.hints.majlisDefault')}</Text>
+                    <Text style={[styles.rowLabel, { color: tc.text.primary }]}>{t('settings.majlisDefault')}</Text>
+                    <Text style={[styles.rowHint, { color: tc.text.tertiary }]}>{t('settings.hints.majlisDefault')}</Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
@@ -290,11 +292,11 @@ export default function ContentSettingsScreen() {
                     colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
                     style={styles.valueBadge}
                   >
-                    <Text style={styles.valueText}>
+                    <Text style={[styles.valueText, { color: tc.text.primary }]}>
                       {majlisFeedType === 'foryou' ? t('feed.forYou') : majlisFeedType === 'following' ? t('feed.following') : t('feed.trending')}
                     </Text>
                   </LinearGradient>
-                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                 </View>
               </Pressable>
             </LinearGradient>
@@ -364,8 +366,8 @@ export default function ContentSettingsScreen() {
                     <Icon name="clock" size="xs" color={colors.emerald} />
                   </LinearGradient>
                   <View style={styles.rowText}>
-                    <Text style={styles.rowLabel}>{t('settings.dailyReminder.label')}</Text>
-                    <Text style={styles.rowHint}>{t('settings.hints.dailyReminder')}</Text>
+                    <Text style={[styles.rowLabel, { color: tc.text.primary }]}>{t('settings.dailyReminder.label')}</Text>
+                    <Text style={[styles.rowHint, { color: tc.text.tertiary }]}>{t('settings.hints.dailyReminder')}</Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
@@ -373,11 +375,11 @@ export default function ContentSettingsScreen() {
                     colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
                     style={styles.valueBadge}
                   >
-                    <Text style={styles.valueText}>
+                    <Text style={[styles.valueText, { color: tc.text.primary }]}>
                       {dailyReminder === 'off' ? t('settings.dailyReminder.off') : dailyReminder === '30min' ? t('settings.dailyReminder.30min') : dailyReminder === '1h' ? t('settings.dailyReminder.1h') : t('settings.dailyReminder.2h')}
                     </Text>
                   </LinearGradient>
-                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                 </View>
               </Pressable>
             </LinearGradient>

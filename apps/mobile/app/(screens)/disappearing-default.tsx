@@ -149,13 +149,13 @@ function DisappearingDefaultContent() {
             end={{ x: 1, y: 1 }}
             style={styles.iconCircle}
           >
-            <Icon name="clock" size={40} color={colors.text.primary} />
+            <Icon name="clock" size={40} color={tc.text.primary} />
           </LinearGradient>
         </Animated.View>
 
         {/* Description */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.descriptionContainer}>
-          <Text style={styles.description}>
+          <Text style={[styles.description, { color: tc.text.secondary }]}>
             {t(
               'disappearingDefault.description',
               'Set a default timer for all new conversations. When enabled, new messages will automatically disappear after the selected duration.',
@@ -180,10 +180,10 @@ function DisappearingDefaultContent() {
                   accessibilityState={{ selected: isSelected }}
                 >
                   <View style={styles.optionTextContainer}>
-                    <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
+                    <Text style={[styles.optionLabel, { color: tc.text.primary }, isSelected && styles.optionLabelSelected]}>
                       {option.label}
                     </Text>
-                    <Text style={styles.optionSubtitle}>
+                    <Text style={[styles.optionSubtitle, { color: tc.text.secondary }]}>
                       {option.subtitle}
                     </Text>
                   </View>
@@ -203,7 +203,7 @@ function DisappearingDefaultContent() {
             <View style={styles.infoIconWrapper}>
               <Icon name="clock" size={18} color={colors.emerald} />
             </View>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: tc.text.secondary }]}>
               {t(
                 'disappearingDefault.existingNote',
                 'Existing conversations will not be affected. You can change the timer for individual conversations in their settings.',

@@ -99,8 +99,8 @@ export default function DraftsScreen() {
             </LinearGradient>
             <View style={styles.draftContent}>
               <Text style={styles.draftType}>{t(`screens.drafts.spaceLabels.${item.space}`, { defaultValue: 'Draft' })}</Text>
-              <Text style={styles.draftPreview} numberOfLines={2}>{preview}</Text>
-              <Text style={styles.draftTime}>{time}</Text>
+              <Text style={[styles.draftPreview, { color: tc.text.primary }]} numberOfLines={2}>{preview}</Text>
+              <Text style={[styles.draftTime, { color: tc.text.tertiary }]}>{time}</Text>
             </View>
             <Pressable
               style={styles.draftDeleteBtn}

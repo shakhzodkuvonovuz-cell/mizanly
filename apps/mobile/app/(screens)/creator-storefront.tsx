@@ -122,7 +122,7 @@ function CreatorStorefrontContent() {
           <Image source={{ uri: item.imageUrl }} style={[styles.productImage, { backgroundColor: tc.surface }]} />
         ) : (
           <View style={[styles.productImage, styles.productImagePlaceholder]}>
-            <Icon name="image" size="lg" color={colors.text.tertiary} />
+            <Icon name="image" size="lg" color={tc.text.tertiary} />
           </View>
         )}
 
@@ -140,7 +140,7 @@ function CreatorStorefrontContent() {
         )}
 
         <View style={styles.productInfo}>
-          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+          <Text style={[styles.productName, { color: tc.text.primary }]} numberOfLines={2}>{item.name}</Text>
           <View style={styles.priceRow}>
             <Text style={styles.productPrice}>
               {item.currency}{item.price.toFixed(2)}
@@ -183,8 +183,8 @@ function CreatorStorefrontContent() {
               size="xl"
             />
             <View style={styles.creatorInfo}>
-              <Text style={styles.creatorName}>{creator.displayName}</Text>
-              <Text style={styles.creatorUsername}>@{creator.username}</Text>
+              <Text style={[styles.creatorName, { color: tc.text.primary }]}>{creator.displayName}</Text>
+              <Text style={[styles.creatorUsername, { color: tc.text.secondary }]}>@{creator.username}</Text>
               <Text style={styles.creatorFollowers}>
                 {formatFollowers(creator.followersCount)} {t('storefront.followers')}
               </Text>

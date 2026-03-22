@@ -144,7 +144,7 @@ function ContentFilterSettingsContent() {
       >
         {/* Strictness Level Section */}
         <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-        <Text style={styles.sectionHeader}>{t('contentFilter.strictness')}</Text>
+        <Text style={[styles.sectionHeader, { color: tc.text.secondary }]}>{t('contentFilter.strictness')}</Text>
 
         {LEVELS.map((level) => {
           const isSelected = currentLevel === level.key;
@@ -173,7 +173,7 @@ function ContentFilterSettingsContent() {
                   <Icon
                     name={level.iconName}
                     size="md"
-                    color={isSelected ? colors.emerald : colors.text.secondary}
+                    color={isSelected ? colors.emerald : tc.text.secondary}
                   />
                 </View>
                 <View style={styles.levelTextWrap}>
@@ -185,7 +185,7 @@ function ContentFilterSettingsContent() {
                   >
                     {t(level.labelKey)}
                   </Text>
-                  <Text style={styles.levelDesc}>{t(level.descKey)}</Text>
+                  <Text style={[styles.levelDesc, { color: tc.text.secondary }]}>{t(level.descKey)}</Text>
                 </View>
                 {isSelected && (
                   <Icon name="check-circle" size="md" color={colors.emerald} />
@@ -199,7 +199,7 @@ function ContentFilterSettingsContent() {
 
         {/* Individual Toggles Section */}
         <Animated.View entering={FadeInUp.delay(60).duration(400)}>
-        <Text style={[styles.sectionHeader, { marginTop: spacing.xl }]}>
+        <Text style={[styles.sectionHeader, { marginTop: spacing.xl, color: tc.text.secondary }]}>
           {t('contentFilter.title')}
         </Text>
 
@@ -210,8 +210,8 @@ function ContentFilterSettingsContent() {
           style={styles.toggleCard}
         >
           <View style={styles.toggleRow}>
-            <Icon name="eye-off" size="sm" color={colors.text.secondary} />
-            <Text style={styles.toggleLabel}>{t('contentFilter.blurHaram')}</Text>
+            <Icon name="eye-off" size="sm" color={tc.text.secondary} />
+            <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>{t('contentFilter.blurHaram')}</Text>
             <Switch
               value={currentBlurHaram}
               onValueChange={handleToggleBlurHaram}
@@ -223,8 +223,8 @@ function ContentFilterSettingsContent() {
           <View style={styles.separator} />
 
           <View style={styles.toggleRow}>
-            <Icon name="volume-x" size="sm" color={colors.text.secondary} />
-            <Text style={styles.toggleLabel}>{t('contentFilter.hideMusic')}</Text>
+            <Icon name="volume-x" size="sm" color={tc.text.secondary} />
+            <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>{t('contentFilter.hideMusic')}</Text>
             <Switch
               value={currentHideMusic}
               onValueChange={handleToggleHideMusic}
@@ -236,8 +236,8 @@ function ContentFilterSettingsContent() {
           <View style={styles.separator} />
 
           <View style={styles.toggleRow}>
-            <Icon name="users" size="sm" color={colors.text.secondary} />
-            <Text style={styles.toggleLabel}>
+            <Icon name="users" size="sm" color={tc.text.secondary} />
+            <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>
               {t('contentFilter.hideMixedGender')}
             </Text>
             <Switch
@@ -254,8 +254,8 @@ function ContentFilterSettingsContent() {
         {/* Info footer */}
         <Animated.View entering={FadeInUp.delay(120).duration(400)}>
         <View style={styles.infoRow}>
-          <Icon name="eye" size="sm" color={colors.text.tertiary} />
-          <Text style={styles.infoText}>
+          <Icon name="eye" size="sm" color={tc.text.tertiary} />
+          <Text style={[styles.infoText, { color: tc.text.tertiary }]}>
             {t('contentFilter.moderateDesc')}
           </Text>
         </View>

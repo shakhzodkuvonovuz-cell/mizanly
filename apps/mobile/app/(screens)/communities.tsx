@@ -102,15 +102,15 @@ function CommunityCard({
 
           {/* Content */}
           <View style={styles.cardContent}>
-            <Text style={styles.communityName}>{community.name}</Text>
-            <Text style={styles.communityDescription} numberOfLines={2}>
+            <Text style={[styles.communityName, { color: tc.text.primary }]}>{community.name}</Text>
+            <Text style={[styles.communityDescription, { color: tc.text.secondary }]} numberOfLines={2}>
               {description}
             </Text>
 
             <View style={styles.communityMeta}>
               <View style={styles.memberCount}>
-                <Icon name="users" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.memberCountText}>{formatCount(community.memberCount)}</Text>
+                <Icon name="users" size="xs" color={tc.text.tertiary} />
+                <Text style={[styles.memberCountText, { color: tc.text.tertiary }]}>{formatCount(community.memberCount)}</Text>
               </View>
               {category && (
                 <View style={styles.categoryBadge}>
@@ -260,17 +260,17 @@ export default function CommunitiesScreen() {
             colors={colors.gradient.cardDark}
             style={styles.searchBar}
           >
-            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <Icon name="search" size="sm" color={tc.text.tertiary} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: tc.text.primary }]}
               placeholder={t('screens.communities.searchPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel={t('common.clear')}>
-                <Icon name="x" size="sm" color={colors.text.tertiary} />
+                <Icon name="x" size="sm" color={tc.text.tertiary} />
               </Pressable>
             )}
           </LinearGradient>

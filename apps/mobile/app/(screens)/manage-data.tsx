@@ -38,8 +38,8 @@ function InfoRow({
   return (
     <View style={styles.infoRow}>
       <View style={styles.infoText}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        {description && <Text style={styles.infoDescription}>{description}</Text>}
+        <Text style={[styles.infoLabel, { color: tc.text.primary }]}>{label}</Text>
+        {description && <Text style={[styles.infoDescription, { color: tc.text.tertiary }]}>{description}</Text>}
       </View>
       {icon && (
         <LinearGradient
@@ -71,8 +71,8 @@ function ActionRow({
   return (
     <View style={styles.actionRow}>
       <View style={styles.actionText}>
-        <Text style={styles.actionLabel}>{label}</Text>
-        {description && <Text style={styles.actionDescription}>{description}</Text>}
+        <Text style={[styles.actionLabel, { color: tc.text.primary }]}>{label}</Text>
+        {description && <Text style={[styles.actionDescription, { color: tc.text.tertiary }]}>{description}</Text>}
       </View>
       <Pressable
         onPress={onPress}
@@ -266,7 +266,7 @@ export default function ManageDataScreen() {
             </LinearGradient>
           </Animated.View>
 
-          <Text style={styles.footerNote}>
+          <Text style={[styles.footerNote, { color: tc.text.tertiary }]}>
             {t('settings.morePrivacySettingsPrefix')}{' '}
             <Text style={styles.link} onPress={() => navigate('/(screens)/settings')} accessibilityLabel={t('settings.goToSettings')} accessibilityRole="link">
               {t('common.settings')}

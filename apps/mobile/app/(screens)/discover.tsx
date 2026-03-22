@@ -62,7 +62,7 @@ function TrendingHashtagsSkeleton() {
   const chips = Array.from({ length: 5 }, (_, i) => i);
   return (
     <View style={styles.trendingSection}>
-      <Text style={styles.sectionTitle}>{t('discover.trendingNow')}</Text>
+      <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('discover.trendingNow')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trendingList}>
         {chips.map((i) => (
           <Skeleton.Rect key={i} width={80} height={32} borderRadius={radius.full} style={{ marginRight: spacing.sm }} />
@@ -83,7 +83,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
     <View style={styles.trendingSection}>
       <View style={styles.sectionTitleRow}>
         <Icon name="trending-up" size="sm" color={colors.gold} />
-        <Text style={styles.sectionTitle}>{t('discover.trendingNow')}</Text>
+        <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('discover.trendingNow')}</Text>
       </View>
       <FlatList
         horizontal
@@ -182,7 +182,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
                 <Image accessible={true} accessibilityLabel={t('accessibility.contentImage')} source={{ uri: item.creator.avatarUrl }} style={styles.featuredAvatar} />
               ) : (
                 <View style={[styles.featuredAvatarPlaceholder, { backgroundColor: tc.bgElevated }]}>
-                  <Icon name="user" size={10} color={colors.text.primary} />
+                  <Icon name="user" size={10} color={tc.text.primary} />
                 </View>
               )}
               <Text style={styles.featuredCreatorName} numberOfLines={1}>
@@ -190,7 +190,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
               </Text>
             </View>
             <View style={styles.featuredViews}>
-              <Icon name="eye" size={12} color={colors.text.secondary} />
+              <Icon name="eye" size={12} color={tc.text.secondary} />
               <Text style={styles.featuredViewsText}>
                 {formatCount(item.viewsCount)}
               </Text>
@@ -210,7 +210,7 @@ function FeaturedSection({ items }: { items: FeaturedItem[] }) {
 
   return (
     <View style={styles.featuredSection}>
-      <Text style={styles.sectionTitle}>{t('discover.featured')}</Text>
+      <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('discover.featured')}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -471,7 +471,7 @@ export default function DiscoverScreen() {
                   <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('series.discoverTitle')}</Text>
                 </Pressable>
               </View>
-              <Text style={styles.sectionTitle}>{t('discover.explore')}</Text>
+              <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('discover.explore')}</Text>
             </>
           }
           ListEmptyComponent={
@@ -494,7 +494,7 @@ export default function DiscoverScreen() {
               </View>
             ) : exploreItems.length > 0 ? (
               <View style={styles.footer}>
-                <Text style={styles.footerText}>{t('discover.reachedEnd')}</Text>
+                <Text style={[styles.footerText, { color: tc.text.tertiary }]}>{t('discover.reachedEnd')}</Text>
               </View>
             ) : null
           }

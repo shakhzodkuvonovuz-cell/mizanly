@@ -50,12 +50,12 @@ function Row({
       disabled={!handlePress}
     >
       <View style={styles.rowText}>
-        <Text style={[styles.rowLabel, destructive && styles.destructive]}>{label}</Text>
-        {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
-        {value ? <Text style={styles.rowValue}>{value}</Text> : null}
+        <Text style={[styles.rowLabel, { color: tc.text.primary }, destructive && styles.destructive]}>{label}</Text>
+        {hint ? <Text style={[styles.rowHint, { color: tc.text.tertiary }]}>{hint}</Text> : null}
+        {value ? <Text style={[styles.rowValue, { color: tc.text.secondary }]}>{value}</Text> : null}
       </View>
       {onPress ? (
-        <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+        <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
       ) : null}
     </Pressable>
   );

@@ -185,8 +185,8 @@ function CreatorDashboardContent() {
         <View style={[styles.overviewIconBg, { backgroundColor: `${item.color}15` }]}>
           <Icon name={item.icon} size="sm" color={item.color} />
         </View>
-        <Text style={styles.overviewValue}>{item.value}</Text>
-        <Text style={styles.overviewLabel}>{item.label}</Text>
+        <Text style={[styles.overviewValue, { color: tc.text.primary }]}>{item.value}</Text>
+        <Text style={[styles.overviewLabel, { color: tc.text.secondary }]}>{item.label}</Text>
         <Text
           style={[
             styles.overviewChange,
@@ -216,7 +216,7 @@ function CreatorDashboardContent() {
         {/* Top Posts Grid */}
         {topPosts.length > 0 ? (
           <>
-            <Text style={styles.subsectionTitle}>
+            <Text style={[styles.subsectionTitle, { color: tc.text.primary }]}>
               {t('creatorDashboard.topPosts', 'Top Performing Posts')}
             </Text>
             <View style={styles.postsGrid}>
@@ -240,7 +240,7 @@ function CreatorDashboardContent() {
                       />
                     ) : (
                       <View style={[styles.postThumbnail, styles.postPlaceholder]}>
-                        <Icon name="image" size="lg" color={colors.text.tertiary} />
+                        <Icon name="image" size="lg" color={tc.text.tertiary} />
                       </View>
                     )}
                     <LinearGradient
@@ -249,11 +249,11 @@ function CreatorDashboardContent() {
                     >
                       <View style={styles.postStats}>
                         <View style={styles.postStatRow}>
-                          <Icon name="eye" size="xs" color={colors.text.primary} />
+                          <Icon name="eye" size="xs" color={tc.text.primary} />
                           <Text style={styles.postStatText}>{formatNumber(post.views)}</Text>
                         </View>
                         <View style={styles.postStatRow}>
-                          <Icon name="heart" size="xs" color={colors.text.primary} />
+                          <Icon name="heart" size="xs" color={tc.text.primary} />
                           <Text style={styles.postStatText}>{formatNumber(post.likes)}</Text>
                         </View>
                       </View>
@@ -268,7 +268,7 @@ function CreatorDashboardContent() {
         {/* Best Time to Post */}
         {bestTimes.length > 0 ? (
           <>
-            <Text style={styles.subsectionTitle}>
+            <Text style={[styles.subsectionTitle, { color: tc.text.primary }]}>
               {t('creatorDashboard.bestTime', 'Best Time to Post')}
             </Text>
             <View style={styles.bestTimesContainer}>
@@ -317,7 +317,7 @@ function CreatorDashboardContent() {
     return (
       <View style={styles.tabContent}>
         {/* Gender Split */}
-        <Text style={styles.subsectionTitle}>
+        <Text style={[styles.subsectionTitle, { color: tc.text.primary }]}>
           {t('creatorDashboard.genderSplit', 'Gender Distribution')}
         </Text>
         <View style={styles.genderContainer}>
@@ -337,7 +337,7 @@ function CreatorDashboardContent() {
         </View>
 
         {/* Age Groups */}
-        <Text style={styles.subsectionTitle}>
+        <Text style={[styles.subsectionTitle, { color: tc.text.primary }]}>
           {t('creatorDashboard.ageGroups', 'Age Distribution')}
         </Text>
         {audienceData.ageGroups.map((group, index) => (
@@ -357,7 +357,7 @@ function CreatorDashboardContent() {
         ))}
 
         {/* Top Countries */}
-        <Text style={styles.subsectionTitle}>
+        <Text style={[styles.subsectionTitle, { color: tc.text.primary }]}>
           {t('creatorDashboard.topCountries', 'Top Countries')}
         </Text>
         {audienceData.topCountries.map((country, index) => (
@@ -366,7 +366,7 @@ function CreatorDashboardContent() {
             entering={FadeInDown.delay(index * 50).duration(250)}
             style={[styles.countryRow, { borderBottomColor: tc.border }]}
           >
-            <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
+            <Icon name="map-pin" size="sm" color={tc.text.tertiary} />
             <Text style={styles.countryName}>{country.name}</Text>
             <Text style={styles.countryPercent}>{country.percentage}%</Text>
           </Animated.View>
@@ -397,7 +397,7 @@ function CreatorDashboardContent() {
         </View>
 
         {/* Breakdown */}
-        <Text style={styles.subsectionTitle}>
+        <Text style={[styles.subsectionTitle, { color: tc.text.primary }]}>
           {t('creatorDashboard.breakdown', 'Revenue Breakdown')}
         </Text>
         <View style={styles.revenueBreakdown}>
@@ -420,7 +420,7 @@ function CreatorDashboardContent() {
         {/* Monthly History */}
         {revenueData.history.length > 0 ? (
           <>
-            <Text style={styles.subsectionTitle}>
+            <Text style={[styles.subsectionTitle, { color: tc.text.primary }]}>
               {t('creatorDashboard.monthlyHistory', 'Monthly History')}
             </Text>
             {revenueData.history.map((entry, index) => (

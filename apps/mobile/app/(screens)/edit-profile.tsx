@@ -268,8 +268,8 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="camera" size="lg" color={colors.gold} />
                   </LinearGradient>
-                  <Text style={styles.coverPlaceholderText}>{t('editProfile.addCoverPhoto')}</Text>
-                  <Text style={styles.coverPlaceholderSubtext}>{t('editProfile.tapToUpload')}</Text>
+                  <Text style={[styles.coverPlaceholderText, { color: tc.text.primary }]}>{t('editProfile.addCoverPhoto')}</Text>
+                  <Text style={[styles.coverPlaceholderSubtext, { color: tc.text.tertiary }]}>{t('editProfile.tapToUpload')}</Text>
                 </View>
               </LinearGradient>
             )}
@@ -304,14 +304,14 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="user" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.label}>{t('editProfile.displayName')}</Text>
+                  <Text style={[styles.label, { color: tc.text.secondary }]}>{t('editProfile.displayName')}</Text>
                 </View>
                 <TextInput
                   style={[styles.input, focusedField === 'displayName' && styles.inputFocused]}
                   value={displayName}
                   onChangeText={setDisplayName}
                   placeholder={t('editProfile.namePlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   maxLength={50}
                   onFocus={() => setFocusedField('displayName')}
                   onBlur={() => setFocusedField(null)}
@@ -330,11 +330,11 @@ export default function EditProfileScreen() {
                     colors={['rgba(110,119,129,0.3)', 'rgba(110,119,129,0.1)']}
                     style={styles.fieldIconBg}
                   >
-                    <Icon name="at-sign" size="xs" color={colors.text.tertiary} />
+                    <Icon name="at-sign" size="xs" color={tc.text.tertiary} />
                   </LinearGradient>
-                  <Text style={styles.label}>{t('editProfile.username')}</Text>
+                  <Text style={[styles.label, { color: tc.text.secondary }]}>{t('editProfile.username')}</Text>
                 </View>
-                <Text style={styles.usernameText}>@{me?.username}</Text>
+                <Text style={[styles.usernameText, { color: tc.text.secondary }]}>@{me?.username}</Text>
               </View>
             </LinearGradient>
 
@@ -351,14 +351,14 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="edit" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.label}>{t('editProfile.bio')}</Text>
+                  <Text style={[styles.label, { color: tc.text.secondary }]}>{t('editProfile.bio')}</Text>
                 </View>
                 <TextInput
                   style={[styles.input, styles.multiline, focusedField === 'bio' && styles.inputFocused]}
                   value={bio}
                   onChangeText={setBio}
                   placeholder={t('editProfile.bioPlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   multiline
                   maxLength={150}
                   textAlignVertical="top"
@@ -382,14 +382,14 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="globe" size="xs" color={colors.gold} />
                   </LinearGradient>
-                  <Text style={styles.label}>{t('editProfile.website')}</Text>
+                  <Text style={[styles.label, { color: tc.text.secondary }]}>{t('editProfile.website')}</Text>
                 </View>
                 <TextInput
                   style={[styles.input, focusedField === 'website' && styles.inputFocused]}
                   value={website}
                   onChangeText={setWebsite}
                   placeholder="https://yoursite.com"
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   autoCapitalize="none"
                   keyboardType="url"
                   maxLength={100}
@@ -412,16 +412,16 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="map-pin" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.label}>{t('editProfile.location')}</Text>
+                  <Text style={[styles.label, { color: tc.text.secondary }]}>{t('editProfile.location')}</Text>
                 </View>
                 <View style={styles.iconInputRow}>
-                  <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
+                  <Icon name="map-pin" size="sm" color={tc.text.tertiary} />
                   <TextInput
                     style={[styles.input, styles.iconInput, focusedField === 'location' && styles.inputFocused]}
                     value={location}
                     onChangeText={setLocation}
                     placeholder={t('editProfile.locationPlaceholder')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     maxLength={100}
                     onFocus={() => setFocusedField('location')}
                     onBlur={() => setFocusedField(null)}
@@ -446,9 +446,9 @@ export default function EditProfileScreen() {
                     >
                       <Icon name="lock" size="xs" color={colors.emerald} />
                     </LinearGradient>
-                    <Text style={styles.label}>{t('editProfile.privateAccount')}</Text>
+                    <Text style={[styles.label, { color: tc.text.secondary }]}>{t('editProfile.privateAccount')}</Text>
                   </View>
-                  <Text style={styles.fieldHint}>{t('editProfile.privateAccountHint')}</Text>
+                  <Text style={[styles.fieldHint, { color: tc.text.tertiary }]}>{t('editProfile.privateAccountHint')}</Text>
                 </View>
                 <Pressable
                   accessibilityRole="button"
@@ -479,7 +479,7 @@ export default function EditProfileScreen() {
                     >
                       <Icon name="link" size="xs" color={colors.gold} />
                     </LinearGradient>
-                    <Text style={styles.label}>{t('editProfile.profileLinks')}</Text>
+                    <Text style={[styles.label, { color: tc.text.secondary }]}>{t('editProfile.profileLinks')}</Text>
                   </View>
                   <View style={styles.linksCountBadge}>
                     <Text style={styles.linksCount}>{links.length}/5</Text>
@@ -505,8 +505,8 @@ export default function EditProfileScreen() {
                           <Icon name="link" size="sm" color={colors.emerald} />
                         </LinearGradient>
                         <View style={styles.linkInfo}>
-                          <Text style={styles.linkTitle} numberOfLines={1}>{link.title}</Text>
-                          <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
+                          <Text style={[styles.linkTitle, { color: tc.text.primary }]} numberOfLines={1}>{link.title}</Text>
+                          <Text style={[styles.linkUrl, { color: tc.text.secondary }]} numberOfLines={1}>{link.url}</Text>
                         </View>
                         <Pressable
                           accessibilityRole="button"
@@ -515,7 +515,7 @@ export default function EditProfileScreen() {
                           disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
                           style={styles.linkDeleteBtn}
                         >
-                          <Icon name="x" size="sm" color={colors.text.tertiary} />
+                          <Icon name="x" size="sm" color={tc.text.tertiary} />
                         </Pressable>
                       </LinearGradient>
                     </Animated.View>
@@ -530,7 +530,7 @@ export default function EditProfileScreen() {
                     <TextInput
                       style={styles.addLinkInput}
                       placeholder={t('editProfile.linkTitlePlaceholder')}
-                      placeholderTextColor={colors.text.tertiary}
+                      placeholderTextColor={tc.text.tertiary}
                       value={newLinkTitle}
                       onChangeText={setNewLinkTitle}
                       maxLength={40}
@@ -538,7 +538,7 @@ export default function EditProfileScreen() {
                     <TextInput
                       style={[styles.addLinkInput, styles.addLinkInputBottom]}
                       placeholder={t('editProfile.urlPlaceholder')}
-                      placeholderTextColor={colors.text.tertiary}
+                      placeholderTextColor={tc.text.tertiary}
                       value={newLinkUrl}
                       onChangeText={setNewLinkUrl}
                       autoCapitalize="none"
@@ -547,7 +547,7 @@ export default function EditProfileScreen() {
                     />
                     <View style={styles.addLinkActions}>
                       <Pressable onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
-                        <Text style={styles.addLinkCancel}>{t('common.cancel')}</Text>
+                        <Text style={[styles.addLinkCancel, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
                       </Pressable>
                       <Pressable
                         accessibilityRole="button"

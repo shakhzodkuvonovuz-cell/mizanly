@@ -20,6 +20,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { User, PaginatedResponse } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -31,6 +32,7 @@ function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
   index?: number;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   return (
     <Animated.View entering={FadeInUp.delay(index * 20).duration(300)}>
@@ -42,10 +44,10 @@ function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
           <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showRing={user.isFollowing} ringColor={colors.emerald} />
           <View style={styles.info}>
             <View style={styles.nameRow}>
-              <Text style={[styles.name, user.isFollowing && styles.nameFollowing]}>{user.displayName}</Text>
+              <Text style={[styles.name, { color: tc.text.primary }, user.isFollowing && styles.nameFollowing]}>{user.displayName}</Text>
               {user.isVerified && <VerifiedBadge size={13} />}
             </View>
-            <Text style={styles.handle}>@{user.username}</Text>
+            <Text style={[styles.handle, { color: tc.text.secondary }]}>@{user.username}</Text>
           </View>
           {!isMe && (
             <GradientButton
@@ -67,6 +69,7 @@ export default function FollowersScreen() {
   const { user: clerkUser } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const followersQuery = useInfiniteQuery({
     queryKey: ['followers', userId],
@@ -100,7 +103,7 @@ export default function FollowersScreen() {
 
   if (followersQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('profile.followers')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -118,7 +121,7 @@ export default function FollowersScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('profile.followers')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

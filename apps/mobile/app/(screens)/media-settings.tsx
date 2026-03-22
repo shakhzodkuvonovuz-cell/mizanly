@@ -92,7 +92,7 @@ function SettingRow({
       <Text
         style={[
           styles.settingLabel,
-          { textAlign: rtlTextAlign(isRTL) },
+          { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) },
           disabled && styles.settingLabelDisabled,
         ]}
       >
@@ -113,7 +113,7 @@ function SettingRow({
 function SectionHeader({ title, index, isRTL }: { title: string; index: number; isRTL: boolean }) {
   return (
     <Animated.View entering={FadeInDown.delay(index * 80).duration(300)}>
-      <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>{title}</Text>
+      <Text style={[styles.sectionTitle, { color: tc.text.secondary, textAlign: rtlTextAlign(isRTL) }]}>{title}</Text>
     </Animated.View>
   );
 }
@@ -249,10 +249,10 @@ export default function MediaSettingsScreen() {
                   style={[styles.dataSaverGradient, { flexDirection: rtlFlexRow(isRTL) }]}
                 >
                   <View style={styles.dataSaverInfo}>
-                    <Text style={[styles.dataSaverTitle, { textAlign: rtlTextAlign(isRTL) }]}>
+                    <Text style={[styles.dataSaverTitle, { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) }]}>
                       {t('mediaSettings.dataSaver')}
                     </Text>
-                    <Text style={[styles.dataSaverHint, { textAlign: rtlTextAlign(isRTL) }]}>
+                    <Text style={[styles.dataSaverHint, { color: tc.text.secondary, textAlign: rtlTextAlign(isRTL) }]}>
                       {t('mediaSettings.dataSaverHint')}
                     </Text>
                   </View>
@@ -380,14 +380,14 @@ export default function MediaSettingsScreen() {
                   }}
                   isRTL={isRTL}
                 />
-                <Text style={[styles.ambientHint, { textAlign: rtlTextAlign(isRTL) }]}>
+                <Text style={[styles.ambientHint, { color: tc.text.tertiary, textAlign: rtlTextAlign(isRTL) }]}>
                   {t('ambient.hint')}
                 </Text>
               </Animated.View>
 
               {/* Footer */}
               <Animated.View entering={FadeInDown.delay(320).duration(300)}>
-                <Text style={[styles.footerText, { textAlign: rtlTextAlign(isRTL) }]}>
+                <Text style={[styles.footerText, { color: tc.text.tertiary, textAlign: rtlTextAlign(isRTL) }]}>
                   {t('mediaSettings.footerNote')}
                 </Text>
               </Animated.View>

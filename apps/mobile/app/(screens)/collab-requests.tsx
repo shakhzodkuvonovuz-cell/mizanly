@@ -133,8 +133,8 @@ export default function CollabRequestsScreen() {
           <Avatar uri={post.user.avatarUrl} name={post.user.displayName} size="md" />
           <View style={styles.info}>
             <View style={styles.userRow}>
-              <Text style={styles.name}>{post.user.displayName}</Text>
-              <Text style={styles.username}>@{post.user.username}</Text>
+              <Text style={[styles.name, { color: tc.text.primary }]}>{post.user.displayName}</Text>
+              <Text style={[styles.username, { color: tc.text.secondary }]}>@{post.user.username}</Text>
             </View>
             <View style={styles.postPreview}>
               {thumbnail ? (
@@ -144,10 +144,10 @@ export default function CollabRequestsScreen() {
                   colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
                   style={[styles.thumbnail, styles.noThumbnail]}
                 >
-                  <Icon name="paperclip" size="sm" color={colors.text.secondary} />
+                  <Icon name="paperclip" size="sm" color={tc.text.secondary} />
                 </LinearGradient>
               )}
-              <Text style={styles.postContent} numberOfLines={2}>
+              <Text style={[styles.postContent, { color: tc.text.secondary }]} numberOfLines={2}>
                 {post.content || t('collabRequests.noCaption')}
               </Text>
             </View>
@@ -200,18 +200,18 @@ export default function CollabRequestsScreen() {
               colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
               style={[styles.thumbnailLarge, styles.noThumbnail]}
             >
-              <Icon name="paperclip" size="md" color={colors.text.secondary} />
+              <Icon name="paperclip" size="md" color={tc.text.secondary} />
             </LinearGradient>
           )}
           <View style={styles.info}>
-            <Text style={styles.postContent} numberOfLines={3}>
+            <Text style={[styles.postContent, { color: tc.text.secondary }]} numberOfLines={3}>
               {post.content || t('collabRequests.noCaption')}
             </Text>
             <View style={styles.postMeta}>
-              <Icon name="user" size="xs" color={colors.text.secondary} />
-              <Text style={styles.metaText}>{t('collabRequests.by')} @{post.user.username}</Text>
-              <Text style={styles.metaDot}>•</Text>
-              <Text style={styles.metaText}>{new Date(post.createdAt).toLocaleDateString()}</Text>
+              <Icon name="user" size="xs" color={tc.text.secondary} />
+              <Text style={[styles.metaText, { color: tc.text.tertiary }]}>{t('collabRequests.by')} @{post.user.username}</Text>
+              <Text style={[styles.metaDot, { color: tc.text.tertiary }]}>•</Text>
+              <Text style={[styles.metaText, { color: tc.text.tertiary }]}>{new Date(post.createdAt).toLocaleDateString()}</Text>
             </View>
             <Pressable
               accessibilityRole="button"

@@ -181,10 +181,10 @@ export default function BiometricLockScreen() {
             <View style={styles.infoIconWrap}>
               <Icon name={biometricIcon} size="xl" color={colors.emerald} />
             </View>
-            <Text style={[styles.infoTitle, { textAlign: rtlTextAlign(isRTL) }]}>
+            <Text style={[styles.infoTitle, { textAlign: rtlTextAlign(isRTL), color: tc.text.primary }]}>
               {biometricLabel}
             </Text>
-            <Text style={[styles.infoSubtitle, { textAlign: rtlTextAlign(isRTL) }]}>
+            <Text style={[styles.infoSubtitle, { textAlign: rtlTextAlign(isRTL), color: tc.text.secondary }]}>
               {t('biometric.enable')}
             </Text>
           </LinearGradient>
@@ -204,11 +204,12 @@ export default function BiometricLockScreen() {
                 >
                   <Icon name={biometricIcon} size="sm" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.toggleLabel}>{t('biometric.enable')}</Text>
+                <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>{t('biometric.enable')}</Text>
               </View>
               <View
                 style={[
                   styles.switchTrack,
+                  { backgroundColor: tc.border },
                   biometricLockEnabled && styles.switchTrackActive,
                 ]}
               >

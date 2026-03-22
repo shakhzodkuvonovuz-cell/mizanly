@@ -102,7 +102,7 @@ export default function BlockedKeywordsScreen() {
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <Text style={styles.hint}>
+          <Text style={[styles.hint, { color: tc.text.secondary }]}>
             {t('screens.blockedKeywords.hint')}
           </Text>
 
@@ -118,9 +118,9 @@ export default function BlockedKeywordsScreen() {
               >
                 <Icon name="plus" size="sm" color={colors.emerald} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: tc.text.primary }]}
                   placeholder={t('screens.blockedKeywords.placeholder')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   value={newWord}
                   onChangeText={setNewWord}
                   onSubmitEditing={handleAdd}
@@ -174,7 +174,7 @@ export default function BlockedKeywordsScreen() {
                     >
                       <Icon name="slash" size="xs" color={colors.error} />
                     </LinearGradient>
-                    <Text style={styles.keywordText}>{item.word}</Text>
+                    <Text style={[styles.keywordText, { color: tc.text.primary }]}>{item.word}</Text>
                     <Pressable
                       onPress={() => handleDelete(item.id, item.word)}
                       hitSlop={8}

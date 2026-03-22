@@ -49,8 +49,8 @@ function CustomToggle({
   return (
     <View style={styles.toggleRow}>
       <View style={styles.toggleContent}>
-        <Text style={styles.toggleLabel}>{label}</Text>
-        {description && <Text style={styles.toggleDescription}>{description}</Text>}
+        <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>{label}</Text>
+        {description && <Text style={[styles.toggleDescription, { color: tc.text.tertiary }]}>{description}</Text>}
       </View>
       <Pressable
         accessibilityRole="button"
@@ -172,14 +172,14 @@ export default function EnableTipsScreen() {
                 <Icon name="gift" size="lg" color={colors.gold} />
               </LinearGradient>
 
-              <Text style={styles.heroTitle}>{t('screens.enableTips.heroTitle')}</Text>
-              <Text style={styles.heroSubtitle}>
+              <Text style={[styles.heroTitle, { color: tc.text.primary }]}>{t('screens.enableTips.heroTitle')}</Text>
+              <Text style={[styles.heroSubtitle, { color: tc.text.secondary }]}>
                 {t('screens.enableTips.heroSubtitle')}
               </Text>
 
               {/* Main Toggle */}
               <View style={[styles.mainToggleRow, { borderTopColor: tc.border }]}>
-                <Text style={styles.mainToggleLabel}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
+                <Text style={[styles.mainToggleLabel, { color: tc.text.primary }]}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
@@ -220,7 +220,7 @@ export default function EnableTipsScreen() {
                     >
                       <Icon name="circle" size="sm" color={colors.emerald} />
                     </LinearGradient>
-                    <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.minimumTipAmount')}</Text>
+                    <Text style={[styles.configTitle, { color: tc.text.primary }]}>{t('screens.enableTips.configTitle.minimumTipAmount')}</Text>
                   </View>
 
                   {/* Preset Amounts */}
@@ -271,7 +271,7 @@ export default function EnableTipsScreen() {
                         if (text) setMinTipAmount(parseInt(text) || 0);
                       }}
                       placeholder={t('screens.enableTips.customAmountPlaceholder')}
-                      placeholderTextColor={colors.text.tertiary}
+                      placeholderTextColor={tc.text.tertiary}
                       keyboardType="number-pad"
                     />
                   </LinearGradient>
@@ -291,7 +291,7 @@ export default function EnableTipsScreen() {
                     >
                       <Icon name="eye" size="sm" color={colors.emerald} />
                     </LinearGradient>
-                    <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.displaySettings')}</Text>
+                    <Text style={[styles.configTitle, { color: tc.text.primary }]}>{t('screens.enableTips.configTitle.displaySettings')}</Text>
                   </View>
 
                   <CustomToggle
@@ -330,7 +330,7 @@ export default function EnableTipsScreen() {
                     >
                       <Icon name="mail" size="sm" color={colors.emerald} />
                     </LinearGradient>
-                    <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.thankYouMessage')}</Text>
+                    <Text style={[styles.configTitle, { color: tc.text.primary }]}>{t('screens.enableTips.configTitle.thankYouMessage')}</Text>
                   </View>
 
                   <LinearGradient
@@ -338,11 +338,11 @@ export default function EnableTipsScreen() {
                     style={styles.messageInputContainer}
                   >
                     <TextInput
-                      style={styles.messageInput}
+                      style={[styles.messageInput, { color: tc.text.primary }]}
                       value={thankYouMessage}
                       onChangeText={setThankYouMessage}
                       placeholder={t('screens.enableTips.thankYouPlaceholder')}
-                      placeholderTextColor={colors.text.tertiary}
+                      placeholderTextColor={tc.text.tertiary}
                       multiline
                       numberOfLines={3}
                       maxLength={MAX_MESSAGE_LENGTH}
@@ -368,7 +368,7 @@ export default function EnableTipsScreen() {
                     >
                       <Icon name="link" size="sm" color={colors.emerald} />
                     </LinearGradient>
-                    <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.paymentMethod')}</Text>
+                    <Text style={[styles.configTitle, { color: tc.text.primary }]}>{t('screens.enableTips.configTitle.paymentMethod')}</Text>
                   </View>
 
                   <Pressable
@@ -418,7 +418,7 @@ export default function EnableTipsScreen() {
                   colors={[colors.emerald, colors.emeraldDark]}
                   style={styles.saveButton}
                 >
-                  <Text style={styles.saveButtonText}>{t('screens.enableTips.saveSettings')}</Text>
+                  <Text style={[styles.saveButtonText, { color: tc.text.primary }]}>{t('screens.enableTips.saveSettings')}</Text>
                 </LinearGradient>
               </Pressable>
             </Animated.View>

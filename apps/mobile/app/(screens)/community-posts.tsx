@@ -84,10 +84,10 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
             showRing={false}
           />
           <View style={styles.postUserInfo}>
-            <Text style={styles.postUserName} numberOfLines={1}>
+            <Text style={[styles.postUserName, { color: tc.text.primary }]} numberOfLines={1}>
               {post.user.displayName}
             </Text>
-            <Text style={styles.postTime}>
+            <Text style={[styles.postTime, { color: tc.text.tertiary }]}>
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
             </Text>
           </View>
@@ -126,11 +126,11 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
           </Text>
         </Pressable>
         <Pressable style={styles.postAction} accessibilityRole="button" accessibilityLabel="Comments">
-          <Icon name="message-circle" size="sm" color={colors.text.secondary} />
-          <Text style={styles.postActionCount}>{formatCount(post.commentsCount)}</Text>
+          <Icon name="message-circle" size="sm" color={tc.text.secondary} />
+          <Text style={[styles.postActionCount, { color: tc.text.secondary }]}>{formatCount(post.commentsCount)}</Text>
         </Pressable>
         <Pressable style={styles.postAction} accessibilityRole="button" accessibilityLabel="Share">
-          <Icon name="share" size="sm" color={colors.text.secondary} />
+          <Icon name="share" size="sm" color={tc.text.secondary} />
         </Pressable>
       </View>
         </LinearGradient>
@@ -356,7 +356,7 @@ export default function CommunityPostsScreen() {
                           accessibilityLabel={t('communityPosts.removeSelectedMedia')}
                           accessibilityRole="button"
                         >
-                          <Icon name="x" size="xs" color={colors.text.primary} />
+                          <Icon name="x" size="xs" color={tc.text.primary} />
                         </Pressable>
                         {media.type === 'video' && (
                           <View style={styles.videoBadge}>
@@ -372,7 +372,7 @@ export default function CommunityPostsScreen() {
                     ref={composeInputRef}
                     style={[styles.composeInput, { backgroundColor: tc.bgElevated }]}
                     placeholder={t('communityPosts.placeholder')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     value={composeText}
                     onChangeText={setComposeText}
                     multiline
@@ -385,7 +385,7 @@ export default function CommunityPostsScreen() {
                     disabled={!composeText.trim() && selectedMediaList.length === 0 || createMutation.isPending}
                   >
                     {createMutation.isPending ? (
-                      <Icon name="loader" size="sm" color={colors.text.secondary} />
+                      <Icon name="loader" size="sm" color={tc.text.secondary} />
                     ) : (
                       <LinearGradient
                         colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
@@ -432,7 +432,7 @@ export default function CommunityPostsScreen() {
           >
             <BottomSheetItem
               label={t('communityPosts.addImage')}
-              icon={<Icon name="image" size="md" color={colors.text.primary} />}
+              icon={<Icon name="image" size="md" color={tc.text.primary} />}
               onPress={async () => {
                 const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsMultipleSelection: true });
                 if (!result.canceled && result.assets) {
@@ -444,7 +444,7 @@ export default function CommunityPostsScreen() {
             />
             <BottomSheetItem
               label={t('communityPosts.addVideo')}
-              icon={<Icon name="video" size="md" color={colors.text.primary} />}
+              icon={<Icon name="video" size="md" color={tc.text.primary} />}
               onPress={async () => {
                 const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8 });
                 if (!result.canceled && result.assets[0]) {
@@ -455,7 +455,7 @@ export default function CommunityPostsScreen() {
             />
             <BottomSheetItem
               label={t('communityPosts.addPoll')}
-              icon={<Icon name="bar-chart-2" size="md" color={colors.text.primary} />}
+              icon={<Icon name="bar-chart-2" size="md" color={tc.text.primary} />}
               onPress={() => Alert.alert(t('communityPosts.polls'), t('communityPosts.pollsComing'))}
             />
           </BottomSheet>
@@ -475,7 +475,7 @@ export default function CommunityPostsScreen() {
             {selectedPost?.content && (
               <BottomSheetItem
                 label={t('communityPosts.copyText')}
-                icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+                icon={<Icon name="link" size="sm" color={tc.text.primary} />}
                 onPress={() => handleCopyText(selectedPost.content!)}
               />
             )}

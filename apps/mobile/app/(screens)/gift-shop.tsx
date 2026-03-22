@@ -160,18 +160,18 @@ function GiftShopContent() {
       <Animated.View entering={FadeIn.duration(300)} style={[styles.balanceBar, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
         <View style={styles.balanceItem}>
           <Icon name="bookmark" size="sm" color={colors.gold} />
-          <Text style={styles.balanceCount}>
+          <Text style={[styles.balanceCount, { color: tc.text.primary }]}>
             {formatCount(balance?.coins ?? 0)}
           </Text>
-          <Text style={styles.balanceLabel}>{t('giftShop.coins', 'Coins')}</Text>
+          <Text style={[styles.balanceLabel, { color: tc.text.secondary }]}>{t('giftShop.coins', 'Coins')}</Text>
         </View>
         <View style={[styles.balanceDivider, { backgroundColor: tc.border }]} />
         <View style={styles.balanceItem}>
           <Icon name="trending-up" size="sm" color={colors.info} />
-          <Text style={styles.balanceCount}>
+          <Text style={[styles.balanceCount, { color: tc.text.primary }]}>
             {formatCount(balance?.diamonds ?? 0)}
           </Text>
-          <Text style={styles.balanceLabel}>{t('giftShop.diamonds', 'Diamonds')}</Text>
+          <Text style={[styles.balanceLabel, { color: tc.text.secondary }]}>{t('giftShop.diamonds', 'Diamonds')}</Text>
         </View>
       </Animated.View>
     );
@@ -190,7 +190,7 @@ function GiftShopContent() {
         <Text style={styles.packageCoins}>
           {item.coins.toLocaleString()}
         </Text>
-        <Text style={styles.packagePrice}>{item.price}</Text>
+        <Text style={[styles.packagePrice, { color: tc.text.secondary }]}>{item.price}</Text>
         <GradientButton
           label={t('giftShop.buy', 'Buy')}
           onPress={() => handleBuyCoins(item.coins)}
@@ -216,7 +216,7 @@ function GiftShopContent() {
         <View style={styles.giftIconWrap}>
           <Icon name={getGiftIcon(item.type)} size="xl" color={colors.gold} />
         </View>
-        <Text style={styles.giftName}>{item.name}</Text>
+        <Text style={[styles.giftName, { color: tc.text.primary }]}>{item.name}</Text>
         <View style={styles.giftCostRow}>
           <Icon name="bookmark" size="xs" color={colors.gold} />
           <Text style={styles.giftCost}>{item.coins}</Text>
@@ -234,8 +234,8 @@ function GiftShopContent() {
         <Icon name={getGiftIcon(item.giftType)} size="md" color={colors.gold} />
       </View>
       <View style={styles.historyInfo}>
-        <Text style={styles.historyType}>{item.giftType}</Text>
-        <Text style={styles.historyMeta}>
+        <Text style={[styles.historyType, { color: tc.text.primary }]}>{item.giftType}</Text>
+        <Text style={[styles.historyMeta, { color: tc.text.secondary }]}>
           {item.senderName
             ? t('giftShop.from', 'From {{name}}', { name: item.senderName })
             : t('giftShop.sent', 'Sent')}
@@ -245,7 +245,7 @@ function GiftShopContent() {
         <Text style={styles.historyCoins}>
           {item.coins} {t('giftShop.coins', 'Coins')}
         </Text>
-        <Text style={styles.historyTime}>
+        <Text style={[styles.historyTime, { color: tc.text.tertiary }]}>
           {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
         </Text>
       </View>
@@ -267,7 +267,7 @@ function GiftShopContent() {
       {renderBalanceBar()}
 
       {/* Buy Coins Section */}
-      <Text style={styles.sectionTitle}>{t('giftShop.buyCoins', 'Buy Coins')}</Text>
+      <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('giftShop.buyCoins', 'Buy Coins')}</Text>
       <FlatList
         data={COIN_PACKAGES}
         renderItem={renderCoinPackage}
@@ -279,7 +279,7 @@ function GiftShopContent() {
       />
 
       {/* Gift Catalog */}
-      <Text style={styles.sectionTitle}>{t('giftShop.giftCatalog', 'Gift Catalog')}</Text>
+      <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('giftShop.giftCatalog', 'Gift Catalog')}</Text>
       {catalogLoading ? (
         <View style={styles.catalogGrid}>
           {Array.from({ length: 8 }).map((_, i) => (
@@ -300,7 +300,7 @@ function GiftShopContent() {
       )}
 
       {/* Cash Out */}
-      <Text style={styles.sectionTitle}>{t('giftShop.cashOut', 'Cash Out')}</Text>
+      <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('giftShop.cashOut', 'Cash Out')}</Text>
       <Pressable
         style={[styles.cashoutCard, { borderColor: tc.border }]}
         onPress={() => {
@@ -316,16 +316,16 @@ function GiftShopContent() {
         >
           <Icon name="trending-up" size="lg" color={colors.info} />
           <View style={styles.cashoutText}>
-            <Text style={styles.cashoutTitle}>
+            <Text style={[styles.cashoutTitle, { color: tc.text.primary }]}>
               {t('giftShop.convertDiamonds', 'Convert Diamonds to Cash')}
             </Text>
-            <Text style={styles.cashoutSub}>
+            <Text style={[styles.cashoutSub, { color: tc.text.secondary }]}>
               {t('giftShop.diamondBalance', '{{count}} diamonds available', {
                 count: balance?.diamonds ?? 0,
               })}
             </Text>
           </View>
-          <Icon name="chevron-right" size="sm" color={colors.text.secondary} />
+          <Icon name="chevron-right" size="sm" color={tc.text.secondary} />
         </LinearGradient>
       </Pressable>
     </ScrollView>
@@ -405,13 +405,13 @@ function GiftShopContent() {
         visible={recipientSheet}
         onClose={() => setRecipientSheet(false)}
       >
-        <Text style={styles.sheetTitle}>
+        <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>
           {t('giftShop.selectRecipient', 'Select Recipient')}
         </Text>
         {selectedGift && (
           <View style={[styles.sheetGiftInfo, { borderBottomColor: tc.border }]}>
             <Icon name={getGiftIcon(selectedGift.type)} size="lg" color={colors.gold} />
-            <Text style={styles.sheetGiftName}>{selectedGift.name}</Text>
+            <Text style={[styles.sheetGiftName, { color: tc.text.primary }]}>{selectedGift.name}</Text>
             <Text style={styles.sheetGiftCost}>
               {selectedGift.coins} {t('giftShop.coins', 'Coins')}
             </Text>
@@ -419,7 +419,7 @@ function GiftShopContent() {
         )}
         <BottomSheetItem
           label={t('giftShop.searchUsers', 'Search Users')}
-          icon={<Icon name="search" size="md" color={colors.text.primary} />}
+          icon={<Icon name="search" size="md" color={tc.text.primary} />}
           onPress={() => {
             setRecipientSheet(false);
             router.push('/(screens)/search');
@@ -427,7 +427,7 @@ function GiftShopContent() {
         />
         <BottomSheetItem
           label={t('common.cancel', 'Cancel')}
-          icon={<Icon name="x" size="md" color={colors.text.secondary} />}
+          icon={<Icon name="x" size="md" color={tc.text.secondary} />}
           onPress={() => setRecipientSheet(false)}
         />
       </BottomSheet>
@@ -437,7 +437,7 @@ function GiftShopContent() {
         visible={cashoutSheet}
         onClose={() => setCashoutSheet(false)}
       >
-        <Text style={styles.sheetTitle}>
+        <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>
           {t('giftShop.cashOutTitle', 'Cash Out Diamonds')}
         </Text>
         <View style={styles.sheetCashoutInfo}>
@@ -445,7 +445,7 @@ function GiftShopContent() {
           <Text style={styles.sheetDiamondCount}>
             {balance?.diamonds?.toLocaleString() ?? '0'}
           </Text>
-          <Text style={styles.sheetDiamondLabel}>
+          <Text style={[styles.sheetDiamondLabel, { color: tc.text.secondary }]}>
             {t('giftShop.diamondsAvailable', 'Diamonds Available')}
           </Text>
         </View>
@@ -460,7 +460,7 @@ function GiftShopContent() {
         </View>
         <BottomSheetItem
           label={t('common.cancel', 'Cancel')}
-          icon={<Icon name="x" size="md" color={colors.text.secondary} />}
+          icon={<Icon name="x" size="md" color={tc.text.secondary} />}
           onPress={() => setCashoutSheet(false)}
         />
       </BottomSheet>

@@ -119,7 +119,7 @@ function DisappearingSettingsContent() {
               </View>
             </View>
             <View style={[styles.lockBadge, { borderColor: tc.bg }]}>
-              <Icon name="lock" size="xs" color={colors.text.primary} />
+              <Icon name="lock" size="xs" color={tc.text.primary} />
             </View>
           </Animated.View>
 
@@ -128,10 +128,10 @@ function DisappearingSettingsContent() {
             entering={FadeInUp.delay(200).duration(400)}
             style={styles.descriptionContainer}
           >
-            <Text style={styles.descriptionTitle}>
+            <Text style={[styles.descriptionTitle, { color: tc.text.primary }]}>
               {t('disappearing.title')}
             </Text>
-            <Text style={styles.descriptionText}>
+            <Text style={[styles.descriptionText, { color: tc.text.secondary }]}>
               {t('disappearing.description')}
             </Text>
           </Animated.View>
@@ -171,12 +171,13 @@ function DisappearingSettingsContent() {
                     <Text
                       style={[
                         styles.optionLabel,
+                        { color: tc.text.primary },
                         isSelected && styles.optionLabelSelected,
                       ]}
                     >
                       {t(option.labelKey)}
                     </Text>
-                    <Text style={styles.optionDescription}>
+                    <Text style={[styles.optionDescription, { color: tc.text.tertiary }]}>
                       {t(option.descriptionKey)}
                     </Text>
                   </View>
@@ -195,8 +196,8 @@ function DisappearingSettingsContent() {
             entering={FadeInUp.delay(400).duration(400)}
             style={styles.footerContainer}
           >
-            <Icon name="lock" size="xs" color={colors.text.tertiary} />
-            <Text style={styles.footerText}>
+            <Icon name="lock" size="xs" color={tc.text.tertiary} />
+            <Text style={[styles.footerText, { color: tc.text.tertiary }]}>
               {t('disappearing.footerInfo')}
             </Text>
           </Animated.View>

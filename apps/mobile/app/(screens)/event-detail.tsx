@@ -238,7 +238,7 @@ export default function EventDetailScreen() {
         <Animated.View entering={FadeInUp.duration(400)}>
           <View style={styles.coverContainer}>
             <View style={[styles.coverPlaceholder, { backgroundColor: tc.bgCard }]}>
-              <Icon name="image" size={48} color={colors.text.tertiary} />
+              <Icon name="image" size={48} color={tc.text.tertiary} />
             </View>
             <LinearGradient
               colors={['transparent', tc.bg]}
@@ -249,7 +249,7 @@ export default function EventDetailScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.badgeGradient}
               >
-                <Text style={styles.badgeText}>{eventTypeBadge}</Text>
+                <Text style={[styles.badgeText, { color: tc.text.primary }]}>{eventTypeBadge}</Text>
               </LinearGradient>
             </View>
           </View>
@@ -257,7 +257,7 @@ export default function EventDetailScreen() {
 
         {/* Event Info */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.infoContainer}>
-          <Text style={styles.eventTitle}>{event.title}</Text>
+          <Text style={[styles.eventTitle, { color: tc.text.primary }]}>{event.title}</Text>
 
           {/* Host Row */}
           <View style={styles.hostRow}>
@@ -284,7 +284,7 @@ export default function EventDetailScreen() {
               <Icon name="calendar" size="sm" color={colors.gold} />
             </LinearGradient>
             <View style={styles.infoTextContainer}>
-              <Text style={styles.infoMain}>{formatEventDate(event.startDate)}</Text>
+              <Text style={[styles.infoMain, { color: tc.text.primary }]}>{formatEventDate(event.startDate)}</Text>
               <Text style={styles.infoSub}>{formatEventTime(event.startDate, event.endDate)}</Text>
             </View>
             <Pressable
@@ -316,7 +316,7 @@ export default function EventDetailScreen() {
                 <Icon name="map-pin" size="sm" color={colors.emerald} />
               </LinearGradient>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoMain}>{event.location}</Text>
+                <Text style={[styles.infoMain, { color: tc.text.primary }]}>{event.location}</Text>
               </View>
               <Pressable
                 style={[styles.directionsButton, { backgroundColor: tc.surface }]}
@@ -327,7 +327,7 @@ export default function EventDetailScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('events.directions')}
               >
-                <Icon name="map-pin" size="xs" color={colors.text.primary} />
+                <Icon name="map-pin" size="xs" color={tc.text.primary} />
               </Pressable>
             </LinearGradient>
           </Animated.View>
@@ -356,7 +356,7 @@ export default function EventDetailScreen() {
             colors={colors.gradient.cardDark}
             style={[styles.rsvpCard, { borderColor: colors.gold }]}
           >
-            <Text style={styles.rsvpLabel}>{t('events.areYouGoing')}</Text>
+            <Text style={[styles.rsvpLabel, { color: tc.text.primary }]}>{t('events.areYouGoing')}</Text>
             <View style={styles.rsvpButtons}>
               {(['going', 'maybe', 'not-going'] as const).map((status) => {
                 const styles_result = getRsvpButtonStyle(status);
@@ -377,7 +377,7 @@ export default function EventDetailScreen() {
                           colors={[colors.emerald, colors.emeraldDark]}
                           style={styles.rsvpGradient}
                         >
-                          <Icon name="check" size="xs" color={colors.text.primary} style={styles.rsvpCheck} />
+                          <Icon name="check" size="xs" color={tc.text.primary} style={styles.rsvpCheck} />
                           <Text style={styles.rsvpButtonTextActive}>{label}</Text>
                         </LinearGradient>
                       ) : isSelected && status === 'maybe' ? (
@@ -385,12 +385,12 @@ export default function EventDetailScreen() {
                           colors={[colors.gold, colors.goldLight]}
                           style={styles.rsvpGradient}
                         >
-                          <Icon name="check" size="xs" color={colors.text.primary} style={styles.rsvpCheck} />
+                          <Icon name="check" size="xs" color={tc.text.primary} style={styles.rsvpCheck} />
                           <Text style={styles.rsvpButtonTextActive}>{label}</Text>
                         </LinearGradient>
                       ) : (
                         <View style={styles.rsvpInner}>
-                          {isSelected && <Icon name="check" size="xs" color={colors.text.secondary} style={styles.rsvpCheck} />}
+                          {isSelected && <Icon name="check" size="xs" color={tc.text.secondary} style={styles.rsvpCheck} />}
                           <Text style={styles_result.text}>{label}</Text>
                         </View>
                       )}
@@ -415,7 +415,7 @@ export default function EventDetailScreen() {
               >
                 <Icon name="users" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.attendeesTitle}>{t('events.attendees')}</Text>
+              <Text style={[styles.attendeesTitle, { color: tc.text.primary }]}>{t('events.attendees')}</Text>
               <View style={styles.attendeesCount}>
                 <Text style={styles.countBadge}>
                   {goingCount} {t('events.going')} · {maybeCount} {t('events.maybe')}
@@ -453,7 +453,7 @@ export default function EventDetailScreen() {
                   accessibilityRole="button"
                 >
                   <Text style={styles.seeAllText}>{t('events.seeAllAttendees')}</Text>
-                  <Icon name="chevron-right" size="xs" color={colors.text.secondary} />
+                  <Icon name="chevron-right" size="xs" color={tc.text.secondary} />
                 </Pressable>
               </>
             )}
@@ -479,8 +479,8 @@ export default function EventDetailScreen() {
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
             style={styles.shareButtonInner}
           >
-            <Icon name="share" size="sm" color={colors.text.primary} />
-            <Text style={styles.shareButtonText}>{t('events.shareEvent')}</Text>
+            <Icon name="share" size="sm" color={tc.text.primary} />
+            <Text style={[styles.shareButtonText, { color: tc.text.primary }]}>{t('events.shareEvent')}</Text>
           </LinearGradient>
         </Pressable>
 
@@ -489,7 +489,7 @@ export default function EventDetailScreen() {
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.rsvpConfirmButton}
           >
-            <Text style={styles.rsvpConfirmText}>
+            <Text style={[styles.rsvpConfirmText, { color: tc.text.primary }]}>
               {t('events.rsvp')}: {rsvpStatus === 'going' ? t('events.going') : rsvpStatus === 'maybe' ? t('events.maybe') : rsvpStatus === 'not-going' ? t('events.cantGo') : t('events.respond')}
             </Text>
           </LinearGradient>

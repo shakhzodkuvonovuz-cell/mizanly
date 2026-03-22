@@ -206,7 +206,7 @@ export default function EditChannelScreen() {
                 <Icon name="camera" size={16} color="#fff" />
               </LinearGradient>
             </Pressable>
-            <Text style={styles.avatarHint}>{t('screens.editChannel.tapToChangePhoto')}</Text>
+            <Text style={[styles.avatarHint, { color: tc.text.secondary }]}>{t('screens.editChannel.tapToChangePhoto')}</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
@@ -214,12 +214,12 @@ export default function EditChannelScreen() {
               colors={colors.gradient.cardDark}
               style={styles.card}
             >
-              <Text style={styles.label}>{t('screens.editChannel.channelName')}</Text>
+              <Text style={[styles.label, { color: tc.text.primary }]}>{t('screens.editChannel.channelName')}</Text>
               <View style={[styles.inputWrap, { backgroundColor: tc.surface }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: tc.text.primary }]}
                   placeholder={t('screens.editChannel.namePlaceholder')}
-                  placeholderTextColor={colors.text.secondary}
+                  placeholderTextColor={tc.text.secondary}
                   value={name}
                   onChangeText={(text) => text.length <= MAX_NAME && setName(text)}
                 />
@@ -235,12 +235,12 @@ export default function EditChannelScreen() {
               colors={colors.gradient.cardDark}
               style={styles.card}
             >
-              <Text style={styles.label}>{t('screens.editChannel.descriptionOptional')}</Text>
+              <Text style={[styles.label, { color: tc.text.primary }]}>{t('screens.editChannel.descriptionOptional')}</Text>
               <View style={[styles.inputWrap, { backgroundColor: tc.surface }, styles.textAreaWrap]}>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder={t('screens.editChannel.descriptionPlaceholder')}
-                  placeholderTextColor={colors.text.secondary}
+                  placeholderTextColor={tc.text.secondary}
                   value={description}
                   onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
                   multiline

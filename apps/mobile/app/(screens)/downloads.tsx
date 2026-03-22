@@ -55,9 +55,9 @@ function StorageBar({ usedBytes, totalBytes }: { usedBytes: number; totalBytes: 
           >
             <Icon name="layers" size="sm" color={colors.emerald} />
           </LinearGradient>
-          <Text style={styles.storageTitle}>{t('downloads.storage')}</Text>
+          <Text style={[styles.storageTitle, { color: tc.text.primary }]}>{t('downloads.storage')}</Text>
         </View>
-        <Text style={styles.storageLabel}>
+        <Text style={[styles.storageLabel, { color: tc.text.tertiary }]}>
           {t('downloads.storageUsed', { used: formatBytes(usedBytes), total: formatBytes(totalBytes) })}
         </Text>
       </View>
@@ -103,7 +103,7 @@ function FilterChips({
             onPress={() => { haptic.tick(); onChange(tab); }}
             style={[styles.chip, { backgroundColor: tc.surface, borderColor: tc.border }, isActive && styles.chipActive]}
           >
-            <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+            <Text style={[styles.chipText, { color: tc.text.secondary }, isActive && styles.chipTextActive]}>
               {labels[tab]}
             </Text>
           </Pressable>
@@ -153,7 +153,7 @@ function DownloadItem({
           <Icon
             name={item.contentType === 'post' ? 'image' : 'video'}
             size="md"
-            color={colors.text.tertiary}
+            color={tc.text.tertiary}
           />
           {/* Type badge */}
           <View style={[styles.typeBadge, { backgroundColor: badgeColor }]}>
@@ -163,12 +163,12 @@ function DownloadItem({
 
         {/* Info */}
         <View style={styles.itemInfo}>
-          <Text style={styles.itemTitle} numberOfLines={1}>
+          <Text style={[styles.itemTitle, { color: tc.text.primary }]} numberOfLines={1}>
             {(item as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}...`}
           </Text>
           <View style={styles.itemMeta}>
-            <Text style={styles.itemSize}>{formatBytes(item.fileSize)}</Text>
-            <Text style={styles.itemStatus}>
+            <Text style={[styles.itemSize, { color: tc.text.tertiary }]}>{formatBytes(item.fileSize)}</Text>
+            <Text style={[styles.itemStatus, { color: tc.text.secondary }]}>
               {item.status === 'complete' ? t('downloads.complete')
                : item.status === 'downloading' ? `${Math.round(item.progress * 100)}%`
                : item.status === 'paused' ? t('downloads.paused')
@@ -194,7 +194,7 @@ function DownloadItem({
         <View style={styles.itemAction}>
           {item.status === 'downloading' && (
             <Pressable onPress={() => onAction(item, 'pause')} style={styles.actionBtn}>
-              <Icon name="clock" size="sm" color={colors.text.secondary} />
+              <Icon name="clock" size="sm" color={tc.text.secondary} />
             </Pressable>
           )}
           {item.status === 'paused' && (
@@ -411,7 +411,7 @@ export default function DownloadsScreen() {
           />
           <BottomSheetItem
             label={t('downloads.viewOriginal')}
-            icon={<Icon name="eye" size="sm" color={colors.text.secondary} />}
+            icon={<Icon name="eye" size="sm" color={tc.text.secondary} />}
             onPress={() => {
               handleSheetClose();
               if (sheetItem) {

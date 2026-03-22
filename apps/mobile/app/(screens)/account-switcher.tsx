@@ -206,13 +206,13 @@ export default function AccountSwitcherScreen() {
                     {/* Account Info */}
                     <View style={styles.heroInfo}>
                       <View style={styles.heroNameRow}>
-                        <Text style={styles.heroName}>{activeAccount.displayName}</Text>
+                        <Text style={[styles.heroName, { color: tc.text.primary }]}>{activeAccount.displayName}</Text>
                         {activeAccount.isVerified && <VerifiedBadge size={15} />}
                       </View>
-                      <Text style={styles.heroUsername}>@{activeAccount.username}</Text>
+                      <Text style={[styles.heroUsername, { color: tc.text.secondary }]}>@{activeAccount.username}</Text>
 
                       {/* Stats */}
-                      <Text style={styles.heroStats}>
+                      <Text style={[styles.heroStats, { color: tc.text.tertiary }]}>
                         {`${activeAccount.followers} ${t('screens.accountSwitcher.followers')} · ${activeAccount.following} ${t('screens.accountSwitcher.following')} · ${activeAccount.posts} ${t('screens.accountSwitcher.posts')}`}
                       </Text>
                     </View>
@@ -235,7 +235,7 @@ export default function AccountSwitcherScreen() {
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.accountTypeGradient}
                     >
-                      <Text style={styles.accountTypeText}>{activeAccount.accountType}</Text>
+                      <Text style={[styles.accountTypeText, { color: tc.text.secondary }]}>{activeAccount.accountType}</Text>
                     </LinearGradient>
                   </View>
                 </LinearGradient>
@@ -246,8 +246,8 @@ export default function AccountSwitcherScreen() {
           {/* Other Accounts Section */}
           {!isLoading && <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('screens.accountSwitcher.otherAccounts')}</Text>
-              <Text style={[styles.sectionCount, { backgroundColor: tc.surface }]}>{otherAccounts.length}</Text>
+              <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('screens.accountSwitcher.otherAccounts')}</Text>
+              <Text style={[styles.sectionCount, { backgroundColor: tc.surface, color: tc.text.tertiary }]}>{otherAccounts.length}</Text>
             </View>
 
             <View style={styles.accountsList}>
@@ -271,10 +271,10 @@ export default function AccountSwitcherScreen() {
 
                       <View style={styles.accountInfo}>
                         <View style={styles.accountNameRow}>
-                          <Text style={styles.accountName}>{account.displayName}</Text>
+                          <Text style={[styles.accountName, { color: tc.text.primary }]}>{account.displayName}</Text>
                           {account.isVerified && <VerifiedBadge size={13} />}
                         </View>
-                        <Text style={styles.accountUsername}>@{account.username}</Text>
+                        <Text style={[styles.accountUsername, { color: tc.text.secondary }]}>@{account.username}</Text>
 
                         {/* Account Type Badge */}
                         <View style={styles.accountTypeBadge}>
@@ -282,11 +282,11 @@ export default function AccountSwitcherScreen() {
                             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                             style={styles.accountTypeBadgeGradient}
                           >
-                            <Text style={styles.accountTypeBadgeText}>{account.accountType}</Text>
+                            <Text style={[styles.accountTypeBadgeText, { color: tc.text.secondary }]}>{account.accountType}</Text>
                           </LinearGradient>
                         </View>
 
-                        <Text style={styles.lastActive}>{account.lastActive}</Text>
+                        <Text style={[styles.lastActive, { color: tc.text.tertiary }]}>{account.lastActive}</Text>
                       </View>
 
                       {/* Unread Badge + Switch Button */}
@@ -335,8 +335,8 @@ export default function AccountSwitcherScreen() {
                 <View style={styles.addAccountIcon}>
                   <Icon name="circle-plus" size="xl" color={colors.emerald} />
                 </View>
-                <Text style={styles.addAccountText}>{t('screens.accountSwitcher.addAccount')}</Text>
-                <Text style={styles.addAccountSubtext}>{t('screens.accountSwitcher.addAccountSubtext')}</Text>
+                <Text style={[styles.addAccountText, { color: tc.text.primary }]}>{t('screens.accountSwitcher.addAccount')}</Text>
+                <Text style={[styles.addAccountSubtext, { color: tc.text.tertiary }]}>{t('screens.accountSwitcher.addAccountSubtext')}</Text>
               </LinearGradient>
             </Pressable>
           </Animated.View>
@@ -358,29 +358,29 @@ export default function AccountSwitcherScreen() {
                       <Icon name="settings" size="sm" color={colors.emerald} />
                     </LinearGradient>
                   </View>
-                  <Text style={styles.managementTitle}>{t('screens.accountSwitcher.managementTitle')}</Text>
+                  <Text style={[styles.managementTitle, { color: tc.text.primary }]}>{t('screens.accountSwitcher.managementTitle')}</Text>
                 </View>
 
                 {/* Manage Accounts Row */}
                 <Pressable accessibilityRole="button" style={[styles.managementRow, { opacity: 0.5 }]} disabled>
                   <View style={styles.managementRowLeft}>
-                    <Icon name="users" size="sm" color={colors.text.secondary} />
-                    <Text style={styles.managementRowText}>{t('screens.accountSwitcher.manageAccounts')}</Text>
+                    <Icon name="users" size="sm" color={tc.text.secondary} />
+                    <Text style={[styles.managementRowText, { color: tc.text.primary }]}>{t('screens.accountSwitcher.manageAccounts')}</Text>
                   </View>
-                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                 </Pressable>
 
                 {/* Default Account Row */}
                 <Pressable accessibilityRole="button" style={[styles.managementRow, { opacity: 0.5 }]} disabled>
                   <View style={styles.managementRowLeft}>
-                    <Icon name="user" size="sm" color={colors.text.secondary} />
-                    <Text style={styles.managementRowText}>{t('screens.accountSwitcher.defaultAccount')}</Text>
+                    <Icon name="user" size="sm" color={tc.text.secondary} />
+                    <Text style={[styles.managementRowText, { color: tc.text.primary }]}>{t('screens.accountSwitcher.defaultAccount')}</Text>
                   </View>
                   <View style={styles.managementRowRight}>
                     <Text style={[styles.managementRowValue, {color: colors.text.tertiary}]}>
                       @{activeAccount?.username}
                     </Text>
-                    <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                    <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                   </View>
                 </Pressable>
 
@@ -388,8 +388,8 @@ export default function AccountSwitcherScreen() {
                 {/* TODO: Persist to settings API */}
                 <View style={styles.toggleRow}>
                   <View style={styles.toggleRowLeft}>
-                    <Icon name="bell" size="sm" color={colors.text.secondary} />
-                    <Text style={styles.toggleRowText}>{t('screens.accountSwitcher.autoSwitchToggle')}</Text>
+                    <Icon name="bell" size="sm" color={tc.text.secondary} />
+                    <Text style={[styles.toggleRowText, { color: tc.text.primary }]}>{t('screens.accountSwitcher.autoSwitchToggle')}</Text>
                   </View>
                   <Switch
                     value={autoSwitchOnNotification}
@@ -418,7 +418,7 @@ export default function AccountSwitcherScreen() {
                   </LinearGradient>
                 </View>
                 <View style={styles.securityContent}>
-                  <Text style={styles.securityText}>
+                  <Text style={[styles.securityText, { color: tc.text.secondary }]}>
                     {t('screens.accountSwitcher.securityText')}
                   </Text>
                   <Pressable accessibilityRole="button" onPress={handleSignOutAll}>

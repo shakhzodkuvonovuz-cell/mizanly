@@ -109,10 +109,10 @@ export default function LinkChildAccountScreen() {
     return (
       <Animated.View entering={FadeInDown.duration(400)} style={styles.pinContainer}>
         <Icon name="lock" size="xl" color={colors.emerald} />
-        <Text style={styles.pinTitle}>
+        <Text style={[styles.pinTitle, { color: tc.text.primary }]}>
           {isConfirm ? t('parentalControls.confirmNewPin') : t('parentalControls.setPin')}
         </Text>
-        <Text style={styles.pinSubtitle}>
+        <Text style={[styles.pinSubtitle, { color: tc.text.secondary }]}>
           {isConfirm ? t('parentalControls.confirmPinSubtitle') : t('parentalControls.setPinSubtitle')}
         </Text>
 
@@ -136,9 +136,9 @@ export default function LinkChildAccountScreen() {
               disabled={d === ''}
             >
               {d === 'del' ? (
-                <Icon name="arrow-left" size="md" color={colors.text.primary} />
+                <Icon name="arrow-left" size="md" color={tc.text.primary} />
               ) : (
-                <Text style={styles.numKeyText}>{d}</Text>
+                <Text style={[styles.numKeyText, { color: tc.text.primary }]}>{d}</Text>
               )}
             </Pressable>
           ))}
@@ -201,11 +201,11 @@ export default function LinkChildAccountScreen() {
                   name={selectedUser.displayName ?? selectedUser.username}
                   size="xl"
                 />
-                <Text style={styles.confirmName}>
+                <Text style={[styles.confirmName, { color: tc.text.primary }]}>
                   {selectedUser.displayName ?? selectedUser.username}
                 </Text>
-                <Text style={styles.confirmUsername}>@{selectedUser.username}</Text>
-                <Text style={styles.confirmHint}>
+                <Text style={[styles.confirmUsername, { color: tc.text.secondary }]}>@{selectedUser.username}</Text>
+                <Text style={[styles.confirmHint, { color: tc.text.tertiary }]}>
                   {t('parentalControls.linkConfirmHint')}
                 </Text>
 
@@ -237,11 +237,11 @@ export default function LinkChildAccountScreen() {
         <View style={[styles.body, { paddingTop: insets.top + 60 }]}>
           {/* Search Input */}
           <View style={[styles.searchContainer, { backgroundColor: tc.bgElevated, borderColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}>
-            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <Icon name="search" size="sm" color={tc.text.tertiary} />
             <TextInput
-              style={[styles.searchInput, { textAlign: rtlTextAlign(isRTL) }]}
+              style={[styles.searchInput, { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) }]}
               placeholder={t('parentalControls.searchPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -249,7 +249,7 @@ export default function LinkChildAccountScreen() {
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')}>
-                <Icon name="x" size="sm" color={colors.text.tertiary} />
+                <Icon name="x" size="sm" color={tc.text.tertiary} />
               </Pressable>
             )}
           </View>
@@ -278,14 +278,14 @@ export default function LinkChildAccountScreen() {
                   size="md"
                 />
                 <View style={[styles.userInfo, rtlMargin(isRTL, spacing.md, 0)]}>
-                  <Text style={[styles.userName, { textAlign: rtlTextAlign(isRTL) }]}>
+                  <Text style={[styles.userName, { color: tc.text.primary, textAlign: rtlTextAlign(isRTL) }]}>
                     {item.displayName ?? item.username}
                   </Text>
-                  <Text style={[styles.userHandle, { textAlign: rtlTextAlign(isRTL) }]}>
+                  <Text style={[styles.userHandle, { color: tc.text.secondary, textAlign: rtlTextAlign(isRTL) }]}>
                     @{item.username}
                   </Text>
                 </View>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
               </Pressable>
             )}
             ListEmptyComponent={
