@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation, RefreshControl,
+  KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation,
 } from 'react-native';
 import { Swipeable, PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
@@ -33,7 +33,9 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useStore } from '@/store';
@@ -381,7 +383,7 @@ const MessageBubble = memo(function MessageBubble({
 }) {
   const { user } = useUser();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const [isReacting, setIsReacting] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
@@ -396,7 +398,7 @@ const MessageBubble = memo(function MessageBubble({
 
   const handleReactionSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
-    haptic.light();
+    haptic.like();
   };
 
   // Animation for new messages
@@ -513,7 +515,7 @@ const MessageBubble = memo(function MessageBubble({
         {message.isSpoiler && !spoilerRevealed ? (
           <Pressable
             onPress={() => {
-              haptic.light();
+              haptic.tick();
               setSpoilerRevealed(true);
               spoilerOpacity.value = withTiming(0, { duration: 300 });
             }}
@@ -699,7 +701,7 @@ export default function ConversationScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const isOffline = useStore((s) => s.isOffline);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const flatListRef = useRef<FlatList>(null);
@@ -1013,7 +1015,7 @@ export default function ConversationScreen() {
     // Remove the optimistic pending message
     setPendingMessages(prev => prev.filter(p => p.id !== undoPending.id));
     setUndoPending(null);
-    haptic.light();
+    haptic.delete();
   }, [undoPending, haptic]);
 
   const commitSend = useCallback((pending: {
@@ -1057,7 +1059,7 @@ export default function ConversationScreen() {
         .catch(() => Alert.alert(t('common.error'), t('errors.editMessageFailed')));
       return;
     }
-    haptic.medium();
+    haptic.send();
     setIsSending(true);
 
     // E2E encryption: encrypt content if encryption is active
@@ -1173,7 +1175,7 @@ export default function ConversationScreen() {
     recordingTimerRef.current = setInterval(() => {
       setRecordingTime((prev) => prev + 1);
     }, 1000);
-    haptic.medium();
+    haptic.longPress();
   }, [haptic]);
 
   const cancelRecording = useCallback(async () => {
@@ -1239,12 +1241,12 @@ export default function ConversationScreen() {
   }, [id, replyTo, haptic, cancelled]);
 
   const handleContextMenu = useCallback((msg: Message) => {
-    haptic.medium();
+    haptic.longPress();
     setContextMenuMsg(msg);
   }, [haptic]);
 
   const handleSwipeReply = useCallback((msg: Message) => {
-    haptic.medium();
+    haptic.tick();
     setReplyTo({
       id: msg.id,
       content: msg.content,
@@ -1510,10 +1512,9 @@ export default function ConversationScreen() {
             }}
             scrollEventThrottle={100}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor={colors.emerald}
               />
             }
             ListEmptyComponent={() => (
@@ -1761,7 +1762,7 @@ export default function ConversationScreen() {
                   messagesApi.reactToMessage(id, contextMenuMsg.id, emoji)
                     .then(() => {
                       queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                      haptic.light();
+                      haptic.like();
                     })
                     .catch(() => Alert.alert(t('common.error'), t('errors.addReactionFailed')));
                 }

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   Dimensions,
 } from 'react-native';
@@ -16,6 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -118,8 +119,25 @@ export default function ChatThemePickerScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    // Theme picker data is local — reload from AsyncStorage
+    if (conversationId) {
+      AsyncStorage.getItem(`${CHAT_THEME_STORAGE_PREFIX}${conversationId}`).then(
+        (val) => {
+          if (val) {
+            try {
+              const saved = JSON.parse(val) as { themeId: string; opacity: number; blur: number };
+              setSelectedTheme(saved.themeId);
+              setOpacity(saved.opacity);
+              setBlur(saved.blur);
+            } catch { /* ignore */ }
+          }
+          setRefreshing(false);
+        },
+      ).catch(() => setRefreshing(false));
+    } else {
+      setRefreshing(false);
+    }
+  }, [conversationId]);
 
   const getCurrentTheme = (): ThemeOption => {
     return (
@@ -276,7 +294,7 @@ export default function ChatThemePickerScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Current Theme Preview */}
         <View style={styles.previewContainer}>
@@ -486,6 +504,7 @@ export default function ChatThemePickerScreen() {
                 `${CHAT_THEME_STORAGE_PREFIX}${conversationId}`,
                 JSON.stringify({ themeId: selectedTheme, opacity, blur }),
               );
+              showToast({ message: t('chatThemePicker.themeApplied'), variant: 'success' });
             }
             router.back();
           }}

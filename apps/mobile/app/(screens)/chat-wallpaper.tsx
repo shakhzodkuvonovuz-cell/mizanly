@@ -19,7 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -85,7 +85,7 @@ function ChatWallpaperScreen() {
   const tc = useThemeColors();
   const params = useLocalSearchParams<{ conversationId: string }>();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
 
   const conversationId = params.conversationId;
@@ -118,19 +118,19 @@ function ChatWallpaperScreen() {
   }, []);
 
   const handleSelectColor = useCallback((value: string) => {
-    haptic.light();
+    haptic.tick();
     clearSelections();
     setSelectedColor(value);
   }, [haptic, clearSelections]);
 
   const handleSelectGradient = useCallback((pair: [string, string]) => {
-    haptic.light();
+    haptic.tick();
     clearSelections();
     setSelectedGradient(pair);
   }, [haptic, clearSelections]);
 
   const handleSelectPattern = useCallback((name: string) => {
-    haptic.light();
+    haptic.tick();
     clearSelections();
     setSelectedPattern(name);
   }, [haptic, clearSelections]);
@@ -143,14 +143,14 @@ function ChatWallpaperScreen() {
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
-      haptic.light();
+      haptic.tick();
       clearSelections();
       setCustomImage(result.assets[0].uri);
     }
   }, [haptic, clearSelections]);
 
   const handleDefault = useCallback(async () => {
-    haptic.light();
+    haptic.tick();
     clearSelections();
     if (conversationId) {
       await AsyncStorage.removeItem(`${WALLPAPER_STORAGE_PREFIX}${conversationId}`);
@@ -414,7 +414,7 @@ function ChatWallpaperScreen() {
               <Pressable
                 key={tab}
                 onPress={() => {
-                  haptic.light();
+                  haptic.tick();
                   setActiveTab(tab);
                 }}
                 style={[styles.tab, isActive && styles.tabActive]}

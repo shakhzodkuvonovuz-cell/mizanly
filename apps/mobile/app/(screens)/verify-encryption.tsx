@@ -16,7 +16,7 @@ import { colors, fonts, spacing, fontSize, radius } from '@/theme';
 import { encryptionService } from '@/services/encryption';
 import { encryptionApi } from '@/services/encryptionApi';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { navigate } from '@/utils/navigation';
 
@@ -60,7 +60,7 @@ function VerifyEncryptionContent() {
   const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { userId, displayName, conversationId } = useLocalSearchParams<{
     userId: string;
     displayName: string;
@@ -142,7 +142,7 @@ function VerifyEncryptionContent() {
 
   const handleCopy = useCallback(
     async (text: string) => {
-      haptic.light();
+      haptic.save();
       await Clipboard.setStringAsync(text);
       Alert.alert(
         t('screens.verify-encryption.copied'),
@@ -155,7 +155,7 @@ function VerifyEncryptionContent() {
   const handleMarkVerified = useCallback(async () => {
     if (!conversationId) return;
     setVerifying(true);
-    haptic.medium();
+    haptic.success();
     try {
       await AsyncStorage.setItem(
         `${VERIFIED_KEY_PREFIX}${conversationId}`,
@@ -174,7 +174,7 @@ function VerifyEncryptionContent() {
 
   const handleUnmark = useCallback(async () => {
     if (!conversationId) return;
-    haptic.light();
+    haptic.delete();
     try {
       await AsyncStorage.removeItem(
         `${VERIFIED_KEY_PREFIX}${conversationId}`
@@ -186,7 +186,7 @@ function VerifyEncryptionContent() {
   }, [conversationId, haptic]);
 
   const handleScanQr = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     navigate('/(screens)/qr-scanner');
   }, [haptic, router]);
 

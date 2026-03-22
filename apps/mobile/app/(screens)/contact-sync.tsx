@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Alert, RefreshControl,
+  FlatList, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -257,7 +258,7 @@ export default function ContactSyncScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={[styles.list, { paddingTop: insets.top + 52 }]}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             ListHeaderComponent={
               hasLoaded && contacts.length > 0 ? (

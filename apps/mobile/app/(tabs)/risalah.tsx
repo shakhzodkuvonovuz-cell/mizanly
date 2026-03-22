@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/Badge';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius, animation, fonts, tabBar } from '@/theme';
 import { useStore } from '@/store';
 import { messagesApi } from '@/services/api';
@@ -171,7 +171,7 @@ const ConversationRow = memo(function ConversationRow({
 export default function RisalahScreen() {
   const router = useRouter();
   const { user } = useUser();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
   const queryClient = useQueryClient();
@@ -409,7 +409,7 @@ export default function RisalahScreen() {
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}
             accessibilityLabel={t('common.search')}
             accessibilityRole="button"
             accessibilityHint={t('accessibility.searchHint')}
@@ -418,7 +418,7 @@ export default function RisalahScreen() {
           </Pressable>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); navigate('/(screens)/saved-messages'); }}
+            onPress={() => { haptic.navigate(); navigate('/(screens)/saved-messages'); }}
             accessibilityLabel={t('risalah.savedMessages')}
             accessibilityRole="button"
           >
@@ -426,7 +426,7 @@ export default function RisalahScreen() {
           </Pressable>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); navigate('/(screens)/call-history'); }}
+            onPress={() => { haptic.navigate(); navigate('/(screens)/call-history'); }}
             accessibilityLabel={t('risalah.call')}
             accessibilityRole="button"
           >
@@ -434,7 +434,7 @@ export default function RisalahScreen() {
           </Pressable>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); setOpenNewConvoSheet(true); }}
+            onPress={() => { haptic.navigate(); setOpenNewConvoSheet(true); }}
             accessibilityLabel={t('accessibility.newConversation')}
             accessibilityRole="button"
             accessibilityHint={t('accessibility.newConversationHint')}

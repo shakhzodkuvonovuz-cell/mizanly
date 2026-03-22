@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -12,9 +12,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { api } from '@/services/api';
 
 const FOLDER_ICONS: IconName[] = ['users', 'heart', 'globe', 'layers', 'bell', 'bookmark', 'flag', 'lock'];
@@ -62,7 +64,7 @@ const PREDEFINED_FILTERS: PredefinedFilter[] = [
 export default function ChatFoldersScreen() {
   const router = useRouter();
   const tc = useThemeColors();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -103,7 +105,8 @@ export default function ChatFoldersScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
       setMenuFolder(null);
-      haptic.light();
+      haptic.delete();
+      showToast({ message: t('risalah.folderDeleted'), variant: 'success' });
     },
   });
 
@@ -119,7 +122,7 @@ export default function ChatFoldersScreen() {
         <Pressable
           accessibilityRole="button"
           style={[styles.folderCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
-          onLongPress={() => { setMenuFolder(item); haptic.light(); }}
+          onLongPress={() => { setMenuFolder(item); haptic.longPress(); }}
         >
           <View style={[styles.folderIcon, { backgroundColor: color + '15' }]}>
             <Icon name={iconName} size="md" color={color} />
@@ -144,7 +147,7 @@ export default function ChatFoldersScreen() {
         <GlassHeader
           title={t('risalah.chatFolders')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-          rightAction={{ icon: 'plus', onPress: () => { setCreateMode(true); haptic.light(); } }}
+          rightAction={{ icon: 'plus', onPress: () => { setCreateMode(true); haptic.navigate(); } }}
         />
 
         {/* Info */}
@@ -167,7 +170,7 @@ export default function ChatFoldersScreen() {
                 key={pf.key}
                 style={[styles.predefinedCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                 onPress={() => {
-                  haptic.light();
+                  haptic.navigate();
                   router.push(`/(screens)/chat-folder-view?filter=${pf.key}`);
                 }}
               >
@@ -206,7 +209,7 @@ export default function ChatFoldersScreen() {
                   accessibilityRole="button"
                   key={icon}
                   style={[styles.iconOption, selectedIcon === i && { borderColor: FOLDER_COLORS[i] }]}
-                  onPress={() => { setSelectedIcon(i); haptic.light(); }}
+                  onPress={() => { setSelectedIcon(i); haptic.tick(); }}
                 >
                   <Icon name={icon} size="sm" color={selectedIcon === i ? FOLDER_COLORS[i] : colors.text.secondary} />
                 </Pressable>
@@ -249,7 +252,7 @@ export default function ChatFoldersScreen() {
           keyExtractor={(item) => item.id as string}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl refreshing={foldersQuery.isRefetching} onRefresh={() => foldersQuery.refetch()} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={foldersQuery.isRefetching} onRefresh={() => foldersQuery.refetch()} />
           }
           ListEmptyComponent={
             foldersQuery.isLoading ? (

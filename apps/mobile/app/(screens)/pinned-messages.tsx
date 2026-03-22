@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
+  View, Text, StyleSheet, FlatList, Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import type { Message } from '@/types';
@@ -52,7 +54,9 @@ export default function PinnedMessagesScreen() {
     try {
       await messagesApi.unpin(conversationId, messageId);
       queryClient.invalidateQueries({ queryKey: ['pinned-messages', conversationId] });
+      showToast({ message: t('screens.pinned-messages.unpinned'), variant: 'success' });
     } catch (err) {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
       if (__DEV__) console.error('Failed to unpin message', err);
     }
   };
@@ -77,9 +81,20 @@ export default function PinnedMessagesScreen() {
           <View style={styles.messageContent}>
             <View style={styles.messageHeader}>
               <Text style={styles.senderName}>{item.sender.displayName}</Text>
-              <Text style={styles.timestamp}>
-                {new Date(item.createdAt).toLocaleDateString()}
-              </Text>
+              <View style={styles.messageHeaderRight}>
+                <Text style={styles.timestamp}>
+                  {new Date(item.createdAt).toLocaleDateString()}
+                </Text>
+                <Pressable
+                  onPress={() => handleUnpin(item.id)}
+                  hitSlop={8}
+                  style={styles.unpinButton}
+                  accessibilityLabel={t('screens.pinned-messages.unpin')}
+                  accessibilityRole="button"
+                >
+                  <Icon name="x" size="xs" color={colors.text.tertiary} />
+                </Pressable>
+              </View>
             </View>
             {item.content && <Text style={styles.content}>{item.content}</Text>}
             {item.mediaUrl && (
@@ -143,10 +158,9 @@ export default function PinnedMessagesScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.emerald}
             />
           }
           ListEmptyComponent={

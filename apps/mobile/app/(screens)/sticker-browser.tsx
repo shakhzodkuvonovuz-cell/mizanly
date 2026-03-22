@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,9 +16,10 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { stickersApi } from '@/services/api';
 import type { StickerPack } from '@/types';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack & { isCollected?: boolean }; onPress: () => void; onAdd: () => void; onRemove: () => void; index: number }) {
@@ -26,10 +27,10 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
   const styles = createStyles(tc);
   const { t } = useTranslation();
   const [isAdded, setIsAdded] = useState(pack.isCollected ?? false);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const handleToggle = () => {
-    haptic.medium();
+    haptic.tick();
     if (isAdded) {
       setIsAdded(false);
       onRemove();
@@ -90,7 +91,7 @@ function StickerBrowserScreenInner() {
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId?: string }>();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -156,7 +157,7 @@ function StickerBrowserScreenInner() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    haptic.light();
+    haptic.navigate();
     await refetch();
     setRefreshing(false);
   }, [refetch, haptic]);
@@ -266,7 +267,7 @@ function StickerBrowserScreenInner() {
           contentContainerStyle={styles.listContent}
           removeClippedSubviews={true}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage && debouncedQuery.length === 0) {

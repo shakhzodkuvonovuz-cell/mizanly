@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Alert,
-  TextInput, FlatList, RefreshControl, Switch,
+  TextInput, FlatList, Switch,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
@@ -18,10 +18,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Conversation, User } from '@/types';
@@ -47,7 +49,7 @@ export default function ConversationInfoScreen() {
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
 
   // Admin state
@@ -125,7 +127,7 @@ export default function ConversationInfoScreen() {
   });
 
   const handleToggleMute = () => {
-    haptic.light();
+    haptic.tick();
     const newMuted = !convo?.isMuted;
     muteMutation.mutate(newMuted);
   };
@@ -183,7 +185,7 @@ export default function ConversationInfoScreen() {
   };
 
   const handleMemberLongPress = (memberId: string, username: string) => {
-    haptic.light();
+    haptic.longPress();
     setSelectedMember({ id: memberId, username });
     setMemberActionSheetOpen(true);
   };
@@ -653,7 +655,7 @@ export default function ConversationInfoScreen() {
                 style={styles.resultsList}
                 keyExtractor={(item) => item.id}
                 removeClippedSubviews={true}
-                refreshControl={<RefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} tintColor={colors.emerald} />}
+                refreshControl={<BrandedRefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} />}
                 renderItem={({ item }) => (
                   <Pressable
                     accessibilityRole="button"

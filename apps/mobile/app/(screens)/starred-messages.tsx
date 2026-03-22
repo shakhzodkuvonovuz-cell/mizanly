@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
+  View, Text, StyleSheet, FlatList, Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import type { Message } from '@/types';
@@ -61,7 +63,9 @@ export default function StarredMessagesScreen() {
     try {
       await messagesApi.toggleStar(conversationId, messageId);
       queryClient.invalidateQueries({ queryKey: ['starred-messages'] });
+      showToast({ message: t('screens.starred-messages.unstarred'), variant: 'success' });
     } catch (err) {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
       if (__DEV__) console.error('Failed to unstar message', err);
     }
   };
@@ -209,10 +213,9 @@ export default function StarredMessagesScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.emerald}
             />
           }
           ListEmptyComponent={

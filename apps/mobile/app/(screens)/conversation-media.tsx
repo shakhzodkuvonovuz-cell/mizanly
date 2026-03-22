@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  RefreshControl, Linking,
+  Linking,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +18,7 @@ import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -372,7 +373,7 @@ export default function ConversationMediaScreen() {
               numColumns={3}
               columnWrapperStyle={styles.mediaGrid}
               contentContainerStyle={styles.mediaList}
-              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
+              refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={refetch} />}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.5}
               ListEmptyComponent={renderEmpty}
@@ -386,7 +387,7 @@ export default function ConversationMediaScreen() {
               renderItem={renderLinkItem}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.listContainer}
-              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
+              refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={refetch} />}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.5}
               ListEmptyComponent={renderEmpty}
@@ -400,7 +401,7 @@ export default function ConversationMediaScreen() {
               renderItem={renderDocItem}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.listContainer}
-              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
+              refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={refetch} />}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.5}
               ListEmptyComponent={renderEmpty}

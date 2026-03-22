@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  TextInput, FlatList, Alert, RefreshControl,
+  TextInput, FlatList, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -18,6 +18,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { searchApi, messagesApi, followsApi } from '@/services/api';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -139,10 +140,9 @@ export default function NewConversationScreen() {
             data={isSearching ? people : suggestions}
             keyExtractor={(item) => item.id}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={false}
                 onRefresh={() => isSearching ? searchQuery.refetch() : suggestionsQuery.refetch()}
-                tintColor={colors.emerald}
               />
             }
             ListHeaderComponent={

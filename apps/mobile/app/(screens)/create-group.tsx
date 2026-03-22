@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  TextInput, FlatList, RefreshControl, Alert, ScrollView,
+  TextInput, FlatList, Alert, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -18,9 +18,10 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, messagesApi, uploadApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -31,7 +32,7 @@ export default function CreateGroupScreen() {
   const router = useRouter();
   const tc = useThemeColors();
   const { user } = useUser();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const [groupName, setGroupName] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
@@ -108,7 +109,7 @@ export default function CreateGroupScreen() {
   });
 
   const handleAddMember = (user: User) => {
-    haptic.light();
+    haptic.follow();
     setSelectedMembers(prev => [...prev, user]);
     setQuery('');
     setDebouncedQuery('');
@@ -116,7 +117,7 @@ export default function CreateGroupScreen() {
   };
 
   const handleRemoveMember = (userId: string) => {
-    haptic.light();
+    haptic.delete();
     setSelectedMembers(prev => prev.filter(m => m.id !== userId));
     setValidationError('');
   };
@@ -242,7 +243,7 @@ export default function CreateGroupScreen() {
                 scrollEnabled={true}
                 keyExtractor={(item) => item.id}
                 removeClippedSubviews={true}
-                refreshControl={<RefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
+                refreshControl={<BrandedRefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} />}
                 renderItem={({ item }) => (
                   <Pressable
                     style={[styles.userRow, { borderBottomColor: tc.border }]}

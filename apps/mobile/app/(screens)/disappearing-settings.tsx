@@ -10,7 +10,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface TimerOption {
@@ -45,7 +45,7 @@ const TIMER_OPTIONS: TimerOption[] = [
 function DisappearingSettingsContent() {
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const params = useLocalSearchParams<{
     conversationId: string;
     currentDuration: string;
@@ -74,7 +74,7 @@ function DisappearingSettingsContent() {
 
   const handleSelect = useCallback(
     (value: number) => {
-      haptic.selection();
+      haptic.tick();
       setSelectedDuration(value);
     },
     [haptic],

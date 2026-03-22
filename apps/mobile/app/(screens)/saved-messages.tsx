@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
+  View, Text, StyleSheet, FlatList, Pressable,
   TextInput, Keyboard,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut, SlideOutRight } from 'react-native-reanimated';
@@ -17,9 +17,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { api } from '@/services/api';
 
 async function fetchSavedMessages(cursor?: string) {
@@ -32,7 +34,7 @@ export default function SavedMessagesScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -64,7 +66,8 @@ export default function SavedMessagesScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-messages'] });
       setMenuItem(null);
-      haptic.light();
+      haptic.delete();
+      showToast({ message: t('common.deleted'), variant: 'success' });
     },
   });
 
@@ -73,7 +76,8 @@ export default function SavedMessagesScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-messages'] });
       setMenuItem(null);
-      haptic.light();
+      haptic.save();
+      showToast({ message: t('risalah.pinned'), variant: 'success' });
     },
   });
 
@@ -96,7 +100,7 @@ export default function SavedMessagesScreen() {
         <Pressable
           accessibilityRole="button"
           style={[styles.messageCard, isPinned && styles.messageCardPinned]}
-          onLongPress={() => { setMenuItem(item); haptic.light(); }}
+          onLongPress={() => { setMenuItem(item); haptic.longPress(); }}
         >
           {isPinned && (
             <View style={styles.pinBadge}>
@@ -178,7 +182,7 @@ export default function SavedMessagesScreen() {
           contentContainerStyle={styles.list}
           inverted={false}
           refreshControl={
-            <RefreshControl refreshing={messagesQuery.isRefetching} onRefresh={() => messagesQuery.refetch()} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={messagesQuery.isRefetching} onRefresh={() => messagesQuery.refetch()} />
           }
           onEndReached={() => messagesQuery.hasNextPage && messagesQuery.fetchNextPage()}
           onEndReachedThreshold={0.3}
