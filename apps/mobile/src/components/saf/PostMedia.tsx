@@ -1,7 +1,7 @@
 import { useState, useCallback, memo } from 'react';
 import { View, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
-import { Image } from 'expo-image';
 import { colors, radius } from '@/theme';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { ImageCarousel } from '@/components/ui/ImageCarousel';
 import { ImageGallery } from '@/components/ui/ImageGallery';
 
@@ -36,13 +36,12 @@ export const PostMedia = memo(function PostMedia({ mediaUrls, mediaTypes, thumbn
     mediaElement = (
       <View style={[styles.single, { height }]}>
         <Pressable onPress={() => handleImagePress(0)} style={styles.fill}>
-          <Image
-            source={{ uri: mediaUrls[0] }}
-            style={[styles.fill, blurred && { opacity: 0.15 }]}
+          <ProgressiveImage
+            uri={mediaUrls[0]}
+            width="100%"
+            height={height}
             contentFit="cover"
-            placeholder={thumbnailUrl ? { uri: thumbnailUrl } : undefined}
-            transition={200}
-            blurRadius={blurred ? 30 : 0}
+            style={blurred ? { opacity: 0.15 } : undefined}
           />
         </Pressable>
       </View>

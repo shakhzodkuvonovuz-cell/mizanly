@@ -61,6 +61,7 @@ export interface Post {
   userReaction?: ReactionType | null;
   isSaved?: boolean;
   isPromoted?: boolean;
+  recentLikers?: Array<{ avatarUrl: string | null; name: string; username: string }>;
 }
 
 export interface BlockedUser {

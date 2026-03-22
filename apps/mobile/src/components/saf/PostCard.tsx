@@ -25,6 +25,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PostMedia } from './PostMedia';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
+import { SocialProof } from '@/components/ui/SocialProof';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { aiApi } from '@/services/api';
@@ -215,6 +216,15 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
   const timeAgo = useMemo(() => formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true, locale: getDateFnsLocale() }), [post.createdAt]);
 
+  // Derive likers for SocialProof: use recentLikers from API, fallback to post author
+  const likers = useMemo(() => {
+    if (post.recentLikers?.length) return post.recentLikers;
+    if (post.user) {
+      return [{ avatarUrl: post.user.avatarUrl ?? null, name: post.user.displayName ?? post.user.username, username: post.user.username }];
+    }
+    return [];
+  }, [post.recentLikers, post.user]);
+
   if (dismissed) return null;
 
   return (
@@ -352,7 +362,6 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           icon={<Icon name="heart" size="sm" color={colors.text.secondary} />}
           activeIcon={<Icon name="heart-filled" size="sm" color={colors.like} fill={colors.like} />}
           isActive={localLiked}
-          count={post.hideLikesCount ? undefined : (localLikes > 0 ? localLikes : undefined)}
           onPress={handleLike}
           disabled={!viewerId}
           activeColor={colors.like}
@@ -391,6 +400,16 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           accessibilityHint={localSaved ? 'Remove from saved items' : 'Save this post for later'}
         />
       </View>
+
+      {/* Social proof — "Liked by [avatar] name and N others" */}
+      {!post.hideLikesCount && localLikes > 0 && (
+        <SocialProof
+          users={likers}
+          count={localLikes}
+          onPress={() => router.push(`/(screens)/post/${post.id}`)}
+          onUserPress={(username) => router.push(`/(screens)/profile/${username}`)}
+        />
+      )}
 
       {/* More menu */}
       <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
