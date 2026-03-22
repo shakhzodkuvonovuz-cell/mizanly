@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { CharCountRing } from '@/components/ui/CharCountRing';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -143,7 +144,7 @@ export default function FatwaQAScreen() {
               keyExtractor={(item) => item.id as string}
               contentContainerStyle={styles.list}
               refreshControl={
-                <RefreshControl refreshing={questionsQuery.isRefetching} onRefresh={() => questionsQuery.refetch()} tintColor={colors.emerald} />
+                <BrandedRefreshControl refreshing={questionsQuery.isRefetching} onRefresh={() => questionsQuery.refetch()} />
               }
               onEndReached={() => questionsQuery.hasNextPage && questionsQuery.fetchNextPage()}
               ListEmptyComponent={

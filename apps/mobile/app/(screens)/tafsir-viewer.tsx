@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Share, RefreshControl,
+  View, Text, StyleSheet, Pressable, ScrollView, Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -16,6 +16,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { TafsirEntry } from '@/types/islamic';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function TafsirViewerScreen() {
@@ -154,11 +155,7 @@ export default function TafsirViewerScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl
-              tintColor={colors.emerald}
-              refreshing={isRefetching}
-              onRefresh={handleRefresh}
-            />
+            <BrandedRefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
           }
         >
           {/* Verse Display Card */}

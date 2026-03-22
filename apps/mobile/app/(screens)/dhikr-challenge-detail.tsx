@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -23,6 +22,8 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import type { DhikrChallengeDetail } from '@/types/islamic';
@@ -128,6 +129,7 @@ export default function DhikrChallengeDetailScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dhikr-challenge', id] });
       queryClient.invalidateQueries({ queryKey: ['dhikr-challenges'] });
+      showToast({ message: t('dhikr.joinedChallenge', { defaultValue: 'Joined challenge' }), variant: 'success' });
     },
   });
 
@@ -138,6 +140,7 @@ export default function DhikrChallengeDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['dhikr-challenges'] });
       setContributeCount(0);
       setShowContribute(false);
+      showToast({ message: t('dhikr.contributed', { defaultValue: 'Contribution submitted' }), variant: 'success' });
     },
   });
 
@@ -305,7 +308,7 @@ export default function DhikrChallengeDetailScreen() {
             }
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />
+              <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           />
         )}

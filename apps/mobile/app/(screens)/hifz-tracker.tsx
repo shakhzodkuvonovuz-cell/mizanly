@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
+  View, Text, StyleSheet, FlatList, Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
@@ -17,6 +18,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
+import { showToast } from '@/components/ui/Toast';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 // Surah data (name + ayah count for all 114 surahs)
@@ -324,11 +326,7 @@ export default function HifzTrackerScreen() {
           }}
           ListHeaderComponent={listHeader}
           refreshControl={
-            <RefreshControl
-              refreshing={progressQuery.isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
+            <BrandedRefreshControl refreshing={progressQuery.isRefetching} onRefresh={handleRefresh} />
           }
           contentContainerStyle={styles.listContent}
         />

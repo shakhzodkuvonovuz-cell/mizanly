@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Alert } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -116,7 +117,7 @@ export default function WaqfScreen() {
           keyExtractor={(item) => item.id as string}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl refreshing={fundsQuery.isRefetching} onRefresh={() => fundsQuery.refetch()} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={fundsQuery.isRefetching} onRefresh={() => fundsQuery.refetch()} />
           }
           onEndReached={() => fundsQuery.hasNextPage && fundsQuery.fetchNextPage()}
           ListEmptyComponent={

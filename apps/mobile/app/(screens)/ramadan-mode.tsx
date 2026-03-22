@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   Dimensions,
 } from 'react-native';
@@ -22,6 +21,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import { formatHijriDate } from '@/utils/hijri';
@@ -348,7 +348,7 @@ export default function RamadanModeScreen() {
         />
 
         <ScrollView
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={ramadanQuery.isRefetching} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={ramadanQuery.isRefetching} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
         >
           {/* Hero Card */}

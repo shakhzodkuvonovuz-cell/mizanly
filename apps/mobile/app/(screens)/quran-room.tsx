@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,6 +13,7 @@ import { io, Socket } from 'socket.io-client';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -244,8 +244,7 @@ export default function QuranRoomScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl
-              tintColor={colors.emerald}
+            <BrandedRefreshControl
               refreshing={loadingVerse}
               onRefresh={() => {
                 if (roomState) {

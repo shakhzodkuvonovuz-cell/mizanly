@@ -6,7 +6,6 @@ import {
   Pressable,
   FlatList,
   StyleSheet,
-  RefreshControl,
   Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,6 +15,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -323,11 +323,7 @@ function DonateScreenContent() {
           }
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl
-              refreshing={donationsQuery.isFetching && !donationsQuery.isLoading}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
+            <BrandedRefreshControl refreshing={donationsQuery.isFetching && !donationsQuery.isLoading} onRefresh={handleRefresh} />
           }
         />
       )}

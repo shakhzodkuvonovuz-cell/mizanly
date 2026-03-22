@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, RefreshControl,
+  View, Text, StyleSheet, Pressable, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fontSizeExt, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import {
   gregorianToHijri,
@@ -306,8 +307,7 @@ export default function IslamicCalendarScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl
-              tintColor={colors.emerald}
+            <BrandedRefreshControl
               refreshing={false}
               onRefresh={() => {
                 // Calendar is computed client-side; refresh resets to current month

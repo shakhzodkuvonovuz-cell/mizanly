@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Share,
+  View, Text, StyleSheet, Pressable, ScrollView, Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { HajjStep, HajjProgress } from '@/types/islamic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -152,11 +153,7 @@ function HajjCompanionContent() {
         <ScrollView
           contentContainerStyle={styles.centeredContent}
           refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.emerald}
-            />
+            <BrandedRefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
         >
           <Animated.View entering={FadeInUp.duration(400)}>
@@ -199,11 +196,7 @@ function HajjCompanionContent() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.emerald}
-          />
+          <BrandedRefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
         }
       >
         {/* Progress card */}

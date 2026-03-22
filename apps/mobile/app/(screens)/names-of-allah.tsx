@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Share,
+  View, Text, StyleSheet, FlatList, Pressable, Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -227,11 +228,7 @@ export default function NamesOfAllahScreen() {
             )
           }
           refreshControl={
-            <RefreshControl
-              refreshing={namesQuery.isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
+            <BrandedRefreshControl refreshing={namesQuery.isRefetching} onRefresh={handleRefresh} />
           }
           contentContainerStyle={styles.listContent}
           ListFooterComponent={

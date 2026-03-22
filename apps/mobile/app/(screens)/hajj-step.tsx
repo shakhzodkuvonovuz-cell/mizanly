@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, RefreshControl,
+  View, Text, StyleSheet, Pressable, ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { HajjStep, HajjProgress } from '@/types/islamic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 interface ChecklistState {
@@ -159,11 +160,7 @@ function HajjStepContent() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.emerald}
-          />
+          <BrandedRefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
         }
       >
         {/* Step header */}

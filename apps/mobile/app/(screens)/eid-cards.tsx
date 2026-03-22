@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, RefreshControl, Share } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +8,7 @@ import type { IconName } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { EidFrame } from '@/components/islamic/EidFrame';
 import type { Occasion } from '@/components/islamic/EidFrame';
@@ -85,7 +86,7 @@ export default function EidCardsScreen() {
         />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={false} onRefresh={() => {}} />}
+          refreshControl={<BrandedRefreshControl refreshing={false} onRefresh={() => {}} />}
         >
           <View style={styles.grid}>
             {occasions.map((occ, index) => (

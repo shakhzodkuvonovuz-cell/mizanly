@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   Dimensions,
   Share,
@@ -30,6 +29,8 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import { navigate } from '@/utils/navigation';
@@ -57,7 +58,7 @@ function PhraseButton({
 }) {
   const { t } = useTranslation();
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${phrase.latin} - ${phrase.meaning}`}>
       <LinearGradient
         colors={
           isSelected
@@ -143,6 +144,7 @@ export default function DhikrCounterScreen() {
       islamicApi.saveDhikrSession(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dhikr-stats'] });
+      showToast({ message: t('screens.dhikrCounter.sessionSaved', { defaultValue: 'Session saved' }), variant: 'success' });
     },
   });
 
@@ -253,7 +255,7 @@ export default function DhikrCounterScreen() {
         />
 
         <ScrollView
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
         >
           {/* Phrase Selector */}
@@ -294,7 +296,7 @@ export default function DhikrCounterScreen() {
 
           {/* Counter Circle */}
           <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.counterContainer}>
-            <Pressable onPress={handleTap}>
+            <Pressable onPress={handleTap} accessibilityRole="button" accessibilityLabel={t('screens.dhikrCounter.tapHint')}>
               <Animated.View style={counterAnimatedStyle}>
                 {/* Outer Ring Gradient */}
                 <LinearGradient
@@ -333,7 +335,7 @@ export default function DhikrCounterScreen() {
             </Pressable>
 
             {/* Reset Button */}
-            <Pressable onPress={handleReset} style={styles.resetButton}>
+            <Pressable onPress={handleReset} style={styles.resetButton} accessibilityRole="button" accessibilityLabel="Reset counter">
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                 style={styles.resetButtonGradient}
@@ -378,7 +380,7 @@ export default function DhikrCounterScreen() {
           {/* Action Buttons Row */}
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.actionRow}>
-              <Pressable onPress={handleShareProgress} style={styles.actionButtonWrapper}>
+              <Pressable onPress={handleShareProgress} style={styles.actionButtonWrapper} accessibilityRole="button" accessibilityLabel={t('dhikr.shareProgress')}>
                 <LinearGradient
                   colors={colors.gradient.cardDark}
                   style={styles.actionButton}

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   TextInput,
   KeyboardAvoidingView,
@@ -24,6 +23,7 @@ import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -271,7 +271,7 @@ export default function ZakatCalculatorScreen() {
           style={styles.keyboardView}
         >
           <ScrollView
-            refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+            refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >

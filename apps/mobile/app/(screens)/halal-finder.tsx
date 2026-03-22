@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, RefreshControl, Linking, Platform,
+  View, Text, StyleSheet, Pressable, FlatList, Linking, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -225,11 +226,7 @@ export default function HalalFinderScreen() {
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshControl={
-            <RefreshControl
-              refreshing={restaurantsQuery.isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
+            <BrandedRefreshControl refreshing={restaurantsQuery.isRefetching} onRefresh={handleRefresh} />
           }
           contentContainerStyle={styles.listContent}
           ListFooterComponent={

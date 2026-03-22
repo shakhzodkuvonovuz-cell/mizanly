@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Share,
+  View, Text, StyleSheet, FlatList, Pressable, Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
@@ -266,11 +267,7 @@ export default function DuaCollectionScreen() {
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}
           refreshControl={
-            <RefreshControl
-              refreshing={duasQuery.isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
+            <BrandedRefreshControl refreshing={duasQuery.isRefetching} onRefresh={handleRefresh} />
           }
           contentContainerStyle={styles.listContent}
           ListFooterComponent={

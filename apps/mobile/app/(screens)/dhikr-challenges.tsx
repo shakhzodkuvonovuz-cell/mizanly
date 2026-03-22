@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   TextInput,
 } from 'react-native';
@@ -24,6 +23,8 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import type { DhikrChallenge } from '@/types/islamic';
@@ -59,7 +60,7 @@ function ChallengeCard({
     : 0;
 
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={challenge.title}>
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.challengeCard}
@@ -160,9 +161,11 @@ export default function DhikrChallengesScreen() {
       setNewTitle('');
       setNewTarget('1000');
       setCreating(false);
+      showToast({ message: t('dhikr.challengeCreated', { defaultValue: 'Challenge created' }), variant: 'success' });
     },
     onError: () => {
       setCreating(false);
+      showToast({ message: t('common.error'), variant: 'error' });
     },
   });
 
@@ -215,7 +218,7 @@ export default function DhikrChallengesScreen() {
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />
+              <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             onEndReached={() => { if (hasNextPage) fetchNextPage(); }}
             onEndReachedThreshold={0.3}

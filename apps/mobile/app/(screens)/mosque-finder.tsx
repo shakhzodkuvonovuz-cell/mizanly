@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   TextInput,
   Dimensions,
@@ -21,7 +20,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
-
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { islamicApi } from '@/services/islamicApi';
 import type { Mosque as ApiMosque, PrayerTimes } from '@/types/islamic';
 import * as Location from 'expo-location';
@@ -343,7 +343,7 @@ export default function MosqueFinderScreen() {
         <FlatList
           data={filteredMosques}
           keyExtractor={item => item.id}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={
             <>
@@ -366,22 +366,6 @@ export default function MosqueFinderScreen() {
                       <Icon name="x" size="sm" color={colors.text.secondary} />
                     </Pressable>
                   )}
-                </LinearGradient>
-              </Animated.View>
-
-              {/* Map Placeholder */}
-              <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.1)', 'rgba(28,35,51,0.2)']}
-                  style={styles.mapPlaceholder}
-                >
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.mapIconBg}
-                  >
-                    <Icon name="map-pin" size="xl" color={colors.emerald} />
-                  </LinearGradient>
-                  <Text style={styles.mapPlaceholderText}>{t('islamic.mapViewComingSoon')}</Text>
                 </LinearGradient>
               </Animated.View>
 

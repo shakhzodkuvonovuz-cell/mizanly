@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, TextInput,
+  View, Text, StyleSheet, Pressable, ScrollView, TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -138,11 +139,7 @@ export default function MorningBriefingScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={
-            <RefreshControl
-              refreshing={briefingQuery.isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
+            <BrandedRefreshControl refreshing={briefingQuery.isRefetching} onRefresh={handleRefresh} />
           }
         >
           {briefingQuery.isLoading ? (

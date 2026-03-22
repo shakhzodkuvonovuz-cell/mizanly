@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   ScrollView,
   Dimensions,
@@ -27,6 +26,8 @@ import type { Hadith as ApiHadith } from '@/types/islamic';
 import type { PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -92,7 +93,7 @@ function PreviousHadithCard({
 }) {
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
-      <Pressable onPress={onPress}>
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={hadith.source}>
         <LinearGradient
           colors={colors.gradient.cardDark}
           style={styles.previousCard}
@@ -217,7 +218,8 @@ export default function HadithScreen() {
     if (!currentHadith) return;
     haptic.save();
     await Clipboard.setStringAsync(`${currentHadith.arabic}\n\n${currentHadith.english}\n\n— ${currentHadith.source} (${currentHadith.narrator})`);
-  }, [haptic, currentHadith]);
+    showToast({ message: t('common.copied', { defaultValue: 'Copied to clipboard' }), variant: 'success' });
+  }, [haptic, currentHadith, t]);
 
   const selectHadith = useCallback((hadith: Hadith) => {
     setCurrentHadith(hadith);
@@ -294,7 +296,7 @@ export default function HadithScreen() {
         <FlatList
           data={hadiths.slice(1)}
           keyExtractor={item => item.id}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={
             <>

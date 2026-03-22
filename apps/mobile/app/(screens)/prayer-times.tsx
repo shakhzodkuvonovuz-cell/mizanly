@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl, Switch, Share,
+  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, Switch, Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,12 +14,17 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt, lineHeight, letterSpacing } from '@/theme';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo, PrayerNotificationSetting } from '@/types/islamic';
 import * as Location from 'expo-location';
+
+const PRAYER_TIMES_CACHE_KEY = 'cached-prayer-times';
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { formatHijriDate } from '@/utils/hijri';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -292,6 +297,25 @@ export default function PrayerTimesScreen() {
     try {
       setError(null);
       if (!refreshing) setLoading(true);
+
+      // Try loading from cache first for instant display
+      try {
+        const cached = await AsyncStorage.getItem(PRAYER_TIMES_CACHE_KEY);
+        if (cached) {
+          const { data: cachedTimes, methods: cachedMethods, timestamp, method } = JSON.parse(cached);
+          const isFresh = Date.now() - timestamp < CACHE_TTL_MS;
+          if (isFresh && method === calculationMethod && cachedTimes) {
+            setPrayerTimes(cachedTimes);
+            if (cachedMethods) setPrayerMethods(cachedMethods);
+            const cached_prayerList = getPrayerList(cachedTimes as ApiPrayerTimes);
+            setCurrentPrayerIndex(getCurrentPrayerIndex(cached_prayerList));
+            setLoading(false);
+          }
+        }
+      } catch {
+        // Cache miss — continue to fetch
+      }
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setError(t('islamic.errors.locationPermission'));
@@ -313,6 +337,18 @@ export default function PrayerTimesScreen() {
       const prayerList = getPrayerList(timesResp as ApiPrayerTimes);
       const currentIndex = getCurrentPrayerIndex(prayerList);
       setCurrentPrayerIndex(currentIndex);
+
+      // Cache the result for offline use
+      try {
+        await AsyncStorage.setItem(PRAYER_TIMES_CACHE_KEY, JSON.stringify({
+          data: timesResp,
+          methods: methodsResp,
+          timestamp: Date.now(),
+          method: calculationMethod,
+        }));
+      } catch {
+        // Cache write failure is non-critical
+      }
     } catch (err) {
       setError(t('islamic.errors.failedToLoad'));
     } finally {
@@ -422,7 +458,7 @@ export default function PrayerTimesScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
           {/* Location Header */}

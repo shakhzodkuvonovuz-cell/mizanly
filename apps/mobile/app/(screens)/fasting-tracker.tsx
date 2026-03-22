@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, RefreshControl, Pressable,
+  View, Text, StyleSheet, ScrollView, Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -179,11 +180,7 @@ export default function FastingTrackerScreen() {
 
         <ScrollView
           refreshControl={
-            <RefreshControl
-              refreshing={statsQuery.isRefetching || logQuery.isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
+            <BrandedRefreshControl refreshing={statsQuery.isRefetching || logQuery.isRefetching} onRefresh={handleRefresh} />
           }
           contentContainerStyle={styles.scrollContent}
         >

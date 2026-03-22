@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl, TextInput, Share,
+  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, TextInput, Share,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
@@ -17,7 +17,9 @@ import { islamicApi } from '@/services/islamicApi';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import type { QuranSurah, QuranVerse } from '@/types/islamic';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -125,7 +127,8 @@ export default function QuranShareScreen() {
     const text = `${verseText}\n\n${translationText}\n\n— ${currentSurah.name} ${currentVerse}`;
     await Clipboard.setStringAsync(text);
     setShowShareOptions(false);
-  }, [verseText, translationText, currentSurah.name, currentVerse]);
+    showToast({ message: t('common.copied', { defaultValue: 'Copied to clipboard' }), variant: 'success' });
+  }, [verseText, translationText, currentSurah.name, currentVerse, t]);
 
   const isRefreshing = surahsRefetching || verseRefetching;
 
@@ -190,7 +193,7 @@ export default function QuranShareScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefreshing} onRefresh={handleRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
         >
           {/* Surah Selector */}
           <Animated.View entering={FadeInUp.duration(500)}>

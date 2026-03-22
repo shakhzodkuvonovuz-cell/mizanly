@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   Dimensions,
   Alert,
@@ -19,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -350,11 +350,7 @@ function QuranReadingPlanContent() {
           data={PLAN_OPTIONS}
           keyExtractor={(item) => item.type}
           refreshControl={
-            <RefreshControl
-              tintColor={colors.emerald}
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-            />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
@@ -409,11 +405,7 @@ function QuranReadingPlanContent() {
         data={historyPlans}
         keyExtractor={(item) => item.id}
         refreshControl={
-          <RefreshControl
-            tintColor={colors.emerald}
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
+          <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
