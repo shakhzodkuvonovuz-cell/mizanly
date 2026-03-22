@@ -205,7 +205,7 @@ function CrossPostContent() {
                   <Icon
                     name={space.icon}
                     size="md"
-                    color={isSelected ? colors.emerald : colors.text.secondary}
+                    color={isSelected ? colors.emerald : tc.text.secondary}
                   />
                 </View>
                 <Text style={[styles.spaceLabel, isSelected && styles.spaceLabelSelected]}>
@@ -236,7 +236,7 @@ function CrossPostContent() {
             <TextInput
               style={[styles.captionInput, { textAlign: rtlTextAlign(isRTL) }]}
               placeholder={t('crossPost.captionPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={captionOverride}
               onChangeText={setCaptionOverride}
               maxLength={CAPTION_MAX}

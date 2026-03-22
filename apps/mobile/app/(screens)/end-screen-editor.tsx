@@ -245,7 +245,7 @@ export default function EndScreenEditorScreen() {
                             <Icon
                               name={opt.icon}
                               size="sm"
-                              color={item.type === opt.type ? colors.emerald : colors.text.secondary}
+                              color={item.type === opt.type ? colors.emerald : tc.text.secondary}
                             />
                             <Text
                               style={[
@@ -271,7 +271,7 @@ export default function EndScreenEditorScreen() {
                         onChangeText={(text) => handleUpdateItem(index, 'label', text)}
                         maxLength={MAX_LABEL}
                         placeholder={t('endScreens.labelPlaceholder')}
-                        placeholderTextColor={colors.text.tertiary}
+                        placeholderTextColor={tc.text.tertiary}
                         accessibilityLabel={t('endScreens.labelField')}
                       />
 
@@ -284,7 +284,7 @@ export default function EndScreenEditorScreen() {
                             value={item.targetId}
                             onChangeText={(text) => handleUpdateItem(index, 'targetId', text)}
                             placeholder={t('endScreens.targetIdPlaceholder')}
-                            placeholderTextColor={colors.text.tertiary}
+                            placeholderTextColor={tc.text.tertiary}
                             accessibilityLabel={t('endScreens.targetId')}
                           />
                         </>
@@ -299,7 +299,7 @@ export default function EndScreenEditorScreen() {
                             value={item.url}
                             onChangeText={(text) => handleUpdateItem(index, 'url', text)}
                             placeholder="https://..."
-                            placeholderTextColor={colors.text.tertiary}
+                            placeholderTextColor={tc.text.tertiary}
                             keyboardType="url"
                             autoCapitalize="none"
                             accessibilityLabel={t('endScreens.url')}

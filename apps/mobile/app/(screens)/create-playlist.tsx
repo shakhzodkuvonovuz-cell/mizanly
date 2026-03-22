@@ -144,7 +144,7 @@ export default function CreatePlaylistScreen() {
               <TextInput
                 style={styles.input}
                 placeholder={t('createPlaylist.placeholder.title')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={title}
                 onChangeText={(text) => text.length <= MAX_TITLE && setTitle(text)}
               />
@@ -172,7 +172,7 @@ export default function CreatePlaylistScreen() {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder={t('createPlaylist.placeholder.description')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={description}
                 onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
                 multiline
@@ -196,7 +196,7 @@ export default function CreatePlaylistScreen() {
                   colors={isPublic ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(100,100,100,0.2)', 'transparent']}
                   style={styles.toggleIconGradient}
                 >
-                  <Icon name={isPublic ? "globe" : "lock"} size="sm" color={isPublic ? colors.emerald : colors.text.tertiary} />
+                  <Icon name={isPublic ? "globe" : "lock"} size="sm" color={isPublic ? colors.emerald : tc.text.tertiary} />
                 </LinearGradient>
               </View>
               <View style={{ flex: 1 }}>
@@ -209,7 +209,7 @@ export default function CreatePlaylistScreen() {
                 value={isPublic}
                 onValueChange={setIsPublic}
                 trackColor={{ false: tc.border, true: colors.emerald }}
-                thumbColor={colors.text.primary}
+                thumbColor={tc.text.primary}
               />
             </LinearGradient>
           </Animated.View>

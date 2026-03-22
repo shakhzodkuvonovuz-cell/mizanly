@@ -190,7 +190,7 @@ export default function DuetCreateScreen() {
                 <View style={styles.creatorRow}>
                   <View style={styles.avatarContainer}>
                     <View style={[styles.avatarPlaceholder, { backgroundColor: tc.surface }]}>
-                      <Icon name="user" size="md" color={colors.text.tertiary} />
+                      <Icon name="user" size="md" color={tc.text.tertiary} />
                     </View>
                   </View>
                   <View style={styles.creatorInfo}>
@@ -250,7 +250,7 @@ export default function DuetCreateScreen() {
                       ) : (
                         <View style={[styles.videoPanel, { backgroundColor: tc.bgCard }]}>
                           <View style={styles.videoPanelInner}>
-                            <Icon name="play" size="xl" color={colors.text.tertiary} />
+                            <Icon name="play" size="xl" color={tc.text.tertiary} />
                           </View>
                         </View>
                       )}
@@ -305,7 +305,7 @@ export default function DuetCreateScreen() {
                         />
                       ) : (
                         <View style={[styles.videoPanelTopBottom, { backgroundColor: tc.bgCard }]}>
-                          <Icon name="play" size="lg" color={colors.text.tertiary} />
+                          <Icon name="play" size="lg" color={tc.text.tertiary} />
                         </View>
                       )}
                     </View>
@@ -353,7 +353,7 @@ export default function DuetCreateScreen() {
                         />
                       ) : (
                         <View style={[styles.videoPanelReact, { backgroundColor: tc.bgCard }]}>
-                          <Icon name="play" size="lg" color={colors.text.tertiary} />
+                          <Icon name="play" size="lg" color={tc.text.tertiary} />
                         </View>
                       )}
                     </View>
@@ -396,7 +396,7 @@ export default function DuetCreateScreen() {
                       <Icon
                         name={layout.icon}
                         size="sm"
-                        color={layoutMode === layout.id ? colors.emerald : colors.text.secondary}
+                        color={layoutMode === layout.id ? colors.emerald : tc.text.secondary}
                       />
                       <Text style={[
                         styles.layoutButtonText,
@@ -446,7 +446,7 @@ export default function DuetCreateScreen() {
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlButtonGradient}
                 >
-                  <Icon name="repeat" size="md" color={colors.text.secondary} />
+                  <Icon name="repeat" size="md" color={tc.text.secondary} />
                 </LinearGradient>
               </Pressable>
 
@@ -485,7 +485,7 @@ export default function DuetCreateScreen() {
                   <Icon
                     name="sun"
                     size="md"
-                    color={flashOn ? colors.gold : colors.text.secondary}
+                    color={flashOn ? colors.gold : tc.text.secondary}
                   />
                 </LinearGradient>
               </Pressable>
@@ -513,7 +513,7 @@ export default function DuetCreateScreen() {
                     style={[styles.muteButton, { backgroundColor: tc.surface }, isMuted && styles.muteButtonActive]}
                     onPress={() => setIsMuted(!isMuted)}
                   >
-                    <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="xs" color={isMuted ? colors.error : colors.text.secondary} />
+                    <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="xs" color={isMuted ? colors.error : tc.text.secondary} />
                     <Text style={[styles.muteButtonText, isMuted && styles.muteButtonTextActive]}>
                       {isMuted ? t('duet.muted') : t('duet.muteOriginal')}
                     </Text>

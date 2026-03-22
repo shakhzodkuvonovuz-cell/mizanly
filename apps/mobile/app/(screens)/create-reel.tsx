@@ -429,7 +429,7 @@ export default function CreateReelScreen() {
                   onPress={() => setShowCamera(false)}
                   style={[styles.modeTab, !showCamera && styles.modeTabActive]}
                 >
-                  <Icon name="image" size="sm" color={!showCamera ? '#FFF' : colors.text.secondary} />
+                  <Icon name="image" size="sm" color={!showCamera ? '#FFF' : tc.text.secondary} />
                   <Text style={[styles.modeText, !showCamera && styles.modeTextActive]}>{t('createReel.gallery')}</Text>
                 </Pressable>
                 <Pressable
@@ -437,7 +437,7 @@ export default function CreateReelScreen() {
                   onPress={handleOpenCamera}
                   style={[styles.modeTab, showCamera && styles.modeTabActive]}
                 >
-                  <Icon name="camera" size="sm" color={showCamera ? '#FFF' : colors.text.secondary} />
+                  <Icon name="camera" size="sm" color={showCamera ? '#FFF' : tc.text.secondary} />
                   <Text style={[styles.modeText, showCamera && styles.modeTextActive]}>{t('createReel.record')}</Text>
                 </Pressable>
               </View>
@@ -507,7 +507,7 @@ export default function CreateReelScreen() {
                   onPress={() => setShowCamera(false)}
                   style={[styles.modeTab, !showCamera && styles.modeTabActive]}
                 >
-                  <Icon name="image" size="sm" color={!showCamera ? '#FFF' : colors.text.secondary} />
+                  <Icon name="image" size="sm" color={!showCamera ? '#FFF' : tc.text.secondary} />
                   <Text style={[styles.modeText, !showCamera && styles.modeTextActive]}>{t('createReel.gallery')}</Text>
                 </Pressable>
                 <Pressable
@@ -515,7 +515,7 @@ export default function CreateReelScreen() {
                   onPress={handleOpenCamera}
                   style={[styles.modeTab, showCamera && styles.modeTabActive]}
                 >
-                  <Icon name="camera" size="sm" color={showCamera ? '#FFF' : colors.text.secondary} />
+                  <Icon name="camera" size="sm" color={showCamera ? '#FFF' : tc.text.secondary} />
                   <Text style={[styles.modeText, showCamera && styles.modeTextActive]}>{t('createReel.record')}</Text>
                 </Pressable>
               </View>
@@ -567,7 +567,7 @@ export default function CreateReelScreen() {
                   }}
                   style={[styles.thumbnailFrame, styles.uploadThumbnailButton]}
                 >
-                  <Icon name="image" size="md" color={colors.text.secondary} />
+                  <Icon name="image" size="md" color={tc.text.secondary} />
                   <Text style={styles.uploadThumbnailText}>{t('createReel.customThumbnail')}</Text>
                 </Pressable>
               </ScrollView>
@@ -595,7 +595,7 @@ export default function CreateReelScreen() {
                 ref={captionInputRef}
                 style={styles.captionInput}
                 placeholder={t('createReel.captionPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={caption}
                 onChangeText={handleCaptionChange}
                 multiline
@@ -649,7 +649,7 @@ export default function CreateReelScreen() {
                   colors={selectedTrack ? ['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)'] : ['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
                   style={styles.toolbarBtnGradient}
                 >
-                  <Icon name="volume-x" size="md" color={selectedTrack ? colors.emerald : colors.text.primary} />
+                  <Icon name="volume-x" size="md" color={selectedTrack ? colors.emerald : tc.text.primary} />
                 </LinearGradient>
                 <Text style={styles.toolbarLabel}>{t('createReel.music')}</Text>
               </Pressable>
@@ -720,7 +720,7 @@ export default function CreateReelScreen() {
                 {selectedTrack.title} — {selectedTrack.artist}
               </Text>
               <Pressable onPress={() => setSelectedTrack(null)} hitSlop={8}>
-                <Icon name="x" size="sm" color={colors.text.secondary} />
+                <Icon name="x" size="sm" color={tc.text.secondary} />
               </Pressable>
             </Animated.View>
           )}

@@ -336,7 +336,7 @@ export default function ReelRemixScreen() {
                           />
                         ) : (
                           <View style={[styles.previewPipImage, styles.pipPlaceholder]}>
-                            <Icon name="play" size="md" color={colors.text.tertiary} />
+                            <Icon name="play" size="md" color={tc.text.tertiary} />
                           </View>
                         )}
                         <View style={styles.previewPipLabel}>
@@ -371,7 +371,7 @@ export default function ReelRemixScreen() {
                     ref={captionInputRef}
                     style={styles.captionInput}
                     placeholder={t('remix.captionPlaceholder')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     value={caption}
                     onChangeText={handleCaptionChange}
                     multiline
@@ -501,7 +501,7 @@ export default function ReelRemixScreen() {
                       />
                     ) : (
                       <View style={[styles.pipImage, styles.pipPlaceholder]}>
-                        <Icon name="play" size="md" color={colors.text.tertiary} />
+                        <Icon name="play" size="md" color={tc.text.tertiary} />
                       </View>
                     )}
                     <View style={styles.pipLabel}>
@@ -527,7 +527,7 @@ export default function ReelRemixScreen() {
                       />
                     ) : (
                       <View style={[styles.sideSplitImage, styles.pipPlaceholder]}>
-                        <Icon name="play" size="lg" color={colors.text.tertiary} />
+                        <Icon name="play" size="lg" color={tc.text.tertiary} />
                       </View>
                     )}
                     <View style={styles.sideSplitLabel}>
@@ -590,7 +590,7 @@ export default function ReelRemixScreen() {
                     <Icon
                       name={opt.icon}
                       size="sm"
-                      color={layout === opt.key ? colors.emerald : colors.text.secondary}
+                      color={layout === opt.key ? colors.emerald : tc.text.secondary}
                     />
                     <Text style={[
                       styles.layoutBtnText,
@@ -641,7 +641,7 @@ export default function ReelRemixScreen() {
                   </View>
                 ) : (
                   <View style={styles.originalInfoRow}>
-                    <Icon name="video" size="md" color={colors.text.tertiary} />
+                    <Icon name="video" size="md" color={tc.text.tertiary} />
                     <Text style={styles.originalCaption}>{t('remix.originalNotFound')}</Text>
                   </View>
                 )}
@@ -658,7 +658,7 @@ export default function ReelRemixScreen() {
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlBtnGradient}
                 >
-                  <Icon name="camera" size="md" color={colors.text.secondary} />
+                  <Icon name="camera" size="md" color={tc.text.secondary} />
                 </LinearGradient>
               </Pressable>
 
@@ -694,7 +694,7 @@ export default function ReelRemixScreen() {
                   <Icon
                     name={flashOn ? 'eye' : 'eye-off'}
                     size="md"
-                    color={flashOn ? colors.gold : colors.text.secondary}
+                    color={flashOn ? colors.gold : tc.text.secondary}
                   />
                 </LinearGradient>
               </Pressable>

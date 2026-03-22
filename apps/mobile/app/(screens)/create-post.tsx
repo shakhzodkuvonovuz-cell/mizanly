@@ -249,7 +249,7 @@ export default function CreatePostScreen() {
               router.back();
             }
           }} hitSlop={8}>
-            <Icon name="x" size="md" color={colors.text.primary} />
+            <Icon name="x" size="md" color={tc.text.primary} />
           </Pressable>
           <Text style={styles.headerTitle}>{t('saf.newPost')}</Text>
           <GradientButton
@@ -267,7 +267,7 @@ export default function CreatePostScreen() {
             <Icon name="clock" size="sm" color={colors.gold} />
             <Text style={styles.draftBannerText}>{t('compose.draftRestored')}</Text>
             <Pressable onPress={() => setShowDraftBanner(false)} hitSlop={8}>
-              <Icon name="x" size="xs" color={colors.text.secondary} />
+              <Icon name="x" size="xs" color={tc.text.secondary} />
             </Pressable>
           </View>
         )}
@@ -288,9 +288,9 @@ export default function CreatePostScreen() {
                 onPress={() => setShowVisibility((v) => !v)}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                  <Icon name={visibilityOption.iconName} size={12} color={colors.text.secondary} />
+                  <Icon name={visibilityOption.iconName} size={12} color={tc.text.secondary} />
                   <Text style={styles.visibilityPillText}>{pillText}</Text>
-                  <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
+                  <Icon name="chevron-down" size={12} color={tc.text.tertiary} />
                 </View>
               </Pressable>
             </View>
@@ -308,7 +308,7 @@ export default function CreatePostScreen() {
                     if (opt.value === 'CIRCLE') setShowCirclePicker(true);
                   }}
                 >
-                  <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
+                  <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : tc.text.secondary} />
                   <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>
                     {t(opt.labelKey)}
                   </Text>
@@ -338,7 +338,7 @@ export default function CreatePostScreen() {
             ref={inputRef}
             style={styles.input}
             placeholder={t('compose.whatsOnYourMind')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             accessibilityLabel={t('accessibility.postContent')}
             value={content}
             onChangeText={(text) => {
@@ -502,7 +502,7 @@ export default function CreatePostScreen() {
             <Icon name="map-pin" size="xs" color={colors.emerald} />
             <Text style={styles.locationPillText}>{location.name}</Text>
             <Pressable onPress={() => setLocation(null)} hitSlop={8}>
-              <Icon name="x" size="xs" color={colors.text.tertiary} />
+              <Icon name="x" size="xs" color={tc.text.tertiary} />
             </Pressable>
           </View>
         )}
@@ -558,7 +558,7 @@ export default function CreatePostScreen() {
                 colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
                 style={[styles.toolbarBtnGradient, media.length > 0 && styles.toolbarBtnGradientActive]}
               >
-                <Icon name="image" size="md" color={media.length > 0 ? colors.emerald : colors.text.secondary} />
+                <Icon name="image" size="md" color={media.length > 0 ? colors.emerald : tc.text.secondary} />
                 {media.length > 0 && (
                   <View style={[styles.mediaBadge, { borderColor: tc.bg }]}>
                     <Text style={styles.mediaBadgeText}>{media.length}</Text>
@@ -576,7 +576,7 @@ export default function CreatePostScreen() {
                 colors={location ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                 style={styles.toolbarBtnGradient}
               >
-                <Icon name="map-pin" size="md" color={location ? colors.emerald : colors.text.secondary} />
+                <Icon name="map-pin" size="md" color={location ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
             </Pressable>
 
@@ -594,7 +594,7 @@ export default function CreatePostScreen() {
                 colors={showAutocomplete && autocompleteType === 'hashtag' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                 style={styles.toolbarBtnGradient}
               >
-                <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : colors.text.secondary} />
+                <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
             </Pressable>
 
@@ -612,7 +612,7 @@ export default function CreatePostScreen() {
                 colors={showAutocomplete && autocompleteType === 'mention' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                 style={styles.toolbarBtnGradient}
               >
-                <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : colors.text.secondary} />
+                <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
             </Pressable>
 

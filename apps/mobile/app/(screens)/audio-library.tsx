@@ -142,10 +142,10 @@ function AudioCard({
 
         {/* Track Info */}
         <View style={styles.trackInfo}>
-          <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
-          <Text style={styles.trackArtist} numberOfLines={1}>{track.artist}</Text>
+          <Text style={[styles.trackTitle, { color: tc.text.primary }]} numberOfLines={1}>{track.title}</Text>
+          <Text style={[styles.trackArtist, { color: tc.text.secondary }]} numberOfLines={1}>{track.artist}</Text>
           <View style={styles.trackMeta}>
-            <Text style={styles.trackDuration}>{track.duration}</Text>
+            <Text style={[styles.trackDuration, { color: tc.text.tertiary }]}>{track.duration}</Text>
             <Text style={styles.trackUses}>{formatCount(track.useCount)} {t('audioLibrary.uses')}</Text>
           </View>
         </View>
@@ -153,7 +153,7 @@ function AudioCard({
         {/* Actions */}
         <View style={styles.trackActions}>
           <Pressable onPress={onToggleFavorite} style={styles.favoriteButton}>
-            <Icon name={track.isFavorite ? 'heart-filled' : 'heart'} size="sm" color={track.isFavorite ? colors.like : colors.text.tertiary} />
+            <Icon name={track.isFavorite ? 'heart-filled' : 'heart'} size="sm" color={track.isFavorite ? colors.like : tc.text.tertiary} />
           </Pressable>
           <GradientButton
             label={t('common.select')}
@@ -275,17 +275,17 @@ export default function AudioLibraryScreen() {
             colors={colors.gradient.cardDark}
             style={styles.searchBar}
           >
-            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <Icon name="search" size="sm" color={tc.text.tertiary} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: tc.text.primary }]}
               placeholder={t('audioLibrary.searchPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')}>
-                <Icon name="x" size="sm" color={colors.text.tertiary} />
+                <Icon name="x" size="sm" color={tc.text.tertiary} />
               </Pressable>
             )}
           </LinearGradient>
@@ -302,8 +302,8 @@ export default function AudioLibraryScreen() {
             style={[styles.categoryPill, favoritesOnly && styles.categoryPillActive]}
             onPress={() => setFavoritesOnly(!favoritesOnly)}
           >
-            <Icon name="heart" size="xs" color={favoritesOnly ? '#fff' : colors.text.tertiary} />
-            <Text style={[styles.categoryText, favoritesOnly && styles.categoryTextActive]}>{t('audioLibrary.category.favorites')}</Text>
+            <Icon name="heart" size="xs" color={favoritesOnly ? '#fff' : tc.text.tertiary} />
+            <Text style={[styles.categoryText, { color: tc.text.secondary }, favoritesOnly && styles.categoryTextActive]}>{t('audioLibrary.category.favorites')}</Text>
           </Pressable>
           {CATEGORIES.map((category) => (
             <Pressable
@@ -312,7 +312,7 @@ export default function AudioLibraryScreen() {
               style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
               onPress={() => setActiveCategory(category)}
             >
-              <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
+              <Text style={[styles.categoryText, { color: tc.text.secondary }, activeCategory === category && styles.categoryTextActive]}>
                 {t(`audioLibrary.category.${category.toLowerCase()}`)}
               </Text>
             </Pressable>
@@ -391,13 +391,13 @@ export default function AudioLibraryScreen() {
               >
                 <View style={styles.selectedTrackHeader}>
                   <Icon name="music" size="md" color={colors.emerald} />
-                  <Text style={styles.selectedTrackTitle}>{selectedTrack.title}</Text>
+                  <Text style={[styles.selectedTrackTitle, { color: tc.text.primary }]}>{selectedTrack.title}</Text>
                 </View>
-                <Text style={styles.selectedTrackArtist}>{selectedTrack.artist}</Text>
+                <Text style={[styles.selectedTrackArtist, { color: tc.text.secondary }]}>{selectedTrack.artist}</Text>
                 <View style={styles.selectedTrackMeta}>
-                  <Text style={styles.selectedTrackMetaText}>{selectedTrack.duration}</Text>
-                  <Text style={styles.selectedTrackMetaText}>{formatCount(selectedTrack.useCount)} {t('audioLibrary.uses')}</Text>
-                  <Text style={styles.selectedTrackMetaText}>{t(`audioLibrary.category.${selectedTrack.category.toLowerCase()}`)}</Text>
+                  <Text style={[styles.selectedTrackMetaText, { color: tc.text.tertiary }]}>{selectedTrack.duration}</Text>
+                  <Text style={[styles.selectedTrackMetaText, { color: tc.text.tertiary }]}>{formatCount(selectedTrack.useCount)} {t('audioLibrary.uses')}</Text>
+                  <Text style={[styles.selectedTrackMetaText, { color: tc.text.tertiary }]}>{t(`audioLibrary.category.${selectedTrack.category.toLowerCase()}`)}</Text>
                 </View>
                 <GradientButton
                   label={t('audioLibrary.useThisSound')}
@@ -408,7 +408,7 @@ export default function AudioLibraryScreen() {
                   onPress={() => setSelectedTrack(null)}
                   style={styles.selectedTrackCancel}
                 >
-                  <Text style={styles.selectedTrackCancelText}>{t('common.cancel')}</Text>
+                  <Text style={[styles.selectedTrackCancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
                 </Pressable>
               </LinearGradient>
             </Animated.View>
@@ -444,7 +444,8 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: colors.text.primary,
+    color: colors.text.primary, // overridden inline via tc
+
     fontSize: fontSize.base,
     paddingVertical: 0,
   },

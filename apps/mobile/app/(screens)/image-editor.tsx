@@ -213,7 +213,7 @@ export default function ImageEditorScreen() {
                 colors={['#2D3548', '#1C2333']}
                 style={[styles.imagePlaceholder, getFilterStyle(selectedFilter)]}
               >
-                <Icon name="image" size="xl" color={colors.text.tertiary} />
+                <Icon name="image" size="xl" color={tc.text.tertiary} />
                 <Text style={styles.imagePlaceholderText}>{t('screens.imageEditor.yourImage')}</Text>
               </LinearGradient>
             )}
@@ -254,7 +254,7 @@ export default function ImageEditorScreen() {
                   colors={activeTab === tab ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : ['transparent', 'transparent']}
                   style={styles.tabIconBg}
                 >
-                  <Icon name={TAB_ICONS[tab] } size="sm" color={activeTab === tab ? colors.emerald : colors.text.tertiary} />
+                  <Icon name={TAB_ICONS[tab] } size="sm" color={activeTab === tab ? colors.emerald : tc.text.tertiary} />
                 </LinearGradient>
                 <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                   {t(`screens.imageEditor.tab.${tab}`)}

@@ -237,7 +237,7 @@ export default function CaptionEditorScreen() {
             onChangeText={(text) => handleCaptionTextChange(item.id, text)}
             multiline
             placeholder={t('captionEditor.placeholder')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
           />
         </LinearGradient>
       </Animated.View>
@@ -304,7 +304,7 @@ export default function CaptionEditorScreen() {
               >
                 {/* Video Placeholder */}
                 <View style={styles.videoPlaceholder}>
-                  <Icon name="video" size="xl" color={colors.text.tertiary} />
+                  <Icon name="video" size="xl" color={tc.text.tertiary} />
                 </View>
 
                 {/* Caption Overlay */}
@@ -376,7 +376,7 @@ export default function CaptionEditorScreen() {
                       colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                       style={styles.controlGradient}
                     >
-                      <Icon name="chevron-left" size="sm" color={colors.text.primary} />
+                      <Icon name="chevron-left" size="sm" color={tc.text.primary} />
                     </LinearGradient>
                   </Pressable>
 
@@ -402,7 +402,7 @@ export default function CaptionEditorScreen() {
                       colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                       style={styles.controlGradient}
                     >
-                      <Icon name="chevron-right" size="sm" color={colors.text.primary} />
+                      <Icon name="chevron-right" size="sm" color={tc.text.primary} />
                     </LinearGradient>
                   </Pressable>
                 </View>
@@ -623,7 +623,7 @@ export default function CaptionEditorScreen() {
                   </>
                 ) : (
                   <>
-                    <Icon name="mic" size="sm" color={colors.text.secondary} />
+                    <Icon name="mic" size="sm" color={tc.text.secondary} />
                     <Text style={styles.autoGenText}>{t('captionEditor.autoGenerate')}</Text>
                   </>
                 )}

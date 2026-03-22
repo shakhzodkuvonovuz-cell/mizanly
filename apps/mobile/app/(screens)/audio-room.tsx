@@ -318,7 +318,7 @@ export default function AudioRoomScreen() {
                   colors={[colors.gold, colors.goldLight]}
                   style={styles.hostBadge}
                 >
-                  <Icon name="star" size="xs" color={colors.text.primary} />
+                  <Icon name="star" size="xs" color={tc.text.primary} />
                 </LinearGradient>
               </View>
 
@@ -341,7 +341,7 @@ export default function AudioRoomScreen() {
                   <Icon name="users" size="xs" color={colors.gold} />
                   <Text style={styles.listenerCount}>{t('audioRoom.listening', { count: participants.length })}</Text>
                   <Text style={styles.dot}>·</Text>
-                  <Icon name="clock" size="xs" color={colors.text.tertiary} />
+                  <Icon name="clock" size="xs" color={tc.text.tertiary} />
                   <Text style={styles.startedText}>{t('audioRoom.started', { timeAgo: formatTimeAgo(room.startedAt) })}</Text>
                 </View>
               </View>
@@ -394,7 +394,7 @@ export default function AudioRoomScreen() {
                           colors={[colors.gold, colors.goldLight]}
                           style={[styles.speakerHostBadge, { borderColor: tc.bg }]}
                         >
-                          <Icon name="star" size="xs" color={colors.text.primary} />
+                          <Icon name="star" size="xs" color={tc.text.primary} />
                         </LinearGradient>
                       )}
                     </View>
@@ -518,7 +518,7 @@ export default function AudioRoomScreen() {
                 colors={isMicOn ? [colors.emerald, colors.emeraldDark] : [colors.error, colors.error]}
                 style={styles.controlButtonInner}
               >
-                <Icon name={isMicOn ? 'mic' : 'volume-x'} size="md" color={colors.text.primary} />
+                <Icon name={isMicOn ? 'mic' : 'volume-x'} size="md" color={tc.text.primary} />
               </LinearGradient>
             </Pressable>
 
@@ -533,7 +533,7 @@ export default function AudioRoomScreen() {
                 colors={isHandRaised ? [colors.gold, colors.goldLight] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.controlButtonInner}
               >
-                <Icon name="edit" size="md" color={isHandRaised ? tc.bg : colors.text.primary} />
+                <Icon name="edit" size="md" color={isHandRaised ? tc.bg : tc.text.primary} />
               </LinearGradient>
             </Pressable>
 
@@ -547,7 +547,7 @@ export default function AudioRoomScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.controlButtonInner}
               >
-                <Icon name="smile" size="md" color={colors.text.primary} />
+                <Icon name="smile" size="md" color={tc.text.primary} />
               </LinearGradient>
             </Pressable>
 
@@ -557,7 +557,7 @@ export default function AudioRoomScreen() {
                 colors={[colors.error, colors.error]}
                 style={styles.controlButtonInner}
               >
-                <Icon name="log-out" size="md" color={colors.text.primary} />
+                <Icon name="log-out" size="md" color={tc.text.primary} />
               </LinearGradient>
             </Pressable>
           </LinearGradient>

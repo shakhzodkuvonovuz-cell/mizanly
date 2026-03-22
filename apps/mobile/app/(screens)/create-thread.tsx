@@ -115,7 +115,7 @@ function ThreadPart({
             ref={(ref) => inputRef(index, ref)}
             style={styles.partInput}
             placeholder={index === 0 ? t('compose.whatsOnYourMind') : t('compose.continueThread')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             accessibilityLabel={index === 0 ? t('accessibility.threadContent') : t('accessibility.threadContinuation')}
             value={part.content}
             onChangeText={(text) => {
@@ -187,7 +187,7 @@ function ThreadPart({
                 colors={part.media.length >= 4 ? ['rgba(110,119,129,0.2)', 'rgba(110,119,129,0.1)'] : ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
                 style={[styles.toolbarBtnGradient, part.media.length >= 4 && styles.toolbarBtnDisabled]}
               >
-                <Icon name="image" size="sm" color={part.media.length >= 4 ? colors.text.tertiary : colors.emerald} />
+                <Icon name="image" size="sm" color={part.media.length >= 4 ? tc.text.tertiary : colors.emerald} />
               </LinearGradient>
             </Pressable>
 
@@ -210,7 +210,7 @@ function ThreadPart({
                 colors={autocomplete.partIndex === index && autocomplete.type === 'hashtag' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                 style={styles.toolbarBtnGradient}
               >
-                <Icon name="hash" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'hashtag' ? colors.emerald : colors.text.secondary} />
+                <Icon name="hash" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'hashtag' ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
             </Pressable>
 
@@ -233,7 +233,7 @@ function ThreadPart({
                 colors={autocomplete.partIndex === index && autocomplete.type === 'mention' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                 style={styles.toolbarBtnGradient}
               >
-                <Icon name="at-sign" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'mention' ? colors.emerald : colors.text.secondary} />
+                <Icon name="at-sign" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'mention' ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
             </Pressable>
 
@@ -243,7 +243,7 @@ function ThreadPart({
                   colors={hasPoll ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                   style={styles.toolbarBtnGradient}
                 >
-                  <Icon name="bar-chart-2" size="sm" color={hasPoll ? colors.emerald : colors.text.secondary} />
+                  <Icon name="bar-chart-2" size="sm" color={hasPoll ? colors.emerald : tc.text.secondary} />
                 </LinearGradient>
               </Pressable>
             )}
@@ -262,6 +262,7 @@ export default function CreateThreadScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const [parts, setParts] = useState<ChainPart[]>([{ content: '', media: [] }]);
   const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
@@ -450,7 +451,7 @@ export default function CreateThreadScreen() {
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Pressable onPress={handleBack} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.close')}>
-            <Icon name="x" size="md" color={colors.text.primary} />
+            <Icon name="x" size="md" color={tc.text.primary} />
           </Pressable>
           <Text style={styles.headerTitle}>{t('majlis.newThread')}</Text>
           <GradientButton
@@ -471,13 +472,13 @@ export default function CreateThreadScreen() {
           >
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <Icon name={VISIBILITY_KEYS.find((o) => o.value === visibility)!.iconName} size={12} color={colors.text.secondary} />
+              <Icon name={VISIBILITY_KEYS.find((o) => o.value === visibility)!.iconName} size={12} color={tc.text.secondary} />
               <Text style={styles.visPillText}>
                 {visibility === 'CIRCLE' && selectedCircle
                   ? selectedCircle.name
                   : t(VISIBILITY_KEYS.find((o) => o.value === visibility)!.labelKey)}
               </Text>
-              <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
+              <Icon name="chevron-down" size={12} color={tc.text.tertiary} />
             </View>
           </Pressable>
         </View>
@@ -487,7 +488,7 @@ export default function CreateThreadScreen() {
             <BottomSheetItem
               key={opt.value}
               label={t(opt.labelKey)}
-              icon={<Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />}
+              icon={<Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : tc.text.secondary} />}
               onPress={() => {
                 setVisibility(opt.value);
                 setShowVisibility(false);
@@ -586,7 +587,7 @@ export default function CreateThreadScreen() {
                   <TextInput
                     style={[styles.pollQuestion, { borderBottomColor: tc.border }]}
                     placeholder={t('compose.askQuestion')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     value={poll.question}
                     onChangeText={(t) => setPoll((p) => p ? { ...p, question: t } : p)}
                     maxLength={120}
@@ -596,7 +597,7 @@ export default function CreateThreadScreen() {
                       <TextInput
                         style={[styles.pollOptionInput, { borderColor: tc.border }]}
                         placeholder={`Option ${oi + 1}`}
-                        placeholderTextColor={colors.text.tertiary}
+                        placeholderTextColor={tc.text.tertiary}
                         value={opt}
                         onChangeText={(t) => setPoll((p) => {
                           if (!p) return p;
@@ -612,7 +613,7 @@ export default function CreateThreadScreen() {
                           onPress={() => setPoll((p) => p ? { ...p, options: p.options.filter((_, i) => i !== oi) } : p)}
                           hitSlop={8}
                         >
-                          <Icon name="x" size={14} color={colors.text.tertiary} />
+                          <Icon name="x" size={14} color={tc.text.tertiary} />
                         </Pressable>
                       )}
                     </View>

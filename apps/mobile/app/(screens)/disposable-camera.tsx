@@ -200,7 +200,7 @@ function DisposableCameraScreen() {
   });
 
   // ── Timer badge color ──
-  const timerColor = timeLeft <= 30 ? colors.error : colors.text.primary;
+  const timerColor = timeLeft <= 30 ? colors.error : tc.text.primary;
 
   // ── Permission denied ──
   if (permission && !permission.granted) {
@@ -311,7 +311,7 @@ function DisposableCameraScreen() {
           </View>
 
           <Animated.View entering={FadeInUp.delay(300).duration(300)} style={[styles.noEditBanner, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-            <Icon name="lock" size="sm" color={colors.text.secondary} />
+            <Icon name="lock" size="sm" color={tc.text.secondary} />
             <Text style={styles.noEditText}>
               {t('disposable.noEditing')}
             </Text>

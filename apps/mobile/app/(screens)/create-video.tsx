@@ -342,7 +342,7 @@ export default function CreateVideoScreen() {
               </>
             ) : (
               <View style={styles.videoPlaceholder}>
-                <Icon name="video" size="xl" color={colors.text.secondary} />
+                <Icon name="video" size="xl" color={tc.text.secondary} />
                 <Text style={styles.videoPlaceholderText}>{t('createVideo.selectVideo')}</Text>
                 <Text style={styles.videoPlaceholderSub}>{t('createVideo.longFormSupported')}</Text>
               </View>
@@ -357,7 +357,7 @@ export default function CreateVideoScreen() {
                 <ProgressiveImage uri={thumbnailUri} width="100%" height={200} contentFit="cover" />
               ) : (
                 <View style={styles.thumbnailPlaceholder}>
-                  <Icon name="image" size="md" color={colors.text.secondary} />
+                  <Icon name="image" size="md" color={tc.text.secondary} />
                   <Text style={styles.thumbnailPlaceholderText}>{t('createVideo.pickThumbnail')}</Text>
                 </View>
               )}
@@ -399,7 +399,7 @@ export default function CreateVideoScreen() {
                   }}
                   style={[styles.thumbnailFrame, styles.uploadThumbnailButton]}
                 >
-                  <Icon name="image" size="md" color={colors.text.secondary} />
+                  <Icon name="image" size="md" color={tc.text.secondary} />
                   <Text style={styles.uploadThumbnailText}>{t('createVideo.customThumbnail')}</Text>
                 </Pressable>
               </ScrollView>
@@ -414,14 +414,14 @@ export default function CreateVideoScreen() {
                 onPress={() => navigate('/(screens)/caption-editor', { videoUri: video.uri })}
               >
                 <Icon name="edit" size="sm" color={colors.emerald} />
-                <Text style={{ color: colors.text.primary, fontSize: fontSize.sm }}>{t('ai.captions.title')}</Text>
+                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm }}>{t('ai.captions.title')}</Text>
               </Pressable>
               <Pressable
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: tc.border }}
                 onPress={() => navigate('/(screens)/video-editor', { uri: video.uri })}
               >
                 <Icon name="video" size="sm" color={colors.gold} />
-                <Text style={{ color: colors.text.primary, fontSize: fontSize.sm }}>{t('common.edit')}</Text>
+                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm }}>{t('common.edit')}</Text>
               </Pressable>
             </View>
           )}
@@ -432,7 +432,7 @@ export default function CreateVideoScreen() {
             <TextInput
               style={[styles.titleInput, { backgroundColor: tc.surface }]}
               placeholder={t('createVideo.titlePlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={title}
               onChangeText={setTitle}
               maxLength={100}
@@ -448,7 +448,7 @@ export default function CreateVideoScreen() {
             <TextInput
               style={[styles.descriptionInput, { backgroundColor: tc.surface }]}
               placeholder={t('createVideo.descriptionPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -466,7 +466,7 @@ export default function CreateVideoScreen() {
               onPress={() => setShowCategorySheet(true)}
             >
               <Text style={styles.pickerText}>{selectedCategory.replace('_', ' ').toLowerCase()}</Text>
-              <Icon name="chevron-down" size="sm" color={colors.text.secondary} />
+              <Icon name="chevron-down" size="sm" color={tc.text.secondary} />
             </Pressable>
           </View>
 
@@ -477,13 +477,13 @@ export default function CreateVideoScreen() {
               <TextInput
                 style={[styles.tagInput, { backgroundColor: tc.surface }]}
                 placeholder={t('createVideo.tagPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={tagInput}
                 onChangeText={setTagInput}
                 onSubmitEditing={addTag}
               />
               <Pressable style={styles.tagAddButton} onPress={addTag}>
-                <Icon name="plus" size="xs" color={colors.text.primary} />
+                <Icon name="plus" size="xs" color={tc.text.primary} />
               </Pressable>
             </View>
             {tags.length > 0 && (
@@ -492,7 +492,7 @@ export default function CreateVideoScreen() {
                   <View key={tag} style={[styles.tagChip, { backgroundColor: tc.bgElevated }]}>
                     <Text style={styles.tagText}>#{tag}</Text>
                     <Pressable onPress={() => removeTag(tag)} hitSlop={8}>
-                      <Icon name="x" size={10} color={colors.text.secondary} />
+                      <Icon name="x" size={10} color={tc.text.secondary} />
                     </Pressable>
                   </View>
                 ))}
@@ -510,7 +510,7 @@ export default function CreateVideoScreen() {
                 onPress={() => setShowChannelSheet(true)}
               >
                 <Text style={styles.pickerText}>{selectedChannel?.name || t('createVideo.selectChannel')}</Text>
-                <Icon name="chevron-down" size="sm" color={colors.text.secondary} />
+                <Icon name="chevron-down" size="sm" color={tc.text.secondary} />
               </Pressable>
             </View>
           )}
@@ -526,7 +526,7 @@ export default function CreateVideoScreen() {
               <Text style={styles.pickerText}>
                 {visibility === 'PUBLIC' ? t('createVideo.public') : visibility === 'UNLISTED' ? t('createVideo.unlisted') : t('createVideo.private')}
               </Text>
-              <Icon name="chevron-down" size="sm" color={colors.text.secondary} />
+              <Icon name="chevron-down" size="sm" color={tc.text.secondary} />
             </Pressable>
           </View>
 

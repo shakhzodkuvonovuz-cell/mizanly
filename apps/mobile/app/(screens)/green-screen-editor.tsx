@@ -282,7 +282,7 @@ export default function GreenScreenEditorScreen() {
                     colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.imageCardGradient}
                   >
-                    <Icon name="image" size="md" color={colors.text.tertiary} />
+                    <Icon name="image" size="md" color={tc.text.tertiary} />
                   </LinearGradient>
                   <Text style={styles.imageName}>{t(`screens.greenScreen.bg.${image.name}`)}</Text>
                 </Pressable>

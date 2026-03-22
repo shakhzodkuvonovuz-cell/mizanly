@@ -239,7 +239,7 @@ export default function CreateEventScreen() {
             <TextInput
               style={[styles.titleInput, { backgroundColor: tc.surface }]}
               placeholder={t('events.eventNamePlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={title}
               onChangeText={setTitle}
               maxLength={100}
@@ -268,7 +268,7 @@ export default function CreateEventScreen() {
             <TextInput
               style={[styles.descriptionInput, { backgroundColor: tc.surface }]}
               placeholder={t('events.descriptionPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -302,7 +302,7 @@ export default function CreateEventScreen() {
               <Text style={styles.dateLabel}>{t('events.start')}</Text>
               <View style={styles.dateValue}>
                 <Text style={styles.dateText}>{formatDateTime(startDate)}</Text>
-                <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
+                <Icon name="chevron-right" size="xs" color={tc.text.tertiary} />
               </View>
             </Pressable>
 
@@ -312,7 +312,7 @@ export default function CreateEventScreen() {
               <Text style={styles.dateLabel}>{t('events.end')}</Text>
               <View style={styles.dateValue}>
                 <Text style={styles.dateText}>{formatDateTime(endDate)}</Text>
-                <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
+                <Icon name="chevron-right" size="xs" color={tc.text.tertiary} />
               </View>
             </Pressable>
 
@@ -322,7 +322,7 @@ export default function CreateEventScreen() {
                 value={allDay}
                 onValueChange={setAllDay}
                 trackColor={{ false: tc.surface, true: colors.emeraldLight }}
-                thumbColor={allDay ? colors.emerald : colors.text.tertiary}
+                thumbColor={allDay ? colors.emerald : tc.text.tertiary}
               />
             </View>
           </LinearGradient>
@@ -350,14 +350,14 @@ export default function CreateEventScreen() {
                 value={isOnline}
                 onValueChange={setIsOnline}
                 trackColor={{ false: tc.surface, true: colors.emeraldLight }}
-                thumbColor={isOnline ? colors.emerald : colors.text.tertiary}
+                thumbColor={isOnline ? colors.emerald : tc.text.tertiary}
               />
             </View>
 
             <TextInput
               style={[styles.locationInput, { backgroundColor: tc.surface }]}
               placeholder={isOnline ? t('events.addMeetingUrl') : t('events.addLocation')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={location}
               onChangeText={setLocation}
             />
@@ -485,7 +485,7 @@ export default function CreateEventScreen() {
                   ? communities.find(c => c.id === selectedCommunity)?.name
                   : t('events.postToCommunity')}
               </Text>
-              <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
+              <Icon name="chevron-down" size="xs" color={tc.text.tertiary} />
             </Pressable>
 
             <Text style={styles.sectionTitle}>{t('events.yourCommunities')}</Text>
@@ -527,7 +527,7 @@ export default function CreateEventScreen() {
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.checkCircle}
                     >
-                      <Icon name="check" size="xs" color={colors.text.primary} />
+                      <Icon name="check" size="xs" color={tc.text.primary} />
                     </LinearGradient>
                   )}
                 </Pressable>
@@ -554,27 +554,27 @@ export default function CreateEventScreen() {
 
             <View style={[styles.toggleRow, { borderTopColor: tc.border }]}>
               <View style={styles.reminderLabel}>
-                <Icon name="clock" size="xs" color={colors.text.secondary} style={styles.reminderIcon} />
+                <Icon name="clock" size="xs" color={tc.text.secondary} style={styles.reminderIcon} />
                 <Text style={styles.toggleLabel}>{t('events.remind1Hour')}</Text>
               </View>
               <Switch
                 value={reminder1h}
                 onValueChange={setReminder1h}
                 trackColor={{ false: tc.surface, true: colors.emeraldLight }}
-                thumbColor={reminder1h ? colors.emerald : colors.text.tertiary}
+                thumbColor={reminder1h ? colors.emerald : tc.text.tertiary}
               />
             </View>
 
             <View style={[styles.toggleRow, { borderTopColor: tc.border }]}>
               <View style={styles.reminderLabel}>
-                <Icon name="calendar" size="xs" color={colors.text.secondary} style={styles.reminderIcon} />
+                <Icon name="calendar" size="xs" color={tc.text.secondary} style={styles.reminderIcon} />
                 <Text style={styles.toggleLabel}>{t('events.remind1Day')}</Text>
               </View>
               <Switch
                 value={reminder1d}
                 onValueChange={setReminder1d}
                 trackColor={{ false: tc.surface, true: colors.emeraldLight }}
-                thumbColor={reminder1d ? colors.emerald : colors.text.tertiary}
+                thumbColor={reminder1d ? colors.emerald : tc.text.tertiary}
               />
             </View>
           </LinearGradient>
