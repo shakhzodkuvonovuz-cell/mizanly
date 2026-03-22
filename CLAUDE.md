@@ -35,7 +35,7 @@ All 5 spaces built + Telegram + Discord + WeChat feature parity + 4 feature batc
 Backend: NestJS with 79 modules (87 services, 82 controllers, 171 test files). Core: Redis, BullMQ job queues (6 queues, 5 processors), rate limiting (all 82 controllers), Stripe (Decimal money fields), Cloudflare Stream, Email (Resend), Meilisearch. AI: Claude API (text moderation + image moderation via Vision) + Whisper transcription + Gemini embeddings. Commerce: marketplace, Zakat (multi-asset, Decimal precision, configurable gold/silver prices via env), Waqf, virtual currency (coins/gifts/diamonds). Gamification: streaks, XP/levels, achievements, challenges, series, daily Islamic tasks (morning briefing). Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions, persistent voice channels, granular role permissions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties, community notes, mosque social graph.
 **Batch 4 fixes:** Real prayer times (Aladhan API + local solar calculator fallback), Quran text API (Quran.com v4, 114 surahs, verse search, random ayah), real image moderation (Claude Vision SAFE/WARNING/BLOCK), 50+ FK relations wired with onDelete rules, mosque finder (Haversine DB query + OSM Overpass fallback), Ramadan from Hijri calendar, charity amounts Decimal, configurable Zakat prices, privacy policy + ToS endpoints, TURN/STUN config, 12 memoized UI components.
 **Test expansion:** Batch 1 added 548 service tests (happy+error+auth per method). Batch 2 (running) adding 63 controller specs + 27 service expansions + gateway + integration tests. Batch 3 planned for edge cases, authorization matrix, error recovery, concurrency, abuse vectors.
-Mobile: 203 screens, 66 UI components, 19 hooks, 19 API services. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) at 2,838 keys each. All screens reachable via navigation (0 orphans). ScreenErrorBoundary on all screens. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
+Mobile: 208 screens, 39 UI components, 27 hooks, 19 API services. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) at 2,900+ keys each. **UI/UX elevation COMPLETE (2026-03-22): 71 commits, 262 files, +10K lines — every screen theme-aware, branded shimmer, contextual haptics, staggered entrance, progressive images, toast feedback, elastic headers.** All screens reachable via navigation (0 orphans). ScreenErrorBoundary on all screens. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
 Islamic: prayer times (Aladhan API, 8 calc methods, 6 adhan reciters, local solar fallback), Quran (Quran.com API, 114 surahs, 4 reciters, reading plans, tafsir, rooms, verse search), hadith (200+), dhikr counter + challenges, zakat calculator (configurable prices), mosque finder (Haversine + OSM) + social graph, Hajj companion, Ramadan mode, Eid cards, nasheed mode, scholar verification + live Q&A, fatwa Q&A, halal restaurant finder, dua collection (100+), fasting tracker, 99 Names of Allah, hifz tracker, daily morning briefing, Islamic calendar theming (5 overlays auto-activated by Hijri date).
 **Known gaps:** 418 findings originally documented. **Key blockers resolved in audit remediation:** SQL injection in embeddings (FIXED file 07), moderation fail-open (FIXED file 10), banned users bypassing auth (FIXED file 03/13), admin report resolution no-ops (FIXED file 13), cascade deletes on financial records (FIXED file 15). **Remaining blockers:** Apple IAP not installed (App Store rejection), google-services.json missing (Android push), video upload not wired from mobile, R2 credentials not filled in, payments API unused on mobile.
 **72-agent deep audit remediation COMPLETE — all 72 files processed. 4,253 tests passing, 0 failures.**
@@ -332,6 +332,110 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 14. **ALL design/UI work MUST use `frontend-design` and `ui-ux-pro-max` skills** — invoke these plugins before any screen, component, or visual implementation work
 15. **NEVER use Sonnet or Haiku as subagent models** — Opus only. No inferior models.
 16. **Tests cover the ENTIRE scope, not just fixes** — When working on an audit file, also add tests for untested parts of that scope. If a service has 0 tests, add them. Every audit file commit must include new tests.
+17. **ALWAYS use `useContextualHaptic`** — NEVER `useHaptic`. Map: like→haptic.like(), follow→haptic.follow(), save→haptic.save(), navigate→haptic.navigate(), tick→haptic.tick(), delete→haptic.delete(), send→haptic.send(), longPress→haptic.longPress()
+18. **ALWAYS use `<BrandedRefreshControl>`** — NEVER raw `<RefreshControl>`. Import from `@/components/ui/BrandedRefreshControl`
+19. **ALWAYS use `<ProgressiveImage>` for content images** — NEVER raw `<Image>` from expo-image. Import from `@/components/ui/ProgressiveImage`. Provides blurhash placeholder + 300ms crossfade.
+20. **ALWAYS use `formatCount()` for engagement numbers** — NEVER display raw numbers for likes, views, followers, etc. Import from `@/utils/formatCount`
+21. **ALWAYS use `showToast()` for mutation feedback** — NEVER leave mutations without success/error feedback. Import from `@/components/ui/Toast`
+22. **NEVER use `colors.dark.*` in JSX directly** — Always use `tc.*` from `useThemeColors()`. StyleSheet.create() dark values are fallbacks only; JSX must have inline `tc.*` overrides.
+23. **NEVER use `Math.random()` for visual data** — Use deterministic patterns (Math.sin) or real data (expo-av metering). Random data = fake data = dishonest UI.
+24. **NEVER use setTimeout for fake loading** — Either fetch real data or remove the refresh control entirely.
+
+---
+
+## UI/UX Elevation (2026-03-22 — 71 commits, 262 files, +10K lines)
+
+### Design System: Modern Dark Cinema Mobile
+Style from ui-ux-pro-max plugin. Cinematic easing, spring physics, glass overlays, content-first.
+
+### New Theme Tokens (`apps/mobile/src/theme/index.ts`)
+```typescript
+lineHeight:     { xs: 16, sm: 18, base: 22, md: 24, lg: 28, xl: 32, '2xl': 36, '3xl': 44, '4xl': 52 }
+letterSpacing:  { tight: -1.2, snug: -0.8, normal: 0, wide: 0.5, wider: 1.0 }
+interaction:    { pressed: 'rgba(255,255,255,0.04)', hover: '...0.06', disabledOpacity: 0.38, focusRingColor: emerald }
+animation.easing: { cinematic: [0.16,1,0.3,1], decelerate: [0,0,0.2,1], accelerate: [0.4,0,1,1] }
+animation.stagger: { item: 40, section: 80 }  // ms between staggered items
+animation.entrance: { duration: 350 }
+animation.exit: { duration: 250 }  // 70% of entrance (Material rule)
+```
+
+### New Components
+| Component | Path | Purpose |
+|-----------|------|---------|
+| **Toast** | `src/components/ui/Toast.tsx` | Glass card, swipe dismiss, auto-dismiss progress, 4 variants. `showToast({ message, variant })` callable anywhere. `<ToastContainer>` mounted in root layout. |
+| **ProgressiveImage** | `src/components/ui/ProgressiveImage.tsx` | Blurhash→crossfade wrapper for expo-image. `uri`, `width`, `height`, `borderRadius`, `blurhash?`. memo'd. |
+| **SocialProof** | `src/components/ui/SocialProof.tsx` | "Liked by [avatar] name and N others". `users`, `count`, `label?`, `onPress?`, `onUserPress?` |
+| **BrandedRefreshControl** | `src/components/ui/BrandedRefreshControl.tsx` | Emerald+gold branded RefreshControl. `refreshing`, `onRefresh` |
+
+### New Hooks
+| Hook | Path | Purpose |
+|------|------|---------|
+| **useContextualHaptic** | `src/hooks/useContextualHaptic.ts` | 10 semantic haptic methods: like, follow, save, navigate, tick, delete, error, longPress, send, success |
+| **useStaggeredEntrance** | `src/hooks/useStaggeredEntrance.ts` | Stagger fade+slide for list items. `index`, `{ delay?, duration?, translateY?, maxIndex? }` |
+| **useScrollLinkedHeader** | `src/hooks/useScrollLinkedHeader.ts` | Elastic header collapse + blur. Returns `onScroll`, `headerAnimatedStyle`, `titleAnimatedStyle`, `blurIntensity`, `scrollY` |
+| **useAnimatedIcon** | `src/hooks/useAnimatedIcon.ts` | Icon animations: bounce, shake, pulse, spin. Returns `{ animatedStyle, trigger }` |
+
+### New Utilities
+| Utility | Path | Purpose |
+|---------|------|---------|
+| **formatCount** | `src/utils/formatCount.ts` | `999→"999"`, `1200→"1.2K"`, `1500000→"1.5M"` |
+
+### Upgraded Components
+| Component | What changed |
+|-----------|-------------|
+| **Avatar** | Rotating story ring (unseen=gradient rotation, viewed=gray static), online pulse dot, `storyViewed?` prop |
+| **Skeleton** | Emerald brand shimmer (was generic white), responsive width |
+| **EmptyState** | Staggered entrance per element, `illustration?` prop, pulsing CTA button |
+| **BottomSheet** | Spring physics (damping:25 stiffness:200), handle pulse, velocity dismiss, rubberband overscroll, `scrollable?` prop |
+| **TabSelector** | Spring indicator animation, haptic tick on change |
+| **GradientButton** | Deeper press scale (0.94), emerald glow pulse when loading |
+| **Icon** | Wrapped in `React.memo` (prevents 269+ unnecessary re-renders) |
+| **Badge** | Only bounces on 0→positive transition (was jarring on every count change) |
+| **CharCountRing** | Animated SVG stroke + interpolated color green→gold→red |
+| **FloatingHearts** | Wide spread (±60px), horizontal drift, stagger cascade (30ms per particle), size 14-32px |
+| **ScreenErrorBoundary** | "Go Home" escape button via Linking |
+| **OfflineBanner** | FadeInDown/FadeOutUp animation, retry button, "Showing cached content" subtitle |
+| **Tab bar** | Glassmorphic BlurView (intensity 80), hairline border |
+| **GlassHeader** | Duplicate showBack/showBackButton resolved |
+
+### Key Features Added
+- **Story viewer** swipe between users (horizontal FlatList pager)
+- **Bakra Following|For You** tab switcher (TikTok-style)
+- **Bakra tap-to-pause** with play icon overlay
+- **Bakra sound marquee** (scrolling audio title)
+- **Bakra audio disc** enlarged to 44px
+- **Create-reel camera recording** via expo-camera
+- **PostCard double-tap heart** with GestureDetector
+- **PostCard SocialProof** ("Liked by X and N others")
+- **PostCard comment preview** ("View all N comments")
+- **Saf DM shortcut** in header (send icon with unread badge)
+- **Saf "New posts" banner** (scroll-triggered polling, emerald pill)
+- **Thread nested replies** with indentation + connecting lines
+- **ThreadCard multi-image grid** (2x2, 1+2, 1+3, 4+ layouts)
+- **Comment sorting** Top/Latest toggle
+- **Prayer times sky gradient** that changes by time-of-day
+- **Prayer times offline cache** (AsyncStorage, 6h TTL)
+- **Quran room real audio** (cdn.islamic.network, Mishary Alafasy)
+- **Dhikr counter bead click** (generated 800Hz sine wave)
+- **Video player double-tap seek** (left=-10s, right=+10s)
+- **Video Up Next** recommendations section
+- **Chat scroll-to-bottom FAB**
+- **Chat folders** predefined filters (Unread, Groups, Channels, Personal) + chat-folder-view screen
+- **New conversation** contact suggestions from followed users
+- **Community posts** upload via R2 (was sending file:// URIs)
+- **Voice post** real waveform from expo-av metering
+- **Interactive sliders** on duet-create + green-screen-editor
+- **Call screen** JWT socket auth (was using callId — security fix)
+- **Light mode** working across all 208 screens (124 files got tc.* inline overrides)
+
+### Remaining External Dep Blockers (cannot fix via code)
+- Video editor FFmpeg (needs native module install)
+- Green screen ML segmentation (needs TFLite model)
+- Call screen WebRTC audio/video (needs TURN server credentials)
+- Shared element transitions (needs react-native-shared-element npm install)
+- Lottie empty state animations (needs .json files from motion designer)
+- Mosque Finder MapView (needs react-native-maps npm install)
+- Social auth Google/Apple (needs Clerk dashboard configuration)
 
 ---
 
@@ -349,12 +453,16 @@ mizanly/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, minbar, create
 │       │   └── (screens)/       # 208 screens + nested route dirs
 │       └── src/
-│           ├── components/ui/   # 35 components: BottomSheet, Skeleton, Icon, Avatar,
-│           │                    # GlassHeader, GradientButton, EmptyState, VerifiedBadge,
-│           │                    # CharCountRing, VideoPlayer, ImageLightbox, DoubleTapHeart,
-│           │                    # AuthGate, OfflineBanner, TTSMiniPlayer, Toast, etc.
+│           ├── components/ui/   # 39 components: Toast, ProgressiveImage, SocialProof,
+│           │                    # BrandedRefreshControl, BottomSheet, Skeleton, Icon (memo'd),
+│           │                    # Avatar (animated ring), GlassHeader, GradientButton (glow),
+│           │                    # EmptyState (staggered), VerifiedBadge, CharCountRing (animated),
+│           │                    # VideoPlayer, ImageLightbox, DoubleTapHeart, FloatingHearts,
+│           │                    # AuthGate, OfflineBanner, TTSMiniPlayer, Badge, etc.
 │           ├── components/islamic/ # EidFrame, IslamicThemeBanner
-│           ├── hooks/           # 23 hooks: useHaptic, useTranslation, useNetworkStatus, usePiP,
+│           ├── hooks/           # 27 hooks: useContextualHaptic (PRIMARY — replaces useHaptic),
+│           │                    # useStaggeredEntrance, useScrollLinkedHeader, useAnimatedIcon,
+│           │                    # useTranslation, useThemeColors, useNetworkStatus, usePiP,
 │           │                    # useVideoPreloader, useAmbientColor, useIslamicTheme, useTTS, etc.
 │           ├── services/        # 19 API service files (api.ts, islamicApi.ts, widgetData.ts, etc.)
 │           ├── stores/index.ts  # Zustand store
