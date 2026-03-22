@@ -1,14 +1,23 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, {
+  FadeInUp,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { Icon } from './Icon';
 import { GradientButton } from './GradientButton';
-import { useEntranceAnimation } from '@/hooks/useEntranceAnimation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 
 export interface EmptyStateProps {
   icon?: React.ComponentProps<typeof Icon>['name'];
+  illustration?: React.ReactNode;
   title: string;
   subtitle?: string;
   actionLabel?: string;
@@ -16,25 +25,74 @@ export interface EmptyStateProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function EmptyState({ icon, title, subtitle, actionLabel, onAction, style }: EmptyStateProps) {
-  const { animatedStyle: entranceStyle } = useEntranceAnimation();
+export function EmptyState({ icon, illustration, title, subtitle, actionLabel, onAction, style }: EmptyStateProps) {
   const tc = useThemeColors();
+  const reducedMotion = useReducedMotion();
+
+  const ctaScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (actionLabel && onAction && !reducedMotion) {
+      ctaScale.value = withRepeat(
+        withSequence(
+          withTiming(1.03, { duration: 1500 }),
+          withTiming(1, { duration: 1500 }),
+        ),
+        -1,
+        true,
+      );
+    }
+  }, [actionLabel, onAction, reducedMotion, ctaScale]);
+
+  const ctaAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ctaScale.value }],
+  }));
+
+  const enterDuration = reducedMotion ? 0 : 400;
 
   return (
-    <Animated.View style={[styles.container, entranceStyle, style]}>
-      {icon && (
-        <View style={[styles.iconWrap, { backgroundColor: tc.bgElevated }]}>
-          <Icon name={icon} size="xl" color={colors.text.tertiary} />
-        </View>
+    <View style={[styles.container, style]}>
+      {illustration ? (
+        <Animated.View
+          entering={FadeInUp.delay(0).duration(enterDuration).springify()}
+          style={styles.illustrationWrap}
+        >
+          {illustration}
+        </Animated.View>
+      ) : icon ? (
+        <Animated.View
+          entering={FadeInUp.delay(0).duration(enterDuration).springify()}
+          style={[styles.iconWrap, { backgroundColor: tc.bgElevated }]}
+        >
+          <Icon name={icon} size="xl" color={tc.text.tertiary} />
+        </Animated.View>
+      ) : null}
+
+      <Animated.Text
+        entering={FadeInUp.delay(reducedMotion ? 0 : 80).duration(enterDuration).springify()}
+        style={[styles.title, { color: tc.text.primary }]}
+      >
+        {title}
+      </Animated.Text>
+
+      {subtitle && (
+        <Animated.Text
+          entering={FadeInUp.delay(reducedMotion ? 0 : 160).duration(enterDuration).springify()}
+          style={[styles.subtitle, { color: tc.text.secondary }]}
+        >
+          {subtitle}
+        </Animated.Text>
       )}
-      <Text style={[styles.title, { color: tc.text.primary }]}>{title}</Text>
-      {subtitle && <Text style={[styles.subtitle, { color: tc.text.secondary }]}>{subtitle}</Text>}
+
       {actionLabel && onAction && (
-        <View style={styles.actionWrap}>
+        <Animated.View
+          entering={FadeInUp.delay(reducedMotion ? 0 : 240).duration(enterDuration).springify()}
+          style={[styles.actionWrap, ctaAnimatedStyle]}
+        >
           <GradientButton label={actionLabel} onPress={onAction} size="sm" />
-        </View>
+        </Animated.View>
       )}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -45,7 +103,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     gap: spacing.sm,
   },
-  // TODO: colors.dark.bgElevated overridden by inline style with tc.bgElevated from useThemeColors()
+  illustrationWrap: {
+    marginBottom: spacing.md,
+    alignItems: 'center',
+  },
   iconWrap: {
     width: 64,
     height: 64,
@@ -58,14 +119,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   title: {
-    color: colors.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '600',
+    fontFamily: fonts.bodyBold,
     textAlign: 'center',
   },
   subtitle: {
-    color: colors.text.secondary,
     fontSize: fontSize.base,
+    fontFamily: fonts.body,
     textAlign: 'center',
     lineHeight: 22,
   },
