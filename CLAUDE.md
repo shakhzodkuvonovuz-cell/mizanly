@@ -2,10 +2,11 @@
 
 ## MANDATORY: Read All Memory Files Before Any Task
 
-At the start of every session, read ALL files in `~/.claude/projects/C--dev-mizanly/memory/`:
+At the start of every session, read ALL files in `~/.claude/projects/C--dev-mizanly/memory/` (listed in MEMORY.md):
 - `user_shakhzod.md` — who the user is, preferences, communication style
 - `feedback_*.md` — all feedback files (brutal honesty, no subagents, no co-author, max effort, Islamic data manual, subagent context quality)
 - `reference_competitor_intel.md` — UpScrolled, Muslim Pro, market data
+- `project_*.md` — project state, gaps audit, deployment status (numbers may be stale — verify against code)
 
 ---
 
@@ -231,6 +232,7 @@ useReducedMotion()           // Accessibility: motion preferences
 - Notification: `userId` (NOT recipientId) | `isRead` (NOT read)
 - Follow: composite PK [followerId, followingId]
 - Exceptions: ForumThread/ForumReply use `authorId`, Circle/MajlisList use `ownerId`, GiftRecord uses `senderId`/`receiverId`
+- ID strategy: core models use `@default(cuid())`, extensions use `@default(uuid())`. New models should use `cuid()` for consistency.
 
 ## Zustand Store
 ```ts
