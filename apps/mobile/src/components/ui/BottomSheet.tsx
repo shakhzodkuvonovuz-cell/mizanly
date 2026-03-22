@@ -7,6 +7,9 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withRepeat,
+  withSequence,
+  interpolate,
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -37,6 +40,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
   const backdropOpacity = useSharedValue(0);
   const context = useSharedValue({ y: 0 });
   const mountedRef = useRef(true);
+  const handleScale = useSharedValue(1);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -44,6 +48,26 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
       mountedRef.current = false;
     };
   }, []);
+
+  // Subtle breathing pulse on the drag handle to signal draggability
+  useEffect(() => {
+    if (visible) {
+      handleScale.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 1200 }),
+          withTiming(1, { duration: 1200 })
+        ),
+        3, // pulse 3 times then stop
+        true
+      );
+    } else {
+      handleScale.value = 1;
+    }
+  }, [visible, handleScale]);
+
+  const handleAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: handleScale.value }],
+  }));
 
   // Validate and clamp snapPoint to 0.1-1 range (percentage of screen height)
   if (__DEV__ && snapPoint !== undefined && (snapPoint < 0 || snapPoint > 1)) {
@@ -54,20 +78,21 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
 
   const open = useCallback(() => {
     backdropOpacity.value = withTiming(1, { duration: animation.timing.normal });
-    translateY.value = withSpring(0, animation.spring.responsive);
+    // Premium entrance spring: heavier and more damped than default responsive
+    translateY.value = withSpring(0, { damping: 25, stiffness: 200, mass: 0.8 });
     // Announce to screen readers that a menu has opened
     AccessibilityInfo.announceForAccessibility(t('common.menuOpened') || 'Menu opened');
   }, [translateY, backdropOpacity, t]);
 
   const close = useCallback(() => {
+    if (!mountedRef.current) return;
     haptic.light();
-    backdropOpacity.value = withTiming(0, { duration: animation.timing.fast });
-    translateY.value = withSpring(SCREEN_HEIGHT, animation.spring.responsive);
-    setTimeout(() => {
-      if (mountedRef.current) {
-        onClose();
+    backdropOpacity.value = withTiming(0, { duration: 200 });
+    translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250 }, (finished) => {
+      if (finished) {
+        runOnJS(onClose)();
       }
-    }, 250);
+    });
   }, [haptic, translateY, backdropOpacity, onClose, SCREEN_HEIGHT]);
 
   useEffect(() => {
@@ -84,13 +109,27 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
     })
     .onUpdate((event) => {
       const newY = context.value.y + event.translationY;
-      translateY.value = Math.max(0, newY);
+      if (newY < 0) {
+        // Rubberband effect when dragging up past top
+        translateY.value = newY * 0.3;
+      } else {
+        translateY.value = newY;
+      }
+      // Fade backdrop proportionally as sheet is dragged down
+      backdropOpacity.value = interpolate(
+        translateY.value,
+        [0, SCREEN_HEIGHT * 0.3],
+        [1, 0],
+        'clamp'
+      );
     })
     .onEnd((event) => {
-      if (event.translationY > 80 || event.velocityY > 500) {
+      if (event.translationY > 60 || event.velocityY > 800) {
         runOnJS(close)();
       } else {
-        translateY.value = withSpring(0, animation.spring.responsive);
+        // Snap back with premium spring
+        translateY.value = withSpring(0, { damping: 20, stiffness: 200 });
+        backdropOpacity.value = withTiming(1, { duration: 200 });
       }
     });
 
@@ -133,7 +172,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
               <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(33, 40, 59, 0.92)', borderTopWidth: 0.5, borderTopColor: colors.glass.border }]} />
             )}
             <View style={styles.handleContainer}>
-              <View style={[styles.handle, { backgroundColor: tc.borderLight }]} />
+              <Animated.View style={[styles.handle, { backgroundColor: tc.borderLight }, handleAnimatedStyle]} />
             </View>
             <View style={styles.content}>{children}</View>
           </Animated.View>
