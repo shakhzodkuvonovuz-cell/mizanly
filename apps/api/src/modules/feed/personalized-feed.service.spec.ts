@@ -21,6 +21,7 @@ describe('PersonalizedFeedService', () => {
             follow: { findMany: jest.fn().mockResolvedValue([]) },
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
             feedInteraction: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             postReaction: { findMany: jest.fn().mockResolvedValue([]) },
             savedPost: { findMany: jest.fn().mockResolvedValue([]) },
@@ -181,11 +182,12 @@ describe('PersonalizedFeedService', () => {
     });
   });
 
-  describe('getPersonalizedFeed — block/mute filtering', () => {
-    it('should query blocks and mutes for authenticated users', async () => {
+  describe('getPersonalizedFeed — block/mute/restrict filtering', () => {
+    it('should query blocks, mutes, and restricts for authenticated users', async () => {
       prisma.feedInteraction.count.mockResolvedValue(5);
       prisma.block.findMany.mockResolvedValue([{ blockerId: 'user-1', blockedId: 'bad-user' }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted-user' }]);
+      prisma.restrict.findMany.mockResolvedValue([{ restrictedId: 'restricted-user' }]);
       prisma.post.findMany.mockResolvedValue([{ id: 'p1', hashtags: [] }]);
 
       await service.getPersonalizedFeed('user-1', 'saf');
@@ -198,15 +200,19 @@ describe('PersonalizedFeedService', () => {
       expect(prisma.mute.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { userId: 'user-1' } }),
       );
+      expect(prisma.restrict.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { restricterId: 'user-1' } }),
+      );
     });
 
-    it('should not query blocks/mutes for unauthenticated users', async () => {
+    it('should not query blocks/mutes/restricts for unauthenticated users', async () => {
       prisma.post.findMany.mockResolvedValue([]);
 
       await service.getPersonalizedFeed(undefined, 'saf');
 
       expect(prisma.block.findMany).not.toHaveBeenCalled();
       expect(prisma.mute.findMany).not.toHaveBeenCalled();
+      expect(prisma.restrict.findMany).not.toHaveBeenCalled();
     });
   });
 

@@ -184,7 +184,9 @@
     "linkCopied": "لنک کلپ بورڈ پر کاپی ہو گیا",
     "spam": "اسپام",
     "inappropriate": "نامناسب",
-    "misinformation": "غلط معلومات"
+    "misinformation": "غلط معلومات",
+    "openLink": "Open link",
+    "menuOpened": "Menu opened"
   },
   "tabs": {
     "saf": "صف",
@@ -418,7 +420,7 @@
     "firstToShare": "Be the first to share your thoughts",
     "noComments": "No comments yet",
     "beFirstToComment": "Be the first to comment",
-    "commentsWithCount": "Comments \u00b7 {{count}}",
+    "commentsWithCount": "Comments · {{count}}",
     "pinned": "Pinned",
     "creator": "Creator",
     "questionPlaceholder": "Type your question...",
@@ -805,7 +807,10 @@
     "skipBack": "Skip back 10 seconds",
     "skipForward": "Skip forward 10 seconds",
     "missingChannel": "چینل نہیں ملا",
-    "pleaseSelectChannel": "براہ کرم ایک چینل منتخب کریں۔"
+    "pleaseSelectChannel": "براہ کرم ایک چینل منتخب کریں۔",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "seekBar": "Video position: {{current}} of {{total}}"
   },
   "islamic": {
     "prayerTimes": "نماز کے اوقات",
@@ -854,7 +859,8 @@
     "prayerNotifications": "Prayer Notifications",
     "prayerMethod": "Prayer Calculation Method",
     "prayerAdjustments": "Prayer Adjustments",
-    "prayerLocation": "Prayer Location"
+    "prayerLocation": "Prayer Location",
+    "qiblaDirectionDegrees": "{{degrees}}° from North"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1013,7 +1019,12 @@
     "widowed": "Widowed",
     "separated": "Separated",
     "divorced": "Divorced",
-    "preferNotToSay": "Prefer not to say"
+    "preferNotToSay": "Prefer not to say",
+    "shareMessage": "Check out @{{username}} on Mizanly!",
+    "noContent": "No content yet",
+    "noLikedPosts": "No liked posts yet",
+    "threads": "Threads",
+    "reels": "Reels"
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",
@@ -1381,7 +1392,39 @@
     "startParty": "Start Party",
     "partyNamePlaceholder": "Party name...",
     "videoIdPlaceholder": "Video ID...",
-    "questionPlaceholder": "Ask your question in detail..."
+    "questionPlaceholder": "Ask your question in detail...",
+    "waqfGoalOf": "of ${{amount}}",
+    "waqfDescription": "Waqf is an Islamic endowment — a permanent charitable fund where the principal is preserved and only the returns are used for good causes.",
+    "waqfContributeComingSoon": "Waqf contributions will be available once payment processing is set up",
+    "browse": "Browse",
+    "ask": "Ask",
+    "answered": "Answered",
+    "pending": "Pending",
+    "yourQuestion": "Your Question",
+    "preferredMadhab": "Preferred Madhab",
+    "submitQuestion": "Submit Question",
+    "madhab": {
+      "any": "Any Madhab",
+      "hanafi": "Hanafi",
+      "maliki": "Maliki",
+      "shafii": "Shafi'i",
+      "hanbali": "Hanbali"
+    },
+    "members": "members",
+    "posts": "posts",
+    "mentee": "Mentee",
+    "mentor": "Mentor",
+    "myMentorships": "My Mentorships",
+    "topicNewMuslim": "New Muslim Guidance",
+    "topicQuran": "Quran Studies",
+    "topicArabic": "Arabic Language",
+    "topicFiqh": "Fiqh & Jurisprudence",
+    "topicGeneral": "General Mentorship",
+    "contribute": "Contribute",
+    "hostedBy": "Hosted by {{name}}",
+    "watchingCount": "{{count}} watching",
+    "joinParty": "Join Party",
+    "start": "Start"
   },
   "discover": {
     "title": "Discover",
@@ -1651,7 +1694,9 @@
       "emptyTitle": "No muted accounts",
       "emptySubtitle": "Accounts you mute will appear here",
       "errorTitle": "Could not load muted accounts",
-      "errorSubtitle": "Pull to refresh"
+      "errorSubtitle": "Pull to refresh",
+      "unmuteConfirmTitle": "Unmute",
+      "unmuteConfirmMessage": "Are you sure you want to unmute this account?"
     },
     "restricted": {
       "title": "Restricted Accounts",
@@ -1794,7 +1839,8 @@
       "errorTitle": "Could not load profile",
       "errorSubtitle": "Please try again",
       "profileUnavailable": "Profile unavailable",
-      "profileUnavailableDesc": "Unable to load your profile"
+      "profileUnavailableDesc": "Unable to load your profile",
+      "shareTitle": "Check out {{name}}'s profile on Mizanly"
     },
     "sound": {
       "title": "Sound",
@@ -1888,6 +1934,65 @@
       "descEidAlFitr": "The Festival of Breaking the Fast. A joyous celebration marking the end of Ramadan.",
       "descDayOfArafah": "The 9th of Dhu al-Hijjah. Standing at Arafah is the essence of Hajj. Fasting on this day expiates sins.",
       "descEidAlAdha": "The Festival of Sacrifice. Commemorating Prophet Ibrahim's (AS) willingness to sacrifice his son."
+    },
+    "greenScreen": {
+      "title": "Green Screen",
+      "solidColors": "Solid Colors",
+      "gradients": "Gradients",
+      "images": "Images",
+      "videos": "Videos",
+      "custom": "Custom",
+      "uploadImage": "Upload Image",
+      "imageFormats": "PNG, JPG, WEBP",
+      "uploadVideo": "Upload Video",
+      "videoFormats": "MP4, MOV",
+      "recentUploads": "Recent Uploads",
+      "noUploadsYet": "No uploads yet",
+      "recentUploadsHint": "Your custom backgrounds will appear here",
+      "adjustments": "Adjustments",
+      "backgroundBlur": "Background Blur",
+      "edgeSmoothing": "Edge Smoothing",
+      "applyAndRecord": "Apply & Record",
+      "color": {
+        "black": "Black",
+        "white": "White",
+        "emerald": "Emerald",
+        "gold": "Gold",
+        "blue": "Blue",
+        "red": "Red",
+        "purple": "Purple",
+        "pink": "Pink",
+        "orange": "Orange",
+        "yellow": "Yellow",
+        "cyan": "Cyan",
+        "gray": "Gray"
+      },
+      "gradient": {
+        "sunset": "Sunset",
+        "ocean": "Ocean",
+        "forest": "Forest",
+        "midnight": "Midnight",
+        "rose": "Rose",
+        "arctic": "Arctic",
+        "desert": "Desert",
+        "aurora": "Aurora"
+      },
+      "bg": {
+        "beach": "Beach",
+        "mountains": "Mountains",
+        "city": "City",
+        "studio": "Studio",
+        "space": "Space",
+        "library": "Library",
+        "cafe": "Cafe",
+        "garden": "Garden",
+        "particles": "Particles",
+        "rain": "Rain",
+        "fire": "Fire",
+        "bokeh": "Bokeh",
+        "clouds": "Clouds",
+        "matrix": "Matrix"
+      }
     }
   },
   "createReel": {
@@ -1973,7 +2078,8 @@
     "history": "Completed Plans",
     "noHistory": "No completed plans yet",
     "startPlan": "Start Plan",
-    "deletePlan": "Delete Plan"
+    "deletePlan": "Delete Plan",
+    "deleteConfirm": "Are you sure you want to delete this reading plan? All progress will be lost."
   },
   "hajj": {
     "title": "Hajj Companion",
@@ -2030,7 +2136,9 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "alreadyApplied": "Application already submitted",
-    "badgePreview": "Your Scholar Badge"
+    "badgePreview": "Your Scholar Badge",
+    "displayedOnProfile": "Displayed on your profile",
+    "documentUploadPlaceholder": "Document upload requires file picker dependency. Coming soon."
   },
   "contentFilter": {
     "title": "Content Filter",
@@ -2365,7 +2473,11 @@
     "enableChat": "Live Chat",
     "enableChatHint": "Allow viewers to chat during countdown",
     "addTrailer": "Add Teaser Clip",
-    "confirm": "Your video will premiere on {{date}} at {{time}}"
+    "confirm": "Your video will premiere on {{date}} at {{time}}",
+    "dateLabel": "Date (YYYY-MM-DD)",
+    "timeLabel": "Time (HH:MM)",
+    "countdownTheme": "Countdown Theme",
+    "invalidDateTime": "Please enter a valid date (YYYY-MM-DD) and time (HH:MM)"
   },
   "clips": {
     "title": "Create Clip",
@@ -2624,7 +2736,9 @@
       "fontArabic": "Arabic",
       "save": "Save Changes",
       "uploadBackground": "Upload Background",
-      "musicUrl": "Music URL"
+      "musicUrl": "Music URL",
+      "saved": "Profile customization saved",
+      "saveError": "Could not save changes. Please try again."
     },
     "settingsSection": "Gamification",
     "settingsStreaks": "Streaks",
@@ -2908,7 +3022,22 @@
     "dragHandlesToTrim": "تراشنے کے لیے ہینڈل گھسیٹیں",
     "exportProgress": "برآمد ہو رہا ہے {{percent}}%",
     "noVideo": "کوئی ویڈیو منتخب نہیں",
-    "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
+    "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں",
+    "exportSimulated": "Export Simulated",
+    "ffmpegNotAvailable": "FFmpeg is not available. Video was exported without processing.",
+    "filterOriginal": "Original",
+    "filterWarm": "Warm",
+    "filterCool": "Cool",
+    "filterBW": "B&W",
+    "filterVintage": "Vintage",
+    "filterVivid": "Vivid",
+    "filterDramatic": "Dramatic",
+    "filterFade": "Fade",
+    "font": {
+      "default": "Default",
+      "bold": "Bold",
+      "handwritten": "Handwritten"
+    }
   },
   "coins": {
     "balance": "سکے بیلنس",
@@ -3065,7 +3194,9 @@
     "writeReview": "جائزہ لکھیں",
     "directions": "راستہ حاصل کریں",
     "verifyHalal": "حلال حیثیت کی تصدیق",
-    "distance": "{{distance}} کلومیٹر دور"
+    "distance": "{{distance}} کلومیٹر دور",
+    "noRestaurantsNearby": "No halal restaurants found nearby",
+    "noRestaurantsForCuisine": "No {{cuisine}} restaurants found nearby"
   },
   "tts": {
     "listen": "سنیں",
@@ -3166,5 +3297,132 @@
   },
   "contentSettings": {
     "saveError": "Failed to save setting"
+  },
+  "autocomplete": {
+    "hashtags": "Hashtags",
+    "people": "People",
+    "noHashtagsFound": "No hashtags found for \"{{query}}\"",
+    "noUsersFound": "No users found for \"{{query}}\"",
+    "hashtagResults": "hashtag results",
+    "userResults": "user results"
+  },
+  "chatExport": {
+    "errorTitle": "Error",
+    "errorLoadStats": "Failed to load chat statistics"
+  },
+  "disappearingDefault": {
+    "errorTitle": "Error"
+  },
+  "cashout": {
+    "title": "Cash Out",
+    "errorTitle": "Error"
+  },
+  "chatLock": {
+    "removeLockMessage": "Are you sure you want to remove the chat lock?"
+  },
+  "camera": {
+    "permissionRequired": "Camera Permission Required",
+    "permissionMessage": "Please grant camera access to use this feature",
+    "grantPermission": "Grant Permission"
+  },
+  "voiceRecorder": {
+    "uploadFailed": "Failed to upload voice message. Please try again."
+  },
+  "duet": {
+    "original": "Original",
+    "you": "You",
+    "recording": "Recording...",
+    "layout": "Layout",
+    "layoutSideBySide": "Side by Side",
+    "layoutTopBottom": "Top & Bottom",
+    "layoutReact": "React",
+    "audioSettings": "Audio Settings",
+    "muted": "Muted",
+    "muteOriginal": "Mute Original",
+    "originalAudio": "Original Audio",
+    "yourAudio": "Your Audio",
+    "duettingWith": "Duetting with @{{username}}",
+    "unknownCreator": "Unknown Creator"
+  },
+  "stitch": {
+    "stitchingFrom": "Stitching from @{{username}}",
+    "useFirst": "Use first:",
+    "originalDuration": "Original: {{seconds}}s",
+    "yoursDuration": "Yours: {{seconds}}s max",
+    "transition": "Transition",
+    "yourResponse": "Your Response",
+    "recordReaction": "Record your reaction or continuation",
+    "recording": "Recording",
+    "preview": "Preview",
+    "you": "You",
+    "totalDuration": "Total Duration",
+    "playPreview": "Play Preview",
+    "unknownCreator": "Unknown Creator",
+    "transitionCut": "Cut",
+    "transitionFade": "Fade",
+    "transitionSlide": "Slide",
+    "transitionZoom": "Zoom",
+    "transitionWipe": "Wipe"
+  },
+  "reelTemplates": {
+    "title": "Reel Templates",
+    "tab": {
+      "trending": "Trending",
+      "recent": "Recent",
+      "mine": "My Templates"
+    },
+    "timeline": "Timeline",
+    "useTemplate": "Use Template",
+    "errorTitle": "Couldn't load templates",
+    "errorSubtitle": "Check your connection and try again",
+    "noTemplates": "No templates found",
+    "noTemplatesSubtitle": "Check back later for new templates",
+    "noMyTemplates": "No saved templates",
+    "noMyTemplatesSubtitle": "Templates you create will appear here"
+  },
+  "captionEditor": {
+    "title": "Caption Editor",
+    "captions": "Captions ({{count}})",
+    "newCaption": "New caption",
+    "noCaptions": "No Captions",
+    "noCaptionsSubtitle": "Add captions manually or auto-generate from audio",
+    "autoGenerate": "Auto-Generate",
+    "processing": "Processing...",
+    "previewPlaceholder": "Caption preview",
+    "placeholder": "Enter caption text...",
+    "style": "Caption Style",
+    "font": "Font",
+    "size": "Size",
+    "position": "Position",
+    "background": "Background",
+    "color": "Text Color",
+    "fontOption": {
+      "default": "Default",
+      "bold": "Bold",
+      "handwritten": "Handwritten"
+    },
+    "sizeOption": {
+      "s": "S",
+      "m": "M",
+      "l": "L"
+    },
+    "positionOption": {
+      "top": "Top",
+      "center": "Center",
+      "bottom": "Bottom"
+    },
+    "backgroundOption": {
+      "none": "None",
+      "darkbar": "Dark Bar",
+      "outline": "Outline"
+    }
+  },
+  "volunteer": {
+    "categoryAll": "All",
+    "categoryDisasterRelief": "Disaster Relief",
+    "categoryMosque": "Mosque",
+    "categoryEducation": "Education",
+    "categoryFoodBank": "Food Bank",
+    "categoryCleanup": "Cleanup"
   }
 }

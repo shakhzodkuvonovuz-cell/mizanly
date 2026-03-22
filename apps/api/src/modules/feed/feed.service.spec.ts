@@ -175,19 +175,21 @@ describe('FeedService', () => {
     });
   });
 
-  describe('getTrendingFeed — block/mute filtering', () => {
+  describe('getTrendingFeed — block/mute/restrict filtering', () => {
     beforeEach(() => {
       (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).contentFilterSetting = { findUnique: jest.fn().mockResolvedValue(null) };
     });
 
-    it('should filter blocked/muted users when authenticated', async () => {
+    it('should filter blocked/muted/restricted users when authenticated', async () => {
       (prisma as any).block.findMany.mockResolvedValue([
         { blockerId: 'u1', blockedId: 'bad-user' },
       ]);
       (prisma as any).mute.findMany.mockResolvedValue([{ mutedId: 'muted-user' }]);
+      (prisma as any).restrict.findMany.mockResolvedValue([{ restrictedId: 'restricted-user' }]);
 
       await service.getTrendingFeed(undefined, 20, 'u1');
 
@@ -196,11 +198,16 @@ describe('FeedService', () => {
           where: { OR: [{ blockerId: 'u1' }, { blockedId: 'u1' }] },
         }),
       );
+      expect((prisma as any).restrict.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { restricterId: 'u1' },
+        }),
+      );
       expect((prisma as any).post.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             user: expect.objectContaining({
-              id: { notIn: ['bad-user', 'muted-user'] },
+              id: { notIn: expect.arrayContaining(['bad-user', 'muted-user', 'restricted-user']) },
             }),
           }),
         }),
@@ -213,16 +220,18 @@ describe('FeedService', () => {
     });
   });
 
-  describe('getFeaturedFeed — block/mute + scheduledAt', () => {
+  describe('getFeaturedFeed — block/mute/restrict + scheduledAt', () => {
     beforeEach(() => {
       (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]), update: jest.fn() };
       (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
     });
 
     it('should include scheduledAt: null and filter blocked users when authenticated', async () => {
       (prisma as any).block.findMany.mockResolvedValue([{ blockerId: 'u1', blockedId: 'blocked1' }]);
       (prisma as any).mute.findMany.mockResolvedValue([]);
+      (prisma as any).restrict.findMany.mockResolvedValue([]);
 
       await service.getFeaturedFeed(undefined, 20, 'u1');
 
@@ -261,17 +270,19 @@ describe('FeedService', () => {
     });
   });
 
-  describe('getSuggestedUsers — block/mute filtering', () => {
+  describe('getSuggestedUsers — block/mute/restrict filtering', () => {
     beforeEach(() => {
       (prisma as any).user = { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() };
       (prisma as any).follow = { findMany: jest.fn().mockResolvedValue([]), count: jest.fn() };
       (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
     });
 
-    it('should exclude blocked/muted users from suggestions', async () => {
+    it('should exclude blocked/muted/restricted users from suggestions', async () => {
       (prisma as any).block.findMany.mockResolvedValue([{ blockerId: 'u1', blockedId: 'bad1' }]);
       (prisma as any).mute.findMany.mockResolvedValue([{ mutedId: 'muted1' }]);
+      (prisma as any).restrict.findMany.mockResolvedValue([{ restrictedId: 'restricted1' }]);
       (prisma as any).follow.findMany.mockResolvedValue([]);
 
       await service.getSuggestedUsers('u1', 5);
@@ -279,14 +290,14 @@ describe('FeedService', () => {
       expect((prisma as any).user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            id: { notIn: expect.arrayContaining(['u1', 'bad1', 'muted1']) },
+            id: { notIn: expect.arrayContaining(['u1', 'bad1', 'muted1', 'restricted1']) },
           }),
         }),
       );
     });
   });
 
-  describe('getFrequentCreators — block/mute filtering', () => {
+  describe('getFrequentCreators — block/mute/restrict filtering', () => {
     beforeEach(() => {
       (prisma as any).feedInteraction = {
         findFirst: jest.fn(),
@@ -297,6 +308,7 @@ describe('FeedService', () => {
       (prisma as any).user = { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() };
       (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
       (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
     });
 
     it('should exclude blocked creators from frequent list', async () => {
