@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Alert, RefreshControl,
+  FlatList, Alert,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -15,7 +16,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { downloadsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import type { OfflineDownload } from '@/types';
@@ -82,7 +83,7 @@ function FilterChips({
   onChange: (tab: FilterTab) => void;
 }) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   const labels: Record<FilterTab, string> = {
@@ -99,7 +100,7 @@ function FilterChips({
           <Pressable
             accessibilityRole="button"
             key={tab}
-            onPress={() => { haptic.light(); onChange(tab); }}
+            onPress={() => { haptic.tick(); onChange(tab); }}
             style={[styles.chip, { backgroundColor: tc.surface, borderColor: tc.border }, isActive && styles.chipActive]}
           >
             <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
@@ -222,7 +223,7 @@ function DownloadItem({
 export default function DownloadsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
 
   const [filter, setFilter] = useState<FilterTab>('all');
@@ -274,7 +275,7 @@ export default function DownloadsScreen() {
 
   const handleAction = useCallback(
     (item: OfflineDownload, action: 'pause' | 'resume' | 'retry' | 'delete') => {
-      haptic.light();
+      haptic.tick();
       if (action === 'delete') {
         Alert.alert(t('downloads.deleteConfirm'), '', [
           { text: t('common.cancel'), style: 'cancel' },
@@ -296,7 +297,7 @@ export default function DownloadsScreen() {
 
   const handleLongPress = useCallback(
     (item: OfflineDownload) => {
-      haptic.medium();
+      haptic.longPress();
       setSheetItem(item);
     },
     [haptic],
@@ -339,7 +340,7 @@ export default function DownloadsScreen() {
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListHeaderComponent={() => (
             <View>

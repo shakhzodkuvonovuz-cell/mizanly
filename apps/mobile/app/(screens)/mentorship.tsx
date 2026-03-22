@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -16,7 +17,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { api, searchApi } from '@/services/api';
 import { useStore } from '@/store';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 const TOPICS: { id: string; i18nKey: string; icon: IconName }[] = [
@@ -30,7 +31,7 @@ const TOPICS: { id: string; i18nKey: string; icon: IconName }[] = [
 export default function MentorshipScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const user = useStore(s => s.user);
 
@@ -64,7 +65,7 @@ export default function MentorshipScreen() {
         onPress={() => {
           setSelectedMentorId(item.id as string);
           setRequestSheetOpen(true);
-          haptic.light();
+          haptic.tick();
         }}
       >
         <Avatar uri={item.avatarUrl as string | null} name={item.displayName as string || ''} size="lg" />
@@ -122,7 +123,7 @@ export default function MentorshipScreen() {
               accessibilityRole="button"
               key={tab}
               style={[styles.tab, { backgroundColor: tc.bgCard, borderColor: tc.border }, activeTab === tab && styles.tabActive]}
-              onPress={() => { setActiveTab(tab); haptic.light(); }}
+              onPress={() => { setActiveTab(tab); haptic.tick(); }}
             >
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                 {tab === 'find' ? t('community.findMentor') : t('community.myMentorships')}
@@ -149,10 +150,9 @@ export default function MentorshipScreen() {
               keyExtractor={(item) => item.id as string}
               contentContainerStyle={styles.list}
               refreshControl={
-                <RefreshControl
+                <BrandedRefreshControl
                   refreshing={searchResults.isRefetching}
                   onRefresh={() => searchResults.refetch()}
-                  tintColor={colors.emerald}
                 />
               }
               ListEmptyComponent={
@@ -176,7 +176,7 @@ export default function MentorshipScreen() {
             keyExtractor={(_, i) => `m-${i}`}
             contentContainerStyle={styles.list}
             refreshControl={
-              <RefreshControl refreshing={myMentorshipsQuery.isRefetching} onRefresh={() => myMentorshipsQuery.refetch()} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={myMentorshipsQuery.isRefetching} onRefresh={() => myMentorshipsQuery.refetch()} />
             }
             ListEmptyComponent={
               myMentorshipsQuery.isLoading ? (
@@ -200,7 +200,7 @@ export default function MentorshipScreen() {
               onPress={() => {
                 setSelectedTopic(topic.id);
                 setRequestSheetOpen(false);
-                haptic.success();
+                haptic.save();
                 // Send mentorship request via API
                 if (selectedMentorId) {
                   api.post('/mentorship/request', { mentorId: selectedMentorId, topic: topic.id }).catch(() => {});

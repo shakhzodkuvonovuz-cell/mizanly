@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, Pressable, FlatList, RefreshControl,
+  View, Text, TextInput, StyleSheet, Pressable, FlatList,
   Dimensions, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -18,6 +18,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { bookmarksApi } from '@/services/api';
 import type { BookmarkCollection } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const SCREEN_W = Dimensions.get('window').width;
 const FOLDER_CARD_WIDTH = (SCREEN_W - spacing.base * 2 - spacing.sm) / 2;
@@ -56,6 +57,7 @@ export default function BookmarkFoldersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   // Collections are now fetched from API via collectionsQuery
   const [refreshing, setRefreshing] = useState(false);
   const [createSheetVisible, setCreateSheetVisible] = useState(false);
@@ -156,7 +158,7 @@ export default function BookmarkFoldersScreen() {
           numColumns={2}
           columnWrapperStyle={styles.gridRow}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>

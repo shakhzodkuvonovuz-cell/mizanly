@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, RefreshControl,
+  View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
@@ -315,10 +316,9 @@ function NotificationTonesScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.emerald}
           />
         }
         ListHeaderComponent={

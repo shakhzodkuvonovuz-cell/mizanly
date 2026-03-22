@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -211,10 +211,9 @@ function OrdersContent() {
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={ordersQuery.isFetching && !ordersQuery.isLoading}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
           />

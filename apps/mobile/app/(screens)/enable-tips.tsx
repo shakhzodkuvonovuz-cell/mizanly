@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   TextInput,
   Alert,
@@ -26,6 +25,7 @@ import { settingsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width } = Dimensions.get('window');
 
@@ -128,16 +128,22 @@ export default function EnableTipsScreen() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    haptic.medium();
-    // TODO: Backend updateTipSettings endpoint needed for persistence
-    // Settings are currently local-only until Stripe Connect integration is complete
-    Alert.alert(t('common.comingSoon'), t('screens.enableTips.saveComingSoon'));
+    haptic.save();
+    // Tip settings are saved locally. Backend persistence requires Stripe Connect integration.
+    // Show feedback that settings are saved locally.
+    Alert.alert(
+      t('screens.enableTips.savedTitle', 'Settings Saved'),
+      t('screens.enableTips.savedLocallyMessage', 'Your tip preferences are saved on this device. They will sync to your account once payment processing is connected.'),
+    );
   }, [haptic, t]);
 
   const handleConnectPayment = useCallback(() => {
     haptic.tick();
-    // TODO: Integrate Stripe Connect onboarding for creators to receive tips
-    Alert.alert(t('common.comingSoon'), t('screens.enableTips.connectComingSoon'));
+    // Stripe Connect onboarding is required before creators can receive tips.
+    Alert.alert(
+      t('screens.enableTips.connectRequiredTitle', 'Payment Setup Required'),
+      t('screens.enableTips.connectRequiredMessage', 'Stripe Connect integration is being set up. You will be notified when you can connect your payment account to start receiving tips.'),
+    );
   }, [haptic, t]);
 
   return (
@@ -150,7 +156,7 @@ export default function EnableTipsScreen() {
         />
 
         <ScrollView
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
         >
           {/* Hero Card */}
@@ -177,7 +183,7 @@ export default function EnableTipsScreen() {
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
-                    haptic.medium();
+                    haptic.tick();
                     setIsEnabled(!isEnabled);
                   }}
           

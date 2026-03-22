@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  ScrollView, Alert, RefreshControl,
+  ScrollView, Alert,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +17,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -34,10 +35,10 @@ function Row({
   onPress?: () => void;
   destructive?: boolean;
 }) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const handlePress = onPress ? () => {
-    haptic.selection();
+    haptic.tick();
     onPress();
   } : undefined;
   return (
@@ -81,6 +82,7 @@ export default function AccountSettingsScreen() {
   const { user: clerkUser } = useUser();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const userQuery = useQuery({
     queryKey: ['user', 'me'],
@@ -259,7 +261,7 @@ export default function AccountSettingsScreen() {
         <ScrollView
           style={styles.body}
           contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}
-          refreshControl={<RefreshControl refreshing={userQuery.isLoading} onRefresh={() => userQuery.refetch()} tintColor={colors.emerald} />}
+          refreshControl={<BrandedRefreshControl refreshing={userQuery.isLoading} onRefresh={() => userQuery.refetch()} />}
         >
           {/* Account Info */}
           <SectionHeader title={t('accountSettings.sections.accountInfo')} index={0} />

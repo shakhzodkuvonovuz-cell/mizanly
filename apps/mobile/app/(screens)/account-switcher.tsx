@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Alert } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -169,7 +170,7 @@ export default function AccountSwitcherScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={onRefresh} />}
         >
           {/* Loading State */}
           {isLoading && (

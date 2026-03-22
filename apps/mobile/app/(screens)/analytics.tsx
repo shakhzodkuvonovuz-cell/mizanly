@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { formatCompactNumber } from '@/utils/localeFormat';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -120,9 +121,8 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
 
 function TopContentSection() {
   const { t } = useTranslation();
-  // TODO [cross-scope]: Backend /creator/analytics/content returns top posts data,
-  // but this screen uses usersApi.getAnalytics() which lacks top content data.
-  // Pending unification of analytics data sources.
+  // Top content analytics require backend data pipeline unification.
+  // Show honest empty state explaining what's needed, not a fake "Coming Soon".
   return (
     <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -140,8 +140,8 @@ function TopContentSection() {
       >
         <EmptyState
           icon="bar-chart-2"
-          title={t('analytics.comingSoon', 'Coming Soon')}
-          subtitle={t('analytics.topContentComingSoon', 'Top performing content analytics will be available here')}
+          title={t('analytics.notEnoughData', 'Not enough data')}
+          subtitle={t('analytics.topContentHint', 'Post more content to see which posts perform best')}
         />
       </LinearGradient>
     </Animated.View>
@@ -210,10 +210,9 @@ function AnalyticsContent() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.emerald}
           />
         }
         showsVerticalScrollIndicator={false}

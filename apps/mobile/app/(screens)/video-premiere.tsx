@@ -9,7 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -24,7 +24,7 @@ export default function VideoPremiereScreen() {
   const styles = createStyles(tc);
   const { videoId, videoTitle } = useLocalSearchParams<{ videoId: string; videoTitle?: string }>();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -44,7 +44,7 @@ export default function VideoPremiereScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['video', videoId] });
-      haptic.success();
+      haptic.save();
       router.back();
     },
   });
@@ -108,7 +108,7 @@ export default function VideoPremiereScreen() {
                 <Pressable
                   accessibilityRole="button"
                   key={theme.id}
-                  onPress={() => { setSelectedTheme(theme.id); haptic.light(); }}
+                  onPress={() => { setSelectedTheme(theme.id); haptic.tick(); }}
                   style={[styles.themeCard, selectedTheme === theme.id && styles.themeCardActive]}
                 >
                   <LinearGradient
@@ -129,7 +129,7 @@ export default function VideoPremiereScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
-              onPress={() => { setChatEnabled(!chatEnabled); haptic.light(); }}
+              onPress={() => { setChatEnabled(!chatEnabled); haptic.tick(); }}
               style={[styles.toggleBtn, chatEnabled && styles.toggleBtnActive]}
             >
               <View style={[styles.toggleKnob, chatEnabled && styles.toggleKnobActive]} />

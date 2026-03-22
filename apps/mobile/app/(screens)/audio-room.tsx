@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   Dimensions,
   Alert,
@@ -25,6 +24,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width } = Dimensions.get('window');
 
@@ -295,7 +295,7 @@ export default function AudioRoomScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
         >
           {/* Room Info Hero */}
@@ -437,9 +437,11 @@ export default function AudioRoomScreen() {
                 ))}
               </View>
 
+              {moreListenerCount > 0 && (
               <View style={styles.moreBadge}>
-                <Text style={styles.moreText}>+{moreListenerCount} more</Text>
+                <Text style={styles.moreText}>{t('audioRoom.moreListeners', { count: moreListenerCount })}</Text>
               </View>
+              )}
             </LinearGradient>
           </Animated.View>
 
@@ -471,7 +473,7 @@ export default function AudioRoomScreen() {
                   <Avatar uri={hand.avatar} name={hand.name} size="sm" />
                   <View style={styles.raisedHandInfo}>
                     <Text style={styles.raisedHandName}>{hand.name}</Text>
-                    <Text style={styles.raisedHandTime}>Raised {hand.raisedAgo}</Text>
+                    <Text style={styles.raisedHandTime}>{t('audioRoom.raisedAgo', { time: hand.raisedAgo })}</Text>
                   </View>
                   <View style={styles.raisedHandActions}>
                     <Pressable onPress={() => handleAcceptHand(hand.userId)}>
@@ -498,7 +500,7 @@ export default function AudioRoomScreen() {
         {/* Room Controls */}
         <View style={[styles.controlsContainer, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
           <Text style={styles.statusText}>
-            You are a {isSpeaker ? 'speaker' : 'listener'}
+            {isSpeaker ? t('audioRoom.youAreSpeaker', 'You are a speaker') : t('audioRoom.youAreListener', 'You are a listener')}
           </Text>
 
           <LinearGradient

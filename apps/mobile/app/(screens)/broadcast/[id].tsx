@@ -5,11 +5,9 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  RefreshControl,
   TextInput,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
-  Pressable,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +26,7 @@ import type { BroadcastChannel as BroadcastChannelType, BroadcastMessage } from 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: boolean; isMuted?: boolean };
 
@@ -296,10 +295,9 @@ export default function BroadcastChannelScreen() {
             ListEmptyComponent={loading ? null : renderEmptyState}
             ListFooterComponent={loading && messages.length > 0 ? renderSkeleton : null}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
             onEndReached={handleLoadMore}

@@ -17,7 +17,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius, animation, shadow, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -30,7 +30,7 @@ function SignInScreenContent() {
   const { t } = useTranslation();
 
   const tc = useThemeColors();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

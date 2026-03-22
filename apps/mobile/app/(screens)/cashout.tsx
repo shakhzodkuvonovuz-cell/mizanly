@@ -127,11 +127,11 @@ function CashoutContent() {
       );
       return;
     }
-    // TODO: Backend wallet/cashout endpoint + Stripe payout integration needed
-    // Cash out requires real payment processing before it can be enabled
+    // Cash out requires Stripe payout integration.
+    // Show honest status instead of misleading "Coming Soon".
     Alert.alert(
-      t('common.comingSoon', 'Coming Soon'),
-      t('cashout.comingSoon', 'Cash out will be available once payment processing is set up'),
+      t('cashout.payoutPendingTitle', 'Payout Setup Pending'),
+      t('cashout.payoutPendingMessage', 'Cash out requires payment processing to be configured. Your balance is tracked and will be available for withdrawal once payouts are enabled.'),
     );
   }, [amount, balance, selectedMethodId, haptic, t]);
 

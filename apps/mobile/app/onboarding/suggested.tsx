@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from '@tanstack/react-query';
@@ -21,7 +22,7 @@ function SuggestedScreenContent() {
   const [following, setFollowing] = useState<Set<string>>(new Set());
   const [finishing, setFinishing] = useState(false);
 
-  const { data: suggested, isLoading } = useQuery({
+  const { data: suggested, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['suggested-onboarding'],
     queryFn: () => authApi.suggestedUsers(),
   });
@@ -94,10 +95,9 @@ function SuggestedScreenContent() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl
-              refreshing={isLoading}
-              onRefresh={() => {}}
-              tintColor={colors.emerald}
+            <BrandedRefreshControl
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
             />
           }
           renderItem={({ item }: { item: User }) => {

@@ -6,7 +6,6 @@ import {
   FlatList,
   Pressable,
   TextInput,
-  RefreshControl,
   Alert,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
@@ -31,6 +30,7 @@ import type { BroadcastChannel as BroadcastChannelType } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { navigate } from '@/utils/navigation';
 
 type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: boolean; isMuted?: boolean };
@@ -323,10 +323,9 @@ export default function BroadcastChannelsScreen() {
             ListEmptyComponent={loading ? renderSkeleton : renderEmptyState}
             ListFooterComponent={loading && filteredData.length > 0 ? renderSkeleton : null}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
             onEndReached={handleLoadMore}

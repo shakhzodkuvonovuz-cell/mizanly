@@ -6,7 +6,6 @@ import {
   ScrollView,
   Pressable,
   Alert,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
@@ -100,11 +99,11 @@ function StorageCategoryRow({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
 
   const handleClear = () => {
-    haptic.light();
+    haptic.tick();
     onClear();
   };
 
@@ -173,7 +172,7 @@ export default function StorageManagementScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
 
   const [sizes, setSizes] = useState<StorageSizes>({
@@ -246,7 +245,7 @@ export default function StorageManagementScreen() {
   };
 
   const handleClearAll = () => {
-    haptic.medium();
+    haptic.delete();
     Alert.alert(
       t('storage.clearAllTitle'),
       t('storage.clearAllMessage'),

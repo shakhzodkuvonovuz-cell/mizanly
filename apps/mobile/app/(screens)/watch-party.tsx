@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -13,7 +14,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
@@ -22,7 +23,7 @@ export default function WatchPartyScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -40,7 +41,7 @@ export default function WatchPartyScreen() {
       setNewTitle('');
       setNewVideoId('');
       queryClient.invalidateQueries({ queryKey: ['watch-parties'] });
-      haptic.success();
+      haptic.save();
     },
   });
 
@@ -55,7 +56,7 @@ export default function WatchPartyScreen() {
         <Pressable
           style={styles.partyCard}
           onPress={() => {
-            haptic.light();
+            haptic.tick();
             router.push(`/(screens)/watch-party/${item.id}` as never);
           }}
         >
@@ -85,7 +86,7 @@ export default function WatchPartyScreen() {
           <Pressable
             style={styles.joinBtn}
             onPress={() => {
-              haptic.medium();
+              haptic.navigate();
               router.push(`/(screens)/watch-party/${item.id}` as never);
             }}
             accessibilityRole="button"
@@ -106,7 +107,7 @@ export default function WatchPartyScreen() {
         <GlassHeader
           title={t('community.watchParties')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-          rightAction={{ icon: 'plus', onPress: () => { setCreateSheetOpen(true); haptic.light(); } }}
+          rightAction={{ icon: 'plus', onPress: () => { setCreateSheetOpen(true); haptic.tick(); } }}
         />
 
         <FlatList
@@ -115,7 +116,7 @@ export default function WatchPartyScreen() {
           keyExtractor={(item) => item.id as string}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl refreshing={partiesQuery.isRefetching} onRefresh={() => partiesQuery.refetch()} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={partiesQuery.isRefetching} onRefresh={() => partiesQuery.refetch()} />
           }
           ListEmptyComponent={
             partiesQuery.isLoading ? (
