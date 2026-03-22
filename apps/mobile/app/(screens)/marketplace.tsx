@@ -9,7 +9,6 @@ import {
   Pressable,
   Dimensions,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Image } from 'expo-image';
@@ -192,12 +191,12 @@ function MarketplaceContent() {
           <View style={styles.badgeRow}>
             {item.isHalal && (
               <View style={styles.halalBadge}>
-                <Text style={styles.badgeText}>Halal</Text>
+                <Text style={styles.badgeText}>{t('marketplace.halal', 'Halal')}</Text>
               </View>
             )}
             {item.isMuslimOwned && (
               <View style={styles.muslimOwnedBadge}>
-                <Text style={styles.badgeText}>Muslim-Owned</Text>
+                <Text style={styles.badgeText}>{t('marketplace.muslimOwned', 'Muslim-Owned')}</Text>
               </View>
             )}
           </View>

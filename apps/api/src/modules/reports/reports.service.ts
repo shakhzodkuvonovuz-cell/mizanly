@@ -20,6 +20,18 @@ export class ReportsService {
     private queueService: QueueService,
   ) {}
 
+  /**
+   * Report reasons that require urgent handling (Finding 2, 3, 14).
+   * CSAM reports: immediately hide content + log for NCMEC CyberTipline reporting.
+   * Terrorism reports: 1-hour removal target (EU TCO Regulation).
+   * These high-priority categories trigger automatic content hiding pending review.
+   */
+  private static readonly URGENT_REPORT_REASONS: Set<string> = new Set([
+    'NUDITY',      // May contain CSAM — urgent review required
+    'VIOLENCE',    // May contain abhorrent violent material (AU Online Safety Act)
+    'TERRORISM',   // 1-hour removal target (EU TCO Regulation)
+  ]);
+
   // Submit a report — any user can report content
   async create(userId: string, dto: CreateReportDto) {
     // Must report at least one target
@@ -83,6 +95,47 @@ export class ReportsService {
           reportedMessageId: dto.reportedMessageId,
         },
       });
+
+      // Urgent report handling: CSAM, terrorism, violence (Findings 2, 3, 14)
+      // Immediately hide reported content pending manual review
+      if (ReportsService.URGENT_REPORT_REASONS.has(dto.reason)) {
+        this.logger.warn(
+          `URGENT REPORT [${dto.reason}]: report ${report.id} from user ${userId}. ` +
+          `Post: ${dto.reportedPostId || 'none'}, User: ${dto.reportedUserId || 'none'}, ` +
+          `Comment: ${dto.reportedCommentId || 'none'}, Message: ${dto.reportedMessageId || 'none'}`,
+        );
+
+        // Auto-hide content pending review — fail-closed for legal safety
+        if (dto.reportedPostId) {
+          await this.prisma.post.update({
+            where: { id: dto.reportedPostId },
+            data: { isRemoved: true, removedReason: `Urgent report: ${dto.reason} — pending review` },
+          }).catch(() => { /* post may already be removed */ });
+        }
+        if (dto.reportedCommentId) {
+          await this.prisma.comment.update({
+            where: { id: dto.reportedCommentId },
+            data: { isRemoved: true },
+          }).catch(() => { /* comment may already be removed */ });
+        }
+
+        // TODO: [LEGAL/CSAM] When reason is NUDITY with child involvement indicators:
+        // 1. Preserve all evidence (do NOT delete — required by 18 USC 2258A)
+        // 2. Submit CyberTipline report to NCMEC (https://report.cybertip.org/ispws/)
+        // 3. Notify designated CSAM compliance officer
+        // 4. Block reported user from uploading new media until review complete
+        // This requires NCMEC ISP registration and API integration.
+
+        // TODO: [LEGAL/TERRORISM] When reason is TERRORISM:
+        // 1. Log timestamp for 1-hour removal compliance tracking (EU TCO Regulation)
+        // 2. Integrate with GIFCT hash-sharing database for known terrorist content
+        // 3. Notify admin immediately via push notification / email
+
+        // TODO: [LEGAL/AU_ONLINE_SAFETY] For Australian users/content:
+        // 1. Implement eSafety Commissioner removal notice handler (24-hour response)
+        // 2. Add reporting categories: non-consensual intimate images, cyberbullying (child-specific)
+        // 3. Track for BOSE transparency reporting
+      }
 
       // Enqueue AI moderation check for reported content
       if (dto.reportedPostId) {

@@ -16,7 +16,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { api } from '@/services/api';
+import { halalApi } from '@/services/halalApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 const CUISINE_TYPES = [
@@ -131,22 +131,23 @@ export default function HalalFinderScreen() {
   const restaurantsQuery = useQuery({
     queryKey: ['halal-restaurants', currentLocation.lat, currentLocation.lng, selectedCuisine],
     queryFn: () =>
-      api.get(`/halal/restaurants?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=25${selectedCuisine ? `&cuisine=${selectedCuisine}` : ''}`
-      }).then((r) => r.data),
+      halalApi.findNearby(currentLocation.lat, currentLocation.lng, { radius: 25, cuisine: selectedCuisine ?? undefined }).then(r => r.data),
     enabled: !!currentLocation,
   });
 
-  const restaurants: HalalRestaurant[] = restaurantsQuery.data?.data ?? [];
+  const rawData = restaurantsQuery.data;
+  const restaurants: HalalRestaurant[] = Array.isArray(rawData) ? rawData : (rawData as Record<string, unknown>)?.data as HalalRestaurant[] ?? [];
 
   const handleRefresh = useCallback(() => {
     restaurantsQuery.refetch();
   }, [restaurantsQuery]);
 
   const handleOpenDirections = useCallback((restaurant: HalalRestaurant) => {
+    const address = encodeURIComponent(restaurant.address);
     const url = Platform.select({
-      ios: `maps:0,0?q=${encodeURIComponent(restaurant.name)}&ll=${restaurant.address}`,
-      android: `geo:0,0?q=${encodeURIComponent(restaurant.address)}`,
-      default: `https://maps.google.com/?q=${encodeURIComponent(restaurant.address)}`,
+      ios: `maps:0,0?q=${encodeURIComponent(restaurant.name)}&address=${address}`,
+      android: `geo:0,0?q=${address}`,
+      default: `https://maps.google.com/?q=${address}`,
     });
     if (url) Linking.openURL(url).catch(() => {});
   }, []);
@@ -191,8 +192,8 @@ export default function HalalFinderScreen() {
         icon="map-pin"
         title={t('halal.restaurants')}
         subtitle={selectedCuisine
-          ? `No ${selectedCuisine} restaurants found nearby`
-          : 'No halal restaurants found nearby'}
+          ? t('halal.noRestaurantsForCuisine', { cuisine: selectedCuisine })
+          : t('halal.noRestaurantsNearby')}
       />
     ) : null
   ), [restaurantsQuery.isLoading, selectedCuisine, t]);
@@ -203,9 +204,9 @@ export default function HalalFinderScreen() {
         <GlassHeader
           title={t('halal.finder')}
           leftAction={{
-            icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />,
+            icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('common.goBack'),
           }}
         />
 

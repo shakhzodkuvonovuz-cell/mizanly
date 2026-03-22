@@ -74,7 +74,7 @@ function IslamicThemeBanner() {
       paddingHorizontal: 16,
       alignItems: 'center',
     }}>
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
+      <Text style={{ color: colors.text.primary, fontWeight: '700', fontSize: 13 }}>
         {theme.bannerTextKey === 'themes.eidMubarak'
           ? t('themes.eidMubarak')
           : t('themes.ramadanKareem')}
@@ -112,12 +112,13 @@ function EidCelebrationOverlay() {
   return (
     <View style={{
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.7)',
+      backgroundColor: colors.dark.bgSheet,
+      opacity: 0.95,
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 10000,
     }}>
-      <Text style={{ fontSize: fontSizeExt.jumbo }}>🎉</Text>
+      <Icon name="heart-filled" size="xl" color={colors.gold} />
       <Text style={{ color: colors.gold, fontSize: fontSizeExt.heading, fontWeight: '700', marginTop: 16 }}>
         {t('themes.eidMubarak')}
       </Text>

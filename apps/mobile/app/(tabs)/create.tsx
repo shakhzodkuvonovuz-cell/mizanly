@@ -7,7 +7,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 // that opens a bottom sheet. If the route is somehow navigated to directly, redirect back.
 export default function CreateScreen() {
   const router = useRouter();
-  useEffect(() => { router.back(); }, []);
+  useEffect(() => { router.back(); }, [router]);
   return (
     <ScreenErrorBoundary>
       <View />

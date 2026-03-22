@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Pressable,
   TextInput,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';

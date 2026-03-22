@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -22,8 +22,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 interface Streak {
   type: string;
@@ -128,8 +126,10 @@ function StreakCard({
 function HeatmapCalendar({ days, isRTL }: { days: StreakDay[]; isRTL: boolean }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
+  const { width: windowWidth } = useWindowDimensions();
   const last30 = days.slice(-30);
-  const cellSize = Math.floor((screenWidth - spacing.base * 2 - spacing.xs * 6) / 7) - 2;
+  const cellSize = Math.floor((windowWidth - spacing.base * 2 - spacing.xs * 6) / 7) - 2;
 
   return (
     <Animated.View entering={FadeInUp.delay(500).duration(500)}>
@@ -138,7 +138,7 @@ function HeatmapCalendar({ days, isRTL }: { days: StreakDay[]; isRTL: boolean })
         style={styles.heatmapCard}
       >
         <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>
-          Last 30 Days
+          {t('gamification.streaks.last30Days')}
         </Text>
         <View style={styles.heatmapGrid}>
           {last30.map((day, i) => (
@@ -154,16 +154,16 @@ function HeatmapCalendar({ days, isRTL }: { days: StreakDay[]; isRTL: boolean })
                     : tc.surface,
                 },
               ]}
-              accessibilityLabel={`${day.date}: ${day.active ? 'Active' : 'Inactive'}`}
+              accessibilityLabel={`${day.date}: ${day.active ? t('gamification.streaks.active') : t('gamification.streaks.inactive')}`}
             />
           ))}
         </View>
         <View style={[styles.heatmapLegend, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Text style={styles.legendText}>Inactive</Text>
+          <Text style={styles.legendText}>{t('gamification.streaks.inactive')}</Text>
           <View style={[styles.legendCell, { backgroundColor: tc.surface }]} />
           <View style={[styles.legendCell, { backgroundColor: colors.emerald, opacity: 0.4 }]} />
           <View style={[styles.legendCell, { backgroundColor: colors.emerald }]} />
-          <Text style={styles.legendText}>Active</Text>
+          <Text style={styles.legendText}>{t('gamification.streaks.active')}</Text>
         </View>
       </LinearGradient>
     </Animated.View>
@@ -179,6 +179,7 @@ function MilestoneBadges({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
   const maxStreak = Math.max(...streaks.map((s) => s.longestDays), 0);
 
   return (
@@ -188,7 +189,7 @@ function MilestoneBadges({
         style={styles.milestonesCard}
       >
         <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>
-          Milestones
+          {t('gamification.streaks.milestones')}
         </Text>
         <View style={[styles.milestonesRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           {MILESTONES.map((m) => {
@@ -218,7 +219,7 @@ function MilestoneBadges({
                     achieved && styles.milestoneLabelAchieved,
                   ]}
                 >
-                  {m} days
+                  {t('gamification.streaks.milestoneDays', { count: m })}
                 </Text>
               </View>
             );
@@ -258,7 +259,7 @@ function StreaksScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
 
-  const { data, isLoading, refetch, isRefetching } = useQuery({
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['streaks'],
     queryFn: async () => {
       const res = await gamificationApi.getStreaks() as { streaks: Streak[]; calendar: StreakDay[] };

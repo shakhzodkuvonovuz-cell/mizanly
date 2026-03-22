@@ -27,8 +27,8 @@ export const audioRoomsApi = {
   toggleHand: (roomId: string) =>
     api.patch<AudioRoomParticipant>(`/audio-rooms/${roomId}/hand`),
 
-  toggleMute: (roomId: string, userId?: string) =>
-    api.patch<AudioRoomParticipant>(`/audio-rooms/${roomId}/mute`, userId ? { userId } : undefined),
+  toggleMute: (roomId: string, targetUserId?: string) =>
+    api.patch<AudioRoomParticipant>(`/audio-rooms/${roomId}/mute`, targetUserId ? { targetUserId } : undefined),
 
   listParticipants: (roomId: string, cursor?: string, role?: string) =>
     api.get<PaginatedResponse<AudioRoomParticipant>>(`/audio-rooms/${roomId}/participants${qs({ cursor, role })}`),

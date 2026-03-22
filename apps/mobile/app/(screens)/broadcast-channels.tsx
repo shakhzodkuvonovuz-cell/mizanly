@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,9 @@ import {
   Alert,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
-  Pressable,
 } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
-import { Stack, useNavigation, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -39,7 +38,6 @@ type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: 
 type TabKey = 'discover' | 'my';
 
 export default function BroadcastChannelsScreen() {
-  const navigation = useNavigation();
   const tc = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -109,6 +107,17 @@ export default function BroadcastChannelsScreen() {
     }
   }, [myChannelsLoading]);
 
+  // Load data on mount (Finding 1 fix: screen was empty without useEffect)
+  useEffect(() => {
+    loadDiscoverChannels(true);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'my') {
+      loadMyChannels(true);
+    }
+  }, [activeTab]);
+
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     if (activeTab === 'discover') {
@@ -131,14 +140,14 @@ export default function BroadcastChannelsScreen() {
 
   const handleChannelPress = useCallback((channel: BroadcastChannelWithSubscription) => {
     navigate(`/(screens)/broadcast/${channel.id}`);
-  }, [navigation]);
+  }, []);
 
   const handleSubscribe = useCallback(async (channel: BroadcastChannelWithSubscription) => {
     try {
       if (channel.isSubscribed) {
         await broadcastApi.unsubscribe(channel.id);
         // Update local state
-        setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: false, subscribersCount: c.subscribersCount - 1 } : c));
+        setDiscoverChannels(prev => prev.map(c => c.id === channel.id ? { ...c, isSubscribed: false, subscribersCount: Math.max(0, c.subscribersCount - 1) } : c));
         setMyChannels(prev => prev.filter(c => c.id !== channel.id));
       } else {
         await broadcastApi.subscribe(channel.id);
@@ -311,7 +320,7 @@ export default function BroadcastChannelsScreen() {
             renderItem={renderChannelItem}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
-            ListEmptyComponent={loading ? null : renderEmptyState}
+            ListEmptyComponent={loading ? renderSkeleton : renderEmptyState}
             ListFooterComponent={loading && filteredData.length > 0 ? renderSkeleton : null}
             refreshControl={
               <RefreshControl

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Alert, Switch, Platform, KeyboardAvoidingView,
+  ScrollView, Alert, Switch, Platform, KeyboardAvoidingView, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -29,8 +29,6 @@ type UpdateProfilePayload = {
   bio?: string;
   website?: string;
   location?: string;
-  pronouns?: string;
-  birthday?: string;
   isPrivate?: boolean;
   avatarUrl?: string;
   coverUrl?: string;
@@ -51,8 +49,8 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
   const [location, setLocation] = useState('');
-  const [pronouns, setPronouns] = useState('');
-  const [birthday, setBirthday] = useState('');
+  // Note: pronouns and birthday fields are not supported by the backend DTO/schema yet
+  // When backend adds support, re-enable these fields
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [coverUri, setCoverUri] = useState<string | undefined>();
@@ -92,13 +90,11 @@ export default function EditProfileScreen() {
   // Seed form from loaded profile
   useEffect(() => {
     if (me) {
-      const profile = me as User & { location?: string; pronouns?: string; birthday?: string };
+      const profile = me as User & { location?: string };
       setDisplayName(me.displayName ?? '');
       setBio(me.bio ?? '');
       setWebsite(me.website ?? '');
       setLocation(profile.location ?? '');
-      setPronouns(profile.pronouns ?? '');
-      setBirthday(profile.birthday ?? '');
       setIsPrivate(me.isPrivate ?? false);
     }
   }, [me]);
@@ -148,12 +144,10 @@ export default function EditProfileScreen() {
       setUploading(false);
 
       const payload: UpdateProfilePayload = {
-        displayName: displayName.trim() || undefined,
-        bio: bio.trim() || undefined,
-        website: website.trim() || undefined,
-        location: location.trim() || undefined,
-        pronouns: pronouns.trim() || undefined,
-        birthday: birthday.trim() || undefined,
+        displayName: displayName.trim(),
+        bio: bio.trim(),
+        website: website.trim(),
+        location: location.trim(),
         isPrivate,
         ...(avatarUrl ? { avatarUrl } : {}),
         ...(coverUrl ? { coverUrl } : {}),
@@ -228,7 +222,17 @@ export default function EditProfileScreen() {
           />
         </View>
 
-        <ScrollView style={[styles.body, { paddingTop: HEADER_HEIGHT }]} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={[styles.body, { paddingTop: HEADER_HEIGHT }]}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={meQuery.isRefetching}
+              onRefresh={() => meQuery.refetch()}
+              tintColor={colors.emerald}
+            />
+          }
+        >
           {/* Cover photo with premium gradient overlay */}
           <Pressable onPress={pickCover}>
             {currentCover ? (
@@ -244,7 +248,7 @@ export default function EditProfileScreen() {
                     style={styles.coverEditBadge}
                   >
                     <Icon name="camera" size="sm" color="#fff" />
-                    <Text style={styles.coverEditText}>{{t('editProfile.changeCover')}}</Text>
+                    <Text style={styles.coverEditText}>{t('editProfile.changeCover')}</Text>
                   </LinearGradient>
                 </View>
               </Animated.View>
@@ -424,61 +428,7 @@ export default function EditProfileScreen() {
               </View>
             </LinearGradient>
 
-            {/* Pronouns */}
-            <LinearGradient
-              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-              style={styles.formCard}
-            >
-              <View style={styles.field}>
-                <View style={styles.fieldHeader}>
-                  <LinearGradient
-                    colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-                    style={styles.fieldIconBg}
-                  >
-                    <Icon name="user" size="xs" color={colors.gold} />
-                  </LinearGradient>
-                  <Text style={styles.label}>{t('editProfile.pronouns')}</Text>
-                </View>
-                <TextInput
-                  style={[styles.input, focusedField === 'pronouns' && styles.inputFocused]}
-                  value={pronouns}
-                  onChangeText={setPronouns}
-                  placeholder={t('editProfile.pronounsPlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
-                  maxLength={30}
-                  onFocus={() => setFocusedField('pronouns')}
-                  onBlur={() => setFocusedField(null)}
-                />
-              </View>
-            </LinearGradient>
-
-            {/* Birthday */}
-            <LinearGradient
-              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-              style={styles.formCard}
-            >
-              <View style={styles.field}>
-                <View style={styles.fieldHeader}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                    style={styles.fieldIconBg}
-                  >
-                    <Icon name="clock" size="xs" color={colors.emerald} />
-                  </LinearGradient>
-                  <Text style={styles.label}>{t('editProfile.birthday')}</Text>
-                </View>
-                <TextInput
-                  style={[styles.input, focusedField === 'birthday' && styles.inputFocused]}
-                  value={birthday}
-                  onChangeText={setBirthday}
-                  placeholder={t('editProfile.birthdayPlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
-                  maxLength={10}
-                  onFocus={() => setFocusedField('birthday')}
-                  onBlur={() => setFocusedField(null)}
-                />
-              </View>
-            </LinearGradient>
+            {/* Pronouns and Birthday fields removed -- not supported by backend DTO/schema yet */}
 
             {/* Private Account with Premium Toggle */}
             <LinearGradient
@@ -595,7 +545,7 @@ export default function EditProfileScreen() {
                     />
                     <View style={styles.addLinkActions}>
                       <Pressable onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
-                        <Text style={styles.addLinkCancel}>Cancel</Text>
+                        <Text style={styles.addLinkCancel}>{t('common.cancel')}</Text>
                       </Pressable>
                       <Pressable
                         accessibilityRole="button"
@@ -609,7 +559,7 @@ export default function EditProfileScreen() {
                         {addLinkMutation.isPending ? (
                           <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                         ) : (
-                          <Text style={styles.addLinkSaveText}>Add</Text>
+                          <Text style={styles.addLinkSaveText}>{t('editProfile.addLink')}</Text>
                         )}
                       </Pressable>
                     </View>

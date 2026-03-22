@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,30 +26,21 @@ export default function PinnedMessagesScreen() {
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
+  // Use the proper server-side pinned messages endpoint (isPinned field)
   const {
     data,
     isLoading,
     isError,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: ['messages', conversationId, 'pinned'],
-    queryFn: async ({ pageParam }) => {
-      const response = await messagesApi.getMessages(conversationId, pageParam);
-      // Filter messages with pushpin reaction
-      const filtered = response.data.filter((msg) =>
-        msg.reactions?.some((r) => r.emoji === '\u{1F4CC}')
-      );
-      return { ...response, data: filtered };
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.meta.cursor,
+  } = useQuery({
+    queryKey: ['pinned-messages', conversationId],
+    queryFn: () => messagesApi.getPinned(conversationId),
+    enabled: !!conversationId,
   });
 
-  const messages = data?.pages.flatMap((page) => page.data) ?? [];
+  const messages: Message[] = (data as Message[]) ?? [];
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -56,16 +48,10 @@ export default function PinnedMessagesScreen() {
     setRefreshing(false);
   };
 
-  const loadMore = () => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  };
-
   const handleUnpin = async (messageId: string) => {
     try {
-      await messagesApi.removeReaction(conversationId, messageId, '\u{1F4CC}');
-      refetch();
+      await messagesApi.unpin(conversationId, messageId);
+      queryClient.invalidateQueries({ queryKey: ['pinned-messages', conversationId] });
     } catch (err) {
       if (__DEV__) console.error('Failed to unpin message', err);
     }
@@ -79,7 +65,7 @@ export default function PinnedMessagesScreen() {
       >
         <Pressable
           style={styles.messageInner}
-          accessibilityLabel={`Pinned message from ${item.sender.displayName}`}
+          accessibilityLabel={`${t('screens.pinned-messages.title')}: ${item.sender.displayName}`}
           accessibilityRole="button"
         >
           <LinearGradient
@@ -163,21 +149,12 @@ export default function PinnedMessagesScreen() {
               tintColor={colors.emerald}
             />
           }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
           ListEmptyComponent={
             <EmptyState
               icon="map-pin"
               title={t('screens.pinned-messages.emptyTitle')}
               subtitle={t('screens.pinned-messages.emptySubtitle')}
             />
-          }
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <View style={styles.footerLoader}>
-                <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-              </View>
-            ) : null
           }
         />
       </SafeAreaView>

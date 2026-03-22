@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, RefreshControl,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
@@ -87,10 +88,11 @@ function HajjStepContent() {
         const next = [...prev];
         next[index] = !next[index];
 
-        // Save to backend
-        if (progress) {
+        // Use fresh progress from query cache to avoid stale closure
+        const freshProgress = queryClient.getQueryData(['hajj-progress']) as HajjProgress | null;
+        if (freshProgress) {
           try {
-            const saved: ChecklistState = JSON.parse(progress.checklistJson || '{}');
+            const saved: ChecklistState = JSON.parse(freshProgress.checklistJson || '{}');
             saved[String(stepIndex)] = next;
             updateMutation.mutate({ checklistJson: JSON.stringify(saved) });
           } catch {
@@ -101,17 +103,18 @@ function HajjStepContent() {
         return next;
       });
     },
-    [progress, stepIndex, updateMutation],
+    [queryClient, stepIndex, updateMutation],
   );
 
   const handleMarkComplete = useCallback(() => {
     if (!progress) return;
-    const nextStep = Math.min(stepIndex + 1, 6);
+    const maxStep = guide.length > 0 ? guide.length - 1 : 6;
+    const nextStep = Math.min(stepIndex + 1, maxStep);
     updateMutation.mutate({ currentStep: nextStep });
     if (nextStep > stepIndex) {
       router.back();
     }
-  }, [progress, stepIndex, updateMutation, router]);
+  }, [progress, stepIndex, updateMutation, router, guide.length]);
 
   const onRefresh = useCallback(() => {
     guideQuery.refetch();

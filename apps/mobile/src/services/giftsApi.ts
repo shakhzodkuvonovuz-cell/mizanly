@@ -32,5 +32,5 @@ export const giftsApi = {
   getCatalog: () => api.get<GiftCatalogItem[]>('/gifts/catalog'),
   getHistory: (cursor?: string) => api.get<{ data: GiftHistoryItem[]; meta: { cursor: string | null; hasMore: boolean } }>(`/gifts/history${qs({ cursor })}`),
   cashout: (data: { diamonds: number }) => api.post('/gifts/cashout', data),
-  getReceived: (userId: string) => api.get<GiftHistoryItem[]>(`/gifts/received/${userId}`),
+  getReceived: () => api.get<GiftHistoryItem[]>('/gifts/received'),
 };

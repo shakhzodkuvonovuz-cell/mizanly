@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert, RefreshControl,
@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Contacts from 'expo-contacts';
+import * as Crypto from 'expo-crypto';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -90,6 +91,7 @@ export default function ContactSyncScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const [contacts, setContacts] = useState<ContactUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -131,7 +133,28 @@ export default function ContactSyncScreen() {
         return;
       }
 
-      const result = await usersApi.syncContacts(phoneNumbers);
+      // Privacy: normalize and hash phone numbers before sending to server
+      // TODO: Backend findByPhoneNumbers must also hash stored phone numbers for comparison
+      const hashedNumbers: string[] = [];
+      for (const num of phoneNumbers) {
+        const normalized = num.replace(/\D/g, '').slice(-10);
+        if (normalized.length >= 7) {
+          const hash = await Crypto.digestStringAsync(
+            Crypto.CryptoDigestAlgorithm.SHA256,
+            normalized,
+          );
+          hashedNumbers.push(hash);
+        }
+      }
+
+      if (hashedNumbers.length === 0) {
+        setContacts([]);
+        setHasLoaded(true);
+        setLoading(false);
+        return;
+      }
+
+      const result = await usersApi.syncContacts(hashedNumbers);
       const users: ContactUser[] = Array.isArray(result) ? result : (result as { data: ContactUser[] }).data ?? [];
       setContacts(users);
       setHasLoaded(true);
@@ -150,11 +173,9 @@ export default function ContactSyncScreen() {
   }, [fetchContacts]);
 
   // Auto-fetch on mount
-  const [didMount, setDidMount] = useState(false);
-  if (!didMount) {
-    setDidMount(true);
+  useEffect(() => {
     fetchContacts();
-  }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const followMutation = useMutation({
     mutationFn: async ({ userId, isFollowing }: { userId: string; isFollowing: boolean }) => {

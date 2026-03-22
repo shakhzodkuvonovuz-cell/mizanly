@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
@@ -14,14 +15,21 @@ interface UpdateTierData {
   isActive?: boolean;
 }
 
+// Single source of truth for platform fee rates
+const PLATFORM_FEE_RATE = 0.10; // 10% platform fee on tips
+const MIN_TIP_AMOUNT = 0.50; // Minimum $0.50 (Stripe minimum for card payments)
+const MAX_TIP_AMOUNT = 10000;
+
 @Injectable()
 export class MonetizationService {
+  private readonly logger = new Logger(MonetizationService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async sendTip(senderId: string, receiverId: string, amount: number, message?: string) {
-    // Validate amount
-    if (amount <= 0 || amount > 10000) {
-      throw new BadRequestException('Tip amount must be between $0.01 and $10,000');
+    // Validate amount — enforce real minimum ($0.50 is typical Stripe minimum)
+    if (amount < MIN_TIP_AMOUNT || amount > MAX_TIP_AMOUNT) {
+      throw new BadRequestException(`Tip amount must be between $${MIN_TIP_AMOUNT.toFixed(2)} and $${MAX_TIP_AMOUNT.toLocaleString()}`);
     }
     if (senderId === receiverId) {
       throw new BadRequestException('Cannot tip yourself');
@@ -33,8 +41,9 @@ export class MonetizationService {
       throw new NotFoundException('Receiver not found');
     }
 
-    const platformFee = amount * 0.10; // 10% platform fee
-    const netAmount = amount - platformFee;
+    // Use precise math: round to 2 decimal places to avoid floating point drift
+    const platformFee = Math.round(amount * PLATFORM_FEE_RATE * 100) / 100;
+    const netAmount = Math.round((amount - platformFee) * 100) / 100;
 
     // Tip is created as pending — should be confirmed via payment webhook
     const tip = await this.prisma.tip.create({
@@ -122,51 +131,62 @@ export class MonetizationService {
   }
 
   async getTipStats(userId: string) {
-    const [totalEarned, totalSent, topSupporters] = await Promise.all([
-      // Total earned (net amount after fees)
+    const [totalGross, totalFees, totalSent, topSupporters] = await Promise.all([
+      // Total gross earned
       this.prisma.tip.aggregate({
-        where: { receiverId: userId },
+        where: { receiverId: userId, status: 'completed' },
         _sum: { amount: true },
+      }),
+      // Total platform fees deducted
+      this.prisma.tip.aggregate({
+        where: { receiverId: userId, status: 'completed' },
+        _sum: { platformFee: true },
       }),
       // Total sent
       this.prisma.tip.aggregate({
-        where: { senderId: userId },
+        where: { senderId: userId, status: 'completed' },
         _sum: { amount: true },
       }),
       // Top supporters (by total amount sent to this user)
       this.prisma.tip.groupBy({
         by: ['senderId'],
-        where: { receiverId: userId },
+        where: { receiverId: userId, status: 'completed' },
         _sum: { amount: true },
         orderBy: { _sum: { amount: 'desc' } },
         take: 5,
       }),
     ]);
 
-    // Fetch sender details for top supporters
-    const supporterDetails = await Promise.all(
-      topSupporters.map(async (supporter) => {
-        const user = await this.prisma.user.findUnique({
-          where: { id: supporter.senderId },
+    // Batch fetch sender details for top supporters (single query instead of N+1)
+    const senderIds = topSupporters.map((s) => s.senderId);
+    const users = senderIds.length > 0
+      ? await this.prisma.user.findMany({
+          where: { id: { in: senderIds } },
           select: { id: true, username: true, displayName: true, avatarUrl: true },
-        });
-        return {
-          user,
-          totalAmount: Number(supporter._sum.amount || 0),
-        };
-      }),
-    );
+        })
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const supporterDetails = topSupporters.map((supporter) => ({
+      user: userMap.get(supporter.senderId) || null,
+      totalAmount: Number(supporter._sum.amount || 0),
+    }));
+
+    const grossEarned = Number(totalGross._sum.amount || 0);
+    const totalPlatformFees = Number(totalFees._sum.platformFee || 0);
 
     return {
-      totalEarned: Number(totalEarned._sum.amount || 0),
+      totalEarned: Math.round((grossEarned - totalPlatformFees) * 100) / 100,
+      totalGross: grossEarned,
+      totalPlatformFees,
       totalSent: Number(totalSent._sum.amount || 0),
       topSupporters: supporterDetails,
     };
   }
 
   async createTier(userId: string, name: string, price: number, benefits: string[], level?: string) {
-    if (price <= 0 || price > 10000) {
-      throw new BadRequestException('Price must be between $0.01 and $10,000');
+    if (price < 0.50 || price > 10000) {
+      throw new BadRequestException('Price must be between $0.50 and $10,000');
     }
     if (!name.trim()) {
       throw new BadRequestException('Tier name is required');
@@ -206,8 +226,8 @@ export class MonetizationService {
     }
 
     // Validate price if provided
-    if (dto.price !== undefined && (dto.price <= 0 || dto.price > 10000)) {
-      throw new BadRequestException('Price must be between $0.01 and $10,000');
+    if (dto.price !== undefined && (dto.price < 0.50 || dto.price > 10000)) {
+      throw new BadRequestException('Price must be between $0.50 and $10,000');
     }
 
     const updated = await this.prisma.membershipTier.update({

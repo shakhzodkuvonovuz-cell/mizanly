@@ -89,18 +89,20 @@ export class FollowsController {
   @Get(':userId/followers')
   @ApiOperation({ summary: 'Followers list (cursor paginated)' })
   getFollowers(
+    @CurrentUser('id') currentUserId: string,
     @Param('userId') userId: string,
     @Query('cursor') cursor?: string,
   ) {
-    return this.followsService.getFollowers(userId, cursor);
+    return this.followsService.getFollowers(userId, cursor, currentUserId);
   }
 
   @Get(':userId/following')
   @ApiOperation({ summary: 'Following list (cursor paginated)' })
   getFollowing(
+    @CurrentUser('id') currentUserId: string,
     @Param('userId') userId: string,
     @Query('cursor') cursor?: string,
   ) {
-    return this.followsService.getFollowing(userId, cursor);
+    return this.followsService.getFollowing(userId, cursor, currentUserId);
   }
 }

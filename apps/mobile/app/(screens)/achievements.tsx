@@ -6,11 +6,9 @@ import {
   FlatList,
   RefreshControl,
   Pressable,
-  Dimensions,
-  Pressable,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
@@ -27,9 +25,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
 
-const { width: screenWidth } = Dimensions.get('window');
 const CARD_GAP = spacing.md;
-const CARD_WIDTH = (screenWidth - spacing.base * 2 - CARD_GAP) / 2;
 
 type AchievementCategory = 'all' | 'content' | 'social' | 'islamic' | 'milestone' | 'special';
 type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
@@ -185,6 +181,9 @@ function AchievementsScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
+  const tc = useThemeColors();
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = (screenWidth - spacing.base * 2 - CARD_GAP) / 2;
   const [selectedCategory, setSelectedCategory] = useState<AchievementCategory>('all');
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
@@ -388,7 +387,7 @@ const styles = StyleSheet.create({
     marginBottom: CARD_GAP,
   },
   cardOuter: {
-    width: CARD_WIDTH,
+    flex: 1,
   },
   achievementCard: {
     borderRadius: radius.lg,
@@ -460,7 +459,7 @@ const styles = StyleSheet.create({
     gap: spacing.base,
   },
   skeletonCard: {
-    width: CARD_WIDTH,
+    flex: 1,
     alignItems: 'center',
     gap: spacing.sm,
     padding: spacing.base,

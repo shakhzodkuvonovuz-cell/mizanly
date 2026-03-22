@@ -2180,7 +2180,16 @@
     "takeBreak": "Mola Hatırlatıcıları",
     "takeBreakHint": "Çok uzun süre kaydırdığınızda hatırlatılın",
     "hours": "{{count}}sa",
-    "minutes": "{{count}}dk"
+    "minutes": "{{count}}dk",
+    "days": {
+      "sun": "Paz",
+      "mon": "Pzt",
+      "tue": "Sal",
+      "wed": "Çar",
+      "thu": "Per",
+      "fri": "Cum",
+      "sat": "Cmt"
+    }
   },
   "autoPlaySettings": {
     "title": "Otomatik Oynatma",

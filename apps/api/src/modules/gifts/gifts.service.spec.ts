@@ -17,8 +17,8 @@ describe('GiftsService', () => {
           provide: PrismaService,
           useValue: {
             coinBalance: { upsert: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
-            coinTransaction: { create: jest.fn(), findMany: jest.fn() },
-            giftRecord: { create: jest.fn(), groupBy: jest.fn() },
+            coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+            giftRecord: { create: jest.fn(), groupBy: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn().mockResolvedValue({ id: 'receiver' }) },
             $transaction: jest.fn().mockResolvedValue([{ id: 'gift-1', senderId: 's', receiverId: 'r', giftType: 'rose', coinCost: 1 }]),
           },
@@ -92,11 +92,26 @@ describe('GiftsService', () => {
   });
 
   describe('getHistory', () => {
-    it('should return paginated transaction history', async () => {
+    it('should return gift records and transactions', async () => {
+      prisma.giftRecord.findMany
+        .mockResolvedValueOnce([{ id: 'g1', giftType: 'rose', coinCost: 1, receiverId: 'r1', senderId: 'u1', createdAt: new Date(), receiver: { displayName: 'Rec', username: 'rec' } }])
+        .mockResolvedValueOnce([]);
       prisma.coinTransaction.findMany.mockResolvedValue([{ id: 'tx1', type: 'purchase', amount: 100 }]);
       const result = await service.getHistory('u1');
-      expect(result.data).toHaveLength(1);
+      expect(result.data.giftsSent).toHaveLength(1);
+      expect(result.data.giftsSent[0].giftName).toBe('Rose');
+      expect(result.data.giftsSent[0].receiverName).toBe('Rec');
+      expect(result.data.transactions).toHaveLength(1);
       expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should return empty data when no history', async () => {
+      prisma.giftRecord.findMany.mockResolvedValue([]);
+      prisma.coinTransaction.findMany.mockResolvedValue([]);
+      const result = await service.getHistory('u1');
+      expect(result.data.giftsSent).toHaveLength(0);
+      expect(result.data.giftsReceived).toHaveLength(0);
+      expect(result.data.transactions).toHaveLength(0);
     });
   });
 

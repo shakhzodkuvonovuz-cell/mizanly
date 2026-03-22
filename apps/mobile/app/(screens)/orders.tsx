@@ -6,6 +6,7 @@ import {
   FlatList,
   RefreshControl,
   Pressable,
+} from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -45,12 +46,12 @@ interface OrdersResponse {
   meta: { cursor: string | null; hasMore: boolean };
 }
 
-const STATUS_CONFIG: Record<OrderStatus, { color: string; bgColor: string; label: string }> = {
-  pending: { color: colors.gold, bgColor: colors.active.gold10, label: 'Pending' },
-  paid: { color: colors.info, bgColor: 'rgba(88, 166, 255, 0.1)', label: 'Paid' },
-  shipped: { color: colors.emerald, bgColor: colors.active.emerald10, label: 'Shipped' },
-  delivered: { color: colors.extended.greenBright, bgColor: 'rgba(63, 185, 80, 0.1)', label: 'Delivered' },
-  cancelled: { color: colors.error, bgColor: colors.active.error10, label: 'Cancelled' },
+const STATUS_CONFIG: Record<OrderStatus, { color: string; bgColor: string; labelKey: string }> = {
+  pending: { color: colors.gold, bgColor: colors.active.gold10, labelKey: 'orders.statusPending' },
+  paid: { color: colors.info, bgColor: 'rgba(88, 166, 255, 0.1)', labelKey: 'orders.statusPaid' },
+  shipped: { color: colors.emerald, bgColor: colors.active.emerald10, labelKey: 'orders.statusShipped' },
+  delivered: { color: colors.extended.greenBright, bgColor: 'rgba(63, 185, 80, 0.1)', labelKey: 'orders.statusDelivered' },
+  cancelled: { color: colors.error, bgColor: colors.active.error10, labelKey: 'orders.statusCancelled' },
 };
 
 function OrdersContent() {
@@ -147,7 +148,7 @@ function OrdersContent() {
               ]}
             >
               <Text style={[styles.statusText, { color: statusConf.color }]}>
-                {statusConf.label}
+                {t(statusConf.labelKey, item.status)}
               </Text>
             </View>
           </View>

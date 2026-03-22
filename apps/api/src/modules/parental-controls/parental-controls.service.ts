@@ -231,7 +231,29 @@ export class ParentalControlsService {
       where: { childUserId },
     });
 
+    // Check if user is a child account (set during registration based on age)
+    const user = await this.prisma.user.findUnique({
+      where: { id: childUserId },
+      select: { isChildAccount: true },
+    });
+
     if (!control) {
+      // Finding 30: Apply protective defaults for child accounts even when unlinked.
+      // COPPA, UK Age Appropriate Design Code, Australian Online Safety Act require
+      // privacy-protective defaults for children.
+      if (user?.isChildAccount) {
+        return {
+          isLinked: false,
+          restrictedMode: true,       // Restricted content by default for minors
+          maxAgeRating: 'PG',         // Age-appropriate content only
+          dailyLimitMinutes: null,
+          dmRestriction: 'followers',  // DMs from followers only — prevents adult strangers messaging minors
+          canGoLive: false,            // Finding 31: Live streaming disabled for minors by default
+          canPost: true,
+          canComment: true,
+        };
+      }
+
       return {
         isLinked: false,
         restrictedMode: false,

@@ -13,19 +13,25 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { IsString, IsUrl, IsOptional } from 'class-validator';
 import { AudioRoomsService } from './audio-rooms.service';
 import { CreateAudioRoomDto } from './dto/create-audio-room.dto';
 import { RoleChangeDto, AudioRoomRole } from './dto/role-change.dto';
-import { HandToggleDto } from './dto/hand-toggle.dto';
 import { MuteToggleDto } from './dto/mute-toggle.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
+class StopRecordingDto {
+  @IsOptional() @IsUrl() recordingUrl?: string;
+}
+
 @ApiTags('Audio Rooms')
 @Controller('audio-rooms')
 export class AudioRoomsController {
   constructor(private audioRoomsService: AudioRoomsService) {}
+
+  // ── Static routes before :id ──
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
@@ -47,6 +53,30 @@ export class AudioRoomsController {
     return this.audioRoomsService.list(viewerId, cursor, limit ? parseInt(limit, 10) : 20);
   }
 
+  @Get('active')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get active rooms with participant counts' })
+  getActiveRooms(@Query('cursor') cursor?: string) {
+    return this.audioRoomsService.getActiveRooms(cursor);
+  }
+
+  @Get('upcoming')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get upcoming scheduled rooms' })
+  getUpcomingRooms(@Query('cursor') cursor?: string) {
+    return this.audioRoomsService.getUpcomingRooms(cursor);
+  }
+
+  @Get('recordings')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List my room recordings' })
+  listRecordings(@CurrentUser('id') userId: string) {
+    return this.audioRoomsService.listRecordings(userId);
+  }
+
+  // ── Parameterized :id routes ──
+
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get audio room detail' })
@@ -55,6 +85,13 @@ export class AudioRoomsController {
     @CurrentUser('id') viewerId?: string,
   ) {
     return this.audioRoomsService.getById(id, viewerId);
+  }
+
+  @Get(':id/recording')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get room recording' })
+  getRecording(@Param('id') id: string) {
+    return this.audioRoomsService.getRecording(id);
   }
 
   @Delete(':id')
@@ -103,11 +140,11 @@ export class AudioRoomsController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Toggle hand raised' })
   toggleHand(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body() dto: HandToggleDto,
   ) {
     return this.audioRoomsService.toggleHand(id, userId);
   }
@@ -123,6 +160,26 @@ export class AudioRoomsController {
     @Body() dto: MuteToggleDto,
   ) {
     return this.audioRoomsService.toggleMute(id, userId, dto.targetUserId);
+  }
+
+  @Post(':id/recording/start')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Start recording (host only)' })
+  startRecording(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.audioRoomsService.startRecording(id, userId);
+  }
+
+  @Post(':id/recording/stop')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Stop recording (host only)' })
+  stopRecording(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: StopRecordingDto) {
+    return this.audioRoomsService.stopRecording(id, userId, dto.recordingUrl);
   }
 
   @Get(':id/participants')

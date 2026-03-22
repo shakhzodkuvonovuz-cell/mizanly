@@ -248,6 +248,14 @@ export class UsersController {
     return this.usersService.cancelAccountDeletion(userId);
   }
 
+  @Post('me/reactivate')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reactivate deactivated account' })
+  reactivateAccount(@CurrentUser('id') userId: string) {
+    return this.usersService.reactivateAccount(userId);
+  }
+
   @Patch('me/nasheed-mode')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -293,21 +301,25 @@ export class UsersController {
   }
 
   @Get(':username/followers')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Followers list' })
   getFollowers(
     @Param('username') username: string,
+    @CurrentUser('id') viewerId?: string,
     @Query('cursor') cursor?: string,
   ) {
-    return this.usersService.getFollowers(username, cursor);
+    return this.usersService.getFollowers(username, cursor, viewerId);
   }
 
   @Get(':username/following')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Following list' })
   getFollowing(
     @Param('username') username: string,
+    @CurrentUser('id') viewerId?: string,
     @Query('cursor') cursor?: string,
   ) {
-    return this.usersService.getFollowing(username, cursor);
+    return this.usersService.getFollowing(username, cursor, viewerId);
   }
 
   @Get(':username/mutual-followers')

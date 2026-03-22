@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Moon, Sun, Settings } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { colors, spacing, fontSize, radius, iconSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -119,37 +118,39 @@ export default function ThemeSettingsScreen() {
       value: 'dark',
       label: t('screens.theme-settings.dark'),
       description: t('screens.theme-settings.darkDesc'),
-      icon: <Moon size={iconSize.md} color={colors.text.primary} strokeWidth={1.75} />,
+      icon: <Icon name="moon" size="md" color={colors.text.primary} />,
     },
     {
       value: 'light',
       label: t('screens.theme-settings.light'),
       description: t('screens.theme-settings.lightDesc'),
-      icon: <Sun size={iconSize.md} color={colors.text.primary} strokeWidth={1.75} />,
+      icon: <Icon name="sun" size="md" color={colors.text.primary} />,
     },
     {
       value: 'system',
       label: t('screens.theme-settings.system'),
       description: t('screens.theme-settings.systemDesc'),
-      icon: <Settings size={iconSize.md} color={colors.text.primary} strokeWidth={1.75} />,
+      icon: <Icon name="settings" size="md" color={colors.text.primary} />,
     },
   ];
 
   if (!isReady) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <GlassHeader
-          title={t('screens.theme-settings.title')}
-          leftAction={{ 
-            icon: 'arrow-left', 
-            onPress: () => router.back(),
-            accessibilityLabel: t('accessibility.goBack')
-          }}
-        />
-        <View style={{ paddingTop: 100 }}>
-          <ThemeSettingsSkeleton />
-        </View>
-      </SafeAreaView>
+      <ScreenErrorBoundary>
+        <SafeAreaView style={styles.container} edges={['top']}>
+          <GlassHeader
+            title={t('screens.theme-settings.title')}
+            leftAction={{
+              icon: 'arrow-left',
+              onPress: () => router.back(),
+              accessibilityLabel: t('accessibility.goBack')
+            }}
+          />
+          <View style={{ paddingTop: 100 }}>
+            <ThemeSettingsSkeleton />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
     );
   }
 
@@ -188,9 +189,9 @@ export default function ThemeSettingsScreen() {
                 <ColorSwatch bg={themeColors.surface} border={themeColors.border} text={colors.text.primary} />
               </View>
               <Text style={styles.previewHint}>
-                {effectiveTheme === 'dark' ? 'Dark theme uses deep backgrounds with emerald highlights.' :
-                 effectiveTheme === 'light' ? 'Light theme uses light backgrounds with emerald highlights.' :
-                 'Theme follows your device settings.'}
+                {effectiveTheme === 'dark' ? t('screens.theme-settings.darkHint', 'Dark theme uses deep backgrounds with emerald highlights.') :
+                 effectiveTheme === 'light' ? t('screens.theme-settings.lightHint', 'Light theme uses light backgrounds with emerald highlights.') :
+                 t('screens.theme-settings.systemHint', 'Theme follows your device settings.')}
               </Text>
             </LinearGradient>
           </Animated.View>
@@ -248,6 +249,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   bodyContent: {
     paddingBottom: 60,
+    paddingTop: 100,
   },
   // Preview card with glassmorphism
   previewCard: {

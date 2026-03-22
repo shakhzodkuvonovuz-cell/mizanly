@@ -94,10 +94,14 @@ export class BroadcastService {
     return { unsubscribed: true };
   }
 
-  async getSubscribers(channelId: string, cursor?: string, limit = 20) {
+  async getSubscribers(channelId: string, cursor?: string, userId?: string, limit = 20) {
+    // Only channel owner/admin can view the subscriber list
+    if (userId) {
+      await this.requireRole(channelId, userId, [ChannelRole.OWNER, ChannelRole.ADMIN]);
+    }
     const where: Prisma.ChannelMemberWhereInput = { channelId };
     if (cursor) {
-      where.userId = { gt: cursor };
+      where.joinedAt = { lt: new Date(cursor) };
     }
     const members = await this.prisma.channelMember.findMany({
       where,
@@ -107,7 +111,7 @@ export class BroadcastService {
     });
     const hasMore = members.length > limit;
     if (hasMore) members.pop();
-    return { data: members, meta: { cursor: members[members.length - 1]?.userId ?? null, hasMore } };
+    return { data: members, meta: { cursor: members[members.length - 1]?.joinedAt?.toISOString() ?? null, hasMore } };
   }
 
   async sendMessage(channelId: string, userId: string, data: { content?: string; messageType?: string; mediaUrl?: string; mediaType?: string }) {

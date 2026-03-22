@@ -12,15 +12,23 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { IsString, IsArray, IsOptional, IsNumber, MaxLength, ValidateNested, ArrayMinSize, ArrayMaxSize, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ReelTemplatesService } from './reel-templates.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
-interface CreateReelTemplateBody {
-  sourceReelId: string;
-  segments: { startMs: number; endMs: number; text?: string }[];
-  name: string;
+class TemplateSegmentDto {
+  @IsNumber() @Min(0) @Max(600000) startMs: number;
+  @IsNumber() @Min(0) @Max(600000) endMs: number;
+  @IsOptional() @IsString() @MaxLength(500) text?: string;
+}
+
+class CreateReelTemplateDto {
+  @IsString() @MaxLength(50) sourceReelId: string;
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(20) @ValidateNested({ each: true }) @Type(() => TemplateSegmentDto) segments: TemplateSegmentDto[];
+  @IsString() @MaxLength(200) name: string;
 }
 
 @ApiTags('Reel Templates (Bakra)')
@@ -56,7 +64,7 @@ export class ReelTemplatesController {
   @ApiOperation({ summary: 'Create a reel template' })
   create(
     @CurrentUser('id') userId: string,
-    @Body() body: CreateReelTemplateBody,
+    @Body() body: CreateReelTemplateDto,
   ) {
     return this.reelTemplatesService.create(userId, body);
   }

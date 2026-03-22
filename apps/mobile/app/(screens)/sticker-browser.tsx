@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, Pressable, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, Pressable, ScrollView, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { stickersApi } from '@/services/api';
 import type { StickerPack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -20,13 +20,11 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack; onPress: () => void; onAdd: () => void; onRemove: () => void; index: number }) {
+function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack & { isCollected?: boolean }; onPress: () => void; onAdd: () => void; onRemove: () => void; index: number }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const { t } = useTranslation();
-  const [isAdded, setIsAdded] = useState(false);
+  const [isAdded, setIsAdded] = useState(pack.isCollected ?? false);
   const haptic = useHaptic();
 
   const handleToggle = () => {
@@ -83,9 +81,10 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
   );
 }
 
-export default function StickerBrowserScreen() {
+function StickerBrowserScreenInner() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const { width: screenWidth } = useWindowDimensions();
+  const styles = createStyles(tc, screenWidth);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId?: string }>();
@@ -134,10 +133,24 @@ export default function StickerBrowserScreen() {
 
   const addMutation = useMutation({
     mutationFn: (id: string) => stickersApi.addToCollection(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sticker-browse'] });
+      queryClient.invalidateQueries({ queryKey: ['sticker-featured'] });
+    },
+    onError: () => {
+      haptic.error();
+    },
   });
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => stickersApi.removeFromCollection(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sticker-browse'] });
+      queryClient.invalidateQueries({ queryKey: ['sticker-featured'] });
+    },
+    onError: () => {
+      haptic.error();
+    },
   });
 
   const onRefresh = useCallback(async () => {
@@ -205,10 +218,9 @@ export default function StickerBrowserScreen() {
   }
 
   return (
-    <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader title={t('screens.sticker-browser.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
-      
+
         <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -293,24 +305,33 @@ export default function StickerBrowserScreen() {
 
               <View style={{ marginTop: spacing.xl }}>
                 <GradientButton
-                  label={t('screens.sticker-browser.addToCollection')}
+                  label={(selectedPack as StickerPack & { isCollected?: boolean }).isCollected ? t('screens.sticker-browser.added') : t('screens.sticker-browser.addToCollection')}
                   onPress={() => {
-                    handleAdd(selectedPack.id);
+                    if (!(selectedPack as StickerPack & { isCollected?: boolean }).isCollected) {
+                      handleAdd(selectedPack.id);
+                    }
                     setSelectedPack(null);
                     haptic.success();
                   }}
+                  disabled={(selectedPack as StickerPack & { isCollected?: boolean }).isCollected}
                 />
               </View>
             </View>
           )}
         </BottomSheet>
       </View>
-  
+  );
+}
+
+export default function StickerBrowserScreen() {
+  return (
+    <ScreenErrorBoundary>
+      <StickerBrowserScreenInner />
     </ScreenErrorBoundary>
   );
 }
 
-const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>, screenWidth = 375) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: tc.bg
@@ -349,7 +370,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   sectionTitle: {
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.primary,
     paddingHorizontal: spacing.base,
     marginBottom: spacing.md,
@@ -374,7 +395,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   featuredTitle: {
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
     color: colors.text.primary,
   },
   card: {
@@ -405,7 +426,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   cardTitle: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.primary,
   },
   cardSubtitle: {
@@ -423,7 +444,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   addButtonText: {
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.primary,
   },
   addedButtonText: {
@@ -438,7 +459,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   sheetTitle: {
     fontSize: fontSize.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bodyBold,
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },

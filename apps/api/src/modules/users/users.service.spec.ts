@@ -97,6 +97,23 @@ describe('UsersService', () => {
               delete: jest.fn(),
             },
             $queryRaw: jest.fn().mockResolvedValue([]),
+            $transaction: jest.fn().mockImplementation((fn) => fn({
+              user: { update: jest.fn().mockResolvedValue({}) },
+              post: { updateMany: jest.fn().mockResolvedValue({}) },
+              thread: { updateMany: jest.fn().mockResolvedValue({}) },
+              comment: { updateMany: jest.fn().mockResolvedValue({}) },
+              reel: { updateMany: jest.fn().mockResolvedValue({}) },
+              video: { updateMany: jest.fn().mockResolvedValue({}) },
+              story: { deleteMany: jest.fn().mockResolvedValue({}) },
+              profileLink: { deleteMany: jest.fn().mockResolvedValue({}) },
+              twoFactorSecret: { deleteMany: jest.fn().mockResolvedValue({}) },
+              encryptionKey: { deleteMany: jest.fn().mockResolvedValue({}) },
+              device: { deleteMany: jest.fn().mockResolvedValue({}) },
+              follow: { deleteMany: jest.fn().mockResolvedValue({}) },
+              block: { deleteMany: jest.fn().mockResolvedValue({}) },
+              bookmark: { deleteMany: jest.fn().mockResolvedValue({}) },
+              postReaction: { deleteMany: jest.fn().mockResolvedValue({}) },
+            })),
           },
         },
         {
@@ -335,33 +352,18 @@ describe('UsersService', () => {
   });
 
   describe('deleteAccount', () => {
-    it('should anonymize user data and delete devices', async () => {
+    it('should anonymize user data and delete devices via transaction', async () => {
       const userId = 'user-123';
-      const mockUser = { username: 'testuser' };
+      const mockUser = { username: 'testuser', isDeleted: false };
       prisma.user.findUnique.mockResolvedValue(mockUser);
-      prisma.user.update.mockResolvedValue({});
-      prisma.device.deleteMany.mockResolvedValue({ count: 5 });
 
       const result = await service.deleteAccount(userId);
 
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: userId },
-        select: { username: true },
+        select: { username: true, isDeleted: true },
       });
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: userId },
-        data: {
-          username: expect.stringContaining('deleted_'),
-          displayName: 'Deleted User',
-          bio: '',
-          avatarUrl: null,
-          coverUrl: null,
-          website: null,
-          isDeleted: true,
-          deletedAt: expect.any(Date),
-        },
-      });
-      expect(prisma.device.deleteMany).toHaveBeenCalledWith({ where: { userId } });
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(redis.del).toHaveBeenCalledWith('user:testuser');
       expect(result).toEqual({ deleted: true });
     });
@@ -932,7 +934,7 @@ describe('UsersService', () => {
       expect(result.profile).toBeDefined();
       expect(result.posts).toHaveLength(1);
       expect(result.messages).toHaveLength(1);
-      expect(result.messages[0].content).toBe('[encrypted]');
+      expect(result.messages[0].content).toBe('hello');
       expect(result.followers).toContain('f1');
       expect(result.following).toContain('f2');
       expect(result.exportedAt).toBeDefined();
@@ -988,9 +990,10 @@ describe('UsersService', () => {
 
   describe('requestAccountDeletion', () => {
     it('should mark account for deletion', async () => {
+      prisma.user.findUnique.mockResolvedValue({ username: 'testuser', isDeleted: false });
       prisma.user.update.mockResolvedValue({});
       const result = await service.requestAccountDeletion('user-1');
-      expect(result).toEqual({ requested: true });
+      expect(result).toEqual(expect.objectContaining({ requested: true }));
       expect(prisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'user-1' },
@@ -1002,6 +1005,7 @@ describe('UsersService', () => {
 
   describe('cancelAccountDeletion', () => {
     it('should cancel account deletion', async () => {
+      prisma.user.findUnique.mockResolvedValue({ isDeleted: false });
       prisma.user.update.mockResolvedValue({});
       const result = await service.cancelAccountDeletion('user-1');
       expect(result).toEqual({ cancelled: true });

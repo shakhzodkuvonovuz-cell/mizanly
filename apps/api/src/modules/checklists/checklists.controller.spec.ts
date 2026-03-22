@@ -54,9 +54,9 @@ describe('ChecklistsController', () => {
       const mockLists = [{ id: 'cl-1', title: 'List 1' }];
       service.getByConversation.mockResolvedValue(mockLists as any);
 
-      const result = await controller.getByConversation('conv-1');
+      const result = await controller.getByConversation('user-1', 'conv-1');
 
-      expect(service.getByConversation).toHaveBeenCalledWith('conv-1');
+      expect(service.getByConversation).toHaveBeenCalledWith('conv-1', 'user-1');
       expect(result).toEqual(mockLists);
     });
   });

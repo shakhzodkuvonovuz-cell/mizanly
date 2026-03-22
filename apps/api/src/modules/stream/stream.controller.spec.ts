@@ -15,6 +15,10 @@ function makeSignature(body: Record<string, unknown>, secret: string): string {
   return `time=${timestamp},sig1=${sig}`;
 }
 
+function makeReq(body: Record<string, unknown>): any {
+  return { rawBody: Buffer.from(JSON.stringify(body)) };
+}
+
 describe('StreamController', () => {
   let controller: StreamController;
   let service: jest.Mocked<StreamService>;
@@ -48,7 +52,7 @@ describe('StreamController', () => {
     it('should return received true when uid is missing', async () => {
       const body = { uid: '' } as any;
       const sig = makeSignature(body, WEBHOOK_SECRET);
-      const result = await controller.handleWebhook(body, sig);
+      const result = await controller.handleWebhook(makeReq(body), body, sig);
       expect(result).toEqual({ received: true });
     });
 
@@ -57,7 +61,7 @@ describe('StreamController', () => {
       const body = { uid: 'vid-1', readyToStream: true } as any;
       const sig = makeSignature(body, WEBHOOK_SECRET);
 
-      const result = await controller.handleWebhook(body, sig);
+      const result = await controller.handleWebhook(makeReq(body), body, sig);
       expect(service.handleStreamReady).toHaveBeenCalledWith('vid-1');
       expect(result).toEqual({ received: true });
     });
@@ -67,18 +71,18 @@ describe('StreamController', () => {
       const body = { uid: 'vid-1', status: { state: 'error', errorReasonCode: 'corrupt' } } as any;
       const sig = makeSignature(body, WEBHOOK_SECRET);
 
-      const result = await controller.handleWebhook(body, sig);
+      const result = await controller.handleWebhook(makeReq(body), body, sig);
       expect(service.handleStreamError).toHaveBeenCalledWith('vid-1', 'corrupt');
       expect(result).toEqual({ received: true });
     });
 
     it('should reject missing signature', async () => {
-      await expect(controller.handleWebhook({ uid: 'vid-1' } as any, undefined))
+      await expect(controller.handleWebhook(makeReq({ uid: 'vid-1' }), { uid: 'vid-1' } as any, undefined))
         .rejects.toThrow(UnauthorizedException);
     });
 
     it('should reject invalid signature', async () => {
-      await expect(controller.handleWebhook({ uid: 'vid-1' } as any, 'time=123,sig1=invalid'))
+      await expect(controller.handleWebhook(makeReq({ uid: 'vid-1' }), { uid: 'vid-1' } as any, 'time=123,sig1=invalid'))
         .rejects.toThrow(UnauthorizedException);
     });
 
@@ -87,7 +91,7 @@ describe('StreamController', () => {
       const body = { uid: 'vid-1' };
       const payload = `${oldTimestamp}.${JSON.stringify(body)}`;
       const sig = createHmac('sha256', WEBHOOK_SECRET).update(payload).digest('hex');
-      await expect(controller.handleWebhook(body as any, `time=${oldTimestamp},sig1=${sig}`))
+      await expect(controller.handleWebhook(makeReq(body), body as any, `time=${oldTimestamp},sig1=${sig}`))
         .rejects.toThrow(UnauthorizedException);
     });
   });
@@ -104,7 +108,7 @@ describe('StreamController', () => {
       }).compile();
 
       const ctrl = moduleNoSecret.get(StreamController);
-      await expect(ctrl.handleWebhook({ uid: 'vid-1' } as any, undefined))
+      await expect(ctrl.handleWebhook(makeReq({ uid: 'vid-1' }), { uid: 'vid-1' } as any, undefined))
         .rejects.toThrow(UnauthorizedException);
     });
   });

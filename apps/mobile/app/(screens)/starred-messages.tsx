@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,27 +26,17 @@ export default function StarredMessagesScreen() {
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
+  // Use the proper server-side starred messages endpoint (starredBy field)
   const {
     data,
     isLoading,
     isError,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: ['messages', conversationId, 'starred'],
-    queryFn: async ({ pageParam }) => {
-      const response = await messagesApi.getMessages(conversationId, pageParam);
-      // Filter messages that have a star reaction
-      const filtered = response.data.filter((msg) =>
-        msg.reactions?.some((r) => r.emoji === '\u2B50')
-      );
-      return { ...response, data: filtered };
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.meta.cursor,
+  } = useQuery({
+    queryKey: ['starred-messages'],
+    queryFn: () => messagesApi.getStarredMessages(),
   });
 
   const { data: conversation } = useQuery({
@@ -54,7 +45,11 @@ export default function StarredMessagesScreen() {
     enabled: !!conversationId,
   });
 
-  const messages = data?.pages.flatMap((page) => page.data) ?? [];
+  const allStarred: Message[] = ((data as { data?: Message[] })?.data ?? data ?? []) as Message[];
+  // If conversationId is provided, filter to only that conversation's starred messages
+  const messages = conversationId
+    ? allStarred.filter((msg: Message) => (msg as Record<string, unknown>).conversationId === conversationId)
+    : allStarred;
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -62,16 +57,10 @@ export default function StarredMessagesScreen() {
     setRefreshing(false);
   };
 
-  const loadMore = () => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  };
-
   const handleUnstar = async (messageId: string) => {
     try {
-      await messagesApi.removeReaction(conversationId, messageId, '\u2B50');
-      refetch();
+      await messagesApi.toggleStar(conversationId, messageId);
+      queryClient.invalidateQueries({ queryKey: ['starred-messages'] });
     } catch (err) {
       if (__DEV__) console.error('Failed to unstar message', err);
     }
@@ -205,7 +194,10 @@ export default function StarredMessagesScreen() {
                   ? conversation.groupName
                   : conversation.otherUser?.displayName || conversation.otherUser?.username}
               </Text>
-              <Text style={styles.starredCount}>★ {messages.length} {t('screens.starred-messages.starred')}</Text>
+              <View style={styles.starredCountRow}>
+                <Icon name="bookmark-filled" size="xs" color={colors.gold} />
+                <Text style={styles.starredCount}>{messages.length} {t('screens.starred-messages.starred')}</Text>
+              </View>
             </LinearGradient>
           </Animated.View>
         )}
@@ -223,21 +215,12 @@ export default function StarredMessagesScreen() {
               tintColor={colors.emerald}
             />
           }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
           ListEmptyComponent={
             <EmptyState
               icon="bookmark-filled"
               title={t('screens.starred-messages.emptyTitle')}
               subtitle={t('screens.starred-messages.emptySubtitle')}
             />
-          }
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <View style={styles.footerLoader}>
-                <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-              </View>
-            ) : null
           }
         />
       </SafeAreaView>
@@ -342,10 +325,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontWeight: '600',
     color: colors.text.primary,
   },
+  starredCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
   starredCount: {
     fontSize: fontSize.xs,
     color: colors.gold,
-    marginTop: spacing.xs,
   },
   starIconBg: {
     width: 28,

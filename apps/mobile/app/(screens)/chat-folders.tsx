@@ -48,6 +48,17 @@ export default function ChatFoldersScreen() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ folderId, name, icon }: { folderId: string; name: string; icon: string }) =>
+      api.patch<Record<string, unknown>>(`/chat-folders/${folderId}`, { name, icon }),
+    onSuccess: () => {
+      setEditingFolder(null);
+      setNewName('');
+      queryClient.invalidateQueries({ queryKey: ['chat-folders'] });
+      haptic.success();
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/chat-folders/${id}`),
     onSuccess: () => {
@@ -77,9 +88,9 @@ export default function ChatFoldersScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.folderName}>{item.name as string}</Text>
             <Text style={styles.folderMeta}>
-              {convCount} chat{convCount !== 1 ? 's' : ''}
-              {Boolean(item.includeGroups) && ' · Groups'}
-              {Boolean(item.includeChannels) && ' · Channels'}
+              {t('risalah.chatCount', { count: convCount })}
+              {Boolean(item.includeGroups) && ` · ${t('risalah.groups')}`}
+              {Boolean(item.includeChannels) && ` · ${t('risalah.channels')}`}
             </Text>
           </View>
           <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
@@ -102,7 +113,7 @@ export default function ChatFoldersScreen() {
           <LinearGradient colors={[colors.emerald + '10', 'transparent']} style={styles.infoGradient}>
             <Icon name="layers" size="sm" color={colors.emerald} />
             <Text style={styles.infoText}>
-              Organize your chats into custom folders. Drag to reorder. Max 10 folders.
+              {t('risalah.chatFoldersDescription')}
             </Text>
           </LinearGradient>
         </Animated.View>
@@ -110,7 +121,7 @@ export default function ChatFoldersScreen() {
         {/* Create form */}
         {createMode && (
           <Animated.View entering={FadeIn.duration(200)} style={[styles.createCard, { backgroundColor: tc.bgCard }]}>
-            <Text style={styles.createTitle}>New Folder</Text>
+            <Text style={styles.createTitle}>{editingFolder ? t('risalah.editFolder') : t('risalah.newFolder')}</Text>
             <TextInput
               style={[styles.createInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newName}
@@ -121,7 +132,7 @@ export default function ChatFoldersScreen() {
               autoFocus
             />
 
-            <Text style={styles.iconLabel}>Icon</Text>
+            <Text style={styles.iconLabel}>{t('risalah.icon')}</Text>
             <View style={styles.iconGrid}>
               {FOLDER_ICONS.map((icon, i) => (
                 <Pressable
@@ -136,17 +147,28 @@ export default function ChatFoldersScreen() {
             </View>
 
             <View style={styles.createActions}>
-              <Pressable onPress={() => setCreateMode(false)} style={[styles.cancelBtn, { backgroundColor: tc.surface }]}>
-                <Text style={styles.cancelText}>Cancel</Text>
+              <Pressable onPress={() => { setCreateMode(false); setEditingFolder(null); setNewName(''); }} style={[styles.cancelBtn, { backgroundColor: tc.surface }]}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
                 style={[styles.createBtn, !newName.trim() && { opacity: 0.5 }]}
-                onPress={() => newName.trim() && createMutation.mutate()}
-                disabled={!newName.trim() || createMutation.isPending}
+                onPress={() => {
+                  if (!newName.trim()) return;
+                  if (editingFolder) {
+                    updateMutation.mutate({
+                      folderId: editingFolder.id as string,
+                      name: newName.trim(),
+                      icon: FOLDER_ICONS[selectedIcon],
+                    });
+                  } else {
+                    createMutation.mutate();
+                  }
+                }}
+                disabled={!newName.trim() || createMutation.isPending || updateMutation.isPending}
               >
                 <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.createBtnGradient}>
-                  <Text style={styles.createBtnText}>Create</Text>
+                  <Text style={styles.createBtnText}>{editingFolder ? t('common.save') : t('common.create')}</Text>
                 </LinearGradient>
               </Pressable>
             </View>
@@ -172,7 +194,7 @@ export default function ChatFoldersScreen() {
                 icon="layers"
                 title={t('risalah.noFoldersYet')}
                 subtitle={t('risalah.createFoldersHint')}
-                actionLabel="Create Folder"
+                actionLabel={t('risalah.createFolder')}
                 onAction={() => setCreateMode(true)}
               />
             )
@@ -184,7 +206,17 @@ export default function ChatFoldersScreen() {
           <BottomSheetItem
             label={t('risalah.editFolder')}
             icon={<Icon name="pencil" size="sm" color={colors.text.primary} />}
-            onPress={() => { setMenuFolder(null); }}
+            onPress={() => {
+              const folder = menuFolder;
+              setMenuFolder(null);
+              if (folder) {
+                setEditingFolder(folder);
+                setNewName((folder.name as string) || '');
+                const iconIdx = FOLDER_ICONS.indexOf((folder.icon as IconName) || 'users');
+                setSelectedIcon(iconIdx >= 0 ? iconIdx : 0);
+                setCreateMode(true);
+              }
+            }}
           />
           <BottomSheetItem
             label={t('risalah.deleteFolder')}

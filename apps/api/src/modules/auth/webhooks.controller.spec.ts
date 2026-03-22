@@ -41,6 +41,13 @@ describe('WebhooksController', () => {
             get: jest.fn().mockReturnValue('whsec_test_secret'),
           },
         },
+        {
+          provide: 'REDIS',
+          useValue: {
+            get: jest.fn().mockResolvedValue(null),
+            setex: jest.fn().mockResolvedValue('OK'),
+          },
+        },
       ],
     }).compile();
 

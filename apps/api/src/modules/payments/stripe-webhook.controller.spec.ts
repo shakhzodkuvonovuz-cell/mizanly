@@ -32,7 +32,13 @@ describe('StripeWebhookController', () => {
             handlePaymentIntentSucceeded: jest.fn(),
             handleInvoicePaid: jest.fn(),
             handleSubscriptionDeleted: jest.fn(),
-            handlePaymentMethodAttached: jest.fn(),
+          },
+        },
+        {
+          provide: 'REDIS',
+          useValue: {
+            get: jest.fn().mockResolvedValue(null),
+            setex: jest.fn().mockResolvedValue('OK'),
           },
         },
       ],
@@ -57,6 +63,7 @@ describe('StripeWebhookController', () => {
       providers: [
         { provide: PaymentsService, useValue: service },
         { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(null) } },
+        { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn().mockResolvedValue('OK') } },
       ],
     }).compile();
     const ctrl2 = module2.get(StripeWebhookController);

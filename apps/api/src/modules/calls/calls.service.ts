@@ -124,7 +124,12 @@ export class CallsService {
     });
   }
 
-  async missedCall(sessionId: string) {
+  async missedCall(sessionId: string, userId?: string) {
+    const session = await this.getSession(sessionId);
+    if (userId) {
+      this.requireParticipant(session.participants, userId);
+    }
+    if (session.status !== CallStatus.RINGING) throw new BadRequestException('Only ringing calls can be marked as missed');
     return this.prisma.callSession.update({
       where: { id: sessionId },
       data: { status: CallStatus.MISSED, endedAt: new Date() },
@@ -207,14 +212,23 @@ export class CallsService {
 
   // ── Group calls (up to 8 participants) ─────────────
 
-  async createGroupCall(conversationId: string, initiatorId: string, participantIds: string[]) {
+  async createGroupCall(conversationId: string, initiatorId: string, participantIds: string[], callType: CallType = CallType.VIDEO) {
     if (participantIds.length > 7) throw new BadRequestException('Group calls support up to 8 participants');
 
+    // Check for active calls among all participants
     const allIds = [initiatorId, ...participantIds.filter(id => id !== initiatorId)];
+    const activeCall = await this.prisma.callParticipant.findFirst({
+      where: {
+        userId: { in: allIds },
+        leftAt: null,
+        session: { status: { in: [CallStatus.RINGING, CallStatus.ACTIVE] } },
+      },
+    });
+    if (activeCall) throw new BadRequestException('One or more participants are already in a call');
 
     const session = await this.prisma.callSession.create({
       data: {
-        callType: CallType.VIDEO,
+        callType,
         status: CallStatus.RINGING,
         maxParticipants: allIds.length,
         participants: {

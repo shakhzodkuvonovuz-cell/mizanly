@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { LiveStatus, LiveType } from '@prisma/client';
+import { LiveStatus, LiveType, Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -29,11 +29,36 @@ export class LiveService {
   async getById(sessionId: string) {
     const session = await this.prisma.liveSession.findUnique({
       where: { id: sessionId },
-      include: {
+      select: {
+        id: true,
+        hostId: true,
+        title: true,
+        description: true,
+        thumbnailUrl: true,
+        liveType: true,
+        status: true,
+        currentViewers: true,
+        totalViews: true,
+        peakViewers: true,
+        isRecorded: true,
+        isRehearsal: true,
+        isSubscribersOnly: true,
+        recordingUrl: true,
+        scheduledAt: true,
+        startedAt: true,
+        endedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        // streamKey intentionally excluded — it is a credential
         host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
         participants: {
           where: { leftAt: null },
-          include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+          select: {
+            userId: true,
+            role: true,
+            joinedAt: true,
+            user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+          },
           take: 20,
         },
       },
@@ -43,7 +68,7 @@ export class LiveService {
   }
 
   async getActive(liveType?: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = { status: LiveStatus.LIVE, isRehearsal: false };
+    const where: Prisma.LiveSessionWhereInput = { status: LiveStatus.LIVE, isRehearsal: false };
     if (liveType) {
       const validLiveTypes = Object.values(LiveType);
       if (!validLiveTypes.includes(liveType as LiveType)) {
@@ -121,30 +146,46 @@ export class LiveService {
       return { joined: true, currentViewers: session.currentViewers };
     }
 
+    // Enforce subscribers-only mode: check if user follows the host
+    if (session.isSubscribersOnly) {
+      const follow = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId, followingId: session.hostId } },
+      });
+      if (!follow || follow.status !== 'ACCEPTED') {
+        throw new ForbiddenException('This live session is for subscribers only');
+      }
+    }
+
     const existing = await this.prisma.liveParticipant.findUnique({
       where: { sessionId_userId: { sessionId, userId } },
     });
     if (existing && !existing.leftAt) return { joined: true, currentViewers: session.currentViewers };
 
     if (existing) {
+      // Re-joining after leaving — only increment currentViewers, NOT totalViews
       await this.prisma.liveParticipant.update({
         where: { sessionId_userId: { sessionId, userId } },
         data: { leftAt: null, joinedAt: new Date(), role },
       });
+      await this.prisma.$executeRaw`
+        UPDATE "LiveSession"
+        SET "currentViewers" = "currentViewers" + 1,
+            "peakViewers" = GREATEST("peakViewers", "currentViewers" + 1)
+        WHERE id = ${sessionId}
+      `;
     } else {
+      // First join — increment both currentViewers and totalViews
       await this.prisma.liveParticipant.create({
         data: { sessionId, userId, role },
       });
+      await this.prisma.$executeRaw`
+        UPDATE "LiveSession"
+        SET "currentViewers" = "currentViewers" + 1,
+            "totalViews" = "totalViews" + 1,
+            "peakViewers" = GREATEST("peakViewers", "currentViewers" + 1)
+        WHERE id = ${sessionId}
+      `;
     }
-
-    // Atomically increment viewers and update peak in one query
-    await this.prisma.$executeRaw`
-      UPDATE "LiveSession"
-      SET "currentViewers" = "currentViewers" + 1,
-          "totalViews" = "totalViews" + 1,
-          "peakViewers" = GREATEST("peakViewers", "currentViewers" + 1)
-      WHERE id = ${sessionId}
-    `;
     const updated = await this.prisma.liveSession.findUnique({
       where: { id: sessionId },
       select: { currentViewers: true },
@@ -173,6 +214,17 @@ export class LiveService {
   }
 
   async raiseHand(sessionId: string, userId: string) {
+    const session = await this.prisma.liveSession.findUnique({ where: { id: sessionId } });
+    if (!session) throw new NotFoundException('Session not found');
+    if (session.status !== LiveStatus.LIVE) throw new BadRequestException('Session is not live');
+
+    const participant = await this.prisma.liveParticipant.findUnique({
+      where: { sessionId_userId: { sessionId, userId } },
+    });
+    if (!participant) throw new NotFoundException('Not a participant in this session');
+    // Only viewers can raise their hand — speakers and hosts should not
+    if (participant.role !== 'viewer') throw new BadRequestException('Only viewers can raise their hand');
+
     return this.prisma.liveParticipant.update({
       where: { sessionId_userId: { sessionId, userId } },
       data: { role: 'raised_hand' },
@@ -239,6 +291,12 @@ export class LiveService {
       where: { liveId_userId: { liveId, userId } },
     });
     if (!guest || guest.status !== 'INVITED') throw new NotFoundException('No pending invitation');
+
+    // Recheck guest count before accepting — prevents race condition allowing >4 guests
+    const acceptedCount = await this.prisma.liveGuest.count({
+      where: { liveId, status: 'ACCEPTED' },
+    });
+    if (acceptedCount >= 4) throw new BadRequestException('Maximum 4 guests already accepted');
 
     return this.prisma.liveGuest.update({
       where: { liveId_userId: { liveId, userId } },
@@ -309,6 +367,7 @@ export class LiveService {
   async endRehearsal(sessionId: string, userId: string) {
     const session = await this.requireHost(sessionId, userId);
     if (!session.isRehearsal) throw new BadRequestException('Session is not in rehearsal mode');
+    if (session.status === LiveStatus.ENDED) throw new BadRequestException('Rehearsal is already ended');
 
     await this.prisma.liveParticipant.updateMany({
       where: { sessionId, leftAt: null },

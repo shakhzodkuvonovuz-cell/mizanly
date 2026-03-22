@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
   Alert, Platform, Image as RNImage,
@@ -18,7 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { liveApi, uploadApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -71,7 +71,7 @@ export default function ScheduleLiveScreen() {
 
   // Date picker state
   const [tempDate, setTempDate] = useState(scheduleDate);
-  const dayOptions = generateDayOptions();
+  const dayOptions = useMemo(() => generateDayOptions(), []);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [selectedHour, setSelectedHour] = useState(scheduleDate.getHours());
   const [selectedMinute, setSelectedMinute] = useState(
@@ -85,7 +85,8 @@ export default function ScheduleLiveScreen() {
     const newDate = new Date(day);
     newDate.setHours(selectedHour, selectedMinute, 0, 0);
     setTempDate(newDate);
-  }, [selectedDayIndex, selectedHour, selectedMinute, dayOptions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- dayOptions is memoized (stable reference)
+  }, [selectedDayIndex, selectedHour, selectedMinute]);
 
   // Thumbnail picker
   const pickThumbnail = async () => {
@@ -395,7 +396,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.md,
   },
   inputLabel: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
+    color: colors.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   input: {
@@ -436,7 +437,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
   },
   thumbnailPlaceholderText: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
+    color: colors.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodySemiBold,
   },
   thumbnailHint: {
     color: colors.text.tertiary, fontSize: fontSize.sm,
@@ -455,15 +456,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dateSelectorText: { flex: 1, color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
+  dateSelectorText: { flex: 1, color: colors.emerald, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
   // Picker sheet
   sheetTitle: {
-    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
+    color: colors.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodyBold,
     paddingHorizontal: spacing.xl, paddingBottom: spacing.sm,
   },
   pickerSection: { marginBottom: spacing.lg, paddingHorizontal: spacing.xl },
   pickerLabel: {
-    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
+    color: colors.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.sm,
   },
   pickerRow: { flexDirection: 'row' },
@@ -476,13 +477,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   pickerChipActive: {
     backgroundColor: colors.active.emerald10, borderColor: colors.emerald,
   },
-  pickerChipText: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600' },
+  pickerChipText: { color: colors.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.bodySemiBold },
   pickerChipTextActive: { color: colors.emerald },
   pickerPreview: {
     alignItems: 'center', marginTop: spacing.lg, marginBottom: spacing.lg,
   },
   pickerPreviewText: {
-    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    color: colors.text.primary, fontSize: fontSize.lg, fontFamily: fonts.bodyBold,
   },
   // Upload overlay
   uploadOverlay: {

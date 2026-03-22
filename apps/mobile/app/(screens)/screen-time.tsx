@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, RefreshControl,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,19 +30,18 @@ type ScreenTimeStats = {
   limitMinutes: number | null;
 };
 
-const LIMIT_OPTIONS: Array<{ label: string; value: number | null }> = [
-  { label: 'No limit', value: null },
-  { label: '15 min', value: 15 },
-  { label: '30 min', value: 30 },
-  { label: '1 hour', value: 60 },
-  { label: '2 hours', value: 120 },
-  { label: '3 hours', value: 180 },
-  { label: '4 hours', value: 240 },
-  { label: '6 hours', value: 360 },
-  { label: '8 hours', value: 480 },
-];
+const LIMIT_VALUES: Array<number | null> = [null, 15, 30, 60, 120, 180, 240, 360, 480];
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function getLimitLabel(value: number | null, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  if (value === null) return t('screenTime.noLimit');
+  if (value >= 60) {
+    const h = Math.floor(value / 60);
+    return t('screenTime.hours', { count: h });
+  }
+  return t('screenTime.minutes', { count: value });
+}
+
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -72,6 +73,7 @@ function getWeekDays(): string[] {
 function BarChart({ daily, isRTL }: { daily: DailyLog[]; isRTL: boolean }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
   const weekDays = getWeekDays();
   const todayStr = weekDays[weekDays.length - 1];
   const dataMap = new Map(daily.map(d => [d.date, d.totalSeconds]));
@@ -85,7 +87,7 @@ function BarChart({ daily, isRTL }: { daily: DailyLog[]; isRTL: boolean }) {
         const height = Math.max((secs / maxSeconds) * BAR_MAX_HEIGHT, 4);
         const isToday = dateStr === todayStr;
         const dayOfWeek = new Date(dateStr + 'T12:00:00').getDay();
-        const label = DAY_LABELS[dayOfWeek];
+        const label = t(`screenTime.days.${DAY_KEYS[dayOfWeek]}`);
 
         return (
           <View key={dateStr} style={styles.barColumn}>
@@ -140,6 +142,13 @@ export default function ScreenTimeScreen() {
   const [limitSheetVisible, setLimitSheetVisible] = useState(false);
   const [takeBreakEnabled, setTakeBreakEnabled] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Restore persisted take-a-break setting
+  useEffect(() => {
+    AsyncStorage.getItem('screen-time-take-break').then((v) => {
+      if (v === 'true') setTakeBreakEnabled(true);
+    });
+  }, []);
 
   const statsQuery = useQuery({
     queryKey: ['screen-time-stats'],
@@ -327,7 +336,9 @@ export default function ScreenTimeScreen() {
             accessibilityRole="button"
             onPress={() => {
               haptic.light();
-              setTakeBreakEnabled(!takeBreakEnabled);
+              const next = !takeBreakEnabled;
+              setTakeBreakEnabled(next);
+              AsyncStorage.setItem('screen-time-take-break', String(next));
             }}
           >
             <LinearGradient
@@ -362,18 +373,18 @@ export default function ScreenTimeScreen() {
 
         {/* Limit Picker BottomSheet */}
         <BottomSheet visible={limitSheetVisible} onClose={() => setLimitSheetVisible(false)}>
-          {LIMIT_OPTIONS.map((opt) => (
+          {LIMIT_VALUES.map((value) => (
             <BottomSheetItem
-              key={String(opt.value)}
-              label={opt.label}
+              key={String(value)}
+              label={getLimitLabel(value, t)}
               icon={
                 <Icon
-                  name={currentLimit === opt.value ? 'check-circle' : 'clock'}
+                  name={currentLimit === value ? 'check-circle' : 'clock'}
                   size="sm"
-                  color={currentLimit === opt.value ? colors.emerald : colors.text.secondary}
+                  color={currentLimit === value ? colors.emerald : colors.text.secondary}
                 />
               }
-              onPress={() => handleSetLimit(opt.value)}
+              onPress={() => handleSetLimit(value)}
             />
           ))}
         </BottomSheet>

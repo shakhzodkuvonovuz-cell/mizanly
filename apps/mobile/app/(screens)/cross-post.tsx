@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl, Pressable,
-  TextInput, Alert, Image,
-  Pressable,
+  TextInput, Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   previewContent: {
     color: colors.text.primary,
     fontSize: fontSize.base,
-    fontFamily: fonts?.medium || undefined,
+    fontFamily: fonts.bodyMedium,
     lineHeight: 22,
   },
   previewMeta: {
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: colors.text.primary,
     fontSize: fontSize.md,
-    fontFamily: fonts?.semibold || undefined,
+    fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.md,
   },
   spaceOption: {
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   spaceLabel: {
     color: colors.text.secondary,
     fontSize: fontSize.base,
-    fontFamily: fonts?.medium || undefined,
+    fontFamily: fonts.bodyMedium,
   },
   spaceLabelSelected: {
     color: colors.text.primary,

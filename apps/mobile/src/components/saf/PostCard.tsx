@@ -123,7 +123,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   });
 
   const dismissMutation = useMutation({
-    mutationFn: () => feedApi.dismiss({ postId: post.id, reason: 'not_interested' }),
+    mutationFn: () => feedApi.dismiss('post', post.id),
     onSuccess: () => { setShowMenu(false); setDismissed(true); },
   });
 

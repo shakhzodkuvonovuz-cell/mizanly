@@ -205,11 +205,4 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   username: { color: colors.text.secondary, fontSize: fontSize.sm },
-  unmuteBtn: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 1,
-    minWidth: 80, alignItems: 'center',
-  },
-  unmuteText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
-
 });

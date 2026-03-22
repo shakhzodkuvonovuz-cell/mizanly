@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Pressable,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
@@ -27,16 +26,18 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { volunteerApi } from '@/services/api';
 
-const CATEGORIES = [
-  { key: 'all', label: 'All' },
-  { key: 'disaster_relief', label: 'Disaster Relief' },
-  { key: 'mosque', label: 'Mosque' },
-  { key: 'education', label: 'Education' },
-  { key: 'food_bank', label: 'Food Bank' },
-  { key: 'cleanup', label: 'Cleanup' },
-] as const;
+const CATEGORY_KEYS = ['all', 'disaster_relief', 'mosque', 'education', 'food_bank', 'cleanup'] as const;
 
-type CategoryKey = typeof CATEGORIES[number]['key'];
+const CATEGORY_I18N: Record<string, string> = {
+  all: 'volunteer.categoryAll',
+  disaster_relief: 'volunteer.categoryDisasterRelief',
+  mosque: 'volunteer.categoryMosque',
+  education: 'volunteer.categoryEducation',
+  food_bank: 'volunteer.categoryFoodBank',
+  cleanup: 'volunteer.categoryCleanup',
+};
+
+type CategoryKey = typeof CATEGORY_KEYS[number];
 
 interface VolunteerOpportunity {
   id: string;
@@ -132,27 +133,30 @@ function VolunteerBoardContent() {
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.chipRow}
     >
-      {CATEGORIES.map((cat) => (
-        <Pressable
-          key={cat.key}
-          style={[
-            styles.chip,
-            selectedCategory === cat.key && styles.chipActive,
-          ]}
-          onPress={() => handleCategoryPress(cat.key)}
-          accessibilityRole="button"
-          accessibilityLabel={cat.label}
-        >
-          <Text
+      {CATEGORY_KEYS.map((key) => {
+        const label = t(CATEGORY_I18N[key], key.replace(/_/g, ' '));
+        return (
+          <Pressable
+            key={key}
             style={[
-              styles.chipText,
-              selectedCategory === cat.key && styles.chipTextActive,
+              styles.chip,
+              selectedCategory === key && styles.chipActive,
             ]}
+            onPress={() => handleCategoryPress(key)}
+            accessibilityRole="button"
+            accessibilityLabel={label}
           >
-            {cat.label}
-          </Text>
-        </Pressable>
-      ))}
+            <Text
+              style={[
+                styles.chipText,
+                selectedCategory === key && styles.chipTextActive,
+              ]}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 

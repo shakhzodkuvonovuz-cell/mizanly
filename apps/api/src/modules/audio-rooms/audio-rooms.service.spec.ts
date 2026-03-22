@@ -10,8 +10,24 @@ describe('AudioRoomsService', () => {
   let service: AudioRoomsService;
   let prisma: any;
 
+  const txMock = {
+    audioRoom: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+    },
+    audioRoomParticipant: {
+      create: jest.fn(),
+    },
+  };
+
   const mockPrismaService = {
-    $transaction: jest.fn(),
+    $transaction: jest.fn().mockImplementation((fnOrArray) => {
+      if (typeof fnOrArray === 'function') {
+        return fnOrArray(txMock);
+      }
+      // Array-based transaction (endRoom uses this)
+      return Promise.resolve(fnOrArray);
+    }),
     audioRoom: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -27,6 +43,7 @@ describe('AudioRoomsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
       deleteMany: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -80,15 +97,16 @@ describe('AudioRoomsService', () => {
         handRaised: false,
         joinedAt: new Date(),
       };
+      const mockRoomWithParticipants = { ...mockRoom, participants: [mockParticipant] };
 
-      mockPrismaService.audioRoom.create.mockResolvedValue(mockRoom);
-      mockPrismaService.audioRoomParticipant.create.mockResolvedValue(mockParticipant);
-      mockPrismaService.audioRoom.findUnique.mockResolvedValue({ ...mockRoom, participants: [mockParticipant] });
+      txMock.audioRoom.create.mockResolvedValue(mockRoom);
+      txMock.audioRoomParticipant.create.mockResolvedValue(mockParticipant);
+      txMock.audioRoom.findUnique.mockResolvedValue(mockRoomWithParticipants);
 
       const result = await service.create(userId, dto);
 
-      expect(result).toEqual({ ...mockRoom, participants: [mockParticipant] });
-      expect(mockPrismaService.audioRoom.create).toHaveBeenCalledWith({
+      expect(result).toEqual(mockRoomWithParticipants);
+      expect(txMock.audioRoom.create).toHaveBeenCalledWith({
         data: {
           title: dto.title,
           description: dto.description,
@@ -99,9 +117,8 @@ describe('AudioRoomsService', () => {
           maxSpeakers: 10,
           isRecording: false,
         },
-        select: expect.any(Object),
       });
-      expect(mockPrismaService.audioRoomParticipant.create).toHaveBeenCalledWith({
+      expect(txMock.audioRoomParticipant.create).toHaveBeenCalledWith({
         data: {
           roomId: 'room1',
           userId,
@@ -110,7 +127,7 @@ describe('AudioRoomsService', () => {
           handRaised: false,
         },
       });
-      expect(mockPrismaService.audioRoom.findUnique).toHaveBeenCalledWith({
+      expect(txMock.audioRoom.findUnique).toHaveBeenCalledWith({
         where: { id: 'room1' },
         select: expect.any(Object),
       });
@@ -138,13 +155,13 @@ describe('AudioRoomsService', () => {
         participants: [],
       };
 
-      mockPrismaService.audioRoom.create.mockResolvedValue(mockRoom);
-      mockPrismaService.audioRoomParticipant.create.mockResolvedValue({});
-      mockPrismaService.audioRoom.findUnique.mockResolvedValue(mockRoom);
+      txMock.audioRoom.create.mockResolvedValue(mockRoom);
+      txMock.audioRoomParticipant.create.mockResolvedValue({});
+      txMock.audioRoom.findUnique.mockResolvedValue(mockRoom);
 
       await service.create(userId, dto);
 
-      expect(mockPrismaService.audioRoom.create).toHaveBeenCalledWith({
+      expect(txMock.audioRoom.create).toHaveBeenCalledWith({
         data: {
           title: dto.title,
           description: dto.description,
@@ -155,7 +172,6 @@ describe('AudioRoomsService', () => {
           maxSpeakers: 10,
           isRecording: false,
         },
-        select: expect.any(Object),
       });
     });
   });
@@ -183,7 +199,7 @@ describe('AudioRoomsService', () => {
 
       expect(result.data).toEqual(mockRooms);
       expect(result.meta.hasMore).toBe(false);
-      expect(result.meta.cursor).toBe(null);
+      expect(result.meta.cursor).toBe(mockRooms[1].createdAt.toISOString());
       expect(mockPrismaService.audioRoom.findMany).toHaveBeenCalledWith({
         where: {
           OR: [
@@ -192,7 +208,7 @@ describe('AudioRoomsService', () => {
           ],
         },
         select: expect.any(Object),
-        take: 20,
+        take: 21,
         orderBy: { createdAt: 'desc' },
       });
     });
@@ -347,10 +363,11 @@ describe('AudioRoomsService', () => {
 
     it('should handle duplicate join gracefully (idempotent)', async () => {
       const mockRoom = { id: 'room1', status: 'live' };
-      mockPrismaService.audioRoom.findUnique.mockResolvedValue(mockRoom);
-      // Successful create (not a duplicate)
+      mockPrismaService.audioRoom.findUnique
+        .mockResolvedValueOnce(mockRoom) // first call: check room exists
+        .mockResolvedValueOnce({ ...mockRoom, participants: [{ id: 'part1' }] }); // return with participants
+      mockPrismaService.audioRoomParticipant.findUnique.mockResolvedValue(null);
       mockPrismaService.audioRoomParticipant.create.mockResolvedValue({ id: 'part1', userId: 'user123' });
-      mockPrismaService.audioRoom.update.mockResolvedValue({ ...mockRoom, participantCount: 2 });
 
       const result = await service.join('room1', 'user123');
       expect(result).toBeDefined();
@@ -405,11 +422,12 @@ describe('AudioRoomsService', () => {
       const hostId = 'host123';
       const targetUserId = 'listener123';
       const dto: RoleChangeDto = { userId: targetUserId, role: AudioRoomRole.SPEAKER };
-      const mockRoom = { id: roomId, hostId, status: 'live', host: { id: hostId } };
+      const mockRoom = { id: roomId, hostId, status: 'live', host: { id: hostId }, maxSpeakers: 10 };
       const mockParticipant = { roomId, userId: targetUserId, role: AudioRoomRole.LISTENER };
 
       mockPrismaService.audioRoom.findUnique.mockResolvedValue(mockRoom);
       mockPrismaService.audioRoomParticipant.findUnique.mockResolvedValue(mockParticipant);
+      mockPrismaService.audioRoomParticipant.count.mockResolvedValue(1); // 1 speaker (host), room allows 10
       mockPrismaService.audioRoomParticipant.update.mockResolvedValue({});
 
       const result = await service.changeRole(roomId, hostId, dto);

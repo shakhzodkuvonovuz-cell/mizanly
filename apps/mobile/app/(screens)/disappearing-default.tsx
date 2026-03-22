@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { settingsApi } from '@/services/api';
+// settingsApi not used — disappearingMessageTimer is local-only (no backend field)
 
 type TimerOption = 'off' | '24h' | '7d' | '90d';
 
@@ -30,15 +31,19 @@ function DisappearingDefaultContent() {
   const [selected, setSelected] = useState<TimerOption>('off');
   const tc = useThemeColors();
 
+  // NOTE: disappearingMessageTimer is not in the backend schema/DTO.
+  // Persisted locally via AsyncStorage until backend supports it.
   useEffect(() => {
     let cancelled = false;
     async function loadSettings() {
       try {
-        const settings = await settingsApi.get();
-        const data = settings as { disappearingMessageTimer?: number };
-        if (!cancelled && typeof data.disappearingMessageTimer === 'number') {
-          const match = TIMER_VALUES.find((v) => v.seconds === data.disappearingMessageTimer);
-          if (match) setSelected(match.key);
+        const stored = await AsyncStorage.getItem('disappearing-message-timer');
+        if (!cancelled && stored) {
+          const seconds = parseInt(stored, 10);
+          if (!isNaN(seconds)) {
+            const match = TIMER_VALUES.find((v) => v.seconds === seconds);
+            if (match) setSelected(match.key);
+          }
         }
       } catch {
         // Use default on error
@@ -57,9 +62,8 @@ function DisappearingDefaultContent() {
     setSaving(true);
     try {
       const timer = TIMER_VALUES.find((v) => v.key === option);
-      await settingsApi.updatePrivacy(
-        { disappearingMessageTimer: timer?.seconds ?? 0 } as Parameters<typeof settingsApi.updatePrivacy>[0],
-      );
+      // Persisted locally — backend schema does not have disappearingMessageTimer field
+      await AsyncStorage.setItem('disappearing-message-timer', String(timer?.seconds ?? 0));
     } catch {
       setSelected(prev);
       Alert.alert(

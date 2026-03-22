@@ -12,6 +12,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as Location from 'expo-location';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -21,6 +23,9 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { islamicApi } from '@/services/islamicApi';
+import { formatHijriDate } from '@/utils/hijri';
+import { navigate } from '@/utils/navigation';
 
 const { width } = Dimensions.get('window');
 
@@ -217,41 +222,121 @@ export default function RamadanModeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useHaptic();
-  const [refreshing, setRefreshing] = useState(false);
-  const [currentDay, setCurrentDay] = useState(15);
+  const queryClient = useQueryClient();
   const [goals, setGoals] = useState<DailyGoal[]>(INITIAL_GOALS);
 
-  // Mock countdown times
-  const [iftarCountdown, setIftarCountdown] = useState('02:34:15');
-  const [suhoorCountdown, setSuhoorCountdown] = useState('08:12:44');
+  // Countdown state
+  const [iftarCountdown, setIftarCountdown] = useState('--:--:--');
+  const [suhoorCountdown, setSuhoorCountdown] = useState('--:--:--');
+  const [isIftarUrgent, setIsIftarUrgent] = useState(false);
 
-  const progress = (currentDay / 30) * 100;
-  const isIftarUrgent = true; // Mock: less than 30 minutes
+  // Fetch Ramadan info from API
+  const ramadanQuery = useQuery({
+    queryKey: ['ramadan-info'],
+    queryFn: () => islamicApi.getRamadanInfo(),
+  });
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
-  }, []);
+  // Fetch prayer times for countdown calculation
+  const locationQuery = useQuery({
+    queryKey: ['ramadan-location'],
+    queryFn: async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return null;
+      const loc = await Location.getCurrentPositionAsync({});
+      return { lat: loc.coords.latitude, lng: loc.coords.longitude };
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const prayerTimesQuery = useQuery({
+    queryKey: ['ramadan-prayer-times', locationQuery.data?.lat, locationQuery.data?.lng],
+    queryFn: () => {
+      const loc = locationQuery.data;
+      if (!loc) return null;
+      return islamicApi.getPrayerTimes(loc.lat, loc.lng);
+    },
+    enabled: !!locationQuery.data,
+  });
+
+  const ramadanData = ramadanQuery.data;
+  const currentDay = ramadanData?.currentDay ?? 1;
+  const totalDays = ramadanData?.totalDays ?? 30;
+  const daysFasted = ramadanData?.daysFasted ?? 0;
+  const progress = (currentDay / totalDays) * 100;
+
+  // Live countdown timers
+  useEffect(() => {
+    const prayerTimes = prayerTimesQuery.data;
+    if (!prayerTimes) return;
+
+    const maghribTime = typeof prayerTimes.maghrib === 'string' ? prayerTimes.maghrib : null;
+    const fajrTime = typeof prayerTimes.fajr === 'string' ? prayerTimes.fajr : null;
+
+    if (!maghribTime || !fajrTime) return;
+
+    const computeCountdown = () => {
+      const now = new Date();
+
+      // Iftar = Maghrib time
+      const [mH, mM] = maghribTime.split(':').map(Number);
+      const maghrib = new Date();
+      maghrib.setHours(mH, mM, 0, 0);
+      if (maghrib <= now) maghrib.setDate(maghrib.getDate() + 1);
+      const iftarDiff = maghrib.getTime() - now.getTime();
+
+      // Suhoor ends = Fajr time
+      const [fH, fM] = fajrTime.split(':').map(Number);
+      const fajr = new Date();
+      fajr.setHours(fH, fM, 0, 0);
+      if (fajr <= now) fajr.setDate(fajr.getDate() + 1);
+      const suhoorDiff = fajr.getTime() - now.getTime();
+
+      const fmt = (diff: number) => {
+        if (diff <= 0) return '00:00:00';
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      };
+
+      setIftarCountdown(fmt(iftarDiff));
+      setSuhoorCountdown(fmt(suhoorDiff));
+      setIsIftarUrgent(iftarDiff > 0 && iftarDiff < 30 * 60 * 1000); // Less than 30 min
+    };
+
+    computeCountdown();
+    const interval = setInterval(computeCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [prayerTimesQuery.data]);
+
+  const onRefresh = useCallback(async () => {
+    await Promise.all([
+      ramadanQuery.refetch(),
+      prayerTimesQuery.refetch(),
+    ]);
+  }, [ramadanQuery, prayerTimesQuery]);
 
   const toggleGoal = useCallback((id: string) => {
     setGoals(prev =>
       prev.map(g => (g.id === id ? { ...g, completed: !g.completed } : g))
     );
+    // Persist goal completion via API
+    islamicApi.completeDailyTask(id).catch(() => {});
   }, []);
 
   const handleDhikrPress = useCallback(() => {
     haptic.light();
-    // Navigate to dhikr counter
+    navigate('/(screens)/dhikr-counter');
   }, [haptic]);
 
-  // Generate 30-day grid
+  // Generate 30-day grid from API data
   const fastingGrid = useMemo(() => {
-    return Array.from({ length: 30 }, (_, i) => ({
+    return Array.from({ length: totalDays }, (_, i) => ({
       day: i + 1,
-      completed: i < 22,
+      completed: i < daysFasted,
       isToday: i + 1 === currentDay,
     }));
-  }, [currentDay]);
+  }, [currentDay, totalDays, daysFasted]);
 
   return (
     <ScreenErrorBoundary>
@@ -263,7 +348,7 @@ export default function RamadanModeScreen() {
         />
 
         <ScrollView
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={ramadanQuery.isRefetching} onRefresh={onRefresh} />}
           contentContainerStyle={styles.scrollContent}
         >
           {/* Hero Card */}
@@ -294,7 +379,7 @@ export default function RamadanModeScreen() {
               </View>
 
               {/* Hijri Date */}
-              <Text style={styles.hijriDate}>١٥ رمضان ١٤٤٦</Text>
+              <Text style={styles.hijriDate}>{formatHijriDate(new Date(), 'ar')}</Text>
             </LinearGradient>
           </Animated.View>
 
@@ -368,8 +453,8 @@ export default function RamadanModeScreen() {
 
               {/* Summary */}
               <View style={styles.trackerSummary}>
-                <Text style={styles.trackerSummaryText}>{t('screens.ramadanMode.daysFasted', { count: 22 })}</Text>
-                <Text style={styles.trackerRemaining}>{t('screens.ramadanMode.daysRemaining', { count: 8 })}</Text>
+                <Text style={styles.trackerSummaryText}>{t('screens.ramadanMode.daysFasted', { count: daysFasted })}</Text>
+                <Text style={styles.trackerRemaining}>{t('screens.ramadanMode.daysRemaining', { count: totalDays - currentDay })}</Text>
               </View>
             </LinearGradient>
           </Animated.View>

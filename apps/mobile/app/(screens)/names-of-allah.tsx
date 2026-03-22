@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Share,
 } from 'react-native';
@@ -128,7 +128,9 @@ export default function NamesOfAllahScreen() {
     setLearnedLoaded(true);
   }, []);
 
-  if (!learnedLoaded) loadLearned();
+  useEffect(() => {
+    if (!learnedLoaded) loadLearned();
+  }, [learnedLoaded, loadLearned]);
 
   const namesQuery = useQuery({
     queryKey: ['names-of-allah'],
@@ -197,9 +199,9 @@ export default function NamesOfAllahScreen() {
         <GlassHeader
           title={t('namesOfAllah.title')}
           leftAction={{
-            icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />,
+            icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('common.goBack'),
           }}
         />
 

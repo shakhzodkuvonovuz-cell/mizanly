@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   FlatList, RefreshControl, Image,
-  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -28,26 +27,19 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Hashtag = { id: string; name: string; postsCount: number };
 
-const SEARCH_TABS = [
-  { key: 'people', label: 'People' },
-  { key: 'posts', label: 'Posts' },
-  { key: 'threads', label: 'Threads' },
-  { key: 'reels', label: 'Reels' },
-  { key: 'hashtags', label: 'Hashtags' },
-] as const;
-
-type SearchTab = typeof SEARCH_TABS[number]['key'];
+type SearchTab = 'people' | 'posts' | 'threads' | 'reels' | 'hashtags';
 
 
 function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: () => void; index: number }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`View hashtag ${hashtag.name}`}
+        accessibilityLabel={t('accessibility.viewHashtag', { name: hashtag.name })}
       >
         <LinearGradient
           colors={colors.gradient.cardDark}
@@ -61,7 +53,7 @@ function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: ()
           </LinearGradient>
           <View>
             <Text style={styles.hashtagName}>#{hashtag.name}</Text>
-            <Text style={styles.hashtagCount}>{hashtag.postsCount}</Text>
+            <Text style={styles.hashtagCount}>{hashtag.postsCount} {t('common.posts')}</Text>
           </View>
         </LinearGradient>
       </Pressable>
@@ -72,6 +64,7 @@ function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: ()
 function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => void; index: number }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 30).duration(400)} style={styles.reelGridItem}>
       <Pressable
@@ -97,6 +90,56 @@ function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => voi
           <Text style={styles.reelGridViews}>{reel.viewsCount.toLocaleString()}</Text>
         </LinearGradient>
       </Pressable>
+    </Animated.View>
+  );
+}
+
+function UserRow({ user, onPress, index, onFollow }: { user: User; onPress: () => void; index: number; onFollow: (userId: string, follow: boolean) => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
+  const { t } = useTranslation();
+  const handleFollow = () => {
+    onFollow(user.id, !user.isFollowing);
+  };
+  return (
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <LinearGradient
+        colors={colors.gradient.cardDark}
+        style={styles.userRow}
+      >
+        <Pressable
+          onPress={onPress}
+          style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('accessibility.viewProfile', { name: user.displayName })}
+        >
+          <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showOnline />
+          <View style={styles.userInfo}>
+            <View style={styles.userNameRow}>
+              <Text style={styles.userName}>{user.displayName}</Text>
+              {user.isVerified && <VerifiedBadge size={13} />}
+            </View>
+            <Text style={styles.userHandle}>@{user.username}</Text>
+            {user._count && (
+              <Text style={styles.userFollowers}>{user._count.followers} {t('screens.search-results.followers')}</Text>
+            )}
+          </View>
+        </Pressable>
+        {user.isFollowing ? (
+          <GradientButton
+            label={t('common.following')}
+            size="sm"
+            variant="secondary"
+            onPress={handleFollow}
+          />
+        ) : (
+          <GradientButton
+            label={t('common.follow')}
+            size="sm"
+            onPress={handleFollow}
+          />
+        )}
+      </LinearGradient>
     </Animated.View>
   );
 }
@@ -266,53 +309,6 @@ export default function SearchResultsScreen() {
     },
   });
 
-  const UserRow = ({ user, onPress, index }: { user: User; onPress: () => void; index: number }) => {
-    const handleFollow = () => {
-      followMutation.mutate({ userId: user.id, follow: !user.isFollowing });
-    };
-    return (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-        <LinearGradient
-          colors={colors.gradient.cardDark}
-          style={styles.userRow}
-        >
-          <Pressable
-            onPress={onPress}
-            style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
-            accessibilityRole="button"
-            accessibilityLabel={`View profile of ${user.displayName}`}
-          >
-            <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showOnline />
-            <View style={styles.userInfo}>
-              <View style={styles.userNameRow}>
-                <Text style={styles.userName}>{user.displayName}</Text>
-                {user.isVerified && <VerifiedBadge size={13} />}
-              </View>
-              <Text style={styles.userHandle}>@{user.username}</Text>
-              {user._count && (
-                <Text style={styles.userFollowers}>{user._count.followers} {t('screens.search-results.followers')}</Text>
-              )}
-            </View>
-          </Pressable>
-          {user.isFollowing ? (
-            <GradientButton
-              label={t('common.following')}
-              size="sm"
-              variant="secondary"
-              onPress={handleFollow}
-            />
-          ) : (
-            <GradientButton
-              label={t('common.follow')}
-              size="sm"
-              onPress={handleFollow}
-            />
-          )}
-        </LinearGradient>
-      </Animated.View>
-    );
-  };
-
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
@@ -413,6 +409,7 @@ export default function SearchResultsScreen() {
                         user={item}
                         onPress={() => router.push(`/(screens)/profile/${item.username}`)}
                         index={index}
+                        onFollow={(userId, follow) => followMutation.mutate({ userId, follow })}
                       />
                     )}
                     ListEmptyComponent={() => (

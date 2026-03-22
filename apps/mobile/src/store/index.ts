@@ -28,8 +28,8 @@ interface AppState {
   // Feed state
   safFeedType: 'following' | 'foryou';
   setSafFeedType: (type: 'following' | 'foryou') => void;
-  majlisFeedType: 'foryou' | 'following' | 'trending';
-  setMajlisFeedType: (type: 'foryou' | 'following' | 'trending') => void;
+  majlisFeedType: 'foryou' | 'following' | 'trending' | 'video';
+  setMajlisFeedType: (type: 'foryou' | 'following' | 'trending' | 'video') => void;
 
   // Create sheet
   isCreateSheetOpen: boolean;

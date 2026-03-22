@@ -38,7 +38,7 @@ export class UpdateProfileDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  @MaxLength(5)
+  @IsIn(['en', 'ar', 'tr', 'ur', 'bn', 'fr', 'id', 'ms'])
   language?: string;
 
   @ApiProperty({ required: false })

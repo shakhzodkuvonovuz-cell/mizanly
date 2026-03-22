@@ -11,7 +11,8 @@ jest.mock('stripe', () => ({
     customers: { create: jest.fn().mockResolvedValue({ id: 'cus_test' }) },
     paymentIntents: { create: jest.fn().mockResolvedValue({ id: 'pi_test', client_secret: 'sec' }) },
     paymentMethods: { list: jest.fn().mockResolvedValue({ data: [] }), attach: jest.fn() },
-    subscriptions: { create: jest.fn(), cancel: jest.fn() },
+    subscriptions: { create: jest.fn(), cancel: jest.fn(), retrieve: jest.fn() },
+    products: { create: jest.fn().mockResolvedValue({ id: 'prod_test' }) },
   })),
 }));
 
@@ -29,11 +30,9 @@ describe('PaymentsService — edge cases', () => {
           provide: PrismaService,
           useValue: {
             user: { findUnique: jest.fn(), update: jest.fn() },
-            monetizationTier: { findUnique: jest.fn() },
-            subscription: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-            paymentMethod: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn() },
-            payment: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-            $transaction: jest.fn(),
+            tip: { create: jest.fn(), update: jest.fn(), findFirst: jest.fn() },
+            membershipTier: { findUnique: jest.fn() },
+            membershipSubscription: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), findFirst: jest.fn() },
           },
         },
       ],
@@ -44,35 +43,34 @@ describe('PaymentsService — edge cases', () => {
   });
 
   it('should reject payment intent with amount = 0', async () => {
-    await expect(service.createPaymentIntent(userId, 'receiver-1', 0))
+    await expect(service.createPaymentIntent(userId, 'receiver-1', 0, 'usd'))
       .rejects.toThrow(BadRequestException);
   });
 
   it('should reject payment intent with negative amount', async () => {
-    await expect(service.createPaymentIntent(userId, 'receiver-1', -100))
+    await expect(service.createPaymentIntent(userId, 'receiver-1', -100, 'usd'))
       .rejects.toThrow(BadRequestException);
   });
 
   it('should reject payment intent to yourself', async () => {
-    await expect(service.createPaymentIntent(userId, userId, 10))
+    await expect(service.createPaymentIntent(userId, userId, 10, 'usd'))
       .rejects.toThrow(BadRequestException);
   });
 
   it('should throw NotFoundException for non-existent receiver', async () => {
     prisma.user.findUnique.mockResolvedValue(null);
-    await expect(service.createPaymentIntent(userId, 'nonexistent', 10))
+    await expect(service.createPaymentIntent(userId, 'nonexistent', 10, 'usd'))
       .rejects.toThrow(NotFoundException);
   });
 
   it('should reject subscription to non-existent tier', async () => {
-    prisma.monetizationTier.findUnique.mockResolvedValue(null);
-    // createSubscription checks tier existence first, throws NotFoundException
+    prisma.membershipTier.findUnique.mockResolvedValue(null);
     await expect(service.createSubscription(userId, 'nonexistent', 'pm-1'))
-      .rejects.toThrow(); // May throw NotFoundException or TypeError depending on mock depth
+      .rejects.toThrow(NotFoundException);
   });
 
   it('should handle listPaymentMethods call', async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: userId, stripeCustomerId: 'cus_test' });
+    prisma.user.findUnique.mockResolvedValue({ id: userId, email: 'test@test.com', username: 'test', displayName: 'Test' });
     const result = await service.listPaymentMethods(userId);
     expect(result).toBeDefined();
   });

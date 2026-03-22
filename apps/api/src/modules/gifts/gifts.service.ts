@@ -36,12 +36,20 @@ const GIFT_CATALOG: GiftCatalogItem[] = [
   { type: 'galaxy', name: 'Galaxy', coins: 5000, animation: 'explode' },
 ];
 
-// Conversion rate: 100 diamonds = $0.70
-const DIAMONDS_PER_USD_CENT = 100 / 70;
+/**
+ * Single source of truth for diamond/coin conversion rates.
+ * 100 diamonds = $0.70 USD → 1 diamond = $0.007 USD
+ * Creators receive 70% of coin cost as diamonds.
+ */
+const DIAMOND_TO_USD = 0.007; // 1 diamond = $0.007
+const DIAMONDS_PER_USD_CENT = 100 / 70; // for converting diamonds → cents
 const MIN_CASHOUT_DIAMONDS = 100;
+const DIAMOND_RATE = 0.7; // Creator receives 70% of coin cost as diamonds
 
-// Creator receives 70% of coin cost as diamonds
-const DIAMOND_RATE = 0.7;
+// IMPORTANT: The coin/diamond balance is stored in the CoinBalance table (this service).
+// The User model also has a legacy `coinBalance` Int field — that field is NOT used by this
+// service and should NOT be relied upon. All coin operations go through CoinBalance.
+// Reconciliation: if any code reads User.coinBalance, it gets a stale/wrong value.
 
 @Injectable()
 export class GiftsService {
@@ -178,25 +186,79 @@ export class GiftsService {
 
   async getHistory(userId: string, cursor?: string, limit = 20) {
     limit = Math.min(Math.max(limit, 1), 50);
-    const transactions = await this.prisma.coinTransaction.findMany({
-      where: { userId },
-      take: limit + 1,
-      ...(cursor
-        ? {
-            cursor: { id: cursor },
-            skip: 1,
-          }
-        : {}),
-      orderBy: { createdAt: 'desc' },
-    });
+
+    // Return GiftRecord entries (sent + received) with user details,
+    // plus CoinTransaction entries for purchases/cashouts
+    const [giftsSent, giftsReceived, transactions] = await Promise.all([
+      this.prisma.giftRecord.findMany({
+        where: { senderId: userId },
+        include: {
+          receiver: {
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
+          },
+        },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.giftRecord.findMany({
+        where: { receiverId: userId },
+        include: {
+          sender: {
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
+          },
+        },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.coinTransaction.findMany({
+        where: {
+          userId,
+          type: { in: ['purchase', 'cashout'] },
+        },
+        take: limit + 1,
+        ...(cursor
+          ? {
+              cursor: { id: cursor },
+              skip: 1,
+            }
+          : {}),
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
     const hasMore = transactions.length > limit;
-    const items = hasMore ? transactions.slice(0, limit) : transactions;
+    const txItems = hasMore ? transactions.slice(0, limit) : transactions;
 
     return {
-      data: items,
+      data: {
+        giftsSent: giftsSent.map((g) => {
+          const catalogItem = GIFT_CATALOG.find((c) => c.type === g.giftType);
+          return {
+            id: g.id,
+            giftType: g.giftType,
+            giftName: catalogItem?.name || g.giftType,
+            coins: g.coinCost,
+            receiverId: g.receiverId,
+            receiverName: (g as any).receiver?.displayName || (g as any).receiver?.username,
+            createdAt: g.createdAt,
+          };
+        }),
+        giftsReceived: giftsReceived.map((g) => {
+          const catalogItem = GIFT_CATALOG.find((c) => c.type === g.giftType);
+          return {
+            id: g.id,
+            giftType: g.giftType,
+            giftName: catalogItem?.name || g.giftType,
+            coins: g.coinCost,
+            senderId: g.senderId,
+            senderName: (g as any).sender?.displayName || (g as any).sender?.username,
+            createdAt: g.createdAt,
+          };
+        }),
+        transactions: txItems,
+      },
       meta: {
-        cursor: hasMore ? items[items.length - 1].id : null,
+        cursor: hasMore ? txItems[txItems.length - 1].id : null,
         hasMore,
       },
     };

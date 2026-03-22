@@ -13,7 +13,6 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
@@ -25,8 +24,6 @@ export default function WatchPartyScreen() {
   const { t } = useTranslation();
   const haptic = useHaptic();
   const queryClient = useQueryClient();
-  const user = useStore(s => s.user);
-
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newVideoId, setNewVideoId] = useState('');
@@ -55,7 +52,13 @@ export default function WatchPartyScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-        <Pressable style={styles.partyCard} onPress={() => haptic.light()}>
+        <Pressable
+          style={styles.partyCard}
+          onPress={() => {
+            haptic.light();
+            router.push(`/(screens)/watch-party/${item.id}` as never);
+          }}
+        >
           <View style={styles.partyHeader}>
             {isLive && (
               <View style={styles.liveBadge}>
@@ -70,19 +73,26 @@ export default function WatchPartyScreen() {
             {host && (
               <View style={styles.hostRow}>
                 <Avatar uri={host.avatarUrl as string | null} name={host.displayName as string || ''} size="sm" />
-                <Text style={styles.hostName}>Hosted by {host.displayName as string}</Text>
+                <Text style={styles.hostName}>{t('community.hostedBy', { name: host.displayName as string })}</Text>
               </View>
             )}
             <View style={styles.viewerRow}>
               <Icon name="eye" size="xs" color={colors.text.tertiary} />
-              <Text style={styles.viewerCount}>{item.viewerCount as number} watching</Text>
+              <Text style={styles.viewerCount}>{t('community.watchingCount', { count: item.viewerCount as number })}</Text>
             </View>
           </View>
 
-          <Pressable style={styles.joinBtn}>
+          <Pressable
+            style={styles.joinBtn}
+            onPress={() => {
+              haptic.medium();
+              router.push(`/(screens)/watch-party/${item.id}` as never);
+            }}
+            accessibilityRole="button"
+          >
             <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.joinBtnGradient}>
               <Icon name="play" size="sm" color="#FFF" />
-              <Text style={styles.joinBtnText}>Join Party</Text>
+              <Text style={styles.joinBtnText}>{t('community.joinParty')}</Text>
             </LinearGradient>
           </Pressable>
         </Pressable>
@@ -121,7 +131,7 @@ export default function WatchPartyScreen() {
         {/* Create Sheet */}
         <BottomSheet visible={createSheetOpen} onClose={() => setCreateSheetOpen(false)}>
           <View style={styles.createForm}>
-            <Text style={styles.createTitle}>Start Watch Party</Text>
+            <Text style={styles.createTitle}>{t('community.startParty')}</Text>
             <TextInput
               style={styles.createInput}
               value={newTitle}
@@ -143,7 +153,7 @@ export default function WatchPartyScreen() {
               disabled={!newTitle || !newVideoId || createMutation.isPending}
             >
               <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.createBtnGradient}>
-                <Text style={styles.createBtnText}>Start</Text>
+                <Text style={styles.createBtnText}>{t('community.start')}</Text>
               </LinearGradient>
             </Pressable>
           </View>

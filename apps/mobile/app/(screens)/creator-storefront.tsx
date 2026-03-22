@@ -8,7 +8,6 @@ import {
   Image,
   RefreshControl,
   Dimensions,
-  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -68,8 +67,10 @@ function CreatorStorefrontContent() {
     if (!userId) return;
     if (isRefresh) setRefreshing(true);
     try {
+      // TODO [cross-scope]: Backend GET /products needs a sellerId filter param
+      // to support creator storefronts. Currently returns all products.
       const [productsRes, profileRes] = await Promise.all([
-        api.get(`/storefront/${userId}/products`),
+        api.get(`/products?sellerId=${userId}`),
         api.get(`/users/${userId}`),
       ]);
       // API client already unwraps the response envelope
@@ -240,7 +241,7 @@ function CreatorStorefrontContent() {
         }
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: insets.bottom + spacing['3xl'] },
+          { paddingTop: insets.top + 60, paddingBottom: insets.bottom + spacing['3xl'] },
           products.length === 0 && !loading && styles.emptyList,
         ]}
         style={styles.list}
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
-    marginTop: 100,
+    // GlassHeader height is accounted for in contentContainerStyle paddingTop
   },
   listContent: {
     paddingHorizontal: spacing.base,

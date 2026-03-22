@@ -38,12 +38,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
           colors={colors.gradient.cardDark}
           style={styles.row}
         >
-          <LinearGradient
-            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-            style={styles.iconBg}
-          >
-            <Icon name="user" size="sm" color={colors.emerald} />
-          </LinearGradient>
+          <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
           <View style={styles.info}>
             <View style={styles.nameRow}>
               <Text style={styles.name}>{user.displayName}</Text>

@@ -161,7 +161,7 @@ describe('LiveController', () => {
   describe('setRecording', () => {
     it('should call service.updateRecording', async () => {
       mockService.updateRecording.mockResolvedValue({ recordingUrl: 'url' });
-      await controller.setRecording('session-1', 'user-1', 'url');
+      await controller.setRecording('session-1', 'user-1', { recordingUrl: 'url' } as any);
       expect(service.updateRecording).toHaveBeenCalledWith('session-1', 'user-1', 'url');
     });
   });

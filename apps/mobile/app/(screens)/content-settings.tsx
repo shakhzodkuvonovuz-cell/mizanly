@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  ScrollView, Switch, Alert,
+  ScrollView, Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,7 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { usersApi, settingsApi } from '@/services/api';
+import { settingsApi } from '@/services/api';
 import type { Settings } from '@/types';
 import { useStore, useSafFeedType, useMajlisFeedType } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -136,17 +137,14 @@ export default function ContentSettingsScreen() {
 
   useEffect(() => {
     if (s) {
-      setSensitiveContent(s.sensitiveContentFilter ?? false);
-      // Hydrate daily reminder from server if available
-      const serverData = s as { dailyReminderEnabled?: boolean; dailyReminderMinutes?: string };
-      if (serverData.dailyReminderEnabled) {
-        const mins = serverData.dailyReminderMinutes;
-        if (mins === '30') setDailyReminder('30min');
-        else if (mins === '60') setDailyReminder('1h');
-        else if (mins === '120') setDailyReminder('2h');
-        else setDailyReminder('off');
-      }
+      setSensitiveContent(s.sensitiveContent ?? false);
     }
+    // Hydrate daily reminder from AsyncStorage (local-only setting)
+    AsyncStorage.getItem('daily-reminder-option').then((stored) => {
+      if (stored && ['off', '30min', '1h', '2h'].includes(stored)) {
+        setDailyReminder(stored as DailyReminderOption);
+      }
+    });
   }, [s]);
 
   // BottomSheet states
@@ -161,20 +159,16 @@ export default function ContentSettingsScreen() {
 
   const handleUpdateSensitiveContent = (v: boolean) => {
     setSensitiveContent(v);
-    wellbeingMutation.mutate({ sensitiveContentFilter: v });
+    wellbeingMutation.mutate({ sensitiveContent: v });
   };
 
+  // Daily reminder is local-only (no backend endpoint exists).
+  // Persisted via AsyncStorage so it survives app restarts.
   const handleUpdateDailyReminder = async (option: DailyReminderOption) => {
     const prev = dailyReminder;
     setDailyReminder(option);
-    const timeMap: Record<DailyReminderOption, string | undefined> = {
-      'off': undefined,
-      '30min': '30',
-      '1h': '60',
-      '2h': '120',
-    };
     try {
-      await usersApi.updateDailyReminder(option !== 'off', timeMap[option]);
+      await AsyncStorage.setItem('daily-reminder-option', option);
     } catch {
       Alert.alert(t('common.error'), t('contentSettings.saveError', 'Failed to save setting'));
       setDailyReminder(prev);

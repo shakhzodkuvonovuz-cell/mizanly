@@ -71,7 +71,7 @@ export default function HashtagExploreScreen() {
         <Pressable
           accessibilityRole="button"
           style={styles.rowInner}
-          onPress={() => navigate('/(screens)/search-results', { q: '#' + item.name })}
+          onPress={() => navigate('/(screens)/search-results', { query: '#' + item.name })}
         >
           <LinearGradient
             colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -93,20 +93,22 @@ export default function HashtagExploreScreen() {
 
   if (isError) {
     return (
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <GlassHeader
-          title={t('screens.hashtag-explore.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
-        />
-        <View style={{ height: insets.top + 52 }} />
-        <EmptyState
-          icon="hash"
-          title={t('screens.hashtag-explore.errorTitle')}
-          subtitle={t('screens.hashtag-explore.errorSubtitle')}
-          actionLabel={t('common.retry')}
-          onAction={() => refetchTrending()}
-        />
-      </View>
+      <ScreenErrorBoundary>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
+          <GlassHeader
+            title={t('screens.hashtag-explore.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
+          />
+          <View style={{ height: insets.top + 52 }} />
+          <EmptyState
+            icon="hash"
+            title={t('screens.hashtag-explore.errorTitle')}
+            subtitle={t('screens.hashtag-explore.errorSubtitle')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetchTrending()}
+          />
+        </View>
+      </ScreenErrorBoundary>
     );
   }
 

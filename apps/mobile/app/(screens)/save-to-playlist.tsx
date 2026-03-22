@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, Alert, RefreshControl,
 } from 'react-native';
@@ -42,13 +42,14 @@ export default function SaveToPlaylistScreen() {
   const playlistsQuery = useQuery({
     queryKey: ['channel-playlists', channels.map(c => c.id)],
     queryFn: async () => {
+      // Fetch all channels in parallel (Finding 8: was sequential for-loop)
+      const results = await Promise.allSettled(
+        channels.map(channel => playlistsApi.getByChannel(channel.id))
+      );
       const allPlaylists: Playlist[] = [];
-      for (const channel of channels) {
-        try {
-          const resp = await playlistsApi.getByChannel(channel.id);
-          allPlaylists.push(...resp.data);
-        } catch (err) {
-          // ignore individual channel errors
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          allPlaylists.push(...result.value.data);
         }
       }
       return allPlaylists;
@@ -61,6 +62,8 @@ export default function SaveToPlaylistScreen() {
   const isError = channelsQuery.isError || playlistsQuery.isError;
 
   // For each playlist, check if video is already in it
+  // TODO (Finding 7): N+1 query — fetches ALL items per playlist to check inclusion.
+  // Should use a dedicated backend endpoint like /playlists/check-inclusion?videoId=X
   const inclusionQueries = useQueries({
     queries: playlists.map(playlist => ({
       queryKey: ['playlist-inclusion', playlist.id, videoId],
@@ -72,8 +75,9 @@ export default function SaveToPlaylistScreen() {
     })),
   });
 
-  // Update inclusion map when queries resolve
-  useMemo(() => {
+  // Update inclusion map when queries resolve (Finding 6: was useMemo with setState)
+  const inclusionDataKey = inclusionQueries.map(q => q.data).join(',');
+  useEffect(() => {
     const newMap: Record<string, boolean> = {};
     playlists.forEach((playlist, idx) => {
       if (inclusionQueries[idx]?.data !== undefined) {
@@ -81,7 +85,8 @@ export default function SaveToPlaylistScreen() {
       }
     });
     setInPlaylistMap(newMap);
-  }, [playlists, inclusionQueries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playlists.length, inclusionDataKey]);
 
   const addMutation = useMutation({
     mutationFn: ({ playlistId }: { playlistId: string }) =>

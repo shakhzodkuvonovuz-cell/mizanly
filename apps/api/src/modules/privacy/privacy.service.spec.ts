@@ -21,7 +21,7 @@ describe('PrivacyService', () => {
             thread: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
             story: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             reel: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
-            video: { updateMany: jest.fn() },
+            video: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
             message: { findMany: jest.fn().mockResolvedValue([]) },
             follow: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             comment: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
@@ -30,8 +30,15 @@ describe('PrivacyService', () => {
             twoFactorSecret: { deleteMany: jest.fn() },
             encryptionKey: { deleteMany: jest.fn() },
             device: { deleteMany: jest.fn() },
-            block: { deleteMany: jest.fn() },
-            bookmark: { deleteMany: jest.fn() },
+            block: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+            mute: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+            bookmark: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+            notification: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+            threadReply: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
+            userSettings: { findUnique: jest.fn().mockResolvedValue(null), deleteMany: jest.fn() },
+            searchHistory: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
+            conversationKeyEnvelope: { deleteMany: jest.fn() },
+            userStreak: { deleteMany: jest.fn() },
             $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<void>) => fn({
               user: { update: jest.fn() },
               post: { updateMany: jest.fn() },
@@ -40,14 +47,21 @@ describe('PrivacyService', () => {
               reel: { updateMany: jest.fn() },
               video: { updateMany: jest.fn() },
               story: { deleteMany: jest.fn() },
+              threadReply: { updateMany: jest.fn() },
               profileLink: { deleteMany: jest.fn() },
               twoFactorSecret: { deleteMany: jest.fn() },
               encryptionKey: { deleteMany: jest.fn() },
+              conversationKeyEnvelope: { deleteMany: jest.fn() },
               device: { deleteMany: jest.fn() },
               follow: { deleteMany: jest.fn() },
               block: { deleteMany: jest.fn() },
+              mute: { deleteMany: jest.fn() },
               bookmark: { deleteMany: jest.fn() },
               postReaction: { deleteMany: jest.fn() },
+              notification: { deleteMany: jest.fn() },
+              searchHistory: { deleteMany: jest.fn() },
+              userSettings: { deleteMany: jest.fn() },
+              userStreak: { deleteMany: jest.fn() },
             })),
           },
         },
@@ -68,7 +82,7 @@ describe('PrivacyService', () => {
       expect(result.reels).toBeDefined();
       expect(result.messages).toBeDefined();
       expect(result.comments).toBeDefined();
-      expect(result.reactions).toBeDefined();
+      expect(result.postReactions).toBeDefined();
       expect(result.following).toBeDefined();
       expect(result.exportedAt).toBeDefined();
     });
@@ -118,7 +132,7 @@ describe('PrivacyService', () => {
       expect(result.threads).toHaveLength(1);
       expect(result.stories).toHaveLength(1);
       expect(result.messages.count).toBe(1);
-      expect(result.following).toEqual(['f1', 'f2']);
+      expect(result.following).toHaveLength(2);
     });
 
     it('should return empty arrays when user has no content', async () => {

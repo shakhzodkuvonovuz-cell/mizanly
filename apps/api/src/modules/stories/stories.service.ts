@@ -245,13 +245,21 @@ export class StoriesService {
     });
 
     if (!alreadyViewed) {
-      await this.prisma.$transaction([
-        this.prisma.storyView.create({ data: { storyId, viewerId } }),
-        this.prisma.story.update({
-          where: { id: storyId },
-          data: { viewsCount: { increment: 1 } },
-        }),
-      ]);
+      try {
+        await this.prisma.$transaction([
+          this.prisma.storyView.create({ data: { storyId, viewerId } }),
+          this.prisma.story.update({
+            where: { id: storyId },
+            data: { viewsCount: { increment: 1 } },
+          }),
+        ]);
+      } catch (error) {
+        // P2002: concurrent view from same user — idempotent, view already counted
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          return { viewed: true };
+        }
+        throw error;
+      }
     }
 
     return { viewed: true };

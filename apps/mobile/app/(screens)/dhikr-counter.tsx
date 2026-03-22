@@ -8,8 +8,6 @@ import {
   Pressable,
   Dimensions,
   Share,
-  Alert,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';

@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, FlatList, Alert, Pressable, type ViewStyle, type ImageStyle,
+  View, StyleSheet, FlatList, Alert, Pressable, RefreshControl, Dimensions, type ViewStyle, type ImageStyle,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { RefreshControl } from 'react-native-gesture-handler';
 import { colors, spacing, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -21,7 +21,8 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
-const ITEM_SIZE = `${100 / GRID_COLUMNS}%` as const;
+const SCREEN_W = Dimensions.get('window').width;
+const ITEM_SIZE = (SCREEN_W - GRID_GAP * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
 
 export default function ArchiveScreen() {
   const router = useRouter();
@@ -171,7 +172,7 @@ export default function ArchiveScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container as ViewStyle}>
-        <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
 
         <FlatList
             removeClippedSubviews={true}

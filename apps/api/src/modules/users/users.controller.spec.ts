@@ -230,18 +230,18 @@ describe('UsersController', () => {
   });
 
   describe('getFollowers', () => {
-    it('should call service.getFollowers with username and cursor', async () => {
+    it('should call service.getFollowers with username, cursor, and viewerId', async () => {
       mockService.getFollowers.mockResolvedValue({ data: [] });
-      await controller.getFollowers('username', 'cursor-1');
-      expect(mockService.getFollowers).toHaveBeenCalledWith('username', 'cursor-1');
+      await controller.getFollowers('username', 'viewer-1', 'cursor-1');
+      expect(mockService.getFollowers).toHaveBeenCalledWith('username', 'cursor-1', 'viewer-1');
     });
   });
 
   describe('getFollowing', () => {
-    it('should call service.getFollowing with username and cursor', async () => {
+    it('should call service.getFollowing with username, cursor, and viewerId', async () => {
       mockService.getFollowing.mockResolvedValue({ data: [] });
-      await controller.getFollowing('username', 'cursor-1');
-      expect(mockService.getFollowing).toHaveBeenCalledWith('username', 'cursor-1');
+      await controller.getFollowing('username', 'viewer-1', 'cursor-1');
+      expect(mockService.getFollowing).toHaveBeenCalledWith('username', 'cursor-1', 'viewer-1');
     });
   });
 

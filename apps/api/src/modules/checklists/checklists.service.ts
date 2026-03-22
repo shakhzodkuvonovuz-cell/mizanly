@@ -18,7 +18,14 @@ export class ChecklistsService {
     });
   }
 
-  async getByConversation(conversationId: string) {
+  async getByConversation(conversationId: string, userId?: string) {
+    // Verify the user is a member of the conversation before exposing checklists
+    if (userId) {
+      const member = await this.prisma.conversationMember.findUnique({
+        where: { conversationId_userId: { conversationId, userId } },
+      });
+      if (!member) throw new ForbiddenException('Not a member of this conversation');
+    }
     return this.prisma.messageChecklist.findMany({
       where: { conversationId },
       include: { items: { orderBy: { createdAt: 'asc' } } },

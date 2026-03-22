@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, IsDateString } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsDateString, IsInt, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateAudioRoomDto {
@@ -17,4 +17,11 @@ export class CreateAudioRoomDto {
   @IsOptional()
   @IsDateString()
   scheduledAt?: string;
+
+  @ApiProperty({ description: 'Maximum number of speakers allowed', required: false, default: 10 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  maxSpeakers?: number;
 }

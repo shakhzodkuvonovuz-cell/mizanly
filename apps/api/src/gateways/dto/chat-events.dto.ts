@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsBoolean, IsIn, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
+import { IsString, IsUUID, IsBoolean, IsIn, IsArray, ArrayMaxSize } from 'class-validator';
 
 export class WsJoinConversationDto {
   @IsUUID()
@@ -61,4 +61,17 @@ export class WsCallSignalDto {
 
   // signal is opaque WebRTC data — validated by size only
   signal: unknown;
+}
+
+export class WsMessageDeliveredDto {
+  @IsUUID()
+  messageId: string;
+
+  @IsUUID()
+  conversationId: string;
+}
+
+export class WsLeaveConversationDto {
+  @IsUUID()
+  conversationId: string;
 }

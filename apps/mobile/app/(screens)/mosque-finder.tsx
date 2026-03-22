@@ -8,6 +8,8 @@ import {
   Pressable,
   TextInput,
   Dimensions,
+  Linking,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,6 +32,25 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 const { width } = Dimensions.get('window');
 
 const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+
+// Mecca (Kaaba) coordinates
+const KAABA_LAT = 21.4225;
+const KAABA_LNG = 39.8262;
+
+function computeQiblaBearing(lat: number, lng: number): { degrees: number; direction: string } {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+  const dLng = toRad(KAABA_LNG - lng);
+  const lat1 = toRad(lat);
+  const lat2 = toRad(KAABA_LAT);
+  const x = Math.sin(dLng) * Math.cos(lat2);
+  const y = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  let bearing = toDeg(Math.atan2(x, y));
+  bearing = ((bearing % 360) + 360) % 360;
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const idx = Math.round(bearing / 45) % 8;
+  return { degrees: Math.round(bearing), direction: directions[idx] };
+}
 
 function computeNextPrayer(prayerTimes?: Record<string, string>): string {
   if (!prayerTimes) return 'Fajr';
@@ -78,27 +99,19 @@ interface Mosque {
   nextPrayer: string;
   nextPrayerTime: string;
   facilities: string[];
+  lat: number;
+  lng: number;
 }
 
 
 const FACILITY_ICONS: Record<string, IconName> = {
-  parking: 'circle',
+  parking: 'map-pin',
   wheelchair: 'check-circle',
   womens: 'users',
-  wudu: 'droplet',
+  wudu: 'globe',
   school: 'book-open',
   library: 'book-open',
-  cafe: 'circle',
-};
-
-const FACILITY_LABELS: Record<string, string> = {
-  parking: 'Parking',
-  wheelchair: 'Accessible',
-  womens: "Women's Area",
-  wudu: 'Wudu Area',
-  school: 'School',
-  library: 'Library',
-  cafe: 'Cafe',
+  cafe: 'clock',
 };
 
 function FacilityBadge({ facility }: { facility: string }) {
@@ -111,12 +124,27 @@ function FacilityBadge({ facility }: { facility: string }) {
   );
 }
 
+function openDirections(lat: number, lng: number, name: string) {
+  const encodedName = encodeURIComponent(name);
+  const url = Platform.select({
+    ios: `maps:0,0?q=${encodedName}&ll=${lat},${lng}`,
+    android: `geo:${lat},${lng}?q=${lat},${lng}(${encodedName})`,
+    default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+  });
+  Linking.openURL(url);
+}
+
 function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const router = useRouter();
 
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push({ pathname: '/(screens)/mosque-detail', params: { id: mosque.id } })}
+      >
       <LinearGradient
         colors={colors.gradient.cardDark}
         style={styles.mosqueCard}
@@ -163,8 +191,8 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
         {/* Directions Button */}
         <Pressable
           accessibilityRole="button"
-          onPress={() => haptic.light()}
-         
+          onPress={() => { haptic.light(); openDirections(mosque.lat, mosque.lng, mosque.name); }}
+
           style={styles.directionsButton}
         >
           <LinearGradient
@@ -176,6 +204,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
           </LinearGradient>
         </Pressable>
       </LinearGradient>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -216,6 +245,8 @@ export default function MosqueFinderScreen() {
         nextPrayer: computeNextPrayer(m.prayerTimes),
         nextPrayerTime: computeNextPrayerTime(m.prayerTimes),
         facilities: m.facilities,
+        lat: m.latitude,
+        lng: m.longitude,
       }));
       setMosques(mappedMosques);
     } catch (err) {
@@ -224,7 +255,7 @@ export default function MosqueFinderScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchData();
@@ -331,7 +362,7 @@ export default function MosqueFinderScreen() {
                     placeholderTextColor={colors.text.tertiary}
                   />
                   {searchQuery.length > 0 && (
-                    <Pressable onPress={() => setSearchQuery('')}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={t('common.clear')} onPress={() => setSearchQuery('')}>
                       <Icon name="x" size="sm" color={colors.text.secondary} />
                     </Pressable>
                   )}
@@ -389,7 +420,11 @@ export default function MosqueFinderScreen() {
 
                   <View style={styles.qiblaContent}>
                     <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
-                    <Text style={styles.qiblaDirection}>118° Southeast</Text>
+                    <Text style={styles.qiblaDirection}>
+                      {userLocation
+                        ? `${computeQiblaBearing(userLocation.lat, userLocation.lng).degrees}° ${computeQiblaBearing(userLocation.lat, userLocation.lng).direction}`
+                        : '--°'}
+                    </Text>
                     <Text style={styles.qiblaHint}>{t('islamic.qiblaHint')}</Text>
                   </View>
 

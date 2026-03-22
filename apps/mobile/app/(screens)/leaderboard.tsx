@@ -6,11 +6,8 @@ import {
   FlatList,
   RefreshControl,
   Pressable,
-  Dimensions,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
@@ -22,14 +19,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius, fonts, shadow, fontSizeExt } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts, fontSizeExt } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 type LeaderboardTab = 'xp' | 'streaks' | 'helpers';
 
@@ -57,6 +52,7 @@ function PodiumCard({
   isRTL: boolean;
 }) {
   const router = useRouter();
+  const tc = useThemeColors();
   const medalColor = position === 1 ? GOLD : position === 2 ? SILVER : BRONZE;
   const height = position === 1 ? 140 : position === 2 ? 110 : 90;
 
@@ -175,8 +171,7 @@ function LoadingSkeleton() {
 }
 
 function LeaderboardScreen() {
-  const { t } = useTranslation();
-  const { isRTL } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
   const { user } = useUser();
@@ -296,7 +291,7 @@ function LeaderboardScreen() {
           <EmptyState
             icon="bar-chart-2"
             title={t('gamification.leaderboard.title')}
-            subtitle={t('common.retry')}
+            subtitle={t('gamification.leaderboard.noData')}
             actionLabel={t('common.retry')}
             onAction={() => refetch()}
           />

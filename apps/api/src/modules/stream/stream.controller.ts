@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Headers,
+  Req,
   HttpCode,
   Logger,
   UnauthorizedException,
@@ -12,6 +13,11 @@ import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { StreamService } from './stream.service';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { Request } from 'express';
+
+interface RawBodyRequest extends Request {
+  rawBody?: Buffer;
+}
 
 @ApiTags('Stream Webhooks')
 @Throttle({ default: { limit: 60, ttl: 60000 } })
@@ -31,6 +37,7 @@ export class StreamController {
   @HttpCode(200)
   @ApiExcludeEndpoint()
   async handleWebhook(
+    @Req() req: RawBodyRequest,
     @Body()
     body: {
       uid: string;
@@ -47,7 +54,10 @@ export class StreamController {
     if (!signature) {
       throw new UnauthorizedException('Missing webhook signature');
     }
-    this.verifySignature(JSON.stringify(body), signature);
+
+    // Use rawBody for signature verification to avoid JSON.stringify reordering
+    const rawBody = req.rawBody?.toString() ?? JSON.stringify(body);
+    this.verifySignature(rawBody, signature);
 
     const streamId = body.uid;
     if (!streamId) {

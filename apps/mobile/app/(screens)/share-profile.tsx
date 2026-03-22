@@ -55,7 +55,7 @@ export default function ShareProfileScreen() {
       await Share.share({
         url: profileUrl,
         message: profileUrl,
-        title: `Check out ${user?.displayName || user?.username}'s profile on Mizanly`,
+        title: t('screens.share-profile.shareTitle', { name: user?.displayName || user?.username }),
       });
     } catch (err) {
       // Sharing cancelled, ignore
@@ -138,13 +138,10 @@ export default function ShareProfileScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('accessibility.goBack')} accessibilityRole="button">
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>{t('screens.share-profile.title')}</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <GlassHeader
+          title={t('screens.share-profile.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+        />
 
         <View style={styles.content}>
           {/* Glassmorphism QR Card */}

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, memo } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, RefreshControl, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -34,6 +35,7 @@ import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/the
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
 import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useStore } from '@/store';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlAbsoluteEnd } from '@/utils/rtl';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -309,11 +311,19 @@ export default function ProfileScreen() {
     try {
       const album = await storiesApi.getHighlightById(albumId);
       if (!album.stories || album.stories.length === 0) return;
-      const group = { user: profile, stories: album.stories, hasUnread: false };
-      router.push({
-        pathname: '/(screens)/story-viewer',
-        params: { groupJson: JSON.stringify(group), startIndex: '0' },
-      });
+      const group = {
+        userId: profile.id,
+        username: profile.username,
+        avatarUrl: profile.avatarUrl,
+        stories: album.stories.map((s: { id: string; mediaUrl: string; mediaType: string; createdAt: string }) => ({
+          id: s.id,
+          mediaUrl: s.mediaUrl,
+          mediaType: s.mediaType,
+          createdAt: s.createdAt,
+        })),
+      };
+      useStore.getState().setStoryViewerData({ groups: [group], startIndex: 0 });
+      router.push('/(screens)/story-viewer');
     } catch {
       // silently ignore — album might be empty
     } finally {
@@ -324,7 +334,7 @@ export default function ProfileScreen() {
   const handleShareProfile = () => {
     const profileUrl = `https://mizanly.app/@${username}`;
     Share.share({
-      message: `Check out @${username} on Mizanly!`,
+      message: t('profile.shareMessage', { username }),
       url: profileUrl,
     });
   };
@@ -560,18 +570,18 @@ export default function ProfileScreen() {
       {/* Stats card */}
       <View style={[styles.statsCard, { flexDirection: rtlFlexRow(isRTL) }]}>
         <StatItem
-          num={profile._count?.followers ?? 0}
+          num={profile.followersCount ?? 0}
           label={t('profile.followers')}
           onPress={() => navigate(`/(screens)/followers/${profile.id}`)}
         />
         <View style={styles.statDivider} />
         <StatItem
-          num={profile._count?.following ?? 0}
+          num={profile.followingCount ?? 0}
           label={t('profile.following')}
           onPress={() => navigate(`/(screens)/following/${profile.id}`)}
         />
         <View style={styles.statDivider} />
-        <StatItem num={profile._count?.posts ?? 0} label={t('profile.posts')} />
+        <StatItem num={profile.postsCount ?? 0} label={t('profile.posts')} />
       </View>
 
       {/* Mutual followers */}
@@ -767,6 +777,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
       <Animated.FlatList
+        key={activeTab === 'threads' ? 'list' : 'grid'}
         removeClippedSubviews={true}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -906,7 +917,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   displayName: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
   handle: { color: colors.text.tertiary, fontSize: fontSize.sm, marginTop: 2 },
-  bio: { marginTop: spacing.sm },
+  bio: { marginTop: spacing.sm, color: colors.text.primary, fontSize: fontSize.base },
   websiteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
   websiteLink: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '500' },
   channelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },

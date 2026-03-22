@@ -119,6 +119,10 @@ export default function CloseFriendsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-circles'] });
     },
+    // Prevent duplicate circle creation -- if backend returns conflict, refetch circles
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-circles'] });
+    },
   });
 
   // Ensure Close Friends circle exists

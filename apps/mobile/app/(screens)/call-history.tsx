@@ -123,7 +123,7 @@ export default function CallHistoryScreen() {
           <Pressable
             accessibilityRole="button"
             hitSlop={8}
-            onPress={() => navigate(`/(screens)/call/${item.id}`)}
+            onPress={() => navigate(`/(screens)/call/${item.id}`)} // TODO: Verify call detail route exists — calls are currently UI facades
           >
             <LinearGradient
               colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}

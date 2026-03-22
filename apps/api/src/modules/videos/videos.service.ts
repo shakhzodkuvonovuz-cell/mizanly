@@ -839,13 +839,15 @@ export class VideosService {
     if (!premiere) throw new NotFoundException('Premiere not found');
 
     try {
-      await this.prisma.premiereReminder.create({
-        data: { premiereId: premiere.id, userId },
-      });
-      await this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = "reminderCount" + 1 WHERE id = ${premiere.id}`;
+      await this.prisma.$transaction([
+        this.prisma.premiereReminder.create({
+          data: { premiereId: premiere.id, userId },
+        }),
+        this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = "reminderCount" + 1 WHERE id = ${premiere.id}`,
+      ]);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return { success: true };
+        return { success: true }; // Already set — idempotent
       }
       throw error;
     }
@@ -856,10 +858,12 @@ export class VideosService {
     const premiere = await this.prisma.videoPremiere.findUnique({ where: { videoId } });
     if (!premiere) throw new NotFoundException('Premiere not found');
 
-    await this.prisma.premiereReminder.delete({
-      where: { premiereId_userId: { premiereId: premiere.id, userId } },
-    });
-    await this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = GREATEST("reminderCount" - 1, 0) WHERE id = ${premiere.id}`;
+    await this.prisma.$transaction([
+      this.prisma.premiereReminder.delete({
+        where: { premiereId_userId: { premiereId: premiere.id, userId } },
+      }),
+      this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = GREATEST("reminderCount" - 1, 0) WHERE id = ${premiere.id}`,
+    ]);
     return { success: true };
   }
 

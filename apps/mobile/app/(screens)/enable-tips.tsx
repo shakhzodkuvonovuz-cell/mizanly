@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Pressable,
   TextInput,
-  Switch,
   Alert,
   Dimensions,
 } from 'react-native';
@@ -130,23 +129,16 @@ export default function EnableTipsScreen() {
 
   const handleSave = useCallback(async () => {
     haptic.medium();
-    setSubmitting(true);
-    try {
-      // Tip settings saved locally — backend updateTipSettings endpoint needed for persistence
-      await new Promise(resolve => setTimeout(resolve, 300));
-      haptic.success();
-      Alert.alert(t('common.success'), t('screens.enableTips.saveSuccess'));
-    } catch (err) {
-      Alert.alert(t('common.error'), t('screens.enableTips.saveError'));
-    } finally {
-      setSubmitting(false);
-    }
-  }, [haptic, isEnabled, minTipAmount, displaySettings, thankYouMessage, isConnected]);
+    // TODO: Backend updateTipSettings endpoint needed for persistence
+    // Settings are currently local-only until Stripe Connect integration is complete
+    Alert.alert(t('common.comingSoon'), t('screens.enableTips.saveComingSoon'));
+  }, [haptic, t]);
 
   const handleConnectPayment = useCallback(() => {
     haptic.light();
-    setIsConnected(!isConnected);
-  }, [haptic, isConnected]);
+    // TODO: Integrate Stripe Connect onboarding for creators to receive tips
+    Alert.alert(t('common.comingSoon'), t('screens.enableTips.connectComingSoon'));
+  }, [haptic, t]);
 
   return (
     <ScreenErrorBoundary>

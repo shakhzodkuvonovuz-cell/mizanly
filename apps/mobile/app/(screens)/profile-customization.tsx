@@ -7,9 +7,10 @@ import {
   RefreshControl,
   Pressable,
   TextInput,
-  Pressable,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +21,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
-import { gamificationApi } from '@/services/api';
+import { gamificationApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -72,6 +73,16 @@ const LAYOUT_ICONS: Record<string, 'layout' | 'layers' | 'book-open' | 'eye'> = 
   magazine: 'book-open',
   minimal: 'eye',
 };
+
+function isValidUrl(url: string): boolean {
+  if (!url.trim()) return false;
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
 
 function SectionLabel({ text, delay }: { text: string; delay: number }) {
   const tc = useThemeColors();
@@ -166,6 +177,7 @@ function ProfileCustomizationScreen() {
   const [showLevel, setShowLevel] = useState(true);
   const [showStreak, setShowStreak] = useState(true);
   const [musicUrl, setMusicUrl] = useState('');
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | undefined>();
 
   useEffect(() => {
     if (data) {
@@ -176,6 +188,7 @@ function ProfileCustomizationScreen() {
       setShowLevel(data.showLevel ?? true);
       setShowStreak(data.showStreak ?? true);
       setMusicUrl(data.profileMusicUrl || '');
+      setBackgroundImageUrl(data.backgroundImageUrl);
     }
   }, [data]);
 
@@ -184,11 +197,39 @@ function ProfileCustomizationScreen() {
     onSuccess: () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['profile-customization'] });
+      Alert.alert(t('common.success'), t('gamification.profileCustomization.saved'));
     },
     onError: () => {
       haptic.error();
+      Alert.alert(t('common.error'), t('gamification.profileCustomization.saveError'));
     },
   });
+
+  const handlePickBackgroundImage = useCallback(async () => {
+    haptic.light();
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [3, 2],
+      quality: 0.9,
+    });
+    if (!result.canceled && result.assets[0]) {
+      try {
+        const uri = result.assets[0].uri;
+        const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const contentType = `image/${ext}`;
+        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'backgrounds');
+        const fileRes = await fetch(uri);
+        const blob = await fileRes.blob();
+        const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
+        if (!uploadRes.ok) throw new Error('Upload failed');
+        setBackgroundImageUrl(publicUrl);
+        haptic.success();
+      } catch {
+        haptic.error();
+      }
+    }
+  }, [haptic]);
 
   const handleSave = useCallback(() => {
     haptic.medium();
@@ -199,9 +240,10 @@ function ProfileCustomizationScreen() {
       showBadges,
       showLevel,
       showStreak,
-      profileMusicUrl: musicUrl || undefined,
+      backgroundImageUrl: backgroundImageUrl || undefined,
+      profileMusicUrl: isValidUrl(musicUrl) ? musicUrl : undefined,
     });
-  }, [accentColor, layoutStyle, bioFont, showBadges, showLevel, showStreak, musicUrl, haptic, saveMutation]);
+  }, [accentColor, layoutStyle, bioFont, showBadges, showLevel, showStreak, backgroundImageUrl, musicUrl, haptic, saveMutation]);
 
   const handleRefresh = useCallback(async () => {
     await refetch();
@@ -379,7 +421,7 @@ function ProfileCustomizationScreen() {
             <SectionLabel text={t('gamification.profileCustomization.background')} delay={400} />
             <Animated.View entering={FadeInUp.delay(450).duration(400)}>
               <Pressable
-                onPress={() => haptic.light()}
+                onPress={handlePickBackgroundImage}
                 style={styles.uploadButton}
                 accessibilityRole="button"
                 accessibilityLabel={t('gamification.profileCustomization.uploadBackground')}

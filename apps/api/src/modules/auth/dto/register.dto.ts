@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MinLength, MaxLength, Matches, IsUrl, IsIn } from 'class-validator';
+import { IsString, IsOptional, MinLength, MaxLength, Matches, IsUrl, IsIn, IsDateString, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -30,4 +30,12 @@ export class RegisterDto {
   @IsOptional()
   @IsIn(['en', 'ar', 'tr', 'ur', 'bn', 'fr', 'id', 'ms'])
   language?: string;
+
+  @ApiProperty({ description: 'Date of birth (ISO 8601). Required for COPPA/GDPR age verification. Must be 13+.' })
+  @IsDateString()
+  dateOfBirth: string;
+
+  @ApiProperty({ description: 'User must actively accept Terms of Service and Privacy Policy (GDPR Art 7)' })
+  @IsBoolean()
+  acceptedTerms: boolean;
 }

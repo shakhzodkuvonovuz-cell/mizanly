@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Pressable,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -54,7 +55,7 @@ function PlanCard({
   const tc = useThemeColors();
   const styles = createStyles(tc);
   return (
-    <Pressable onPress={() => onSelect(option.type)}>
+    <Pressable accessibilityRole="button" onPress={() => onSelect(option.type)}>
       <LinearGradient
         colors={['rgba(10,123,79,0.25)', 'rgba(200,150,62,0.1)']}
         style={styles.planCard}
@@ -276,7 +277,7 @@ function QuranReadingPlanContent() {
   const handleMarkPage = useCallback(() => {
     const plan = activePlan as QuranReadingPlan | null | undefined;
     if (!plan) return;
-    const dailyTarget = plan.planType === '30day' ? 20 : plan.planType === '60day' ? 10 : 7;
+    const dailyTarget = PLAN_OPTIONS.find(o => o.type === plan.planType)?.pagesPerDay ?? 7;
     const nextPage = Math.min((plan.currentPage || 0) + dailyTarget, 604);
     const nextJuz = Math.ceil(nextPage / 20);
     const isComplete = nextPage >= 604;
@@ -290,15 +291,37 @@ function QuranReadingPlanContent() {
   const handleDeletePlan = useCallback(() => {
     const plan = activePlan as QuranReadingPlan | null | undefined;
     if (!plan) return;
-    deleteMutation.mutate(plan.id);
     setDeleteSheetVisible(false);
-  }, [activePlan, deleteMutation]);
+    Alert.alert(
+      t('quranPlan.deletePlan'),
+      t('quranPlan.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('quranPlan.deletePlan'), style: 'destructive', onPress: () => deleteMutation.mutate(plan.id) },
+      ],
+    );
+  }, [activePlan, deleteMutation, t]);
 
-  // Mock heat map data (last 30 days)
-  const heatMapDays = useMemo(
-    () => Array.from({ length: 30 }, () => Math.floor(Math.random() * 3)),
-    [],
-  );
+  // Heat map data derived from plan progress — shows reading consistency
+  // TODO: Fetch actual daily reading history from API when endpoint is available
+  const heatMapDays = useMemo(() => {
+    if (!plan) return Array.from({ length: 30 }, () => 0);
+    const startDate = new Date(plan.startDate);
+    const now = new Date();
+    const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const currentPage = plan.currentPage || 0;
+    const planOption = PLAN_OPTIONS.find(o => o.type === plan.planType);
+    const pagesPerDay = planOption?.pagesPerDay ?? 7;
+    // Estimate which days had reading based on progress
+    return Array.from({ length: 30 }, (_, i) => {
+      const dayIndex = 29 - i; // 0 = today, 29 = 30 days ago
+      if (dayIndex > daysSinceStart) return 0; // Before plan started
+      const expectedPages = (daysSinceStart - dayIndex) * pagesPerDay;
+      if (currentPage >= expectedPages) return 2; // On track
+      if (currentPage >= expectedPages * 0.5) return 1; // Partial
+      return 0;
+    });
+  }, [plan]);
 
   const historyPlans = (historyData as { data?: QuranReadingPlan[] } | undefined)?.data ?? [];
   const plan = activePlan as QuranReadingPlan | null | undefined;
@@ -372,8 +395,7 @@ function QuranReadingPlanContent() {
   const juzProgress = plan.currentJuz || 0;
   const pageProgress = plan.currentPage || 0;
   const percentComplete = Math.round((pageProgress / 604) * 100);
-  const dailyTarget =
-    plan.planType === '30day' ? 20 : plan.planType === '60day' ? 10 : 7;
+  const dailyTarget = PLAN_OPTIONS.find(o => o.type === plan.planType)?.pagesPerDay ?? 7;
 
   return (
     <SafeAreaView style={styles.container}>

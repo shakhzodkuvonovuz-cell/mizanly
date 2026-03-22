@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Alert,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -45,8 +46,8 @@ interface PatternItem {
 const SOLID_COLORS: SolidColor[] = [
   { name: 'Emerald', value: colors.emerald },
   { name: 'Gold', value: colors.gold },
-  { name: 'Dark', value: tc.bg },
-  { name: 'Surface', value: tc.surface },
+  { name: 'Dark', value: colors.dark.bg },
+  { name: 'Surface', value: colors.dark.surface },
   { name: 'Red', value: '#DC2626' },
   { name: 'Blue', value: '#2563EB' },
   { name: 'Purple', value: colors.extended.violet },
@@ -58,14 +59,14 @@ const SOLID_COLORS: SolidColor[] = [
 ];
 
 const GRADIENT_PAIRS: GradientPair[] = [
-  { name: 'Emerald Night', colors: [colors.emerald, tc.bg] },
-  { name: 'Golden Dusk', colors: [colors.gold, tc.bg] },
-  { name: 'Purple Night', colors: [colors.extended.violet, tc.bg] },
-  { name: 'Ocean Deep', colors: ['#2563EB', tc.bg] },
+  { name: 'Emerald Night', colors: [colors.emerald, colors.dark.bg] },
+  { name: 'Golden Dusk', colors: [colors.gold, colors.dark.bg] },
+  { name: 'Purple Night', colors: [colors.extended.violet, colors.dark.bg] },
+  { name: 'Ocean Deep', colors: ['#2563EB', colors.dark.bg] },
   { name: 'Emerald Gold', colors: [colors.emerald, colors.gold] },
   { name: 'Sunset', colors: ['#EA580C', '#DC2626'] },
-  { name: 'Teal Depth', colors: ['#0D9488', tc.bg] },
-  { name: 'Rose Night', colors: ['#DB2777', tc.bg] },
+  { name: 'Teal Depth', colors: ['#0D9488', colors.dark.bg] },
+  { name: 'Rose Night', colors: ['#DB2777', colors.dark.bg] },
 ];
 
 const PATTERNS: PatternItem[] = [

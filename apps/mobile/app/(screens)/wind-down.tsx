@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, BackHandler, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -28,6 +28,7 @@ export default function WindDownScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
+  const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<'breatheIn' | 'breatheOut'>('breatheIn');
 
   // Breathing circle animation
@@ -87,7 +88,7 @@ export default function WindDownScreen() {
         style={styles.container}
         accessibilityLabel={t('windDown.title')}
       >
-        <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>{t('windDown.title')}</Text>
@@ -118,24 +119,29 @@ export default function WindDownScreen() {
           {/* Actions */}
           <View style={styles.actions}>
             <GradientButton
-              label={t('windDown.continueScrolling')}
+              label={t('windDown.closeApp')}
               onPress={() => {
                 haptic.light();
-                router.back();
+                if (Platform.OS === 'android') {
+                  BackHandler.exitApp();
+                } else {
+                  router.back();
+                }
               }}
               fullWidth
             />
             <Pressable
+              accessibilityRole="button"
               style={styles.closeBtn}
               onPress={() => {
                 haptic.light();
-                router.replace('/(tabs)/saf');
+                router.back();
               }}
             >
-              <Text style={styles.closeBtnText}>{t('windDown.closeApp')}</Text>
+              <Text style={styles.closeBtnText}>{t('windDown.continueScrolling')}</Text>
             </Pressable>
           </View>
-        </SafeAreaView>
+        </View>
       </LinearGradient>
     </ScreenErrorBoundary>
   );

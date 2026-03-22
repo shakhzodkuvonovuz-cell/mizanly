@@ -180,9 +180,17 @@ export class FollowsService {
     return { message: 'Unfollowed' };
   }
 
-  async getFollowers(userId: string, cursor?: string, limit = 20) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  async getFollowers(userId: string, cursor?: string, viewerId?: string, limit = 20) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, isPrivate: true } });
     if (!user) throw new NotFoundException('User not found');
+    // Private accounts: only the owner or their followers can see the followers list
+    if (user.isPrivate && viewerId !== userId) {
+      if (!viewerId) throw new ForbiddenException('This account is private');
+      const isFollowing = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: viewerId, followingId: userId } },
+      });
+      if (!isFollowing) throw new ForbiddenException('This account is private');
+    }
 
     const follows = await this.prisma.follow.findMany({
       where: { followingId: userId },
@@ -223,9 +231,17 @@ export class FollowsService {
     };
   }
 
-  async getFollowing(userId: string, cursor?: string, limit = 20) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  async getFollowing(userId: string, cursor?: string, viewerId?: string, limit = 20) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, isPrivate: true } });
     if (!user) throw new NotFoundException('User not found');
+    // Private accounts: only the owner or their followers can see the following list
+    if (user.isPrivate && viewerId !== userId) {
+      if (!viewerId) throw new ForbiddenException('This account is private');
+      const isFollowing = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: viewerId, followingId: userId } },
+      });
+      if (!isFollowing) throw new ForbiddenException('This account is private');
+    }
 
     const follows = await this.prisma.follow.findMany({
       where: { followerId: userId },

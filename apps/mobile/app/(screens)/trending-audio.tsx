@@ -42,7 +42,6 @@ export default function TrendingAudioScreen() {
   }, [refetch, haptic]);
 
   const formatDuration = (seconds: number) => {
-    const Math = global.Math; // To avoid linter issues if Math isn't globally typed
     const m = Math.floor(seconds / 60);
     const s = Math.round(seconds % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
@@ -111,37 +110,41 @@ export default function TrendingAudioScreen() {
 
   if (isError) {
     return (
-      <View style={styles.container}>
-        <GlassHeader 
-          title={t('screens.trending-audio.title')} 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
-        />
-        <View style={{ height: insets.top + 52 }} />
-        <EmptyState 
-          icon="music" 
-          title={t('screens.trending-audio.errorTitle')}
-          subtitle={t('screens.trending-audio.errorSubtitle')}
-          actionLabel={t('common.retry')} 
-          onAction={() => refetch()} 
-        />
-      </View>
+      <ScreenErrorBoundary>
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('screens.trending-audio.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+          />
+          <View style={{ height: insets.top + 52 }} />
+          <EmptyState
+            icon="music"
+            title={t('screens.trending-audio.errorTitle')}
+            subtitle={t('screens.trending-audio.errorSubtitle')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetch()}
+          />
+        </View>
+      </ScreenErrorBoundary>
     );
   }
 
   if (isLoading && !tracks) {
     return (
-      <View style={styles.container}>
-        <GlassHeader 
-          title={t('screens.trending-audio.title')} 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
-        />
-        <View style={{ height: insets.top + 52 }} />
-        <View style={{ padding: spacing.base, gap: spacing.md }}>
-          <Skeleton.Rect width="100%" height={70} borderRadius={radius.md} />
-          <Skeleton.Rect width="100%" height={70} borderRadius={radius.md} />
-          <Skeleton.Rect width="100%" height={70} borderRadius={radius.md} />
+      <ScreenErrorBoundary>
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('screens.trending-audio.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+          />
+          <View style={{ height: insets.top + 52 }} />
+          <View style={{ padding: spacing.base, gap: spacing.md }}>
+            <Skeleton.Rect width="100%" height={70} borderRadius={radius.md} />
+            <Skeleton.Rect width="100%" height={70} borderRadius={radius.md} />
+            <Skeleton.Rect width="100%" height={70} borderRadius={radius.md} />
+          </View>
         </View>
-      </View>
+      </ScreenErrorBoundary>
     );
   }
 

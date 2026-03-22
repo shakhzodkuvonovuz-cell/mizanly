@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
+  RefreshControl,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -62,79 +63,81 @@ function PostInsightsContent() {
   const params = useLocalSearchParams<{ postId: string; postType: string }>();
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [post, setPost] = useState<Post | null>(null);
   const [insights, setInsights] = useState<InsightsData | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadData() {
-      try {
-        const [postRes, insightsRes] = await Promise.all([
-          params.postId ? postsApi.getById(params.postId) : Promise.resolve(null),
-          params.postId
-            ? params.postType === 'reel'
-              ? creatorApi.getReelInsights(params.postId)
-              : creatorApi.getPostInsights(params.postId)
-            : Promise.resolve(null),
-        ]);
+  const loadData = useCallback(async () => {
+    try {
+      const [postRes, insightsRes] = await Promise.all([
+        params.postId ? postsApi.getById(params.postId) : Promise.resolve(null),
+        params.postId
+          ? params.postType === 'reel'
+            ? creatorApi.getReelInsights(params.postId)
+            : creatorApi.getPostInsights(params.postId)
+          : Promise.resolve(null),
+      ]);
 
-        if (!cancelled) {
-          setPost(postRes as Post | null);
-          const raw = insightsRes as Record<string, unknown> | null;
-          if (raw) {
-            setInsights({
-              reach: Number(raw.reach ?? 0),
-              impressions: Number(raw.impressions ?? 0),
-              profileVisits: Number(raw.profileVisits ?? 0),
-              follows: Number(raw.follows ?? 0),
-              shares: Number(raw.shares ?? 0),
-              saves: Number(raw.saves ?? 0),
-              likes: Number(raw.likes ?? 0),
-              comments: Number(raw.comments ?? 0),
-              discovery: (raw.discovery as DiscoverySource[]) ?? [
-                { label: t('postInsights.home', 'Home'), percentage: 0, color: colors.emerald },
-                { label: t('postInsights.explore', 'Explore'), percentage: 0, color: colors.info },
-                { label: t('postInsights.hashtags', 'Hashtags'), percentage: 0, color: colors.gold },
-                { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: colors.text.tertiary },
-              ],
-              interactions: {
-                profileTaps: Number((raw.interactions as Record<string, unknown>)?.profileTaps ?? 0),
-                websiteTaps: Number((raw.interactions as Record<string, unknown>)?.websiteTaps ?? 0),
-                emailTaps: Number((raw.interactions as Record<string, unknown>)?.emailTaps ?? 0),
-              },
-            });
-          } else {
-            // Fallback insights when API returns nothing
-            setInsights({
-              reach: 0,
-              impressions: 0,
-              profileVisits: 0,
-              follows: 0,
-              shares: 0,
-              saves: 0,
-              likes: 0,
-              comments: 0,
-              discovery: [
-                { label: t('postInsights.home', 'Home'), percentage: 0, color: colors.emerald },
-                { label: t('postInsights.explore', 'Explore'), percentage: 0, color: colors.info },
-                { label: t('postInsights.hashtags', 'Hashtags'), percentage: 0, color: colors.gold },
-                { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: colors.text.tertiary },
-              ],
-              interactions: { profileTaps: 0, websiteTaps: 0, emailTaps: 0 },
-            });
-          }
-        }
-      } catch {
-        if (!cancelled) {
-          setInsights(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+      setPost(postRes as Post | null);
+      const raw = insightsRes as Record<string, unknown> | null;
+      if (raw) {
+        setInsights({
+          reach: Number(raw.reach ?? 0),
+          impressions: Number(raw.impressions ?? 0),
+          profileVisits: Number(raw.profileVisits ?? 0),
+          follows: Number(raw.follows ?? 0),
+          shares: Number(raw.shares ?? 0),
+          saves: Number(raw.saves ?? 0),
+          likes: Number(raw.likes ?? 0),
+          comments: Number(raw.comments ?? 0),
+          discovery: (raw.discovery as DiscoverySource[]) ?? [
+            { label: t('postInsights.home', 'Home'), percentage: 0, color: colors.emerald },
+            { label: t('postInsights.explore', 'Explore'), percentage: 0, color: colors.info },
+            { label: t('postInsights.hashtags', 'Hashtags'), percentage: 0, color: colors.gold },
+            { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: colors.text.tertiary },
+          ],
+          interactions: {
+            profileTaps: Number((raw.interactions as Record<string, unknown>)?.profileTaps ?? 0),
+            websiteTaps: Number((raw.interactions as Record<string, unknown>)?.websiteTaps ?? 0),
+            emailTaps: Number((raw.interactions as Record<string, unknown>)?.emailTaps ?? 0),
+          },
+        });
+      } else {
+        // Fallback insights when API returns nothing
+        setInsights({
+          reach: 0,
+          impressions: 0,
+          profileVisits: 0,
+          follows: 0,
+          shares: 0,
+          saves: 0,
+          likes: 0,
+          comments: 0,
+          discovery: [
+            { label: t('postInsights.home', 'Home'), percentage: 0, color: colors.emerald },
+            { label: t('postInsights.explore', 'Explore'), percentage: 0, color: colors.info },
+            { label: t('postInsights.hashtags', 'Hashtags'), percentage: 0, color: colors.gold },
+            { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: colors.text.tertiary },
+          ],
+          interactions: { profileTaps: 0, websiteTaps: 0, emailTaps: 0 },
+        });
       }
+    } catch {
+      setInsights(null);
+    } finally {
+      setLoading(false);
     }
-    loadData();
-    return () => { cancelled = true; };
   }, [params.postId, params.postType, t]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, [loadData]);
 
   const formatNumber = (n: number): string => {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -190,6 +193,13 @@ function PostInsightsContent() {
           paddingHorizontal: spacing.base,
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.emerald}
+          />
+        }
       >
         {/* Post Preview Card */}
         {post ? (

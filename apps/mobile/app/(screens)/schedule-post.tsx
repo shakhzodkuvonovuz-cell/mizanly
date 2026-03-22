@@ -1,12 +1,11 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -51,8 +50,9 @@ export default function SchedulePostScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthNames = Array.from({ length: 12 }, (_, i) =>
+    new Date(2024, i, 1).toLocaleDateString(undefined, { month: 'long' })
+  );
 
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -95,6 +95,7 @@ export default function SchedulePostScreen() {
   const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
   // Note: Backend auto-publisher not yet implemented — scheduled posts require a BullMQ cron job
+  // TODO [cross-scope]: Backend create DTOs may not validate scheduledAt field — verify in posts/threads/reels DTOs
   const handleSchedule = async () => {
     setIsScheduling(true);
     haptic.medium();
@@ -249,7 +250,11 @@ export default function SchedulePostScreen() {
 
               {/* Weekday Headers */}
               <View style={styles.weekdayRow}>
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                {Array.from({ length: 7 }, (_, i) => {
+                // 2023-12-31 is a Sunday; offset by i to get Sun-Sat
+                const d = new Date(2023, 11, 31 + i);
+                return d.toLocaleDateString(undefined, { weekday: 'narrow' });
+              }).map((day, i) => (
                   <Text key={i} style={styles.weekdayText}>{day}</Text>
                 ))}
               </View>
@@ -431,7 +436,7 @@ export default function SchedulePostScreen() {
                   style={styles.bestTimeGradient}
                 >
                   <Icon name="trending-up" size="sm" color={colors.gold} />
-                  <Text style={styles.bestTimeText}>6:00 PM ({t('screens.schedule-post.highEngagement')})</Text>
+                  <Text style={styles.bestTimeText}>{t('screens.schedule-post.bestTimeTip', 'Check Creator Studio for best posting times')}</Text>
                 </LinearGradient>
               </View>
             </LinearGradient>
@@ -501,7 +506,7 @@ export default function SchedulePostScreen() {
               style={styles.scheduleButtonGradient}
             >
               {isScheduling ? (
-                <Skeleton.Circle size={20} />
+                <ActivityIndicator size="small" color="#FFF" />
               ) : (
                 <>
                   <Icon name="calendar" size="sm" color="#FFF" />
@@ -550,7 +555,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   userName: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.primary,
   },
   userHandle: {
@@ -639,7 +644,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   monthText: {
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.primary,
   },
   weekdayRow: {
@@ -651,7 +656,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     textAlign: 'center',
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
-    fontWeight: '500',
+    fontFamily: fonts.bodyMedium,
   },
   calendarGrid: {
     flexDirection: 'row',
@@ -683,7 +688,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   todayDayText: {
     fontSize: fontSize.base,
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   selectedDay: {
     width: 36,
@@ -695,7 +700,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   selectedDayText: {
     fontSize: fontSize.base,
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   quickDates: {
     flexDirection: 'row',
@@ -717,7 +722,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   quickDateTextActive: {
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   timeCard: {
     marginHorizontal: spacing.base,
@@ -748,7 +753,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   timeTitle: {
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.primary,
   },
   timeLabel: {
@@ -778,11 +783,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timeOptionText: {
     fontSize: fontSize.base,
     color: colors.text.secondary,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.body, // TODO [cross-scope]: fonts.mono maps to DMSans (not monospace) — fix in theme/index.ts
   },
   timeOptionTextActive: {
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   ampmContainer: {
     flexDirection: 'row',
@@ -805,7 +810,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   ampmTextActive: {
     color: colors.emerald,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
   bestTimeContainer: {
     marginTop: spacing.md,
@@ -880,7 +885,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   summaryValue: {
     fontSize: fontSize.md,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     color: colors.gold,
     marginBottom: spacing.md,
   },
@@ -933,6 +938,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   scheduleButtonText: {
     fontSize: fontSize.base,
     color: '#FFF',
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
   },
 });

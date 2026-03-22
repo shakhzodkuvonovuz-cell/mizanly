@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
@@ -53,9 +54,15 @@ export default function EidCardsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <GlassHeader title={t('eidCards.title')} showBack />
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+        <GlassHeader
+          title={t('eidCards.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={false} onRefresh={() => {}} />}
+        >
           <View style={styles.grid}>
             {occasions.map((occ) => (
               <Pressable
@@ -92,7 +99,7 @@ export default function EidCardsScreen() {
             </View>
           )}
         </BottomSheet>
-      </View>
+      </SafeAreaView>
     </ScreenErrorBoundary>
   );
 }

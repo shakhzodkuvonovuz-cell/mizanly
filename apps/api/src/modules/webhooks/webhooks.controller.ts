@@ -13,16 +13,16 @@ class CreateWebhookBodyDto {
   @IsArray() @IsString({ each: true }) @ArrayMaxSize(20) @MaxLength(50, { each: true }) events: string[];
 }
 
-@ApiTags('Webhooks')
+@ApiTags('Community Webhooks')
 @Throttle({ default: { limit: 20, ttl: 60000 } })
-@Controller('webhooks')
+@Controller('community-webhooks')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()
-export class WebhooksController {
+export class CommunityWebhooksController {
   constructor(private webhooks: WebhooksService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a webhook' })
+  @ApiOperation({ summary: 'Create a webhook for a community' })
   async create(
     @CurrentUser('id') userId: string,
     @Body() body: CreateWebhookBodyDto,
@@ -31,9 +31,9 @@ export class WebhooksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List webhooks for a community' })
-  async list(@Query('circleId') circleId: string) {
-    return this.webhooks.list(circleId);
+  @ApiOperation({ summary: 'List webhooks for a community (requires membership)' })
+  async list(@CurrentUser('id') userId: string, @Query('circleId') circleId: string) {
+    return this.webhooks.list(circleId, userId);
   }
 
   @Delete(':id')

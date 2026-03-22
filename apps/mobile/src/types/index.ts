@@ -537,7 +537,7 @@ export interface Settings {
   notifyFollows: boolean;
   notifyMentions: boolean;
   notifyMessages: boolean;
-  sensitiveContentFilter: boolean;
+  sensitiveContent: boolean;
   reducedMotion: boolean;
   dailyTimeLimit?: number;
 }

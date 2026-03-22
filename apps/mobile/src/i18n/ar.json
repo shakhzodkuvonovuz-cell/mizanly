@@ -2011,7 +2011,16 @@
     "takeBreak": "تذكيرات الاستراحة",
     "takeBreakHint": "تلقي تذكير عند التصفح لفترة طويلة",
     "hours": "{{count}} ساعة",
-    "minutes": "{{count}} دقيقة"
+    "minutes": "{{count}} دقيقة",
+    "days": {
+      "sun": "أحد",
+      "mon": "إثن",
+      "tue": "ثلا",
+      "wed": "أرب",
+      "thu": "خمي",
+      "fri": "جمع",
+      "sat": "سبت"
+    }
   },
   "autoPlaySettings": {
     "title": "تشغيل تلقائي",

@@ -73,7 +73,7 @@ describe('HealthController', () => {
     it('should return 200 with status "healthy" when all services are up', async () => {
       prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
 
-      const result = await controller.check();
+      const result = await controller.check('admin-user-id');
 
       expect(result).toEqual(expect.objectContaining({
         status: 'healthy',
@@ -87,7 +87,7 @@ describe('HealthController', () => {
     it('should return status "degraded" when database query fails', async () => {
       prisma.$queryRaw.mockRejectedValue(new Error('DB connection failed'));
 
-      const result = await controller.check();
+      const result = await controller.check('admin-user-id');
 
       expect(result.status).not.toBe('healthy');
       expect(result.services.database).toBe('down');
@@ -142,25 +142,25 @@ describe('HealthController', () => {
   describe('response format', () => {
     it('should include timestamp as ISO string in health check', async () => {
       prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
-      const result = await controller.check();
+      const result = await controller.check('admin-user-id');
       expect(new Date(result.timestamp).toISOString()).toBe(result.timestamp);
     });
 
     it('should include version string', async () => {
       prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
-      const result = await controller.check();
+      const result = await controller.check('admin-user-id');
       expect(typeof result.version).toBe('string');
     });
 
     it('should report redis status', async () => {
       prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
-      const result = await controller.check();
+      const result = await controller.check('admin-user-id');
       expect(['up', 'down']).toContain(result.services.redis);
     });
 
     it('should handle all services healthy', async () => {
       prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
-      const result = await controller.check();
+      const result = await controller.check('admin-user-id');
       expect(result.status).toBe('healthy');
       expect(result.services.database).toBe('up');
     });

@@ -21,15 +21,6 @@ interface ReasonItem {
   detail: string;
 }
 
-const REASON_MAP: Record<string, { icon: IconName; label: string }> = {
-  follow: { icon: 'user', label: 'You follow this creator' },
-  trending: { icon: 'trending-up', label: 'Trending in your region' },
-  popular: { icon: 'heart', label: 'Popular with people you follow' },
-  interests: { icon: 'check-circle', label: 'Based on your interests' },
-  similar: { icon: 'layers', label: 'Similar to content you like' },
-  hashtag: { icon: 'hash', label: 'From a topic you follow' },
-};
-
 function WhyShowingContent() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
@@ -42,33 +33,60 @@ function WhyShowingContent() {
   const [post, setPost] = useState<Post | null>(null);
   const [reasons, setReasons] = useState<ReasonItem[]>([]);
 
+  // Map backend reason keys to icons
+  const reasonIconMap: Record<string, IconName> = {
+    follow: 'user',
+    trending: 'trending-up',
+    popular: 'heart',
+    interests: 'check-circle',
+    similar: 'layers',
+    hashtag: 'hash',
+    engagement: 'bar-chart-2',
+    recommended: 'eye',
+  };
+
   useEffect(() => {
     let cancelled = false;
     async function loadData() {
       try {
-        if (params.postId) {
-          const postData = await postsApi.getById(params.postId);
-          if (!cancelled) setPost(postData as Post);
+        const [postData, explainData] = await Promise.all([
+          params.postId ? postsApi.getById(params.postId) : null,
+          params.postId ? feedApi.explainPost(params.postId).catch(() => null) : null,
+        ]);
+        if (cancelled) return;
+        if (postData) setPost(postData as Post);
+
+        // Use real reasons from backend if available
+        if (explainData?.reasons?.length) {
+          const mapped: ReasonItem[] = explainData.reasons.map((reason: string) => {
+            const key = reason.toLowerCase().replace(/\s+/g, '_');
+            return {
+              icon: reasonIconMap[key] ?? 'eye',
+              label: reason,
+              detail: t('whyShowing.algorithmDetail', 'This signal contributed to showing you this content'),
+            };
+          });
+          setReasons(mapped);
+        } else {
+          // Fallback to default reasons if backend doesn't provide them
+          setReasons([
+            {
+              icon: 'user',
+              label: t('whyShowing.reasonFollow', 'You follow this creator'),
+              detail: t('whyShowing.reasonFollowDetail', 'Content from accounts you follow appears in your feed'),
+            },
+            {
+              icon: 'trending-up',
+              label: t('whyShowing.reasonTrending', 'Trending content'),
+              detail: t('whyShowing.reasonTrendingDetail', 'This post is getting high engagement in your community'),
+            },
+            {
+              icon: 'check-circle',
+              label: t('whyShowing.reasonInterests', 'Based on your interests'),
+              detail: t('whyShowing.reasonInterestsDetail', 'You have engaged with similar content before'),
+            },
+          ]);
         }
-        // Build reasons based on post data — in production, backend would provide these
-        const defaultReasons: ReasonItem[] = [
-          {
-            icon: 'user',
-            label: t('whyShowing.reasonFollow', 'You follow this creator'),
-            detail: t('whyShowing.reasonFollowDetail', 'Content from accounts you follow appears in your feed'),
-          },
-          {
-            icon: 'trending-up',
-            label: t('whyShowing.reasonTrending', 'Trending content'),
-            detail: t('whyShowing.reasonTrendingDetail', 'This post is getting high engagement in your community'),
-          },
-          {
-            icon: 'check-circle',
-            label: t('whyShowing.reasonInterests', 'Based on your interests'),
-            detail: t('whyShowing.reasonInterestsDetail', 'You have engaged with similar content before'),
-          },
-        ];
-        if (!cancelled) setReasons(defaultReasons);
       } catch {
         // Use fallback reasons
         if (!cancelled) {
@@ -109,10 +127,7 @@ function WhyShowingContent() {
   const handleSeeLess = useCallback(async () => {
     try {
       if (params.postId) {
-        await feedApi.dismiss({
-          postId: params.postId,
-          reason: 'see_less',
-        });
+        await feedApi.dismiss(params.postType ?? 'post', params.postId);
       }
       Alert.alert(
         t('whyShowing.seeLessTitle', 'Updated'),

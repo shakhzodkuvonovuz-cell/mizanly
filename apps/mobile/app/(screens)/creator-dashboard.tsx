@@ -9,7 +9,6 @@ import {
   RefreshControl,
   Dimensions,
   Image,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -30,6 +29,18 @@ import { navigate } from '@/utils/navigation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.4;
+
+const formatNumber = (n: number): string => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+};
+
+const formatChange = (n: number): string => {
+  if (n > 0) return `+${n.toFixed(1)}%`;
+  if (n < 0) return `${n.toFixed(1)}%`;
+  return '0%';
+};
 
 interface OverviewStat {
   label: string;
@@ -165,18 +176,6 @@ function CreatorDashboardContent() {
     setRefreshing(false);
   }, [loadData]);
 
-  const formatNumber = (n: number): string => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-    return String(n);
-  };
-
-  const formatChange = (n: number): string => {
-    if (n > 0) return `+${n.toFixed(1)}%`;
-    if (n < 0) return `${n.toFixed(1)}%`;
-    return '0%';
-  };
-
   const renderOverviewCard = useCallback(
     ({ item, index }: { item: OverviewStat; index: number }) => (
       <Animated.View
@@ -198,7 +197,7 @@ function CreatorDashboardContent() {
         </Text>
       </Animated.View>
     ),
-    [],
+    [tc.bgCard],
   );
 
   const renderContentTab = useCallback(() => {
@@ -486,39 +485,7 @@ function CreatorDashboardContent() {
         title={t('creatorDashboard.title', 'Creator Studio')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
-      <FlatList
-        data={[]}
-        keyExtractor={() => 'dummy'}
-        renderItem={null}
-        ListHeaderComponent={
-          <View>
-            {/* Overview Cards */}
-            <FlatList
-              data={overviewStats}
-              keyExtractor={(item) => item.label}
-              renderItem={renderOverviewCard}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.overviewContainer}
-              style={styles.overviewScroll}
-            />
-
-            {/* Tab Selector */}
-            <View style={styles.tabSelectorContainer}>
-              <TabSelector
-                tabs={translatedTabs}
-                activeKey={activeTab}
-                onTabChange={setActiveTab}
-                variant="pill"
-              />
-            </View>
-
-            {/* Tab Content */}
-            {activeTab === 'content' ? renderContentTab() : null}
-            {activeTab === 'audience' ? renderAudienceTab() : null}
-            {activeTab === 'revenue' ? renderRevenueTab() : null}
-          </View>
-        }
+      <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + 60,
           paddingBottom: insets.bottom + spacing['2xl'],
@@ -531,7 +498,34 @@ function CreatorDashboardContent() {
           />
         }
         showsVerticalScrollIndicator={false}
-      />
+      >
+        {/* Overview Cards */}
+        <FlatList
+          data={overviewStats}
+          keyExtractor={(item) => item.label}
+          renderItem={renderOverviewCard}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.overviewContainer}
+          style={styles.overviewScroll}
+          scrollEnabled
+        />
+
+        {/* Tab Selector */}
+        <View style={styles.tabSelectorContainer}>
+          <TabSelector
+            tabs={translatedTabs}
+            activeKey={activeTab}
+            onTabChange={setActiveTab}
+            variant="pill"
+          />
+        </View>
+
+        {/* Tab Content */}
+        {activeTab === 'content' ? renderContentTab() : null}
+        {activeTab === 'audience' ? renderAudienceTab() : null}
+        {activeTab === 'revenue' ? renderRevenueTab() : null}
+      </ScrollView>
     </View>
   );
 }

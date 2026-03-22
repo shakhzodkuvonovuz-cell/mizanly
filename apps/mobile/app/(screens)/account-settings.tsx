@@ -10,7 +10,7 @@ import { useClerk, useUser } from '@clerk/clerk-expo';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
-import { Switch } from 'react-native-gesture-handler';
+// Switch import removed — not used on this screen
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';

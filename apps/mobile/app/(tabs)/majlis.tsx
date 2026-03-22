@@ -5,7 +5,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -76,7 +76,6 @@ export default function MajlisScreen() {
   const { t, isRTL } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
-  const navigation = useNavigation();
   const haptic = useHaptic();
   const tc = useThemeColors();
   const feedType = useStore((s) => s.majlisFeedType);
@@ -99,12 +98,8 @@ export default function MajlisScreen() {
   const feedRef = useRef<FlashListRef<Thread>>(null);
   useScrollToTop(feedRef as React.RefObject<FlashListRef<Thread>>);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus' as never, () => {
-      feedRef.current?.scrollToOffset({ offset: 0, animated: true });
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
+  // which would reset scroll position when returning from sub-screens
 
   // Floating compose button
   const fabScale = useSharedValue(1);
@@ -126,7 +121,7 @@ export default function MajlisScreen() {
     queryFn: ({ pageParam }) => {
       // Video tab: use the same feed endpoint but pass 'video' type hint
       const type = feedType === 'video' ? 'foryou' : feedType;
-      return threadsApi.getFeed(type as 'foryou' | 'following' | 'trending', pageParam as string | undefined);
+      return threadsApi.getFeed(type as 'foryou' | 'following' | 'trending' | 'video', pageParam as string | undefined);
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
@@ -162,7 +157,7 @@ export default function MajlisScreen() {
         onAction={() => router.push('/(screens)/create-thread')}
       />
     )
-  ), [feedQuery.isLoading, router]);
+  ), [feedQuery.isLoading, feedQuery.isError, router, t]);
 
   const listFooter = useMemo(() => {
     if (feedQuery.isFetchingNextPage) {
@@ -181,7 +176,7 @@ export default function MajlisScreen() {
       );
     }
     return null;
-  }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, threads.length]);
+  }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, threads.length, t]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -242,7 +237,7 @@ export default function MajlisScreen() {
       <TabSelector
         tabs={TABS}
         activeKey={feedType}
-        onTabChange={(key) => setFeedType(key as 'foryou' | 'following' | 'trending')}
+        onTabChange={(key) => setFeedType(key as 'foryou' | 'following' | 'trending' | 'video')}
       />
 
       {/* Trending hashtags */}
@@ -291,6 +286,7 @@ export default function MajlisScreen() {
           estimatedItemSize={200}
           windowSize={7}
           maxToRenderPerBatch={5}
+          contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
         />
       </Animated.View>
@@ -394,9 +390,5 @@ const styles = StyleSheet.create({
   endOfFeedText: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
-  },
-  highEngagementCard: {
-    borderLeftWidth: 2,
-    borderLeftColor: colors.gold,
   },
 });

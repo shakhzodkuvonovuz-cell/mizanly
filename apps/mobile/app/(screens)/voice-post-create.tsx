@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions, Alert } from 'react-native';
 import Animated, { FadeInUp, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
@@ -30,6 +30,10 @@ export default function VoicePostCreateScreen() {
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const stopRecordingRef = useRef<() => void>(() => {});
+  const durationRef = useRef(0);
+  // Memoize waveform random heights to prevent flickering on re-render (Finding 50)
+  const waveformHeights = useRef(Array.from({ length: 30 }, () => 10 + Math.random() * 40)).current;
 
   const pulseScale = useSharedValue(1);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulseScale.value }] }));
@@ -43,7 +47,11 @@ export default function VoicePostCreateScreen() {
 
   const startRecording = useCallback(async () => {
     try {
-      await Audio.requestPermissionsAsync();
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert(t('voicePost.permissionNeeded'), t('voicePost.microphoneRequired'));
+        return;
+      }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const recording = new Audio.Recording();
       await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
@@ -56,14 +64,13 @@ export default function VoicePostCreateScreen() {
 
       pulseScale.value = withRepeat(withTiming(1.15, { duration: 800 }), -1, true);
 
+      durationRef.current = 0;
       intervalRef.current = setInterval(() => {
-        setDuration(d => {
-          if (d >= MAX_DURATION) {
-            stopRecording();
-            return d;
-          }
-          return d + 1;
-        });
+        durationRef.current += 1;
+        setDuration(durationRef.current);
+        if (durationRef.current >= MAX_DURATION) {
+          stopRecordingRef.current();
+        }
       }, 1000);
     } catch {
       // Permission denied or error
@@ -83,7 +90,10 @@ export default function VoicePostCreateScreen() {
     } catch {
       setIsRecording(false);
     }
-  }, []);
+  }, [haptic, pulseScale]);
+
+  // Keep stopRecordingRef in sync with the latest callback
+  stopRecordingRef.current = stopRecording;
 
   const postMutation = useMutation({
     mutationFn: async () => {
@@ -127,11 +137,11 @@ export default function VoicePostCreateScreen() {
             <Text style={styles.maxDuration}>{t('voicePost.maxDuration', { time: formatTime(MAX_DURATION) })}</Text>
           </Animated.View>
 
-          {/* Waveform placeholder */}
+          {/* Waveform placeholder — uses memoized random heights to prevent flicker */}
           <View style={styles.waveform}>
-            {Array.from({ length: 30 }).map((_, i) => {
+            {waveformHeights.map((randomHeight, i) => {
               const height = isRecording
-                ? 10 + Math.random() * 40
+                ? randomHeight
                 : recordingUri ? 10 + Math.sin(i * 0.5) * 20 + 20 : 10;
               return (
                 <View

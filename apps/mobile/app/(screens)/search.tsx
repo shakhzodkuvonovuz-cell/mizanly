@@ -3,7 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   FlatList, RefreshControl, Image,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
@@ -148,7 +147,6 @@ export default function SearchScreen() {
   const [isFocused, setIsFocused] = useState(false);
   const [activeTab, setActiveTab] = useState<SearchTab>('people');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  const mountedRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -179,20 +177,16 @@ export default function SearchScreen() {
     setSearchHistory(updated);
   }, []);
 
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-    if (debouncedQuery.trim().length >= 2) {
-      addSearchToHistory(debouncedQuery);
-    }
-  }, [debouncedQuery, addSearchToHistory]);
-
   const handleQueryChange = (text: string) => {
     setQuery(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => setDebouncedQuery(text), 400);
+  };
+
+  const handleSearchSubmit = () => {
+    if (query.trim().length >= 2) {
+      addSearchToHistory(query.trim());
+    }
   };
 
   const searchQuery = useQuery({
@@ -257,11 +251,11 @@ export default function SearchScreen() {
   });
 
   const explorePosts = exploreQuery.data?.pages.flatMap((p) => p.data) ?? [];
-  const posts = postsQuery.data?.pages.flatMap((p) => p.posts ?? []) ?? [];
-  const threads = threadsQuery.data?.pages.flatMap((p) => p.threads ?? []) ?? [];
-  const reels: Reel[] = reelsQuery.data?.pages.flatMap((p) => p.reels ?? []) ?? [];
-  const videos: Video[] = videosQuery.data?.pages.flatMap((p) => p.videos ?? []) ?? [];
-  const channels: Channel[] = channelsQuery.data?.pages.flatMap((p) => p.channels ?? []) ?? [];
+  const posts = postsQuery.data?.pages.flatMap((p) => p.data ?? p.posts ?? []) ?? [];
+  const threads = threadsQuery.data?.pages.flatMap((p) => p.data ?? p.threads ?? []) ?? [];
+  const reels: Reel[] = reelsQuery.data?.pages.flatMap((p) => p.data ?? p.reels ?? []) ?? [];
+  const videos: Video[] = videosQuery.data?.pages.flatMap((p) => p.data ?? p.videos ?? []) ?? [];
+  const channels: Channel[] = channelsQuery.data?.pages.flatMap((p) => p.data ?? p.channels ?? []) ?? [];
   const people: User[] = searchQuery.data?.people ?? [];
   const hashtags = searchQuery.data?.hashtags ?? [];
   const trending: TrendingHashtag[] = trendingQuery.data ?? [];
@@ -290,6 +284,7 @@ export default function SearchScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
+            onSubmitEditing={handleSearchSubmit}
           />
           {query.length > 0 && (
             <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>

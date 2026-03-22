@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 interface EmailData {
@@ -8,12 +8,20 @@ interface EmailData {
 }
 
 @Injectable()
-export class EmailService {
+export class EmailService implements OnModuleInit {
   private readonly logger = new Logger(EmailService.name);
   private resend: { emails: { send: (data: { from: string; to: string; subject: string; html: string }) => Promise<unknown> } } | null = null;
+  private initPromise: Promise<void>;
+  private readonly fromAddress: string;
 
   constructor(private config: ConfigService) {
-    this.initResend();
+    this.fromAddress = this.config.get<string>('EMAIL_FROM') || 'Mizanly <noreply@mizanly.com>';
+    this.initPromise = this.initResend();
+  }
+
+  async onModuleInit() {
+    // Ensure Resend is initialized before the module is ready to serve requests
+    await this.initPromise;
   }
 
   private async initResend() {
@@ -32,11 +40,26 @@ export class EmailService {
     }
   }
 
+  /**
+   * HTML-escape user-provided strings to prevent XSS in email templates.
+   */
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   private async send(data: EmailData): Promise<boolean> {
+    // Ensure Resend is initialized (handles race condition)
+    await this.initPromise;
+
     if (this.resend) {
       try {
         await this.resend.emails.send({
-          from: 'Mizanly <noreply@mizanly.com>',
+          from: this.fromAddress,
           to: data.to,
           subject: data.subject,
           html: data.html,
@@ -49,9 +72,8 @@ export class EmailService {
       }
     }
 
-    // Fallback: log the email content
-    this.logger.log(`[EMAIL LOG] To: ${data.to} | Subject: ${data.subject}`);
-    this.logger.debug(`[EMAIL LOG] Body: ${data.html.substring(0, 200)}...`);
+    // Fallback: log subject only (no PII/content in logs)
+    this.logger.log(`[EMAIL LOG] To: ${data.to} | Subject: ${data.subject} (not sent — Resend not configured)`);
     return false;
   }
 
@@ -62,7 +84,7 @@ export class EmailService {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0D1117; color: #fff; padding: 0; margin: 0;">
   <div style="max-width: 600px; margin: 0 auto; padding: 32px 24px;">
     <div style="background: #0A7B4F; padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
-      <h1 style="margin: 0; font-size: 28px; color: #fff; letter-spacing: 1px;">ميزانلي</h1>
+      <h1 style="margin: 0; font-size: 28px; color: #fff; letter-spacing: 1px;">&#1605;&#1610;&#1586;&#1575;&#1606;&#1604;&#1610;</h1>
       <p style="margin: 4px 0 0; font-size: 14px; color: rgba(255,255,255,0.8);">Mizanly</p>
     </div>
     <div style="background: #161B22; padding: 24px; border-radius: 0 0 12px 12px;">
@@ -77,10 +99,11 @@ export class EmailService {
   }
 
   async sendWelcome(email: string, name: string): Promise<boolean> {
+    const safeName = this.escapeHtml(name);
     const html = this.wrapTemplate(`
-      <h2 style="color: #C8963E; margin: 0 0 16px;">Welcome to Mizanly, ${name}!</h2>
+      <h2 style="color: #C8963E; margin: 0 0 16px;">Welcome to Mizanly, ${safeName}!</h2>
       <p style="color: #8B949E; line-height: 1.6;">
-        Assalamu Alaikum! We're thrilled to have you join the Mizanly community —
+        Assalamu Alaikum! We're thrilled to have you join the Mizanly community &mdash;
         a culturally intelligent platform built for the global Muslim community.
       </p>
       <p style="color: #8B949E; line-height: 1.6;">
@@ -96,19 +119,22 @@ export class EmailService {
         </a>
       </div>
     `);
-    return this.send({ to: email, subject: 'Welcome to Mizanly! 🌙', html });
+    return this.send({ to: email, subject: 'Welcome to Mizanly!', html });
   }
 
   async sendSecurityAlert(email: string, data: { device: string; location: string; time: string }): Promise<boolean> {
+    const safeDevice = this.escapeHtml(data.device);
+    const safeLocation = this.escapeHtml(data.location);
+    const safeTime = this.escapeHtml(data.time);
     const html = this.wrapTemplate(`
       <h2 style="color: #F85149; margin: 0 0 16px;">New Login Detected</h2>
       <p style="color: #8B949E; line-height: 1.6;">
         A new login to your Mizanly account was detected:
       </p>
       <table style="width: 100%; margin: 16px 0;">
-        <tr><td style="color: #6E7781; padding: 8px 0;">Device:</td><td style="color: #fff; padding: 8px 0;">${data.device}</td></tr>
-        <tr><td style="color: #6E7781; padding: 8px 0;">Location:</td><td style="color: #fff; padding: 8px 0;">${data.location}</td></tr>
-        <tr><td style="color: #6E7781; padding: 8px 0;">Time:</td><td style="color: #fff; padding: 8px 0;">${data.time}</td></tr>
+        <tr><td style="color: #6E7781; padding: 8px 0;">Device:</td><td style="color: #fff; padding: 8px 0;">${safeDevice}</td></tr>
+        <tr><td style="color: #6E7781; padding: 8px 0;">Location:</td><td style="color: #fff; padding: 8px 0;">${safeLocation}</td></tr>
+        <tr><td style="color: #6E7781; padding: 8px 0;">Time:</td><td style="color: #fff; padding: 8px 0;">${safeTime}</td></tr>
       </table>
       <p style="color: #8B949E; line-height: 1.6;">
         If this wasn't you, please change your password immediately and enable two-factor authentication.
@@ -124,24 +150,28 @@ export class EmailService {
     topPost?: string;
     prayerStreak: number;
   }): Promise<boolean> {
+    const safeName = this.escapeHtml(data.name);
+    const safeTopPost = data.topPost ? this.escapeHtml(data.topPost) : '';
     const html = this.wrapTemplate(`
       <h2 style="color: #C8963E; margin: 0 0 16px;">Your Weekly Summary</h2>
-      <p style="color: #8B949E;">Assalamu Alaikum ${data.name}, here's your week on Mizanly:</p>
-      <div style="display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap;">
-        <div style="background: rgba(10,123,79,0.15); border-radius: 12px; padding: 16px; flex: 1; min-width: 120px; text-align: center;">
-          <p style="font-size: 28px; margin: 0; color: #0A7B4F; font-weight: 700;">${data.newFollowers}</p>
-          <p style="color: #8B949E; font-size: 12px; margin: 4px 0 0;">New Followers</p>
-        </div>
-        <div style="background: rgba(200,150,62,0.15); border-radius: 12px; padding: 16px; flex: 1; min-width: 120px; text-align: center;">
-          <p style="font-size: 28px; margin: 0; color: #C8963E; font-weight: 700;">${data.totalLikes}</p>
-          <p style="color: #8B949E; font-size: 12px; margin: 4px 0 0;">Total Likes</p>
-        </div>
-        <div style="background: rgba(10,123,79,0.15); border-radius: 12px; padding: 16px; flex: 1; min-width: 120px; text-align: center;">
-          <p style="font-size: 28px; margin: 0; color: #0A7B4F; font-weight: 700;">${data.prayerStreak}</p>
-          <p style="color: #8B949E; font-size: 12px; margin: 4px 0 0;">Prayer Streak</p>
-        </div>
-      </div>
-      ${data.topPost ? `<p style="color: #8B949E;">Your top post: <em style="color: #fff;">"${data.topPost}"</em></p>` : ''}
+      <p style="color: #8B949E;">Assalamu Alaikum ${safeName}, here's your week on Mizanly:</p>
+      <table style="width: 100%; margin: 24px 0; border-spacing: 8px;">
+        <tr>
+          <td style="background: rgba(10,123,79,0.15); border-radius: 12px; padding: 16px; text-align: center; width: 33%;">
+            <p style="font-size: 28px; margin: 0; color: #0A7B4F; font-weight: 700;">${data.newFollowers}</p>
+            <p style="color: #8B949E; font-size: 12px; margin: 4px 0 0;">New Followers</p>
+          </td>
+          <td style="background: rgba(200,150,62,0.15); border-radius: 12px; padding: 16px; text-align: center; width: 33%;">
+            <p style="font-size: 28px; margin: 0; color: #C8963E; font-weight: 700;">${data.totalLikes}</p>
+            <p style="color: #8B949E; font-size: 12px; margin: 4px 0 0;">Total Likes</p>
+          </td>
+          <td style="background: rgba(10,123,79,0.15); border-radius: 12px; padding: 16px; text-align: center; width: 33%;">
+            <p style="font-size: 28px; margin: 0; color: #0A7B4F; font-weight: 700;">${data.prayerStreak}</p>
+            <p style="color: #8B949E; font-size: 12px; margin: 4px 0 0;">Prayer Streak</p>
+          </td>
+        </tr>
+      </table>
+      ${safeTopPost ? `<p style="color: #8B949E;">Your top post: <em style="color: #fff;">&ldquo;${safeTopPost}&rdquo;</em></p>` : ''}
     `);
     return this.send({ to: email, subject: 'Your Weekly Mizanly Summary', html });
   }
@@ -152,9 +182,10 @@ export class EmailService {
     earnings: number;
     newSubscribers: number;
   }): Promise<boolean> {
+    const safeName = this.escapeHtml(data.name);
     const html = this.wrapTemplate(`
       <h2 style="color: #C8963E; margin: 0 0 16px;">Creator Weekly Summary</h2>
-      <p style="color: #8B949E;">Here's how your content performed this week, ${data.name}:</p>
+      <p style="color: #8B949E;">Here's how your content performed this week, ${safeName}:</p>
       <table style="width: 100%; margin: 16px 0;">
         <tr><td style="color: #6E7781; padding: 8px 0;">Views:</td><td style="color: #0A7B4F; font-weight: 700; padding: 8px 0;">${data.views.toLocaleString()}</td></tr>
         <tr><td style="color: #6E7781; padding: 8px 0;">Earnings:</td><td style="color: #C8963E; font-weight: 700; padding: 8px 0;">$${data.earnings.toFixed(2)}</td></tr>

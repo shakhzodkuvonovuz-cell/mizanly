@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -6,9 +6,7 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  RefreshControl,
   Alert,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -102,15 +100,10 @@ function ActionRow({
 export default function ManageDataScreen() {
   const router = useRouter();
   const { signOut } = useClerk();
-  const [refreshing, setRefreshing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const { t } = useTranslation();
   const tc = useThemeColors();
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, []);
+  // No async data to load — content is rendered immediately
 
   const clearWatchHistoryMutation = useMutation({
     mutationFn: () => usersApi.clearWatchHistory(),
@@ -214,11 +207,7 @@ export default function ManageDataScreen() {
     );
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    // Could refresh any data, but nothing yet.
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+  // No data to refresh on this static screen — RefreshControl removed
 
   return (
     <ScreenErrorBoundary>
@@ -228,29 +217,9 @@ export default function ManageDataScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
 
-        {isLoading ? (
-          <View style={{ padding: spacing.base, paddingTop: 100, gap: spacing.lg }}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flex: 1, gap: spacing.xs }}>
-                  <Skeleton.Rect width={140} height={14} />
-                  <Skeleton.Rect width={200} height={11} />
-                </View>
-                <Skeleton.Rect width={80} height={32} borderRadius={radius.sm} />
-              </View>
-            ))}
-          </View>
-        ) : (
         <ScrollView
           style={styles.body}
           contentContainerStyle={styles.bodyContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.emerald}
-            />
-          }
         >
           <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
@@ -305,7 +274,6 @@ export default function ManageDataScreen() {
             {t('settings.morePrivacySettingsSuffix')}
           </Text>
         </ScrollView>
-        )}
       </SafeAreaView>
   
     </ScreenErrorBoundary>

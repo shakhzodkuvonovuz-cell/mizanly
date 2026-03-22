@@ -30,9 +30,9 @@ export class ChecklistsController {
   }
 
   @Get('conversation/:conversationId')
-  @ApiOperation({ summary: 'Get all checklists for a conversation' })
-  async getByConversation(@Param('conversationId') conversationId: string) {
-    return this.checklistsService.getByConversation(conversationId);
+  @ApiOperation({ summary: 'Get all checklists for a conversation (members only)' })
+  async getByConversation(@CurrentUser('id') userId: string, @Param('conversationId') conversationId: string) {
+    return this.checklistsService.getByConversation(conversationId, userId);
   }
 
   @Post(':checklistId/items')

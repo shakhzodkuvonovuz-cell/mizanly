@@ -153,9 +153,10 @@ export default function DuaCollectionScreen() {
   }, [duasQuery, dailyDuaQuery, showBookmarked, bookmarkedQuery]);
 
   const handleShare = useCallback((dua: Dua) => {
-    const text = `${dua.arabicText}\n\n${dua.transliteration}\n\n${dua.translation.en}\n\n— ${dua.source} ${dua.sourceRef}\n\nShared from Mizanly`;
+    const translation = dua.translation[locale] || dua.translation.en || '';
+    const text = `${dua.arabicText}\n\n${dua.transliteration}\n\n${translation}\n\n— ${dua.source} ${dua.sourceRef}\n\nShared from Mizanly`;
     Share.share({ message: text }).catch(() => {});
-  }, []);
+  }, [locale]);
 
   const getCategoryLabel = useCallback((cat: string) => {
     const key = `duas.${cat}` as const;
@@ -234,7 +235,7 @@ export default function DuaCollectionScreen() {
       <EmptyState
         icon="heart"
         title={showBookmarked ? t('duas.bookmarked') : t('duas.title')}
-        subtitle={showBookmarked ? 'No bookmarked duas yet' : 'No duas found for this category'}
+        subtitle={showBookmarked ? t('duas.noBookmarkedDuas') : t('duas.noDuasForCategory')}
       />
     ) : null
   ), [duasQuery.isLoading, showBookmarked, t]);
@@ -245,9 +246,9 @@ export default function DuaCollectionScreen() {
         <GlassHeader
           title={t('duas.title')}
           leftAction={{
-            icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />,
+            icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('common.goBack'),
           }}
         />
 

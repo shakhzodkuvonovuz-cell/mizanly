@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet,
-  ScrollView, Switch, Alert, Linking, Pressable,
+  ScrollView, Alert, Linking, Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -190,7 +191,7 @@ export default function SettingsScreen() {
       setNotifyFollows(s.notifyFollows ?? true);
       setNotifyMentions(s.notifyMentions ?? true);
       setNotifyMessages(s.notifyMessages ?? true);
-      setSensitiveContent(s.sensitiveContentFilter ?? false);
+      setSensitiveContent(s.sensitiveContent ?? false);
       setReducedMotion(s.reducedMotion ?? false);
     }
   }, [s]);
@@ -489,7 +490,7 @@ export default function SettingsScreen() {
               icon={<Icon name="eye-off" size="sm" color={colors.emerald} />}
               hint={t('settings.hints.filterSensitiveContent')}
               value={sensitiveContent}
-              onToggle={(v) => { setSensitiveContent(v); wellbeingMutation.mutate({ sensitiveContentFilter: v }); }}
+              onToggle={(v) => { setSensitiveContent(v); wellbeingMutation.mutate({ sensitiveContent: v }); }}
             />
             <View style={styles.divider} />
             <Row
@@ -799,7 +800,7 @@ export default function SettingsScreen() {
             <View style={styles.divider} />
             <Row
               label={t('settings.creatorStorefront')}
-              icon={<Icon name="shopping-bag" size="sm" color={colors.emerald} />}
+              icon={<Icon name="briefcase" size="sm" color={colors.emerald} />}
               onPress={() => navigate('/(screens)/creator-storefront')}
             />
             <View style={styles.divider} />
@@ -839,7 +840,7 @@ export default function SettingsScreen() {
             <View style={styles.divider} />
             <Row
               label={t('community.fatwaQA')}
-              icon={<Icon name="help-circle" size="sm" color={colors.emerald} />}
+              icon={<Icon name="alert-circle" size="sm" color={colors.emerald} />}
               onPress={() => navigate('/(screens)/fatwa-qa')}
             />
             <View style={styles.divider} />

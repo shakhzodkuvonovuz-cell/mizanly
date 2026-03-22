@@ -17,7 +17,10 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
-const DAYS_OF_WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAYS_OF_WEEK_KEYS = [
+  'fasting.daySun', 'fasting.dayMon', 'fasting.dayTue', 'fasting.dayWed',
+  'fasting.dayThu', 'fasting.dayFri', 'fasting.daySat',
+];
 const FAST_TYPES = ['ramadan', 'monday', 'thursday', 'ayyam-al-bid', 'arafat', 'ashura', 'qada', 'nafl'];
 
 interface FastingLog {
@@ -153,8 +156,8 @@ export default function FastingTrackerScreen() {
   const monthLabel = useMemo(() => {
     const [year, month] = currentMonth.split('-').map(Number);
     const date = new Date(year, month - 1, 1);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  }, [currentMonth]);
+    return date.toLocaleDateString(isRTL ? 'ar' : undefined, { month: 'long', year: 'numeric' });
+  }, [currentMonth, isRTL]);
 
   const navigateMonth = useCallback((delta: number) => {
     const [year, month] = currentMonth.split('-').map(Number);
@@ -168,9 +171,9 @@ export default function FastingTrackerScreen() {
         <GlassHeader
           title={t('fasting.tracker')}
           leftAction={{
-            icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />,
+            icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('common.goBack'),
           }}
         />
 
@@ -252,8 +255,8 @@ export default function FastingTrackerScreen() {
 
             {/* Day labels */}
             <View style={styles.calWeekRow}>
-              {DAYS_OF_WEEK.map((d, i) => (
-                <Text key={i} style={styles.calWeekLabel}>{d}</Text>
+              {DAYS_OF_WEEK_KEYS.map((key, i) => (
+                <Text key={i} style={styles.calWeekLabel}>{t(key)}</Text>
               ))}
             </View>
 

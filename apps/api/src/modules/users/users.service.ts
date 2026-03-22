@@ -28,6 +28,9 @@ const PUBLIC_USER_FIELDS = {
   role: true,
   createdAt: true,
   lastSeenAt: true,
+  isDeleted: true,
+  isBanned: true,
+  isDeactivated: true,
 };
 
 const CHANNEL_SELECT = {
@@ -186,7 +189,7 @@ export class UsersService {
       reels,
       videos,
       comments,
-      messages: messages.map(m => ({ ...m, content: m.content ? '[encrypted]' : null })),
+      messages,
       followers: followers.map(f => f.followerId),
       following: following.map(f => f.followingId),
       likes,
@@ -197,27 +200,71 @@ export class UsersService {
   async deleteAccount(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { username: true },
+      select: { username: true, isDeleted: true },
     });
     if (!user) throw new NotFoundException('User not found');
+    if (user.isDeleted) throw new NotFoundException('Account already deleted');
 
-    // Soft delete: anonymize user data, mark as deleted
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        username: `deleted_${userId.slice(0, 8)}`,
-        displayName: 'Deleted User',
-        bio: '',
-        avatarUrl: null,
-        coverUrl: null,
-        website: null,
-        isDeleted: true,
-        deletedAt: new Date(),
-      },
+    // Full transactional soft-delete: anonymize PII + mark all content as removed (GDPR Article 17)
+    await this.prisma.$transaction(async (tx) => {
+      // Anonymize user profile — use full userId to prevent collision
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          username: `deleted_${userId}`,
+          displayName: 'Deleted User',
+          bio: '',
+          avatarUrl: null,
+          coverUrl: null,
+          website: null,
+          email: `deleted_${userId}@deleted.local`,
+          phone: null,
+          expoPushToken: null,
+          notificationsOn: false,
+          isDeleted: true,
+          deletedAt: new Date(),
+          isDeactivated: true,
+          deactivatedAt: new Date(),
+        },
+      });
+
+      // Soft-delete all user content
+      await tx.post.updateMany({
+        where: { userId },
+        data: { isRemoved: true, removedReason: 'Account deleted by user', removedAt: new Date() },
+      });
+      await tx.thread.updateMany({
+        where: { userId },
+        data: { isRemoved: true },
+      });
+      await tx.comment.updateMany({
+        where: { userId },
+        data: { isRemoved: true },
+      });
+      await tx.reel.updateMany({
+        where: { userId },
+        data: { isRemoved: true },
+      });
+      await tx.video.updateMany({
+        where: { userId },
+        data: { isRemoved: true },
+      });
+      await tx.story.deleteMany({ where: { userId } });
+
+      // Delete sensitive personal data
+      await tx.profileLink.deleteMany({ where: { userId } });
+      await tx.twoFactorSecret.deleteMany({ where: { userId } });
+      await tx.encryptionKey.deleteMany({ where: { userId } });
+      await tx.device.deleteMany({ where: { userId } });
+
+      // Remove social graph
+      await tx.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } });
+      await tx.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } });
+
+      // Delete bookmarks and reactions
+      await tx.bookmark.deleteMany({ where: { userId } });
+      await tx.postReaction.deleteMany({ where: { userId } });
     });
-
-    // Delete all device tokens (stop push notifications)
-    await this.prisma.device.deleteMany({ where: { userId } });
 
     await this.redis.del(`user:${user.username}`);
     return { deleted: true };
@@ -241,6 +288,11 @@ export class UsersService {
       if (!user) throw new NotFoundException('User not found');
       // Cache for 5 minutes
       await this.redis.setex(`user:${username}`, 300, JSON.stringify(user));
+    }
+
+    // Reject deleted, banned, or deactivated profiles
+    if (user.isDeleted || user.isBanned || user.isDeactivated) {
+      throw new NotFoundException('User not found');
     }
 
     // Check if current user is blocked
@@ -676,9 +728,25 @@ export class UsersService {
     return { stats };
   }
 
-  async getFollowers(username: string, cursor?: string, limit = 20) {
-    const target = await this.prisma.user.findUnique({ where: { username } });
+  async getFollowers(username: string, cursor?: string, viewerId?: string, limit = 20) {
+    const target = await this.prisma.user.findUnique({ where: { username }, select: { id: true, isPrivate: true, isDeleted: true, isBanned: true, isDeactivated: true } });
     if (!target) throw new NotFoundException('User not found');
+    if (target.isDeleted || target.isBanned || target.isDeactivated) throw new NotFoundException('User not found');
+    // Block check
+    if (viewerId) {
+      const block = await this.prisma.block.findFirst({
+        where: { OR: [{ blockerId: viewerId, blockedId: target.id }, { blockerId: target.id, blockedId: viewerId }] },
+      });
+      if (block) throw new ForbiddenException('User not available');
+    }
+    // Private accounts: only the owner or their followers can see the followers list
+    if (target.isPrivate && viewerId !== target.id) {
+      if (!viewerId) throw new ForbiddenException('This account is private');
+      const isFollowing = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: viewerId, followingId: target.id } },
+      });
+      if (!isFollowing) throw new ForbiddenException('This account is private');
+    }
     const userId = target.id;
     const follows = await this.prisma.follow.findMany({
       where: { followingId: userId },
@@ -719,9 +787,25 @@ export class UsersService {
     };
   }
 
-  async getFollowing(username: string, cursor?: string, limit = 20) {
-    const target = await this.prisma.user.findUnique({ where: { username } });
+  async getFollowing(username: string, cursor?: string, viewerId?: string, limit = 20) {
+    const target = await this.prisma.user.findUnique({ where: { username }, select: { id: true, isPrivate: true, isDeleted: true, isBanned: true, isDeactivated: true } });
     if (!target) throw new NotFoundException('User not found');
+    if (target.isDeleted || target.isBanned || target.isDeactivated) throw new NotFoundException('User not found');
+    // Block check
+    if (viewerId) {
+      const block = await this.prisma.block.findFirst({
+        where: { OR: [{ blockerId: viewerId, blockedId: target.id }, { blockerId: target.id, blockedId: viewerId }] },
+      });
+      if (block) throw new ForbiddenException('User not available');
+    }
+    // Private accounts: only the owner or their followers can see the following list
+    if (target.isPrivate && viewerId !== target.id) {
+      if (!viewerId) throw new ForbiddenException('This account is private');
+      const isFollowing = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: viewerId, followingId: target.id } },
+      });
+      if (!isFollowing) throw new ForbiddenException('This account is private');
+    }
     const userId = target.id;
     const follows = await this.prisma.follow.findMany({
       where: { followerId: userId },
@@ -766,22 +850,38 @@ export class UsersService {
     if (reporterId === reportedUserId) return { reported: false };
     const reasonMap: Record<string, ReportReason> = {
       spam: 'SPAM' as ReportReason,
-      impersonation: 'HARASSMENT' as ReportReason,
-      inappropriate: 'NUDITY' as ReportReason,
+      impersonation: 'IMPERSONATION' as ReportReason,
+      inappropriate: 'OTHER' as ReportReason,
+      harassment: 'HARASSMENT' as ReportReason,
+      nudity: 'NUDITY' as ReportReason,
+      violence: 'VIOLENCE' as ReportReason,
+      hate_speech: 'HATE_SPEECH' as ReportReason,
+      self_harm: 'SELF_HARM' as ReportReason,
+      misinformation: 'MISINFORMATION' as ReportReason,
+      terrorism: 'TERRORISM' as ReportReason,
+      doxxing: 'DOXXING' as ReportReason,
+      copyright: 'COPYRIGHT' as ReportReason,
     };
-    const mappedReason = reasonMap[reason] ?? ('SPAM' as ReportReason);
+    const mappedReason = reasonMap[reason] ?? ('OTHER' as ReportReason);
     await this.prisma.report.create({
       data: { reporterId, reportedUserId, reason: mappedReason },
-    }).catch((err: unknown) => this.logger.error('Failed to save report', err));
+    });
     return { reported: true };
   }
 
   async getMutualFollowers(currentUserId: string, targetUsername: string, limit = 20) {
     const target = await this.prisma.user.findUnique({
       where: { username: targetUsername },
-      select: { id: true },
+      select: { id: true, isDeleted: true, isBanned: true, isDeactivated: true, isPrivate: true },
     });
     if (!target) throw new NotFoundException("User not found");
+    if (target.isDeleted || target.isBanned || target.isDeactivated) throw new NotFoundException('User not found');
+
+    // Block check
+    const block = await this.prisma.block.findFirst({
+      where: { OR: [{ blockerId: currentUserId, blockedId: target.id }, { blockerId: target.id, blockedId: currentUserId }] },
+    });
+    if (block) throw new ForbiddenException('User not available');
 
     const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 50);
     const mutual = await this.prisma.$queryRaw<Array<{id: string, username: string, displayName: string, avatarUrl: string | null}>>`
@@ -790,6 +890,7 @@ export class UsersService {
       INNER JOIN follows f2 ON f1."followerId" = f2."followerId"
       INNER JOIN users u ON f1."followerId" = u.id
       WHERE f1."followingId" = ${currentUserId} AND f2."followingId" = ${target.id}
+        AND u."isDeleted" = false AND u."isBanned" = false AND u."isDeactivated" = false
       LIMIT ${safeLimit}
     `;
     return {
@@ -833,19 +934,62 @@ export class UsersService {
   }
 
   async requestAccountDeletion(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, isDeleted: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.isDeleted) throw new NotFoundException('Account already deleted');
+
+    // 30-day grace period: deactivate now, schedule deletion
+    const scheduledDeletionDate = new Date();
+    scheduledDeletionDate.setDate(scheduledDeletionDate.getDate() + 30);
+
     await this.prisma.user.update({
       where: { id: userId },
-      data: { deletedAt: new Date(), isDeactivated: true },
+      data: {
+        deletedAt: scheduledDeletionDate,
+        isDeactivated: true,
+        deactivatedAt: new Date(),
+      },
     });
-    return { requested: true };
+    await this.redis.del(`user:${user.username}`);
+    return {
+      requested: true,
+      scheduledDeletionDate: scheduledDeletionDate.toISOString(),
+      message: 'Account will be permanently deleted in 30 days. You can cancel before then.',
+    };
   }
 
   async cancelAccountDeletion(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isDeleted: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.isDeleted) throw new NotFoundException('Account already permanently deleted');
+
     await this.prisma.user.update({
       where: { id: userId },
-      data: { deletedAt: null, isDeactivated: false },
+      data: { deletedAt: null, isDeactivated: false, deactivatedAt: null },
     });
     return { cancelled: true };
+  }
+
+  async reactivateAccount(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { isDeactivated: true, isDeleted: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.isDeleted) throw new NotFoundException('Account permanently deleted — cannot reactivate');
+    if (!user.isDeactivated) return { reactivated: true, message: 'Account is already active' };
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { isDeactivated: false, deactivatedAt: null, deletedAt: null },
+    });
+    return { reactivated: true };
   }
 
   async updateNasheedMode(userId: string, enabled: boolean) {

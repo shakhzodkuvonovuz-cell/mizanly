@@ -7,7 +7,6 @@ import {
   TextInput,
   Pressable,
   Platform,
-  Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';

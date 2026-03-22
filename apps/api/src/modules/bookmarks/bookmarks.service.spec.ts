@@ -16,7 +16,8 @@ describe('BookmarksService', () => {
         {
           provide: PrismaService,
           useValue: {
-            $transaction: jest.fn(),
+            $transaction: jest.fn().mockImplementation((promises) => Promise.all(promises)),
+            $executeRaw: jest.fn().mockResolvedValue(1),
             savedPost: {
               findUnique: jest.fn(),
               create: jest.fn(),
@@ -43,6 +44,7 @@ describe('BookmarksService', () => {
             },
             thread: {
               findUnique: jest.fn(),
+              update: jest.fn(),
             },
             video: {
               findUnique: jest.fn(),

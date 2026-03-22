@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, Alert,
   KeyboardAvoidingView, Platform, ScrollView,
-  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -139,13 +138,19 @@ function LocationPickerContent() {
       longitude: location.longitude,
       address,
     };
-    router.back();
-    // Pass location data back via global event or params
-    // The conversation screen should handle this via router params
-    router.setParams({
-      sharedLocation: JSON.stringify(locationData),
-    });
-  }, [location, address, haptic, router]);
+    // Navigate back to conversation with location data as params
+    if (params.conversationId) {
+      router.navigate({
+        pathname: '/(screens)/conversation/[id]',
+        params: {
+          id: params.conversationId,
+          sharedLocation: JSON.stringify(locationData),
+        },
+      });
+    } else {
+      router.back();
+    }
+  }, [location, address, haptic, router, params.conversationId]);
 
   return (
     <View style={[styles.container, { backgroundColor: tc.bg }]}>

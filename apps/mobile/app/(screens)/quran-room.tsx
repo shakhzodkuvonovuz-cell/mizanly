@@ -49,6 +49,8 @@ export default function QuranRoomScreen() {
   const haptic = useHaptic();
 
   const socketRef = useRef<Socket | null>(null);
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
   const [isConnected, setIsConnected] = useState(false);
   const [roomState, setRoomState] = useState<QuranRoomState | null>(null);
   const [verseText, setVerseText] = useState<QuranVerse | null>(null);
@@ -67,7 +69,7 @@ export default function QuranRoomScreen() {
 
     const connect = async () => {
       try {
-        const token = await getToken();
+        const token = await getTokenRef.current();
         if (!token || !mounted) return;
 
         const socket = io(SOCKET_URL, {
@@ -129,7 +131,7 @@ export default function QuranRoomScreen() {
         socketRef.current = null;
       }
     };
-  }, [roomId, getToken, t]);
+  }, [roomId]);
 
   // Fetch verse when it changes
   useEffect(() => {
@@ -243,8 +245,15 @@ export default function QuranRoomScreen() {
           refreshControl={
             <RefreshControl
               tintColor={colors.emerald}
-              refreshing={false}
-              onRefresh={() => {}}
+              refreshing={loadingVerse}
+              onRefresh={() => {
+                if (roomState) {
+                  setLoadingVerse(true);
+                  islamicApi.getVerse(roomState.currentSurah, roomState.currentVerse)
+                    .then(response => { setVerseText(response); setLoadingVerse(false); })
+                    .catch(() => setLoadingVerse(false));
+                }
+              }}
             />
           }
         >

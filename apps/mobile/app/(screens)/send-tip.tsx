@@ -28,6 +28,7 @@ import { paymentsApi } from '@/services/paymentsApi';
 import { usersApi } from '@/services/api';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 
 const { width } = Dimensions.get('window');
 
@@ -78,21 +79,6 @@ function AmountButton({
   );
 }
 
-function VerifiedBadge({ size = 13 }: { size?: number }) {
-  const tc = useThemeColors();
-  const styles = createStyles(tc);
-  return (
-    <View style={[styles.verifiedBadge, { width: size, height: size }]}>
-      <LinearGradient
-        colors={[colors.emerald, colors.goldLight]}
-        style={styles.verifiedGradient}
-      >
-        <Icon name="check" size="xs" color={colors.text.primary} />
-      </LinearGradient>
-    </View>
-  );
-}
-
 export default function SendTipScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
@@ -135,7 +121,7 @@ export default function SendTipScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [params.username]);
+  }, [params.username, t]);
 
   useEffect(() => {
     fetchCreator();
@@ -301,7 +287,7 @@ export default function SendTipScreen() {
                   {creator?.isVerified && <VerifiedBadge size={13} />}
                 </View>
                 <Text style={styles.creatorUsername}>{creator?.username}</Text>
-                <Text style={styles.followerCount}>{formattedFollowers} followers</Text>
+                <Text style={styles.followerCount}>{formattedFollowers} {t('profile.followers')}</Text>
               </View>
             </LinearGradient>
           </Animated.View>

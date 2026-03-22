@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl,
+  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl, TextInput, Share,
+} from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -52,6 +54,7 @@ export default function QuranShareScreen() {
   const [currentVerse, setCurrentVerse] = useState(1);
   const [showSurahPicker, setShowSurahPicker] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [surahSearch, setSurahSearch] = useState('');
 
   // Fetch list of surahs
   const {
@@ -108,18 +111,21 @@ export default function QuranShareScreen() {
 
   const handleShareAsPost = useCallback(() => {
     setShowShareOptions(false);
-    router.push('/(screens)/create-post');
-  }, [router]);
+    const content = `${verseText}\n\n${translationText}\n\n— ${currentSurah.name} ${currentVerse}`;
+    router.push({ pathname: '/(screens)/create-post', params: { content } });
+  }, [router, verseText, translationText, currentSurah.name, currentVerse]);
 
   const handleShareAsStory = useCallback(() => {
     setShowShareOptions(false);
-    router.push('/(screens)/create-story');
-  }, [router]);
+    const content = `${verseText}\n\n${translationText}\n\n— ${currentSurah.name} ${currentVerse}`;
+    router.push({ pathname: '/(screens)/create-story', params: { content } });
+  }, [router, verseText, translationText, currentSurah.name, currentVerse]);
 
-  const handleCopyText = useCallback(() => {
-    // Copy to clipboard
+  const handleCopyText = useCallback(async () => {
+    const text = `${verseText}\n\n${translationText}\n\n— ${currentSurah.name} ${currentVerse}`;
+    await Clipboard.setStringAsync(text);
     setShowShareOptions(false);
-  }, []);
+  }, [verseText, translationText, currentSurah.name, currentVerse]);
 
   const isRefreshing = surahsRefetching || verseRefetching;
 
@@ -280,8 +286,10 @@ export default function QuranShareScreen() {
                   </View>
                 ) : verseText ? (
                   <>
-                    {/* Bismillah */}
-                    <Text style={styles.bismillah}>{'\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650'}</Text>
+                    {/* Bismillah — Surah 9 (At-Tawbah) does NOT have Bismillah */}
+                    {selectedSurahNumber !== 9 && (
+                      <Text style={styles.bismillah}>{'\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650'}</Text>
+                    )}
 
                     {/* Decorative line */}
                     <LinearGradient
@@ -371,12 +379,18 @@ export default function QuranShareScreen() {
         </ScrollView>
 
         {/* Surah Picker Bottom Sheet */}
-        <BottomSheet visible={showSurahPicker} onClose={() => setShowSurahPicker(false)}>
+        <BottomSheet visible={showSurahPicker} onClose={() => { setShowSurahPicker(false); setSurahSearch(''); }}>
           <View style={styles.surahSearchBar}>
             <Icon name="search" size="sm" color={colors.text.tertiary} />
-            <Text style={styles.surahSearchPlaceholder}>{t('screens.quranShare.searchSurahs')}</Text>
+            <TextInput
+              style={styles.surahSearchInput}
+              value={surahSearch}
+              onChangeText={setSurahSearch}
+              placeholder={t('screens.quranShare.searchSurahs')}
+              placeholderTextColor={colors.text.tertiary}
+            />
           </View>
-          {(surahs ?? []).map((surah) => (
+          {(surahs ?? []).filter(s => !surahSearch.trim() || s.name.toLowerCase().includes(surahSearch.toLowerCase()) || s.arabicName.includes(surahSearch)).map((surah) => (
             <BottomSheetItem
               key={surah.number}
               label={`${surah.number}. ${surah.name}`}
@@ -415,7 +429,13 @@ export default function QuranShareScreen() {
           <BottomSheetItem
             label={t('screens.quranShare.shareImage')}
             icon={<Icon name="share" size="sm" color={colors.emerald} />}
-            onPress={() => setShowShareOptions(false)}
+            onPress={async () => {
+              setShowShareOptions(false);
+              // TODO: Capture verse card as image with react-native-view-shot when installed
+              // For now, share as text via system share sheet
+              const text = `${verseText}\n\n${translationText}\n\n— ${currentSurah.name} ${currentVerse}`;
+              try { await Share.share({ message: text }); } catch { /* user cancelled */ }
+            }}
           />
         </BottomSheet>
       </View>
@@ -697,9 +717,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderBottomWidth: 1,
     borderBottomColor: colors.active.white6,
   },
-  surahSearchPlaceholder: {
-    color: colors.text.tertiary,
+  surahSearchInput: {
+    flex: 1,
+    color: colors.text.primary,
     fontSize: fontSize.base,
+    padding: 0,
   },
   surahArabicList: {
     color: colors.text.tertiary,

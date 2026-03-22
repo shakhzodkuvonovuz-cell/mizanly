@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Share,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -27,19 +28,23 @@ const TOTAL_STEPS = 7;
 function PulseCircle({ children, active }: { children: React.ReactNode; active: boolean }) {
   const pulseScale = useSharedValue(1);
 
-  if (active) {
-    pulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.15, { duration: 800 }),
-        withTiming(1, { duration: 800 }),
-      ),
-      -1,
-      true,
-    );
-  }
+  useEffect(() => {
+    if (active) {
+      pulseScale.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 800 }),
+          withTiming(1, { duration: 800 }),
+        ),
+        -1,
+        true,
+      );
+    } else {
+      pulseScale.value = withTiming(1, { duration: 200 });
+    }
+  }, [active, pulseScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: active ? pulseScale.value : 1 }],
+    transform: [{ scale: pulseScale.value }],
   }));
 
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
@@ -169,7 +174,7 @@ function HajjCompanionContent() {
               <Pressable
                 accessibilityRole="button"
                 style={styles.startButton}
-                onPress={() => createMutation.mutate(currentYear)}
+                onPress={() => setShowYearPicker(true)}
 
               >
                 <LinearGradient

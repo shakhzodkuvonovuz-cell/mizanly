@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ChannelPostsService {
@@ -63,19 +64,30 @@ export class ChannelPostsService {
     return this.prisma.channelPost.update({ where: { id: postId }, data: { isPinned: false } });
   }
 
-  async like(postId: string, _userId: string) {
-    // Verify post exists before incrementing
+  // NOTE: Channel posts lack a per-user reaction junction table (ChannelPostReaction).
+  // Until the schema adds one (file 15 scope), likes cannot be properly deduplicated.
+  // The userId parameter is accepted for future dedup but currently only used for
+  // existence verification. A schema migration is required to fix this properly.
+
+  async like(postId: string, userId: string) {
     const post = await this.prisma.channelPost.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Community post not found');
+
+    // Verify user exists
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) throw new NotFoundException('User not found');
 
     await this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = "likesCount" + 1 WHERE id = ${postId}`;
     return { liked: true };
   }
 
-  async unlike(postId: string, _userId: string) {
-    // Verify post exists before decrementing
+  async unlike(postId: string, userId: string) {
     const post = await this.prisma.channelPost.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Community post not found');
+
+    // Verify user exists
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) throw new NotFoundException('User not found');
 
     await this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`;
     return { unliked: true };

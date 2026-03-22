@@ -5,7 +5,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   useSharedValue,
@@ -15,7 +15,7 @@ import Animated, {
   FadeOut,
   SlideOutRight,
 } from 'react-native-reanimated';
-import { colors, spacing, fontSize, radius, animation, fonts } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fonts, tabBar } from '@/theme';
 import { CaughtUpCard } from '@/components/ui/CaughtUpCard';
 import { useStore } from '@/store';
 import { postsApi, storiesApi, notificationsApi, feedApi, followsApi } from '@/services/api';
@@ -191,7 +191,6 @@ export default function SafScreen() {
   const { t, isRTL } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
-  const navigation = useNavigation();
   const haptic = useHaptic();
   const tc = useThemeColors();
   const queryClient = useQueryClient();
@@ -223,12 +222,8 @@ export default function SafScreen() {
   const feedRef = useRef<FlashListRef<Post | { _type: 'suggested' }>>(null);
   useScrollToTop(feedRef as React.RefObject<FlashListRef<Post | { _type: 'suggested' }>>);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus' as never, () => {
-      feedRef.current?.scrollToOffset({ offset: 0, animated: true });
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
+  // which would reset scroll position when returning from sub-screens
 
   const searchPress = useAnimatedPress();
   const bellPress = useAnimatedPress();
@@ -267,6 +262,15 @@ export default function SafScreen() {
     },
   });
 
+  // Load cached feed data for stale-while-revalidate
+  const [cachedFeedData, setCachedFeedData] = useState<Record<string, unknown> | null>(null);
+  useEffect(() => {
+    feedCache.get(CACHE_KEYS.SAF_FEED + ':' + feedType).then((cached) => {
+      if (cached) setCachedFeedData(cached as Record<string, unknown>);
+      else setCachedFeedData(null);
+    });
+  }, [feedType]);
+
   const feedQuery = useInfiniteQuery({
     queryKey: ['saf-feed', feedType],
     queryFn: async ({ pageParam }) => {
@@ -279,16 +283,19 @@ export default function SafScreen() {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
-    placeholderData: () => {
-      // Show cached data immediately while fetching fresh data
-      return undefined;
-    },
+    placeholderData: cachedFeedData ? {
+      pages: [cachedFeedData],
+      pageParams: [undefined],
+    } : undefined,
   });
 
   const rawPosts: Post[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
 
   // Interleave suggested user cards into the feed every N posts
-  const suggestedUsers = (suggestedQuery.data ?? []).filter((u) => !dismissedUserIds.has(u.id));
+  const suggestedUsers = useMemo(
+    () => (suggestedQuery.data ?? []).filter((u) => !dismissedUserIds.has(u.id)),
+    [suggestedQuery.data, dismissedUserIds],
+  );
   type FeedItem = (Post & { _type?: undefined }) | { _type: 'suggested'; id: string; users: SuggestedUser[] };
   const feedItems: FeedItem[] = useMemo(() => {
     if (suggestedUsers.length === 0) return rawPosts;
@@ -382,7 +389,7 @@ export default function SafScreen() {
         />
       </Animated.View>
     </View>
-  ), [storyGroups, feedType, setFeedType, user?.id, router, feedTypeAnimStyle, bannerDismissed, dismissBanner]);
+  ), [storyGroups, feedType, setFeedType, user?.id, router, feedTypeAnimStyle, bannerDismissed, dismissBanner, FEED_TABS, tc.border]);
 
   const listEmpty = useMemo(() => (
     feedQuery.isError ? (
@@ -408,7 +415,7 @@ export default function SafScreen() {
         onAction={() => router.push('/(screens)/discover')}
       />
     )
-  ), [feedQuery.isLoading, router, t]);
+  ), [feedQuery.isLoading, feedQuery.isError, router, t]);
 
   const listFooter = useMemo(() => {
     if (feedQuery.isFetchingNextPage) {
@@ -519,6 +526,7 @@ export default function SafScreen() {
         maxToRenderPerBatch={5}
         onScroll={onScrollDirection}
         scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
         getItemType={(item) => (item._type === 'suggested' ? 'suggested' : 'post')}
       />

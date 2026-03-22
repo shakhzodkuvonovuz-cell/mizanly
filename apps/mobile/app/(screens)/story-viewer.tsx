@@ -3,7 +3,6 @@ import {
   View, Text, StyleSheet, Pressable,
   Dimensions, TextInput, Platform,
   KeyboardAvoidingView, Alert, FlatList, RefreshControl,
-  Pressable,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -33,6 +32,7 @@ import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useStore } from '@/store';
 
 type Sticker = {
   id: string;
@@ -93,19 +93,35 @@ export default function StoryViewerScreen() {
     isOwn?: string;
   }>();
 
-  const ownStory = isOwn === 'true';
+  // Primary: read story data from Zustand store (set by saf.tsx)
+  // Fallback: read from URL params (used by profile/[username].tsx)
+  const storyViewerData = useStore((s) => s.storyViewerData);
 
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  // Resolve group and startIndex from store or URL params
   let group: StoryGroup | null = null;
-  try {
-    group = groupJson ? JSON.parse(groupJson) : null;
-  } catch {
-    group = null;
+  let resolvedStartIndex = 0;
+  let ownStory = isOwn === 'true';
+
+  if (storyViewerData && storyViewerData.groups && storyViewerData.groups.length > 0) {
+    // Store-based: saf.tsx sets the full groups array + startIndex
+    const startIdx = storyViewerData.startIndex ?? 0;
+    group = (storyViewerData.groups[startIdx] as StoryGroup) ?? null;
+    resolvedStartIndex = 0; // Within the selected group, start at first story
+    if (storyViewerData.isOwn) ownStory = true;
+  } else {
+    // Fallback: URL params (profile/[username].tsx passes groupJson)
+    try {
+      group = groupJson ? JSON.parse(groupJson) : null;
+    } catch {
+      group = null;
+    }
+    resolvedStartIndex = Number(startIndexParam ?? 0);
   }
 
-  const [storyIndex, setStoryIndex] = useState(Number(startIndexParam ?? 0));
+  const [storyIndex, setStoryIndex] = useState(resolvedStartIndex);
   const progressValue = useSharedValue(0);
   const [paused, setPaused] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -113,6 +129,13 @@ export default function StoryViewerScreen() {
   const [showViewers, setShowViewers] = useState(false);
   const [stickerResponses, setStickerResponses] = useState<Record<string, Record<string, unknown>>>({});
   const { t } = useTranslation();
+
+  // Clear store data on unmount to avoid stale data on next open
+  useEffect(() => {
+    return () => {
+      useStore.getState().setStoryViewerData(null);
+    };
+  }, []);
 
   const story = group?.stories[storyIndex];
   const stickers = useMemo(() => {
@@ -263,14 +286,21 @@ export default function StoryViewerScreen() {
     }
   };
 
+  // Reset progress on story index change
+  useEffect(() => {
+    progressValue.value = 0;
+  }, [storyIndex, progressValue]);
+
   // Progress animation (for images; videos use their own duration)
   useEffect(() => {
     if (paused || showViewers || story?.mediaType?.startsWith('video')) {
       cancelAnimation(progressValue);
       return;
     }
-    progressValue.value = 0;
-    progressValue.value = withTiming(1, { duration: STORY_DURATION }, (finished) => {
+    // Resume from current progress value instead of resetting to 0
+    const currentProgress = progressValue.value;
+    const remainingDuration = STORY_DURATION * (1 - currentProgress);
+    progressValue.value = withTiming(1, { duration: Math.max(0, remainingDuration) }, (finished) => {
       if (finished) runOnJS(advance)();
     });
     return () => { cancelAnimation(progressValue); };
@@ -311,9 +341,8 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
 
   const replyMutation = useMutation({
     mutationFn: async () => {
-      if (!group) throw new Error('Story group not available');
-      const convo = await messagesApi.createDM(group.user.id);
-      await messagesApi.sendMessage(convo.id, { content: replyText });
+      if (!story) throw new Error('Story not available');
+      await storiesApi.replyToStory(story.id, replyText);
     },
     onSuccess: () => {
       setReplyText('');
@@ -323,9 +352,8 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
   });
   const reactionMutation = useMutation({
     mutationFn: async (emoji: string) => {
-      if (!group) throw new Error('Story group not available');
-      const convo = await messagesApi.createDM(group.user.id);
-      await messagesApi.sendMessage(convo.id, { content: emoji });
+      if (!story) throw new Error('Story not available');
+      await storiesApi.replyToStory(story.id, emoji);
     },
     onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });

@@ -214,11 +214,17 @@ export class CreatorService {
   }
 
   async getRevenueSummary(userId: string) {
-    const [tips, membershipIncome] = await Promise.all([
+    const [tipsGross, tipsFees, tipCount, membershipIncome] = await Promise.all([
       this.prisma.tip.aggregate({
-        where: { receiverId: userId },
+        where: { receiverId: userId, status: 'completed' },
         _sum: { amount: true },
-        _count: true,
+      }),
+      this.prisma.tip.aggregate({
+        where: { receiverId: userId, status: 'completed' },
+        _sum: { platformFee: true },
+      }),
+      this.prisma.tip.count({
+        where: { receiverId: userId, status: 'completed' },
       }),
       this.prisma.membershipSubscription.count({
         where: { tier: { userId }, status: 'active' },
@@ -242,8 +248,13 @@ export class CreatorService {
       0,
     );
 
+    const tipsGrossAmount = Number(tipsGross._sum.amount ?? 0);
+    const tipsFeesAmount = Number(tipsFees._sum.platformFee ?? 0);
+    const tipsNet = Math.round((tipsGrossAmount - tipsFeesAmount) * 100) / 100;
+
     return {
-      tips: { total: Number(tips._sum.amount ?? 0), count: tips._count },
+      total: (tipsNet + membershipTotal).toFixed(2),
+      tips: { total: tipsNet, gross: tipsGrossAmount, fees: tipsFeesAmount, count: tipCount },
       memberships: { total: membershipTotal, count: membershipIncome },
     };
   }

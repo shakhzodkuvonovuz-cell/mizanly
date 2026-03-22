@@ -76,6 +76,13 @@ export default function ConversationInfoScreen() {
   const name = convo ? conversationName(convo, user?.id, t) : '…';
   const avatarUri = convo ? conversationAvatar(convo, user?.id) : undefined;
 
+  // Member search for adding members — must be before any conditional returns (Rules of Hooks)
+  const memberSearchQuery = useQuery({
+    queryKey: ['group-member-search', debouncedSearchQuery],
+    queryFn: () => searchApi.search(debouncedSearchQuery),
+    enabled: !!convo && debouncedSearchQuery.trim().length >= 2 && addMembersSheetOpen,
+  });
+
   const leaveGroupMutation = useMutation({
     mutationFn: () => messagesApi.leaveGroup(id),
     onSuccess: () => {
@@ -125,7 +132,7 @@ export default function ConversationInfoScreen() {
 
   const pickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -221,13 +228,6 @@ export default function ConversationInfoScreen() {
   const isGroup = convo.isGroup;
   const isCreator = convo.createdById === user?.id;
   const otherMember = !isGroup ? convo.members.find((m) => m.user.id !== user?.id) : null;
-
-  // Member search for adding members
-  const memberSearchQuery = useQuery({
-    queryKey: ['group-member-search', debouncedSearchQuery],
-    queryFn: () => searchApi.search(debouncedSearchQuery),
-    enabled: debouncedSearchQuery.trim().length >= 2 && addMembersSheetOpen,
-  });
 
   const searchResults: User[] = (memberSearchQuery.data?.people ?? []).filter(
     p => p.id !== user?.id &&
@@ -335,7 +335,7 @@ export default function ConversationInfoScreen() {
                       delayLongPress={500}
                      
                       accessibilityLabel={`${m.user.displayName}, @${m.user.username}`}
-                      accessibilityHint="Press to view profile, long press to view member actions"
+                      accessibilityHint={t('conversation.memberAccessibilityHint')}
                       accessibilityRole="button"
                     >
                       <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />

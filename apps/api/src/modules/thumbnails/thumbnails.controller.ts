@@ -4,6 +4,7 @@ import { IsString, IsArray, IsIn, ArrayMinSize, ArrayMaxSize, MaxLength } from '
 import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ThumbnailsService } from './thumbnails.service';
 
 class TrackVariantDto {
@@ -37,23 +38,25 @@ export class ThumbnailsController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload thumbnail variants for A/B testing (2-3 variants)' })
-  async createVariants(@Body() dto: CreateVariantsDto) {
+  async createVariants(@CurrentUser('id') userId: string, @Body() dto: CreateVariantsDto) {
     return this.thumbnails.createVariants(
       dto.contentType as 'post' | 'reel' | 'video',
       dto.contentId,
       dto.thumbnailUrls,
+      userId,
     );
   }
 
   @Get('variants/:contentType/:contentId')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get variants with stats (creator analytics)' })
+  @ApiOperation({ summary: 'Get variants with stats (creator analytics, owner only)' })
   async getVariants(
+    @CurrentUser('id') userId: string,
     @Param('contentType') contentType: string,
     @Param('contentId') contentId: string,
   ) {
-    return this.thumbnails.getVariants(contentType as 'post' | 'reel' | 'video', contentId);
+    return this.thumbnails.getVariants(contentType as 'post' | 'reel' | 'video', contentId, userId);
   }
 
   @Get('serve/:contentType/:contentId')

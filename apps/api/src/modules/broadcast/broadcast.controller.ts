@@ -7,6 +7,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { IsBoolean } from 'class-validator';
 import { BroadcastService } from './broadcast.service';
 import { CreateBroadcastChannelDto } from './dto/create-channel.dto';
+import { UpdateBroadcastChannelDto } from './dto/update-channel.dto';
 import { SendBroadcastDto } from './dto/send-broadcast.dto';
 
 class MuteChannelDto {
@@ -86,7 +87,7 @@ export class BroadcastController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update channel' })
-  async update(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: Partial<CreateBroadcastChannelDto>) {
+  async update(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: UpdateBroadcastChannelDto) {
     return this.broadcast.update(id, userId, dto);
   }
 
@@ -120,9 +121,9 @@ export class BroadcastController {
   @Get(':id/subscribers')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List subscribers' })
-  async subscribers(@Param('id') id: string, @Query('cursor') cursor?: string) {
-    return this.broadcast.getSubscribers(id, cursor);
+  @ApiOperation({ summary: 'List subscribers (owner/admin only)' })
+  async subscribers(@Param('id') id: string, @CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
+    return this.broadcast.getSubscribers(id, cursor, userId);
   }
 
   @Post(':id/messages')

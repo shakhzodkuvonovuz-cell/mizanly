@@ -410,11 +410,30 @@ export class CommunitiesService {
     });
   }
 
-  async updateRole(roleId: string, userId: string, data: Record<string, unknown>) {
+  async updateRole(roleId: string, userId: string, data: {
+    name?: string; color?: string;
+    canSendMessages?: boolean; canPostMedia?: boolean; canInvite?: boolean;
+    canKick?: boolean; canBan?: boolean; canManageRoles?: boolean;
+    canManageChannels?: boolean; canSpeak?: boolean;
+  }) {
     const role = await this.prisma.communityRole.findUnique({ where: { id: roleId } });
     if (!role) throw new NotFoundException('Role not found');
     await this.requireAdmin(role.communityId, userId);
-    return this.prisma.communityRole.update({ where: { id: roleId }, data });
+
+    // Whitelist only allowed fields to prevent arbitrary field injection
+    const allowed: Record<string, unknown> = {};
+    if (data.name !== undefined) allowed.name = data.name;
+    if (data.color !== undefined) allowed.color = data.color;
+    if (data.canSendMessages !== undefined) allowed.canSendMessages = data.canSendMessages;
+    if (data.canPostMedia !== undefined) allowed.canPostMedia = data.canPostMedia;
+    if (data.canInvite !== undefined) allowed.canInvite = data.canInvite;
+    if (data.canKick !== undefined) allowed.canKick = data.canKick;
+    if (data.canBan !== undefined) allowed.canBan = data.canBan;
+    if (data.canManageRoles !== undefined) allowed.canManageRoles = data.canManageRoles;
+    if (data.canManageChannels !== undefined) allowed.canManageChannels = data.canManageChannels;
+    if (data.canSpeak !== undefined) allowed.canSpeak = data.canSpeak;
+
+    return this.prisma.communityRole.update({ where: { id: roleId }, data: allowed });
   }
 
   async deleteRole(roleId: string, userId: string) {
@@ -434,7 +453,19 @@ export class CommunitiesService {
   private async requireAdmin(communityId: string, userId: string) {
     const community = await this.prisma.circle.findUnique({ where: { id: communityId } });
     if (!community) throw new NotFoundException('Community not found');
-    if (community.ownerId !== userId) throw new ForbiddenException('Only the owner can manage roles');
+
+    // Owner always has permission
+    if (community.ownerId === userId) return community;
+
+    // Check if user has ADMIN role in the community
+    const membership = await this.prisma.circleMember.findUnique({
+      where: { circleId_userId: { circleId: communityId, userId } },
+      select: { role: true },
+    });
+    if (!membership || !['ADMIN'].includes(membership.role)) {
+      throw new ForbiddenException('Only the owner or admins can manage roles');
+    }
+
     return community;
   }
 }

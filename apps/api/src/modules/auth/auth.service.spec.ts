@@ -34,7 +34,10 @@ describe('AuthService', () => {
           useValue: {
             user: {
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
               upsert: jest.fn(),
+              update: jest.fn(),
+              create: jest.fn(),
               findMany: jest.fn(),
               updateMany: jest.fn(),
             },
@@ -47,6 +50,9 @@ describe('AuthService', () => {
             },
             follow: {
               findMany: jest.fn(),
+            },
+            pushToken: {
+              deleteMany: jest.fn(),
             },
           },
         },
@@ -70,7 +76,44 @@ describe('AuthService', () => {
   });
 
   describe('syncClerkUser', () => {
-    it('should upsert user with clerk data', async () => {
+    it('should update existing user with clerk data', async () => {
+      const clerkId = 'clerk-123';
+      const data = {
+        email: 'user@example.com',
+        displayName: 'John Doe',
+        avatarUrl: 'https://example.com/avatar.jpg',
+      };
+      const existingUser = {
+        id: 'user-456',
+        clerkId,
+        username: 'existing_user',
+      };
+      const updatedUser = {
+        id: 'user-456',
+        clerkId,
+        email: data.email,
+        username: 'existing_user',
+        displayName: data.displayName,
+        avatarUrl: data.avatarUrl,
+      };
+      prisma.user.findUnique.mockResolvedValue(existingUser);
+      prisma.user.update.mockResolvedValue(updatedUser);
+
+      const result = await service.syncClerkUser(clerkId, data);
+
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { clerkId } });
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { clerkId },
+        data: {
+          email: data.email,
+          displayName: data.displayName,
+          avatarUrl: data.avatarUrl,
+        },
+      });
+      expect(result).toEqual(updatedUser);
+    });
+
+    it('should create new user when clerkId not found', async () => {
       const clerkId = 'clerk-123';
       const data = {
         email: 'user@example.com',
@@ -81,28 +124,25 @@ describe('AuthService', () => {
         id: 'user-456',
         clerkId,
         email: data.email,
-        username: 'user_clerk-123',
+        username: expect.stringContaining('user_'),
         displayName: data.displayName,
         avatarUrl: data.avatarUrl,
       };
-      prisma.user.upsert.mockResolvedValue(mockUser);
+      // First findUnique (by clerkId) returns null — new user
+      prisma.user.findUnique
+        .mockResolvedValueOnce(null)    // clerkId lookup
+        .mockResolvedValueOnce(null);   // username collision check
+      prisma.user.create.mockResolvedValue(mockUser);
 
       const result = await service.syncClerkUser(clerkId, data);
 
-      expect(prisma.user.upsert).toHaveBeenCalledWith({
-        where: { clerkId },
-        create: {
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
           clerkId,
           email: data.email,
-          username: expect.stringContaining('user_'),
           displayName: data.displayName,
           avatarUrl: data.avatarUrl,
-        },
-        update: {
-          email: data.email,
-          displayName: data.displayName,
-          avatarUrl: data.avatarUrl,
-        },
+        }),
       });
       expect(result).toEqual(mockUser);
     });
@@ -111,15 +151,28 @@ describe('AuthService', () => {
   describe('deactivateByClerkId', () => {
     it('should deactivate user by clerkId', async () => {
       const clerkId = 'clerk-123';
-      prisma.user.updateMany.mockResolvedValue({ count: 1 });
+      const mockUser = { id: 'user-123', clerkId };
+      prisma.user.findFirst.mockResolvedValue(mockUser);
+      prisma.user.update.mockResolvedValue({ ...mockUser, isDeactivated: true });
+      prisma.pushToken.deleteMany.mockResolvedValue({ count: 0 });
 
       const result = await service.deactivateByClerkId(clerkId);
 
-      expect(prisma.user.updateMany).toHaveBeenCalledWith({
-        where: { clerkId },
+      expect(prisma.user.findFirst).toHaveBeenCalledWith({ where: { clerkId } });
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
         data: { isDeactivated: true, deactivatedAt: expect.any(Date) },
       });
+      expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({ where: { userId: mockUser.id } });
       expect(result).toEqual({ count: 1 });
+    });
+
+    it('should return count 0 when user not found', async () => {
+      prisma.user.findFirst.mockResolvedValue(null);
+
+      const result = await service.deactivateByClerkId('nonexistent');
+
+      expect(result).toEqual({ count: 0 });
     });
   });
 
@@ -255,7 +308,7 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should register a new user with Clerk data', async () => {
       const clerkId = 'clerk-abc';
-      const dto = { username: 'JohnDoe', displayName: 'John Doe', bio: 'Hello', avatarUrl: 'https://example.com/av.jpg', language: 'en' };
+      const dto = { username: 'JohnDoe', displayName: 'John Doe', bio: 'Hello', avatarUrl: 'https://example.com/av.jpg', language: 'en', dateOfBirth: '2000-01-01', acceptedTerms: true };
       mockClerkClient.users.getUser.mockResolvedValue({
         emailAddresses: [{ emailAddress: 'john@example.com' }],
       });
@@ -277,7 +330,7 @@ describe('AuthService', () => {
     it('should throw BadRequestException when Clerk has no email', async () => {
       mockClerkClient.users.getUser.mockResolvedValue({ emailAddresses: [] });
 
-      await expect(service.register('clerk-abc', { username: 'test', displayName: 'Test' } as any)).rejects.toThrow(BadRequestException);
+      await expect(service.register('clerk-abc', { username: 'test', displayName: 'Test', dateOfBirth: '2000-01-01', acceptedTerms: true } as any)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ConflictException when username taken by another user', async () => {
@@ -286,7 +339,7 @@ describe('AuthService', () => {
       });
       prisma.user.findUnique.mockResolvedValue({ id: 'other-user', clerkId: 'clerk-other' });
 
-      await expect(service.register('clerk-abc', { username: 'taken', displayName: 'Test' } as any)).rejects.toThrow(ConflictException);
+      await expect(service.register('clerk-abc', { username: 'taken', displayName: 'Test', dateOfBirth: '2000-01-01', acceptedTerms: true } as any)).rejects.toThrow(ConflictException);
     });
 
     it('should allow re-registration with same clerkId owning the username', async () => {
@@ -298,7 +351,7 @@ describe('AuthService', () => {
       prisma.user.upsert.mockResolvedValue({ id: 'user-1', clerkId, username: 'myname' });
       prisma.userSettings.upsert.mockResolvedValue({});
 
-      const result = await service.register(clerkId, { username: 'myname', displayName: 'Test' } as any);
+      const result = await service.register(clerkId, { username: 'myname', displayName: 'Test', dateOfBirth: '2000-01-01', acceptedTerms: true } as any);
 
       expect(result.id).toBe('user-1');
     });
@@ -312,7 +365,7 @@ describe('AuthService', () => {
       prisma.user.upsert.mockResolvedValue({ id: 'user-1', clerkId });
       prisma.userSettings.upsert.mockResolvedValue({});
 
-      await service.register(clerkId, { username: 'test', displayName: 'Test' } as any);
+      await service.register(clerkId, { username: 'test', displayName: 'Test', dateOfBirth: '2000-01-01', acceptedTerms: true } as any);
 
       expect(prisma.user.upsert).toHaveBeenCalledWith(expect.objectContaining({
         create: expect.objectContaining({ language: 'en' }),
@@ -328,7 +381,7 @@ describe('AuthService', () => {
       prisma.user.upsert.mockResolvedValue({ id: 'user-1', clerkId });
       prisma.userSettings.upsert.mockResolvedValue({});
 
-      await service.register(clerkId, { username: 'MyUser', displayName: 'Test' } as any);
+      await service.register(clerkId, { username: 'MyUser', displayName: 'Test', dateOfBirth: '2000-01-01', acceptedTerms: true } as any);
 
       expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { username: 'myuser' } });
       expect(prisma.user.upsert).toHaveBeenCalledWith(expect.objectContaining({

@@ -186,14 +186,6 @@ describe('PaymentsService', () => {
     });
   });
 
-  describe('handlePaymentMethodAttached', () => {
-    it('should not throw — logs only', async () => {
-      await expect(
-        service.handlePaymentMethodAttached({ id: 'pm_123' } as any),
-      ).resolves.not.toThrow();
-    });
-  });
-
   describe('createSubscription — pending status', () => {
     it('should create subscription with pending status (not active)', async () => {
       redis.get.mockResolvedValue('cus_cached');

@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Image,
+  View, Text, StyleSheet, Pressable, ScrollView,
   RefreshControl, FlatList, Dimensions, Alert, Share,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -94,7 +95,7 @@ function VideoCard({ video }: { video: Video }) {
             {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </View>
-        <Pressable style={styles.moreButton} hitSlop={8}>
+        <Pressable style={styles.moreButton} hitSlop={8} onPress={() => {/* Video options: handled by parent channel menu */}}>
           <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
         </Pressable>
       </View>
@@ -159,7 +160,7 @@ function VideoCard({ video }: { video: Video }) {
       )}
       <View style={styles.playlistInfo}>
         <Text style={styles.playlistTitle} numberOfLines={2}>{playlist.title}</Text>
-        <Text style={styles.playlistMeta}>{playlist.videosCount} videos</Text>
+        <Text style={styles.playlistMeta}>{playlist.videosCount} {t('minbar.videos')}</Text>
       </View>
     </Pressable>
   );
@@ -355,19 +356,19 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       <View style={[styles.statsEnhanced, { backgroundColor: tc.surface }]}>
         <View style={styles.statItemEnhanced}>
           <Icon name="users" size="sm" color={colors.emerald} />
-          <Text style={styles.statNumEnhanced}>{channel?.subscribersCount.toLocaleString() || '0'}</Text>
+          <Text style={styles.statNumEnhanced}>{channel?.subscribersCount?.toLocaleString() ?? '0'}</Text>
           <Text style={styles.statLabelEnhanced}>{t('channel.subscribers')}</Text>
         </View>
         <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
           <Icon name="video" size="sm" color={colors.gold} />
-          <Text style={styles.statNumEnhanced}>{channel?.videosCount.toLocaleString() || '0'}</Text>
+          <Text style={styles.statNumEnhanced}>{channel?.videosCount?.toLocaleString() ?? '0'}</Text>
           <Text style={styles.statLabelEnhanced}>{t('minbar.videos')}</Text>
         </View>
         <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
           <Icon name="eye" size="sm" color={colors.text.secondary} />
-          <Text style={styles.statNumEnhanced}>{channel?.totalViews.toLocaleString() || '0'}</Text>
+          <Text style={styles.statNumEnhanced}>{channel?.totalViews?.toLocaleString() ?? '0'}</Text>
           <Text style={styles.statLabelEnhanced}>{t('minbar.viewCount')}</Text>
         </View>
       </View>
@@ -444,7 +445,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         />
       </View>
     </View>
-  ), [channel, handle, subscribeMutation.isPending, featuredVideo, activeTab, CHANNEL_TABS, showTrailerSection, t]);
+  ), [channel, handle, subscribeMutation.isPending, featuredVideo, activeTab, CHANNEL_TABS, showTrailerSection, t, handleSubscribe, handleShare, tc, router]);
 
   if (channelQuery.isLoading) {
     return (
@@ -473,7 +474,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           icon="slash"
           title={t('common.error')}
           subtitle={t('errors.loadContentFailed')}
-          actionLabel="Go back"
+          actionLabel={t('common.back', 'Go back')}
           onAction={() => router.back()}
         />
       </View>
@@ -492,7 +493,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           icon="video"
           title={t('channel.notFound')}
           subtitle={t('channel.notFoundSubtitle')}
-          actionLabel="Go back"
+          actionLabel={t('common.back', 'Go back')}
           onAction={() => router.back()}
         />
       </SafeAreaView>
@@ -521,8 +522,32 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         <FlatList<Video | Playlist>
           data={activeTab === 'videos' ? regularVideos : activeTab === 'playlists' ? playlists : []}
           keyExtractor={(item) => item.id}
-          renderItem={activeTab === 'videos' ? ({ item }) => <VideoCard video={item as Video} /> : activeTab === 'playlists' ? ({ item }) => <PlaylistCard playlist={item as Playlist} /> : undefined}
-          ListHeaderComponent={ListHeader}
+          renderItem={({ item }) => {
+            if (activeTab === 'videos') return <VideoCard video={item as Video} />;
+            if (activeTab === 'playlists') return <PlaylistCard playlist={item as Playlist} />;
+            return null;
+          }}
+          ListHeaderComponent={
+            <>
+              {ListHeader}
+              {/* About tab content rendered as part of header (Finding 29: was incorrectly in ListEmptyComponent) */}
+              {activeTab === 'about' && (
+                <View style={styles.aboutTab}>
+                  <Text style={styles.aboutDescription}>{channel.description || t('channel.noDescription', 'No description provided.')}</Text>
+                  <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
+                    <Text style={styles.aboutMetaLabel}>{t('channel.joined')}</Text>
+                    <Text style={styles.aboutMetaValue}>
+                      {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
+                    </Text>
+                  </View>
+                  <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
+                    <Text style={styles.aboutMetaLabel}>{t('channel.totalViews')}</Text>
+                    <Text style={styles.aboutMetaValue}>{channel.totalViews?.toLocaleString() ?? '0'}</Text>
+                  </View>
+                </View>
+              )}
+            </>
+          }
           removeClippedSubviews={true}
           ListEmptyComponent={
             activeTab === 'videos' ? (
@@ -555,21 +580,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                   />
                 </View>
               )
-            ) : (
-              <View style={styles.aboutTab}>
-                <Text style={styles.aboutDescription}>{channel.description || 'No description provided.'}</Text>
-                <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
-                  <Text style={styles.aboutMetaLabel}>{t('channel.joined')}</Text>
-                  <Text style={styles.aboutMetaValue}>
-                    {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
-                  </Text>
-                </View>
-                <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
-                  <Text style={styles.aboutMetaLabel}>{t('channel.totalViews')}</Text>
-                  <Text style={styles.aboutMetaValue}>{channel.totalViews.toLocaleString()}</Text>
-                </View>
-              </View>
-            )
+            ) : null
           }
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
@@ -582,7 +593,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         {/* More menu bottom sheet */}
         <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
           <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
-            <Text style={styles.sheetTitle}>Channel options</Text>
+            <Text style={styles.sheetTitle}>{t('channel.options', 'Channel options')}</Text>
           </View>
           {isOwner && (
             <BottomSheetItem

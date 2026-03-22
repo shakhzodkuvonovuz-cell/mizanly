@@ -211,6 +211,8 @@ describe('LiveService', () => {
 
   describe('raiseHand', () => {
     it('should update participant role to raised_hand', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE' });
+      prisma.liveParticipant.findUnique.mockResolvedValue({ sessionId: 'live1', userId: 'user1', role: 'viewer' });
       prisma.liveParticipant.update.mockResolvedValue({ role: 'raised_hand' });
       const result = await service.raiseHand('live1', 'user1');
       expect(result.role).toBe('raised_hand');

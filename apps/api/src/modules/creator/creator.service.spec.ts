@@ -104,26 +104,40 @@ describe('CreatorService', () => {
   });
 
   describe('getRevenueSummary', () => {
-    it('should return tip and membership revenue', async () => {
-      prisma.tip.aggregate.mockResolvedValue({ _sum: { amount: 500 }, _count: 10 });
+    beforeEach(() => {
+      prisma.tip.count = jest.fn();
+    });
+
+    it('should return net tip and membership revenue with total', async () => {
+      prisma.tip.aggregate
+        .mockResolvedValueOnce({ _sum: { amount: 500 } })  // gross
+        .mockResolvedValueOnce({ _sum: { platformFee: 50 } });  // fees
+      prisma.tip.count.mockResolvedValue(10);
       prisma.membershipSubscription.count.mockResolvedValue(5);
       prisma.membershipTier.findMany.mockResolvedValue([
         { price: 10, _count: { subscriptions: 3 } },
         { price: 25, _count: { subscriptions: 2 } },
       ]);
       const result = await service.getRevenueSummary('u1');
-      expect(result.tips.total).toBe(500);
+      expect(result.tips.total).toBe(450); // 500 - 50
+      expect(result.tips.gross).toBe(500);
+      expect(result.tips.fees).toBe(50);
       expect(result.tips.count).toBe(10);
       expect(result.memberships.total).toBe(80); // 10*3 + 25*2
+      expect(result.total).toBe('530.00'); // 450 + 80
     });
 
     it('should handle zero revenue', async () => {
-      prisma.tip.aggregate.mockResolvedValue({ _sum: { amount: null }, _count: 0 });
+      prisma.tip.aggregate
+        .mockResolvedValueOnce({ _sum: { amount: null } })
+        .mockResolvedValueOnce({ _sum: { platformFee: null } });
+      prisma.tip.count.mockResolvedValue(0);
       prisma.membershipSubscription.count.mockResolvedValue(0);
       prisma.membershipTier.findMany.mockResolvedValue([]);
       const result = await service.getRevenueSummary('u1');
       expect(result.tips.total).toBe(0);
       expect(result.memberships.total).toBe(0);
+      expect(result.total).toBe('0.00');
     });
   });
 

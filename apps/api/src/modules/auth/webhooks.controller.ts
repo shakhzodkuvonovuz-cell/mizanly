@@ -7,17 +7,50 @@ import {
   HttpStatus,
   BadRequestException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { Webhook } from 'svix';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
+import Redis from 'ioredis';
 
 interface RawBodyRequest extends Request {
   rawBody?: Buffer;
 }
+
+interface ClerkWebhookEvent {
+  type: string;
+  data: {
+    id: string;
+    email_addresses?: Array<{ email_address: string }>;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+    image_url?: string;
+    [key: string]: unknown;
+  };
+}
+
+/** Known Clerk event types that we handle or explicitly acknowledge */
+const HANDLED_EVENTS = new Set([
+  'user.created',
+  'user.updated',
+  'user.deleted',
+]);
+
+const ACKNOWLEDGED_EVENTS = new Set([
+  'session.created',
+  'session.ended',
+  'session.removed',
+  'session.revoked',
+  'email.created',
+  'organization.created',
+  'organization.updated',
+  'organization.deleted',
+]);
 
 @ApiTags('Webhooks')
 @Controller('webhooks')
@@ -27,6 +60,7 @@ export class WebhooksController {
   constructor(
     private authService: AuthService,
     private config: ConfigService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   @Post('clerk')
@@ -51,18 +85,6 @@ export class WebhooksController {
     }
 
     const wh = new Webhook(secret);
-    interface ClerkWebhookEvent {
-      type: string;
-      data: {
-        id: string;
-        email_addresses?: Array<{ email_address: string }>;
-        first_name?: string;
-        last_name?: string;
-        username?: string;
-        image_url?: string;
-        [key: string]: unknown;
-      };
-    }
     let event: ClerkWebhookEvent;
 
     try {
@@ -74,6 +96,18 @@ export class WebhooksController {
     } catch (err) {
       this.logger.warn('Invalid Clerk webhook signature');
       throw new BadRequestException('Invalid webhook signature');
+    }
+
+    // Idempotency: check if this svix-id has already been processed
+    if (svixId) {
+      const dedupeKey = `clerk_webhook:${svixId}`;
+      const alreadyProcessed = await this.redis.get(dedupeKey);
+      if (alreadyProcessed) {
+        this.logger.debug(`Clerk webhook ${svixId} already processed — skipping`);
+        return { received: true, deduplicated: true };
+      }
+      // Mark as processed with 24-hour TTL (Clerk retries for up to 3 days, but svix-id is unique per event)
+      await this.redis.setex(dedupeKey, 86400, '1');
     }
 
     const { type, data } = event;
@@ -94,6 +128,10 @@ export class WebhooksController {
       });
     } else if (type === 'user.deleted') {
       await this.authService.deactivateByClerkId(data.id);
+    } else if (ACKNOWLEDGED_EVENTS.has(type)) {
+      this.logger.debug(`Clerk webhook acknowledged but no action: ${type}`);
+    } else if (!HANDLED_EVENTS.has(type)) {
+      this.logger.warn(`Unhandled Clerk webhook event type: ${type}`);
     }
 
     return { received: true };

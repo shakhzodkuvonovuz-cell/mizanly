@@ -7,6 +7,7 @@ import {
   FlatList,
   StyleSheet,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -89,11 +90,12 @@ function DonateScreenContent() {
   const handleDonate = () => {
     const amount = getAmount();
     if (amount < 100) return;
-    donateMutation.mutate({
-      campaignId: params.campaignId,
-      amount,
-      currency,
-    });
+    // TODO: Integrate Stripe payment before creating donation record
+    // Currently the backend creates a donation record without collecting payment
+    Alert.alert(
+      t('common.comingSoon', 'Coming Soon'),
+      t('charity.donateComingSoon', 'Donations will be available once payment processing is set up'),
+    );
   };
 
   const handlePresetPress = (amount: number) => {
@@ -112,7 +114,7 @@ function DonateScreenContent() {
   if (showSuccess) {
     return (
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <GlassHeader title={t('charity.title')} showBack />
+        <GlassHeader title={t('charity.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
             <Icon name="check-circle" size="xl" color={colors.emerald} />
@@ -257,7 +259,7 @@ function DonateScreenContent() {
 
   return (
     <View style={[styles.container, { backgroundColor: tc.bg }]}>
-      <GlassHeader title={t('charity.title')} showBack />
+      <GlassHeader title={t('charity.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
       {donationsQuery.isLoading && donations.length === 0 ? (
         <View style={styles.skeletonContainer}>
           <Skeleton.Rect width="100%" height={48} borderRadius={radius.md} />

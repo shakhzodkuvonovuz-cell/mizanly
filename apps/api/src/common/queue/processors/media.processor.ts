@@ -17,6 +17,19 @@ interface MediaJobData {
  *
  * Uses sharp for image processing (already installed).
  * Video transcription delegates to Cloudflare Stream (webhook-driven).
+ *
+ * LEGAL NOTE (Finding 22 — GDPR Article 25, Data Protection by Design):
+ * The image-resize job strips EXIF metadata (GPS coordinates, device info, timestamps)
+ * from processed images via sharp.rotate(). However, the ORIGINAL file uploaded directly
+ * to R2 via presigned URL still contains full EXIF data. The original URL is stored in
+ * mediaUrls[] and served to users.
+ *
+ * TODO: [LEGAL/PRIVACY] After processing, REPLACE the original file in R2 with the
+ * EXIF-stripped version. This requires:
+ * 1. Upload service to support programmatic PUT (not just presigned URLs)
+ * 2. Post-processing step that overwrites the original key with the stripped buffer
+ * 3. Or: route all uploads through the server instead of direct-to-R2
+ * Until then, user GPS coordinates may be embedded in uploaded photos.
  */
 @Injectable()
 export class MediaProcessor implements OnModuleInit, OnModuleDestroy {

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable,
-  FlatList, Alert, RefreshControl,
+  View, Text, StyleSheet, Pressable, Alert,
+  FlatList, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -146,8 +146,12 @@ export default function WatchHistoryScreen() {
           text: t('screens.watch-history.clear'),
           style: 'destructive',
           onPress: async () => {
-            await usersApi.clearWatchHistory();
-            watchHistoryQuery.refetch();
+            try {
+              await usersApi.clearWatchHistory();
+              watchHistoryQuery.refetch();
+            } catch (error) {
+              Alert.alert(t('common.error'), t('common.checkConnection'));
+            }
           },
         },
       ]
@@ -160,20 +164,22 @@ export default function WatchHistoryScreen() {
 
   if (watchHistoryQuery.isError) {
     return (
-      <View style={styles.container}>
-        <GlassHeader
-          title={t('screens.watch-history.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
-        />
-        <View style={styles.headerSpacer} />
-        <EmptyState
-          icon="flag"
-          title={t('screens.watch-history.errorTitle')}
-          subtitle={t('screens.watch-history.errorSubtitle')}
-          actionLabel={t('common.retry')}
-          onAction={() => watchHistoryQuery.refetch()}
-        />
-      </View>
+      <ScreenErrorBoundary>
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('screens.watch-history.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+          />
+          <View style={styles.headerSpacer} />
+          <EmptyState
+            icon="flag"
+            title={t('screens.watch-history.errorTitle')}
+            subtitle={t('screens.watch-history.errorSubtitle')}
+            actionLabel={t('common.retry')}
+            onAction={() => watchHistoryQuery.refetch()}
+          />
+        </View>
+      </ScreenErrorBoundary>
     );
   }
 
@@ -184,7 +190,7 @@ export default function WatchHistoryScreen() {
           title={t('screens.watch-history.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
           rightActions={[{
-            icon: <Text style={styles.clearText}>{t('screens.watch-history.clear')}</Text>,
+            icon: 'trash',
             onPress: handleClear,
             accessibilityLabel: t('screens.watch-history.clearConfirmTitle'),
           }]}
@@ -240,11 +246,6 @@ export default function WatchHistoryScreen() {
 const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: tc.bg },
   headerSpacer: { height: 100 },
-  clearText: {
-    color: colors.error,
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-  },
   listContainer: { paddingBottom: 100, gap: spacing.lg, paddingTop: spacing.sm },
   videoCard: {
     marginHorizontal: spacing.base,

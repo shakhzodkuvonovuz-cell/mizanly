@@ -65,7 +65,7 @@ export default function NewConversationScreen() {
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('common.back')
           }}
         />
 
@@ -169,13 +169,15 @@ export default function NewConversationScreen() {
             )}
             ListEmptyComponent={() =>
               debouncedQuery.trim().length >= 2 ? (
-                <View style={styles.empty}>
-                  <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedQuery })}</Text>
-                </View>
+                <EmptyState
+                  icon="search"
+                  title={t('messages.noUsersFound', { query: debouncedQuery })}
+                />
               ) : (
-                <View style={styles.hint}>
-                  <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
-                </View>
+                <EmptyState
+                  icon="user"
+                  title={t('messages.searchByNameOrUsername')}
+                />
               )
             }
           />

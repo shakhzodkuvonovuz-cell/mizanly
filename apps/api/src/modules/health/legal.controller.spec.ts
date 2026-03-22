@@ -19,7 +19,7 @@ describe('LegalController', () => {
       const result = controller.getPrivacyPolicy();
 
       expect(result.title).toBe('Mizanly Privacy Policy');
-      expect(result.version).toBe('1.0');
+      expect(result.version).toBe('1.1');
       expect(result.lastUpdated).toBeDefined();
     });
 
@@ -29,11 +29,11 @@ describe('LegalController', () => {
       const headings = result.sections.map((s: any) => s.heading);
       expect(headings).toContain('Information We Collect');
       expect(headings).toContain('How We Use Your Information');
-      expect(headings).toContain('Data Sharing');
+      expect(headings).toContain('Data Sharing and Sub-Processors');
       expect(headings).toContain('Your Rights');
       expect(headings).toContain('Security');
-      expect(headings).toContain('Children');
-      expect(headings).toContain('Contact');
+      expect(headings).toContain('Children and Age Verification');
+      expect(headings).toContain('Contact & Data Protection Officer');
     });
 
     it('should have non-empty content in each section', () => {
@@ -50,7 +50,7 @@ describe('LegalController', () => {
       const result = controller.getTermsOfService();
 
       expect(result.title).toBe('Mizanly Terms of Service');
-      expect(result.version).toBe('1.0');
+      expect(result.version).toBe('1.1');
       expect(result.lastUpdated).toBeDefined();
     });
 
@@ -61,7 +61,7 @@ describe('LegalController', () => {
       expect(headings).toContain('Acceptance of Terms');
       expect(headings).toContain('Eligibility');
       expect(headings).toContain('Content Policy');
-      expect(headings).toContain('Intellectual Property');
+      expect(headings).toContain('Copyright and DMCA');
       expect(headings).toContain('Limitation of Liability');
       expect(headings).toContain('Account Termination');
       expect(headings).toContain('Governing Law');

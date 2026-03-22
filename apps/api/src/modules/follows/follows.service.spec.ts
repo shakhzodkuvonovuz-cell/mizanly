@@ -295,7 +295,7 @@ describe('FollowsService', () => {
 
       const result = await service.getFollowers(userId);
 
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: userId }, select: { id: true, isPrivate: true } });
       expect(prisma.follow.findMany).toHaveBeenCalledWith({
         where: { followingId: userId },
         include: {
@@ -347,7 +347,7 @@ describe('FollowsService', () => {
 
       const result = await service.getFollowing(userId);
 
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: userId }, select: { id: true, isPrivate: true } });
       expect(prisma.follow.findMany).toHaveBeenCalledWith({
         where: { followerId: userId },
         include: {

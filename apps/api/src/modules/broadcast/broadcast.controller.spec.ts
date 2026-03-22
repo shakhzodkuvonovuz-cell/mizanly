@@ -216,8 +216,8 @@ describe('BroadcastController', () => {
     it('should call service.getSubscribers', async () => {
       const expected = { data: [], meta: { cursor: null, hasMore: false } };
       mockService.getSubscribers.mockResolvedValue(expected);
-      const result = await controller.subscribers('channel-1', undefined);
-      expect(service.getSubscribers).toHaveBeenCalledWith('channel-1', undefined);
+      const result = await controller.subscribers('channel-1', 'user-1', undefined);
+      expect(service.getSubscribers).toHaveBeenCalledWith('channel-1', undefined, 'user-1');
       expect(result).toEqual(expected);
     });
   });

@@ -69,23 +69,23 @@ describe('FollowsController', () => {
   });
 
   describe('getFollowers', () => {
-    it('should call followsService.getFollowers with userId and cursor', async () => {
+    it('should call followsService.getFollowers with userId, cursor, and currentUserId', async () => {
       service.getFollowers.mockResolvedValue({ data: [{ id: 'user-2' }], meta: { cursor: null, hasMore: false } } as any);
 
-      const result = await controller.getFollowers('user-456', 'cursor-1');
+      const result = await controller.getFollowers(userId, 'user-456', 'cursor-1');
 
-      expect(service.getFollowers).toHaveBeenCalledWith('user-456', 'cursor-1');
+      expect(service.getFollowers).toHaveBeenCalledWith('user-456', 'cursor-1', userId);
       expect(result.data).toHaveLength(1);
     });
   });
 
   describe('getFollowing', () => {
-    it('should call followsService.getFollowing with userId and cursor', async () => {
+    it('should call followsService.getFollowing with userId, cursor, and currentUserId', async () => {
       service.getFollowing.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } } as any);
 
-      await controller.getFollowing('user-456', 'cursor-1');
+      await controller.getFollowing(userId, 'user-456', 'cursor-1');
 
-      expect(service.getFollowing).toHaveBeenCalledWith('user-456', 'cursor-1');
+      expect(service.getFollowing).toHaveBeenCalledWith('user-456', 'cursor-1', userId);
     });
   });
 

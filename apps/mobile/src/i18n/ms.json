@@ -2180,7 +2180,16 @@
     "takeBreak": "Take a Break Reminders",
     "takeBreakHint": "Get reminded when you've been scrolling too long",
     "hours": "{{count}}h",
-    "minutes": "{{count}}m"
+    "minutes": "{{count}}m",
+    "days": {
+      "sun": "Ahd",
+      "mon": "Isn",
+      "tue": "Sel",
+      "wed": "Rab",
+      "thu": "Kha",
+      "fri": "Jum",
+      "sat": "Sab"
+    }
   },
   "autoPlaySettings": {
     "title": "Auto-play",

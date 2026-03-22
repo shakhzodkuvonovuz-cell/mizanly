@@ -414,6 +414,15 @@ export class ReelsService {
       this.prisma.$executeRaw`UPDATE "User" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
 
+    // Decrement hashtag counters for removed reel
+    if (reel.hashtags && reel.hashtags.length > 0) {
+      await Promise.all(
+        reel.hashtags.map((name: string) =>
+          this.prisma.$executeRaw`UPDATE "Hashtag" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE name = ${name}`,
+        ),
+      );
+    }
+
     // Clean up from Cloudflare Stream
     if (reel.streamId) {
       this.stream.deleteVideo(reel.streamId).catch((err) => {

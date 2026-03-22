@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView,
+  View, Text, StyleSheet, Pressable, ScrollView, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { navigate } from '@/utils/navigation';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
@@ -45,8 +46,8 @@ const ISLAMIC_EVENTS: IslamicEvent[] = [
   { day: 1, month: 8, name: 'screens.islamicCalendar.firstDayOfRamadan', type: 'important', description: 'screens.islamicCalendar.descFirstDayOfRamadan' },
   { day: 27, month: 8, name: 'screens.islamicCalendar.laylatAlQadr', type: 'important', description: 'screens.islamicCalendar.descLaylatAlQadr' },
   { day: 1, month: 9, name: 'screens.islamicCalendar.eidAlFitr', type: 'eid', description: 'screens.islamicCalendar.descEidAlFitr' },
-  { day: 8, month: 11, name: 'screens.islamicCalendar.dayOfArafah', type: 'important', description: 'screens.islamicCalendar.descDayOfArafah' },
-  { day: 9, month: 11, name: 'screens.islamicCalendar.eidAlAdha', type: 'eid', description: 'screens.islamicCalendar.descEidAlAdha' },
+  { day: 9, month: 11, name: 'screens.islamicCalendar.dayOfArafah', type: 'important', description: 'screens.islamicCalendar.descDayOfArafah' },
+  { day: 10, month: 11, name: 'screens.islamicCalendar.eidAlAdha', type: 'eid', description: 'screens.islamicCalendar.descEidAlAdha' },
 ];
 
 /**
@@ -304,6 +305,17 @@ export default function IslamicCalendarScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              tintColor={colors.emerald}
+              refreshing={false}
+              onRefresh={() => {
+                // Calendar is computed client-side; refresh resets to current month
+                setCurrentMonth(todayHijri.month - 1);
+                setCurrentYear(todayHijri.year);
+              }}
+            />
+          }
         >
           {/* Current Date Card */}
           <Animated.View entering={FadeInUp.duration(500)}>
@@ -385,6 +397,11 @@ export default function IslamicCalendarScreen() {
                 ))}
               </View>
 
+              {/* Disclaimer about approximate computation */}
+              <Text style={styles.disclaimerText}>
+                {t('screens.islamicCalendar.approximateDisclaimer')}
+              </Text>
+
               {/* Legend */}
               <View style={styles.calendarLegend}>
                 <View style={styles.legendItem}>
@@ -429,7 +446,7 @@ export default function IslamicCalendarScreen() {
 
           {/* Quick Links */}
           <View style={styles.quickLinks}>
-            <Pressable accessibilityRole="button" style={styles.quickLink}>
+            <Pressable accessibilityRole="button" style={styles.quickLink} onPress={() => navigate('/(screens)/prayer-times')}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                 style={styles.quickLinkGradient}
@@ -439,7 +456,7 @@ export default function IslamicCalendarScreen() {
               </LinearGradient>
             </Pressable>
 
-            <Pressable accessibilityRole="button" style={styles.quickLink}>
+            <Pressable accessibilityRole="button" style={styles.quickLink} onPress={() => navigate('/(screens)/quran-share')}>
               <LinearGradient
                 colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
                 style={styles.quickLinkGradient}
@@ -707,6 +724,14 @@ const styles = StyleSheet.create({
   legendText: {
     color: colors.text.secondary,
     fontSize: fontSize.xs,
+  },
+  disclaimerText: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    fontStyle: 'italic',
   },
 
   // Events Section

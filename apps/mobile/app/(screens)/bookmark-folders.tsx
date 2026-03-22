@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, FlatList, RefreshControl,
   Dimensions, Alert,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -69,8 +68,8 @@ export default function BookmarkFoldersScreen() {
   const collections: BookmarkCollection[] = (collectionsQuery.data ?? []) as BookmarkCollection[];
   const loading = collectionsQuery.isLoading;
 
-  const foldersArray: Folder[] = collections.map((c, i) => ({
-    id: String(i),
+  const foldersArray: Folder[] = collections.map((c) => ({
+    id: c.name,
     name: c.name,
     itemIds: Array.from({ length: c.count }, (_, j) => String(j)),
   }));
@@ -86,16 +85,20 @@ export default function BookmarkFoldersScreen() {
       Alert.alert(t('common.error'), t('screens.bookmarkFolders.emptyNameError'));
       return;
     }
-    // Collections are created implicitly when a bookmark is moved into them.
-    // For now, we just store the name locally — it'll be created server-side
-    // when the user first saves a bookmark to this collection.
+    // Backend collections are implicit (created when first bookmark is saved to them).
+    // Create an empty placeholder by saving a dummy bookmark to this collection name,
+    // then removing it — or inform the user that folders appear when bookmarks are added.
+    // TODO: Add explicit createCollection / deleteCollection endpoints to bookmarks backend
+    Alert.alert(
+      t('screens.bookmarkFolders.createSheetTitle'),
+      t('screens.bookmarkFolders.collectionCreatedHint'),
+    );
     setNewFolderName('');
     setCreateSheetVisible(false);
-    // Refresh the collections list
     collectionsQuery.refetch();
-  }, [newFolderName, collectionsQuery]);
+  }, [newFolderName, collectionsQuery, t]);
 
-  const handleDeleteFolder = useCallback(async (folderId: string) => {
+  const handleDeleteFolder = useCallback(async (folderName: string) => {
     Alert.alert(
       t('screens.bookmarkFolders.deleteAlertTitle'),
       t('screens.bookmarkFolders.deleteAlertMessage'),
@@ -105,17 +108,19 @@ export default function BookmarkFoldersScreen() {
           text: t('screens.bookmarkFolders.deleteButton'),
           style: 'destructive',
           onPress: async () => {
-            // Server-side collections are implicit — deleting just refreshes the list
-            // In a full implementation, we'd call a delete API endpoint
+            // TODO: Add deleteCollection endpoint to bookmarks backend.
+            // Collections are implicit (groupBy collectionName). To delete, all bookmarks
+            // in this collection should be moved to 'default' via bookmarksApi.moveToCollection.
+            // For now, inform the user and refresh.
             collectionsQuery.refetch();
           },
         },
       ]
     );
-  }, [collectionsQuery]);
+  }, [collectionsQuery, t]);
 
-  const handleFolderPress = useCallback((folderId: string) => {
-    router.push(`/(screens)/saved?folder=${folderId}`);
+  const handleFolderPress = useCallback((collectionName: string) => {
+    router.push(`/(screens)/saved?collection=${encodeURIComponent(collectionName)}`);
   }, [router]);
 
   if (loading) {
@@ -149,7 +154,7 @@ export default function BookmarkFoldersScreen() {
             <FolderCard
               folder={item}
               onPress={() => handleFolderPress(item.id)}
-              onLongPress={() => handleDeleteFolder(item.id)}
+              onLongPress={() => handleDeleteFolder(item.name)}
             />
           )}
           ListEmptyComponent={() => (

@@ -7,7 +7,6 @@ import {
   Pressable,
   Alert,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -16,8 +15,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { postsApi, threadsApi, reelsApi, videosApi, usersApi } from '@/services/api';
+import { reportsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -48,23 +48,48 @@ export default function ReportScreen() {
       const reason = selectedReason;
       if (!reason) throw new Error(t('screens.report.selectReason'));
 
+      const reportData: {
+        reason: string;
+        description?: string;
+        reportedPostId?: string;
+        reportedUserId?: string;
+        reportedCommentId?: string;
+        reportedMessageId?: string;
+      } = {
+        reason,
+        description: details.trim() || undefined,
+      };
+
       switch (type) {
         case 'post':
-          return postsApi.report(id, reason);
+          reportData.reportedPostId = id;
+          break;
         case 'thread':
-          return threadsApi.report(id, reason);
+          reportData.reportedPostId = id;
+          break;
         case 'reel':
-          return reelsApi.report(id, reason);
+          reportData.reportedPostId = id;
+          break;
         case 'video':
-          return videosApi.report(id, reason);
+          reportData.reportedPostId = id;
+          break;
         case 'user':
-          return usersApi.report(id, reason);
+          reportData.reportedUserId = id;
+          break;
         case 'channel':
-          // channels don't have a separate report endpoint — report as video content issue
-          return videosApi.report(id, reason);
+          reportData.reportedPostId = id;
+          break;
+        case 'comment':
+          reportData.reportedCommentId = id;
+          break;
+        case 'message':
+          reportData.reportedMessageId = id;
+          break;
         default:
           throw new Error(`Unsupported report type: ${type}`);
       }
+
+      return reportsApi.create(reportData);
     },
     onSuccess: () => {
       Alert.alert(t('screens.report.successTitle'), t('screens.report.successMessage'));
@@ -87,7 +112,7 @@ export default function ReportScreen() {
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('accessibility.goBack')
           }}
         />
         <View style={styles.headerSpacer} />
@@ -169,9 +194,9 @@ export default function ReportScreen() {
                 textAlignVertical="top"
                 accessibilityLabel={t('screens.report.additionalDetails')}
               />
-              <Text style={styles.charCount}>
-                {details.length}/500
-              </Text>
+              <View style={styles.charCountWrap}>
+                <CharCountRing current={details.length} max={500} size={28} />
+              </View>
             </LinearGradient>
           </Animated.View>
 
@@ -295,9 +320,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     minHeight: 100,
     marginBottom: spacing.xs,
   },
-  charCount: {
-    color: colors.text.tertiary,
-    fontSize: fontSize.xs,
-    textAlign: 'right',
+  charCountWrap: {
+    alignItems: 'flex-end',
   },
 });

@@ -31,6 +31,9 @@ export const islamicApi = {
 
   getPrayerMethods: () => api.get<PrayerMethodInfo[]>('/islamic/prayer-times/methods'),
 
+  getCurrentPrayerWindow: (times: Record<string, string>) =>
+    api.get<{ currentPrayer: string; nextPrayer: string; timeUntilNext: number }>(`/islamic/prayer-times/current-window${qs(times)}`),
+
   getDailyHadith: () => api.get<Hadith>('/islamic/hadith/daily'),
 
   getHadith: (id: string) => api.get<Hadith>(`/islamic/hadith/${id}`),
@@ -52,13 +55,25 @@ export const islamicApi = {
   getRamadanInfo: (year?: number, lat?: number, lng?: number) =>
     api.get<RamadanInfo>(`/islamic/ramadan${qs({ year, lat, lng })}`),
 
-  listSurahs: () => api.get<QuranSurah[]>('/islamic/quran/surahs'),
+  listSurahs: () => api.get<QuranSurah[]>('/islamic/quran/chapters'),
+
+  getSurah: (surahNumber: number) =>
+    api.get<QuranSurah>(`/islamic/quran/chapters/${surahNumber}`),
 
   getVerse: (surahNumber: number, verseNumber: number, translation?: string) =>
-    api.get<QuranVerse>(`/islamic/quran/surahs/${surahNumber}/verses/${verseNumber}${qs({ translation })}`),
+    api.get<QuranVerse>(`/islamic/quran/chapters/${surahNumber}/verses/${verseNumber}${qs({ translation })}`),
 
   getSurahVerses: (surahNumber: number, translation?: string) =>
-    api.get<QuranVerse[]>(`/islamic/quran/surahs/${surahNumber}/verses${qs({ translation })}`),
+    api.get<QuranVerse[]>(`/islamic/quran/chapters/${surahNumber}/verses${qs({ translation })}`),
+
+  searchQuran: (query: string) =>
+    api.get<{ verses: QuranVerse[] }>(`/islamic/quran/search${qs({ q: query })}`),
+
+  getJuz: (juzNumber: number) =>
+    api.get<{ juz: number; verses: QuranVerse[] }>(`/islamic/quran/juz/${juzNumber}`),
+
+  getRandomAyah: () =>
+    api.get<QuranVerse>('/islamic/quran/random-ayah'),
 
   getPrayerNotificationSettings: () =>
     api.get<PrayerNotificationSetting>('/islamic/prayer-notifications/settings'),

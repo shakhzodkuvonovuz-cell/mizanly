@@ -218,8 +218,9 @@ export class StripeConnectService {
     if (diamondAmount < 100) throw new BadRequestException('Minimum cashout: 100 diamonds');
     if (!user.stripeConnectAccountId) throw new BadRequestException('Set up payouts first');
 
-    // 1 diamond = $0.01 USD
-    const amountUsd = diamondAmount * 0.01;
+    // 1 diamond = $0.007 USD (100 diamonds = $0.70)
+    // Must match DIAMOND_TO_USD in gifts.service.ts
+    const amountUsd = diamondAmount * 0.007;
     const amountCents = Math.round(amountUsd * 100);
 
     // Create Stripe transfer FIRST, then deduct diamonds on success

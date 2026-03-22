@@ -170,12 +170,17 @@ function ScholarVerificationContent() {
     setRefreshing(false);
   }, [fetchStatus]);
 
-  const handleAddDocument = useCallback(() => {
-    // Placeholder: in production, this would open a file picker + presigned URL upload
-    const mockUrl = `https://cdn.mizanly.app/docs/credential-${Date.now()}.pdf`;
-    setDocumentUrls(prev => [...prev, mockUrl]);
+  const handleAddDocument = useCallback(async () => {
+    // TODO: Replace with expo-document-picker when installed:
+    // const result = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/*'] });
+    // Then upload via presigned R2 URL and use real URL.
+    // For now, alert user that document upload requires the file picker dependency.
+    Alert.alert(
+      t('scholar.addDocument'),
+      t('scholar.documentUploadPlaceholder'),
+    );
     haptic.light();
-  }, [haptic]);
+  }, [haptic, t]);
 
   const handleRemoveDocument = useCallback((index: number) => {
     setDocumentUrls(prev => prev.filter((_, i) => i !== index));
@@ -281,7 +286,7 @@ function ScholarVerificationContent() {
                   </Text>
                   <View style={styles.badgeInline}>
                     <Text style={styles.badgePreviewDesc}>
-                      Displayed on your profile
+                      {t('scholar.displayedOnProfile')}
                     </Text>
                     <VerifiedBadge size={16} variant="scholar" />
                   </View>
@@ -396,7 +401,7 @@ function ScholarVerificationContent() {
           <BottomSheetItem
             key={spec.key}
             label={spec.label}
-            icon="book-open"
+            icon={<Icon name="book-open" size="sm" color={colors.text.primary} />}
             onPress={() => {
               setSpecialization(spec.key);
               setSpecSheetVisible(false);
@@ -412,7 +417,7 @@ function ScholarVerificationContent() {
           <BottomSheetItem
             key={m.key}
             label={m.label}
-            icon="book"
+            icon={<Icon name="book-open" size="sm" color={colors.text.primary} />}
             onPress={() => {
               setMadhab(m.key);
               setMadhabSheetVisible(false);
@@ -433,7 +438,7 @@ export default function ScholarVerificationScreen() {
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <GlassHeader title={t('scholar.title')} />
+        <GlassHeader title={t('scholar.title')} showBack />
         <ScholarVerificationContent />
       </SafeAreaView>
     </ScreenErrorBoundary>

@@ -7,8 +7,6 @@ import {
   RefreshControl,
   Pressable,
   Dimensions,
-  FlatList,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -78,10 +76,10 @@ const PATTERNS: ThemeOption[] = [
 
 const PHOTOS: ThemeOption[] = [
   { id: 'upload', name: 'Upload Photo', icon: 'image' },
-  { id: 'nature1', name: 'Nature 1', color: tc.surface },
-  { id: 'nature2', name: 'Nature 2', color: tc.surface },
-  { id: 'abstract1', name: 'Abstract 1', color: tc.surface },
-  { id: 'abstract2', name: 'Abstract 2', color: tc.surface },
+  { id: 'nature1', name: 'Nature 1', color: colors.dark.surface },
+  { id: 'nature2', name: 'Nature 2', color: colors.dark.surface },
+  { id: 'abstract1', name: 'Abstract 1', color: colors.dark.surface },
+  { id: 'abstract2', name: 'Abstract 2', color: colors.dark.surface },
 ];
 
 export default function ChatThemePickerScreen() {
@@ -101,17 +99,17 @@ export default function ChatThemePickerScreen() {
 
   const getCurrentTheme = (): ThemeOption => {
     return (
-      SOLID_COLORS.find(t => t.id === selectedTheme) ||
-      GRADIENTS.find(t => t.id === selectedTheme) ||
+      SOLID_COLORS.find(opt => opt.id === selectedTheme) ||
+      GRADIENTS.find(opt => opt.id === selectedTheme) ||
       { id: 'default', name: 'Default', color: tc.bg }
     );
   };
 
   const getTranslatedThemeName = (id: string) => {
-    const theme = SOLID_COLORS.find(t => t.id === id) ||
-      GRADIENTS.find(t => t.id === id) ||
-      PATTERNS.find(t => t.id === id) ||
-      PHOTOS.find(t => t.id === id);
+    const theme = SOLID_COLORS.find(opt => opt.id === id) ||
+      GRADIENTS.find(opt => opt.id === id) ||
+      PATTERNS.find(opt => opt.id === id) ||
+      PHOTOS.find(opt => opt.id === id);
     if (theme) {
       return t(`chatThemePicker.themeName.${id}`);
     }
@@ -336,51 +334,52 @@ export default function ChatThemePickerScreen() {
           })}
         </ScrollView>
 
-        {/* Theme Grid */}
+        {/* Theme Grid — using .map() instead of FlatList inside ScrollView */}
         <View style={styles.gridContainer}>
           {activeTab === 'solid' && (
-            <FlatList
-              data={SOLID_COLORS}
-              renderItem={renderColorItem}
-              keyExtractor={item => item.id}
-              numColumns={2}
-              scrollEnabled={false}
-              columnWrapperStyle={styles.gridRow}
-              contentContainerStyle={styles.gridContent}
-            />
+            <View style={styles.gridContent}>
+              {/* Pair items into rows of 2 */}
+              {Array.from({ length: Math.ceil(SOLID_COLORS.length / 2) }, (_, rowIdx) => (
+                <View key={rowIdx} style={styles.gridRow}>
+                  {SOLID_COLORS.slice(rowIdx * 2, rowIdx * 2 + 2).map((item, i) =>
+                    renderColorItem({ item, index: rowIdx * 2 + i })
+                  )}
+                </View>
+              ))}
+            </View>
           )}
           {activeTab === 'gradients' && (
-            <FlatList
-              data={GRADIENTS}
-              renderItem={renderGradientItem}
-              keyExtractor={item => item.id}
-              numColumns={2}
-              scrollEnabled={false}
-              columnWrapperStyle={styles.gridRow}
-              contentContainerStyle={styles.gridContent}
-            />
+            <View style={styles.gridContent}>
+              {Array.from({ length: Math.ceil(GRADIENTS.length / 2) }, (_, rowIdx) => (
+                <View key={rowIdx} style={styles.gridRow}>
+                  {GRADIENTS.slice(rowIdx * 2, rowIdx * 2 + 2).map((item, i) =>
+                    renderGradientItem({ item, index: rowIdx * 2 + i })
+                  )}
+                </View>
+              ))}
+            </View>
           )}
           {activeTab === 'patterns' && (
-            <FlatList
-              data={PATTERNS}
-              renderItem={renderPatternItem}
-              keyExtractor={item => item.id}
-              numColumns={2}
-              scrollEnabled={false}
-              columnWrapperStyle={styles.gridRow}
-              contentContainerStyle={styles.gridContent}
-            />
+            <View style={styles.gridContent}>
+              {Array.from({ length: Math.ceil(PATTERNS.length / 2) }, (_, rowIdx) => (
+                <View key={rowIdx} style={styles.gridRow}>
+                  {PATTERNS.slice(rowIdx * 2, rowIdx * 2 + 2).map((item, i) =>
+                    renderPatternItem({ item, index: rowIdx * 2 + i })
+                  )}
+                </View>
+              ))}
+            </View>
           )}
           {activeTab === 'photos' && (
-            <FlatList
-              data={PHOTOS}
-              renderItem={renderPhotoItem}
-              keyExtractor={item => item.id}
-              numColumns={2}
-              scrollEnabled={false}
-              columnWrapperStyle={styles.gridRow}
-              contentContainerStyle={styles.gridContent}
-            />
+            <View style={styles.gridContent}>
+              {Array.from({ length: Math.ceil(PHOTOS.length / 2) }, (_, rowIdx) => (
+                <View key={rowIdx} style={styles.gridRow}>
+                  {PHOTOS.slice(rowIdx * 2, rowIdx * 2 + 2).map((item, i) =>
+                    renderPhotoItem({ item, index: rowIdx * 2 + i })
+                  )}
+                </View>
+              ))}
+            </View>
           )}
         </View>
 
@@ -404,16 +403,32 @@ export default function ChatThemePickerScreen() {
               <Text style={styles.sliderLabel}>{t('chatThemePicker.wallpaperOpacity')}</Text>
               <Text style={styles.sliderValue}>{opacity}%</Text>
             </View>
-            <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
-              <View style={[styles.sliderFill, { width: `${opacity}%` }]} />
+            <View style={styles.sliderButtons}>
+              <Pressable onPress={() => setOpacity(Math.max(0, opacity - 10))} accessibilityRole="button" accessibilityLabel={t('chatThemePicker.decreaseOpacity')}>
+                <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
+              </Pressable>
+              <View style={[styles.sliderTrack, { backgroundColor: tc.surface, flex: 1 }]}>
+                <View style={[styles.sliderFill, { width: `${opacity}%` }]} />
+              </View>
+              <Pressable onPress={() => setOpacity(Math.min(100, opacity + 10))} accessibilityRole="button" accessibilityLabel={t('chatThemePicker.increaseOpacity')}>
+                <Icon name="chevron-right" size="sm" color={colors.text.secondary} />
+              </Pressable>
             </View>
 
             <View style={[styles.sliderRow, { marginTop: spacing.lg }]}>
               <Text style={styles.sliderLabel}>{t('chatThemePicker.messageBlur')}</Text>
               <Text style={styles.sliderValue}>{blur}%</Text>
             </View>
-            <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
-              <View style={[styles.sliderFill, { width: `${blur}%` }]} />
+            <View style={styles.sliderButtons}>
+              <Pressable onPress={() => setBlur(Math.max(0, blur - 10))} accessibilityRole="button" accessibilityLabel={t('chatThemePicker.decreaseBlur')}>
+                <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
+              </Pressable>
+              <View style={[styles.sliderTrack, { backgroundColor: tc.surface, flex: 1 }]}>
+                <View style={[styles.sliderFill, { width: `${blur}%` }]} />
+              </View>
+              <Pressable onPress={() => setBlur(Math.min(100, blur + 10))} accessibilityRole="button" accessibilityLabel={t('chatThemePicker.increaseBlur')}>
+                <Icon name="chevron-right" size="sm" color={colors.text.secondary} />
+              </Pressable>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -424,10 +439,29 @@ export default function ChatThemePickerScreen() {
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
-        <Pressable>
+        <Pressable
+          onPress={() => {
+            setSelectedTheme('default');
+            setActiveTab('solid');
+            setOpacity(30);
+            setBlur(0);
+            router.back();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={t('chatThemePicker.resetToDefault')}
+        >
           <Text style={styles.resetText}>{t('chatThemePicker.resetToDefault')}</Text>
         </Pressable>
-        <Pressable>
+        <Pressable
+          onPress={() => {
+            // TODO: Persist theme selection to AsyncStorage or API
+            // For now, go back to confirm selection
+            router.back();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={t('chatThemePicker.apply')}
+          style={{ opacity: selectedTheme === 'default' ? 0.5 : 1 }}
+        >
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.applyButton}
@@ -694,6 +728,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontFamily: fonts.semibold,
     color: colors.gold,
+  },
+  sliderButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
   sliderTrack: {
     height: 4,

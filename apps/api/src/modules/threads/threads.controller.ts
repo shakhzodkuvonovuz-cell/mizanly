@@ -268,6 +268,7 @@ export class ThreadsController {
   }
 
   @Get(':id/share-link')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get shareable URL for this thread' })
   getShareLink(@Param('id') id: string) {
     return this.threadsService.getShareLink(id);

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, RefreshControl, ScrollView,
+  View, Text, StyleSheet, Pressable, FlatList, RefreshControl, ScrollView, Alert,
+} from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -103,7 +104,12 @@ function GiftShopContent() {
 
   const handleBuyCoins = (amount: number) => {
     haptic.medium();
-    purchaseMutation.mutate(amount);
+    // TODO: Integrate Stripe payment before crediting coins
+    // Currently the backend credits coins without collecting payment
+    Alert.alert(
+      t('common.comingSoon', 'Coming Soon'),
+      t('giftShop.purchaseComingSoon', 'Coin purchases will be available once payment processing is set up'),
+    );
   };
 
   const handleGiftTap = (gift: GiftCatalogItem | { type: string; name: string; coins: number }) => {
@@ -119,7 +125,12 @@ function GiftShopContent() {
 
   const handleCashout = () => {
     if (balance && balance.diamonds > 0) {
-      cashoutMutation.mutate(balance.diamonds);
+      // TODO: Integrate Stripe payout before deducting diamonds
+      // Currently the backend deducts diamonds without sending real money
+      Alert.alert(
+        t('common.comingSoon', 'Coming Soon'),
+        t('giftShop.cashoutComingSoon', 'Diamond cash out will be available once payment processing is set up'),
+      );
     }
   };
 

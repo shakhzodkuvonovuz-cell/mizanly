@@ -20,13 +20,13 @@ import { IsString, IsNumber, IsOptional, IsArray, IsBoolean, IsIn, Min, Max, Max
 
 class CreateTipDto {
   @IsString() @MaxLength(50) receiverId: string;
-  @IsNumber() @Min(0.01) @Max(10000) amount: number;
+  @IsNumber() @Min(0.50) @Max(10000) amount: number;
   @IsOptional() @IsString() @MaxLength(500) message?: string;
 }
 
 class CreateTierDto {
   @IsString() @MaxLength(100) name: string;
-  @IsNumber() @Min(0.01) @Max(10000) price: number;
+  @IsNumber() @Min(0.50) @Max(10000) price: number;
   @IsArray() @IsString({ each: true }) @ArrayMaxSize(20) benefits: string[];
   @IsOptional() @IsIn(['bronze', 'silver', 'gold', 'platinum']) level?: string;
 }

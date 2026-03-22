@@ -28,6 +28,7 @@ const ROOM_SELECT = {
   endedAt: true,
   maxSpeakers: true,
   isRecording: true,
+  isPersistent: true,
   createdAt: true,
   host: {
     select: {
@@ -39,6 +40,7 @@ const ROOM_SELECT = {
     },
   },
   participants: {
+    take: 50, // Limit participants to prevent unbounded queries
     select: {
       id: true,
       userId: true,
@@ -57,6 +59,7 @@ const ROOM_SELECT = {
       },
     },
   },
+  _count: { select: { participants: true } },
 };
 
 const PARTICIPANT_SELECT = {
@@ -84,37 +87,38 @@ export class AudioRoomsService {
 
   constructor(private prisma: PrismaService) {}
 
-  // Create audio room
+  // Create audio room (atomic: room + host participant in transaction)
   async create(userId: string, dto: CreateAudioRoomDto) {
-    const room = await this.prisma.audioRoom.create({
-      data: {
-        title: dto.title,
-        description: dto.description,
-        hostId: userId,
-        status: dto.scheduledAt ? ROOM_STATUS.SCHEDULED : ROOM_STATUS.LIVE,
-        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
-        startedAt: dto.scheduledAt ? null : new Date(),
-        maxSpeakers: 10, // default
-        isRecording: false,
-      },
-      select: ROOM_SELECT,
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const room = await tx.audioRoom.create({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          hostId: userId,
+          status: dto.scheduledAt ? ROOM_STATUS.SCHEDULED : ROOM_STATUS.LIVE,
+          scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+          startedAt: dto.scheduledAt ? null : new Date(),
+          maxSpeakers: dto.maxSpeakers ?? 10,
+          isRecording: false,
+        },
+      });
 
-    // Add host as participant
-    await this.prisma.audioRoomParticipant.create({
-      data: {
-        roomId: room.id,
-        userId: userId,
-        role: AudioRoomRole.HOST,
-        isMuted: false,
-        handRaised: false,
-      },
-    });
+      // Add host as participant
+      await tx.audioRoomParticipant.create({
+        data: {
+          roomId: room.id,
+          userId,
+          role: AudioRoomRole.HOST,
+          isMuted: false,
+          handRaised: false,
+        },
+      });
 
-    // Reload room with participants
-    return this.prisma.audioRoom.findUnique({
-      where: { id: room.id },
-      select: ROOM_SELECT,
+      // Return room with participants
+      return tx.audioRoom.findUnique({
+        where: { id: room.id },
+        select: ROOM_SELECT,
+      });
     });
   }
 
@@ -134,12 +138,13 @@ export class AudioRoomsService {
     const rooms = await this.prisma.audioRoom.findMany({
       where,
       select: ROOM_SELECT,
-      take: limit,
+      take: limit + 1,
       orderBy: { createdAt: 'desc' },
     });
 
-    const hasMore = rooms.length === limit;
-    const nextCursor = hasMore ? rooms[rooms.length - 1].createdAt.toISOString() : null;
+    const hasMore = rooms.length > limit;
+    if (hasMore) rooms.pop();
+    const nextCursor = rooms.length > 0 ? rooms[rooms.length - 1].createdAt.toISOString() : null;
 
     return {
       data: rooms,
@@ -212,7 +217,18 @@ export class AudioRoomsService {
       throw new BadRequestException('Room is not live');
     }
 
-    // Create participant — handle P2002 (unique constraint) for idempotent join
+    // Idempotent join — return existing participant if already in room
+    const existing = await this.prisma.audioRoomParticipant.findUnique({
+      where: { roomId_userId: { roomId: id, userId } },
+    });
+    if (existing) {
+      return this.prisma.audioRoom.findUnique({
+        where: { id },
+        select: ROOM_SELECT,
+      });
+    }
+
+    // Create participant — handle P2002 race condition idempotently
     try {
       await this.prisma.audioRoomParticipant.create({
         data: {
@@ -225,7 +241,11 @@ export class AudioRoomsService {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('Already joined this room');
+        // Race condition — participant was created between check and create
+        return this.prisma.audioRoom.findUnique({
+          where: { id },
+          select: ROOM_SELECT,
+        });
       }
       throw error;
     }
@@ -301,6 +321,16 @@ export class AudioRoomsService {
     // Only allow listener ↔ speaker changes (host role cannot be changed)
     if (currentRole === AudioRoomRole.HOST || newRole === AudioRoomRole.HOST) {
       throw new BadRequestException('Cannot change host role');
+    }
+
+    // Enforce maxSpeakers when promoting to speaker
+    if (newRole === AudioRoomRole.SPEAKER && currentRole !== AudioRoomRole.SPEAKER) {
+      const speakerCount = await this.prisma.audioRoomParticipant.count({
+        where: { roomId: id, role: { in: [AudioRoomRole.SPEAKER, AudioRoomRole.HOST] } },
+      });
+      if (speakerCount >= room.maxSpeakers) {
+        throw new BadRequestException(`Maximum ${room.maxSpeakers} speakers allowed`);
+      }
     }
 
     // Update role

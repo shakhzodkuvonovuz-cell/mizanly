@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Image,
+  View, Text, StyleSheet, Pressable,
   RefreshControl, FlatList,
-  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -28,6 +28,17 @@ export default function ChannelPlaylistsScreen() {
   const insets = useSafeAreaInsets();
   const channelId = Array.isArray(params.channelId) ? params.channelId[0] : params.channelId;
 
+  // Fetch playlists (moved before early return to comply with React rules of hooks — Finding 34)
+  const playlistsQuery = useInfiniteQuery({
+    queryKey: ['channel-playlists', channelId],
+    queryFn: ({ pageParam }) => playlistsApi.getByChannel(channelId!, pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last: PaginatedResponse<Playlist>) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: !!channelId,
+  });
+
+  const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p: PaginatedResponse<Playlist>) => p.data) ?? [];
+
   // If channelId is missing, show error
   if (!channelId) {
     return (
@@ -45,17 +56,6 @@ export default function ChannelPlaylistsScreen() {
       </View>
     );
   }
-
-  // Fetch playlists
-  const playlistsQuery = useInfiniteQuery({
-    queryKey: ['channel-playlists', channelId],
-    queryFn: ({ pageParam }) => playlistsApi.getByChannel(channelId, pageParam as string | undefined),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: PaginatedResponse<Playlist>) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
-    enabled: !!channelId,
-  });
-
-  const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p: PaginatedResponse<Playlist>) => p.data) ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -187,24 +187,6 @@ export default function ChannelPlaylistsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-  },
-  backBtn: {
-    padding: spacing.xs,
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
-    fontWeight: '600',
-  },
-  headerRight: {
-    width: 40, // balance spacing
-  },
   listContent: {
     paddingHorizontal: spacing.base,
     paddingTop: spacing.sm,

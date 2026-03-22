@@ -5,7 +5,7 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { LiveService } from './live.service';
-import { IsString, IsBoolean, IsOptional, IsUrl, MaxLength } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsUrl, MaxLength, IsArray, ArrayMaxSize } from 'class-validator';
 import { CreateLiveDto } from './dto/create-live.dto';
 
 class StartRehearsalDto {
@@ -16,6 +16,19 @@ class StartRehearsalDto {
 
 class SetSubscribersOnlyDto {
   @IsBoolean() subscribersOnly: boolean;
+}
+
+class SetRecordingDto {
+  @IsUrl() recordingUrl: string;
+}
+
+class InviteGuestDto {
+  @IsString() guestUserId: string;
+}
+
+class CreateGroupCallDto {
+  @IsString() conversationId: string;
+  @IsArray() @IsString({ each: true }) @ArrayMaxSize(7) participantIds: string[];
 }
 
 @ApiTags('Live Sessions')
@@ -138,8 +151,8 @@ export class LiveController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Set recording URL' })
-  async setRecording(@Param('id') id: string, @CurrentUser('id') userId: string, @Body('recordingUrl') url: string) {
-    return this.live.updateRecording(id, userId, url);
+  async setRecording(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: SetRecordingDto) {
+    return this.live.updateRecording(id, userId, dto.recordingUrl);
   }
 
   // ── Multi-guest endpoints ──────────────────────────
@@ -148,8 +161,8 @@ export class LiveController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Invite a guest to live (max 4)' })
-  async inviteGuest(@Param('id') id: string, @CurrentUser('id') userId: string, @Body('guestUserId') guestUserId: string) {
-    return this.live.inviteGuest(id, guestUserId, userId);
+  async inviteGuest(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: InviteGuestDto) {
+    return this.live.inviteGuest(id, dto.guestUserId, userId);
   }
 
   @Post(':id/guests/accept')

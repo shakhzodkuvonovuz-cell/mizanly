@@ -8,7 +8,6 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
-  Pressable,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Image } from 'expo-image';
@@ -32,16 +31,9 @@ import { gamificationApi } from '@/services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const CATEGORIES = [
-  { key: 'all', label: 'All' },
-  { key: 'drama', label: 'Drama' },
-  { key: 'documentary', label: 'Documentary' },
-  { key: 'tutorial', label: 'Tutorial' },
-  { key: 'comedy', label: 'Comedy' },
-  { key: 'islamic', label: 'Islamic' },
-] as const;
+const CATEGORY_KEYS = ['all', 'drama', 'documentary', 'tutorial', 'comedy', 'islamic'] as const;
 
-type CategoryKey = typeof CATEGORIES[number]['key'];
+type CategoryKey = typeof CATEGORY_KEYS[number];
 
 interface SeriesItem {
   id: string;
@@ -50,7 +42,7 @@ interface SeriesItem {
   category: string;
   coverUrl?: string;
   episodeCount: number;
-  followerCount: number;
+  followersCount: number;
   isFollowing: boolean;
   creator: {
     id: string;
@@ -74,6 +66,15 @@ function SeriesDiscoverContent() {
   const haptic = useHaptic();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+
+  const CATEGORIES: { key: CategoryKey; label: string }[] = [
+    { key: 'all', label: t('series.categories.all', 'All') },
+    { key: 'drama', label: t('series.categories.drama', 'Drama') },
+    { key: 'documentary', label: t('series.categories.documentary', 'Documentary') },
+    { key: 'tutorial', label: t('series.categories.tutorial', 'Tutorial') },
+    { key: 'comedy', label: t('series.categories.comedy', 'Comedy') },
+    { key: 'islamic', label: t('series.categories.islamic', 'Islamic') },
+  ];
 
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
 
@@ -219,8 +220,8 @@ function SeriesDiscoverContent() {
               <Text style={styles.creatorName} numberOfLines={1}>
                 {item.creator.displayName}
               </Text>
-              <Text style={styles.followerCount}>
-                {item.followerCount.toLocaleString()} {t('series.followers', 'followers')}
+              <Text style={styles.followersCount}>
+                {item.followersCount.toLocaleString()} {t('series.followers', 'followers')}
               </Text>
             </View>
             <Pressable
@@ -230,7 +231,7 @@ function SeriesDiscoverContent() {
               ]}
               onPress={() => handleFollowToggle(item)}
               accessibilityRole="button"
-              accessibilityLabel={item.isFollowing ? 'Unfollow' : 'Follow'}
+              accessibilityLabel={item.isFollowing ? t('series.following', 'Following') : t('series.follow', 'Follow')}
             >
               <Text
                 style={[
@@ -450,7 +451,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
   },
-  followerCount: {
+  followersCount: {
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     fontFamily: fonts.body,

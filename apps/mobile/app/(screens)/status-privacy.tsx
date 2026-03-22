@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,22 +29,42 @@ function StatusPrivacyContent() {
   const [readReceipts, setReadReceipts] = useState(true);
   const [typingIndicators, setTypingIndicators] = useState(true);
 
+  // NOTE: Backend UpdatePrivacyDto only supports activityStatus (boolean).
+  // The granular fields (lastSeenPrivacy, onlineStatusPrivacy, readReceipts,
+  // typingIndicators) are persisted locally via AsyncStorage until the backend
+  // schema supports them. activityStatus is synced to the backend.
   useEffect(() => {
     let cancelled = false;
     async function loadSettings() {
       try {
-        const settings = await settingsApi.get();
+        const [settings, localPrefs] = await Promise.all([
+          settingsApi.get(),
+          AsyncStorage.getItem('status-privacy-settings'),
+        ]);
         if (!cancelled) {
-          const data = settings as {
-            lastSeenPrivacy?: LastSeenOption;
-            onlineStatusPrivacy?: OnlineStatusOption;
-            readReceipts?: boolean;
-            typingIndicators?: boolean;
-          };
-          if (data.lastSeenPrivacy) setLastSeen(data.lastSeenPrivacy);
-          if (data.onlineStatusPrivacy) setOnlineStatus(data.onlineStatusPrivacy);
-          if (typeof data.readReceipts === 'boolean') setReadReceipts(data.readReceipts);
-          if (typeof data.typingIndicators === 'boolean') setTypingIndicators(data.typingIndicators);
+          // Sync activityStatus from backend (maps to online visibility)
+          const data = settings as { activityStatus?: boolean };
+          if (typeof data.activityStatus === 'boolean' && !data.activityStatus) {
+            setOnlineStatus('nobody');
+          }
+
+          // Load granular settings from local storage
+          if (localPrefs) {
+            try {
+              const parsed = JSON.parse(localPrefs) as {
+                lastSeenPrivacy?: LastSeenOption;
+                onlineStatusPrivacy?: OnlineStatusOption;
+                readReceipts?: boolean;
+                typingIndicators?: boolean;
+              };
+              if (parsed.lastSeenPrivacy) setLastSeen(parsed.lastSeenPrivacy);
+              if (parsed.onlineStatusPrivacy) setOnlineStatus(parsed.onlineStatusPrivacy);
+              if (typeof parsed.readReceipts === 'boolean') setReadReceipts(parsed.readReceipts);
+              if (typeof parsed.typingIndicators === 'boolean') setTypingIndicators(parsed.typingIndicators);
+            } catch {
+              // Invalid stored data, use defaults
+            }
+          }
         }
       } catch {
         Alert.alert(t('common.error'), t('statusPrivacy.loadError'));
@@ -58,7 +79,16 @@ function StatusPrivacyContent() {
   const saveSettings = useCallback(async (updates: Record<string, unknown>, rollback?: () => void) => {
     setSaving(true);
     try {
-      await settingsApi.updatePrivacy(updates as Parameters<typeof settingsApi.updatePrivacy>[0]);
+      // Persist all granular settings to AsyncStorage
+      const currentRaw = await AsyncStorage.getItem('status-privacy-settings');
+      const current = currentRaw ? JSON.parse(currentRaw) : {};
+      await AsyncStorage.setItem('status-privacy-settings', JSON.stringify({ ...current, ...updates }));
+
+      // Sync activityStatus to backend when onlineStatus changes
+      if ('onlineStatusPrivacy' in updates) {
+        const isActive = updates.onlineStatusPrivacy !== 'nobody';
+        await settingsApi.updatePrivacy({ activityStatus: isActive });
+      }
     } catch {
       rollback?.();
       Alert.alert(

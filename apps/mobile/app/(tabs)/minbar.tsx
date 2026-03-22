@@ -6,11 +6,11 @@ import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, radius, shadow, fonts } from '@/theme';
+import { colors, spacing, fontSize, radius, shadow, fonts, tabBar } from '@/theme';
 import { useStore } from '@/store';
-import { videosApi, usersApi } from '@/services/api';
+import { videosApi, usersApi, feedApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { TabSelector } from '@/components/ui/TabSelector';
@@ -27,6 +27,7 @@ import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -82,9 +83,13 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
   const { t } = useTranslation();
   const tc = useThemeColors();
   const video = item as VideoWithProgress;
-  const durationMinutes = Math.floor(video.duration / 60);
-  const durationSeconds = Math.floor(video.duration % 60);
-  const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+  const totalSeconds = Math.floor(video.duration);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const durationText = hours > 0
+    ? `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    : `${minutes}:${seconds.toString().padStart(2, '0')}`;
   const watchProgress = video.progress ?? 0;
   const hasWatchProgress = watchProgress > 0 && watchProgress < 1;
 
@@ -163,9 +168,8 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
 export default function MinbarScreen() {
   const { user } = useUser();
   const router = useRouter();
-  const navigation = useNavigation();
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
   const [selectedCategory, setSelectedCategory] = useState<VideoCategory | 'all'>('all');
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
@@ -182,12 +186,8 @@ export default function MinbarScreen() {
   const feedRef = useRef<FlashListRef<Video>>(null);
   useScrollToTop(feedRef);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      feedRef.current?.scrollToOffset({ offset: 0, animated: true });
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
+  // which would reset scroll position when returning from sub-screens
 
   const continueWatchingQuery = useQuery({
     queryKey: ['watch-history'],
@@ -335,7 +335,10 @@ export default function MinbarScreen() {
   ), [selectedCategory, handleCategoryPress, continueWatchingQuery.data, router, feedType, t, CATEGORIES]);
 
   const listEmpty = useMemo(() => {
-    if (feedType === 'subscriptions') {
+    if (feedQuery.isError) {
+      return <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />;
+    }
+    if (feedType === 'subscriptions' && !feedQuery.isLoading) {
       return (
         <EmptyState
           icon="users"
@@ -345,9 +348,6 @@ export default function MinbarScreen() {
           onAction={() => router.push('/(screens)/discover')}
         />
       );
-    }
-    if (feedQuery.isError) {
-      return <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />;
     }
     return feedQuery.isLoading ? (
       <View>
@@ -373,7 +373,7 @@ export default function MinbarScreen() {
         onAction={() => router.push('/(screens)/create-video')}
       />
     );
-  }, [feedQuery.isLoading, feedType, router]);
+  }, [feedQuery.isLoading, feedQuery.isError, feedType, router, t]);
 
   const listFooter = useMemo(() => (
     feedQuery.isFetchingNextPage ? (
@@ -387,9 +387,9 @@ export default function MinbarScreen() {
     <ScreenErrorBoundary>
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>Minbar</Text>
-        <View style={styles.headerRight}>
+      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.minbar')}</Text>
+        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <AnimatedPressable
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
@@ -434,7 +434,7 @@ export default function MinbarScreen() {
                 <Badge
                   count={unreadNotifications}
                   size="sm"
-                  style={styles.notifBadge}
+                  style={[styles.notifBadge, rtlAbsoluteEnd(isRTL, -8)]}
                 />
               )}
             </View>
@@ -455,6 +455,7 @@ export default function MinbarScreen() {
         estimatedItemSize={350}
         windowSize={7}
         maxToRenderPerBatch={5}
+        contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
       />
       <BottomSheet
@@ -479,7 +480,12 @@ export default function MinbarScreen() {
         <BottomSheetItem
           label={t('minbar.notInterested')}
           icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
-          onPress={() => setSelectedVideoId(null)}
+          onPress={() => {
+            if (selectedVideoId) {
+              feedApi.dismiss('VIDEO', selectedVideoId).catch(() => {});
+            }
+            setSelectedVideoId(null);
+          }}
         />
       </BottomSheet>
     </SafeAreaView>
@@ -508,7 +514,6 @@ const styles = StyleSheet.create({
   notifBadge: {
     position: 'absolute',
     top: -6,
-    right: -8,
   },
   categoriesContainer: {
     paddingHorizontal: spacing.base,

@@ -3,6 +3,8 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
@@ -11,9 +13,15 @@ import { RegisterDto } from './dto/register.dto';
 import { SetInterestsDto } from './dto/set-interests.dto';
 import { AnalyticsService } from '../../common/services/analytics.service';
 
+/** Minimum age required to register (COPPA compliance) */
+const MINIMUM_AGE = 13;
+/** Age at which parental consent is no longer required (GDPR Art 8) */
+const PARENTAL_CONSENT_AGE = 18;
+
 @Injectable()
 export class AuthService {
   private clerk;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private prisma: PrismaService,
@@ -25,7 +33,37 @@ export class AuthService {
     });
   }
 
+  /**
+   * Calculate age from date of birth string.
+   * COPPA/GDPR compliance: must be 13+ to register.
+   */
+  private calculateAge(dateOfBirth: string): number {
+    const dob = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
   async register(clerkId: string, dto: RegisterDto) {
+    // COPPA/GDPR Age Verification (Finding 1, 15)
+    const age = this.calculateAge(dto.dateOfBirth);
+    if (age < MINIMUM_AGE) {
+      throw new ForbiddenException(
+        `You must be at least ${MINIMUM_AGE} years old to use Mizanly. COPPA and GDPR require age verification.`,
+      );
+    }
+
+    // Terms of Service acceptance (Finding 4, 21 — GDPR Art 7)
+    if (!dto.acceptedTerms) {
+      throw new BadRequestException(
+        'You must accept the Terms of Service and Privacy Policy to create an account',
+      );
+    }
+
     // Fetch email from Clerk
     let clerkUser;
     try {
@@ -45,6 +83,8 @@ export class AuthService {
       throw new ConflictException('Username already taken');
     }
 
+    const isMinor = age < PARENTAL_CONSENT_AGE;
+
     // Upsert: create on first call, update on subsequent calls
     const user = await this.prisma.user.upsert({
       where: { clerkId },
@@ -56,6 +96,14 @@ export class AuthService {
         bio: dto.bio ?? '',
         avatarUrl: dto.avatarUrl,
         language: dto.language ?? 'en',
+        // Mark as child account if under 18 — triggers restrictive defaults (Finding 15, 30)
+        isChildAccount: isMinor,
+        // TODO: [LEGAL] Add tosAcceptedAt, tosVersion, privacyPolicyAcceptedAt, dateOfBirth
+        // fields to User model (requires schema migration). Currently storing acceptance
+        // via the DTO validation + isChildAccount flag. Schema fields needed for:
+        // - Demonstrable consent record (GDPR Art 7)
+        // - ToS version tracking for re-acceptance on update
+        // - Age-based feature gating queries
       },
       update: {
         username: dto.username.toLowerCase(),
@@ -73,10 +121,15 @@ export class AuthService {
       update: {},
     });
 
+    if (isMinor) {
+      this.logger.log(`Minor registered (age ${age}): user ${user.id} — child protections active`);
+    }
+
     // Track user registration
     this.analytics.track('user_registered', user.id, {
       username: user.username,
       language: user.language,
+      isMinor,
     });
     this.analytics.increment('registrations:daily');
 
@@ -142,6 +195,7 @@ export class AuthService {
         id: { notIn: [...followingIds, userId] },
         isDeactivated: false,
         isBanned: false,
+        isDeleted: false,
         followers: { some: { followerId: { in: followingIds } } },
       },
       select: {
@@ -169,6 +223,7 @@ export class AuthService {
           },
           isDeactivated: false,
           isBanned: false,
+          isDeleted: false,
         },
         select: {
           id: true,
@@ -193,17 +248,35 @@ export class AuthService {
     displayName: string;
     avatarUrl?: string;
   }) {
-    return this.prisma.user.upsert({
-      where: { clerkId },
-      create: {
+    // Check if this clerkId already exists (update case) — keep existing username
+    const existingByClerk = await this.prisma.user.findUnique({ where: { clerkId } });
+    if (existingByClerk) {
+      return this.prisma.user.update({
+        where: { clerkId },
+        data: {
+          email: data.email,
+          displayName: data.displayName,
+          avatarUrl: data.avatarUrl,
+        },
+      });
+    }
+
+    // New user — generate collision-resistant username
+    const baseUsername = `user_${clerkId.replace(/[^a-zA-Z0-9]/g, '').slice(-12)}`;
+    let username = baseUsername;
+
+    // Check for username collision and add random suffix if needed
+    const usernameConflict = await this.prisma.user.findUnique({ where: { username } });
+    if (usernameConflict) {
+      const suffix = Math.random().toString(36).slice(2, 6);
+      username = `${baseUsername}_${suffix}`;
+    }
+
+    return this.prisma.user.create({
+      data: {
         clerkId,
         email: data.email,
-        username: `user_${clerkId.slice(-8)}`,
-        displayName: data.displayName,
-        avatarUrl: data.avatarUrl,
-      },
-      update: {
-        email: data.email,
+        username,
         displayName: data.displayName,
         avatarUrl: data.avatarUrl,
       },
@@ -211,9 +284,19 @@ export class AuthService {
   }
 
   async deactivateByClerkId(clerkId: string) {
-    return this.prisma.user.updateMany({
-      where: { clerkId },
+    // Find the user first to clean up related data
+    const user = await this.prisma.user.findFirst({ where: { clerkId } });
+    if (!user) return { count: 0 };
+
+    // Deactivate the user
+    await this.prisma.user.update({
+      where: { id: user.id },
       data: { isDeactivated: true, deactivatedAt: new Date() },
     });
+
+    // Clean up push tokens so no notifications are sent to deactivated user
+    await this.prisma.pushToken.deleteMany({ where: { userId: user.id } });
+
+    return { count: 1 };
   }
 }

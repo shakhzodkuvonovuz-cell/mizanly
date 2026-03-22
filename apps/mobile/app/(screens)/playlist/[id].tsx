@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, RefreshControl,
-  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
@@ -155,8 +154,8 @@ export default function PlaylistDetailScreen() {
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
-          }} 
+            accessibilityLabel: t('common.back', 'Go back')
+          }}
         />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState icon="layers" title={t('screens.playlist.notFound')} />
@@ -169,20 +168,20 @@ export default function PlaylistDetailScreen() {
   if (playlistQuery.isError) {
     return (
       <View style={styles.container}>
-        <GlassHeader 
-          title={t('screens.playlist.title')} 
-          leftAction={{ 
-            icon: 'arrow-left', 
+        <GlassHeader
+          title={t('screens.playlist.title')}
+          leftAction={{
+            icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
-          }} 
+            accessibilityLabel: t('common.back', 'Go back')
+          }}
         />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="slash"
             title={t('common.error')}
             subtitle={t('common.errorSubtitle')}
-            actionLabel="Go back"
+            actionLabel={t('common.back', 'Go back')}
             onAction={() => router.back()}
           />
         </View>
@@ -194,11 +193,11 @@ export default function PlaylistDetailScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title={playlist?.title ?? 'Playlist'}
-          leftAction={{ 
-            icon: 'arrow-left', 
+          title={playlist?.title ?? t('screens.playlist.title', 'Playlist')}
+          leftAction={{
+            icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('common.back', 'Go back')
           }}
         />
 
@@ -210,7 +209,6 @@ export default function PlaylistDetailScreen() {
           </View>
         ) : (
           <FlatList
-            removeClippedSubviews={true}
             data={items}
             keyExtractor={(item, i) => item.id ?? String(i)}
             renderItem={renderItem}
@@ -227,7 +225,7 @@ export default function PlaylistDetailScreen() {
                   icon="slash"
                   title={t('minbar.noVideosYet')}
                   subtitle={t('common.pullToRefresh')}
-                  actionLabel="Retry"
+                  actionLabel={t('common.retry', 'Retry')}
                   onAction={() => itemsQuery.refetch()}
                 />
               ) : (

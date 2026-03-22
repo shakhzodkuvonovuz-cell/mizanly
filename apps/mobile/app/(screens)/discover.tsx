@@ -9,7 +9,6 @@ import {
   Image,
   Dimensions,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
@@ -22,7 +21,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { feedApi, searchApi } from '@/services/api';
+import { searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -69,7 +68,6 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         <Text style={styles.sectionTitle}>{t('discover.trendingNow')}</Text>
       </View>
       <FlatList
-            removeClippedSubviews={true}
         horizontal
         data={hashtags}
         keyExtractor={(item) => item.id}
@@ -78,9 +76,9 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         renderItem={({ item }) => (
           <Pressable
             style={[styles.hashtagChipGold, { backgroundColor: tc.bgCard }]}
-            onPress={() => navigate(`/(screens)/search?q=${encodeURIComponent(item.name)}`)}
+            onPress={() => navigate(`/(screens)/search-results?query=${encodeURIComponent('#' + item.name)}`)}
             accessibilityRole="button"
-            accessibilityLabel={`Search for hashtag ${item.name}`}
+            accessibilityLabel={t('accessibility.searchHashtag', { name: item.name })}
           >
             <Icon name="hash" size={12} color={colors.gold} />
             <Text style={styles.hashtagTextGold}>#{item.name}</Text>
@@ -97,6 +95,8 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
 }
 
 function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; onSelect: (c: CategoryKey) => void; categories: { key: CategoryKey; label: string; icon: IconName }[] }) {
+  const { t } = useTranslation();
+  const tc = useThemeColors();
   return (
     <View style={styles.categoriesSection}>
       <ScrollView
@@ -115,7 +115,7 @@ function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; 
               ]}
               onPress={() => onSelect(cat.key)}
               accessibilityRole="button"
-              accessibilityLabel={`Filter by ${cat.label}`}
+              accessibilityLabel={t('discover.filterBy', { category: cat.label })}
             >
               <Icon name={cat.icon} size={14} color={isActive ? '#fff' : colors.text.primary} />
               <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
@@ -140,6 +140,7 @@ interface FeaturedItem {
 
 function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => void }) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.97 });
 
   return (
@@ -149,9 +150,9 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={`View ${item.title}`}
+      accessibilityLabel={t('accessibility.viewContent', { title: item.title })}
     >
-      <Image accessible={true} accessibilityLabel="Content image" source={{ uri: item.thumbnailUrl }} style={styles.featuredImage} />
+      <Image accessible={true} accessibilityLabel={t('accessibility.contentImage')} source={{ uri: item.thumbnailUrl }} style={styles.featuredImage} />
       <View style={styles.featuredOverlay}>
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.85)']}
@@ -162,7 +163,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
           <View style={styles.featuredMeta}>
             <View style={styles.featuredCreator}>
               {item.creator.avatarUrl ? (
-                <Image accessible={true} accessibilityLabel="Content image" source={{ uri: item.creator.avatarUrl }} style={styles.featuredAvatar} />
+                <Image accessible={true} accessibilityLabel={t('accessibility.contentImage')} source={{ uri: item.creator.avatarUrl }} style={styles.featuredAvatar} />
               ) : (
                 <View style={[styles.featuredAvatarPlaceholder, { backgroundColor: tc.bgElevated }]}>
                   <Icon name="user" size={10} color={colors.text.primary} />
@@ -220,7 +221,8 @@ function FeaturedSection({ items }: { items: FeaturedItem[] }) {
 type ExploreItem = Post | Reel | Thread | Video;
 
 const ExploreGridItem = memo(function ExploreGridItem({ item }: { item: ExploreItem }) {
-  const router = useRouter();
+  const { t } = useTranslation();
+  const tc = useThemeColors();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.96 });
 
   // Determine type
@@ -260,7 +262,7 @@ const ExploreGridItem = memo(function ExploreGridItem({ item }: { item: ExploreI
       accessibilityLabel={t('accessibility.viewPost')}
     >
       {thumbnailUrl ? (
-        <Image accessible={true} accessibilityLabel="Content image" source={{ uri: thumbnailUrl }} style={styles.gridImage} />
+        <Image accessible={true} accessibilityLabel={t('accessibility.contentImage')} source={{ uri: thumbnailUrl }} style={styles.gridImage} />
       ) : (
         <View style={[styles.gridImage, styles.placeholder, { backgroundColor: tc.surface }]} />
       )}
@@ -327,8 +329,8 @@ export default function DiscoverScreen() {
     fetchNextPage,
     refetch: refetchExplore,
   } = useInfiniteQuery({
-    queryKey: ['exploreFeed'],
-    queryFn: ({ pageParam }) => feedApi.getExplore(pageParam),
+    queryKey: ['exploreFeed', activeCategory],
+    queryFn: ({ pageParam }) => searchApi.getExploreFeed(pageParam, activeCategory !== 'all' ? activeCategory : undefined),
     getNextPageParam: (lastPage) => lastPage.meta.cursor ?? undefined,
     initialPageParam: undefined as string | undefined,
   });
@@ -383,20 +385,22 @@ export default function DiscoverScreen() {
 
   if (hasError) {
     return (
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <GlassHeader
-          title={t('discover.title')}
-          rightActions={[{ icon: 'search', onPress: () => navigate('/(screens)/search'), accessibilityLabel: t('common.search') }]}
-        />
-        <View style={styles.headerSpacer} />
-        <EmptyState
-          icon="flag"
-          title={t('discover.loadFailed')}
-          subtitle={t('discover.tryAgainLater')}
-          actionLabel={t('common.retry')}
-          onAction={() => { refetchTrending(); refetchExplore(); }}
-        />
-      </View>
+      <ScreenErrorBoundary>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
+          <GlassHeader
+            title={t('discover.title')}
+            rightActions={[{ icon: 'search', onPress: () => navigate('/(screens)/search'), accessibilityLabel: t('common.search') }]}
+          />
+          <View style={styles.headerSpacer} />
+          <EmptyState
+            icon="flag"
+            title={t('discover.loadFailed')}
+            subtitle={t('discover.tryAgainLater')}
+            actionLabel={t('common.retry')}
+            onAction={() => { refetchTrending(); refetchExplore(); }}
+          />
+        </View>
+      </ScreenErrorBoundary>
     );
   }
 

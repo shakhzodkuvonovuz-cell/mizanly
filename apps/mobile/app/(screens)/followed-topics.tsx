@@ -7,7 +7,6 @@ import {
   Pressable,
   StyleSheet,
   RefreshControl,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -45,14 +44,15 @@ function FollowedTopicsContent() {
 
   const loadData = useCallback(async () => {
     try {
-      const [trendingRes] = await Promise.all([
+      const [trendingRes, followedRes] = await Promise.all([
         hashtagsApi.getTrending(),
+        hashtagsApi.getFollowed().catch(() => []),
       ]);
       const trending = (trendingRes as HashtagInfo[]) ?? [];
+      const followed = (followedRes as HashtagInfo[]) ?? [];
       setSuggestedTopics(trending.slice(0, 10));
-      // followed topics loaded from trending for now — backend may add dedicated endpoint
       setFollowedTopics(
-        trending.slice(0, 5).map((h) => ({ ...h, isFollowing: true })),
+        followed.map((h) => ({ ...h, isFollowing: true })),
       );
     } catch {
       // Silently fail, show empty state
@@ -100,11 +100,25 @@ function FollowedTopicsContent() {
       const isCurrentlyFollowing = followedTopics.some((h) => h.id === hashtag.id);
       setTogglingIds((prev) => new Set(prev).add(hashtag.id));
 
+      // Optimistic update
+      if (isCurrentlyFollowing) {
+        setFollowedTopics((prev) => prev.filter((h) => h.id !== hashtag.id));
+      } else {
+        setFollowedTopics((prev) => [...prev, { ...hashtag, isFollowing: true }]);
+      }
+
       try {
         if (isCurrentlyFollowing) {
-          setFollowedTopics((prev) => prev.filter((h) => h.id !== hashtag.id));
+          await hashtagsApi.unfollow(hashtag.id);
         } else {
+          await hashtagsApi.follow(hashtag.id);
+        }
+      } catch {
+        // Revert optimistic update on failure
+        if (isCurrentlyFollowing) {
           setFollowedTopics((prev) => [...prev, { ...hashtag, isFollowing: true }]);
+        } else {
+          setFollowedTopics((prev) => prev.filter((h) => h.id !== hashtag.id));
         }
       } finally {
         setTogglingIds((prev) => {

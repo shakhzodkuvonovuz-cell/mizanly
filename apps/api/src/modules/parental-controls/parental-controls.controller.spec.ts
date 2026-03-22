@@ -41,7 +41,7 @@ describe('ParentalControlsController', () => {
 
   describe('linkChild', () => {
     it('should call parentalControlsService.linkChild with parentUserId and dto', async () => {
-      const dto = { childUsername: 'kid123', pin: '1234' };
+      const dto = { childUserId: 'kid-123', pin: '1234' };
       service.linkChild.mockResolvedValue({ linked: true } as any);
 
       const result = await controller.linkChild(userId, dto as any);

@@ -45,7 +45,7 @@ export class ScreenErrorBoundary extends Component<ScreenErrorBoundaryProps, Scr
           icon="slash"
           title={i18next.t('common.error')}
           subtitle={this.state.error?.message ?? 'An unexpected error occurred. Please try again.'}
-          actionLabel="Try again"
+          actionLabel={i18next.t('common.retry')}
           onAction={this.handleRetry}
         />
       </View>

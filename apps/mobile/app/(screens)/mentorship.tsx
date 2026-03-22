@@ -19,12 +19,12 @@ import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-const TOPICS: { id: string; label: string; icon: IconName }[] = [
-  { id: 'new_muslim', label: 'New Muslim Guidance', icon: 'heart' },
-  { id: 'quran', label: 'Quran Studies', icon: 'globe' },
-  { id: 'arabic', label: 'Arabic Language', icon: 'edit' },
-  { id: 'fiqh', label: 'Fiqh & Jurisprudence', icon: 'layers' },
-  { id: 'general', label: 'General Mentorship', icon: 'users' },
+const TOPICS: { id: string; i18nKey: string; icon: IconName }[] = [
+  { id: 'new_muslim', i18nKey: 'community.topicNewMuslim', icon: 'heart' },
+  { id: 'quran', i18nKey: 'community.topicQuran', icon: 'globe' },
+  { id: 'arabic', i18nKey: 'community.topicArabic', icon: 'edit' },
+  { id: 'fiqh', i18nKey: 'community.topicFiqh', icon: 'layers' },
+  { id: 'general', i18nKey: 'community.topicGeneral', icon: 'users' },
 ];
 
 export default function MentorshipScreen() {
@@ -91,7 +91,7 @@ export default function MentorshipScreen() {
             <View style={styles.badges}>
               <View style={[styles.badge, { backgroundColor: isMentor ? colors.gold + '20' : colors.emerald + '20' }]}>
                 <Text style={[styles.badgeText, { color: isMentor ? colors.gold : colors.emerald }]}>
-                  {isMentor ? 'Mentee' : 'Mentor'}
+                  {isMentor ? t('community.mentee') : t('community.mentor')}
                 </Text>
               </View>
               <View style={[styles.badge, { backgroundColor: (item.status === 'active' ? colors.emerald : colors.text.tertiary) + '20' }]}>
@@ -125,7 +125,7 @@ export default function MentorshipScreen() {
               onPress={() => { setActiveTab(tab); haptic.light(); }}
             >
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab === 'find' ? 'Find a Mentor' : 'My Mentorships'}
+                {tab === 'find' ? t('community.findMentor') : t('community.myMentorships')}
               </Text>
             </Pressable>
           ))}
@@ -148,8 +148,21 @@ export default function MentorshipScreen() {
               renderItem={renderMentor}
               keyExtractor={(item) => item.id as string}
               contentContainerStyle={styles.list}
+              refreshControl={
+                <RefreshControl
+                  refreshing={searchResults.isRefetching}
+                  onRefresh={() => searchResults.refetch()}
+                  tintColor={colors.emerald}
+                />
+              }
               ListEmptyComponent={
-                <EmptyState icon="users" title={t('community.findMentor')} subtitle={t('community.findMentorHint')} />
+                searchResults.isLoading ? (
+                  <View style={styles.skeletons}>
+                    {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.lg} />)}
+                  </View>
+                ) : (
+                  <EmptyState icon="users" title={t('community.findMentor')} subtitle={t('community.findMentorHint')} />
+                )
               }
             />
           </>
@@ -182,13 +195,16 @@ export default function MentorshipScreen() {
           {TOPICS.map(topic => (
             <BottomSheetItem
               key={topic.id}
-              label={topic.label}
+              label={t(topic.i18nKey, topic.id)}
               icon={<Icon name={topic.icon} size="sm" color={colors.emerald} />}
               onPress={() => {
                 setSelectedTopic(topic.id);
                 setRequestSheetOpen(false);
                 haptic.success();
-                // Send request — would call API
+                // Send mentorship request via API
+                if (selectedMentorId) {
+                  api.post('/mentorship/request', { mentorId: selectedMentorId, topic: topic.id }).catch(() => {});
+                }
               }}
             />
           ))}

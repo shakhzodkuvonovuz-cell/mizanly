@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl, Switch,
+  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl, Switch, Share,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
@@ -35,14 +36,7 @@ interface Prayer {
   time: string;
 }
 
-const CALCULATION_METHODS = [
-  'Muslim World League',
-  'Islamic Society of North America (ISNA)',
-  'Egyptian General Authority',
-  'Umm al-Qura University, Makkah',
-  'University of Karachi',
-  'Jafari / Shia',
-];
+// CALCULATION_METHODS removed — actual methods fetched from islamicApi.getPrayerMethods()
 
 function timeStringToDate(timeStr: string): Date {
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -121,16 +115,20 @@ function PrayerCard({
   const { t } = useTranslation();
   const pulseAnim = useSharedValue(1);
 
-  if (isCurrent) {
-    pulseAnim.value = withRepeat(
-      withSequence(
-        withTiming(1.02, { duration: 1000 }),
-        withTiming(1, { duration: 1000 })
-      ),
-      -1,
-      true
-    );
-  }
+  useEffect(() => {
+    if (isCurrent) {
+      pulseAnim.value = withRepeat(
+        withSequence(
+          withTiming(1.02, { duration: 1000 }),
+          withTiming(1, { duration: 1000 })
+        ),
+        -1,
+        true
+      );
+    } else {
+      pulseAnim.value = 1;
+    }
+  }, [isCurrent, pulseAnim]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseAnim.value }],
@@ -222,7 +220,19 @@ export default function PrayerTimesScreen() {
   const [showNotifSettings, setShowNotifSettings] = useState(false);
   const [showAdhanStylePicker, setShowAdhanStylePicker] = useState(false);
   const [showReminderPicker, setShowReminderPicker] = useState(false);
-  const [qiblaDirection] = useState(45); // Degrees from North
+  // Compute Qibla direction from user location (Kaaba: 21.4225, 39.8262)
+  const qiblaDirection = useMemo(() => {
+    if (!userLocation) return 0;
+    const lat1 = (userLocation.lat * Math.PI) / 180;
+    const lng1 = (userLocation.lng * Math.PI) / 180;
+    const lat2 = (21.4225 * Math.PI) / 180;
+    const lng2 = (39.8262 * Math.PI) / 180;
+    const dLng = lng2 - lng1;
+    const x = Math.sin(dLng) * Math.cos(lat2);
+    const y = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    const bearing = (Math.atan2(x, y) * 180) / Math.PI;
+    return Math.round((bearing + 360) % 360);
+  }, [userLocation]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [currentPrayerIndex, setCurrentPrayerIndex] = useState(0);
   const [prayerMethods, setPrayerMethods] = useState<PrayerMethodInfo[]>([]);
@@ -287,7 +297,7 @@ export default function PrayerTimesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [calculationMethod, refreshing]);
+  }, [calculationMethod]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -302,57 +312,63 @@ export default function PrayerTimesScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <GlassHeader
-          title={t('islamic.prayerTimes')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-        />
-        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
-          <Skeleton.Rect width={screenWidth - 32} height={200} borderRadius={radius.lg} />
-          <Skeleton.Rect width={200} height={20} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
-          <Skeleton.Rect width={150} height={16} borderRadius={radius.sm} style={{ marginTop: spacing.md }} />
-        </View>
-      </SafeAreaView>
+      <ScreenErrorBoundary>
+        <SafeAreaView style={styles.container}>
+          <GlassHeader
+            title={t('islamic.prayerTimes')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          />
+          <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+            <Skeleton.Rect width={screenWidth - 32} height={200} borderRadius={radius.lg} />
+            <Skeleton.Rect width={200} height={20} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
+            <Skeleton.Rect width={150} height={16} borderRadius={radius.sm} style={{ marginTop: spacing.md }} />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
-        <GlassHeader
-          title={t('islamic.prayerTimes')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-        />
-        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
-          <EmptyState
-            icon="clock"
-            title={t('islamic.errors.failedToLoad')}
-            subtitle={error}
-            actionLabel={t('common.retry')}
-            onAction={fetchData}
+      <ScreenErrorBoundary>
+        <SafeAreaView style={styles.container}>
+          <GlassHeader
+            title={t('islamic.prayerTimes')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           />
-        </View>
-      </SafeAreaView>
+          <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+            <EmptyState
+              icon="clock"
+              title={t('islamic.errors.failedToLoad')}
+              subtitle={error}
+              actionLabel={t('common.retry')}
+              onAction={fetchData}
+            />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
     );
   }
 
   if (!prayerTimes) {
     return (
-      <SafeAreaView style={styles.container}>
-        <GlassHeader
-          title={t('islamic.prayerTimes')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-        />
-        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
-          <EmptyState
-            icon="clock"
-            title={t('islamic.errors.noPrayerTimes')}
-            subtitle={t('islamic.errors.couldNotLoad')}
-            actionLabel={t('common.retry')}
-            onAction={fetchData}
+      <ScreenErrorBoundary>
+        <SafeAreaView style={styles.container}>
+          <GlassHeader
+            title={t('islamic.prayerTimes')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           />
-        </View>
-      </SafeAreaView>
+          <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+            <EmptyState
+              icon="clock"
+              title={t('islamic.errors.noPrayerTimes')}
+              subtitle={t('islamic.errors.couldNotLoad')}
+              actionLabel={t('common.retry')}
+              onAction={fetchData}
+            />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
     );
   }
 
@@ -383,7 +399,7 @@ export default function PrayerTimesScreen() {
                 <Icon name="map-pin" size="sm" color={colors.emerald} />
                 <Text style={styles.locationText}>{userLocation ? t('islamic.locationCoords', { lat: userLocation.lat.toFixed(2), lng: userLocation.lng.toFixed(2) }) : t('islamic.detectingLocation')}</Text>
               </View>
-              <Pressable onPress={() => { /* Open location picker */ }}>
+              <Pressable onPress={() => navigate('/(screens)/location-picker')}>
                 <Text style={styles.changeLocation}>{t('common.change')}</Text>
               </Pressable>
             </LinearGradient>
@@ -478,7 +494,7 @@ export default function PrayerTimesScreen() {
                   </LinearGradient>
 
                   <Text style={styles.qiblaDirectionText}>
-                    {qiblaDirection}° from North
+                    {t('islamic.qiblaDirectionDegrees', { degrees: qiblaDirection })}
                   </Text>
                 </View>
               </LinearGradient>

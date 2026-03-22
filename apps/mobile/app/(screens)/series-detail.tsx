@@ -8,7 +8,7 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
-  Pressable,
+  Share,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { Image } from 'expo-image';
@@ -51,7 +51,7 @@ interface SeriesDetail {
   category: string;
   coverUrl?: string;
   episodeCount: number;
-  followerCount: number;
+  followersCount: number;
   isFollowing: boolean;
   isCreator: boolean;
   episodes: Episode[];
@@ -240,7 +240,7 @@ function SeriesDetailContent() {
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Icon name="users" size="sm" color={colors.gold} />
-            <Text style={styles.statValue}>{series.followerCount.toLocaleString()}</Text>
+            <Text style={styles.statValue}>{series.followersCount.toLocaleString()}</Text>
             <Text style={styles.statLabel}>{t('series.followers', 'followers')}</Text>
           </View>
         </View>
@@ -313,7 +313,17 @@ function SeriesDetailContent() {
         rightActions={[
           {
             icon: 'share',
-            onPress: () => haptic.light(),
+            onPress: async () => {
+              haptic.light();
+              try {
+                await Share.share({
+                  message: `${series.title} - ${t('series.detail', 'Series')} on Mizanly`,
+                  url: `mizanly://series/${params.id}`,
+                });
+              } catch (_) {
+                // User cancelled share
+              }
+            },
             accessibilityLabel: t('common.share', 'Share'),
           },
         ]}
@@ -358,7 +368,7 @@ function SeriesDetailContent() {
           icon={<Icon name="image" size="md" color={colors.text.primary} />}
           onPress={() => {
             setAddEpisodeSheet(false);
-            // Navigate to post picker
+            navigate('/(screens)/content-picker', { type: 'post', seriesId: params.id! });
           }}
         />
         <BottomSheetItem
@@ -366,7 +376,7 @@ function SeriesDetailContent() {
           icon={<Icon name="video" size="md" color={colors.text.primary} />}
           onPress={() => {
             setAddEpisodeSheet(false);
-            // Navigate to reel picker
+            navigate('/(screens)/content-picker', { type: 'reel', seriesId: params.id! });
           }}
         />
         <BottomSheetItem
@@ -374,7 +384,7 @@ function SeriesDetailContent() {
           icon={<Icon name="play" size="md" color={colors.text.primary} />}
           onPress={() => {
             setAddEpisodeSheet(false);
-            // Navigate to video picker
+            navigate('/(screens)/content-picker', { type: 'video', seriesId: params.id! });
           }}
         />
         <BottomSheetItem

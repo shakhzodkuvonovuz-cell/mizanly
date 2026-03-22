@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   Alert,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -47,6 +46,9 @@ type PayoutSpeed = 'instant' | 'standard';
 
 // ── API helpers ──
 
+// TODO: Backend wallet endpoints not yet implemented
+// These endpoints (/monetization/wallet/*) need to be built before cash out is functional
+// For now, the screen shows a "coming soon" state
 const walletApi = {
   getBalance: () =>
     api.get<WalletBalance>('/monetization/wallet/balance'),
@@ -124,24 +126,13 @@ function CashoutContent() {
       );
       return;
     }
-    setSubmitting(true);
-    try {
-      await walletApi.requestCashout({
-        amount,
-        payoutSpeed,
-        paymentMethodId: selectedMethodId,
-      });
-      haptic.success();
-      setSuccess(true);
-    } catch {
-      Alert.alert(
-        t('cashout.errorTitle', 'Error'),
-        t('cashout.errorSubmit', 'Failed to submit cashout request'),
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }, [amount, balance, selectedMethodId, payoutSpeed, haptic, t]);
+    // TODO: Backend wallet/cashout endpoint + Stripe payout integration needed
+    // Cash out requires real payment processing before it can be enabled
+    Alert.alert(
+      t('common.comingSoon', 'Coming Soon'),
+      t('cashout.comingSoon', 'Cash out will be available once payment processing is set up'),
+    );
+  }, [amount, balance, selectedMethodId, haptic, t]);
 
   if (success) {
     return (

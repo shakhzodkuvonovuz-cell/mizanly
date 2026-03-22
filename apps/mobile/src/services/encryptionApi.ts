@@ -19,4 +19,10 @@ export const encryptionApi = {
 
   rotateKey: (conversationId: string, envelopes: { userId: string; encryptedKey: string; nonce: string }[]) =>
     api.post(`/encryption/rotate/${conversationId}`, { envelopes }),
+
+  getSafetyNumber: (otherUserId: string) =>
+    api.get<{ safetyNumber: string }>(`/encryption/safety-number/${otherUserId}`),
+
+  getEncryptionStatus: (conversationId: string) =>
+    api.get<{ encrypted: boolean; algorithm?: string }>(`/encryption/status/${conversationId}`),
 };

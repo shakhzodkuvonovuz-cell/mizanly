@@ -36,22 +36,22 @@ describe('ThumbnailsController', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('createVariants', () => {
-    it('should call thumbnailsService.createVariants with contentType, contentId, and urls', async () => {
+    it('should call thumbnailsService.createVariants with contentType, contentId, urls, and userId', async () => {
       service.createVariants.mockResolvedValue({ id: 'test-1' } as any);
 
-      await controller.createVariants({ contentType: 'post', contentId: 'post-1', thumbnailUrls: ['a.jpg', 'b.jpg'] } as any);
+      await controller.createVariants('user-1', { contentType: 'post', contentId: 'post-1', thumbnailUrls: ['a.jpg', 'b.jpg'] } as any);
 
-      expect(service.createVariants).toHaveBeenCalledWith('post', 'post-1', ['a.jpg', 'b.jpg']);
+      expect(service.createVariants).toHaveBeenCalledWith('post', 'post-1', ['a.jpg', 'b.jpg'], 'user-1');
     });
   });
 
   describe('getVariants', () => {
-    it('should call thumbnailsService.getVariants with contentType and contentId', async () => {
+    it('should call thumbnailsService.getVariants with contentType, contentId, and userId', async () => {
       service.getVariants.mockResolvedValue([{ id: 'v-1', url: 'a.jpg', impressions: 100 }] as any);
 
-      await controller.getVariants('post', 'post-1');
+      await controller.getVariants('user-1', 'post', 'post-1');
 
-      expect(service.getVariants).toHaveBeenCalledWith('post', 'post-1');
+      expect(service.getVariants).toHaveBeenCalledWith('post', 'post-1', 'user-1');
     });
   });
 

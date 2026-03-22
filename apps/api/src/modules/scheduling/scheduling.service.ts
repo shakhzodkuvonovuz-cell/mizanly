@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Post, Thread, Reel, Video } from '@prisma/client';
@@ -21,8 +22,13 @@ export type ScheduledContent = Post | Thread | Reel | Video;
 
 type ContentModel = 'post' | 'thread' | 'reel' | 'video';
 
+// TODO: No auto-publisher cron/BullMQ job exists to publish scheduled content.
+// Posts with scheduledAt in the past stay in "scheduled" state forever.
+// Needs a repeatable BullMQ job or @nestjs/schedule cron to check and publish due content.
 @Injectable()
 export class SchedulingService {
+  private readonly logger = new Logger(SchedulingService.name);
+
   constructor(private prisma: PrismaService) {}
 
   private getModel(type: string): ContentModel {
@@ -206,5 +212,48 @@ export class SchedulingService {
       default:
         throw new BadRequestException('Invalid content type');
     }
+  }
+
+  /**
+   * Auto-publish all content whose scheduledAt has passed.
+   * Should be called by a cron job or BullMQ repeatable job.
+   * Sets scheduledAt to null (= published) for all overdue items.
+   * Returns the count of items published per content type.
+   */
+  async publishOverdueContent(): Promise<{ posts: number; threads: number; reels: number; videos: number }> {
+    const now = new Date();
+
+    const [posts, threads, reels, videos] = await Promise.all([
+      this.prisma.post.updateMany({
+        where: { scheduledAt: { not: null, lte: now } },
+        data: { scheduledAt: null },
+      }),
+      this.prisma.thread.updateMany({
+        where: { scheduledAt: { not: null, lte: now } },
+        data: { scheduledAt: null },
+      }),
+      this.prisma.reel.updateMany({
+        where: { scheduledAt: { not: null, lte: now } },
+        data: { scheduledAt: null },
+      }),
+      this.prisma.video.updateMany({
+        where: { scheduledAt: { not: null, lte: now } },
+        data: { scheduledAt: null },
+      }),
+    ]);
+
+    const result = {
+      posts: posts.count,
+      threads: threads.count,
+      reels: reels.count,
+      videos: videos.count,
+    };
+
+    const totalPublished = result.posts + result.threads + result.reels + result.videos;
+    if (totalPublished > 0) {
+      this.logger.log(`Auto-published ${totalPublished} items: ${JSON.stringify(result)}`);
+    }
+
+    return result;
   }
 }

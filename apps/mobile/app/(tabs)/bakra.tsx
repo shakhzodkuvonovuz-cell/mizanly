@@ -20,7 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, type TapGesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fontSizeExt, fonts } from '@/theme';
 import { useStore } from '@/store';
 import { reelsApi, feedApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
@@ -436,6 +436,7 @@ export default function BakraScreen() {
   const [commentsReel, setCommentsReel] = useState<Reel | null>(null);
   const [heartTrigger, setHeartTrigger] = useState(0);
   const videoRefs = useRef<{ [key: string]: Video }>({});
+  const viewedReelIds = useRef<Set<string>>(new Set());
   const setVideoRef = useCallback((id: string, ref: Video) => {
     videoRefs.current[id] = ref;
   }, []);
@@ -486,7 +487,10 @@ export default function BakraScreen() {
         const newReel = currentReels[idx];
         if (newReel && videoRefs.current[newReel.id]) {
           videoRefs.current[newReel.id].playAsync();
-          reelsApi.view(newReel.id).catch(() => {});
+          if (!viewedReelIds.current.has(newReel.id)) {
+            viewedReelIds.current.add(newReel.id);
+            reelsApi.view(newReel.id).catch(() => {});
+          }
         }
         setCurrentIndex(idx);
         // Preload next 2 videos
@@ -501,7 +505,7 @@ export default function BakraScreen() {
 
   const queryClient = useQueryClient();
   const likeInFlight = useRef(false);
-  const handleLike = async (reel: Reel) => {
+  const handleLike = useCallback(async (reel: Reel) => {
     if (likeInFlight.current) return;
     likeInFlight.current = true;
     haptic.light();
@@ -534,10 +538,10 @@ export default function BakraScreen() {
     } finally {
       likeInFlight.current = false;
     }
-  };
+  }, [haptic, queryClient, feedQuery]);
 
   const bookmarkInFlight = useRef(false);
-  const handleBookmark = async (reel: Reel) => {
+  const handleBookmark = useCallback(async (reel: Reel) => {
     if (bookmarkInFlight.current) return;
     bookmarkInFlight.current = true;
     haptic.light();
@@ -567,36 +571,36 @@ export default function BakraScreen() {
     } finally {
       bookmarkInFlight.current = false;
     }
-  };
+  }, [haptic, queryClient, feedQuery]);
 
-  const handleShare = async (reel: Reel) => {
+  const handleShare = useCallback(async (reel: Reel) => {
     haptic.light();
     await reelsApi.share(reel.id);
     feedQuery.refetch();
-  };
+  }, [haptic, feedQuery]);
 
-  const handleComment = (reel: Reel) => {
+  const handleComment = useCallback((reel: Reel) => {
     haptic.light();
     setCommentsReel(reel);
-  };
+  }, [haptic]);
 
-  const handleProfilePress = (username: string) => {
+  const handleProfilePress = useCallback((username: string) => {
     router.push(`/(screens)/profile/${username}`);
-  };
+  }, [router]);
 
-  const handleReport = (reel: Reel) => {
+  const handleReport = useCallback((reel: Reel) => {
     router.push(`/(screens)/report?type=reel&id=${reel.id}`);
-  };
+  }, [router]);
 
-  const handleNotInterested = async (reel: Reel) => {
+  const handleNotInterested = useCallback(async (reel: Reel) => {
     haptic.light();
     try {
       await feedApi.reportNotInterested(reel.id, 'reel');
     } catch { /* best effort */ }
     Alert.alert(t('bakra.notInterestedAlert.title'), t('bakra.notInterestedAlert.message'));
-  };
+  }, [haptic, t]);
 
-  const handleCopyLink = async (reel: Reel) => {
+  const handleCopyLink = useCallback(async (reel: Reel) => {
     haptic.light();
     try {
       const { url } = await reelsApi.getShareLink(reel.id);
@@ -606,7 +610,7 @@ export default function BakraScreen() {
       await Clipboard.setStringAsync(`https://mizanly.com/reel/${reel.id}`);
     }
     Alert.alert(t('bakra.linkCopiedAlert.title'), t('bakra.linkCopiedAlert.message'));
-  };
+  }, [haptic, t]);
 
   const handleFollow = useCallback((userId: string) => {
     followsApi.follow(userId).then(() => {
@@ -783,11 +787,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   logo: {
     color: colors.emerald,
     fontSize: fontSize.xl,
-    fontWeight: '700',
+    fontFamily: fonts.headingBold,
     letterSpacing: -0.5,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },

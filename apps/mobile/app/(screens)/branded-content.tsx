@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   Switch,
+  RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -81,9 +82,16 @@ function BrandedContentContent() {
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + spacing.xl },
+          { paddingTop: insets.top + 60 + spacing.base, paddingBottom: insets.bottom + spacing.xl },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={false}
+            onRefresh={() => {/* Form screen — no data to refresh */}}
+            tintColor={colors.emerald}
+          />
+        }
       >
         {/* Toggle */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.toggleCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
@@ -190,11 +198,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-    marginTop: 100,
   },
   content: {
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.base,
     gap: spacing.lg,
   },
   toggleCard: {

@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Image as RNImage, ScrollView,
-  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -51,7 +50,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   const handleLike = useCallback(() => {
     const newLiked = !liked;
     setLiked(newLiked);
-    setLikeCount(prev => newLiked ? prev + 1 : prev - 1);
+    setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
     onLike(post.id, newLiked);
   }, [liked, onLike, post.id]);
 
@@ -210,7 +209,9 @@ export default function CommunityPostsScreen() {
     if (!composeText.trim() && selectedMediaList.length === 0) return;
     createMutation.mutate({
       content: composeText.trim(),
-      mediaUrls: selectedMediaList.map(m => m.uri) // In a real app, these would be uploaded URLs
+      // TODO: Upload media to R2 via presigned URL before submitting, then pass returned URLs.
+      // Currently sends local file:// URIs which the backend cannot serve to other clients.
+      mediaUrls: selectedMediaList.map(m => m.uri)
     });
   }, [composeText, selectedMediaList, createMutation]);
 

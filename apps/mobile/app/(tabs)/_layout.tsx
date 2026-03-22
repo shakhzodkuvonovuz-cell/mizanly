@@ -37,7 +37,6 @@ function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; ba
   };
 
   const { icon } = iconMap[name];
-  const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(focused ? 1.1 : 1, animation.spring.responsive) }],
@@ -192,7 +191,7 @@ export default function TabLayout() {
           options={{
             title: t('tabs.saf'),
             tabBarAccessibilityLabel: t('tabs.accessibility.homeFeed'),
-            tabBarIcon: ({ focused }) => <TabIcon name="saf" focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabIcon name="saf" focused={focused} badge={unreadNotifications || undefined} />,
           }}
         />
         <Tabs.Screen

@@ -22,7 +22,6 @@ export default function QrCodeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
-  const [loading, setLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,14 +29,14 @@ export default function QrCodeScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  const qrValue = `mizanly://profile/${username}`;
+  const qrValue = `https://mizanly.app/@${username}`;
 
   const handleShare = async () => {
     try {
       haptic.light();
       await Share.share({
-        message: `Check out my Mizanly profile: ${qrValue}`,
-        title: 'My Mizanly Profile',
+        message: t('screens.qr-code.shareMessage', { url: qrValue }),
+        title: t('screens.qr-code.shareTitle'),
       });
     } catch (err) {
       Alert.alert(t('common.error'), t('screens.qr-code.errorTitle'));
@@ -100,7 +99,6 @@ export default function QrCodeScreen() {
               accessibilityRole="button"
               style={styles.button}
               onPress={handleShare}
-              disabled={loading}
             >
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -115,7 +113,6 @@ export default function QrCodeScreen() {
               accessibilityRole="button"
               style={styles.button}
               onPress={handleSave}
-              disabled={loading}
             >
               <LinearGradient
                 colors={[colors.emerald, colors.gold]}

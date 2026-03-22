@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,15 +21,27 @@ export default function LocalBoardsScreen() {
   const { t, isRTL } = useTranslation();
   const haptic = useHaptic();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const tc = useThemeColors();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
+  const handleSearchChange = (text: string) => {
+    setSearch(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(text), 400);
+  };
 
   const boardsQuery = useInfiniteQuery({
-    queryKey: ['local-boards', search],
+    queryKey: ['local-boards', debouncedSearch],
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams();
       if (pageParam) params.set('cursor', pageParam);
-      if (search) params.set('city', search);
-      return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/boards?${params}`);
+      if (debouncedSearch) params.set('city', debouncedSearch);
+      return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/community/boards?${params}`);
     },
     getNextPageParam: (lastPage: { meta?: { cursor: string | null; hasMore: boolean } }) =>
       lastPage?.meta?.hasMore ? lastPage.meta.cursor : undefined,
@@ -40,7 +52,7 @@ export default function LocalBoardsScreen() {
 
   const renderBoard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-      <Pressable accessibilityRole="button" style={[styles.boardCard, { borderColor: tc.border }]} onPress={() => haptic.light()}>
+      <Pressable accessibilityRole="button" style={[styles.boardCard, { borderColor: tc.border }]} onPress={() => { haptic.light(); router.push(`/(screens)/local-board/${item.id}` as never); }}>
         <LinearGradient
           colors={['rgba(10,123,79,0.08)', 'transparent']}
           style={styles.boardGradient}
@@ -60,11 +72,11 @@ export default function LocalBoardsScreen() {
           <View style={styles.boardStats}>
             <View style={styles.stat}>
               <Icon name="users" size="xs" color={colors.text.tertiary} />
-              <Text style={styles.statText}>{item.membersCount as number} members</Text>
+              <Text style={styles.statText}>{item.membersCount as number} {t('community.members')}</Text>
             </View>
             <View style={styles.stat}>
               <Icon name="layers" size="xs" color={colors.text.tertiary} />
-              <Text style={styles.statText}>{item.postsCount as number} posts</Text>
+              <Text style={styles.statText}>{item.postsCount as number} {t('community.posts')}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -87,7 +99,7 @@ export default function LocalBoardsScreen() {
             placeholder={t('community.searchByCity')}
             placeholderTextColor={colors.text.tertiary}
             value={search}
-            onChangeText={setSearch}
+            onChangeText={handleSearchChange}
           />
         </View>
 

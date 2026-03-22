@@ -742,6 +742,19 @@ export class PostsService {
     const original = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!original || original.isRemoved) throw new NotFoundException('Post not found');
 
+    // Block check: cannot share posts from users who blocked you or whom you blocked
+    if (original.userId !== userId) {
+      const blocked = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: original.userId },
+            { blockerId: original.userId, blockedId: userId },
+          ],
+        },
+      });
+      if (blocked) throw new NotFoundException('Post not found');
+    }
+
     const existing = await this.prisma.post.findFirst({
       where: { userId, sharedPostId: postId, isRemoved: false },
     });

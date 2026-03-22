@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { SearchService } from './search.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -17,6 +17,7 @@ export class SearchController {
   @Get()
   @UseGuards(OptionalClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Universal search across all content types' })
   search(
     @Query('q') query: string,
     @Query('type') type?: string,
@@ -31,11 +32,13 @@ export class SearchController {
   @Get('trending')
   @UseGuards(OptionalClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 20 } })
+  @ApiOperation({ summary: 'Get trending hashtags and topics' })
   trending() { return this.searchService.trending(); }
 
   @Get('hashtag/:tag')
   @UseGuards(OptionalClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Get posts for a specific hashtag' })
   getHashtagPosts(
     @Param('tag') tag: string,
     @Query('cursor') cursor?: string,
@@ -45,11 +48,13 @@ export class SearchController {
 
   @Get('suggested-users')
   @UseGuards(ClerkAuthGuard) @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get suggested users to follow' })
   suggestedUsers(@CurrentUser('id') userId: string) { return this.searchService.suggestedUsers(userId); }
 
   @Get('posts')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Search posts by query string' })
   searchPosts(
     @Query('q') query: string,
     @Query('cursor') cursor?: string,
@@ -63,6 +68,7 @@ export class SearchController {
   @Get('threads')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Search threads by query string' })
   searchThreads(
     @Query('q') query: string,
     @Query('cursor') cursor?: string,
@@ -75,6 +81,7 @@ export class SearchController {
   @Get('reels')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Search reels by query string' })
   searchReels(
     @Query('q') query: string,
     @Query('cursor') cursor?: string,
@@ -87,6 +94,7 @@ export class SearchController {
   @Get('explore')
   @UseGuards(OptionalClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Get explore/discovery feed' })
   exploreFeed(
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
@@ -98,6 +106,7 @@ export class SearchController {
   @Get('suggestions')
   @UseGuards(OptionalClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Get search query autocomplete suggestions' })
   querySuggestions(
     @Query('q') query: string,
     @Query('limit') limit?: string,

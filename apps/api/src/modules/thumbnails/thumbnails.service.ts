@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
 type ContentType = 'post' | 'reel' | 'video';
@@ -14,9 +14,14 @@ export class ThumbnailsService {
    * Upload thumbnail variants for A/B testing.
    * Max 3 variants per piece of content.
    */
-  async createVariants(contentType: ContentType, contentId: string, thumbnailUrls: string[]) {
+  async createVariants(contentType: ContentType, contentId: string, thumbnailUrls: string[], userId?: string) {
     if (thumbnailUrls.length < 2 || thumbnailUrls.length > MAX_VARIANTS) {
       throw new BadRequestException(`Provide 2-${MAX_VARIANTS} thumbnail variants`);
+    }
+
+    // Verify ownership of the content
+    if (userId) {
+      await this.verifyContentOwnership(contentType, contentId, userId);
     }
 
     // Check if variants already exist
@@ -41,7 +46,12 @@ export class ThumbnailsService {
   /**
    * Get variants with stats for creator analytics.
    */
-  async getVariants(contentType: ContentType, contentId: string) {
+  async getVariants(contentType: ContentType, contentId: string, userId?: string) {
+    // Verify ownership — only the content creator should see A/B test analytics
+    if (userId) {
+      await this.verifyContentOwnership(contentType, contentId, userId);
+    }
+
     const variants = await this.prisma.thumbnailVariant.findMany({
       where: { contentType, contentId },
       orderBy: { createdAt: 'asc' },
@@ -147,5 +157,24 @@ export class ThumbnailsService {
       where: { id: bestVariant.id },
       data: { isWinner: true },
     });
+  }
+
+  /**
+   * Verify the requesting user owns the content they're creating/viewing variants for.
+   */
+  private async verifyContentOwnership(contentType: ContentType, contentId: string, userId: string) {
+    let ownerId: string | null = null;
+    if (contentType === 'post') {
+      const post = await this.prisma.post.findUnique({ where: { id: contentId }, select: { userId: true } });
+      ownerId = post?.userId ?? null;
+    } else if (contentType === 'reel') {
+      const reel = await this.prisma.reel.findUnique({ where: { id: contentId }, select: { userId: true } });
+      ownerId = reel?.userId ?? null;
+    } else if (contentType === 'video') {
+      const video = await this.prisma.video.findUnique({ where: { id: contentId }, select: { userId: true } });
+      ownerId = video?.userId ?? null;
+    }
+    if (!ownerId) throw new NotFoundException('Content not found');
+    if (ownerId !== userId) throw new ForbiddenException('You can only manage thumbnails for your own content');
   }
 }

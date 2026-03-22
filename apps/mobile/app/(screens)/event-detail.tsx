@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   RefreshControl,
   Pressable,
   Dimensions,
-  Pressable,
+  Linking,
+  Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -41,7 +42,7 @@ function toApiRsvpStatus(status: RsvpStatus): ApiRsvpStatus | null {
 
 function formatEventDate(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(undefined, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -51,10 +52,10 @@ function formatEventDate(dateStr: string): string {
 
 function formatEventTime(startStr: string, endStr?: string): string {
   const start = new Date(startStr);
-  const startTime = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const startTime = start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   if (!endStr) return startTime;
   const end = new Date(endStr);
-  const endTime = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const endTime = end.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
   return `${startTime} — ${endTime}`;
 }
 
@@ -65,6 +66,7 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>(null);
+  const [descExpanded, setDescExpanded] = useState(false);
   const tc = useThemeColors();
 
   // Fetch event details
@@ -83,6 +85,18 @@ export default function EventDetailScreen() {
     },
     enabled: !!id,
   });
+
+  // Initialize RSVP status from server data when event loads
+  useEffect(() => {
+    if (event?.myRsvp) {
+      const statusMap: Record<string, RsvpStatus> = {
+        going: 'going',
+        maybe: 'maybe',
+        not_going: 'not-going',
+      };
+      setRsvpStatus(statusMap[event.myRsvp] ?? null);
+    }
+  }, [event?.myRsvp]);
 
   // Fetch attendees
   const {
@@ -151,49 +165,53 @@ export default function EventDetailScreen() {
   // Loading skeleton
   if (eventLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <GlassHeader
-          title={t('events.event')}
-          onBack={() => router.back()}
-        />
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.base }}>
-          <Skeleton.Rect width="100%" height={220} borderRadius={radius.lg} />
-          <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
-            <Skeleton.Text width="70%" />
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Skeleton.Circle size={40} />
-              <Skeleton.Text width="40%" />
+      <ScreenErrorBoundary>
+        <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+          <GlassHeader
+            title={t('events.event')}
+            onBack={() => router.back()}
+          />
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.base }}>
+            <Skeleton.Rect width="100%" height={220} borderRadius={radius.lg} />
+            <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
+              <Skeleton.Text width="70%" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Skeleton.Circle size={40} />
+                <Skeleton.Text width="40%" />
+              </View>
+              <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
+              <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
+              <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
             </View>
-            <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
-            <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
-            <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
     );
   }
 
   // Error state
   if (eventError || !event) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <GlassHeader
-          title={t('events.event')}
-          onBack={() => router.back()}
-        />
-        <EmptyState
-          icon="calendar"
-          title={t('events.loadFailed')}
-          subtitle={eventError instanceof Error ? eventError.message : t('events.tryAgain')}
-          actionLabel={t('common.retry')}
-          onAction={() => refetchEvent()}
-        />
-      </SafeAreaView>
+      <ScreenErrorBoundary>
+        <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+          <GlassHeader
+            title={t('events.event')}
+            onBack={() => router.back()}
+          />
+          <EmptyState
+            icon="calendar"
+            title={t('events.loadFailed')}
+            subtitle={eventError instanceof Error ? eventError.message : t('events.tryAgain')}
+            actionLabel={t('common.retry')}
+            onAction={() => refetchEvent()}
+          />
+        </SafeAreaView>
+      </ScreenErrorBoundary>
     );
   }
 
-  const goingCount = event._count?.goingCount ?? 0;
-  const maybeCount = event._count?.maybeCount ?? 0;
+  const goingCount = (event as Record<string, unknown>).goingCount as number ?? event._count?.rsvps ?? 0;
+  const maybeCount = (event as Record<string, unknown>).maybeCount as number ?? 0;
   const totalRsvps = event._count?.rsvps ?? 0;
   const remainingAttendees = Math.max(0, goingCount - attendees.length);
   const eventTypeBadge = event.eventType === 'virtual' ? t('events.virtual') :
@@ -205,7 +223,11 @@ export default function EventDetailScreen() {
       <GlassHeader
         title={t('events.event')}
         onBack={() => router.back()}
-        rightAction={{ icon: 'share', onPress: () => {} }}
+        rightAction={{ icon: 'share', onPress: () => {
+          Share.share({
+            message: `${event.title} — ${formatEventDate(event.startDate)}${event.location ? ` at ${event.location}` : ''}`,
+          });
+        } }}
       />
 
       <ScrollView
@@ -265,7 +287,15 @@ export default function EventDetailScreen() {
               <Text style={styles.infoMain}>{formatEventDate(event.startDate)}</Text>
               <Text style={styles.infoSub}>{formatEventTime(event.startDate, event.endDate)}</Text>
             </View>
-            <Pressable style={[styles.addToCalendar, { backgroundColor: tc.surface }]}>
+            <Pressable
+              style={[styles.addToCalendar, { backgroundColor: tc.surface }]}
+              onPress={() => {
+                // Open device calendar with event details
+                const startDate = new Date(event.startDate).toISOString();
+                Linking.openURL(`calshow:${new Date(event.startDate).getTime() / 1000}`);
+              }}
+              accessibilityRole="button"
+            >
               <Icon name="calendar" size="xs" color={colors.emerald} />
               <Text style={styles.addText}>{t('events.add')}</Text>
             </Pressable>
@@ -288,7 +318,15 @@ export default function EventDetailScreen() {
               <View style={styles.infoTextContainer}>
                 <Text style={styles.infoMain}>{event.location}</Text>
               </View>
-              <Pressable style={[styles.directionsButton, { backgroundColor: tc.surface }]}>
+              <Pressable
+                style={[styles.directionsButton, { backgroundColor: tc.surface }]}
+                onPress={() => {
+                  const query = encodeURIComponent(event.location ?? '');
+                  Linking.openURL(`https://maps.google.com/?q=${query}`);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={t('events.directions')}
+              >
                 <Icon name="map-pin" size="xs" color={colors.text.primary} />
               </Pressable>
             </LinearGradient>
@@ -302,10 +340,12 @@ export default function EventDetailScreen() {
               colors={colors.gradient.cardDark}
               style={styles.descriptionCard}
             >
-              <Text style={styles.descriptionText}>{event.description}</Text>
-              <Pressable>
-                <Text style={styles.readMore}>{t('common.readMore')}</Text>
-              </Pressable>
+              <Text style={styles.descriptionText} numberOfLines={descExpanded ? undefined : 4}>{event.description}</Text>
+              {!descExpanded && (
+                <Pressable onPress={() => setDescExpanded(true)} accessibilityRole="button">
+                  <Text style={styles.readMore}>{t('common.readMore')}</Text>
+                </Pressable>
+              )}
             </LinearGradient>
           </Animated.View>
         )}
@@ -407,7 +447,11 @@ export default function EventDetailScreen() {
                   )}
                 </View>
 
-                <Pressable style={styles.seeAllButton}>
+                <Pressable
+                  style={styles.seeAllButton}
+                  onPress={() => router.push(`/(screens)/event-attendees/${id}` as never)}
+                  accessibilityRole="button"
+                >
                   <Text style={styles.seeAllText}>{t('events.seeAllAttendees')}</Text>
                   <Icon name="chevron-right" size="xs" color={colors.text.secondary} />
                 </Pressable>
@@ -422,7 +466,15 @@ export default function EventDetailScreen() {
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
-        <Pressable style={styles.shareEventButton}>
+        <Pressable
+          style={styles.shareEventButton}
+          onPress={() => {
+            Share.share({
+              message: `${event.title} — ${formatEventDate(event.startDate)}${event.location ? ` at ${event.location}` : ''}`,
+            });
+          }}
+          accessibilityRole="button"
+        >
           <LinearGradient
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
             style={styles.shareButtonInner}

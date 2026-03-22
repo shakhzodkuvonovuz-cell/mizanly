@@ -6,6 +6,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
+const VALID_ADMIN_ACTIONS = [
+  'member_added', 'member_removed', 'member_banned',
+  'title_changed', 'photo_changed', 'pin_message', 'unpin_message',
+  'slow_mode_changed', 'permissions_changed',
+  'topic_created', 'topic_updated', 'topic_deleted',
+  'emoji_pack_created', 'emoji_pack_updated', 'emoji_pack_deleted',
+  'emoji_added', 'emoji_removed',
+] as const;
+
 @Injectable()
 export class TelegramFeaturesService {
   constructor(private prisma: PrismaService) {}
@@ -24,7 +33,10 @@ export class TelegramFeaturesService {
 
     const hasMore = messages.length > limit;
     if (hasMore) messages.pop();
-    return { data: messages, meta: { cursor: messages[messages.length - 1]?.id || null, hasMore } };
+    return {
+      data: messages,
+      meta: { cursor: hasMore ? messages[messages.length - 1]?.id ?? null : null, hasMore },
+    };
   }
 
   async saveMessage(userId: string, dto: {
@@ -40,6 +52,11 @@ export class TelegramFeaturesService {
     }
     if (dto.forwardedFromType && !['post', 'thread', 'reel', 'video', 'message'].includes(dto.forwardedFromType)) {
       throw new BadRequestException('Invalid forwardedFromType');
+    }
+
+    // Validate forwardedFromId is provided when forwardedFromType is set (Finding 32)
+    if (dto.forwardedFromType && !dto.forwardedFromId) {
+      throw new BadRequestException('forwardedFromId is required when forwardedFromType is set');
     }
 
     return this.prisma.savedMessage.create({
@@ -62,19 +79,29 @@ export class TelegramFeaturesService {
     });
   }
 
-  async searchSavedMessages(userId: string, query: string, limit = 20) {
+  async searchSavedMessages(userId: string, query: string, cursor?: string, limit = 20) {
     if (!query || query.trim().length === 0) {
       throw new BadRequestException('Search query is required');
     }
 
-    return this.prisma.savedMessage.findMany({
-      where: {
-        userId,
-        content: { contains: query.trim(), mode: 'insensitive' },
-      },
+    const where: Record<string, unknown> = {
+      userId,
+      content: { contains: query.trim(), mode: 'insensitive' },
+    };
+    if (cursor) where.id = { lt: cursor };
+
+    const messages = await this.prisma.savedMessage.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: limit + 1,
     });
+
+    const hasMore = messages.length > limit;
+    if (hasMore) messages.pop();
+    return {
+      data: messages,
+      meta: { cursor: hasMore ? messages[messages.length - 1]?.id ?? null : null, hasMore },
+    };
   }
 
   // ── Chat Folders ────────────────────────────────────────
@@ -87,9 +114,54 @@ export class TelegramFeaturesService {
     });
   }
 
+  async getFolderConversations(userId: string, folderId: string, cursor?: string, limit = 50) {
+    const folder = await this.prisma.chatFolder.findFirst({ where: { id: folderId, userId } });
+    if (!folder) throw new NotFoundException('Chat folder not found');
+
+    const where: Record<string, unknown> = {
+      members: { some: { userId } },
+    };
+
+    // Apply folder filters
+    if (folder.conversationIds.length > 0) {
+      if (folder.filterType === 'exclude') {
+        where.id = { notIn: folder.conversationIds };
+      } else {
+        where.id = { in: folder.conversationIds };
+      }
+    }
+
+    if (folder.includeGroups && !folder.includeChannels) {
+      where.isGroup = true;
+    } else if (folder.includeChannels && !folder.includeGroups) {
+      where.isGroup = false;
+    }
+
+    if (cursor) {
+      (where as Record<string, unknown>).id = {
+        ...((where.id as Record<string, unknown>) || {}),
+        lt: cursor,
+      };
+    }
+
+    const conversations = await this.prisma.conversation.findMany({
+      where,
+      orderBy: { lastMessageAt: 'desc' },
+      take: limit + 1,
+    });
+
+    const hasMore = conversations.length > limit;
+    if (hasMore) conversations.pop();
+    return {
+      data: conversations,
+      meta: { cursor: hasMore ? conversations[conversations.length - 1]?.id ?? null : null, hasMore },
+    };
+  }
+
   async createChatFolder(userId: string, dto: {
     name: string; icon?: string; conversationIds?: string[];
     includeGroups?: boolean; includeChannels?: boolean;
+    filterType?: string; includeBots?: boolean;
   }) {
     if (!dto.name?.trim()) {
       throw new BadRequestException('Folder name is required');
@@ -101,6 +173,19 @@ export class TelegramFeaturesService {
     const count = await this.prisma.chatFolder.count({ where: { userId } });
     if (count >= 10) throw new BadRequestException('Maximum 10 chat folders');
 
+    // Validate conversationIds — verify user is member of each conversation (Finding 9)
+    if (dto.conversationIds && dto.conversationIds.length > 0) {
+      const memberships = await this.prisma.conversationMember.findMany({
+        where: { userId, conversationId: { in: dto.conversationIds } },
+        select: { conversationId: true },
+      });
+      const memberConvIds = new Set(memberships.map(m => m.conversationId));
+      const invalidIds = dto.conversationIds.filter(id => !memberConvIds.has(id));
+      if (invalidIds.length > 0) {
+        throw new ForbiddenException(`Not a member of conversations: ${invalidIds.join(', ')}`);
+      }
+    }
+
     return this.prisma.chatFolder.create({
       data: {
         userId,
@@ -110,6 +195,8 @@ export class TelegramFeaturesService {
         conversationIds: dto.conversationIds || [],
         includeGroups: dto.includeGroups || false,
         includeChannels: dto.includeChannels || false,
+        filterType: dto.filterType || 'include',
+        includeBots: dto.includeBots || false,
       },
     });
   }
@@ -117,6 +204,7 @@ export class TelegramFeaturesService {
   async updateChatFolder(userId: string, folderId: string, dto: {
     name?: string; icon?: string; conversationIds?: string[];
     includeGroups?: boolean; includeChannels?: boolean;
+    filterType?: string; includeBots?: boolean;
   }) {
     const folder = await this.prisma.chatFolder.findFirst({ where: { id: folderId, userId } });
     if (!folder) throw new NotFoundException('Chat folder not found');
@@ -125,6 +213,19 @@ export class TelegramFeaturesService {
       if (!dto.name.trim()) throw new BadRequestException('Folder name is required');
       if (dto.name.length > 50) throw new BadRequestException('Folder name must be 50 characters or less');
       dto.name = dto.name.trim();
+    }
+
+    // Validate conversationIds if provided (Finding 9)
+    if (dto.conversationIds && dto.conversationIds.length > 0) {
+      const memberships = await this.prisma.conversationMember.findMany({
+        where: { userId, conversationId: { in: dto.conversationIds } },
+        select: { conversationId: true },
+      });
+      const memberConvIds = new Set(memberships.map(m => m.conversationId));
+      const invalidIds = dto.conversationIds.filter(id => !memberConvIds.has(id));
+      if (invalidIds.length > 0) {
+        throw new ForbiddenException(`Not a member of conversations: ${invalidIds.join(', ')}`);
+      }
     }
 
     return this.prisma.chatFolder.update({ where: { id: folderId }, data: dto });
@@ -148,10 +249,24 @@ export class TelegramFeaturesService {
       take: 50,
     });
     const ownedIds = new Set(folders.map((f) => f.id));
+
+    // Validate complete set — all owned folders must be included (Finding 16)
+    if (folderIds.length !== ownedIds.size) {
+      throw new BadRequestException(
+        `Must reorder all folders. Expected ${ownedIds.size} folder IDs, got ${folderIds.length}`,
+      );
+    }
+
     for (const id of folderIds) {
       if (!ownedIds.has(id)) {
         throw new ForbiddenException(`Folder ${id} does not belong to you`);
       }
+    }
+
+    // Check for duplicates
+    const uniqueIds = new Set(folderIds);
+    if (uniqueIds.size !== folderIds.length) {
+      throw new BadRequestException('Duplicate folder IDs are not allowed');
     }
 
     // Batch reorder in a single transaction instead of N individual queries
@@ -173,6 +288,16 @@ export class TelegramFeaturesService {
       throw new ForbiddenException('Only admins can set slow mode');
     }
 
+    // Verify this is a group conversation (Finding 35)
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { isGroup: true },
+    });
+    if (!conversation) throw new NotFoundException('Conversation not found');
+    if (!conversation.isGroup) {
+      throw new BadRequestException('Slow mode can only be set on group conversations');
+    }
+
     const validIntervals = [0, 30, 60, 300, 900, 3600];
     if (!validIntervals.includes(seconds)) {
       throw new BadRequestException('Invalid slow mode interval. Valid: 0, 30, 60, 300, 900, 3600');
@@ -184,14 +309,7 @@ export class TelegramFeaturesService {
     });
 
     // Log admin action
-    await this.prisma.adminLog.create({
-      data: {
-        groupId: conversationId,
-        adminId,
-        action: 'slow_mode_changed',
-        details: `Slow mode set to ${seconds}s`,
-      },
-    });
+    await this.logAdminAction(conversationId, adminId, 'slow_mode_changed', undefined, `Slow mode set to ${seconds}s`);
 
     return { success: true, slowModeSeconds: seconds };
   }
@@ -218,10 +336,24 @@ export class TelegramFeaturesService {
 
     const hasMore = logs.length > limit;
     if (hasMore) logs.pop();
-    return { data: logs, meta: { cursor: logs[logs.length - 1]?.id || null, hasMore } };
+    return {
+      data: logs,
+      meta: { cursor: hasMore ? logs[logs.length - 1]?.id ?? null : null, hasMore },
+    };
   }
 
-  async logAdminAction(groupId: string, adminId: string, action: string, targetId?: string, details?: string) {
+  async logAdminAction(
+    groupId: string,
+    adminId: string,
+    action: string,
+    targetId?: string,
+    details?: string,
+  ) {
+    // Validate action against known action types (Finding 10)
+    if (!VALID_ADMIN_ACTIONS.includes(action as typeof VALID_ADMIN_ACTIONS[number])) {
+      throw new BadRequestException(`Invalid admin action: ${action}. Valid actions: ${VALID_ADMIN_ACTIONS.join(', ')}`);
+    }
+
     return this.prisma.adminLog.create({
       data: { groupId, adminId, action, targetId, details },
     });
@@ -245,12 +377,23 @@ export class TelegramFeaturesService {
     const count = await this.prisma.groupTopic.count({ where: { conversationId } });
     if (count >= 100) throw new BadRequestException('Maximum 100 topics per group');
 
-    return this.prisma.groupTopic.create({
+    const topic = await this.prisma.groupTopic.create({
       data: { conversationId, name: dto.name.trim(), iconColor: dto.iconColor, createdById: userId },
     });
+
+    // Log admin action for topic creation (Finding 12)
+    await this.logAdminAction(conversationId, userId, 'topic_created', topic.id, `Topic "${dto.name.trim()}" created`);
+
+    return topic;
   }
 
-  async getTopics(conversationId: string) {
+  async getTopics(conversationId: string, userId: string) {
+    // Verify membership before returning topics (Finding 7)
+    const member = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId } },
+    });
+    if (!member) throw new ForbiddenException('Not a member of this group');
+
     return this.prisma.groupTopic.findMany({
       where: { conversationId },
       orderBy: [{ isPinned: 'desc' }, { lastMessageAt: 'desc' }],
@@ -278,7 +421,17 @@ export class TelegramFeaturesService {
       dto.name = dto.name.trim();
     }
 
-    return this.prisma.groupTopic.update({ where: { id: topicId }, data: dto });
+    const updated = await this.prisma.groupTopic.update({ where: { id: topicId }, data: dto });
+
+    // Log admin action for topic update (Finding 12)
+    const changes: string[] = [];
+    if (dto.name) changes.push(`name="${dto.name}"`);
+    if (dto.isPinned !== undefined) changes.push(`isPinned=${dto.isPinned}`);
+    if (dto.isClosed !== undefined) changes.push(`isClosed=${dto.isClosed}`);
+    if (dto.iconColor) changes.push(`iconColor=${dto.iconColor}`);
+    await this.logAdminAction(topic.conversationId, userId, 'topic_updated', topicId, changes.join(', '));
+
+    return updated;
   }
 
   async deleteTopic(topicId: string, userId: string) {
@@ -295,7 +448,12 @@ export class TelegramFeaturesService {
       throw new ForbiddenException('Only admins can delete topics');
     }
 
-    return this.prisma.groupTopic.delete({ where: { id: topicId } });
+    const deleted = await this.prisma.groupTopic.delete({ where: { id: topicId } });
+
+    // Log admin action for topic deletion (Finding 12)
+    await this.logAdminAction(topic.conversationId, userId, 'topic_deleted', topicId, `Topic "${topic.name}" deleted`);
+
+    return deleted;
   }
 
   // ── Custom Emoji Packs ──────────────────────────────────
@@ -313,6 +471,38 @@ export class TelegramFeaturesService {
     });
   }
 
+  async updateEmojiPack(packId: string, userId: string, dto: { name?: string; description?: string; isPublic?: boolean }) {
+    const pack = await this.prisma.customEmojiPack.findFirst({ where: { id: packId, creatorId: userId } });
+    if (!pack) throw new NotFoundException('Emoji pack not found or not yours');
+
+    if (dto.name !== undefined) {
+      if (!dto.name.trim()) throw new BadRequestException('Pack name is required');
+      if (dto.name.length > 100) throw new BadRequestException('Pack name must be 100 characters or less');
+      dto.name = dto.name.trim();
+    }
+
+    return this.prisma.customEmojiPack.update({ where: { id: packId }, data: dto });
+  }
+
+  async deleteEmojiPack(packId: string, userId: string) {
+    const pack = await this.prisma.customEmojiPack.findFirst({ where: { id: packId, creatorId: userId } });
+    if (!pack) throw new NotFoundException('Emoji pack not found or not yours');
+    return this.prisma.customEmojiPack.delete({ where: { id: packId } });
+  }
+
+  async deleteEmoji(emojiId: string, userId: string) {
+    const emoji = await this.prisma.customEmoji.findUnique({
+      where: { id: emojiId },
+      include: { pack: { select: { creatorId: true } } },
+    });
+    if (!emoji) throw new NotFoundException('Emoji not found');
+    if (emoji.pack.creatorId !== userId) {
+      throw new ForbiddenException('Only the pack creator can delete emojis');
+    }
+
+    return this.prisma.customEmoji.delete({ where: { id: emojiId } });
+  }
+
   async addEmojiToPack(packId: string, userId: string, dto: { shortcode: string; imageUrl: string; isAnimated?: boolean }) {
     const pack = await this.prisma.customEmojiPack.findFirst({ where: { id: packId, creatorId: userId } });
     if (!pack) throw new NotFoundException('Emoji pack not found or not yours');
@@ -322,12 +512,28 @@ export class TelegramFeaturesService {
       throw new BadRequestException('Shortcode must be 2-32 alphanumeric characters or underscores');
     }
 
+    // Check for duplicate shortcode within pack (Finding 31 — also enforced by @@unique in schema)
+    const existing = await this.prisma.customEmoji.findUnique({
+      where: { packId_shortcode: { packId, shortcode: dto.shortcode } },
+    });
+    if (existing) {
+      throw new BadRequestException(`Shortcode "${dto.shortcode}" already exists in this pack`);
+    }
+
     const count = await this.prisma.customEmoji.count({ where: { packId } });
     if (count >= 120) throw new BadRequestException('Maximum 120 emoji per pack');
 
-    return this.prisma.customEmoji.create({
+    const emoji = await this.prisma.customEmoji.create({
       data: { packId, shortcode: dto.shortcode, imageUrl: dto.imageUrl, isAnimated: dto.isAnimated || false },
     });
+
+    // Increment pack usage count when emoji is added (Finding 18)
+    await this.prisma.customEmojiPack.update({
+      where: { id: packId },
+      data: { usageCount: { increment: 1 } },
+    });
+
+    return emoji;
   }
 
   async getEmojiPacks(cursor?: string, limit = 20) {
@@ -346,7 +552,10 @@ export class TelegramFeaturesService {
 
     const hasMore = packs.length > limit;
     if (hasMore) packs.pop();
-    return { data: packs, meta: { cursor: packs[packs.length - 1]?.id || null, hasMore } };
+    return {
+      data: packs,
+      meta: { cursor: hasMore ? packs[packs.length - 1]?.id ?? null : null, hasMore },
+    };
   }
 
   async getMyEmojiPacks(userId: string) {

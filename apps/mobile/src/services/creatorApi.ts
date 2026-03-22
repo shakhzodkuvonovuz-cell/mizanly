@@ -50,4 +50,6 @@ export const creatorApi = {
     api.get<GrowthData>('/creator/analytics/growth'),
   getRevenue: () =>
     api.get<RevenueData>('/creator/analytics/revenue'),
+  askAI: (question: string) =>
+    api.post<{ answer: string }>('/creator/ask', { question }),
 };

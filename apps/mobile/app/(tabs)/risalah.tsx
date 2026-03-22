@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter, useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -27,7 +27,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize, radius, animation, fonts } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fonts, tabBar } from '@/theme';
 import { useStore } from '@/store';
 import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
@@ -168,7 +168,6 @@ const ConversationRow = memo(function ConversationRow({
 
 export default function RisalahScreen() {
   const router = useRouter();
-  const navigation = useNavigation();
   const { user } = useUser();
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
@@ -191,20 +190,17 @@ export default function RisalahScreen() {
   const listRef = useRef<FlatList<Conversation>>(null);
   useScrollToTop(listRef);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus' as never, () => {
-      listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
+  // which would reset scroll position when returning from sub-screens
 
   useEffect(() => {
-    let socket: Socket;
+    let mounted = true;
+    let socket: Socket | null = null;
     const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
 
     const connect = async () => {
       const token = await getToken();
-      if (!token) return;
+      if (!token || !mounted) return;
 
       socket = io(SOCKET_URL, {
         auth: { token },
@@ -216,6 +212,7 @@ export default function RisalahScreen() {
 
       // Refresh token on reconnect attempt (handles expired tokens)
       socket.on('connect_error', async () => {
+        if (!mounted || !socket) return;
         const freshToken = await getToken({ skipCache: true });
         if (freshToken && socket) {
           socket.auth = { token: freshToken };
@@ -223,10 +220,12 @@ export default function RisalahScreen() {
       });
 
       socket.on('user_online', ({ userId }: { userId: string }) => {
+        if (!mounted) return;
         setOnlineUsers(prev => new Set(prev).add(userId));
       });
 
       socket.on('user_offline', ({ userId }: { userId: string }) => {
+        if (!mounted) return;
         setOnlineUsers(prev => {
           const next = new Set(prev);
           next.delete(userId);
@@ -235,6 +234,7 @@ export default function RisalahScreen() {
       });
 
       socket.on('user_typing', ({ conversationId, userId, isTyping }: { conversationId: string; userId: string; isTyping: boolean }) => {
+        if (!mounted) return;
         setTypingUsers(prev => {
           const next = new Map(prev);
           const currentSet = next.get(conversationId) ?? new Set();
@@ -254,6 +254,7 @@ export default function RisalahScreen() {
 
       // Refetch conversations on new messages so list stays fresh
       socket.on('new_message', () => {
+        if (!mounted) return;
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
       });
 
@@ -261,13 +262,27 @@ export default function RisalahScreen() {
     };
 
     connect();
-    return () => { socket?.disconnect(); };
+    return () => {
+      mounted = false;
+      socket?.disconnect();
+      socketRef.current = null;
+    };
   }, [getToken, queryClient]);
 
   const { data: conversations, isLoading, isError, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
   });
+
+  // Join conversation rooms so we receive typing events
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket?.connected || !conversations) return;
+    const convos = conversations as Conversation[];
+    for (const convo of convos) {
+      socket.emit('join_conversation', { conversationId: convo.id });
+    }
+  }, [conversations]);
 
   const archiveMutation = useMutation({
     mutationFn: (conversationId: string) => messagesApi.archiveConversation(conversationId),
@@ -318,7 +333,7 @@ export default function RisalahScreen() {
         onAction={() => router.push('/(screens)/new-conversation')}
       />
     )
-  ), [isLoading, activeTab, router]);
+  ), [isLoading, isError, activeTab, router, t]);
 
   const listHeader = useMemo(() => {
     if (archivedCount === 0) return null;
@@ -336,7 +351,7 @@ export default function RisalahScreen() {
         <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={colors.text.tertiary} />
       </Pressable>
     );
-  }, [archivedCount, router]);
+  }, [archivedCount, router, isRTL, t, tc.border]);
 
   const keyExtractor = useCallback((item: Conversation) => item.id, []);
   const renderItem = useCallback(({ item }: { item: Conversation }) => {
@@ -369,7 +384,7 @@ export default function RisalahScreen() {
         />
       </Swipeable>
     );
-  }, [user?.id, router, onlineUsers, typingUsers]);
+  }, [user?.id, router, onlineUsers, typingUsers, archiveMutation, t]);
   const getItemLayout = useCallback((_: ArrayLike<Conversation> | null | undefined, index: number) => ({
     length: 72,
     offset: 72 * index,
@@ -382,6 +397,15 @@ export default function RisalahScreen() {
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.risalah')}</Text>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
+          <Pressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+            accessibilityLabel={t('common.search')}
+            accessibilityRole="button"
+            accessibilityHint={t('accessibility.searchHint')}
+          >
+            <Icon name="search" size="sm" color={colors.text.primary} />
+          </Pressable>
           <Pressable
             hitSlop={8}
             onPress={() => { haptic.light(); navigate('/(screens)/saved-messages'); }}
@@ -493,6 +517,7 @@ export default function RisalahScreen() {
             tintColor={colors.emerald}
           />
         }
+        contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
       />
@@ -624,7 +649,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: spacing['2xl'],
+    bottom: tabBar.height + 16,
     right: spacing.base,
     width: 56,
     height: 56,

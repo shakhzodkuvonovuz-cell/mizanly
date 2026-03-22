@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
 } from 'react-native';
@@ -141,7 +141,7 @@ const STATUS_COLORS: Record<string, string> = {
   memorized: colors.emerald,
   in_progress: colors.gold,
   needs_review: colors.extended.orange,
-  not_started: tc.surface,
+  not_started: colors.dark.surface,
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -157,7 +157,7 @@ interface SurahProgress {
   lastReviewedAt: string | null;
 }
 
-function SurahRow({ surah, progress, onPress }: {
+const SurahRow = React.memo(function SurahRow({ surah, progress, onPress }: {
   surah: typeof SURAHS[0];
   progress: SurahProgress;
   onPress: () => void;
@@ -187,7 +187,7 @@ function SurahRow({ surah, progress, onPress }: {
       <Icon name="chevron-right" size={16} color={colors.text.tertiary} />
     </Pressable>
   );
-}
+});
 
 export default function HifzTrackerScreen() {
   const router = useRouter();
@@ -199,17 +199,17 @@ export default function HifzTrackerScreen() {
 
   const progressQuery = useQuery({
     queryKey: ['hifz-progress'],
-    queryFn: () => islamicApi.getHifzProgress().then(r => r.data),
+    queryFn: () => islamicApi.getHifzProgress(),
   });
 
   const statsQuery = useQuery({
     queryKey: ['hifz-stats'],
-    queryFn: () => islamicApi.getHifzStats().then(r => r.data),
+    queryFn: () => islamicApi.getHifzStats(),
   });
 
   const reviewQuery = useQuery({
     queryKey: ['hifz-review'],
-    queryFn: () => islamicApi.getHifzReviewSchedule().then(r => r.data),
+    queryFn: () => islamicApi.getHifzReviewSchedule(),
   });
 
   const updateMutation = useMutation({
@@ -224,9 +224,10 @@ export default function HifzTrackerScreen() {
     },
   });
 
-  const progressList: SurahProgress[] = progressQuery.data ?? SURAHS.map(s => ({ surahNum: s.num, status: 'not_started', lastReviewedAt: null }));
-  const stats = statsQuery.data;
-  const reviewList = reviewQuery.data ?? [];
+  const progressList: SurahProgress[] = (progressQuery.data as SurahProgress[] | undefined) ?? SURAHS.map(s => ({ surahNum: s.num, status: 'not_started', lastReviewedAt: null }));
+  const progressMap = useMemo(() => new Map(progressList.map(p => [p.surahNum, p])), [progressList]);
+  const stats = statsQuery.data as Record<string, number> | undefined;
+  const reviewList = (reviewQuery.data as SurahProgress[] | undefined) ?? [];
 
   const handleRefresh = useCallback(() => {
     progressQuery.refetch();
@@ -302,9 +303,9 @@ export default function HifzTrackerScreen() {
         <GlassHeader
           title={t('hifz.title')}
           leftAction={{
-            icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />,
+            icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('common.goBack'),
           }}
         />
 
@@ -312,7 +313,7 @@ export default function HifzTrackerScreen() {
           data={SURAHS}
           keyExtractor={(item) => String(item.num)}
           renderItem={({ item }) => {
-            const progress = progressList.find(p => p.surahNum === item.num) ?? { surahNum: item.num, status: 'not_started', lastReviewedAt: null };
+            const progress = progressMap.get(item.num) ?? { surahNum: item.num, status: 'not_started', lastReviewedAt: null };
             return (
               <SurahRow
                 surah={item}

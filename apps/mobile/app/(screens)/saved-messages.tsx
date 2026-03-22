@@ -17,7 +17,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -36,7 +35,6 @@ export default function SavedMessagesScreen() {
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
-  const user = useStore(s => s.user);
 
   const [newMessage, setNewMessage] = useState('');
   const [searchMode, setSearchMode] = useState(false);
@@ -79,7 +77,13 @@ export default function SavedMessagesScreen() {
     },
   });
 
-  const messages = messagesQuery.data?.pages.flatMap((p) => ((p as Record<string, unknown>).data as Array<Record<string, unknown>>) || []) || [];
+  const allMessages = messagesQuery.data?.pages.flatMap((p) => ((p as Record<string, unknown>).data as Array<Record<string, unknown>>) || []) || [];
+  const messages = searchQuery.trim()
+    ? allMessages.filter((msg) => {
+        const content = (msg.content as string) || '';
+        return content.toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : allMessages;
 
   const renderMessage = useCallback(({ item, index }: { item: Record<string, unknown>; index: number }) => {
     const isPinned = item.isPinned as boolean;
@@ -97,14 +101,14 @@ export default function SavedMessagesScreen() {
           {isPinned && (
             <View style={styles.pinBadge}>
               <Icon name="bookmark" size="xs" color={colors.gold} />
-              <Text style={styles.pinText}>Pinned</Text>
+              <Text style={styles.pinText}>{t('risalah.pinned')}</Text>
             </View>
           )}
 
           {isForwarded && (
             <View style={styles.forwardBadge}>
               <Icon name="share" size="xs" color={colors.text.tertiary} />
-              <Text style={styles.forwardText}>Forwarded from {item.forwardedFromType as string}</Text>
+              <Text style={styles.forwardText}>{t('risalah.forwardedFrom', { source: item.forwardedFromType as string })}</Text>
             </View>
           )}
 
@@ -127,7 +131,7 @@ export default function SavedMessagesScreen() {
         </Pressable>
       </Animated.View>
     );
-  }, []);
+  }, [styles, haptic, t]);
 
   return (
     <ScreenErrorBoundary>
@@ -143,7 +147,7 @@ export default function SavedMessagesScreen() {
           <LinearGradient colors={[colors.emerald + '10', 'transparent']} style={styles.infoGradient}>
             <Icon name="bookmark" size="sm" color={colors.emerald} />
             <Text style={styles.infoText}>
-              Your personal cloud notepad. Save messages, links, and files — accessible on all devices.
+              {t('risalah.savedMessagesDescription')}
             </Text>
           </LinearGradient>
         </Animated.View>
@@ -219,7 +223,7 @@ export default function SavedMessagesScreen() {
         {/* Context menu */}
         <BottomSheet visible={!!menuItem} onClose={() => setMenuItem(null)}>
           <BottomSheetItem
-            label={menuItem?.isPinned ? 'Unpin' : 'Pin'}
+            label={menuItem?.isPinned ? t('risalah.unpin') : t('risalah.pin')}
             icon={<Icon name="bookmark" size="sm" color={colors.gold} />}
             onPress={() => menuItem && pinMutation.mutate(menuItem.id as string)}
           />

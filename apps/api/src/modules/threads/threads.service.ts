@@ -471,6 +471,16 @@ export class ThreadsService {
       }),
       this.prisma.$executeRaw`UPDATE "User" SET "threadsCount" = GREATEST("threadsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
+
+    // Decrement hashtag counters for removed thread
+    if (thread.hashtags && thread.hashtags.length > 0) {
+      await Promise.all(
+        thread.hashtags.map((name: string) =>
+          this.prisma.$executeRaw`UPDATE "Hashtag" SET "threadsCount" = GREATEST("threadsCount" - 1, 0) WHERE name = ${name}`,
+        ),
+      );
+    }
+
     return { deleted: true };
   }
 
@@ -543,6 +553,7 @@ export class ThreadsService {
           userId,
           content: '',
           repostOfId: threadId,
+          isChainHead: true,
           mediaUrls: [],
           mediaTypes: [],
           visibility: 'PUBLIC',
@@ -552,6 +563,10 @@ export class ThreadsService {
       this.prisma.thread.update({
         where: { id: threadId },
         data: { repostsCount: { increment: 1 } },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { threadsCount: { increment: 1 } },
       }),
     ]);
     // Notify thread owner (always different user due to self-repost guard above)

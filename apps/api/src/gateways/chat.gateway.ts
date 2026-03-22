@@ -27,6 +27,8 @@ import {
   WsCallRejectDto,
   WsCallEndDto,
   WsCallSignalDto,
+  WsMessageDeliveredDto,
+  WsLeaveConversationDto,
 } from './dto/chat-events.dto';
 import {
   JoinQuranRoomDto,
@@ -136,8 +138,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      // Attach user id to socket data for later handlers
+      // Attach user id and Quran room tracking to socket data
       client.data.userId = user.id;
+      client.data.quranRooms = [];
 
       // Track user as online via Redis (scales across instances)
       const userId = client.data.userId;
@@ -167,6 +170,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       client.join(`user:${user.id}`);
     } catch {
+      // Clean up heartbeat timer if connection setup fails partway through
+      const existingTimer = this.heartbeatTimers.get(client.id);
+      if (existingTimer) {
+        clearInterval(existingTimer);
+        this.heartbeatTimers.delete(client.id);
+      }
       client.disconnect();
     }
   }
@@ -177,6 +186,33 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (timer) {
       clearInterval(timer);
       this.heartbeatTimers.delete(client.id);
+    }
+
+    // Clean up Quran room memberships for this socket (F5 — prevent ghost participants)
+    const quranRooms: string[] = client.data.quranRooms || [];
+    for (const roomId of quranRooms) {
+      try {
+        const partKey = this.quranParticipantsKey(roomId);
+        await this.redis.srem(partKey, client.id);
+        const remaining = await this.redis.scard(partKey);
+        if (remaining === 0) {
+          // Room empty — clean up
+          await this.redis.del(this.quranRoomKey(roomId), partKey);
+        } else {
+          // Broadcast updated participant count
+          const room = await this.getQuranRoom(roomId);
+          this.server.to(`quran:${roomId}`).emit('quran_room_update', {
+            roomId,
+            hostId: room?.hostId,
+            currentSurah: room?.currentSurah,
+            currentVerse: room?.currentVerse,
+            reciterId: room?.reciterId,
+            participantCount: remaining,
+          });
+        }
+      } catch (e) {
+        this.logger.error(`Failed to clean up Quran room ${roomId} on disconnect`, e);
+      }
     }
 
     const userId = client.data.userId;
@@ -226,6 +262,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.join(`conversation:${dto.conversationId}`);
   }
 
+  @SubscribeMessage('leave_conversation')
+  async handleLeave(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string },
+  ) {
+    if (!client.data.userId) throw new WsException('Unauthorized');
+    if (!(await this.checkRateLimit(client.data.userId, 'leave', 20, 60))) return;
+    const dto = plainToInstance(WsLeaveConversationDto, data);
+    const errors = await validate(dto);
+    if (errors.length > 0) {
+      client.emit('error', { message: 'Invalid leave_conversation data' });
+      return;
+    }
+    client.leave(`conversation:${dto.conversationId}`);
+  }
+
   @SubscribeMessage('send_message')
   async handleMessage(
     @ConnectedSocket() client: Socket,
@@ -254,22 +306,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const message = await this.messagesService.sendMessage(
-      dto.conversationId,
-      client.data.userId,
-      {
-        content: dto.content,
-        messageType: dto.messageType,
-        mediaUrl: dto.mediaUrl,
-        mediaType: dto.mediaType,
-        replyToId: dto.replyToId,
-        isSpoiler: dto.isSpoiler,
-        isViewOnce: dto.isViewOnce,
-      },
-    );
+    let message;
+    try {
+      message = await this.messagesService.sendMessage(
+        dto.conversationId,
+        client.data.userId,
+        {
+          content: dto.content,
+          messageType: dto.messageType,
+          mediaUrl: dto.mediaUrl,
+          mediaType: dto.mediaType,
+          replyToId: dto.replyToId,
+          isSpoiler: dto.isSpoiler,
+          isViewOnce: dto.isViewOnce,
+        },
+      );
+    } catch {
+      throw new WsException('Failed to send message');
+    }
 
     this.server
-      .to(`conversation:${data.conversationId}`)
+      .to(`conversation:${dto.conversationId}`)
       .emit('new_message', message);
 
     return message;
@@ -288,7 +345,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Invalid typing data' });
       return;
     }
-    await this.messagesService.requireMembership(dto.conversationId, client.data.userId);
+    try {
+      await this.messagesService.requireMembership(dto.conversationId, client.data.userId);
+    } catch {
+      throw new WsException('Not a member of this conversation');
+    }
     client.to(`conversation:${dto.conversationId}`).emit('user_typing', {
       userId: client.data.userId,
       isTyping: dto.isTyping,
@@ -376,6 +437,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Invalid call_answer data' });
       return;
     }
+    // Block check — prevent answering calls from/to blocked users
+    const blocked = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: client.data.userId, blockedId: dto.callerId },
+          { blockerId: dto.callerId, blockedId: client.data.userId },
+        ],
+      },
+    });
+    if (blocked) {
+      client.emit('error', { message: 'Cannot interact with this user' });
+      return;
+    }
     const callerSockets = await this.getUserSockets(dto.callerId);
     if (callerSockets.length > 0) { for (const s of callerSockets) { this.server.to(s).emit('call_answered', { sessionId: dto.sessionId, answeredBy: client.data.userId }); } }
   }
@@ -388,6 +462,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const errors = await validate(dto);
     if (errors.length > 0) {
       client.emit('error', { message: 'Invalid call_reject data' });
+      return;
+    }
+    // Block check — prevent rejecting calls to reveal blocked status info
+    const blocked = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: client.data.userId, blockedId: dto.callerId },
+          { blockerId: dto.callerId, blockedId: client.data.userId },
+        ],
+      },
+    });
+    if (blocked) {
+      client.emit('error', { message: 'Cannot interact with this user' });
       return;
     }
     const callerSockets = await this.getUserSockets(dto.callerId);
@@ -426,6 +513,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Invalid call_signal data' });
       return;
     }
+    // Block check — prevent WebRTC signaling to/from blocked users (IP leak prevention)
+    const blocked = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: client.data.userId, blockedId: dto.targetUserId },
+          { blockerId: dto.targetUserId, blockedId: client.data.userId },
+        ],
+      },
+    });
+    if (blocked) {
+      client.emit('error', { message: 'Cannot signal this user' });
+      return;
+    }
     const targetSockets = await this.getUserSockets(dto.targetUserId);
     if (targetSockets.length > 0) { for (const s of targetSockets) { this.server.to(s).emit('call_signal', { fromUserId: client.data.userId, signal: dto.signal }); } }
   }
@@ -434,24 +534,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleMessageDelivered(@ConnectedSocket() client: Socket, @MessageBody() data: { messageId: string; conversationId: string }) {
     if (!client.data.userId) throw new WsException('Unauthorized');
     if (!(await this.checkRateLimit(client.data.userId, 'delivered', 60, 60))) return;
-    if (!data.messageId || !data.conversationId) {
+
+    const dto = plainToInstance(WsMessageDeliveredDto, data);
+    const errors = await validate(dto);
+    if (errors.length > 0) {
       client.emit('error', { message: 'Invalid message_delivered data' });
       return;
     }
 
     // Verify membership before updating delivery status
     try {
-      await this.messagesService.requireMembership(data.conversationId, client.data.userId);
+      await this.messagesService.requireMembership(dto.conversationId, client.data.userId);
     } catch {
       throw new WsException('Not a member of this conversation');
     }
 
     const now = new Date();
     this.prisma.message.updateMany({
-      where: { id: data.messageId, conversationId: data.conversationId },
+      where: { id: dto.messageId, conversationId: dto.conversationId },
       data: { deliveredAt: now },
     }).catch((e) => this.logger.error('Failed to update delivery', e));
-    this.server.to(`conversation:${data.conversationId}`).emit('delivery_receipt', { messageId: data.messageId, deliveredAt: now.toISOString(), deliveredTo: client.data.userId });
+
+    // Emit delivery receipt only to the message sender, not the entire room (F11 — privacy)
+    const msg = await this.prisma.message.findUnique({
+      where: { id: dto.messageId },
+      select: { senderId: true },
+    });
+    if (msg?.senderId) {
+      const senderSockets = await this.getUserSockets(msg.senderId);
+      for (const s of senderSockets) {
+        this.server.to(s).emit('delivery_receipt', { messageId: dto.messageId, deliveredAt: now.toISOString(), deliveredTo: client.data.userId });
+      }
+    }
   }
 
   @SubscribeMessage('join_quran_room')
@@ -479,11 +593,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.redis.expire(roomKey, this.QURAN_ROOM_TTL);
     }
 
-    // Add participant
+    // Add participant and track on socket for disconnect cleanup
     const partKey = this.quranParticipantsKey(roomId);
     await this.redis.sadd(partKey, client.id);
     await this.redis.expire(partKey, this.QURAN_ROOM_TTL);
     client.join(`quran:${roomId}`);
+    if (!client.data.quranRooms) client.data.quranRooms = [];
+    if (!client.data.quranRooms.includes(roomId)) client.data.quranRooms.push(roomId);
 
     // Broadcast updated state
     const room = await this.getQuranRoom(roomId);
@@ -516,6 +632,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const partKey = this.quranParticipantsKey(roomId);
     await this.redis.srem(partKey, client.id);
     client.leave(`quran:${roomId}`);
+    // Remove from socket tracking
+    if (client.data.quranRooms) {
+      client.data.quranRooms = client.data.quranRooms.filter((r: string) => r !== roomId);
+    }
 
     // Clean up empty rooms
     const remaining = await this.redis.scard(partKey);

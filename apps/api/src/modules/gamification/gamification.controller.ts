@@ -85,9 +85,9 @@ export class GamificationController {
   @Get('challenges')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Browse challenges' })
-  getChallenges(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+  getChallenges(@Query('cursor') cursor?: string, @Query('limit') limit?: string, @Query('category') category?: string) {
     const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit) : 20), 50);
-    return this.gamificationService.getChallenges(cursor, safeLimit);
+    return this.gamificationService.getChallenges(cursor, safeLimit, category);
   }
 
   @Post('challenges')

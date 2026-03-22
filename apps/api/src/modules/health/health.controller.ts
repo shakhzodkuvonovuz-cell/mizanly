@@ -32,8 +32,16 @@ export class HealthController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Health check dashboard — DB, Redis, R2, Stream status' })
-  async check() {
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Health check dashboard — DB, Redis, R2, Stream status (admin only)' })
+  async check(@CurrentUser('id') userId?: string) {
+    // Detailed service topology is admin-only; unauthenticated users should use /health/ready or /health/live
+    if (userId) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+      if (user?.role !== 'ADMIN') throw new ForbiddenException('Admin access required');
+    } else {
+      throw new ForbiddenException('Authentication required');
+    }
     const [dbOk, redisOk, r2Ok, streamOk] = await Promise.all([
       this.prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
       this.redis.ping().then(() => true).catch(() => false),

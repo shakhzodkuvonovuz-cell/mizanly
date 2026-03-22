@@ -49,7 +49,7 @@ export default function CreatePlaylistScreen() {
       playlistsApi.create(data),
     onSuccess: (newPlaylist) => {
       haptic.success();
-      queryClient.invalidateQueries({ queryKey: ['playlists', channelId] });
+      queryClient.invalidateQueries({ queryKey: ['channel-playlists', channelId] });
       router.back();
     },
     onError: () => {

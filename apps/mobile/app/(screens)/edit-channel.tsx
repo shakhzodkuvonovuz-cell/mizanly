@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -61,6 +61,31 @@ export default function EditChannelScreen() {
     }
   }, [channel]);
 
+  // Dirty state tracking (Finding 39)
+  const isDirty = useMemo(() => {
+    if (!channel) return false;
+    return (
+      name !== (channel.name || '') ||
+      description !== (channel.description || '') ||
+      avatarUrl !== (channel.avatarUrl || null)
+    );
+  }, [name, description, avatarUrl, channel]);
+
+  const handleBack = useCallback(() => {
+    if (isDirty) {
+      Alert.alert(
+        t('screens.editChannel.unsavedChanges', 'Unsaved Changes'),
+        t('screens.editChannel.discardChanges', 'You have unsaved changes. Are you sure you want to go back?'),
+        [
+          { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+          { text: t('common.discard', 'Discard'), style: 'destructive', onPress: () => router.back() },
+        ]
+      );
+    } else {
+      router.back();
+    }
+  }, [isDirty, router, t]);
+
   const updateMutation = useMutation({
     mutationFn: (data: { name: string; description?: string; avatarUrl?: string }) =>
       channelsApi.update(handle!, data),
@@ -99,10 +124,14 @@ export default function EditChannelScreen() {
       Alert.alert(t('screens.editChannel.required'), t('screens.editChannel.pleaseEnterName'));
       return;
     }
+    // NOTE (Finding 27): avatarUrl may be a local file:// URI from the picker.
+    // A proper presigned upload flow (R2/CDN) is needed before sending to the API.
+    // For now, only send avatarUrl if it's already a remote URL (not a local file).
+    const isRemoteUrl = avatarUrl && !avatarUrl.startsWith('file://');
     updateMutation.mutate({
       name: name.trim(),
       description: description.trim() || undefined,
-      avatarUrl: avatarUrl || undefined,
+      avatarUrl: isRemoteUrl ? avatarUrl : undefined,
     });
   };
 
@@ -150,7 +179,7 @@ export default function EditChannelScreen() {
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.editChannel.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
         />
 
         <ScrollView

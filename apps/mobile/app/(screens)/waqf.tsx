@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Alert } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
+import { Alert } from 'react-native';
 
 export default function WaqfScreen() {
   const tc = useThemeColors();
@@ -28,7 +29,7 @@ export default function WaqfScreen() {
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams();
       if (pageParam) params.set('cursor', pageParam);
-      return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/waqf?${params}`);
+      return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/community/waqf?${params}`);
     },
     getNextPageParam: (lastPage: { meta?: { cursor: string | null; hasMore: boolean } }) =>
       lastPage?.meta?.hasMore ? lastPage.meta.cursor : undefined,
@@ -73,14 +74,18 @@ export default function WaqfScreen() {
           </View>
           <View style={styles.amountRow}>
             <Text style={styles.raisedAmount}>${raised.toLocaleString()}</Text>
-            <Text style={styles.goalAmount}>of ${goal.toLocaleString()}</Text>
+            <Text style={styles.goalAmount}>{t('community.waqfGoalOf', { amount: goal.toLocaleString() })}</Text>
             <Text style={styles.percentText}>{Math.round(progress * 100)}%</Text>
           </View>
 
-          <Pressable accessibilityRole="button" style={styles.contributeBtn} onPress={() => haptic.light()}>
+          <Pressable accessibilityRole="button" style={styles.contributeBtn} onPress={() => {
+              haptic.light();
+              // TODO: Wire to payment flow once Stripe integration is complete on mobile
+              Alert.alert(t('common.comingSoon'), t('community.waqfContributeComingSoon'));
+            }}>
             <LinearGradient colors={[colors.gold, '#D4A94F']} style={styles.contributeBtnGradient}>
               <Icon name="heart" size="sm" color="#FFF" />
-              <Text style={styles.contributeBtnText}>Contribute</Text>
+              <Text style={styles.contributeBtnText}>{t('community.contribute')}</Text>
             </LinearGradient>
           </Pressable>
         </View>
@@ -101,7 +106,7 @@ export default function WaqfScreen() {
           <LinearGradient colors={[colors.gold + '15', 'transparent']} style={styles.infoGradient}>
             <Icon name="heart" size="md" color={colors.gold} />
             <Text style={styles.infoText}>
-              Waqf is an Islamic endowment — a permanent charitable fund where the principal is preserved and only the returns are used for good causes.
+              {t('community.waqfDescription')}
             </Text>
           </LinearGradient>
         </Animated.View>

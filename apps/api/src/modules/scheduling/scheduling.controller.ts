@@ -81,4 +81,11 @@ export class SchedulingController {
   ): Promise<ScheduledContent> {
     return this.schedulingService.publishNow(userId, type, id);
   }
+
+  @Post('publish-overdue')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Auto-publish all overdue scheduled content (internal/cron)' })
+  publishOverdue() {
+    return this.schedulingService.publishOverdueContent();
+  }
 }

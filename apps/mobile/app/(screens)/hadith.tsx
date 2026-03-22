@@ -8,8 +8,9 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
-  Pressable,
+  Share,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -143,7 +144,7 @@ export default function HadithScreen() {
         source: dailyResp.source,
         narrator: dailyResp.narrator,
         date: '',
-        isBookmarked: bookmarkedIds.has(dailyResp.id.toString()),
+        isBookmarked: false,
       };
       const listHadiths: Hadith[] = (Array.isArray(listResp) ? listResp : []).map((h: ApiHadith) => ({
         id: h.id.toString(),
@@ -152,7 +153,7 @@ export default function HadithScreen() {
         source: h.source,
         narrator: h.narrator,
         date: '',
-        isBookmarked: bookmarkedIds.has(h.id.toString()),
+        isBookmarked: false,
       }));
       setCurrentHadith(dailyHadith);
       setHadiths([dailyHadith, ...listHadiths]);
@@ -162,7 +163,7 @@ export default function HadithScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [bookmarkedIds]);
+  }, [t]);
 
   useEffect(() => {
     fetchData();
@@ -177,6 +178,9 @@ export default function HadithScreen() {
     if (!currentHadith) return;
     haptic.medium();
     const hadithId = currentHadith.id;
+    // Optimistic UI update
+    setCurrentHadith(prev => prev ? { ...prev, isBookmarked: !prev.isBookmarked } : prev);
+    setHadiths(prev => prev.map(h => h.id === hadithId ? { ...h, isBookmarked: !h.isBookmarked } : h));
     setBookmarkedIds(prev => {
       const next = new Set(prev);
       if (next.has(hadithId)) {
@@ -186,22 +190,34 @@ export default function HadithScreen() {
       }
       return next;
     });
-    setCurrentHadith(prev => prev ? { ...prev, isBookmarked: !prev.isBookmarked } : prev);
-    setHadiths(prev => prev.map(h => h.id === hadithId ? { ...h, isBookmarked: !h.isBookmarked } : h));
+    // Persist bookmark to API
+    islamicApi.bookmarkHadith(hadithId).catch(() => {
+      // Revert on failure
+      setCurrentHadith(prev => prev ? { ...prev, isBookmarked: !prev.isBookmarked } : prev);
+      setHadiths(prev => prev.map(h => h.id === hadithId ? { ...h, isBookmarked: !h.isBookmarked } : h));
+    });
     scaleAnim.value = withSpring(1.1, { damping: 10, stiffness: 400 }, () => {
       scaleAnim.value = withSpring(1);
     });
   }, [haptic, scaleAnim, currentHadith]);
 
-  const handleShare = useCallback(() => {
+  const handleShare = useCallback(async () => {
+    if (!currentHadith) return;
     haptic.light();
-    // Mock share functionality
-  }, [haptic]);
+    try {
+      await Share.share({
+        message: `${currentHadith.arabic}\n\n${currentHadith.english}\n\n— ${currentHadith.source} (${currentHadith.narrator})\n\nShared from Mizanly`,
+      });
+    } catch {
+      // User cancelled share
+    }
+  }, [haptic, currentHadith]);
 
-  const handleCopy = useCallback(() => {
+  const handleCopy = useCallback(async () => {
+    if (!currentHadith) return;
     haptic.light();
-    // Mock copy functionality
-  }, [haptic]);
+    await Clipboard.setStringAsync(`${currentHadith.arabic}\n\n${currentHadith.english}\n\n— ${currentHadith.source} (${currentHadith.narrator})`);
+  }, [haptic, currentHadith]);
 
   const selectHadith = useCallback((hadith: Hadith) => {
     setCurrentHadith(hadith);

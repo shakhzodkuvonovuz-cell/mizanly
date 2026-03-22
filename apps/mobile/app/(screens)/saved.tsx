@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Dimensions, RefreshControl,
-  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// AsyncStorage import removed — folder filtering uses API collection names, not local storage
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -37,6 +36,7 @@ type Tab = 'posts' | 'threads' | 'reels' | 'videos';
 function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={onPress}
@@ -68,6 +68,7 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
 function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
   const hasThumbnail = reel.thumbnailUrl != null;
   return (
     <Pressable
@@ -98,6 +99,7 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
 function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
+  const { t } = useTranslation();
   const hasThumbnail = video.thumbnailUrl != null;
   return (
     <Pressable
@@ -105,7 +107,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 
       style={styles.videoRow}
       accessibilityRole="button"
-      accessibilityLabel={`View video: ${video.title}`}
+      accessibilityLabel={t('accessibility.viewVideo', { title: video.title })}
     >
       {hasThumbnail ? (
         <Image
@@ -134,10 +136,11 @@ export default function SavedScreen() {
   const router = useRouter();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<Tab>('posts');
-  const params = useLocalSearchParams<{ folder?: string }>();
+  const params = useLocalSearchParams<{ folder?: string; collection?: string }>();
   const folderId = params.folder;
-  const [folderItems, setFolderItems] = useState<string[]>([]);
-  const [folderLoading, setFolderLoading] = useState(false);
+  const collectionName = params.collection;
+  // Determine active collection for API filtering (from either folder or collection param)
+  const activeCollection = collectionName || undefined;
 
   const savedPostsQuery = useInfiniteQuery({
     queryKey: ['saved-posts'],
@@ -171,35 +174,7 @@ export default function SavedScreen() {
     enabled: activeTab === 'videos',
   });
 
-  useEffect(() => {
-    const loadFolder = async () => {
-      if (!folderId) {
-        setFolderItems([]);
-        return;
-      }
-      setFolderLoading(true);
-      try {
-        const stored = await AsyncStorage.getItem('bookmark-folders');
-        if (stored) {
-          const data = JSON.parse(stored);
-          const folder = data[folderId];
-          if (folder) {
-            setFolderItems(folder.itemIds || []);
-          } else {
-            setFolderItems([]);
-          }
-        } else {
-          setFolderItems([]);
-        }
-      } catch (error) {
-        if (__DEV__) console.error('Failed to load folder:', error);
-        setFolderItems([]);
-      } finally {
-        setFolderLoading(false);
-      }
-    };
-    loadFolder();
-  }, [folderId]);
+  // Collection filtering is handled via API query params (activeCollection)
 
   const posts: Post[] = savedPostsQuery.data?.pages.flatMap((p) => p.data) ?? [];
   const threads: Thread[] = savedThreadsQuery.data?.pages.flatMap((p) => p.data) ?? [];

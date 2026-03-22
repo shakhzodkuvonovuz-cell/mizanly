@@ -13,7 +13,7 @@
       "backgroundColor": "#0A7B4F"
     },
     "assetBundlePatterns": [
-      "**/*"
+      "assets/**/*"
     ],
     "ios": {
       "supportsTablet": true,
@@ -23,6 +23,7 @@
         "NSCameraUsageDescription": "Mizanly needs camera access to create posts, stories, and reels",
         "NSMicrophoneUsageDescription": "Mizanly needs microphone access for voice notes and video recording",
         "NSPhotoLibraryUsageDescription": "Mizanly needs photo library access to share images and videos",
+        "NSLocationWhenInUseUsageDescription": "Mizanly uses your location for prayer times, qibla direction, and finding nearby mosques.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -52,7 +53,9 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ]
     },
     "jsEngine": "hermes",
@@ -82,6 +85,20 @@
           "icon": "./assets/images/icon.png",
           "color": "#0A7B4F",
           "sounds": []
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Mizanly uses your location for prayer times, qibla direction, and finding nearby mosques."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "backgroundColor": "#0A7B4F",
+          "resizeMode": "contain"
         }
       ],
       "expo-font",

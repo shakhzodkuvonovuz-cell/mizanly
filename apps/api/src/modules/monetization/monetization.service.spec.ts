@@ -11,6 +11,7 @@ describe('MonetizationService', () => {
   const mockPrismaService = {
     user: {
       findUnique: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
     tip: {
       create: jest.fn(),
@@ -103,6 +104,11 @@ describe('MonetizationService', () => {
       expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
     });
 
+    it('should throw BadRequestException for amount below minimum ($0.50)', async () => {
+      await expect(service.sendTip('sender1', 'receiver1', 0.10)).rejects.toThrow(BadRequestException);
+      expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
+    });
+
     it('should throw BadRequestException for self-tip', async () => {
       await expect(service.sendTip('same', 'same', 50)).rejects.toThrow(BadRequestException);
       expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
@@ -114,6 +120,18 @@ describe('MonetizationService', () => {
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'receiver1' },
       });
+    });
+
+    it('should compute platform fee with precise rounding', async () => {
+      const mockReceiver = { id: 'receiver1' };
+      mockPrismaService.user.findUnique.mockResolvedValue(mockReceiver);
+      mockPrismaService.tip.create.mockImplementation((args: any) => Promise.resolve(args.data));
+
+      await service.sendTip('sender1', 'receiver1', 10.01);
+      const createCall = mockPrismaService.tip.create.mock.calls[0][0];
+      // 10.01 * 0.10 = 1.001 → rounded to 1.00 at 2 decimal places
+      expect(createCall.data.platformFee).toBe(1);
+      expect(createCall.data.status).toBe('pending');
     });
   });
 
@@ -192,8 +210,13 @@ describe('MonetizationService', () => {
   });
 
   describe('getTipStats', () => {
-    it('should return aggregated stats and top supporters', async () => {
-      const mockAggregateEarned = { _sum: { amount: 500 } };
+    beforeEach(() => {
+      mockPrismaService.user.findMany = jest.fn();
+    });
+
+    it('should return net earnings (gross minus fees) and batch-fetch top supporters', async () => {
+      const mockAggregateGross = { _sum: { amount: 500 } };
+      const mockAggregateFees = { _sum: { platformFee: 50 } };
       const mockAggregateSent = { _sum: { amount: 200 } };
       const mockGroupBy = [
         { senderId: 'supporter1', _sum: { amount: 300 } },
@@ -202,23 +225,31 @@ describe('MonetizationService', () => {
       const mockUser1 = { id: 'supporter1', username: 'supp1', displayName: 'Supp1', avatarUrl: null };
       const mockUser2 = { id: 'supporter2', username: 'supp2', displayName: 'Supp2', avatarUrl: null };
       mockPrismaService.tip.aggregate
-        .mockResolvedValueOnce(mockAggregateEarned)
+        .mockResolvedValueOnce(mockAggregateGross)
+        .mockResolvedValueOnce(mockAggregateFees)
         .mockResolvedValueOnce(mockAggregateSent);
       mockPrismaService.tip.groupBy.mockResolvedValue(mockGroupBy);
-      mockPrismaService.user.findUnique
-        .mockResolvedValueOnce(mockUser1)
-        .mockResolvedValueOnce(mockUser2);
+      mockPrismaService.user.findMany.mockResolvedValue([mockUser1, mockUser2]);
 
       const result = await service.getTipStats('user1');
-      expect(result.totalEarned).toBe(500);
+      // Net: 500 - 50 = 450
+      expect(result.totalEarned).toBe(450);
+      expect(result.totalGross).toBe(500);
+      expect(result.totalPlatformFees).toBe(50);
       expect(result.totalSent).toBe(200);
       expect(result.topSupporters).toHaveLength(2);
       expect(result.topSupporters[0]).toEqual({ user: mockUser1, totalAmount: 300 });
       expect(result.topSupporters[1]).toEqual({ user: mockUser2, totalAmount: 200 });
-      expect(mockPrismaService.tip.aggregate).toHaveBeenCalledTimes(2);
+      // Should use batch findMany instead of N+1
+      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['supporter1', 'supporter2'] } },
+        select: { id: true, username: true, displayName: true, avatarUrl: true },
+      });
+      // aggregate called 3 times (gross, fees, sent)
+      expect(mockPrismaService.tip.aggregate).toHaveBeenCalledTimes(3);
       expect(mockPrismaService.tip.groupBy).toHaveBeenCalledWith({
         by: ['senderId'],
-        where: { receiverId: 'user1' },
+        where: { receiverId: 'user1', status: 'completed' },
         _sum: { amount: true },
         orderBy: { _sum: { amount: 'desc' } },
         take: 5,
@@ -228,12 +259,26 @@ describe('MonetizationService', () => {
     it('should handle zero sums', async () => {
       mockPrismaService.tip.aggregate
         .mockResolvedValueOnce({ _sum: { amount: null } })
+        .mockResolvedValueOnce({ _sum: { platformFee: null } })
         .mockResolvedValueOnce({ _sum: { amount: null } });
       mockPrismaService.tip.groupBy.mockResolvedValue([]);
       const result = await service.getTipStats('user1');
       expect(result.totalEarned).toBe(0);
+      expect(result.totalGross).toBe(0);
+      expect(result.totalPlatformFees).toBe(0);
       expect(result.totalSent).toBe(0);
       expect(result.topSupporters).toEqual([]);
+    });
+
+    it('should handle float precision in net calculation', async () => {
+      mockPrismaService.tip.aggregate
+        .mockResolvedValueOnce({ _sum: { amount: 10.01 } })
+        .mockResolvedValueOnce({ _sum: { platformFee: 1.001 } })
+        .mockResolvedValueOnce({ _sum: { amount: 0 } });
+      mockPrismaService.tip.groupBy.mockResolvedValue([]);
+      const result = await service.getTipStats('user1');
+      // 10.01 - 1.001 = 9.009 → rounded to 9.01
+      expect(result.totalEarned).toBe(9.01);
     });
   });
 
@@ -271,6 +316,10 @@ describe('MonetizationService', () => {
 
     it('should throw BadRequestException for negative price', async () => {
       await expect(service.createTier('user1', 'Gold', -5, [])).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for price below minimum ($0.50)', async () => {
+      await expect(service.createTier('user1', 'Gold', 0.10, [])).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for empty name', async () => {
@@ -337,9 +386,14 @@ describe('MonetizationService', () => {
       await expect(service.updateTier('tier1', 'not-owner', {})).rejects.toThrow(ForbiddenException);
     });
 
-    it('should throw BadRequestException for invalid price', async () => {
+    it('should throw BadRequestException for zero price', async () => {
       mockPrismaService.membershipTier.findUnique.mockResolvedValue(existingTier);
       await expect(service.updateTier('tier1', 'owner', { price: 0 })).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for price below minimum', async () => {
+      mockPrismaService.membershipTier.findUnique.mockResolvedValue(existingTier);
+      await expect(service.updateTier('tier1', 'owner', { price: 0.10 })).rejects.toThrow(BadRequestException);
     });
   });
 

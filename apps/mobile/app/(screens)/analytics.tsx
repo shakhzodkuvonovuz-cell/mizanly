@@ -108,7 +108,7 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
                 end={{ x: 0, y: 1 }}
               />
               <Text style={styles.barLabel}>
-                {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </Text>
             </View>
           ))}
@@ -120,7 +120,9 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
 
 function TopContentSection() {
   const { t } = useTranslation();
-  // Placeholder for top performing content
+  // TODO [cross-scope]: Backend /creator/analytics/content returns top posts data,
+  // but this screen uses usersApi.getAnalytics() which lacks top content data.
+  // Pending unification of analytics data sources.
   return (
     <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -138,18 +140,23 @@ function TopContentSection() {
       >
         <EmptyState
           icon="bar-chart-2"
-          title={t('analytics.noContentData')}
-          subtitle={t('analytics.noContentDataSubtitle')}
+          title={t('analytics.comingSoon', 'Coming Soon')}
+          subtitle={t('analytics.topContentComingSoon', 'Top performing content analytics will be available here')}
         />
       </LinearGradient>
     </Animated.View>
   );
 }
 
-export default function AnalyticsScreen() {
+// TODO [cross-scope]: This screen uses usersApi.getAnalytics() (GET /users/me/analytics)
+// while creator-dashboard uses creatorApi.getOverview() (GET /creator/analytics/overview).
+// These are two separate data sources that may show inconsistent numbers.
+// Should be unified into a single analytics data pipeline.
+function AnalyticsContent() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const { data, isLoading, error, refetch } = useQuery<AnalyticsResponse>({
     queryKey: ['analytics'],
@@ -193,83 +200,85 @@ export default function AnalyticsScreen() {
   }
 
   return (
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      <GlassHeader
+        title={t('analytics.creatorAnalytics')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+      />
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.emerald}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {isLoading ? (
+          <>
+            <View style={styles.cards}>
+              <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
+              <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
+              <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
+            </View>
+            <View style={styles.section}>
+              <Skeleton.Rect width="60%" height={20} borderRadius={radius.sm} />
+              <Skeleton.Rect width="100%" height={150} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
+            </View>
+            <View style={styles.section}>
+              <Skeleton.Rect width="60%" height={20} borderRadius={radius.sm} />
+              <Skeleton.Rect width="100%" height={120} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
+            </View>
+          </>
+        ) : stats.length === 0 ? (
+          <EmptyState
+            icon="bar-chart-2"
+            title={t('analytics.noDataYet')}
+            subtitle={t('analytics.noDataSubtitle')}
+            actionLabel={t('analytics.startCreating')}
+            onAction={() => navigate('/(screens)/create-post')}
+          />
+        ) : (
+          <>
+            <View style={styles.cards}>
+              <SummaryCard
+                title={t('analytics.views')}
+                value={formatNumber(totalViews)}
+                icon="eye"
+                index={0}
+              />
+              <SummaryCard
+                title={t('analytics.likes')}
+                value={formatNumber(totalLikes)}
+                icon="heart"
+                index={1}
+              />
+              <SummaryCard
+                title={t('analytics.followers')}
+                value={formatNumber(totalFollowers)}
+                icon="users"
+                index={2}
+              />
+            </View>
+
+            <BarChart stats={stats} />
+
+            <TopContentSection />
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+export default function AnalyticsScreen() {
+  return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-        <GlassHeader
-          title={t('analytics.creatorAnalytics')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-        />
-
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.emerald}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {isLoading ? (
-            <>
-              <View style={styles.cards}>
-                <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
-                <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
-                <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
-              </View>
-              <View style={styles.section}>
-                <Skeleton.Rect width="60%" height={20} borderRadius={radius.sm} />
-                <Skeleton.Rect width="100%" height={150} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
-              </View>
-              <View style={styles.section}>
-                <Skeleton.Rect width="60%" height={20} borderRadius={radius.sm} />
-                <Skeleton.Rect width="100%" height={120} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
-              </View>
-            </>
-          ) : stats.length === 0 ? (
-            <EmptyState
-              icon="bar-chart-2"
-              title={t('analytics.noDataYet')}
-              subtitle={t('analytics.noDataSubtitle')}
-              actionLabel={t('analytics.startCreating')}
-              onAction={() => navigate('/(screens)/create-post')}
-            />
-          ) : (
-            <>
-              <View style={styles.cards}>
-                <SummaryCard
-                  title={t('analytics.views')}
-                  value={formatNumber(totalViews)}
-                  change={totalViews > 0 ? '+' + formatNumber(totalViews) : undefined}
-                  icon="eye"
-                  index={0}
-                />
-                <SummaryCard
-                  title={t('analytics.likes')}
-                  value={formatNumber(totalLikes)}
-                  change={totalLikes > 0 ? '+' + formatNumber(totalLikes) : undefined}
-                  icon="heart"
-                  index={1}
-                />
-                <SummaryCard
-                  title={t('analytics.followers')}
-                  value={formatNumber(totalFollowers)}
-                  change={totalFollowers > 0 ? '+' + formatNumber(totalFollowers) : undefined}
-                  icon="users"
-                  index={2}
-                />
-              </View>
-
-              <BarChart stats={stats} />
-
-              <TopContentSection />
-            </>
-          )}
-        </ScrollView>
-      </SafeAreaView>
-  
+      <AnalyticsContent />
     </ScreenErrorBoundary>
   );
 }

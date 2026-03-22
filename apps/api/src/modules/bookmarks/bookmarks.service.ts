@@ -101,9 +101,16 @@ export class BookmarksService {
     if (!thread) throw new NotFoundException('Thread not found');
 
     try {
-      return await this.prisma.threadBookmark.create({
-        data: { userId, threadId },
-      });
+      const [bookmark] = await this.prisma.$transaction([
+        this.prisma.threadBookmark.create({
+          data: { userId, threadId },
+        }),
+        this.prisma.thread.update({
+          where: { id: threadId },
+          data: { bookmarksCount: { increment: 1 } },
+        }),
+      ]);
+      return bookmark;
     } catch (error) {
       // P2002: already saved — idempotent
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -119,9 +126,12 @@ export class BookmarksService {
   // Unsave a thread
   async unsaveThread(userId: string, threadId: string) {
     try {
-      await this.prisma.threadBookmark.delete({
-        where: { userId_threadId: { userId, threadId } },
-      });
+      await this.prisma.$transaction([
+        this.prisma.threadBookmark.delete({
+          where: { userId_threadId: { userId, threadId } },
+        }),
+        this.prisma.$executeRaw`UPDATE "Thread" SET "bookmarksCount" = GREATEST("bookmarksCount" - 1, 0) WHERE id = ${threadId}`,
+      ]);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new NotFoundException('Thread not saved');

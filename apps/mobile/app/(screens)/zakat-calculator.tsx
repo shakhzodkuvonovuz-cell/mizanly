@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Dimensions,
+  Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -180,24 +181,33 @@ export default function ZakatCalculatorScreen() {
   });
 
   const onRefresh = useCallback(() => {
+    // Zakat calculator is client-side; refresh resets the form
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    setCurrentStep(1);
+    setAssets({ cash: '', gold: '', investments: '', inventory: '', property: '' });
+    setDeductions({ debts: '', expenses: '' });
+    setRefreshing(false);
   }, []);
+
+  const safeParseFloat = (val: string): number => {
+    const parsed = parseFloat(val || '0');
+    return isNaN(parsed) ? 0 : parsed;
+  };
 
   const totalAssets = useMemo(() => {
     return (
-      parseFloat(assets.cash || '0') +
-      parseFloat(assets.gold || '0') +
-      parseFloat(assets.investments || '0') +
-      parseFloat(assets.inventory || '0') +
-      parseFloat(assets.property || '0')
+      safeParseFloat(assets.cash) +
+      safeParseFloat(assets.gold) +
+      safeParseFloat(assets.investments) +
+      safeParseFloat(assets.inventory) +
+      safeParseFloat(assets.property)
     );
   }, [assets]);
 
   const totalDeductions = useMemo(() => {
     return (
-      parseFloat(deductions.debts || '0') +
-      parseFloat(deductions.expenses || '0')
+      safeParseFloat(deductions.debts) +
+      safeParseFloat(deductions.expenses)
     );
   }, [deductions]);
 
@@ -229,6 +239,20 @@ export default function ZakatCalculatorScreen() {
     setAssets({ cash: '', gold: '', investments: '', inventory: '', property: '' });
     setDeductions({ debts: '', expenses: '' });
   }, [haptic]);
+
+  const handleShare = useCallback(async () => {
+    haptic.light();
+    try {
+      await Share.share({
+        message: t('screens.zakatCalculator.shareMessage', {
+          netWealth: formatCurrency(netWealth),
+          zakatDue: formatCurrency(zakatDue),
+        }),
+      });
+    } catch {
+      // User cancelled share
+    }
+  }, [haptic, netWealth, zakatDue, t]);
 
   const formatCurrency = (value: number) => {
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -489,7 +513,7 @@ export default function ZakatCalculatorScreen() {
                     </LinearGradient>
                   </Pressable>
 
-                  <Pressable accessibilityRole="button" onPress={() => {}} style={styles.actionButtonHalf}>
+                  <Pressable accessibilityRole="button" onPress={handleShare} style={styles.actionButtonHalf}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.actionButtonHalfGradient}

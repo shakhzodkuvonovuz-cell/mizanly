@@ -32,3 +32,7 @@ export class CreateStageSessionDto {
 export class InviteSpeakerDto {
   @ApiProperty() @IsString() speakerId: string;
 }
+
+export class RemoveSpeakerDto {
+  @ApiProperty() @IsString() speakerId: string;
+}

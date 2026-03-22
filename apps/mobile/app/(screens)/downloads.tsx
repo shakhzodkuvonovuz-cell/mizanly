@@ -2,10 +2,9 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert, RefreshControl,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
@@ -84,6 +83,7 @@ function FilterChips({
 }) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   const labels: Record<FilterTab, string> = {
     all: t('downloads.all'),
@@ -163,7 +163,7 @@ function DownloadItem({
         {/* Info */}
         <View style={styles.itemInfo}>
           <Text style={styles.itemTitle} numberOfLines={1}>
-            {item.contentId.slice(0, 8)}...
+            {(item as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}...`}
           </Text>
           <View style={styles.itemMeta}>
             <Text style={styles.itemSize}>{formatBytes(item.fileSize)}</Text>
@@ -231,13 +231,11 @@ export default function DownloadsScreen() {
   const tc = useThemeColors();
 
   // Storage stats
-  const storageQuery = useInfiniteQuery({
+  const storageQuery = useQuery({
     queryKey: ['downloads-storage'],
     queryFn: () => downloadsApi.getStorage() as Promise<{ usedBytes: number; count: number }>,
-    initialPageParam: undefined,
-    getNextPageParam: () => undefined,
   });
-  const storageData = storageQuery.data?.pages[0];
+  const storageData = storageQuery.data;
 
   // Downloads list
   const statusParam = filter === 'all' ? undefined : filter;
@@ -287,8 +285,11 @@ export default function DownloadsScreen() {
           },
         ]);
       }
-      // pause / resume / retry would call the downloadManager service
-      // and update progress via the API — left to the download orchestration layer
+      // TODO: Implement pause/resume/retry via downloadManager service.
+      // Requires a native download orchestration module (e.g., expo-file-system background download).
+      // pause: downloadManager.pause(item.id)
+      // resume: downloadManager.resume(item.id)
+      // retry: downloadManager.retry(item.id)
     },
     [haptic, t, deleteMutation],
   );
@@ -397,7 +398,14 @@ export default function DownloadsScreen() {
             icon={<Icon name="play" size="sm" color={colors.emerald} />}
             onPress={() => {
               handleSheetClose();
-              // Navigate to content detail for offline playback
+              if (sheetItem) {
+                const route = sheetItem.contentType === 'post'
+                  ? `/(screens)/post/${sheetItem.contentId}`
+                  : sheetItem.contentType === 'video'
+                  ? `/(screens)/video/${sheetItem.contentId}`
+                  : `/(screens)/reel/${sheetItem.contentId}`;
+                navigate(route);
+              }
             }}
           />
           <BottomSheetItem

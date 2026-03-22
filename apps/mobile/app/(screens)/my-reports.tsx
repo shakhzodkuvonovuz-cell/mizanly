@@ -22,7 +22,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function MyReportsScreen() {
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -64,11 +64,11 @@ export default function MyReportsScreen() {
   };
 
   const getTargetText = (item: Report) => {
-    if (item.reportedUserId && item.reportedUser) return `User: @${item.reportedUser.username}`;
-    if (item.reportedPostId) return 'Post';
-    if (item.reportedCommentId) return 'Comment';
-    if (item.reportedMessageId) return 'Message';
-    return 'Content';
+    if (item.reportedUserId && item.reportedUser) return `${t('screens.my-reports.targetUser')}: @${item.reportedUser.username}`;
+    if (item.reportedPostId) return t('screens.my-reports.targetPost');
+    if (item.reportedCommentId) return t('screens.my-reports.targetComment');
+    if (item.reportedMessageId) return t('screens.my-reports.targetMessage');
+    return t('screens.my-reports.targetContent');
   };
 
   const renderItem = ({ item, index }: { item: Report; index: number }) => {
@@ -100,7 +100,7 @@ export default function MyReportsScreen() {
           </View>
           <Text style={styles.target} numberOfLines={1}>{getTargetText(item)}</Text>
           <Text style={styles.date}>
-            {format(new Date(item.createdAt), 'MMM d, yyyy')} • {formatDistanceToNowStrict(new Date(item.createdAt), { locale: getDateFnsLocale() })} ago
+            {format(new Date(item.createdAt), 'PPP', { locale: getDateFnsLocale() })} • {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </LinearGradient>
       </Animated.View>

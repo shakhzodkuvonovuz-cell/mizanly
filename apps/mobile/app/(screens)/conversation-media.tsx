@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
   RefreshControl, Linking,
-  Pressable,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -108,7 +107,9 @@ function isVideoMediaType(mediaType?: string): boolean {
 }
 
 export default function ConversationMediaScreen() {
-  const { id: conversationId } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string; conversationId?: string }>();
+  // Support both ?id= (from conversation/[id]) and ?conversationId= (from conversation-info)
+  const conversationId = params.id || params.conversationId;
   const router = useRouter();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>('media');
@@ -162,7 +163,7 @@ export default function ConversationMediaScreen() {
             id: `${msg.id}-media`,
             url: msg.mediaUrl,
             type: 'video',
-            thumbnailUrl: msg.mediaUrl, // Could have separate thumbnail, but use same for now
+            thumbnailUrl: msg.thumbnailUrl, // Use dedicated thumbnail if available
             messageId: msg.id,
             createdAt: msg.createdAt,
           });

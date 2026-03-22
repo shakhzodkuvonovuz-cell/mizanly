@@ -324,7 +324,8 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
 
     it('getHistory returns empty for new user', async () => {
       const result = await service.getHistory('u1');
-      expect(result.data).toEqual([]);
+      expect(result.data.giftsSent).toEqual([]);
+      expect(result.data.giftsReceived).toEqual([]);
     });
 
     it('sendGift with valid gift type succeeds', async () => {

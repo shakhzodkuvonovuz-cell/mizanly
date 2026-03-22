@@ -11,6 +11,9 @@ import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { formatDistanceToNowStrict } from 'date-fns';
+import type { Locale } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -57,19 +60,8 @@ function getReasonIcon(reason: string): IconName {
   return REASON_ICONS[key] ?? REASON_ICONS.default;
 }
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const date = new Date(dateStr).getTime();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHour < 24) return `${diffHour}h ago`;
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return new Date(dateStr).toLocaleDateString();
+function timeAgo(dateStr: string, locale?: Locale): string {
+  return formatDistanceToNowStrict(new Date(dateStr), { addSuffix: true, locale });
 }
 
 function LevelBadge({ xpData, isRTL }: { xpData: XPData; isRTL: boolean }) {
@@ -147,7 +139,7 @@ function XPEventRow({ event, index, isRTL }: { event: XPEvent; index: number; is
             {event.reason}
           </Text>
           <Text style={[styles.eventTime, { textAlign: rtlTextAlign(isRTL) }]}>
-            {timeAgo(event.createdAt)}
+            {timeAgo(event.createdAt, getDateFnsLocale())}
           </Text>
         </View>
 

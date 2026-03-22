@@ -1,8 +1,7 @@
-import { useState, useRef, useCallback, useEffect, memo } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation, RefreshControl,
-  Pressable,
 } from 'react-native';
 import { Swipeable, PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
@@ -202,6 +201,11 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
   const [playing, setPlaying] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
 
+  // Memoize waveform bar heights to prevent flickering on re-render
+  const waveformHeights = useMemo(() =>
+    Array.from({ length: 20 }, (_, i) => 4 + Math.sin(i * 0.8) * 8 + Math.random() * 4),
+  []);
+
   const toggle = useCallback(async () => {
     if (playing) {
       await soundRef.current?.pauseAsync();
@@ -234,12 +238,12 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
     <Pressable style={styles.voicePlayer} onPress={toggle}>
       <Icon name={playing ? 'volume-x' : 'play'} size={18} color={isOwn ? '#fff' : colors.emerald} />
       <View style={styles.voiceWaveform}>
-        {Array.from({ length: 20 }).map((_, i) => (
+        {waveformHeights.map((height, i) => (
           <View
             key={i}
             style={[
               styles.voiceBar,
-              { height: 4 + Math.sin(i * 0.8) * 8 + Math.random() * 4 },
+              { height },
               isOwn ? styles.voiceBarOwn : styles.voiceBarOther,
             ]}
           />
@@ -595,7 +599,9 @@ const MessageBubble = memo(function MessageBubble({
             <View style={styles.receiptRow}>
               <ReadReceiptIcon status={getMessageStatus(message, readByMembers, deliveredMessages)} />
               {readByMembers.length > 0 && (
-                <Text style={styles.readTime}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
+                {readByMembers[0]?.lastReadAt && (
+                  <Text style={styles.readTime}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
+                )}
               )}
             </View>
           )}
@@ -701,6 +707,7 @@ export default function ConversationScreen() {
   const socketRef = useRef<Socket | null>(null);
   const inputRef = useRef<TextInput>(null);
   const newMessageIdsRef = useRef(new Set<string>());
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [text, setText] = useState('');
   const [sendAsSpoiler, setSendAsSpoiler] = useState(false);
   const [sendAsViewOnce, setSendAsViewOnce] = useState(false);
@@ -833,37 +840,36 @@ export default function ConversationScreen() {
 
   const messages = (messagesQuery.data?.pages.flatMap((p) => p.data) ?? []) as EncryptedMessage[];
 
-  // Pre-decrypt encrypted messages and store in map
+  // Pre-decrypt encrypted messages and store in map — only process new messages
   useEffect(() => {
-    const decryptAll = async () => {
-      const newMap = new Map<string, string>();
+    if (!isEncrypted) return;
+    const decryptNew = async () => {
+      const newEntries: Array<[string, string]> = [];
       for (const msg of messages) {
         if (msg.isEncrypted && msg.content && msg.encNonce) {
-          const existing = decryptedContents.get(msg.id);
-          if (existing) {
-            newMap.set(msg.id, existing);
-          } else {
-            const decrypted = await getDecryptedContent(msg);
-            if (decrypted) {
-              newMap.set(msg.id, decrypted);
+          // Skip already-decrypted messages using functional state read
+          setDecryptedContents(prev => {
+            if (!prev.has(msg.id)) {
+              // Queue decryption outside setState
+              getDecryptedContent(msg).then(decrypted => {
+                if (decrypted) {
+                  setDecryptedContents(p => {
+                    if (p.has(msg.id)) return p;
+                    const next = new Map(p);
+                    next.set(msg.id, decrypted);
+                    return next;
+                  });
+                }
+              });
             }
-          }
+            return prev;
+          });
         }
       }
-      if (newMap.size > 0) {
-        setDecryptedContents(prev => {
-          const merged = new Map(prev);
-          for (const [k, v] of newMap) {
-            merged.set(k, v);
-          }
-          return merged;
-        });
-      }
     };
-    if (isEncrypted) {
-      decryptAll();
-    }
-  }, [messages, isEncrypted, getDecryptedContent]);
+    decryptNew();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length, isEncrypted]);
 
   const combinedMessages = [...messages, ...pendingMessages.map(p => ({
     ...p,
@@ -889,6 +895,8 @@ export default function ConversationScreen() {
       const socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'] });
       socket.on('connect', () => {
         socket.emit('join_conversation', { conversationId: id });
+        // Refetch messages to catch any missed during disconnection
+        queryClient.invalidateQueries({ queryKey: ['messages', id] });
         // Retry pending messages on reconnect
         const pending = pendingMessagesRef.current.filter(p => p.status === 'pending');
         pending.forEach(pending => {
@@ -902,7 +910,7 @@ export default function ConversationScreen() {
         });
       });
       socket.on('new_message', (msg: Message & { clientId?: string }) => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+        // Note: LayoutAnimation removed to avoid conflicts with react-native-reanimated
         newMessageIdsRef.current.add(msg.id);
         // Remove any pending message that matches this incoming message
         const pending = pendingMessagesRef.current;
@@ -935,7 +943,17 @@ export default function ConversationScreen() {
         });
       });
       socket.on('user_typing', ({ userId, isTyping: typing }: { userId: string; isTyping: boolean }) => {
-        if (userId !== user?.id) setOtherTyping(typing);
+        if (userId !== user?.id) {
+          setOtherTyping(typing);
+          // Auto-clear typing indicator after 5 seconds in case isTyping:false is never sent
+          if (typing) {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = setTimeout(() => setOtherTyping(false), 5000);
+          } else if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = null;
+          }
+        }
       });
       socketRef.current = socket;
     };

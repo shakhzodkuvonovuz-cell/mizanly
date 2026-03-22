@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  FlatList, RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, Alert,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,7 +15,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { aiApi, usersApi } from '@/services/api';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -53,6 +53,18 @@ export default function AiAvatarScreen() {
     },
   });
 
+  const setProfileMutation = useMutation({
+    mutationFn: (avatarUrl: string) => usersApi.updateMe({ avatarUrl }),
+    onSuccess: (_data, avatarUrl) => {
+      // Update the Zustand store with the new avatar
+      const currentUser = useStore.getState().user;
+      if (currentUser) {
+        useStore.getState().setUser({ ...currentUser, avatarUrl });
+      }
+      haptic.success();
+    },
+  });
+
   const avatars = (avatarsQuery.data as AiAvatar[] | undefined) || [];
 
   const renderAvatar = ({ item, index }: { item: AiAvatar; index: number }) => (
@@ -64,7 +76,13 @@ export default function AiAvatarScreen() {
             {item.style}
           </Text>
         </View>
-        <Pressable style={styles.setProfileBtn} onPress={() => haptic.light()}>
+        <Pressable
+          style={styles.setProfileBtn}
+          onPress={() => {
+            setProfileMutation.mutate(item.avatarUrl);
+          }}
+          disabled={setProfileMutation.isPending}
+        >
           <Text style={styles.setProfileText}>{t('ai.avatar.setProfile')}</Text>
         </Pressable>
       </View>
@@ -116,6 +134,9 @@ export default function AiAvatarScreen() {
 
           {/* Generate button */}
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.generateSection}>
+            {!user?.avatarUrl && (
+              <Text style={styles.noAvatarHint}>{t('ai.avatar.uploadFirst')}</Text>
+            )}
             <Pressable
               accessibilityRole="button"
               onPress={() => generateMutation.mutate()}
@@ -177,7 +198,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bodySemiBold,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: spacing.md,
@@ -200,7 +221,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  styleLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '500', textAlign: 'center' },
+  styleLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.bodyMedium, textAlign: 'center' },
   generateSection: { marginBottom: spacing.xl },
   generateBtn: { borderRadius: radius.md, overflow: 'hidden' },
   generateGradient: {
@@ -211,7 +232,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.base,
     borderRadius: radius.md,
   },
-  generateText: { color: '#FFF', fontSize: fontSize.md, fontWeight: '700' },
+  generateText: { color: '#FFF', fontSize: fontSize.md, fontFamily: fonts.bodyBold },
   skeletonRow: { flexDirection: 'row', gap: spacing.md },
   avatarGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   avatarCard: {
@@ -229,8 +250,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   styleBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
-  styleBadgeText: { fontSize: fontSize.xs, fontWeight: '500', textTransform: 'capitalize' },
+  styleBadgeText: { fontSize: fontSize.xs, fontFamily: fonts.bodyMedium, textTransform: 'capitalize' },
   setProfileBtn: { paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  setProfileText: { color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' },
+  setProfileText: { color: colors.emerald, fontSize: fontSize.xs, fontFamily: fonts.bodySemiBold },
+  noAvatarHint: { color: colors.text.secondary, fontSize: fontSize.sm, fontFamily: fonts.body, textAlign: 'center', marginBottom: spacing.sm },
   emptyWrap: { marginTop: spacing.xl },
 });

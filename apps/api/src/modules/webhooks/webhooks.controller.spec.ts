@@ -1,18 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WebhooksController } from './webhooks.controller';
+import { CommunityWebhooksController } from './webhooks.controller';
 import { WebhooksService } from './webhooks.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
-describe('WebhooksController', () => {
-  let controller: WebhooksController;
+describe('CommunityWebhooksController', () => {
+  let controller: CommunityWebhooksController;
   let service: jest.Mocked<WebhooksService>;
 
   const userId = 'user-123';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [WebhooksController],
+      controllers: [CommunityWebhooksController],
       providers: [
         ...globalMockProviders,
         {
@@ -28,7 +28,7 @@ describe('WebhooksController', () => {
       ],
     }).compile();
 
-    controller = module.get(WebhooksController);
+    controller = module.get(CommunityWebhooksController);
     service = module.get(WebhooksService) as jest.Mocked<WebhooksService>;
   });
 
@@ -49,9 +49,9 @@ describe('WebhooksController', () => {
     it('should call webhooksService.list with circleId', async () => {
       service.list.mockResolvedValue([{ id: 'wh-1' }] as any);
 
-      await controller.list('circle-1');
+      await controller.list(userId, 'circle-1');
 
-      expect(service.list).toHaveBeenCalledWith('circle-1');
+      expect(service.list).toHaveBeenCalledWith('circle-1', userId);
     });
   });
 

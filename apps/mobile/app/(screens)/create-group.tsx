@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -62,7 +63,7 @@ export default function CreateGroupScreen() {
 
   const pickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -264,13 +265,15 @@ export default function CreateGroupScreen() {
                 )}
                 ListEmptyComponent={() =>
                   debouncedQuery.trim().length >= 2 ? (
-                    <View style={styles.empty}>
-                      <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedQuery })}</Text>
-                    </View>
+                    <EmptyState
+                      icon="search"
+                      title={t('messages.noUsersFound', { query: debouncedQuery })}
+                    />
                   ) : (
-                    <View style={styles.hint}>
-                      <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
-                    </View>
+                    <EmptyState
+                      icon="user"
+                      title={t('messages.searchByNameOrUsername')}
+                    />
                   )
                 }
               />

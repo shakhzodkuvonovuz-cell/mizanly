@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Alert,
   KeyboardAvoidingView, Platform, ScrollView, RefreshControl,
@@ -51,13 +51,16 @@ export default function DMNoteEditorScreen() {
   } = useQuery<DMNote | null>({
     queryKey: ['dm-note', 'me'],
     queryFn: () => messagesApi.getMyDMNote(),
-    select: (data) => {
-      if (data && content === '' && !createMutation.isSuccess) {
-        setContent(data.content);
-      }
-      return data;
-    },
   });
+
+  // Hydrate content from existing note on initial load
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    if (existingNote && !hydrated) {
+      setContent(existingNote.content);
+      setHydrated(true);
+    }
+  }, [existingNote, hydrated]);
 
   const createMutation = useMutation({
     mutationFn: () => messagesApi.createDMNote(content.trim(), expiryHours),

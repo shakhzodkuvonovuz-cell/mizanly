@@ -10,7 +10,7 @@ import { TelegramFeaturesService } from './telegram-features.service';
 import {
   SaveMessageDto, ReorderChatFoldersDto, CreateChatFolderDto, UpdateChatFolderDto,
   SetSlowModeDto, CreateTopicDto, UpdateTopicDto,
-  CreateEmojiPackDto, AddEmojiDto,
+  CreateEmojiPackDto, UpdateEmojiPackDto, AddEmojiDto,
 } from './dto/telegram-features.dto';
 
 @ApiTags('Telegram Features')
@@ -25,8 +25,12 @@ export class TelegramFeaturesController {
 
   @Get('saved-messages/search')
   @ApiOperation({ summary: 'Search saved messages' })
-  searchSavedMessages(@CurrentUser('id') userId: string, @Query('q') query: string) {
-    return this.service.searchSavedMessages(userId, query);
+  searchSavedMessages(
+    @CurrentUser('id') userId: string,
+    @Query('q') query: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.service.searchSavedMessages(userId, query, cursor);
   }
 
   @Get('saved-messages')
@@ -36,6 +40,7 @@ export class TelegramFeaturesController {
   }
 
   @Post('saved-messages')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Save a message' })
   saveMessage(@CurrentUser('id') userId: string, @Body() dto: SaveMessageDto) {
     return this.service.saveMessage(userId, dto);
@@ -65,6 +70,16 @@ export class TelegramFeaturesController {
   @ApiOperation({ summary: 'Get chat folders' })
   getChatFolders(@CurrentUser('id') userId: string) {
     return this.service.getChatFolders(userId);
+  }
+
+  @Get('chat-folders/:id/conversations')
+  @ApiOperation({ summary: 'Get conversations matching folder filters' })
+  getFolderConversations(
+    @CurrentUser('id') userId: string,
+    @Param('id') folderId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.service.getFolderConversations(userId, folderId, cursor);
   }
 
   @Post('chat-folders')
@@ -112,8 +127,8 @@ export class TelegramFeaturesController {
 
   @Get('conversations/:id/topics')
   @ApiOperation({ summary: 'Get group topics' })
-  getTopics(@Param('id') conversationId: string) {
-    return this.service.getTopics(conversationId);
+  getTopics(@CurrentUser('id') userId: string, @Param('id') conversationId: string) {
+    return this.service.getTopics(conversationId, userId);
   }
 
   @Patch('topics/:id')
@@ -143,10 +158,29 @@ export class TelegramFeaturesController {
     return this.service.createEmojiPack(userId, dto);
   }
 
+  @Patch('emoji-packs/:id')
+  @ApiOperation({ summary: 'Update emoji pack' })
+  updateEmojiPack(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: UpdateEmojiPackDto) {
+    return this.service.updateEmojiPack(id, userId, dto);
+  }
+
+  @Delete('emoji-packs/:id')
+  @ApiOperation({ summary: 'Delete emoji pack' })
+  deleteEmojiPack(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.service.deleteEmojiPack(id, userId);
+  }
+
   @Post('emoji-packs/:id/emojis')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Add emoji to pack' })
   addEmoji(@CurrentUser('id') userId: string, @Param('id') packId: string, @Body() dto: AddEmojiDto) {
     return this.service.addEmojiToPack(packId, userId, dto);
+  }
+
+  @Delete('emojis/:id')
+  @ApiOperation({ summary: 'Delete emoji from pack' })
+  deleteEmoji(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.service.deleteEmoji(id, userId);
   }
 
   @Get('emoji-packs')

@@ -6,8 +6,7 @@ import {
   FlatList,
   RefreshControl,
   Pressable,
-  Dimensions,
-  Pressable,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -28,8 +27,6 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 type ChallengeTab = 'discover' | 'my';
 
@@ -53,13 +50,13 @@ interface Challenge {
 }
 
 const CATEGORIES = [
-  { key: 'all', label: 'All', icon: 'layers' as IconName },
-  { key: 'quran', label: 'Quran', icon: 'globe' as IconName },
-  { key: 'dhikr', label: 'Dhikr', icon: 'repeat' as IconName },
-  { key: 'photography', label: 'Photography', icon: 'camera' as IconName },
-  { key: 'fitness', label: 'Fitness', icon: 'trending-up' as IconName },
-  { key: 'cooking', label: 'Cooking', icon: 'heart' as IconName },
-  { key: 'learning', label: 'Learning', icon: 'edit' as IconName },
+  { key: 'all', labelKey: 'gamification.all', icon: 'layers' as IconName },
+  { key: 'quran', labelKey: 'gamification.categories.quran', icon: 'globe' as IconName },
+  { key: 'dhikr', labelKey: 'gamification.categories.dhikr', icon: 'repeat' as IconName },
+  { key: 'photography', labelKey: 'gamification.categories.photography', icon: 'camera' as IconName },
+  { key: 'fitness', labelKey: 'gamification.categories.fitness', icon: 'trending-up' as IconName },
+  { key: 'cooking', labelKey: 'gamification.categories.cooking', icon: 'heart' as IconName },
+  { key: 'learning', labelKey: 'gamification.categories.learning', icon: 'edit' as IconName },
 ];
 
 function getDaysLeft(endDate: string): number {
@@ -103,6 +100,7 @@ function ChallengeCard({
               source={{ uri: challenge.coverImageUrl }}
               style={styles.coverImage}
               contentFit="cover"
+              accessibilityLabel={t('gamification.challenges.coverImage', { title: challenge.title })}
             />
             <LinearGradient
               colors={['transparent', 'rgba(13,17,23,0.8)']}
@@ -142,7 +140,7 @@ function ChallengeCard({
                   style={[styles.progressFill, { width: `${progress * 100}%` }]}
                 />
               </View>
-              <Text style={styles.progressText}>
+              <Text style={[styles.progressText, { textAlign: rtlTextAlign(isRTL) }]}>
                 {t('gamification.challenges.progress', {
                   current: challenge.currentProgress ?? 0,
                   target: challenge.targetCount,
@@ -201,6 +199,7 @@ function ChallengeCard({
 }
 
 function LoadingSkeleton() {
+  const tc = useThemeColors();
   return (
     <View style={styles.skeletonWrap}>
       <View style={styles.chipScrollRow}>
@@ -369,7 +368,7 @@ function ChallengesScreen() {
                     selectedCategory === cat.key && styles.categoryChipTextActive,
                   ]}
                 >
-                  {cat.label}
+                  {t(cat.labelKey)}
                 </Text>
               </View>
             </Pressable>
@@ -432,7 +431,7 @@ function ChallengesScreen() {
         style={styles.fab}
         onPress={() => {
           haptic.medium();
-          // Navigate to create challenge screen when available
+          Alert.alert(t('gamification.challenges.create'), t('gamification.challenges.createComingSoon'));
         }}
         accessibilityRole="button"
         accessibilityLabel={t('gamification.challenges.create')}
@@ -592,7 +591,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
     color: colors.text.secondary,
-    textAlign: 'right',
   },
   // Footer
   challengeFooter: {

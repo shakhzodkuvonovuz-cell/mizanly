@@ -129,6 +129,9 @@ describe('CallsService', () => {
 
   describe('missedCall', () => {
     it('should mark call as missed', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'RINGING', participants: [{ userId: 'user1' }],
+      });
       prisma.callSession.update.mockResolvedValue({ id: 'call1', status: 'MISSED' });
       const result = await service.missedCall('call1');
       expect(result.status).toBe('MISSED');

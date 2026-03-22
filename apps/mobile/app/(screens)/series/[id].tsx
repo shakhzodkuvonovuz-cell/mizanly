@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Pressable,
   Dimensions,
-  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -35,8 +34,8 @@ const HERO_HEIGHT = 240;
 interface Episode {
   id: string;
   title: string;
-  episodeNumber: number;
-  releaseDate: string;
+  number: number;
+  createdAt: string;
   postId?: string;
   reelId?: string;
   videoId?: string;
@@ -47,9 +46,9 @@ interface SeriesDetail {
   title: string;
   description?: string;
   category: string;
-  coverImageUrl?: string;
+  coverUrl?: string;
   episodeCount: number;
-  followerCount: number;
+  followersCount: number;
   isFollowing: boolean;
   isComplete: boolean;
   episodes: Episode[];
@@ -91,12 +90,12 @@ function EpisodeRow({
     <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 500)).duration(400)}>
       <Pressable
         onPress={handlePress}
-        accessibilityLabel={`Episode ${episode.episodeNumber}: ${episode.title}`}
+        accessibilityLabel={`Episode ${episode.number}: ${episode.title}`}
         accessibilityRole="button"
       >
         <View style={[styles.episodeRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           <View style={styles.episodeNumberWrap}>
-            <Text style={styles.episodeNumber}>{episode.episodeNumber}</Text>
+            <Text style={styles.episodeNumber}>{episode.number}</Text>
           </View>
           <View style={styles.episodeInfo}>
             <Text
@@ -106,7 +105,7 @@ function EpisodeRow({
               {episode.title}
             </Text>
             <Text style={[styles.episodeDate, { textAlign: rtlTextAlign(isRTL) }]}>
-              {new Date(episode.releaseDate).toLocaleDateString()}
+              {new Date(episode.createdAt).toLocaleDateString()}
             </Text>
           </View>
           <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
@@ -190,9 +189,9 @@ function SeriesDetailScreen() {
     <>
       {/* Hero */}
       <View style={styles.hero}>
-        {data.coverImageUrl ? (
+        {data.coverUrl ? (
           <Image
-            source={{ uri: data.coverImageUrl }}
+            source={{ uri: data.coverUrl }}
             style={styles.heroImage}
             contentFit="cover"
           />
@@ -211,7 +210,7 @@ function SeriesDetailScreen() {
           {data.isComplete && (
             <View style={styles.completeBadge}>
               <Icon name="check-circle" size="xs" color={colors.gold} />
-              <Text style={styles.completeBadgeText}>Complete Series</Text>
+              <Text style={styles.completeBadgeText}>{t('series.completeSeries', 'Complete Series')}</Text>
             </View>
           )}
         </View>
@@ -255,7 +254,7 @@ function SeriesDetailScreen() {
         <View style={[styles.statItem, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="users" size="sm" color={colors.text.secondary} />
           <Text style={styles.statText}>
-            {t('gamification.series.followers', { count: data.followerCount })}
+            {t('gamification.series.followers', { count: data.followersCount })}
           </Text>
         </View>
         <View style={styles.followBtnWrap}>
@@ -273,7 +272,7 @@ function SeriesDetailScreen() {
       <View style={[styles.episodesHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Icon name="layers" size="sm" color={colors.text.primary} />
         <Text style={styles.episodesHeaderText}>
-          Episodes ({data.episodes?.length ?? 0})
+          {t('series.episodeList', 'Episodes')} ({data.episodes?.length ?? 0})
         </Text>
       </View>
     </>

@@ -490,8 +490,128 @@ export class PaymentsService {
     await this.redis.del(`subscription:internal:${dbSubscriptionId}`);
   }
 
-  async handlePaymentMethodAttached(paymentMethod: Stripe.PaymentMethod) {
-    // No action needed, but we can log
-    this.logger.debug(`Payment method attached: ${paymentMethod.id}`);
+  async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+    let tipId = await this.redis.get(`payment_intent:${paymentIntent.id}`);
+    if (!tipId) {
+      // Redis mapping expired or lost — try DB fallback via metadata
+      const senderId = paymentIntent.metadata?.senderId;
+      if (senderId) {
+        const tip = await this.prisma.tip.findFirst({
+          where: { senderId, status: 'pending' },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true },
+        });
+        tipId = tip?.id ?? null;
+      }
+      if (!tipId) {
+        this.logger.warn(`No tip found for failed payment intent ${paymentIntent.id}`);
+        return;
+      }
+    }
+
+    // Update tip status to failed
+    await this.prisma.tip.update({
+      where: { id: tipId },
+      data: {
+        status: 'failed',
+        message: JSON.stringify({
+          stripePaymentIntentId: paymentIntent.id,
+          status: 'failed',
+          failedAt: new Date().toISOString(),
+          failureMessage: paymentIntent.last_payment_error?.message ?? 'Payment failed',
+        }),
+      },
+    });
+
+    // Clean up mapping
+    await this.redis.del(`payment_intent:${paymentIntent.id}`);
+  }
+
+  async handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+    const subscriptionId = 'subscription' in invoice ? String(invoice.subscription ?? '') : '';
+    if (!subscriptionId) return;
+
+    const dbSubscriptionId = await this.redis.get(`subscription:${subscriptionId}`);
+    if (!dbSubscriptionId) {
+      this.logger.warn(`No subscription found for failed invoice on Stripe subscription ${subscriptionId}`);
+      return;
+    }
+
+    // Mark subscription as past_due — user needs to update payment method
+    await this.prisma.membershipSubscription.update({
+      where: { id: dbSubscriptionId },
+      data: { status: 'past_due' },
+    });
+
+    this.logger.warn(`Subscription ${dbSubscriptionId} marked as past_due due to failed invoice payment`);
+  }
+
+  async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+    let dbSubscriptionId = await this.redis.get(`subscription:${subscription.id}`);
+    if (!dbSubscriptionId) {
+      // Redis mapping expired — try DB fallback via metadata
+      const userId = subscription.metadata?.userId || subscription.metadata?.mizanlyUserId;
+      const tierId = subscription.metadata?.tierId || subscription.metadata?.mizanlyTierId;
+      if (userId && tierId) {
+        const sub = await this.prisma.membershipSubscription.findUnique({
+          where: { tierId_userId: { tierId, userId } },
+          select: { id: true },
+        });
+        dbSubscriptionId = sub?.id ?? null;
+      }
+      if (!dbSubscriptionId) {
+        this.logger.warn(`No subscription found for updated Stripe subscription ${subscription.id}`);
+        return;
+      }
+    }
+
+    // Map Stripe status to our status
+    const statusMap: Record<string, string> = {
+      active: 'active',
+      past_due: 'past_due',
+      canceled: 'cancelled',
+      unpaid: 'past_due',
+      paused: 'paused',
+    };
+    const mappedStatus = statusMap[subscription.status] ?? 'active';
+
+    const periodEnd = 'current_period_end' in subscription
+      ? (subscription.current_period_end as number) : undefined;
+
+    await this.prisma.membershipSubscription.update({
+      where: { id: dbSubscriptionId },
+      data: {
+        status: mappedStatus,
+        endDate: periodEnd ? new Date(periodEnd * 1000) : undefined,
+      },
+    });
+  }
+
+  async handleDisputeCreated(dispute: Record<string, unknown>) {
+    // Log the dispute for manual review
+    const paymentIntentId = typeof dispute.payment_intent === 'string' ? dispute.payment_intent : '';
+    const reason = typeof dispute.reason === 'string' ? dispute.reason : 'unknown';
+    const amount = typeof dispute.amount === 'number' ? dispute.amount : 0;
+
+    this.logger.error(`CHARGEBACK DISPUTE: payment_intent=${paymentIntentId}, reason=${reason}, amount=${amount}`);
+
+    // If we can find the tip associated with this payment intent, mark it as disputed
+    if (paymentIntentId) {
+      const tipId = await this.redis.get(`payment_intent:${paymentIntentId}`);
+      if (tipId) {
+        await this.prisma.tip.update({
+          where: { id: tipId },
+          data: {
+            status: 'disputed',
+            message: JSON.stringify({
+              stripePaymentIntentId: paymentIntentId,
+              status: 'disputed',
+              disputeReason: reason,
+              disputedAt: new Date().toISOString(),
+            }),
+          },
+        });
+      }
+    }
   }
 }

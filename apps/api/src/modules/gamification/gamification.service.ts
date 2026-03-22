@@ -449,24 +449,40 @@ export class GamificationService {
       orderBy: { number: 'desc' },
     });
 
-    const episode = await this.prisma.seriesEpisode.create({
-      data: {
-        seriesId,
-        number: (lastEpisode?.number || 0) + 1,
-        title: dto.title,
-        postId: dto.postId,
-        reelId: dto.reelId,
-        videoId: dto.videoId,
-        releasedAt: new Date(),
-      },
-    });
-
-    await this.prisma.series.update({
-      where: { id: seriesId },
-      data: { episodeCount: { increment: 1 } },
-    });
+    const [episode] = await this.prisma.$transaction([
+      this.prisma.seriesEpisode.create({
+        data: {
+          seriesId,
+          number: (lastEpisode?.number || 0) + 1,
+          title: dto.title,
+          postId: dto.postId,
+          reelId: dto.reelId,
+          videoId: dto.videoId,
+          releasedAt: new Date(),
+        },
+      }),
+      this.prisma.series.update({
+        where: { id: seriesId },
+        data: { episodeCount: { increment: 1 } },
+      }),
+    ]);
 
     return episode;
+  }
+
+  async removeEpisode(userId: string, seriesId: string, episodeId: string) {
+    const series = await this.prisma.series.findFirst({ where: { id: seriesId, userId } });
+    if (!series) throw new NotFoundException('Series not found');
+
+    const episode = await this.prisma.seriesEpisode.findUnique({ where: { id: episodeId } });
+    if (!episode || episode.seriesId !== seriesId) throw new NotFoundException('Episode not found');
+
+    await this.prisma.$transaction([
+      this.prisma.seriesEpisode.delete({ where: { id: episodeId } }),
+      this.prisma.$executeRaw`UPDATE "Series" SET "episodeCount" = GREATEST("episodeCount" - 1, 0) WHERE id = ${seriesId}`,
+    ]);
+
+    return { success: true };
   }
 
   async followSeries(userId: string, seriesId: string) {
