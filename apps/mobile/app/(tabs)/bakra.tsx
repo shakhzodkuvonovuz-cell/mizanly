@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo, useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken, Alert } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -38,6 +38,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { navigate } from '@/utils/navigation';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import * as Clipboard from 'expo-clipboard';
@@ -654,7 +655,7 @@ export default function BakraScreen() {
     try {
       await feedApi.reportNotInterested(reel.id, 'reel');
     } catch { /* best effort */ }
-    Alert.alert(t('bakra.notInterestedAlert.title'), t('bakra.notInterestedAlert.message'));
+    showToast({ message: t('bakra.notInterestedAlert.message'), variant: 'success' });
   }, [haptic, t]);
 
   const handleCopyLink = useCallback(async (reel: Reel) => {
@@ -666,7 +667,7 @@ export default function BakraScreen() {
       // Fallback: copy a constructed URL
       await Clipboard.setStringAsync(`https://mizanly.com/reel/${reel.id}`);
     }
-    Alert.alert(t('bakra.linkCopiedAlert.title'), t('bakra.linkCopiedAlert.message'));
+    showToast({ message: t('bakra.linkCopiedAlert.message'), variant: 'success' });
   }, [haptic, t]);
 
   const handleFollow = useCallback((userId: string) => {

@@ -7,7 +7,7 @@ import {
   Pressable,
   TextInput,
   Dimensions,
-  Alert,
+  Image,
   Linking,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -54,6 +54,7 @@ export default function AppealModerationScreen() {
   const queryClient = useQueryClient();
   const [selectedReason, setSelectedReason] = useState<AppealReason | null>(null);
   const [details, setDetails] = useState('');
+  const [evidenceImages, setEvidenceImages] = useState<string[]>([]);
 
   const APPEAL_REASONS: { id: AppealReason; label: string }[] = [
     { id: 'no-violation', label: t('appealModeration.reason.noViolation') },
@@ -289,9 +290,9 @@ export default function AppealModerationScreen() {
                 onPress={async () => {
                   try {
                     const ImagePicker = await import('expo-image-picker');
-                    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] });
-                    if (!result.canceled) {
-                      // TODO: Store result.assets and display selected images
+                    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: 5 });
+                    if (!result.canceled && result.assets.length > 0) {
+                      setEvidenceImages(prev => [...prev, ...result.assets.map(a => a.uri)].slice(0, 5));
                     }
                   } catch {
                     // Image picker not available
@@ -308,10 +309,7 @@ export default function AppealModerationScreen() {
               <Pressable
                 style={styles.evidenceButton}
                 onPress={() => {
-                  Alert.alert(
-                    t('appealModeration.evidenceTitle'),
-                    t('appealModeration.documentUploadComingSoon', 'Document upload coming soon'),
-                  );
+                  showToast({ message: t('appealModeration.documentUploadComingSoon', 'Document upload coming soon'), variant: 'info' });
                 }}
               >
                 <View style={styles.evidenceButtonInner}>
@@ -321,6 +319,24 @@ export default function AppealModerationScreen() {
                 </View>
               </Pressable>
             </View>
+
+            {/* Selected evidence image thumbnails */}
+            {evidenceImages.length > 0 && (
+              <View style={styles.evidenceThumbnails}>
+                {evidenceImages.map((uri, idx) => (
+                  <View key={uri} style={styles.evidenceThumbnailWrap}>
+                    <Image source={{ uri }} style={styles.evidenceThumbnailImg} />
+                    <Pressable
+                      accessibilityRole="button"
+                      style={styles.evidenceThumbnailRemove}
+                      onPress={() => setEvidenceImages(prev => prev.filter((_, i) => i !== idx))}
+                    >
+                      <Icon name="x" size="xs" color="#FFF" />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )}
           </LinearGradient>
         </Animated.View>
 
@@ -703,6 +719,35 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     color: colors.emerald,
     marginTop: spacing.xs,
+  },
+  evidenceThumbnails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  evidenceThumbnailWrap: {
+    position: 'relative',
+    width: 64,
+    height: 64,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  evidenceThumbnailImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.md,
+  },
+  evidenceThumbnailRemove: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 20,
+    height: 20,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   historyCard: {
     borderRadius: radius.lg,

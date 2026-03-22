@@ -25,6 +25,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -97,7 +98,7 @@ export default function AudioRoomScreen() {
       setParticipants(participantsRes.data);
     } catch (err) {
       setError(t('audioRoom.failedToLoad'));
-      Alert.alert(t('common.error'), t('audioRoom.failedToLoad'));
+      showToast({ message: t('audioRoom.failedToLoad'), variant: 'error' });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -170,7 +171,7 @@ export default function AudioRoomScreen() {
     userId: p.userId,
     name: p.user.name || p.user.username || 'User',
     avatar: p.user.avatarUrl || null,
-    raisedAgo: 'Just now', // TODO: compute from handRaisedAt if available
+    raisedAgo: formatTimeAgo(p.handRaisedAt),
   }));
 
   const handleToggleMic = async () => {
@@ -179,7 +180,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.toggleMute(room.id);
       fetchData(); // refresh participants
     } catch (err) {
-      Alert.alert(t('common.error'), t('audioRoom.failedToToggleMute'));
+      showToast({ message: t('audioRoom.failedToToggleMute'), variant: 'error' });
     }
   };
 
@@ -189,7 +190,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.toggleHand(room.id);
       fetchData(); // refresh participants
     } catch (err) {
-      Alert.alert(t('common.error'), t('audioRoom.failedToRaiseHand'));
+      showToast({ message: t('audioRoom.failedToRaiseHand'), variant: 'error' });
     }
   };
 
@@ -199,7 +200,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.leave(room.id);
       router.back();
     } catch (err) {
-      Alert.alert(t('common.error'), t('audioRoom.failedToLeaveRoom'));
+      showToast({ message: t('audioRoom.failedToLeaveRoom'), variant: 'error' });
     }
   };
 
@@ -209,7 +210,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.changeRole(room.id, { userId, role: 'speaker' });
       fetchData();
     } catch (err) {
-      Alert.alert(t('common.error'), t('audioRoom.failedToAcceptHand'));
+      showToast({ message: t('audioRoom.failedToAcceptHand'), variant: 'error' });
     }
   };
 
@@ -219,7 +220,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.changeRole(room.id, { userId, role: 'listener' });
       fetchData();
     } catch (err) {
-      Alert.alert(t('common.error'), t('audioRoom.failedToDeclineHand'));
+      showToast({ message: t('audioRoom.failedToDeclineHand'), variant: 'error' });
     }
   };
 
@@ -238,7 +239,7 @@ export default function AudioRoomScreen() {
               await audioRoomsApi.delete(room.id);
               router.back();
             } catch (err) {
-              Alert.alert(t('common.error'), t('audioRoom.failedToEndRoom'));
+              showToast({ message: t('audioRoom.failedToEndRoom'), variant: 'error' });
             }
           },
         },

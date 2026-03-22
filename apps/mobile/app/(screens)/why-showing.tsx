@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { feedApi, postsApi } from '@/services/api';
+import { showToast } from '@/components/ui/Toast';
 import type { Post } from '@/types';
 
 interface ReasonItem {
@@ -111,16 +112,10 @@ function WhyShowingContent() {
       if (params.postId) {
         await feedApi.reportNotInterested(params.postId, params.postType ?? 'post');
       }
-      Alert.alert(
-        t('whyShowing.notInterestedTitle', 'Got it'),
-        t('whyShowing.notInterestedMsg', "We'll show less content like this"),
-      );
+      showToast({ message: t('whyShowing.notInterestedMsg', "We'll show less content like this"), variant: 'success' });
       router.back();
     } catch {
-      Alert.alert(
-        t('whyShowing.errorTitle', 'Error'),
-        t('whyShowing.errorMsg', 'Something went wrong. Please try again.'),
-      );
+      showToast({ message: t('whyShowing.errorMsg', 'Something went wrong. Please try again.'), variant: 'error' });
     }
   }, [params.postId, params.postType, router, t]);
 
@@ -129,16 +124,10 @@ function WhyShowingContent() {
       if (params.postId) {
         await feedApi.dismiss(params.postType ?? 'post', params.postId);
       }
-      Alert.alert(
-        t('whyShowing.seeLessTitle', 'Updated'),
-        t('whyShowing.seeLessMsg', "You'll see less content like this"),
-      );
+      showToast({ message: t('whyShowing.seeLessMsg', "You'll see less content like this"), variant: 'success' });
       router.back();
     } catch {
-      Alert.alert(
-        t('whyShowing.errorTitle', 'Error'),
-        t('whyShowing.errorMsg', 'Something went wrong. Please try again.'),
-      );
+      showToast({ message: t('whyShowing.errorMsg', 'Something went wrong. Please try again.'), variant: 'error' });
     }
   }, [params.postId, router, t]);
 

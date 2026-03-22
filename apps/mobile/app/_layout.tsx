@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { I18nManager, Alert, AppState, AppStateStatus, Platform, View, Text, StyleSheet, TextInput } from 'react-native';
+import { I18nManager, AppState, AppStateStatus, Platform, View, Text, StyleSheet, TextInput } from 'react-native';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { useTranslation } from '@/hooks/useTranslation';
 import { StatusBar } from 'expo-status-bar';
@@ -26,7 +26,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { TTSMiniPlayer } from '@/components/ui/TTSMiniPlayer';
-import { ToastContainer } from '@/components/ui/Toast';
+import { ToastContainer, showToast } from '@/components/ui/Toast';
 import { useStore } from '@/store';
 import { colors, fontSizeExt } from '@/theme';
 import { useIslamicTheme, useIsEidToday } from '@/hooks/useIslamicTheme';
@@ -160,7 +160,7 @@ const queryClient = new QueryClient({
           const msg = error.name === 'ApiNetworkError'
             ? 'You appear to be offline. Please check your connection.'
             : error.message;
-          Alert.alert('Error', msg);
+          showToast({ message: msg, variant: 'error' });
         }
       },
       retry: (failureCount, error) => {

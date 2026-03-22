@@ -15,6 +15,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 const MAX_TIME = 300; // 5 minutes
 
@@ -51,7 +52,7 @@ export default function VoiceRecorderScreen() {
   const start = useCallback(async () => {
     const { granted } = await Audio.requestPermissionsAsync();
     if (!granted) {
-      Alert.alert(t('screens.voiceRecorder.permissionNeeded'), t('screens.voiceRecorder.microphoneRequired'));
+      showToast({ message: t('screens.voiceRecorder.microphoneRequired'), variant: 'error' });
       return;
     }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
@@ -103,7 +104,7 @@ export default function VoiceRecorderScreen() {
     await rec.stopAndUnloadAsync();
     const u = rec.getURI();
     if (!u) {
-      Alert.alert(t('common.error'), t('screens.voiceRecorder.recordingFailed'));
+      showToast({ message: t('screens.voiceRecorder.recordingFailed'), variant: 'error' });
       setState('idle');
       return;
     }
@@ -151,7 +152,7 @@ export default function VoiceRecorderScreen() {
       // Navigate back after successful upload
       router.back();
     } catch {
-      Alert.alert(t('common.error'), t('voiceRecorder.uploadFailed'));
+      showToast({ message: t('voiceRecorder.uploadFailed'), variant: 'error' });
     } finally {
       setUploading(false);
     }

@@ -286,11 +286,7 @@ export default function DownloadsScreen() {
           },
         ]);
       }
-      // TODO: Implement pause/resume/retry via downloadManager service.
-      // Requires a native download orchestration module (e.g., expo-file-system background download).
-      // pause: downloadManager.pause(item.id)
-      // resume: downloadManager.resume(item.id)
-      // retry: downloadManager.retry(item.id)
+      // Pause/resume requires a native download manager module
     },
     [haptic, t, deleteMutation],
   );

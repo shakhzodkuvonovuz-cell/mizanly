@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, Alert,
   FlatList, RefreshControl,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -147,7 +148,7 @@ export default function WatchHistoryScreen() {
               await usersApi.clearWatchHistory();
               watchHistoryQuery.refetch();
             } catch (error) {
-              Alert.alert(t('common.error'), t('common.checkConnection'));
+              showToast({ message: t('common.checkConnection'), variant: 'error' });
             }
           },
         },

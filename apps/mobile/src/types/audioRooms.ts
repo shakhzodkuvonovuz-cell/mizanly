@@ -33,6 +33,8 @@ export interface AudioRoomParticipant {
   role: ParticipantRole;
   isMuted: boolean;
   handRaised: boolean;
+  handRaisedAt?: string;
+  isSpeaking?: boolean;
   joinedAt: string;
 }
 

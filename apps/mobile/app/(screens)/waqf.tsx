@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { api } from '@/services/api';
 
 export default function WaqfScreen() {
@@ -81,7 +82,7 @@ export default function WaqfScreen() {
           <Pressable accessibilityRole="button" style={styles.contributeBtn} onPress={() => {
               haptic.navigate();
               // TODO: Wire to payment flow once Stripe integration is complete on mobile
-              Alert.alert(t('common.comingSoon'), t('community.waqfContributeComingSoon'));
+              showToast({ message: t('community.waqfContributeComingSoon'), variant: 'info' });
             }}>
             <LinearGradient colors={[colors.gold, '#D4A94F']} style={styles.contributeBtnGradient}>
               <Icon name="heart" size="sm" color="#FFF" />
