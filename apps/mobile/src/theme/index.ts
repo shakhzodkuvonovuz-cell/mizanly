@@ -175,6 +175,19 @@ export const fontSize = {
   '4xl': 42,
 } as const;
 
+export const lineHeight = {
+  xs: 16, sm: 18, base: 22, md: 24, lg: 28, xl: 32,
+  '2xl': 36, '3xl': 44, '4xl': 52,
+} as const;
+
+export const letterSpacing = {
+  tight: -1.2,    // hero/display text
+  snug: -0.8,     // headings
+  normal: 0,      // body text
+  wide: 0.5,      // labels/captions
+  wider: 1.0,     // ALL CAPS labels
+} as const;
+
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -322,6 +335,25 @@ export const animation = {
     slow: 400,
     shimmer: 1200,
   },
+  easing: {
+    cinematic: [0.16, 1, 0.3, 1] as readonly [number, number, number, number],
+    decelerate: [0, 0, 0.2, 1] as readonly [number, number, number, number],
+    accelerate: [0.4, 0, 1, 1] as readonly [number, number, number, number],
+  },
+  stagger: {
+    item: 40,      // ms between staggered list items
+    section: 80,   // ms between staggered sections
+  },
+  entrance: { duration: 350 },
+  exit: { duration: 250 },  // exits are 70% of entrance duration (Material rule)
+} as const;
+
+export const interaction = {
+  pressed: 'rgba(255, 255, 255, 0.04)',
+  hover: 'rgba(255, 255, 255, 0.06)',
+  disabledOpacity: 0.38,
+  focusRingColor: '#0A7B4F', // emerald
+  focusRingWidth: 2,
 } as const;
 
 // Glassmorphism presets
