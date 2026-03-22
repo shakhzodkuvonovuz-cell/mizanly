@@ -2868,6 +2868,8 @@
   },
   "network": {
     "offline": "Anda sedang offline",
+    "offlineSubtitle": "Menampilkan konten tersimpan",
+    "tapToRetry": "Ketuk untuk coba lagi",
     "backOnline": "Kembali online",
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."

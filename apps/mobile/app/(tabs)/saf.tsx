@@ -36,6 +36,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { useAnimatedIcon } from '@/hooks/useAnimatedIcon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
@@ -237,7 +238,17 @@ export default function SafScreen() {
   const bellPress = useAnimatedPress();
   const cameraPress = useAnimatedPress();
   const profilePress = useAnimatedPress();
+  const bellShake = useAnimatedIcon('shake');
   const { onScroll, headerAnimatedStyle, titleAnimatedStyle, scrollY } = useScrollLinkedHeader(56);
+
+  // Shake bell icon when unread notifications go from 0 to positive
+  const prevUnreadRef = useRef(0);
+  useEffect(() => {
+    if (unreadNotifications > 0 && prevUnreadRef.current === 0) {
+      bellShake.trigger();
+    }
+    prevUnreadRef.current = unreadNotifications;
+  }, [unreadNotifications, bellShake]);
 
   // ── "New posts" banner state ──
   const [hasScrolledDown, setHasScrolledDown] = useState(false);
@@ -585,16 +596,18 @@ export default function SafScreen() {
             accessibilityRole="button"
             accessibilityHint={t('accessibility.notificationsHint')}
           >
-            <View>
-              <Icon name="bell" size="sm" color={colors.text.primary} />
-              {unreadNotifications > 0 && (
-                <Badge
-                  count={unreadNotifications}
-                  size="sm"
-                  style={[styles.notifBadge, rtlAbsoluteEnd(isRTL, -8)]}
-                />
-              )}
-            </View>
+            <Animated.View style={bellShake.animatedStyle}>
+              <View>
+                <Icon name="bell" size="sm" color={colors.text.primary} />
+                {unreadNotifications > 0 && (
+                  <Badge
+                    count={unreadNotifications}
+                    size="sm"
+                    style={[styles.notifBadge, rtlAbsoluteEnd(isRTL, -8)]}
+                  />
+                )}
+              </View>
+            </Animated.View>
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}

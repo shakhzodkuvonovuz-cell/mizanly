@@ -2867,6 +2867,8 @@
   },
   "network": {
     "offline": "Anda sedang luar talian",
+    "offlineSubtitle": "Memaparkan kandungan cache",
+    "tapToRetry": "Ketik untuk cuba semula",
     "backOnline": "Kembali dalam talian",
     "queuedAction": "Akan disegerakkan apabila disambungkan",
     "syncing": "Menyegerakkan..."

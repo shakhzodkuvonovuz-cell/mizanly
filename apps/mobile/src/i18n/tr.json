@@ -2867,6 +2867,8 @@
   },
   "network": {
     "offline": "Çevrimdışısınız",
+    "offlineSubtitle": "Önbelleğe alınmış içerik gösteriliyor",
+    "tapToRetry": "Yeniden denemek için dokunun",
     "backOnline": "Tekrar çevrimiçi",
     "queuedAction": "Bağlandığında senkronize edilecek",
     "syncing": "Senkronize ediliyor..."

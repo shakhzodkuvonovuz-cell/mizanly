@@ -2917,6 +2917,8 @@
   },
   "network": {
     "offline": "You're offline",
+    "offlineSubtitle": "Showing cached content",
+    "tapToRetry": "Tap to retry",
     "backOnline": "Back online",
     "queuedAction": "Will sync when connected",
     "syncing": "Syncing..."

@@ -2868,6 +2868,8 @@
   },
   "network": {
     "offline": "Vous êtes hors ligne",
+    "offlineSubtitle": "Affichage du contenu en cache",
+    "tapToRetry": "Appuyez pour réessayer",
     "backOnline": "De retour en ligne",
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
