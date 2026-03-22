@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withSequence,
+  FadeInUp,
 } from 'react-native-reanimated';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar } from '@/components/ui/Avatar';
@@ -19,8 +20,9 @@ import { reelsApi, api } from '@/services/api';
 import type { Reel, Comment } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { formatCount } from '@/utils/formatCount';
 
 interface ReelComment extends Comment {
   parentId?: string;
@@ -35,7 +37,7 @@ interface CommentItemProps {
 
 const CommentItem = memo(function CommentItem({ item, reelUserId, reelId, onReply }: CommentItemProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const likeScale = useSharedValue(1);
 
   const likeAnimStyle = useAnimatedStyle(() => ({
@@ -43,7 +45,7 @@ const CommentItem = memo(function CommentItem({ item, reelUserId, reelId, onRepl
   }));
 
   const handleLikeComment = async () => {
-    haptic.light();
+    haptic.like();
     likeScale.value = withSequence(
       withSpring(1.3, { damping: 12, stiffness: 350 }),
       withSpring(1, { damping: 10, stiffness: 400 })
@@ -102,7 +104,7 @@ const CommentItem = memo(function CommentItem({ item, reelUserId, reelId, onRepl
               <Icon name="heart" size="xs" color={colors.text.secondary} />
             </Animated.View>
             <Text style={styles.commentActionText}>
-              {item.likesCount > 0 ? item.likesCount : ''}
+              {item.likesCount > 0 ? formatCount(item.likesCount) : ''}
             </Text>
           </Pressable>
           <Pressable
@@ -113,7 +115,7 @@ const CommentItem = memo(function CommentItem({ item, reelUserId, reelId, onRepl
           >
             <Icon name="message-circle" size="xs" color={colors.text.secondary} />
             <Text style={styles.commentActionText}>
-              {item._count?.replies ? item._count.replies : ''}
+              {item._count?.replies ? formatCount(item._count.replies) : ''}
             </Text>
           </Pressable>
         </View>
@@ -130,7 +132,7 @@ interface CommentsSheetProps {
 
 export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const queryClient = useQueryClient();
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
@@ -154,7 +156,7 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
       setNewComment('');
       setReplyTo(null);
       inputRef.current?.blur();
-      haptic.light();
+      haptic.send();
     },
   });
 
@@ -171,13 +173,15 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
     inputRef.current?.focus();
   }, []);
 
-  const renderComment = useCallback(({ item }: { item: ReelComment }) => (
-    <CommentItem
-      item={item}
-      reelUserId={reel.user?.id}
-      reelId={reel.id}
-      onReply={handleReply}
-    />
+  const renderComment = useCallback(({ item, index }: { item: ReelComment; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 10) * 30).duration(300)}>
+      <CommentItem
+        item={item}
+        reelUserId={reel.user?.id}
+        reelId={reel.id}
+        onReply={handleReply}
+      />
+    </Animated.View>
   ), [reel.user?.id, reel.id, handleReply]);
 
   const listEmpty = commentsQuery.isLoading ? (
