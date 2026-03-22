@@ -167,12 +167,19 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 **Technical debt (from 72-agent audit remediation):**
 - i18n key deduplication: ~200 keys duplicated across sections (saf.viewInsights, bakra.viewInsights, majlis.viewInsights, profile.viewInsights all = "View Insights"). Refactoring to shared common.* keys would touch 200+ t() call sites — too risky without automated codemods. Track and fix when adding i18n testing.
 - i18n translation completeness: 5 languages (ur, bn, fr, id, ms) are 85%+ untranslated English. Arabic has 518 untranslated keys. Requires human translator — NOT AI-generated.
-- pgvector HNSW index: `CREATE INDEX embeddings_vector_idx ON embeddings USING hnsw (vector vector_cosine_ops)` needed for performant KNN search. Requires raw SQL migration.
-- Trending/For-You feed scoring in SQL: currently fetches 200 rows and sorts in JS. Should use SQL expression `ORDER BY (likesCount * 3 + commentsCount * 5) / POWER(age_hours, 1.5) DESC LIMIT 20`.
 - Scheduled content auto-publisher: @nestjs/schedule not installed. Content with scheduledAt in the past stays in "scheduled" state forever. Needs cron job or BullMQ repeatable job.
-- LinkPreview component uses mock data instead of real OG metadata fetching from backend /og endpoint.
-- BottomSheet needs KeyboardAvoidingView for sheets containing TextInput.
 - LocationPicker uses hardcoded mosque locations instead of expo-location + geocoding API.
+
+**Last 7 deferred items (all require external services — cannot be fixed in code):**
+- Stream uploads fire-and-forget — needs BullMQ queue integration for retry/error handling on Cloudflare Stream uploads
+- CDN variant URLs — assumes Cloudflare Image Resizing service is enabled on the R2 bucket
+- Virus scanning — requires ClamAV server or cloud antivirus API (e.g., VirusTotal) for uploaded file scanning
+- Search parallel full-text scans — falls back to 7 parallel Prisma LIKE queries without Meilisearch; deploy Meilisearch to fix
+- getNearbyContent — stub; needs PostGIS extension on Neon PostgreSQL for real geospatial queries
+- Caption generation — placeholder; needs AI image analysis service (Claude Vision or similar) to auto-generate alt text
+- Image resize doesn't upload — media processor resizes locally but needs R2 credentials to upload the resized variants
+
+**Audit status: 0 OPEN, 7 NOTED (external deps only), 178 FIXED. 4,276 tests, 0 failures. 830 commits.**
 
 ### Backend + Performance Hardening (Batches 68, A1-C)
 - ~~TODO stubs~~ — ✅ Fixed
