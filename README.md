@@ -33,6 +33,7 @@
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Design System](#design-system)
+- [UI/UX Elevation](#uiux-elevation-march-2026)
 - [UI Component Library](#ui-component-library)
 - [Custom Hooks](#custom-hooks)
 - [Service Layer](#service-layer)
@@ -86,28 +87,29 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Source Lines (TS/TSX) | 107,032 |
+| Source Lines (TS/TSX) | 118,000+ |
 | Test Lines (*.spec.ts) | 55,462 |
-| Total TypeScript | 160,746 |
-| Mobile Screens | 203 |
+| Total TypeScript | 173,000+ |
+| Mobile Screens | 208 |
 | Backend Modules | 79 |
 | Backend Controllers | 82 |
 | Backend Services | 94 |
-| Prisma Models | 188 |
+| Prisma Models | 189 |
 | Prisma Schema Lines | 4,084 |
 | Test Suites | 277 |
-| Tests Passing | 3,974 (100%) |
-| UI Components | 66 |
-| Custom Hooks | 19 |
+| Tests Passing | 4,276 (100%) |
+| UI Components | 39 |
+| Custom Hooks | 27 |
 | API Service Files | 19 |
-| Translation Keys | 2,838 per language |
+| Translation Keys | 2,900+ per language |
 | Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
 | REST Endpoints | 850+ |
 | Socket Events | 16 |
 | DTOs | 120+ |
-| Audit Findings Fixed | 1,800+ (across 36 deep audit files) |
-| Git Commits | 816 |
-| Development Time | 19 days (Mar 3–22, 2026) |
+| Audit Findings Fixed | 4,300+ (across 72 deep audit files) |
+| UI/UX Elevation | 87 commits, 272 files, +12.5K/-5.5K lines |
+| Git Commits | 1,050+ |
+| Development Time | 21 days (Mar 3–23, 2026) |
 
 ---
 
@@ -564,7 +566,7 @@ mizanly/
 │       │   │   ├── risalah.tsx       # WhatsApp-style conversations
 │       │   │   ├── minbar.tsx        # YouTube-style channels
 │       │   │   └── create.tsx        # Universal create button
-│       │   └── (screens)/            # 195 detail/utility screens
+│       │   └── (screens)/            # 208 detail/utility screens
 │       │       ├── conversation/     # Chat screens (per conversation)
 │       │       ├── post/             # Post detail views
 │       │       ├── profile/          # User profile views
@@ -584,14 +586,14 @@ mizanly/
 │       │       └── playlists/        # Playlist browser
 │       ├── src/
 │       │   ├── components/
-│       │   │   ├── ui/              # 33 reusable UI components
+│       │   │   ├── ui/              # 39 reusable UI components (Toast, ProgressiveImage, SocialProof, BrandedRefreshControl, etc.)
 │       │   │   └── islamic/         # Islamic-specific components
-│       │   ├── hooks/               # 19 custom hooks
+│       │   ├── hooks/               # 27 custom hooks (useContextualHaptic, useStaggeredEntrance, useScrollLinkedHeader, etc.)
 │       │   ├── services/            # 19 API service files
 │       │   ├── stores/              # Zustand global store
 │       │   ├── theme/               # Design tokens
 │       │   ├── types/               # TypeScript interfaces
-│       │   ├── utils/               # Utility functions (Hijri dates, etc.)
+│       │   ├── utils/               # Utility functions (Hijri dates, formatCount, navigation, RTL, etc.)
 │       │   └── i18n/                # Translations (8 languages: EN, AR, TR, UR, BN, FR, ID, MS)
 │       ├── assets/
 │       │   └── images/              # App icon, splash, adaptive icon
@@ -695,43 +697,97 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 | `fontSize.xl` | 20px |
 | `fontSize['2xl']` | 24px |
 
+### Line Heights
+
+| Token | Size |
+|-------|------|
+| `lineHeight.xs` | 16px |
+| `lineHeight.sm` | 18px |
+| `lineHeight.base` | 22px |
+| `lineHeight.md` | 24px |
+| `lineHeight.lg` | 28px |
+| `lineHeight.xl` | 32px |
+
+### Letter Spacing
+
+| Token | Size | Usage |
+|-------|------|-------|
+| `letterSpacing.tight` | -1.2 | Hero/display text |
+| `letterSpacing.snug` | -0.8 | Headings |
+| `letterSpacing.normal` | 0 | Body text |
+| `letterSpacing.wide` | 0.5 | Labels/captions |
+| `letterSpacing.wider` | 1.0 | ALL CAPS labels |
+
+---
+
+## UI/UX Elevation (March 2026)
+
+87 commits across 272 files elevated every screen from prototype quality to Instagram/TikTok-level polish:
+
+**Design System:** Modern Dark Cinema Mobile style — cinematic easing (`Easing.bezier(0.16, 1, 0.3, 1)`), spring physics on all modals/sheets, glassmorphic tab bar + headers, emerald brand shimmer.
+
+**Universal Patterns Applied to ALL 208 Screens:**
+- `useContextualHaptic` — 10 semantic haptic patterns (like, follow, save, navigate, tick, delete, error, longPress, send, success)
+- `BrandedRefreshControl` — emerald+gold branded pull-to-refresh on every list
+- `ProgressiveImage` — blurhash placeholder + crossfade on every content image
+- `formatCount()` — engagement numbers display as "1.2K", "3.5M" everywhere
+- `showToast()` — every mutation has success/error feedback
+- Staggered entrance animations on every list (40ms delay per item, cinematic easing)
+- Theme-aware colors (`tc.*` from `useThemeColors`) — 0 hardcoded color props, light mode works everywhere
+
+**Hero Screen Features:**
+- Saf: SocialProof on PostCard, comment preview, DM shortcut, "New posts" banner, double-tap heart
+- Bakra: Following/For You tabs, tap-to-pause, sound marquee, 44px audio disc, camera recording
+- Profile: Stretchy cover, sticky tab bar, follow pulse animation
+- Prayer Times: Sky gradient by time-of-day, per-prayer adhan toggles, Qibla direction card, offline cache
+- Discover: Auto-play video thumbnails, masonry grid pattern
+- Notifications: Content thumbnails, inline follow-back button
+- Settings: Search bar with real-time section filtering
+- Story Viewer: Swipe between users
+- Thread: Nested/indented replies, multi-image grid (2x2, 1+2, 1+3), comment sorting
+- Detail screens: Sticky glass action bar
+- Create flows: Discard BottomSheet (Save Draft / Discard / Cancel)
+
 ---
 
 ## UI Component Library
 
-66 reusable components in `apps/mobile/src/components/`:
+39 reusable UI components in `apps/mobile/src/components/`:
 
 | Component | File | Description |
 |-----------|------|-------------|
 | **ActionButton** | `ActionButton.tsx` | Floating action button with gradient |
 | **Autocomplete** | `Autocomplete.tsx` | Hashtag/mention autocomplete dropdown |
-| **Avatar** | `Avatar.tsx` | User avatar with online indicator and size variants |
-| **Badge** | `Badge.tsx` | Notification count badge |
-| **BottomSheet** | `BottomSheet.tsx` | Modal bottom sheet with `BottomSheetItem` list items (replaces RN Modal everywhere) |
+| **Avatar** | `Avatar.tsx` | User avatar with animated rotating story ring (unseen=gradient rotation, viewed=gray), online pulse dot, blurhash placeholder |
+| **Badge** | `Badge.tsx` | Notification count badge — only bounces on 0→positive transition (no jarring re-animation) |
+| **BottomSheet** | `BottomSheet.tsx` | Spring physics bottom sheet with handle pulse, velocity-based dismiss, rubberband overscroll, scrollable content support |
+| **BrandedRefreshControl** | `BrandedRefreshControl.tsx` | Emerald+gold branded RefreshControl used on all pull-to-refresh lists |
 | **CaughtUpCard** | `CaughtUpCard.tsx` | "You're all caught up" end-of-feed card |
-| **CharCountRing** | `CharCountRing.tsx` | Circular character count indicator (like Twitter's) |
+| **CharCountRing** | `CharCountRing.tsx` | Animated SVG circular character count with interpolated green→gold→red color transition |
 | **DoubleTapHeart** | `DoubleTapHeart.tsx` | Instagram-style double-tap heart animation overlay |
-| **EmptyState** | `EmptyState.tsx` | Empty state with icon, title, subtitle, and optional action button |
+| **EmptyState** | `EmptyState.tsx` | Staggered entrance animation (icon→title→subtitle→button), optional illustration slot, pulsing CTA |
 | **EndScreenOverlay** | `EndScreenOverlay.tsx` | Video end-screen overlay with suggested content cards |
 | **FadeIn** | `FadeIn.tsx` | Fade-in animation wrapper component |
-| **FloatingHearts** | `FloatingHearts.tsx` | Animated floating hearts for live streams |
-| **GlassHeader** | `GlassHeader.tsx` | Glassmorphism navigation header with blur effect |
-| **GradientButton** | `GradientButton.tsx` | Emerald gradient button with loading state |
-| **Icon** | `Icon.tsx` | Lucide icon wrapper with size presets (sm/md/lg/xl) |
+| **FloatingHearts** | `FloatingHearts.tsx` | Wide-spread (±60px) heart explosion with horizontal drift, stagger cascade, size variation |
+| **GlassHeader** | `GlassHeader.tsx` | Glassmorphism navigation header with blur effect, scroll-linked elastic collapse support |
+| **GradientButton** | `GradientButton.tsx` | Emerald gradient button with deeper press scale (0.94), loading glow pulse, success variant |
+| **Icon** | `Icon.tsx` | React.memo'd Lucide icon wrapper with size presets — prevents 269+ unnecessary re-renders |
 | **ImageCarousel** | `ImageCarousel.tsx` | Horizontal swipeable image carousel with pagination dots |
 | **ImageGallery** | `ImageGallery.tsx` | Grid image gallery with tap-to-view |
 | **ImageLightbox** | `ImageLightbox.tsx` | Full-screen image viewer with pinch-to-zoom |
 | **LinkPreview** | `LinkPreview.tsx` | URL preview card with title, description, and thumbnail |
 | **LocationPicker** | `LocationPicker.tsx` | Location search and selection |
 | **MiniPlayer** | `MiniPlayer.tsx` | Floating mini audio/video player |
-| **OfflineBanner** | `OfflineBanner.tsx` | Network connectivity warning banner |
+| **OfflineBanner** | `OfflineBanner.tsx` | Animated network warning with retry button, "Showing cached content" subtitle |
 | **PremiereCountdown** | `PremiereCountdown.tsx` | Video premiere countdown timer overlay |
+| **ProgressiveImage** | `ProgressiveImage.tsx` | Blurhash placeholder + 300ms crossfade wrapper for expo-image. Used for ALL content images. |
 | **RichText** | `RichText.tsx` | Text with parsed hashtags, mentions, and links |
 | **ScreenErrorBoundary** | `ScreenErrorBoundary.tsx` | Error boundary wrapper for every screen |
-| **Skeleton** | `Skeleton.tsx` | Loading skeletons (Rect, Circle, PostCard, etc.) |
+| **Skeleton** | `Skeleton.tsx` | Emerald brand shimmer wave loading skeletons (Rect, Circle, PostCard, ThreadCard, etc.) |
+| **SocialProof** | `SocialProof.tsx` | "Liked by [avatar] username and N others" — stacked overlapping avatars with count |
 | **TabBarIndicator** | `TabBarIndicator.tsx` | Animated underline indicator for tab bars |
-| **TabSelector** | `TabSelector.tsx` | Animated tab bar with indicator |
-| **ToastNotification** | `ToastNotification.tsx` | In-app toast notification system |
+| **TabSelector** | `TabSelector.tsx` | Animated tab bar with spring indicator, haptic tick on change |
+| **Toast** | `Toast.tsx` | Glass card toast notification with swipe dismiss, auto-dismiss progress bar, 4 variants (success/error/warning/info). `showToast()` callable from anywhere. |
 | **VerifiedBadge** | `VerifiedBadge.tsx` | Verified checkmark (emerald) or scholar badge (gold star) |
 | **VideoControls** | `VideoControls.tsx` | Video playback controls overlay |
 | **VideoPlayer** | `VideoPlayer.tsx` | Full-featured video player component |
@@ -747,17 +803,19 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Custom Hooks
 
-19 hooks in `apps/mobile/src/hooks/`:
+27 hooks in `apps/mobile/src/hooks/`:
 
 | Hook | File | Description |
 |------|------|-------------|
 | `useAmbientColor` | `useAmbientColor.ts` | Extracts dominant color from image for ambient UI theming |
+| `useAnimatedIcon` | `useAnimatedIcon.ts` | Triggered icon animations: bounce (heart), shake (bell), pulse (bookmark), spin. Returns { animatedStyle, trigger } |
 | `useAnimatedPress` | `useAnimatedPress.ts` | Scale animation on press with Reanimated |
 | `useBackgroundUpload` | `useBackgroundUpload.ts` | Background file upload with progress tracking |
 | `useChatLock` | `useChatLock.ts` | Chat-level biometric/PIN lock state |
+| `useContextualHaptic` | `useContextualHaptic.ts` | **PRIMARY haptic hook** — 10 semantic patterns: like, follow, save, navigate, tick, delete, error, longPress, send, success |
 | `useEntranceAnimation` | `useEntranceAnimation.ts` | Screen entrance fade/slide animations |
 | `useFpsMonitor` | `useFpsMonitor.ts` | Frame rate monitoring for performance debugging |
-| `useHaptic` | `useHaptic.ts` | Haptic feedback triggers (light, medium, heavy, success, error) |
+| `useHaptic` | `useHaptic.ts` | (DEPRECATED — use useContextualHaptic instead) Basic haptic feedback triggers |
 | `useIsWeb` | `useIsWeb.ts` | Platform detection for web-specific logic |
 | `useNetworkStatus` | `useNetworkStatus.ts` | Online/offline connectivity state |
 | `usePayment` | `usePayment.ts` | Stripe payment flow hook |
@@ -767,7 +825,10 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 | `usePushNotifications` | `usePushNotifications.ts` | Push notification registration and permissions |
 | `useReducedMotion` | `useReducedMotion.ts` | Detects system reduced motion preference for accessibility |
 | `useResponsive` | `useResponsive.ts` | Responsive layout breakpoints |
-| `useScrollDirection` | `useScrollDirection.ts` | Tracks scroll direction for auto-hiding headers |
+| `useScrollDirection` | `useScrollDirection.ts` | (DEPRECATED — use useScrollLinkedHeader instead) Binary scroll direction detection |
+| `useScrollLinkedHeader` | `useScrollLinkedHeader.ts` | Elastic header collapse with proportional blur — replaces binary show/hide. Returns onScroll, headerAnimatedStyle, titleAnimatedStyle, blurIntensity |
+| `useStaggeredEntrance` | `useStaggeredEntrance.ts` | Cinematic stagger fade+slide for list items — delays based on index, uses Easing.bezier(0.16,1,0.3,1) |
+| `useThemeColors` | `useThemeColors.ts` | Theme-aware surface/text colors — responds to OS dark/light changes when theme='system' |
 | `useTranslation` | `useTranslation.ts` | i18n translation function with RTL awareness |
 | `useVideoPreload` | `useVideoPreload.ts` | Preloads next videos in feed for smooth scrolling |
 | `useWebKeyboardShortcuts` | `useWebKeyboardShortcuts.ts` | Keyboard shortcuts for web platform |
