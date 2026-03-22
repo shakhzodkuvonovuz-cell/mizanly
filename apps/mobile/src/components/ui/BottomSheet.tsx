@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { View, StyleSheet, Pressable, Platform, useWindowDimensions, KeyboardAvoidingView, AccessibilityInfo } from 'react-native';
+import { View, StyleSheet, Pressable, Platform, useWindowDimensions, KeyboardAvoidingView, AccessibilityInfo, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -28,9 +28,11 @@ interface BottomSheetProps {
   /** Percentage of screen height (0-1). Must be between 0.1 and 1.0. Values outside range are clamped. */
   snapPoint?: number;
   blurBackdrop?: boolean;
+  /** When true, wraps children in a ScrollView for long/keyboard-heavy content. Default: false */
+  scrollable?: boolean;
 }
 
-export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdrop }: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdrop, scrollable = false }: BottomSheetProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
   const tc = useThemeColors();
@@ -174,7 +176,19 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
             <View style={styles.handleContainer}>
               <Animated.View style={[styles.handle, { backgroundColor: tc.borderLight }, handleAnimatedStyle]} />
             </View>
-            <View style={styles.content}>{children}</View>
+            <View style={styles.content}>
+              {scrollable ? (
+                <ScrollView
+                  bounces={false}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                >
+                  {children}
+                </ScrollView>
+              ) : (
+                children
+              )}
+            </View>
           </Animated.View>
         </GestureDetector>
       </KeyboardAvoidingView>
