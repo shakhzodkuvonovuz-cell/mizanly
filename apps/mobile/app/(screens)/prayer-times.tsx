@@ -23,6 +23,7 @@ const PRAYER_TIMES_CACHE_KEY = 'cached-prayer-times';
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatHijriDate } from '@/utils/hijri';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -67,6 +68,11 @@ function getCurrentPrayerIndex(prayerList: Prayer[]): number {
     }
   }
   return 0; // Default to first prayer if before Fajr
+}
+
+function getCompassDirection(degrees: number): string {
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return dirs[Math.round(degrees / 45) % 8];
 }
 
 function CountdownTimer({ targetTime, nextPrayerName }: { targetTime: string; nextPrayerName: string }) {
@@ -121,7 +127,16 @@ function PrayerCard({
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const pulseAnim = useSharedValue(1);
+  const [notifyEnabled, setNotifyEnabled] = useState(true);
+
+  // Load saved adhan notification preference for this prayer
+  useEffect(() => {
+    AsyncStorage.getItem(`adhan-notify-${prayer.name}`).then((val) => {
+      if (val !== null) setNotifyEnabled(JSON.parse(val));
+    });
+  }, [prayer.name]);
 
   useEffect(() => {
     if (isCurrent) {
@@ -141,6 +156,13 @@ function PrayerCard({
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseAnim.value }],
   }));
+
+  const toggleNotify = useCallback(() => {
+    const next = !notifyEnabled;
+    setNotifyEnabled(next);
+    haptic.tick();
+    AsyncStorage.setItem(`adhan-notify-${prayer.name}`, JSON.stringify(next));
+  }, [notifyEnabled, haptic, prayer.name]);
 
   return (
     <Animated.View
@@ -200,6 +222,22 @@ function PrayerCard({
               </View>
             )}
           </View>
+
+          {/* Per-prayer adhan notification toggle */}
+          <Pressable
+            onPress={toggleNotify}
+            hitSlop={8}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: notifyEnabled }}
+            accessibilityLabel={t('islamic.adhanNotification', { prayer: prayer.name })}
+            style={styles.bellToggle}
+          >
+            <Icon
+              name="bell"
+              size="sm"
+              color={notifyEnabled ? colors.emerald : tc.text.tertiary}
+            />
+          </Pressable>
         </View>
       </LinearGradient>
     </Animated.View>
@@ -518,61 +556,34 @@ export default function PrayerTimesScreen() {
             </LinearGradient>
           </Animated.View>
 
-          {/* Qibla Compass */}
-          <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.qiblaContainer}>
-            <Pressable onPress={() => navigate('/(screens)/qibla-compass')}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-                style={styles.qiblaCard}
-              >
-                <View style={styles.qiblaHeader}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-                    style={styles.qiblaIconBg}
-                  >
-                    <Icon name="map-pin" size="xs" color={colors.emerald} />
-                  </LinearGradient>
-                  <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
-                  <View style={{ flex: 1 }} />
-                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
-                </View>
-
-                <View style={styles.compassContainer}>
-                  {/* Compass circle */}
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(28,35,51,0.3)']}
-                    style={styles.compassCircle}
-                  >
-                    {/* Cardinal directions */}
-                    <Text style={[styles.compassDirection, styles.compassN]}>N</Text>
-                    <Text style={[styles.compassDirection, styles.compassE]}>E</Text>
-                    <Text style={[styles.compassDirection, styles.compassS]}>S</Text>
-                    <Text style={[styles.compassDirection, styles.compassW]}>W</Text>
-
-                    {/* Qibla arrow */}
-                    <View style={[styles.qiblaArrow, { transform: [{ rotate: `${qiblaDirection}deg` }] }]}>
-                      <LinearGradient
-                        colors={[colors.emerald, colors.gold]}
-                        style={styles.arrowHead}
-                      />
-                      <View style={styles.arrowTail} />
-                    </View>
-
-                    {/* Center dot */}
-                    <LinearGradient
-                      colors={[colors.emerald, colors.gold]}
-                      style={styles.compassCenter}
-                    >
-                      <Icon name="map-pin" size="xs" color="#fff" />
-                    </LinearGradient>
-                  </LinearGradient>
-
-                  <Text style={styles.qiblaDirectionText}>
-                    {t('islamic.qiblaDirectionDegrees', { degrees: qiblaDirection })}
+          {/* Compact Qibla Direction Card */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.qiblaCompactCard}>
+            <LinearGradient
+              colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
+              style={styles.qiblaCompactGradient}
+            >
+              <View style={styles.qiblaCompactRow}>
+                <Icon name="map-pin" size="sm" color={colors.gold} />
+                <View style={styles.qiblaCompactTextContainer}>
+                  <Text style={[styles.qiblaCompactLabel, { color: tc.text.secondary }]}>
+                    {t('islamic.qiblaDirection')}
+                  </Text>
+                  <Text style={[styles.qiblaCompactValue, { color: tc.text.primary }]}>
+                    {qiblaDirection
+                      ? `${qiblaDirection}\u00B0 ${getCompassDirection(qiblaDirection)}`
+                      : t('islamic.calculating')}
                   </Text>
                 </View>
-              </LinearGradient>
-            </Pressable>
+                <Pressable
+                  onPress={() => navigate('/(screens)/qibla-compass')}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('islamic.openCompass')}
+                >
+                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+                </Pressable>
+              </View>
+            </LinearGradient>
           </Animated.View>
 
           {/* All Prayers List */}
@@ -884,91 +895,29 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: '#fff',
   },
 
-  // Qibla
-  qiblaContainer: {
+  // Compact Qibla Card
+  qiblaCompactCard: {
+    marginHorizontal: 0,
     marginBottom: spacing.md,
   },
-  qiblaCard: {
+  qiblaCompactGradient: {
     borderRadius: radius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.active.white6,
+    padding: spacing.md,
   },
-  qiblaHeader: {
+  qiblaCompactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    gap: spacing.md,
   },
-  qiblaIconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
+  qiblaCompactTextContainer: {
+    flex: 1,
   },
-  qiblaTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.base,
-    fontWeight: '600',
-  },
-  compassContainer: {
-    alignItems: 'center',
-  },
-  compassCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: radius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.active.emerald30,
-  },
-  compassDirection: {
-    position: 'absolute',
-    color: colors.text.tertiary,
+  qiblaCompactLabel: {
     fontSize: fontSize.xs,
-    fontWeight: '600',
   },
-  compassN: { top: 8 },
-  compassE: { right: 8 },
-  compassS: { bottom: 8 },
-  compassW: { left: 8 },
-  qiblaArrow: {
-    position: 'absolute',
-    width: 100,
-    height: 4,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  arrowHead: {
-    width: 12,
-    height: 12,
-    borderRadius: radius.sm,
-    transform: [{ rotate: '45deg' }],
-  },
-  arrowTail: {
-    position: 'absolute',
-    width: 50,
-    height: 2,
-    backgroundColor: colors.emerald,
-    right: 6,
-  },
-  compassCenter: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qiblaIcon: {
-    fontSize: 20,
-  },
-  qiblaDirectionText: {
-    color: colors.emerald,
+  qiblaCompactValue: {
     fontSize: fontSize.base,
-    fontWeight: '600',
-    marginTop: spacing.md,
+    fontFamily: fonts.bodyBold,
   },
 
   // Prayer List
@@ -1052,6 +1001,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   prayerTimeContainer: {
     alignItems: 'flex-end',
+  },
+  bellToggle: {
+    marginLeft: spacing.sm,
+    padding: spacing.xs,
   },
   prayerTime: {
     color: colors.text.secondary,

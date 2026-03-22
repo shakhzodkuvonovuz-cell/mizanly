@@ -57,6 +57,7 @@ export default function CreateEventScreen() {
   const [reminder1d, setReminder1d] = useState(true);
   const [hasCover, setHasCover] = useState(false);
   const [coverUri, setCoverUri] = useState<string | null>(null);
+  const [showDiscardSheet, setShowDiscardSheet] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date>(new Date());
@@ -107,6 +108,15 @@ export default function CreateEventScreen() {
       setTempDate(endDate);
     }
   }, [showDatePicker, startDate, endDate]);
+
+  const handleBack = useCallback(() => {
+    const hasContent = title.trim() || description.trim() || location.trim() || coverUri;
+    if (hasContent) {
+      setShowDiscardSheet(true);
+    } else {
+      router.back();
+    }
+  }, [title, description, location, coverUri, router]);
 
   const handleSubmit = useCallback(async () => {
     if (submitting) return;
@@ -173,7 +183,7 @@ export default function CreateEventScreen() {
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-      <GlassHeader title={t('events.createEvent')} onBack={() => router.back()} />
+      <GlassHeader title={t('events.createEvent')} onBack={handleBack} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -592,6 +602,39 @@ export default function CreateEventScreen() {
           </LinearGradient>
         </Pressable>
       </View>
+
+      {/* Discard confirmation */}
+      <BottomSheet visible={showDiscardSheet} onClose={() => setShowDiscardSheet(false)}>
+        <BottomSheetItem
+          label={t('common.saveDraft')}
+          icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
+          onPress={async () => {
+            try {
+              await AsyncStorage.setItem('event-draft', JSON.stringify({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity }));
+              setShowDiscardSheet(false);
+              showToast({ message: t('common.draftSaved'), variant: 'success' });
+              router.back();
+            } catch {
+              showToast({ message: t('common.error'), variant: 'error' });
+            }
+          }}
+        />
+        <BottomSheetItem
+          label={t('compose.discard')}
+          icon={<Icon name="trash" size="sm" color={colors.error} />}
+          destructive
+          onPress={() => {
+            setShowDiscardSheet(false);
+            AsyncStorage.removeItem('event-draft').catch(() => {});
+            router.back();
+          }}
+        />
+        <BottomSheetItem
+          label={t('common.cancel')}
+          icon={<Icon name="x" size="sm" color={tc.text.primary} />}
+          onPress={() => setShowDiscardSheet(false)}
+        />
+      </BottomSheet>
 
       {/* Date Picker Bottom Sheet — @react-native-community/datetimepicker not installed, using quick-select options */}
       <BottomSheet visible={showDatePicker !== null} onClose={() => setShowDatePicker(null)} snapPoint={0.6}>

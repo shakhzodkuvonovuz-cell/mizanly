@@ -71,6 +71,7 @@ export default function CreateVideoScreen() {
   const [normalizeAudio, setNormalizeAudio] = useState(false);
 
   // UI state
+  const [showDiscardSheet, setShowDiscardSheet] = useState(false);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [showVisibilitySheet, setShowVisibilitySheet] = useState(false);
   const [showChannelSheet, setShowChannelSheet] = useState(false);
@@ -294,6 +295,15 @@ export default function CreateVideoScreen() {
     },
   });
 
+  const handleBack = () => {
+    const hasContent = video || title.trim() || description.trim() || tags.length > 0;
+    if (hasContent) {
+      setShowDiscardSheet(true);
+    } else {
+      router.back();
+    }
+  };
+
   const handleSubmit = () => {
     if (!video) {
       showToast({ message: t('createVideo.selectVideoToUpload'), variant: 'error' });
@@ -317,7 +327,7 @@ export default function CreateVideoScreen() {
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('createVideo.title')}
-          leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: t('common.close') }}
+          leftAction={{ icon: 'x', onPress: handleBack, accessibilityLabel: t('common.close') }}
           rightActions={[{ icon: 'send', onPress: handleSubmit, accessibilityLabel: t('createVideo.upload') }]}
         />
 
@@ -609,8 +619,49 @@ export default function CreateVideoScreen() {
             onPress={() => { setVisibility('PRIVATE'); setShowVisibilitySheet(false); }}
           />
         </BottomSheet>
+
+        {/* Discard confirmation */}
+        <BottomSheet visible={showDiscardSheet} onClose={() => setShowDiscardSheet(false)}>
+          <BottomSheetItem
+            label={t('common.saveDraft')}
+            icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
+            onPress={async () => {
+              try {
+                const draft = {
+                  title,
+                  description,
+                  category: selectedCategory,
+                  tags,
+                  channelId: selectedChannelId,
+                  visibility,
+                };
+                await AsyncStorage.setItem('video-draft', JSON.stringify(draft));
+                setShowDiscardSheet(false);
+                showToast({ message: t('common.draftSaved'), variant: 'success' });
+                router.back();
+              } catch {
+                showToast({ message: t('common.error'), variant: 'error' });
+              }
+            }}
+          />
+          <BottomSheetItem
+            label={t('compose.discard')}
+            icon={<Icon name="trash" size="sm" color={colors.error} />}
+            destructive
+            onPress={async () => {
+              setShowDiscardSheet(false);
+              await AsyncStorage.removeItem('video-draft').catch(() => {});
+              router.back();
+            }}
+          />
+          <BottomSheetItem
+            label={t('common.cancel')}
+            icon={<Icon name="x" size="sm" color={tc.text.primary} />}
+            onPress={() => setShowDiscardSheet(false)}
+          />
+        </BottomSheet>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }

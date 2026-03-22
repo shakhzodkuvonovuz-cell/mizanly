@@ -188,7 +188,11 @@
     "inappropriate": "نامناسب",
     "misinformation": "غلط معلومات",
     "openLink": "Open link",
-    "menuOpened": "Menu opened"
+    "menuOpened": "Menu opened",
+    "saveDraft": "Save Draft",
+    "draftSaved": "Draft saved",
+    "discardChanges": "Discard changes?",
+    "unsavedChangesMessage": "You have unsaved changes. What would you like to do?"
   },
   "tabs": {
     "saf": "صف",
@@ -886,7 +890,10 @@
     "prayerMethod": "Prayer Calculation Method",
     "prayerAdjustments": "Prayer Adjustments",
     "prayerLocation": "Prayer Location",
-    "qiblaDirectionDegrees": "{{degrees}}° from North"
+    "qiblaDirectionDegrees": "{{degrees}}° from North",
+    "openCompass": "Open Compass",
+    "calculating": "Calculating...",
+    "adhanNotification": "{{prayer}} notification"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1109,8 +1116,10 @@
   },
   "notifications": {
     "notifications": "Notifications",
+    "title": "Notifications",
     "all": "All",
     "mentions": "Mentions",
+    "verified": "Verified",
     "comments": "Comments",
     "likes": "Likes",
     "shares": "Shares",
@@ -1123,7 +1132,43 @@
     "ramadan": "Ramadan",
     "system": "System",
     "security": "Security",
-    "updates": "Updates"
+    "updates": "Updates",
+    "likedYourPost": "liked your post",
+    "commentedOnPost": "commented on your post",
+    "startedFollowing": "started following you",
+    "requestedToFollow": "requested to follow you",
+    "acceptedFollowRequest": "accepted your follow request",
+    "mentionedYou": "mentioned you",
+    "repliedToComment": "replied to your comment",
+    "repostedThread": "reposted your thread",
+    "quotedThread": "quoted your thread",
+    "repliedToThread": "replied to your thread",
+    "invitedToCircle": "invited you to a circle",
+    "joinedCircle": "joined your circle",
+    "sentMessage": "sent you a message",
+    "postedInChannel": "posted in a channel",
+    "wentLive": "went live",
+    "interactedWithYou": "interacted with you",
+    "someone": "Someone",
+    "others": "others",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This Week",
+    "earlier": "Earlier",
+    "noNotifications": "No notifications yet",
+    "noNotificationsSubtitle": "When you get notifications, they'll show up here",
+    "markAllRead": "Mark all read",
+    "markAllReadAccessibility": "Mark all notifications as read",
+    "allMarkedRead": "All notifications marked as read",
+    "loadFailed": "Failed to load notifications",
+    "checkConnection": "Please check your connection and try again",
+    "accept": "Accept",
+    "decline": "Decline",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "followed": "Followed",
+    "followBack": "Follow back",
+    "viewContent": "View content"
   },
   "settings": {
     "settings": "Settings",
@@ -3488,48 +3533,4 @@
     "categoryFoodBank": "Food Bank",
     "categoryCleanup": "Cleanup"
   },
-  "audioRoom": {
-    "failedToLoad": "Failed to load audio room",
-    "failedToToggleMute": "Failed to toggle mute",
-    "failedToRaiseHand": "Failed to raise hand",
-    "failedToLeaveRoom": "Failed to leave room",
-    "failedToAcceptHand": "Failed to accept hand",
-    "failedToDeclineHand": "Failed to decline hand",
-    "failedToEndRoom": "Failed to end room",
-    "endRoom": "End Room",
-    "endRoomTitle": "End Room",
-    "endRoomConfirm": "Are you sure you want to end this room? All participants will be disconnected.",
-    "endRoomButton": "End Room",
-    "hostedBy": "Hosted by @{{username}}",
-    "live": "LIVE",
-    "listening": "{{count}} listening",
-    "started": "Started {{timeAgo}}",
-    "speakers": "Speakers",
-    "listeners": "Listeners",
-    "raisedHands": "Raised Hands"
-  },
-  "video": {
-    "title": "Video",
-    "notFound": "Video not found",
-    "notFoundSubtitle": "This video may have been removed or is no longer available",
-    "chapters": "Chapters",
-    "showChapters": "Show chapters",
-    "hideChapters": "Hide chapters",
-    "nowPlaying": "NOW",
-    "options": "Options",
-    "saveToPlaylist": "Save to Playlist",
-    "upNext": "Up Next"
-  },
-  "locationPicker": {
-    "title": "Add Location",
-    "useCurrentLocation": "Use Current Location",
-    "recent": "Recent",
-    "searchResults": "Search Results",
-    "popularLocations": "Popular Locations",
-    "noLocationsFound": "No locations found"
-  },
-  "errorBoundary": {
-    "unexpectedError": "An unexpected error occurred. Please try again.",
-    "goHome": "Go Home"
-  }
-}
+  "au

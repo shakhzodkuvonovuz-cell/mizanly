@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Alert,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -271,6 +271,9 @@ export default function CreateThreadScreen() {
   const [showCirclePicker, setShowCirclePicker] = useState(false);
   const [poll, setPoll] = useState<{ question: string; options: string[]; allowMultiple: boolean } | null>(null);
 
+  // Discard sheet state
+  const [showDiscardSheet, setShowDiscardSheet] = useState(false);
+
   // Autocomplete state - tracks which part is currently showing autocomplete
   const [autocomplete, setAutocomplete] = useState<AutocompleteState>({
     partIndex: null,
@@ -433,13 +436,7 @@ export default function CreateThreadScreen() {
   const handleBack = () => {
     const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
     if (hasContent) {
-      Alert.alert(t('compose.discardThread'), t('compose.unsavedContent'), [
-        { text: t('compose.keepEditing') },
-        { text: t('compose.discard'), style: 'destructive', onPress: () => {
-          AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
-          router.back();
-        }},
-      ]);
+      setShowDiscardSheet(true);
     } else {
       router.back();
     }
@@ -535,6 +532,39 @@ export default function CreateThreadScreen() {
               />
             ))
           )}
+        </BottomSheet>
+
+        {/* Discard confirmation */}
+        <BottomSheet visible={showDiscardSheet} onClose={() => setShowDiscardSheet(false)}>
+          <BottomSheetItem
+            label={t('common.saveDraft')}
+            icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
+            onPress={async () => {
+              try {
+                await AsyncStorage.setItem(THREAD_DRAFT_KEY, JSON.stringify({ parts }));
+                setShowDiscardSheet(false);
+                showToast({ message: t('common.draftSaved'), variant: 'success' });
+                router.back();
+              } catch {
+                showToast({ message: t('compose.failedToSaveDraft'), variant: 'error' });
+              }
+            }}
+          />
+          <BottomSheetItem
+            label={t('compose.discard')}
+            icon={<Icon name="trash" size="sm" color={colors.error} />}
+            destructive
+            onPress={async () => {
+              setShowDiscardSheet(false);
+              await AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
+              router.back();
+            }}
+          />
+          <BottomSheetItem
+            label={t('common.cancel')}
+            icon={<Icon name="x" size="sm" color={tc.text.primary} />}
+            onPress={() => setShowDiscardSheet(false)}
+          />
         </BottomSheet>
 
         <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">

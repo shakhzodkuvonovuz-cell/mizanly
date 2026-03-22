@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  ScrollView, Platform, Alert, Dimensions,
+  ScrollView, Platform, Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
@@ -68,6 +68,9 @@ export default function CreatePostScreen() {
   const [autocompleteType, setAutocompleteType] = useState<AutocompleteType>(null);
   const [autocompleteQuery, setAutocompleteQuery] = useState('');
   const [showAutocomplete, setShowAutocomplete] = useState(false);
+
+  // Discard sheet state
+  const [showDiscardSheet, setShowDiscardSheet] = useState(false);
 
   // Location state
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -241,10 +244,7 @@ export default function CreatePostScreen() {
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Pressable onPress={() => {
             if (content.trim() || media.length > 0) {
-              Alert.alert(t('createPost.discardTitle'), t('createPost.discardMessage'), [
-                { text: t('common.cancel'), style: 'cancel' },
-                { text: t('createPost.discard'), style: 'destructive', onPress: () => router.back() },
-              ]);
+              setShowDiscardSheet(true);
             } else {
               router.back();
             }
@@ -448,6 +448,42 @@ export default function CreatePostScreen() {
             </ScrollView>
           )}
         </ScrollView>
+
+        {/* Discard confirmation */}
+        <BottomSheet visible={showDiscardSheet} onClose={() => setShowDiscardSheet(false)}>
+          <BottomSheetItem
+            label={t('common.saveDraft')}
+            icon={<Icon name="bookmark" size="sm" color={tc.text.primary} />}
+            onPress={async () => {
+              try {
+                await AsyncStorage.setItem('post-draft', JSON.stringify({
+                  content,
+                  mediaUrls: media.map(m => m.uri),
+                }));
+                setShowDiscardSheet(false);
+                showToast({ message: t('common.draftSaved'), variant: 'success' });
+                router.back();
+              } catch {
+                showToast({ message: t('compose.failedToSaveDraft'), variant: 'error' });
+              }
+            }}
+          />
+          <BottomSheetItem
+            label={t('compose.discard')}
+            icon={<Icon name="trash" size="sm" color={colors.error} />}
+            destructive
+            onPress={async () => {
+              setShowDiscardSheet(false);
+              await AsyncStorage.removeItem('post-draft').catch(() => {});
+              router.back();
+            }}
+          />
+          <BottomSheetItem
+            label={t('common.cancel')}
+            icon={<Icon name="x" size="sm" color={tc.text.primary} />}
+            onPress={() => setShowDiscardSheet(false)}
+          />
+        </BottomSheet>
 
         {/* Circle picker */}
         <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>

@@ -188,7 +188,11 @@
     "inappropriate": "Tidak sesuai",
     "misinformation": "Maklumat palsu",
     "openLink": "Open link",
-    "menuOpened": "Menu opened"
+    "menuOpened": "Menu opened",
+    "saveDraft": "Save Draft",
+    "draftSaved": "Draft saved",
+    "discardChanges": "Discard changes?",
+    "unsavedChangesMessage": "You have unsaved changes. What would you like to do?"
   },
   "tabs": {
     "saf": "Saf",
@@ -281,7 +285,10 @@
     "prayerMethod": "Prayer Calculation Method",
     "prayerAdjustments": "Prayer Adjustments",
     "prayerLocation": "Prayer Location",
-    "qiblaDirectionDegrees": "{{degrees}}° from North"
+    "qiblaDirectionDegrees": "{{degrees}}° from North",
+    "openCompass": "Open Compass",
+    "calculating": "Calculating...",
+    "adhanNotification": "{{prayer}} notification"
   },
   "auth": {
     "signIn": "Sign In",
