@@ -35,7 +35,7 @@ All 5 spaces built + Telegram + Discord + WeChat feature parity + 4 feature batc
 Backend: NestJS with 79 modules (87 services, 82 controllers, 171 test files). Core: Redis, BullMQ job queues (6 queues, 5 processors), rate limiting (all 82 controllers), Stripe (Decimal money fields), Cloudflare Stream, Email (Resend), Meilisearch. AI: Claude API (text moderation + image moderation via Vision) + Whisper transcription + Gemini embeddings. Commerce: marketplace, Zakat (multi-asset, Decimal precision, configurable gold/silver prices via env), Waqf, virtual currency (coins/gifts/diamonds). Gamification: streaks, XP/levels, achievements, challenges, series, daily Islamic tasks (morning briefing). Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions, persistent voice channels, granular role permissions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties, community notes, mosque social graph.
 **Batch 4 fixes:** Real prayer times (Aladhan API + local solar calculator fallback), Quran text API (Quran.com v4, 114 surahs, verse search, random ayah), real image moderation (Claude Vision SAFE/WARNING/BLOCK), 50+ FK relations wired with onDelete rules, mosque finder (Haversine DB query + OSM Overpass fallback), Ramadan from Hijri calendar, charity amounts Decimal, configurable Zakat prices, privacy policy + ToS endpoints, TURN/STUN config, 12 memoized UI components.
 **Test expansion:** Batch 1 added 548 service tests (happy+error+auth per method). Batch 2 (running) adding 63 controller specs + 27 service expansions + gateway + integration tests. Batch 3 planned for edge cases, authorization matrix, error recovery, concurrency, abuse vectors.
-Mobile: 208 screens, 39 UI components, 27 hooks, 19 API services. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) at 2,900+ keys each. **UI/UX elevation COMPLETE (2026-03-22/23): 80 commits, 269 files, +11K/-5K lines — every screen theme-aware (0 hardcoded color props), branded shimmer, contextual haptics (0 old useHaptic), staggered entrance, progressive images (0 raw Image), toast feedback (0 bare Alert.alert for feedback), elastic headers, BrandedRefreshControl (0 raw RefreshControl).** All screens reachable via navigation (0 orphans). ScreenErrorBoundary on all screens. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
+Mobile: 208 screens, 39 UI components, 27 hooks, 19 API services. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) at 2,900+ keys each. **UI/UX elevation COMPLETE (2026-03-22/23): 87 commits, 272 files, +12.5K/-5.5K lines — every screen theme-aware (0 hardcoded color props), branded shimmer, contextual haptics (0 old useHaptic), staggered entrance, progressive images (0 raw Image), toast feedback (0 bare Alert.alert for feedback), elastic headers, BrandedRefreshControl (0 raw RefreshControl), sticky action bars on detail screens, settings search, discover auto-play video, notification thumbnails + follow-back, prayer adhan toggles + Qibla card, profile sticky tabs, create discard BottomSheet.** All screens reachable via navigation (0 orphans). ScreenErrorBoundary on all screens. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
 Islamic: prayer times (Aladhan API, 8 calc methods, 6 adhan reciters, local solar fallback), Quran (Quran.com API, 114 surahs, 4 reciters, reading plans, tafsir, rooms, verse search), hadith (200+), dhikr counter + challenges, zakat calculator (configurable prices), mosque finder (Haversine + OSM) + social graph, Hajj companion, Ramadan mode, Eid cards, nasheed mode, scholar verification + live Q&A, fatwa Q&A, halal restaurant finder, dua collection (100+), fasting tracker, 99 Names of Allah, hifz tracker, daily morning briefing, Islamic calendar theming (5 overlays auto-activated by Hijri date).
 **Known gaps:** 418 findings originally documented. **Key blockers resolved in audit remediation:** SQL injection in embeddings (FIXED file 07), moderation fail-open (FIXED file 10), banned users bypassing auth (FIXED file 03/13), admin report resolution no-ops (FIXED file 13), cascade deletes on financial records (FIXED file 15). **Remaining blockers:** Apple IAP not installed (App Store rejection), google-services.json missing (Android push), video upload not wired from mobile, R2 credentials not filled in, payments API unused on mobile.
 **72-agent deep audit remediation COMPLETE — all 72 files processed. 4,253 tests passing, 0 failures.**
@@ -343,7 +343,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 
 ---
 
-## UI/UX Elevation (2026-03-22/23 — 80 commits, 269 files, +11K/-5K lines)
+## UI/UX Elevation (2026-03-22/23 — 87 commits, 272 files, +12.5K/-5.5K lines)
 
 ### Design System: Modern Dark Cinema Mobile
 Style from ui-ux-pro-max plugin. Cinematic easing, spring physics, glass overlays, content-first.
@@ -430,6 +430,13 @@ animation.exit: { duration: 250 }  // 70% of entrance (Material rule)
 - **Alert.alert cleanup** — 141 calls analyzed, 79 converted to showToast, 62 kept (all verified destructive confirmations)
 - **Evidence images** in appeal-moderation (was TODO stub, now stores + renders thumbnails)
 - **Audio room** handRaisedAt computed from timestamp (was hardcoded "Just now")
+- **Detail screens** sticky glass action bar (post, thread, video detail)
+- **Profile** sticky tab bar (Posts/Reels/Tagged stick on scroll) + follow pulse animation
+- **Settings** search bar with real-time section/row filtering
+- **Prayer Times** per-prayer adhan notification toggles (AsyncStorage) + Qibla direction card
+- **Notifications** content thumbnails (44px), inline follow-back button, mark-all-read (verified)
+- **Discover** auto-play muted video thumbnails on reel/video grid items + refined masonry pattern
+- **Create flows** discard confirmation via BottomSheet (Save Draft / Discard / Cancel) on post/thread/video/event
 
 ### Verification Counts (grep-verified, not agent-reported)
 | Check | Count |
@@ -443,7 +450,13 @@ animation.exit: { duration: 250 }  // 70% of entrance (Material rule)
 | Fake setTimeout refresh | **0** |
 | Alert.alert for simple feedback | **0** (62 remain, all destructive confirmations) |
 
-### Remaining External Dep Blockers (cannot fix via code)
+### Remaining Items (2 plan tasks + external deps)
+
+**Plan items deferred (need backend/infrastructure):**
+- Bakra "not interested" swipe-left gesture — needs complex gesture infrastructure + dismiss API
+- Profile story highlights row — needs highlight data model + API endpoint
+
+**External dep blockers (cannot fix via code):**
 - Video editor FFmpeg (needs native module install)
 - Green screen ML segmentation (needs TFLite model)
 - Call screen WebRTC audio/video (needs TURN server credentials)
