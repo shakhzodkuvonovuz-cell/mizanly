@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, Alert, RefreshControl,
+  View, Text, StyleSheet, Pressable, FlatList, Alert,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -236,14 +237,13 @@ export default function SaveToPlaylistScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderPlaylistItem}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={refreshing}
               onRefresh={async () => {
                 setRefreshing(true);
                 await Promise.all([channelsQuery.refetch(), playlistsQuery.refetch()]);
                 setRefreshing(false);
               }}
-              tintColor={colors.emerald}
             />
           }
           ListEmptyComponent={

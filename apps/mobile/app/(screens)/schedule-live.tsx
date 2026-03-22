@@ -8,8 +8,8 @@ import { useMutation } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -21,6 +21,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { liveApi, uploadApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -141,12 +142,14 @@ export default function ScheduleLiveScreen() {
       });
     },
     onSuccess: (live) => {
+      showToast({ message: t('live.scheduled'), variant: 'success' });
       router.back();
       // Navigate to live session detail
       router.push(`/(screens)/live/${live.id}`);
     },
     onError: (err: Error) => {
       setUploading(false);
+      showToast({ message: err.message || t('common.somethingWentWrong'), variant: 'error' });
       Alert.alert(t('screens.schedule-live.errorTitle'), err.message || t('screens.schedule-live.errorSchedule'));
     },
   });
@@ -241,7 +244,7 @@ export default function ScheduleLiveScreen() {
               <Text style={styles.inputLabel}>{t('screens.schedule-live.thumbnailLabel')}</Text>
               {thumbnail ? (
                 <View style={styles.thumbnailPreview}>
-                  <Image source={{ uri: thumbnail.uri }} style={styles.thumbnailImage} contentFit="cover" />
+                  <ProgressiveImage uri={thumbnail.uri} width="100%" height={200} />
                   <Pressable style={styles.removeThumbnail} onPress={removeThumbnail}>
                     <Icon name="x" size={12} color="#fff" />
                   </Pressable>

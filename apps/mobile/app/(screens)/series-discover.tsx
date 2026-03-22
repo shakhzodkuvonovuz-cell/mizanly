@@ -10,8 +10,8 @@ import {
   Dimensions,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -177,10 +177,10 @@ function SeriesDiscoverContent() {
         {/* Cover Image */}
         <View style={styles.coverWrap}>
           {item.coverUrl ? (
-            <Image
-              source={{ uri: item.coverUrl }}
-              style={styles.coverImage}
-              contentFit="cover"
+            <ProgressiveImage
+              uri={item.coverUrl}
+              width="100%"
+              height={180}
             />
           ) : (
             <View style={[styles.coverImage, styles.coverPlaceholder]}>

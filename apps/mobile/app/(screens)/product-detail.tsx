@@ -11,8 +11,8 @@ import {
   Pressable,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -233,10 +233,10 @@ function ProductDetailContent() {
             keyExtractor={(_, idx) => `img-${idx}`}
             renderItem={({ item }) =>
               item ? (
-                <Image
-                  source={{ uri: item }}
-                  style={styles.carouselImage}
-                  contentFit="cover"
+                <ProgressiveImage
+                  uri={item}
+                  width={screenWidth}
+                  height={screenWidth * 0.8}
                 />
               ) : (
                 <View style={[styles.carouselImage, styles.imagePlaceholder]}>
@@ -406,10 +406,10 @@ function ProductDetailContent() {
                   accessibilityRole="button"
                 >
                   {item.imageUrls?.[0] ? (
-                    <Image
-                      source={{ uri: item.imageUrls[0] }}
-                      style={styles.relatedImage}
-                      contentFit="cover"
+                    <ProgressiveImage
+                      uri={item.imageUrls[0]}
+                      width={140}
+                      height={100}
                     />
                   ) : (
                     <View style={[styles.relatedImage, styles.imagePlaceholder]}>

@@ -7,7 +7,6 @@ import {
   Pressable,
   Alert,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -23,6 +22,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { reportsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 const REASONS = [
   { label: 'Hate speech', value: 'HATE_SPEECH' },
@@ -98,14 +98,11 @@ export default function ReportScreen() {
       return reportsApi.create(dto);
     },
     onSuccess: () => {
-      Alert.alert(
-        t('screens.reports-detail.successTitle'),
-        t('screens.reports-detail.successMessage'),
-        [{ text: t('common.ok'), onPress: () => router.back() }]
-      );
+      showToast({ message: t('screens.reports-detail.successMessage'), variant: 'success' });
+      router.back();
     },
     onError: (error: Error) => {
-      Alert.alert(t('screens.reports-detail.errorTitle'), error.message);
+      showToast({ message: error.message, variant: 'error' });
     },
   });
 

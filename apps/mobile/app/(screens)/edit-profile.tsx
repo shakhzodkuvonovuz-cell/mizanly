@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Alert, Switch, Platform, KeyboardAvoidingView, RefreshControl,
+  ScrollView, Alert, Switch, Platform, KeyboardAvoidingView,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -23,6 +24,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
 import type { ProfileLink, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 type UpdateProfilePayload = {
   displayName?: string;
@@ -157,11 +159,12 @@ export default function EditProfileScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      showToast({ message: t('common.saved'), variant: 'success' });
       router.back();
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert(t('common.error'), err.message || t('editProfile.couldNotSave'));
+      showToast({ message: err.message || t('editProfile.couldNotSave'), variant: 'error' });
     },
   });
 
@@ -226,10 +229,9 @@ export default function EditProfileScreen() {
           style={[styles.body, { paddingTop: HEADER_HEIGHT }]}
           keyboardShouldPersistTaps="handled"
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={meQuery.isRefetching}
               onRefresh={() => meQuery.refetch()}
-              tintColor={colors.emerald}
             />
           }
         >

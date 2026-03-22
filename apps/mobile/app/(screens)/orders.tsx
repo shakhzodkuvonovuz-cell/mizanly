@@ -8,8 +8,8 @@ import {
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -107,10 +107,11 @@ function OrdersContent() {
             {/* Thumbnail */}
             <View style={styles.thumbnailWrap}>
               {item.product.imageUrls?.[0] ? (
-                <Image
-                  source={{ uri: item.product.imageUrls[0] }}
-                  style={styles.thumbnail}
-                  contentFit="cover"
+                <ProgressiveImage
+                  uri={item.product.imageUrls[0]}
+                  width={72}
+                  height={72}
+                  borderRadius={radius.md}
                 />
               ) : (
                 <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>

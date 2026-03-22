@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, RefreshControl,
+  FlatList,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -139,7 +140,7 @@ export default function FollowersScreen() {
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={() =>
             followersQuery.isLoading ? (

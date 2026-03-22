@@ -1,13 +1,14 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, RefreshControl,
+  FlatList,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -127,7 +128,7 @@ export default function PlaylistDetailScreen() {
           colors={colors.gradient.cardDark}
           style={styles.thumbContainer}
         >
-          <Image source={{ uri: playlist.thumbnailUrl }} style={styles.playlistThumb} contentFit="cover" />
+          <ProgressiveImage uri={playlist.thumbnailUrl} width="100%" height={200} borderRadius={radius.md} />
         </LinearGradient>
       ) : null}
       <Text style={styles.playlistTitle}>{playlist?.title ?? ''}</Text>
@@ -235,7 +236,7 @@ export default function PlaylistDetailScreen() {
             onEndReached={onEndReached}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             contentContainerStyle={[styles.list, { paddingTop: insets.top + 56 }]}
           />

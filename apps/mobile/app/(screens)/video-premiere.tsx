@@ -12,6 +12,7 @@ import { videosApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 
 const THEMES = [
   { id: 'emerald', label: 'premiere.themeEmerald', colors: [colors.emerald, '#0D9B63'] },
@@ -45,7 +46,11 @@ export default function VideoPremiereScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['video', videoId] });
       haptic.save();
+      showToast({ message: t('premiere.scheduled'), variant: 'success' });
       router.back();
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 

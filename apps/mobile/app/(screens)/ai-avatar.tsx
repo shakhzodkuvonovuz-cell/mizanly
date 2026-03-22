@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  RefreshControl, ActivityIndicator, Alert,
+  ActivityIndicator, Alert,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -21,6 +22,7 @@ import { useStore } from '@/store';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import type { AiAvatar } from '@/types';
 
 const STYLES: { id: string; label: string; icon: IconName; color: string }[] = [
@@ -50,6 +52,10 @@ export default function AiAvatarScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-avatars'] });
       haptic.success();
+      showToast({ message: t('ai.avatar.generated'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -62,6 +68,10 @@ export default function AiAvatarScreen() {
         useStore.getState().setUser({ ...currentUser, avatarUrl });
       }
       haptic.success();
+      showToast({ message: t('ai.avatar.setProfile'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -100,7 +110,7 @@ export default function AiAvatarScreen() {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.content}
-          refreshControl={<RefreshControl refreshing={avatarsQuery.isRefetching} onRefresh={() => avatarsQuery.refetch()} tintColor={colors.emerald} />}
+          refreshControl={<BrandedRefreshControl refreshing={avatarsQuery.isRefetching} onRefresh={() => avatarsQuery.refetch()} />}
         >
           {/* Current avatar preview */}
           <Animated.View entering={FadeInUp.duration(300)} style={styles.previewSection}>

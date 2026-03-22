@@ -21,6 +21,7 @@ import { liveApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 type LiveType = 'VIDEO' | 'AUDIO';
 
@@ -66,13 +67,14 @@ export default function GoLiveScreen() {
     },
     onSuccess: (live) => {
       setUploading(false);
+      showToast({ message: t('live.streamStarted'), variant: 'success' });
       router.back();
       // Navigate to live viewer screen
       router.push(`/(screens)/live/${live.id}`);
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert(t('common.error'), err.message || t('live.failedToStartStream'));
+      showToast({ message: err.message || t('live.failedToStartStream'), variant: 'error' });
     },
   });
 
@@ -100,12 +102,13 @@ export default function GoLiveScreen() {
     },
     onSuccess: (live) => {
       setUploading(false);
+      showToast({ message: t('live.rehearsalStarted'), variant: 'success' });
       router.back();
       router.push(`/(screens)/live/${live.id}`);
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert(t('common.error'), err.message || t('live.failedToStartRehearsal'));
+      showToast({ message: err.message || t('live.failedToStartRehearsal'), variant: 'error' });
     },
   });
 

@@ -9,8 +9,8 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -165,7 +165,7 @@ function ThreadPart({
                     colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
                     style={styles.mediaCardGradient}
                   >
-                    <Image source={{ uri: item.uri }} style={styles.thumbImgEnhanced} contentFit="cover" />
+                    <ProgressiveImage uri={item.uri} width={84} height={84} borderRadius={radius.md - 2} />
                     <Pressable style={styles.removeThumb} onPress={() => onRemoveMedia(mi)} hitSlop={4} accessibilityRole="button" accessibilityLabel={t('compose.removeMedia')}>
                       <LinearGradient
                         colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}

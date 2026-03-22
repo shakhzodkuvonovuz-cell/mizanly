@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, Pressable, Linking, StyleSheet, Alert } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { Image } from 'expo-image';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -85,10 +85,11 @@ export function ContactMessage({
         {/* Header: Avatar + Name */}
         <View style={styles.header}>
           {avatarUrl ? (
-            <Image
-              source={{ uri: avatarUrl }}
-              style={styles.avatar}
-              contentFit="cover"
+            <ProgressiveImage
+              uri={avatarUrl}
+              width={AVATAR_SIZE}
+              height={AVATAR_SIZE}
+              borderRadius={radius.full}
             />
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: tc.surface }]}>

@@ -12,8 +12,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -190,10 +190,10 @@ function SeriesDetailScreen() {
       {/* Hero */}
       <View style={styles.hero}>
         {data.coverUrl ? (
-          <Image
-            source={{ uri: data.coverUrl }}
-            style={styles.heroImage}
-            contentFit="cover"
+          <ProgressiveImage
+            uri={data.coverUrl}
+            width="100%"
+            height={HERO_HEIGHT}
           />
         ) : (
           <LinearGradient

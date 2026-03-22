@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Alert, RefreshControl,
+  FlatList, Alert,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -160,7 +161,7 @@ export default function FollowRequestsScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={[styles.list, { paddingTop: insets.top + 52 }]}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             renderItem={({ item, index }) => (
               <RequestRow

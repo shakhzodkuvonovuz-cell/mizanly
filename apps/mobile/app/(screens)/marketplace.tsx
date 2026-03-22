@@ -11,8 +11,8 @@ import {
   ScrollView,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -179,10 +179,10 @@ function MarketplaceContent() {
       >
         <View style={styles.productImageWrap}>
           {item.imageUrls?.[0] ? (
-            <Image
-              source={{ uri: item.imageUrls[0] }}
-              style={styles.productImage}
-              contentFit="cover"
+            <ProgressiveImage
+              uri={item.imageUrls[0]}
+              width="100%"
+              height={COLUMN_WIDTH * 0.9}
             />
           ) : (
             <View style={[styles.productImagePlaceholder, { backgroundColor: tc.surface }]}>

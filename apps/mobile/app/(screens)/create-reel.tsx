@@ -14,8 +14,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { Video, ResizeMode } from 'expo-av';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -550,7 +550,7 @@ export default function CreateReelScreen() {
                       thumbnailUri === frame && !customThumbnail && styles.thumbnailFrameSelected,
                     ]}
                   >
-                    <Image accessible={true} accessibilityLabel="Content image" source={{ uri: frame }} style={styles.thumbnailImage} />
+                    <ProgressiveImage uri={frame} width={80} height={45} accessibilityLabel="Content image" />
                   </Pressable>
                 ))}
                 <Pressable

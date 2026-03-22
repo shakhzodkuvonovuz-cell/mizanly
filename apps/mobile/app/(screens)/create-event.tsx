@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   TextInput,
   Switch,
@@ -29,11 +28,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -134,11 +135,12 @@ export default function CreateEventScreen() {
       };
       const response = await eventsApi.create(dto);
       const eventId = (response as { id?: string }).id ?? '';
+      showToast({ message: t('events.eventCreated'), variant: 'success' });
       navigate('/(screens)/event-detail', { id: eventId });
     } catch (err) {
       const message = err instanceof Error ? err.message : t('events.createFailed');
       setError(message);
-      Alert.alert(t('common.error'), t('events.createFailedRetry'));
+      showToast({ message: t('events.createFailedRetry'), variant: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -183,7 +185,7 @@ export default function CreateEventScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Cover Image Section */}
@@ -195,7 +197,7 @@ export default function CreateEventScreen() {
           >
             {coverUri ? (
               <>
-                <Image source={{ uri: coverUri }} style={styles.coverGradient} contentFit="cover" />
+                <ProgressiveImage uri={coverUri} width="100%" height={200} contentFit="cover" />
                 <View style={styles.coverOverlay}>
                   <Pressable style={[styles.changeButton, { backgroundColor: tc.surface }]} onPress={pickCoverPhoto}>
                     <Text style={styles.changeText}>{t('common.change')}</Text>

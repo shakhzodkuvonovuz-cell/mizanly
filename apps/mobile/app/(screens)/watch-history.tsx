@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -59,7 +59,7 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
           style={styles.thumbnailContainer}
         >
           {item.thumbnailUrl ? (
-            <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+            <ProgressiveImage uri={item.thumbnailUrl} width="100%" height={200} />
           ) : (
             <LinearGradient
               colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}

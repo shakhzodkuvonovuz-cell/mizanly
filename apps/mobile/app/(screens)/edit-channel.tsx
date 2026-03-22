@@ -20,6 +20,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 export default function EditChannelScreen() {
   const router = useRouter();
@@ -93,11 +94,12 @@ export default function EditChannelScreen() {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['channel', handle] });
       queryClient.invalidateQueries({ queryKey: ['my-channels'] });
+      showToast({ message: t('common.saved'), variant: 'success' });
       router.back();
     },
     onError: () => {
       haptic.error();
-      Alert.alert(t('common.error'), t('screens.editChannel.failedToUpdate'));
+      showToast({ message: t('screens.editChannel.failedToUpdate'), variant: 'error' });
     },
   });
 

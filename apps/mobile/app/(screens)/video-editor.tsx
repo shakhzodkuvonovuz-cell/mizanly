@@ -316,7 +316,7 @@ export default function VideoEditorScreen() {
             <Text style={styles.toolPanelTitle}>{t('videoEditor.playbackSpeed')}</Text>
             <View style={styles.speedGrid}>
               {SPEED_OPTIONS.map((speed) => (
-                <Pressable accessibilityRole="button" accessibilityRole="button"
+                <Pressable accessibilityRole="button"
                   key={speed}
                   style={styles.speedButton}
                   onPress={() => setPlaybackSpeed(speed)}
@@ -351,7 +351,7 @@ export default function VideoEditorScreen() {
                   key={filter.id}
                   entering={FadeInUp.delay(index * 50).duration(300)}
                 >
-                  <Pressable accessibilityRole="button" accessibilityRole="button"
+                  <Pressable accessibilityRole="button"
                     style={styles.filterButton}
                     onPress={() => setSelectedFilter(filter.id)}
                   >
@@ -415,7 +415,7 @@ export default function VideoEditorScreen() {
             <Text style={styles.toolSubTitle}>{t('videoEditor.textColor')}</Text>
             <View style={styles.colorRow}>
               {TEXT_COLORS.map((color) => (
-                <Pressable accessibilityRole="button" accessibilityRole="button"
+                <Pressable accessibilityRole="button"
                   key={color}
                   style={[
                     styles.colorCircle,
@@ -656,7 +656,7 @@ export default function VideoEditorScreen() {
               { id: 'music', icon: 'music' as IconName, label: t('videoEditor.music') },
               { id: 'volume', icon: 'volume-2' as IconName, label: t('videoEditor.volume') },
             ].map((tool) => (
-              <Pressable accessibilityRole="button" accessibilityRole="button"
+              <Pressable accessibilityRole="button"
                 key={tool.id}
                 style={styles.toolTab}
                 onPress={() => setSelectedTool(tool.id as ToolTab)}
@@ -703,7 +703,7 @@ export default function VideoEditorScreen() {
             <Text style={styles.qualityLabel}>{t('videoEditor.exportQuality')}</Text>
             <View style={styles.qualityButtons}>
               {(['720p', '1080p', '4K'] as QualityOption[]).map((quality) => (
-                <Pressable accessibilityRole="button" accessibilityRole="button"
+                <Pressable accessibilityRole="button"
                   key={quality}
                   style={styles.qualityButton}
                   onPress={() => setSelectedQuality(quality)}

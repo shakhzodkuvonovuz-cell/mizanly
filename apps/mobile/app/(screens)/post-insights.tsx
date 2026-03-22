@@ -7,8 +7,8 @@ import {
   Pressable,
   RefreshControl,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -203,9 +203,11 @@ function PostInsightsContent() {
           <Animated.View entering={FadeIn.duration(300)} style={styles.postPreview}>
             <View style={styles.postPreviewRow}>
               {post.mediaUrls && post.mediaUrls.length > 0 ? (
-                <Image
-                  source={{ uri: post.mediaUrls[0] }}
-                  style={styles.postThumbnail}
+                <ProgressiveImage
+                  uri={post.mediaUrls[0]}
+                  width={64}
+                  height={64}
+                  borderRadius={radius.sm}
                 />
               ) : (
                 <View style={[styles.postThumbnail, styles.postPlaceholder]}>

@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -97,10 +97,10 @@ function ChallengeCard({
         {/* Cover image */}
         {challenge.coverImageUrl && (
           <View style={styles.coverWrap}>
-            <Image
-              source={{ uri: challenge.coverImageUrl }}
-              style={styles.coverImage}
-              contentFit="cover"
+            <ProgressiveImage
+              uri={challenge.coverImageUrl}
+              width="100%"
+              height={140}
               accessibilityLabel={t('gamification.challenges.coverImage', { title: challenge.title })}
             />
             <LinearGradient

@@ -8,7 +8,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { Image } from 'expo-image';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -75,11 +75,12 @@ export function LinkSticker({
         {/* URL Row */}
         <View style={styles.urlRow}>
           {favicon ? (
-            <Image
-              source={{ uri: favicon }}
-              style={styles.favicon}
+            <ProgressiveImage
+              uri={favicon}
+              width={20}
+              height={20}
+              borderRadius={radius.sm}
               contentFit="contain"
-              accessibilityIgnoresInvertColors
             />
           ) : (
             <Icon name="link" size="sm" color={colors.text.secondary} />

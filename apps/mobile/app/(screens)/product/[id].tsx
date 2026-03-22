@@ -14,8 +14,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -106,10 +106,10 @@ function ImageCarousel({ images }: { images: string[] }) {
         viewabilityConfig={viewabilityConfig}
         keyExtractor={(_, i) => String(i)}
         renderItem={({ item }) => (
-          <Image
-            source={{ uri: item }}
-            style={{ width: screenWidth, height: IMAGE_HEIGHT }}
-            contentFit="cover"
+          <ProgressiveImage
+            uri={item}
+            width={screenWidth}
+            height={IMAGE_HEIGHT}
           />
         )}
       />

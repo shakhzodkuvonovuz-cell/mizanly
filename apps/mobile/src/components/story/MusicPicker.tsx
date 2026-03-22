@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, StyleSheet, RefreshControl } from 'react-native';
 import { Audio } from 'expo-av';
-import { Image } from 'expo-image';
 import { useQuery } from '@tanstack/react-query';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
@@ -216,10 +216,11 @@ export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
           accessibilityRole="button"
         >
           {item.coverUrl ? (
-            <Image
-              source={{ uri: item.coverUrl }}
-              style={styles.coverArt}
-              contentFit="cover"
+            <ProgressiveImage
+              uri={item.coverUrl}
+              width={40}
+              height={40}
+              borderRadius={radius.sm}
             />
           ) : (
             <View style={[styles.coverPlaceholder, { backgroundColor: tc.surface, borderColor: tc.border }]}>

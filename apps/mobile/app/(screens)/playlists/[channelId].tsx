@@ -1,13 +1,14 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  RefreshControl, FlatList,
+  FlatList,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
@@ -83,7 +84,7 @@ export default function ChannelPlaylistsScreen() {
         >
           {/* Thumbnail */}
           {item.thumbnailUrl ? (
-            <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+            <ProgressiveImage uri={item.thumbnailUrl} width={120} height={68} borderRadius={radius.sm} />
           ) : (
             <LinearGradient
               colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
@@ -172,7 +173,7 @@ export default function ChannelPlaylistsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderPlaylistItem}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}

@@ -13,6 +13,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { postsApi, threadsApi, reelsApi } from '@/services/api';
+import { showToast } from '@/components/ui/Toast';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -133,10 +134,11 @@ export default function SchedulePostScreen() {
       }
 
       haptic.success();
+      showToast({ message: t('screens.schedule-post.scheduled'), variant: 'success' });
       router.back();
     } catch (err) {
       const message = err instanceof Error ? err.message : t('common.somethingWentWrong');
-      Alert.alert(t('common.error'), message);
+      showToast({ message, variant: 'error' });
     } finally {
       setIsScheduling(false);
     }

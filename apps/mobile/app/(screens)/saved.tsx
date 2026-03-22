@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 // AsyncStorage import removed — folder filtering uses API collection names, not local storage
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -47,10 +47,10 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
       accessibilityLabel={t('accessibility.viewPost')}
     >
       {post.mediaUrls.length > 0 ? (
-        <Image
-          source={{ uri: post.thumbnailUrl ?? post.mediaUrls[0] }}
-          style={styles.gridImage}
-          contentFit="cover"
+        <ProgressiveImage
+          uri={post.thumbnailUrl ?? post.mediaUrls[0]}
+          width={GRID_ITEM}
+          height={GRID_ITEM}
         />
       ) : (
         <View style={styles.gridTextPost}>
@@ -80,10 +80,10 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
       accessibilityLabel={t('accessibility.viewReel')}
     >
       {hasThumbnail ? (
-        <Image
-          source={{ uri: reel.thumbnailUrl }}
-          style={styles.gridImage}
-          contentFit="cover"
+        <ProgressiveImage
+          uri={reel.thumbnailUrl!}
+          width={GRID_ITEM}
+          height={GRID_ITEM}
         />
       ) : (
         <View style={[styles.gridImage, styles.placeholder]}>
@@ -111,10 +111,11 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
       accessibilityLabel={t('accessibility.viewVideo', { title: video.title })}
     >
       {hasThumbnail ? (
-        <Image
-          source={{ uri: video.thumbnailUrl }}
-          style={styles.videoThumbnail}
-          contentFit="cover"
+        <ProgressiveImage
+          uri={video.thumbnailUrl!}
+          width={120}
+          height={68}
+          borderRadius={radius.sm}
         />
       ) : (
         <View style={[styles.videoThumbnail, styles.placeholder]}>

@@ -14,8 +14,8 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { Video, ResizeMode } from 'expo-av';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -258,11 +258,12 @@ function FullScreenViewer({
         {/* Media */}
         <View style={styles.mediaContainer}>
           {mediaType === 'IMAGE' ? (
-            <Image
-              source={{ uri: mediaUrl }}
-              style={styles.image}
+            <ProgressiveImage
+              uri={mediaUrl}
+              width={SCREEN_WIDTH - spacing.base * 2}
+              height={SCREEN_HEIGHT * 0.6}
+              borderRadius={radius.md}
               contentFit="contain"
-              transition={200}
             />
           ) : (
             <Video

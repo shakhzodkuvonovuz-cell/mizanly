@@ -4,8 +4,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import * as Location from 'expo-location';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -57,10 +57,10 @@ function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; 
       accessibilityRole="button"
     >
       {restaurant.imageUrl && (
-        <Image
-          source={{ uri: restaurant.imageUrl }}
-          style={styles.cardImage}
-          contentFit="cover"
+        <ProgressiveImage
+          uri={restaurant.imageUrl}
+          width="100%"
+          height={140}
         />
       )}
       <View style={styles.cardContent}>

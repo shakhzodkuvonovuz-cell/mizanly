@@ -3,8 +3,8 @@ import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
   Alert,
 } from 'react-native';
-import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +25,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
+import { showToast } from '@/components/ui/Toast';
 
 const CATEGORIES = [
   'EDUCATION', 'QURAN', 'LECTURE', 'VLOG', 'NEWS', 'DOCUMENTARY',
@@ -281,11 +282,12 @@ export default function CreateVideoScreen() {
       // Invalidate feeds
       queryClient.invalidateQueries({ queryKey: ['videos-feed'] });
       queryClient.invalidateQueries({ queryKey: ['channel-videos'] });
+      showToast({ message: t('createVideo.videoUploaded'), variant: 'success' });
       // Navigate to video page
       router.replace(`/(screens)/video/${video.id}`);
     },
     onError: (error: Error) => {
-      Alert.alert(t('createVideo.uploadFailed'), error.message || t('createVideo.pleaseTryAgain'));
+      showToast({ message: error.message || t('createVideo.pleaseTryAgain'), variant: 'error' });
     },
     onSettled: () => {
       setUploading(false);
@@ -352,7 +354,7 @@ export default function CreateVideoScreen() {
             <Text style={styles.sectionLabel}>{t('createVideo.thumbnailOptional')}</Text>
             <Pressable style={[styles.thumbnailPicker, { backgroundColor: tc.surface }]} onPress={pickThumbnail}>
               {thumbnailUri ? (
-                <Image source={{ uri: thumbnailUri }} style={styles.thumbnail} />
+                <ProgressiveImage uri={thumbnailUri} width="100%" height={200} contentFit="cover" />
               ) : (
                 <View style={styles.thumbnailPlaceholder}>
                   <Icon name="image" size="md" color={colors.text.secondary} />
@@ -380,7 +382,7 @@ export default function CreateVideoScreen() {
                       thumbnailUri === frame && !customThumbnail && styles.thumbnailFrameSelected,
                     ]}
                   >
-                    <Image source={{ uri: frame }} style={styles.thumbnailImage} />
+                    <ProgressiveImage uri={frame} width={80} height={45} borderRadius={radius.sm} />
                   </Pressable>
                 ))}
                 <Pressable

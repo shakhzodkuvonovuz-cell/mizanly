@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, FlatList, Pressable, Dimensions } from 'react-n
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
@@ -59,7 +59,7 @@ export default function BookmarkCollectionsScreen() {
         >
           <View style={styles.coverWrap}>
             {item.thumbnailUrl ? (
-              <Image source={{ uri: item.thumbnailUrl }} style={[styles.cover, { backgroundColor: tc.bgElevated }]} contentFit="cover" />
+              <ProgressiveImage uri={item.thumbnailUrl} width="100%" height={200} />
             ) : (
               <View style={[styles.cover, styles.placeholderCover]}>
                 <LinearGradient

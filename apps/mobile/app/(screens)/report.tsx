@@ -21,6 +21,7 @@ import { reportsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 const REASONS = [
   { labelKey: 'screens.report.reasonSpam', value: 'SPAM' },
@@ -92,11 +93,11 @@ export default function ReportScreen() {
       return reportsApi.create(reportData);
     },
     onSuccess: () => {
-      Alert.alert(t('screens.report.successTitle'), t('screens.report.successMessage'));
+      showToast({ message: t('screens.report.successMessage'), variant: 'success' });
       router.back();
     },
     onError: (error: Error) => {
-      Alert.alert(t('screens.report.errorTitle'), error.message);
+      showToast({ message: error.message, variant: 'error' });
     },
   });
 

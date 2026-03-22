@@ -11,8 +11,8 @@ import {
   Share,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -208,10 +208,10 @@ function SeriesDetailContent() {
       {/* Cover Hero */}
       <View style={styles.heroWrap}>
         {series.coverUrl ? (
-          <Image
-            source={{ uri: series.coverUrl }}
-            style={styles.heroImage}
-            contentFit="cover"
+          <ProgressiveImage
+            uri={series.coverUrl}
+            width="100%"
+            height={220}
           />
         ) : (
           <View style={[styles.heroImage, styles.heroPlaceholder]}>

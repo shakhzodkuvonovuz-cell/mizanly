@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   TextInput,
   Dimensions,
@@ -26,6 +25,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { appealsApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -87,6 +88,10 @@ export default function AppealModerationScreen() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appealHistory', reportId] });
+      showToast({ message: t('appealModeration.submitted'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
@@ -128,7 +133,7 @@ export default function AppealModerationScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={onRefresh} />}
+        refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={onRefresh} />}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Moderation Action Card */}

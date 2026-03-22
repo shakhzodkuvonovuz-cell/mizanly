@@ -10,8 +10,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -29,6 +29,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
+import { showToast } from '@/components/ui/Toast';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 
@@ -215,11 +216,12 @@ export default function CreatePostScreen() {
         await AsyncStorage.removeItem('post-draft');
       } catch (err) {
       }
+      showToast({ message: t('compose.postPublished'), variant: 'success' });
       router.back();
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert(t('common.error'), err.message || t('compose.failedToCreatePost'));
+      showToast({ message: err.message || t('compose.failedToCreatePost'), variant: 'error' });
     },
   });
 
@@ -392,7 +394,7 @@ export default function CreatePostScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.mediaCardGradient}
                   >
-                    <Image accessible={true} accessibilityLabel="Content image" source={{ uri: item.uri }} style={styles.mediaImage} contentFit="cover" />
+                    <ProgressiveImage uri={item.uri} width="100%" height={100} borderRadius={radius.md - 3} accessibilityLabel="Content image" />
                     {item.type === 'video' && (
                       <LinearGradient
                         colors={['rgba(0,0,0,0.6)', 'transparent']}

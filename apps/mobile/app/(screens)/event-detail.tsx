@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   Dimensions,
   Linking,
@@ -28,6 +27,7 @@ import type { User } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width } = Dimensions.get('window');
 
@@ -232,7 +232,7 @@ export default function EventDetailScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={handleRefresh} />}
+        refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />}
       >
         {/* Cover Image Hero */}
         <Animated.View entering={FadeInUp.duration(400)}>

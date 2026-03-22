@@ -3,8 +3,8 @@ import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Dimensions, P
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -29,6 +29,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
+import { showToast } from '@/components/ui/Toast';
 import { EidFrame } from '@/components/islamic/EidFrame';
 import type { Occasion } from '@/components/islamic/EidFrame';
 
@@ -391,9 +392,10 @@ export default function CreateStoryScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stories-feed'] });
+      showToast({ message: t('stories.published'), variant: 'success' });
       router.back();
     },
-    onError: () => Alert.alert(t('common.error'), t('stories.failedToPublish')),
+    onError: () => showToast({ message: t('stories.failedToPublish'), variant: 'error' }),
   });
 
   const currentFont = FONTS[fontIndex];
@@ -612,7 +614,7 @@ export default function CreateStoryScreen() {
           <EidFrame occasion={eidFrameOccasion}>
             {mediaUri ? (
               <View style={{ flex: 1 }}>
-                <Image source={{ uri: mediaUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                <ProgressiveImage uri={mediaUri} width="100%" height={CANVAS_H} contentFit="cover" />
                 {currentFilter.overlay && (
                   <View style={[StyleSheet.absoluteFill, { backgroundColor: currentFilter.overlay }]} pointerEvents="none" />
                 )}
@@ -893,7 +895,7 @@ export default function CreateStoryScreen() {
                 }}>
                   {mediaUri && (
                     <View style={{ flex: 1 }}>
-                      <Image source={{ uri: mediaUri }} style={{ width: 40, height: 40 }} contentFit="cover" />
+                      <ProgressiveImage uri={mediaUri} width={40} height={40} />
                       {f.overlay && (
                         <View style={[StyleSheet.absoluteFill, { backgroundColor: f.overlay }]} />
                       )}

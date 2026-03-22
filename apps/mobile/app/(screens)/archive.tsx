@@ -4,8 +4,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius } from '@/theme';
@@ -115,11 +115,10 @@ export default function ArchiveScreen() {
         onLongPress={() => handleStoryLongPress(item)}
         delayLongPress={500}
       >
-        <Image
-          source={{ uri: item.thumbnailUrl || item.mediaUrl }}
-          style={styles.thumbnail as ImageStyle}
-          contentFit="cover"
-          transition={200}
+        <ProgressiveImage
+          uri={item.thumbnailUrl || item.mediaUrl}
+          width="100%"
+          height={Math.round(ITEM_SIZE / 0.75)}
         />
         {item.mediaType === 'VIDEO' && (
           <View style={styles.videoBadge as ViewStyle}>

@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
+import { showToast } from '@/components/ui/Toast';
 
 export default function WatchPartyScreen() {
   const tc = useThemeColors();
@@ -42,6 +43,10 @@ export default function WatchPartyScreen() {
       setNewVideoId('');
       queryClient.invalidateQueries({ queryKey: ['watch-parties'] });
       haptic.save();
+      showToast({ message: t('community.watchPartyCreated'), variant: 'success' });
+    },
+    onError: () => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 

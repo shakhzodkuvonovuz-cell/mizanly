@@ -4,7 +4,6 @@ import {
   Image as RNImage, StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Image } from 'expo-image';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
   withTiming, interpolate,
