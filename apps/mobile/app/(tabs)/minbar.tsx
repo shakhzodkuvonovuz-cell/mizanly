@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter, useNavigation } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, radius, shadow } from '@/theme';
+import { colors, spacing, fontSize, radius, shadow, fonts } from '@/theme';
 import { useStore } from '@/store';
 import { videosApi, usersApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     color: colors.emerald,
     fontSize: fontSize.xl,
     fontWeight: '700',
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: fonts.headingBold,
     letterSpacing: -0.5,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },

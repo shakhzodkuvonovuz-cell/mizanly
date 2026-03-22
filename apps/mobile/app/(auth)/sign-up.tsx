@@ -16,7 +16,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   logoSection: { alignItems: 'center', marginBottom: spacing['3xl'] },
-  logo: { color: colors.text.primary, fontSize: 32, fontFamily: 'PlayfairDisplay_700Bold' },
+  logo: { color: colors.text.primary, fontSize: 32, fontFamily: fonts.headingBold },
   tagline: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.sm },
   title: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700', textAlign: 'center', marginBottom: spacing.sm },
   subtitle: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center', lineHeight: 24, marginBottom: spacing['2xl'] },

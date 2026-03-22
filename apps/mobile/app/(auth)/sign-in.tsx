@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize, radius, animation, shadow } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, shadow, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   logoSection: { alignItems: 'center', marginBottom: spacing['3xl'] },
-  logo: { color: colors.emerald, fontSize: 42, fontFamily: 'PlayfairDisplay_700Bold', letterSpacing: -1 },
+  logo: { color: colors.emerald, fontSize: 42, fontFamily: fonts.headingBold, letterSpacing: -1 },
   logoArabic: { color: colors.gold, fontSize: fontSize.xl, marginTop: spacing.xs },
   tagline: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.sm },
   form: { gap: spacing.md },

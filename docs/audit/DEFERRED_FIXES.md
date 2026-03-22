@@ -676,3 +676,18 @@ F7 (usePayment deleted — 122 lines dead code), F8 (useReducedMotion wired into
 
 ### NOTED (0 remaining):
 All 52 findings addressed.
+
+## From Audit 33 (Theme/Styling) — 267 findings
+### Already fixed in prior files:
+Cat 2 (DMSans-Medium → DMSans_500Medium — file 24), Cat 10 (ScreenErrorBoundary i18next.t — file 24)
+
+### FIXED directly (35):
+Cat 1 (getThemeColors() utility created with light text variants; textLight colors defined for future light mode migration), Cat 3 (15 font string literals → fonts.* tokens across 12 files: PlayfairDisplay→headingBold, DMSans→bodyBold/bodyMedium, monospace→fonts.mono), Cat 9 (fonts.mono: DMSans_400Regular → Platform.select Menlo/monospace for actual monospace rendering), Cat 8 partial (spacing tokens noted)
+
+### NOTED (architecture — tracked in CLAUDE.md technical debt):
+- Cat 1: 244 files hardcode colors.dark.* — needs full migration to useThemeColors (getThemeColors helper created but 1,251 call sites need migration)
+- Cat 4: 421+ hardcoded hex colors — needs design system expansion
+- Cat 5: 37 hardcoded English strings — partially addressed in files 24/26
+- Cat 6: 83 hardcoded fontSize values — many intentional for special sizes
+- Cat 11: 16 fontWeight '800' — no token, iOS ignores with loaded fonts
+- Cat 12: 300+ inline rgba() colors — many contextually appropriate

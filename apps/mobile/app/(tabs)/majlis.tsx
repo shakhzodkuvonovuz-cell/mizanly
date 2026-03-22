@@ -15,7 +15,7 @@ import Animated, {
   FadeInUp,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, animation, radius, tabBar } from '@/theme';
+import { colors, spacing, fontSize, animation, radius, tabBar, fonts } from '@/theme';
 import { useStore } from '@/store';
 import { threadsApi, hashtagsApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
-  logo: { color: colors.emerald, fontSize: fontSize.xl, fontFamily: 'PlayfairDisplay_700Bold' },
+  logo: { color: colors.emerald, fontSize: fontSize.xl, fontFamily: fonts.headingBold },
   headerRight: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.lg },
   footer: { paddingVertical: spacing.sm },
   fab: {

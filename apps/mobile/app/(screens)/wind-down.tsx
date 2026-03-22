@@ -14,7 +14,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize.xl,
     fontWeight: '700',
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: fonts.headingBold,
     marginBottom: spacing.sm,
   },
   subtitle: {

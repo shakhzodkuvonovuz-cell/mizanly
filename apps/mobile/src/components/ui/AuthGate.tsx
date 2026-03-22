@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useUser, useAuth } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { Icon } from './Icon';
 import { GradientButton } from './GradientButton';
 import { BottomSheet } from './BottomSheet';
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text.primary,
     fontSize: fontSize.lg,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.sm,
   },
   subtitle: {
@@ -169,6 +169,6 @@ const styles = StyleSheet.create({
   signInText: {
     color: colors.emerald,
     fontSize: fontSize.sm,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: fonts.bodyMedium,
   },
 });

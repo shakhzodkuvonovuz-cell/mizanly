@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 
 import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo, PrayerNotificationSetting } from '@/types/islamic';
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: fontSize.xl,
     fontWeight: '700',
-    fontFamily: 'monospace',
+    fontFamily: fonts.mono,
   },
   decorationPattern: {
     position: 'absolute',

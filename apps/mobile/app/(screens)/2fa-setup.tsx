@@ -18,7 +18,7 @@ import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, radius, fontSize, animation } from '@/theme';
+import { colors, spacing, radius, fontSize, animation, fonts } from '@/theme';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useUser } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize.md,
     fontWeight: '600',
-    fontFamily: 'monospace',
+    fontFamily: fonts.mono,
   },
 
   // OTP Input
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize.md,
     fontWeight: '700',
-    fontFamily: 'monospace',
+    fontFamily: fonts.mono,
   },
   backupCodeTextCopied: {
     color: colors.emerald,

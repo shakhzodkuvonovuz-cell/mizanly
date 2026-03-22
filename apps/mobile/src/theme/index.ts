@@ -1,6 +1,8 @@
 // Mizanly Design System
 // Brand colors, typography, spacing, shadows, animations, glassmorphism
 
+import { Platform } from 'react-native';
+
 export const colors = {
   // Brand
   emerald: '#0A7B4F',
@@ -36,12 +38,21 @@ export const colors = {
     borderHighlight: 'rgba(0, 0, 0, 0.05)',
   },
 
-  // Text
+  // Text (dark mode defaults — use useThemeColors() for theme-aware values)
   text: {
     primary: '#FFFFFF',
     secondary: '#8B949E',
     tertiary: '#8B949E', // WCAG AA compliant (≥4.5:1 on dark.bg)
     inverse: '#1E293B',
+    onColor: '#FFFFFF',
+  },
+
+  // Light mode text variants
+  textLight: {
+    primary: '#1F2937',
+    secondary: '#4B5563',
+    tertiary: '#6B7280',
+    inverse: '#FFFFFF',
     onColor: '#FFFFFF',
   },
 
@@ -85,13 +96,13 @@ export const fonts = {
   bodyBold: 'DMSans_700Bold',
   arabic: 'NotoNaskhArabic_400Regular',
   arabicBold: 'NotoNaskhArabic_700Bold',
-  mono: 'DMSans_400Regular',
+  mono: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
   // Aliases matching useFonts registration keys
   regular: 'DMSans_400Regular',
   medium: 'DMSans_500Medium',
   semibold: 'DMSans_500Medium',
   bold: 'DMSans_700Bold',
-} as const;
+};
 
 export const fontWeight = {
   regular: '400' as const,
@@ -199,6 +210,23 @@ export const elevation = {
     borderColor: colors.glass.border,
   },
 } as const;
+
+/**
+ * Theme-aware color getter. Returns dark or light surface/text colors
+ * based on the provided theme string.
+ *
+ * Usage in components:
+ *   const themeColors = getThemeColors(theme);
+ *   style={{ backgroundColor: themeColors.bg }}
+ *
+ * For hooks: use useThemeColors() from store which reads the current theme.
+ */
+export function getThemeColors(theme: 'dark' | 'light' | 'system') {
+  const effectiveTheme = theme === 'system' ? 'dark' : theme; // Default to dark
+  const surface = effectiveTheme === 'dark' ? colors.dark : colors.light;
+  const text = effectiveTheme === 'dark' ? colors.text : colors.textLight;
+  return { ...surface, text };
+}
 
 // Tab bar config
 export const tabBar = {

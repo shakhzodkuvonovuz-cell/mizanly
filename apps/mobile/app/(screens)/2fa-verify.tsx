@@ -21,7 +21,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { colors, spacing, radius, fontSize, animation } from '@/theme';
+import { colors, spacing, radius, fontSize, animation, fonts } from '@/theme';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useUser } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize['2xl'],
     fontWeight: '700',
-    fontFamily: 'monospace',
+    fontFamily: fonts.mono,
     flex: 1,
     letterSpacing: 4,
   },

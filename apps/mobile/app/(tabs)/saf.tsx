@@ -15,7 +15,7 @@ import Animated, {
   FadeOut,
   SlideOutRight,
 } from 'react-native-reanimated';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fonts } from '@/theme';
 import { CaughtUpCard } from '@/components/ui/CaughtUpCard';
 import { useStore } from '@/store';
 import { postsApi, storiesApi, notificationsApi, feedApi, followsApi } from '@/services/api';
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   logo: {
     color: colors.emerald,
     fontSize: fontSize.xl,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: fonts.headingBold,
     letterSpacing: -1,
   },
   hijriDate: {
@@ -569,7 +569,7 @@ const suggestedStyles = StyleSheet.create({
   title: {
     color: colors.text.primary,
     fontSize: fontSize.base,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.md,
   },
   row: {
@@ -595,7 +595,7 @@ const suggestedStyles = StyleSheet.create({
   displayName: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: fonts.bodyMedium,
   },
   bio: {
     color: colors.text.secondary,
@@ -611,7 +611,7 @@ const suggestedStyles = StyleSheet.create({
   followBtnText: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: fonts.bodyBold,
   },
 });
 
@@ -635,7 +635,7 @@ const bannerStyles = StyleSheet.create({
   title: {
     color: colors.emerald,
     fontSize: fontSize.base,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: fonts.bodyBold,
   },
   subtitle: {
     color: colors.text.secondary,

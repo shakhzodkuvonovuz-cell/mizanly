@@ -27,7 +27,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fonts } from '@/theme';
 import { useStore } from '@/store';
 import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
-  logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', fontFamily: 'PlayfairDisplay_700Bold' },
+  logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', fontFamily: fonts.headingBold },
   headerRight: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.lg },
   chatItem: {
     flexDirection: 'row',
