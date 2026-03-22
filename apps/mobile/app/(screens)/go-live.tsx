@@ -198,6 +198,7 @@ export default function GoLiveScreen() {
               <Text style={[styles.inputLabel, { color: tc.text.primary }]}>{t('live.streamType')}</Text>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('live.selectStreamType')}
                 style={[styles.typeSelector, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
                 onPress={() => setShowLiveTypePicker(true)}
               >
@@ -238,6 +239,7 @@ export default function GoLiveScreen() {
               {isScheduled && scheduleDate && (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('live.scheduleTime')}
                   style={[styles.scheduleDisplay, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
                   onPress={() => setShowDatePicker(true)}
                 >

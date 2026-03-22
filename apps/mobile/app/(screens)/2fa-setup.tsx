@@ -234,6 +234,7 @@ export default function TwoFactorSetupScreen() {
 
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('auth.selectAuthenticatorApp')}
                 style={styles.appPickerButton}
                 onPress={() => setShowAppPicker(true)}
               >
@@ -253,6 +254,7 @@ export default function TwoFactorSetupScreen() {
 
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('common.continue')}
                 style={styles.nextButton}
                 onPress={() => setActiveStep('qr')}
               >
@@ -313,7 +315,7 @@ export default function TwoFactorSetupScreen() {
                 {/* Manual Secret */}
                 <View style={styles.secretContainer}>
                   <Text style={styles.secretLabel}>{t('auth.enterSecretManually')}</Text>
-                  <Pressable onPress={async () => { await Clipboard.setStringAsync(secret); showToast({ message: t('common.copied'), variant: 'success' }); }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('auth.enterSecretManually')} onPress={async () => { await Clipboard.setStringAsync(secret); showToast({ message: t('common.copied'), variant: 'success' }); }}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                       style={styles.secretBox}
@@ -326,6 +328,7 @@ export default function TwoFactorSetupScreen() {
 
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('auth.scannedCodeButton')}
                   style={styles.nextButton}
                   onPress={() => setActiveStep('verify')}
                 >
@@ -386,6 +389,7 @@ export default function TwoFactorSetupScreen() {
 
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('auth.enable2FA')}
                   style={styles.nextButton}
                   onPress={handleEnable2FA}
                   disabled={isEnabling || verificationCode.some(d => d === '')}
@@ -434,6 +438,7 @@ export default function TwoFactorSetupScreen() {
                   {backupCodes.map((code, idx) => (
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t('auth.backupCodeCopied', { code })}
                       key={idx}
                       onPress={() => copyBackupCode(code)}
                     >
@@ -461,6 +466,7 @@ export default function TwoFactorSetupScreen() {
                 <View style={styles.backupActions}>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={t('common.copyAll')}
                     style={styles.backupActionButton}
                     onPress={copyAllBackupCodes}
                   >
@@ -475,6 +481,7 @@ export default function TwoFactorSetupScreen() {
 
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={t('common.download')}
                     style={styles.backupActionButton}
                     onPress={downloadBackupCodes}
                   >
@@ -490,6 +497,7 @@ export default function TwoFactorSetupScreen() {
 
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('common.done')}
                   style={styles.nextButton}
                   onPress={() => router.back()}
                 >

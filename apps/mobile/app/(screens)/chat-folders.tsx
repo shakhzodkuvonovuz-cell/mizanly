@@ -121,6 +121,7 @@ export default function ChatFoldersScreen() {
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={item.name as string}
           style={[styles.folderCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
           onPress={() => {
             haptic.navigate();
@@ -171,6 +172,7 @@ export default function ChatFoldersScreen() {
             {PREDEFINED_FILTERS.map((pf) => (
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t(pf.labelKey)}
                 key={pf.key}
                 style={[styles.predefinedCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                 onPress={() => {
@@ -211,6 +213,7 @@ export default function ChatFoldersScreen() {
               {FOLDER_ICONS.map((icon, i) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={icon}
                   key={icon}
                   style={[styles.iconOption, selectedIcon === i && { borderColor: FOLDER_COLORS[i] }]}
                   onPress={() => { setSelectedIcon(i); haptic.tick(); }}
@@ -221,11 +224,12 @@ export default function ChatFoldersScreen() {
             </View>
 
             <View style={styles.createActions}>
-              <Pressable onPress={() => { setCreateMode(false); setEditingFolder(null); setNewName(''); }} style={[styles.cancelBtn, { backgroundColor: tc.surface }]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} onPress={() => { setCreateMode(false); setEditingFolder(null); setNewName(''); }} style={[styles.cancelBtn, { backgroundColor: tc.surface }]}>
                 <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={editingFolder ? t('common.save') : t('common.create')}
                 style={[styles.createBtn, !newName.trim() && { opacity: 0.5 }]}
                 onPress={() => {
                   if (!newName.trim()) return;

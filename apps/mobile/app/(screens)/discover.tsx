@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Image,
   Dimensions,
   ScrollView,
 } from 'react-native';
@@ -183,7 +182,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
           <View style={styles.featuredMeta}>
             <View style={styles.featuredCreator}>
               {item.creator.avatarUrl ? (
-                <Image accessible={true} accessibilityLabel={t('accessibility.contentImage')} source={{ uri: item.creator.avatarUrl }} style={styles.featuredAvatar} />
+                <ProgressiveImage uri={item.creator.avatarUrl} width={20} height={20} borderRadius={9999} accessibilityLabel={t('accessibility.contentImage')} />
               ) : (
                 <View style={[styles.featuredAvatarPlaceholder, { backgroundColor: tc.bgElevated }]}>
                   <Icon name="user" size={10} color={tc.text.primary} />

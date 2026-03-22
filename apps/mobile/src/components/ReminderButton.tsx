@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
+import { showToast } from '@/components/ui/Toast';
 import { colors, radius, animation } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -44,7 +45,7 @@ export function ReminderButton({ postId, hasReminder, onToggle }: ReminderButton
         onToggle(true);
         haptic.success();
       } catch {
-        Alert.alert(t('common.error'), t('reminder.setError'));
+        showToast({ message: t('reminder.setError'), variant: 'error' });
       }
     },
     [postId, onToggle, haptic, t],
@@ -56,7 +57,7 @@ export function ReminderButton({ postId, hasReminder, onToggle }: ReminderButton
       onToggle(false);
       haptic.delete();
     } catch {
-      Alert.alert(t('common.error'), t('reminder.removeError'));
+      showToast({ message: t('reminder.removeError'), variant: 'error' });
     }
   }, [postId, onToggle, haptic, t]);
 

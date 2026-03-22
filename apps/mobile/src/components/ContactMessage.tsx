@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react';
-import { View, Text, Pressable, Linking, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, Linking, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
+import { showToast } from '@/components/ui/Toast';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -39,10 +40,7 @@ export function ContactMessage({
         await Linking.openURL(url);
       }
     } catch {
-      Alert.alert(
-        t('contact.callError', 'Error'),
-        t('contact.callErrorMessage', 'Could not open the phone dialer.'),
-      );
+      showToast({ message: t('contact.callErrorMessage', 'Could not open the phone dialer.'), variant: 'error' });
     }
   }, [phone, haptic, t]);
 
@@ -56,19 +54,13 @@ export function ContactMessage({
         await Linking.openURL(url);
       }
     } catch {
-      Alert.alert(
-        t('contact.emailError', 'Error'),
-        t('contact.emailErrorMessage', 'Could not open the email application.'),
-      );
+      showToast({ message: t('contact.emailErrorMessage', 'Could not open the email application.'), variant: 'error' });
     }
   }, [email, haptic, t]);
 
   const handleAddToContacts = useCallback(() => {
     haptic.success();
-    Alert.alert(
-      t('contact.addTitle', 'Add Contact'),
-      t('contact.addMessage', '{{name}} will be added to your contacts.', { name }),
-    );
+    showToast({ message: t('contact.addMessage', '{{name}} will be added to your contacts.', { name }), variant: 'success' });
   }, [name, haptic, t]);
 
   const bgColor = isOutgoing ? colors.active.emerald10 : tc.bgCard;

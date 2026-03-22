@@ -170,6 +170,7 @@ function HajjCompanionContent() {
               </Text>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('hajj.startTracker')}
                 style={styles.startButton}
                 onPress={() => setShowYearPicker(true)}
 
@@ -245,8 +246,9 @@ function HajjCompanionContent() {
               >
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={step.name}
                   style={styles.stepRow}
-  
+
                   onPress={() =>
                     navigate('/(screens)/hajj-step', { step: step.step })
                   }
@@ -313,6 +315,7 @@ function HajjCompanionContent() {
         <View style={styles.actions}>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('hajj.shareProgress')}
             style={styles.shareButton}
             onPress={handleShare}
           >
@@ -324,6 +327,7 @@ function HajjCompanionContent() {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('hajj.reset')}
             style={styles.resetButton}
             onPress={() => setShowResetSheet(true)}
           >

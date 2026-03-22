@@ -346,11 +346,11 @@ export default function LiveViewerScreen() {
         {canModerate && !isSelf && (
           <View style={styles.participantActions}>
             {item.role === 'LISTENER' && (
-              <Pressable onPress={() => handleInviteSpeaker(item.id)} style={styles.participantActionBtn}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('screens.live.inviteToSpeak')} onPress={() => handleInviteSpeaker(item.id)} style={styles.participantActionBtn}>
                 <Icon name="mic" size="sm" color={tc.text.secondary} />
               </Pressable>
             )}
-            <Pressable onPress={() => handleRemoveParticipant(item.id)} style={styles.participantActionBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.live.removeParticipant')} onPress={() => handleRemoveParticipant(item.id)} style={styles.participantActionBtn}>
               <Icon name="x" size="sm" color={colors.error} />
             </Pressable>
           </View>
@@ -550,7 +550,7 @@ export default function LiveViewerScreen() {
 
           {/* Quick actions row */}
           <View style={styles.overlayActionRow}>
-            <Pressable style={styles.overlayActionButton} onPress={handleRaiseHand} accessibilityRole="button">
+            <Pressable style={styles.overlayActionButton} onPress={handleRaiseHand} accessibilityRole="button" accessibilityLabel={isHandRaised ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}>
               <View style={[styles.overlayActionCircle, isHandRaised && styles.overlayActionCircleActive]}>
                 <Icon name="edit" size="md" color={isHandRaised ? '#fff' : tc.text.primary} />
               </View>
@@ -558,13 +558,13 @@ export default function LiveViewerScreen() {
                 {isHandRaised ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}
               </Text>
             </Pressable>
-            <Pressable style={styles.overlayActionButton} onPress={() => setShowChat(true)} accessibilityRole="button">
+            <Pressable style={styles.overlayActionButton} onPress={() => setShowChat(true)} accessibilityRole="button" accessibilityLabel={t('screens.live.chat')}>
               <View style={styles.overlayActionCircle}>
                 <Icon name="message-circle" size="md" color={tc.text.primary} />
               </View>
               <Text style={styles.overlayActionLabel}>{t('screens.live.chat')}</Text>
             </Pressable>
-            <Pressable style={styles.overlayActionButton} onPress={handleShare} accessibilityRole="button">
+            <Pressable style={styles.overlayActionButton} onPress={handleShare} accessibilityRole="button" accessibilityLabel={t('common.share')}>
               <View style={styles.overlayActionCircle}>
                 <Icon name="share" size="md" color={tc.text.primary} />
               </View>
@@ -574,6 +574,7 @@ export default function LiveViewerScreen() {
             {['🔥', '❤️', '👏'].map((emoji) => (
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={`${t('screens.live.react')} ${emoji}`}
                 key={emoji}
                 style={styles.overlayActionButton}
                 onPress={() => addFloatingReaction(emoji)}
@@ -654,6 +655,7 @@ export default function LiveViewerScreen() {
               {['🔥', '❤️', '👏', '😂', '😮'].map((emoji) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={`${t('screens.live.react')} ${emoji}`}
                   key={emoji}
                   style={styles.reactionButton}
                   onPress={() => addFloatingReaction(emoji)}
@@ -675,6 +677,7 @@ export default function LiveViewerScreen() {
             />
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('screens.live.sendMessage')}
               style={[styles.sendButton, !chatMessage.trim() && styles.sendButtonDisabled]}
               onPress={handleSendChat}
               disabled={!chatMessage.trim()}

@@ -168,7 +168,7 @@ export default function TwoFactorVerifyScreen() {
             maxLength={6}
             editable={!loading}
           />
-          <Pressable onPress={() => setBackupCode('')}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Clear backup code" onPress={() => setBackupCode('')}>
             <Icon name="x" size="sm" color={tc.text.tertiary} />
           </Pressable>
         </LinearGradient>
@@ -212,6 +212,7 @@ export default function TwoFactorVerifyScreen() {
             {/* Mode Toggle */}
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={mode === 'code' ? t('screens.2faVerify.useBackupCodeInstead') : t('screens.2faVerify.useAuthenticatorCodeInstead')}
               style={styles.modeToggle}
               onPress={() => {
                 setMode(mode === 'code' ? 'backup' : 'code');
@@ -231,6 +232,7 @@ export default function TwoFactorVerifyScreen() {
             {/* Verify Button */}
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('auth.verify')}
               style={styles.verifyButton}
               onPress={handleVerify}
               disabled={loading || (mode === 'code' && verificationCode.some(d => d === '')) || (mode === 'backup' && backupCode.length !== 6)}
@@ -256,6 +258,7 @@ export default function TwoFactorVerifyScreen() {
             {/* Lost Access Link */}
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('screens.2faVerify.lostAccessLinkText')}
               style={styles.lostAccessLink}
               onPress={() =>
                 Alert.alert(

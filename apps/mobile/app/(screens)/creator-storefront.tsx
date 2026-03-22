@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Image,
   Dimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -23,6 +22,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';
 import { formatCount } from '@/utils/formatCount';
@@ -119,7 +119,7 @@ function CreatorStorefrontContent() {
         accessibilityLabel={`${item.name}, ${item.currency}${item.price}`}
       >
         {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} style={[styles.productImage, { backgroundColor: tc.surface }]} />
+          <ProgressiveImage uri={item.imageUrl} width={CARD_WIDTH} height={CARD_WIDTH} style={{ backgroundColor: tc.surface }} />
         ) : (
           <View style={[styles.productImage, styles.productImagePlaceholder]}>
             <Icon name="image" size="lg" color={tc.text.tertiary} />

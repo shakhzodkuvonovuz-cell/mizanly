@@ -193,7 +193,7 @@ export default function EditChannelScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.avatarSection}>
-            <Pressable accessibilityRole="button" onPress={pickImage} style={styles.avatarWrap}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.editChannel.tapToChangePhoto')} onPress={pickImage} style={styles.avatarWrap}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                 style={styles.avatarBg}

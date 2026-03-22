@@ -166,9 +166,9 @@ export default function ChatThemePickerScreen() {
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t(`chatThemePicker.themeName.${item.id}`)}
           style={[styles.colorItem, { width: itemWidth }]}
           onPress={() => setSelectedTheme(item.id)}
-
         >
           <View
             style={[
@@ -200,9 +200,9 @@ export default function ChatThemePickerScreen() {
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t(`chatThemePicker.themeName.${item.id}`)}
           style={[styles.colorItem, { width: itemWidth }]}
           onPress={() => setSelectedTheme(item.id)}
-
         >
           <LinearGradient
             colors={item.gradient || ['#0D1117', '#0D1117']}
@@ -230,9 +230,9 @@ export default function ChatThemePickerScreen() {
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t(`chatThemePicker.themeName.${item.id}`)}
           style={[styles.patternItem, isSelected && styles.patternItemSelected]}
           onPress={() => setSelectedTheme(item.id)}
-
         >
           <LinearGradient
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -259,9 +259,9 @@ export default function ChatThemePickerScreen() {
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t(`chatThemePicker.themeName.${item.id}`)}
           style={[styles.photoItem, isUpload && styles.photoItemUpload, isSelected && styles.photoItemSelected]}
           onPress={() => !isUpload && setSelectedTheme(item.id)}
-
         >
           {isUpload ? (
             <View style={styles.uploadContent}>
@@ -353,9 +353,9 @@ export default function ChatThemePickerScreen() {
                 <Animated.View key={tab.id} entering={FadeInUp.delay(index * 80).duration(400)}>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={t(`chatThemePicker.tab.${tab.id}`)}
                     style={[styles.tab, isActive && styles.tabActive]}
                     onPress={() => setActiveTab(tab.id)}
-
                   >
                     {isActive ? (
                       <LinearGradient

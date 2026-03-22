@@ -194,6 +194,7 @@ export default function TafsirViewerScreen() {
             </Text>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('tafsir.filterSources')}
               style={styles.filterButton}
               onPress={() => setShowSourceFilter(true)}
             >
@@ -247,7 +248,7 @@ export default function TafsirViewerScreen() {
 
           {/* Share Button */}
           <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.shareSection}>
-            <Pressable style={styles.shareButton} onPress={handleShare}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('tafsir.share')} style={styles.shareButton} onPress={handleShare}>
               <LinearGradient
                 colors={[colors.emerald, colors.gold]}
                 style={styles.shareButtonGradient}

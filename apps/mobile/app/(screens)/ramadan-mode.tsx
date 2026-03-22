@@ -169,6 +169,7 @@ function GoalItem({
     <Animated.View entering={FadeInUp.delay(200 + index * 60).duration(300)}>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={t(goal.label)}
         onPress={() => {
           haptic.tick();
           onToggle();
@@ -343,7 +344,7 @@ export default function RamadanModeScreen() {
       <SafeAreaView style={styles.container}>
         <GlassHeader
           title={t('screens.ramadanMode.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
           rightActions={[{ icon: 'moon', onPress: () => {}, accessibilityLabel: t('screens.ramadanMode.title') }]}
         />
 

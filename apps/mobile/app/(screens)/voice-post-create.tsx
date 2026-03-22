@@ -177,6 +177,7 @@ export default function VoicePostCreateScreen() {
           <Animated.View style={[styles.recordSection, pulseStyle]}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={isRecording ? t('voicePost.tapToStop') : recordingUri ? t('voicePost.tapToReRecord') : t('voicePost.tapToRecord')}
               style={[styles.recordButton, isRecording && styles.recordButtonActive]}
               onPress={isRecording ? stopRecording : startRecording}
 
@@ -198,6 +199,7 @@ export default function VoicePostCreateScreen() {
             <Animated.View entering={FadeInUp.duration(300)} style={styles.postSection}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('voicePost.postVoice')}
                 style={[styles.postBtn, postMutation.isPending && { opacity: 0.5 }]}
                 onPress={() => postMutation.mutate()}
                 disabled={postMutation.isPending}

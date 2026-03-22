@@ -223,6 +223,7 @@ export default function CaptionEditorScreen() {
             </LinearGradient>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('common.delete')}
               style={styles.deleteButton}
               onPress={() => handleDeleteCaption(item.id)}
             >
@@ -369,6 +370,7 @@ export default function CaptionEditorScreen() {
                 <View style={styles.playbackControls}>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel="Rewind 5 seconds"
                     style={styles.controlCircle}
                     onPress={() => { haptic.tick(); setCurrentTime(Math.max(0, currentTime - 5)); }}
                   >
@@ -382,6 +384,7 @@ export default function CaptionEditorScreen() {
 
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={isPlaying ? t('common.pause') : t('common.play')}
                     style={[styles.controlCircle, styles.playCircle]}
                     onPress={() => { haptic.tick(); setIsPlaying(!isPlaying); }}
                   >
@@ -395,6 +398,7 @@ export default function CaptionEditorScreen() {
 
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel="Forward 5 seconds"
                     style={styles.controlCircle}
                     onPress={() => { haptic.tick(); setCurrentTime(Math.min(90, currentTime + 5)); }}
                   >
@@ -414,7 +418,7 @@ export default function CaptionEditorScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>{t('captionEditor.captions', { count: captions.length })}</Text>
-              <Pressable style={styles.addCaptionButton} onPress={handleAddCaption}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('common.add')} style={styles.addCaptionButton} onPress={handleAddCaption}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                   style={styles.addCaptionGradient}
@@ -470,6 +474,7 @@ export default function CaptionEditorScreen() {
                   {FONT_OPTIONS.map((font) => (
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t(`captionEditor.fontOption.${font.toLowerCase()}`)}
                       key={font}
                       style={styles.selectorButton}
                       onPress={() => { haptic.tick(); setSelectedFont(font); }}
@@ -498,6 +503,7 @@ export default function CaptionEditorScreen() {
                   {SIZE_OPTIONS.map((size) => (
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t(`captionEditor.sizeOption.${size.toLowerCase()}`)}
                       key={size}
                       style={styles.selectorButton}
                       onPress={() => { haptic.tick(); setSelectedSize(size); }}
@@ -526,6 +532,7 @@ export default function CaptionEditorScreen() {
                   {POSITION_OPTIONS.map((position) => (
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t(`captionEditor.positionOption.${position.toLowerCase()}`)}
                       key={position}
                       style={styles.selectorButton}
                       onPress={() => { haptic.tick(); setSelectedPosition(position); }}
@@ -554,6 +561,7 @@ export default function CaptionEditorScreen() {
                   {BACKGROUND_OPTIONS.map((bg) => (
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t(`captionEditor.backgroundOption.${bg.toLowerCase().replace(/\s+/g, '')}`)}
                       key={bg}
                       style={styles.selectorButton}
                       onPress={() => { haptic.tick(); setSelectedBackground(bg); }}
@@ -582,6 +590,7 @@ export default function CaptionEditorScreen() {
                   {TEXT_COLORS.map((color) => (
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t('captionEditor.color') + ` ${color}`}
                       key={color}
                       style={[
                         styles.colorCircle,
@@ -608,6 +617,7 @@ export default function CaptionEditorScreen() {
           >
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('captionEditor.autoGenerate')}
               style={styles.autoGenButton}
               onPress={handleAutoGenerate}
               disabled={generateMutation.isPending}
@@ -632,6 +642,7 @@ export default function CaptionEditorScreen() {
 
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('common.save')}
               style={styles.saveButton}
               onPress={handleSave}
               disabled={saveMutation.isPending}

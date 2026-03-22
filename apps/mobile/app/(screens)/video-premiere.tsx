@@ -112,6 +112,7 @@ export default function VideoPremiereScreen() {
               {THEMES.map(theme => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t(theme.label)}
                   key={theme.id}
                   onPress={() => { setSelectedTheme(theme.id); haptic.tick(); }}
                   style={[styles.themeCard, selectedTheme === theme.id && styles.themeCardActive]}
@@ -134,6 +135,7 @@ export default function VideoPremiereScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('premiere.enableChat')}
               onPress={() => { setChatEnabled(!chatEnabled); haptic.tick(); }}
               style={[styles.toggleBtn, chatEnabled && styles.toggleBtnActive]}
             >
@@ -145,6 +147,7 @@ export default function VideoPremiereScreen() {
           <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.submitSection}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('premiere.schedule')}
               onPress={handleSchedule}
               disabled={!isValid || createMutation.isPending}
               style={[styles.submitBtn, (!isValid || createMutation.isPending) && { opacity: 0.5 }]}

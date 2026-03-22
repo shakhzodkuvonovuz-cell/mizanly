@@ -229,6 +229,7 @@ export default function QuietModeScreen() {
                   </Text>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={`${t('quietMode.startTime')}: ${startTime}`}
                     style={styles.timeButton}
                     onPress={() => { haptic.selection(); setShowStartPicker(true); }}
                   >
@@ -243,6 +244,7 @@ export default function QuietModeScreen() {
                   </Text>
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={`${t('quietMode.endTime')}: ${endTime}`}
                     style={styles.timeButton}
                     onPress={() => { haptic.selection(); setShowEndPicker(true); }}
                   >

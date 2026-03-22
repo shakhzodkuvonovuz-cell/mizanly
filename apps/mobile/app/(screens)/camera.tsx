@@ -179,6 +179,7 @@ export default function CameraScreen() {
             {/* Close Button */}
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('common.close')}
               style={styles.controlPill}
               onPress={() => router.back()}
             >
@@ -188,6 +189,7 @@ export default function CameraScreen() {
             {/* Flash Toggle */}
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={flashOn ? "Turn flash off" : "Turn flash on"}
               style={[styles.controlPill, flashOn && styles.controlPillActive]}
               onPress={() => setFlashOn(!flashOn)}
             >
@@ -197,6 +199,7 @@ export default function CameraScreen() {
             {/* Camera Flip */}
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Flip camera"
               style={styles.controlPill}
               onPress={() => setIsFrontCamera(!isFrontCamera)}
             >
@@ -220,6 +223,7 @@ export default function CameraScreen() {
             {(['photo', 'video', 'story'] as CameraMode[]).map((m) => (
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
                 key={m}
                 style={[styles.modePill, mode === m && styles.modePillActive]}
                 onPress={() => setMode(m)}
@@ -258,8 +262,9 @@ export default function CameraScreen() {
             <Animated.View style={[styles.captureButtonOuter, pulseStyle]}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={mode === 'video' && isRecording ? "Stop recording" : "Capture"}
                 onPress={handleCapturePress}
-               
+
                 style={styles.captureButtonTouch}
               >
                 <Animated.View style={[styles.captureButtonInner, animatedCaptureStyle]}>

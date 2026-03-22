@@ -59,6 +59,8 @@ export default function WatchPartyScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={item.title as string}
           style={styles.partyCard}
           onPress={() => {
             haptic.tick();
@@ -95,6 +97,7 @@ export default function WatchPartyScreen() {
               router.push(`/(screens)/watch-party/${item.id}` as never);
             }}
             accessibilityRole="button"
+            accessibilityLabel={t('community.joinParty')}
           >
             <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.joinBtnGradient}>
               <Icon name="play" size="sm" color="#FFF" />
@@ -154,6 +157,7 @@ export default function WatchPartyScreen() {
             />
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('community.start')}
               style={[styles.createBtn, (!newTitle || !newVideoId) && { opacity: 0.5 }]}
               onPress={() => createMutation.mutate()}
               disabled={!newTitle || !newVideoId || createMutation.isPending}

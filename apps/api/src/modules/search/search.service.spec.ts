@@ -734,7 +734,7 @@ describe('SearchService', () => {
         expect.objectContaining({
           where: { followerId: userId },
           select: { followingId: true },
-          take: 5000,
+          take: 1000,
         }),
       );
       expect(prisma.user.findMany).toHaveBeenCalledWith(

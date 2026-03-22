@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Alert, Image,
+  FlatList, Alert,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
@@ -18,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { showToast } from '@/components/ui/Toast';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { collabsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -139,7 +140,7 @@ export default function CollabRequestsScreen() {
             </View>
             <View style={styles.postPreview}>
               {thumbnail ? (
-                <Image source={{ uri: thumbnail }} style={styles.thumbnail} resizeMode="cover" />
+                <ProgressiveImage uri={thumbnail} width={50} height={50} borderRadius={radius.sm} />
               ) : (
                 <LinearGradient
                   colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
@@ -195,7 +196,7 @@ export default function CollabRequestsScreen() {
           style={styles.row}
         >
           {thumbnail ? (
-            <Image source={{ uri: thumbnail }} style={styles.thumbnailLarge} resizeMode="cover" />
+            <ProgressiveImage uri={thumbnail} width={70} height={70} borderRadius={radius.md} />
           ) : (
             <LinearGradient
               colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}

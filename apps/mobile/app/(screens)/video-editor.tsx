@@ -296,7 +296,7 @@ export default function VideoEditorScreen() {
                 />
               </View>
             </View>
-            <Pressable accessibilityRole="button" style={styles.splitButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.splitAtPlayhead')} style={styles.splitButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.splitButtonGradient}
@@ -305,7 +305,7 @@ export default function VideoEditorScreen() {
                 <Text style={styles.splitButtonText}>{t('videoEditor.splitAtPlayhead')}</Text>
               </LinearGradient>
             </Pressable>
-            <Pressable accessibilityRole="button" style={styles.deleteButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.deleteSelectedSegment')} style={styles.deleteButton}>
               <View style={styles.deleteButtonInner}>
                 <Icon name="trash" size="sm" color={colors.error} />
                 <Text style={styles.deleteButtonText}>{t('videoEditor.deleteSelectedSegment')}</Text>
@@ -321,6 +321,7 @@ export default function VideoEditorScreen() {
             <View style={styles.speedGrid}>
               {SPEED_OPTIONS.map((speed) => (
                 <Pressable accessibilityRole="button"
+                  accessibilityLabel={`${speed}x ${t('videoEditor.speed')}`}
                   key={speed}
                   style={styles.speedButton}
                   onPress={() => setPlaybackSpeed(speed)}
@@ -356,6 +357,7 @@ export default function VideoEditorScreen() {
                   entering={FadeInUp.delay(index * 50).duration(300)}
                 >
                   <Pressable accessibilityRole="button"
+                    accessibilityLabel={t(filter.labelKey)}
                     style={styles.filterButton}
                     onPress={() => setSelectedFilter(filter.id)}
                   >
@@ -380,7 +382,7 @@ export default function VideoEditorScreen() {
         return (
           <View style={styles.toolPanel}>
             <Text style={styles.toolPanelTitle}>{t('videoEditor.addCaption')}</Text>
-            <Pressable accessibilityRole="button" style={styles.addTextButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.addTextOverlay')} style={styles.addTextButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.addTextButtonGradient}
@@ -394,6 +396,7 @@ export default function VideoEditorScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fontScroll}>
               {FONT_OPTION_KEYS.map((font) => (
                 <Pressable accessibilityRole="button"
+                  accessibilityLabel={t(`videoEditor.font.${font}`)}
                   key={font}
                   style={styles.fontButton}
                   onPress={() => setSelectedFont(font)}
@@ -420,6 +423,7 @@ export default function VideoEditorScreen() {
             <View style={styles.colorRow}>
               {TEXT_COLORS.map((color) => (
                 <Pressable accessibilityRole="button"
+                  accessibilityLabel={`${t('videoEditor.textColor')} ${color}`}
                   key={color}
                   style={[
                     styles.colorCircle,
@@ -437,7 +441,7 @@ export default function VideoEditorScreen() {
         return (
           <View style={styles.toolPanel}>
             <Text style={styles.toolPanelTitle}>{t('videoEditor.backgroundMusic')}</Text>
-            <Pressable accessibilityRole="button" style={styles.libraryButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.addFromAudioLibrary')} style={styles.libraryButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.libraryButtonGradient}
@@ -466,7 +470,7 @@ export default function VideoEditorScreen() {
                     <Text style={styles.trackName}>Summer Vibes</Text>
                     <Text style={styles.trackArtist}>by AudioLibrary</Text>
                   </View>
-                  <Pressable accessibilityRole="button" style={styles.removeTrackButton}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.removeTrack')} style={styles.removeTrackButton}>
                     <Icon name="x" size="xs" color={colors.error} />
                   </Pressable>
                 </View>
@@ -542,7 +546,7 @@ export default function VideoEditorScreen() {
             </View>
 
             {/* Playback Speed Badge */}
-            <Pressable accessibilityRole="button" style={styles.speedBadge} onPress={cyclePlaybackSpeed}>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${t('videoEditor.playbackSpeed')} ${playbackSpeed}x`} style={styles.speedBadge} onPress={cyclePlaybackSpeed}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                 style={styles.speedBadgeGradient}
@@ -661,6 +665,7 @@ export default function VideoEditorScreen() {
               { id: 'volume', icon: 'volume-2' as IconName, label: t('videoEditor.volume') },
             ].map((tool) => (
               <Pressable accessibilityRole="button"
+                accessibilityLabel={tool.label}
                 key={tool.id}
                 style={styles.toolTab}
                 onPress={() => setSelectedTool(tool.id as ToolTab)}
@@ -708,6 +713,7 @@ export default function VideoEditorScreen() {
             <View style={styles.qualityButtons}>
               {(['720p', '1080p', '4K'] as QualityOption[]).map((quality) => (
                 <Pressable accessibilityRole="button"
+                  accessibilityLabel={`${t('videoEditor.exportQuality')} ${quality}`}
                   key={quality}
                   style={styles.qualityButton}
                   onPress={() => setSelectedQuality(quality)}
@@ -742,7 +748,7 @@ export default function VideoEditorScreen() {
           colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
           style={styles.bottomBarGradient}
         >
-          <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={() => router.back()}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.export')} style={styles.exportButton} onPress={handleExport} disabled={isExporting}>

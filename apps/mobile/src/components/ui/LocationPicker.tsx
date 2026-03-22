@@ -2,11 +2,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   View, Text, TextInput, StyleSheet,
-  FlatList, Alert,
+  FlatList,
   Pressable,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Icon } from './Icon';
+import { showToast } from './Toast';
 import { BottomSheet, BottomSheetItem } from './BottomSheet';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -97,10 +98,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
-          t('common.permissionDenied'),
-          t('common.locationPermissionRequired'),
-        );
+        showToast({ message: t('common.locationPermissionRequired'), variant: 'warning' });
         return;
       }
       setLoading(true);
@@ -125,7 +123,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
       });
       onClose();
     } catch {
-      Alert.alert(t('common.error'), t('common.locationFetchFailed'));
+      showToast({ message: t('common.locationFetchFailed'), variant: 'error' });
     } finally {
       setLoading(false);
     }

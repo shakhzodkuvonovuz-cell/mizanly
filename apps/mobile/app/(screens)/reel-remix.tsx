@@ -383,6 +383,7 @@ export default function ReelRemixScreen() {
                     <View style={styles.captionTools}>
                       <Pressable
                         accessibilityRole="button"
+                        accessibilityLabel={t('remix.addHashtag')}
                         style={styles.captionToolBtn}
                         onPress={() => setShowAutocomplete('hashtag')}
                       >
@@ -390,6 +391,7 @@ export default function ReelRemixScreen() {
                       </Pressable>
                       <Pressable
                         accessibilityRole="button"
+                        accessibilityLabel={t('remix.addMention')}
                         style={styles.captionToolBtn}
                         onPress={() => setShowAutocomplete('mention')}
                       >
@@ -577,6 +579,7 @@ export default function ReelRemixScreen() {
               ]).map((opt) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={opt.label}
                   key={opt.key}
                   style={styles.layoutBtn}
                   onPress={() => handleLayoutChange(opt.key)}
@@ -654,7 +657,7 @@ export default function ReelRemixScreen() {
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
             <View style={styles.controlsRow}>
               {/* Camera flip */}
-              <Pressable style={styles.controlBtn} onPress={toggleCamera}>
+              <Pressable style={styles.controlBtn} onPress={toggleCamera} accessibilityRole="button" accessibilityLabel={t('remix.flipCamera')}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlBtnGradient}
@@ -664,7 +667,7 @@ export default function ReelRemixScreen() {
               </Pressable>
 
               {/* Record button */}
-              <Pressable style={styles.recordButtonOuter} onPress={toggleRecording}>
+              <Pressable style={styles.recordButtonOuter} onPress={toggleRecording} accessibilityRole="button" accessibilityLabel={isRecording ? t('remix.stopRecording') : t('remix.startRecording')}>
                 <LinearGradient
                   colors={isRecording
                     ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
@@ -684,7 +687,7 @@ export default function ReelRemixScreen() {
               </Pressable>
 
               {/* Flash toggle */}
-              <Pressable style={styles.controlBtn} onPress={toggleFlash}>
+              <Pressable style={styles.controlBtn} onPress={toggleFlash} accessibilityRole="button" accessibilityLabel={flashOn ? t('remix.flashOff') : t('remix.flashOn')}>
                 <LinearGradient
                   colors={flashOn
                     ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']

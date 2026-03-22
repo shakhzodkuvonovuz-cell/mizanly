@@ -182,7 +182,7 @@ export default function AppealModerationScreen() {
               </View>
             </View>
 
-            <Pressable style={styles.guidelinesLink} onPress={() => Linking.openURL('https://mizanly.com/guidelines')}>
+            <Pressable accessibilityRole="link" accessibilityLabel={t('appealModeration.guidelinesText')} style={styles.guidelinesLink} onPress={() => Linking.openURL('https://mizanly.com/guidelines')}>
               <Icon name="link" size="xs" color={colors.emerald} />
               <Text style={styles.guidelinesText}>{t('appealModeration.guidelinesText')}</Text>
             </Pressable>
@@ -210,13 +210,14 @@ export default function AppealModerationScreen() {
             {APPEAL_REASONS.map((reason, index) => (
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={reason.label}
                 key={reason.id}
                 style={[
                   styles.reasonRow,
                   index < APPEAL_REASONS.length - 1 && [styles.reasonRowBorder, { borderBottomColor: tc.border }],
                 ]}
                 onPress={() => setSelectedReason(reason.id)}
-               
+
               >
                 <View
                   style={[
@@ -286,6 +287,8 @@ export default function AppealModerationScreen() {
 
             <View style={styles.evidenceButtons}>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('appealModeration.uploadImage')}
                 style={styles.evidenceButton}
                 onPress={async () => {
                   try {
@@ -307,6 +310,8 @@ export default function AppealModerationScreen() {
               </Pressable>
 
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('appealModeration.uploadDocument')}
                 style={styles.evidenceButton}
                 onPress={() => {
                   showToast({ message: t('appealModeration.documentUploadComingSoon', 'Document upload coming soon'), variant: 'info' });
@@ -328,6 +333,7 @@ export default function AppealModerationScreen() {
                     <Image source={{ uri }} style={styles.evidenceThumbnailImg} />
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t('common.remove')}
                       style={styles.evidenceThumbnailRemove}
                       onPress={() => setEvidenceImages(prev => prev.filter((_, i) => i !== idx))}
                     >
@@ -464,13 +470,14 @@ export default function AppealModerationScreen() {
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} onPress={() => router.back()}>
           <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t('appealModeration.submitAppeal')}
           disabled={isSubmitDisabled || submitAppealMutation.isPending}
-         
+
           onPress={() => submitAppealMutation.mutate()}
         >
           <LinearGradient

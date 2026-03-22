@@ -362,7 +362,7 @@ export class MessagesService {
         ],
       },
       select: { blockerId: true, blockedId: true },
-      take: 5000,
+      take: 1000,
     });
     if (blocks.length > 0) {
       throw new BadRequestException('Cannot create group with blocked users');
@@ -423,7 +423,7 @@ export class MessagesService {
           { blockedId: userId, blockerId: { in: memberIds } },
         ],
       },
-      take: 5000,
+      take: 1000,
     });
     if (blocks.length > 0) throw new BadRequestException('Cannot add blocked users');
 

@@ -232,11 +232,11 @@ export default function SchedulePostScreen() {
                   </LinearGradient>
                 </View>
                 <View style={styles.monthNavigation}>
-                  <Pressable accessibilityRole="button" onPress={() => changeMonth(-1)}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('screens.schedule-post.previousMonth')} onPress={() => changeMonth(-1)}>
                     <Icon name="chevron-left" size="md" color={tc.text.secondary} />
                   </Pressable>
                   <Text style={styles.monthText}>{monthNames[currentMonth]} {currentYear}</Text>
-                  <Pressable accessibilityRole="button" onPress={() => changeMonth(1)}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('screens.schedule-post.nextMonth')} onPress={() => changeMonth(1)}>
                     <Icon name="chevron-right" size="md" color={tc.text.secondary} />
                   </Pressable>
                 </View>
@@ -269,6 +269,7 @@ export default function SchedulePostScreen() {
 
                   return (
                       <Pressable accessibilityRole="button"
+                        accessibilityLabel={`${day}`}
                         key={day}
                         style={styles.calendarDay}
                         onPress={() => !isPast && setSelectedDate(day)}
@@ -298,6 +299,7 @@ export default function SchedulePostScreen() {
               <View style={styles.quickDates}>
                 {quickDates.map((quick) => (
                   <Pressable accessibilityRole="button"
+                    accessibilityLabel={quick.label}
                     key={quick.label}
                     style={styles.quickDateButton}
                     onPress={() => setSelectedDate(quick.day)}
@@ -348,6 +350,7 @@ export default function SchedulePostScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hourScroll}>
                 {hours.map((hour) => (
                   <Pressable accessibilityRole="button"
+                    accessibilityLabel={`${t('screens.schedule-live.hour')} ${hour}`}
                     key={hour}
                     style={styles.timeOptionButton}
                     onPress={() => setSelectedHour(hour)}
@@ -375,6 +378,7 @@ export default function SchedulePostScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.minuteScroll}>
                 {minutes.map((minute) => (
                   <Pressable accessibilityRole="button"
+                    accessibilityLabel={`${t('screens.schedule-live.minute')} ${minute.toString().padStart(2, '0')}`}
                     key={minute}
                     style={styles.timeOptionButton}
                     onPress={() => setSelectedMinute(minute)}
@@ -401,6 +405,7 @@ export default function SchedulePostScreen() {
               <View style={styles.ampmContainer}>
                 {(['AM', 'PM'] as AmPm[]).map((ampm) => (
                   <Pressable accessibilityRole="button"
+                    accessibilityLabel={ampm}
                     key={ampm}
                     style={styles.ampmButton}
                     onPress={() => setSelectedAmPm(ampm)}
@@ -491,10 +496,10 @@ export default function SchedulePostScreen() {
           colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
           style={styles.bottomBarGradient}
         >
-          <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={() => router.back()}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" style={styles.scheduleButton} onPress={handleSchedule} disabled={isScheduling}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('screens.schedule-post.schedule')} style={styles.scheduleButton} onPress={handleSchedule} disabled={isScheduling}>
             <LinearGradient
               colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
               style={styles.scheduleButtonGradient}

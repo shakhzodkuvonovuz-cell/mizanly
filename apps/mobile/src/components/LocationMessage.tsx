@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
-import { View, Text, Pressable, Linking, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, Linking, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
+import { showToast } from '@/components/ui/Toast';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -37,16 +38,10 @@ export function LocationMessage({
       if (supported) {
         await Linking.openURL(mapsUrl);
       } else {
-        Alert.alert(
-          t('location.cannotOpen', 'Cannot Open Maps'),
-          t('location.cannotOpenMessage', 'No maps application is available on this device.'),
-        );
+        showToast({ message: t('location.cannotOpenMessage', 'No maps application is available on this device.'), variant: 'error' });
       }
     } catch {
-      Alert.alert(
-        t('location.openError', 'Error'),
-        t('location.openErrorMessage', 'Could not open the maps application.'),
-      );
+      showToast({ message: t('location.openErrorMessage', 'Could not open the maps application.'), variant: 'error' });
     }
   }, [mapsUrl, haptic, t]);
 

@@ -310,21 +310,21 @@ export class CommunityService {
 
   async getDataExport(userId: string) {
     // GDPR Article 15/20 — users have the right to ALL their data.
-    // Capped at 50K per table to prevent OOM on massive accounts;
+    // Capped at 10K per table to prevent OOM on massive accounts;
     // a true export pipeline would stream to a file.
     const [user, posts, threads, messages] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
       this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
-      take: 50000,
+      take: 10000,
     }),
       this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
-      take: 50000,
+      take: 10000,
     }),
       this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
-      take: 50000,
+      take: 10000,
     }),
     ]);
     return { user, posts, threads, messages, exportedAt: new Date().toISOString() };

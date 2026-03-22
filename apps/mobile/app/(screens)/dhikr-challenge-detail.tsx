@@ -230,8 +230,9 @@ export default function DhikrChallengeDetailScreen() {
               <View style={styles.contributeSection}>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t('dhikr.contribute')}
                   onPress={handleContributeTap}
-                 
+
                   style={styles.contributeCounter}
                 >
                   <LinearGradient
@@ -257,6 +258,7 @@ export default function DhikrChallengeDetailScreen() {
                   />
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={t('common.cancel')}
                     onPress={() => {
                       setShowContribute(false);
                       setContributeCount(0);

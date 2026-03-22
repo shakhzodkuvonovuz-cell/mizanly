@@ -193,6 +193,7 @@ export default function CreateEventScreen() {
         <Animated.View entering={FadeInUp.duration(400)}>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('events.addCoverPhoto')}
             style={[styles.coverContainer, hasCover && styles.coverHasImage]}
             onPress={pickCoverPhoto}
           >
@@ -200,7 +201,7 @@ export default function CreateEventScreen() {
               <>
                 <ProgressiveImage uri={coverUri} width="100%" height={200} contentFit="cover" />
                 <View style={styles.coverOverlay}>
-                  <Pressable style={[styles.changeButton, { backgroundColor: tc.surface }]} onPress={pickCoverPhoto}>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Change cover photo" style={[styles.changeButton, { backgroundColor: tc.surface }]} onPress={pickCoverPhoto}>
                     <Text style={styles.changeText}>{t('common.change')}</Text>
                   </Pressable>
                 </View>
@@ -299,7 +300,7 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.dateTime')}</Text>
             </View>
 
-            <Pressable style={styles.dateRow} onPress={() => setShowDatePicker('start')}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('events.start')} style={styles.dateRow} onPress={() => setShowDatePicker('start')}>
               <Text style={styles.dateLabel}>{t('events.start')}</Text>
               <View style={styles.dateValue}>
                 <Text style={styles.dateText}>{formatDateTime(startDate)}</Text>
@@ -309,7 +310,7 @@ export default function CreateEventScreen() {
 
             <View style={[styles.dateDivider, { backgroundColor: tc.border }]} />
 
-            <Pressable style={styles.dateRow} onPress={() => setShowDatePicker('end')}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('events.end')} style={styles.dateRow} onPress={() => setShowDatePicker('end')}>
               <Text style={styles.dateLabel}>{t('events.end')}</Text>
               <View style={styles.dateValue}>
                 <Text style={styles.dateText}>{formatDateTime(endDate)}</Text>
@@ -387,10 +388,11 @@ export default function CreateEventScreen() {
                 return (
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={eventTypeLabel}
                     key={type}
                     style={styles.pillButton}
                     onPress={() => setEventType(type)}
-                                     >
+                  >
                     {eventType === type ? (
                       <LinearGradient
                         colors={[colors.emerald, colors.emeraldDark]}
@@ -436,10 +438,11 @@ export default function CreateEventScreen() {
                 return (
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={privacyLabel}
                       key={type}
                       style={styles.pillButton}
                       onPress={() => setPrivacy(type)}
-                                         >
+                    >
                       {privacy === type ? (
                         <LinearGradient
                           colors={[colors.emerald, colors.emeraldDark]}
@@ -480,7 +483,7 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.community')}</Text>
             </View>
 
-            <Pressable style={[styles.communityDropdown, { backgroundColor: tc.surface }]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('events.postToCommunity')} style={[styles.communityDropdown, { backgroundColor: tc.surface }]}>
               <Text style={selectedCommunity ? styles.dropdownValue : styles.dropdownPlaceholder}>
                 {selectedCommunity
                   ? communities.find(c => c.id === selectedCommunity)?.name
@@ -510,6 +513,7 @@ export default function CreateEventScreen() {
               communities.map((community, index) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={community.name}
                   key={community.id}
                   style={[
                     styles.communityRow,
@@ -517,7 +521,7 @@ export default function CreateEventScreen() {
                     selectedCommunity === community.id && styles.communityRowSelected,
                   ]}
                   onPress={() => setSelectedCommunity(community.id)}
-                                 >
+                >
                   <Avatar uri={community.avatarUrl} name={community.name} size="sm" />
                   <View style={styles.communityInfo}>
                     <Text style={styles.communityName}>{community.name}</Text>
@@ -587,13 +591,13 @@ export default function CreateEventScreen() {
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
-        <Pressable onPress={async () => {
+        <Pressable accessibilityRole="button" accessibilityLabel={t('events.saveDraft')} onPress={async () => {
           await AsyncStorage.setItem('event-draft', JSON.stringify({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity }));
           showToast({ message: t('common.saved'), variant: 'success' });
         }}>
           <Text style={styles.draftText}>{t('events.saveDraft')}</Text>
         </Pressable>
-        <Pressable onPress={handleSubmit} disabled={submitting}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('events.createEvent')} onPress={handleSubmit} disabled={submitting}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.createButton}
@@ -653,6 +657,8 @@ export default function CreateEventScreen() {
             optionDate.setHours(optionDate.getHours() + option.hours);
             return (
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={option.label}
                 key={option.hours}
                 style={styles.confirmButton}
                 onPress={() => handleDateSelect(optionDate)}

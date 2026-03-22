@@ -99,6 +99,7 @@ function FilterChips({
         return (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={labels[tab]}
             key={tab}
             onPress={() => { haptic.tick(); onChange(tab); }}
             style={[styles.chip, { backgroundColor: tc.surface, borderColor: tc.border }, isActive && styles.chipActive]}
@@ -141,6 +142,7 @@ function DownloadItem({
     <Animated.View entering={FadeInUp.delay(index * 40).duration(350)}>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={(item as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}`}
         style={styles.downloadItem}
         onLongPress={() => onLongPress(item)}
         delayLongPress={400}
@@ -193,22 +195,22 @@ function DownloadItem({
         {/* Action button */}
         <View style={styles.itemAction}>
           {item.status === 'downloading' && (
-            <Pressable onPress={() => onAction(item, 'pause')} style={styles.actionBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('downloads.paused')} onPress={() => onAction(item, 'pause')} style={styles.actionBtn}>
               <Icon name="clock" size="sm" color={tc.text.secondary} />
             </Pressable>
           )}
           {item.status === 'paused' && (
-            <Pressable onPress={() => onAction(item, 'resume')} style={styles.actionBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('downloads.resume')} onPress={() => onAction(item, 'resume')} style={styles.actionBtn}>
               <Icon name="play" size="sm" color={colors.emerald} />
             </Pressable>
           )}
           {item.status === 'failed' && (
-            <Pressable onPress={() => onAction(item, 'retry')} style={styles.actionBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.retry')} onPress={() => onAction(item, 'retry')} style={styles.actionBtn}>
               <Icon name="loader" size="sm" color={colors.gold} />
             </Pressable>
           )}
           {item.status === 'complete' && (
-            <Pressable onPress={() => onAction(item, 'delete')} style={styles.actionBtn}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('downloads.delete')} onPress={() => onAction(item, 'delete')} style={styles.actionBtn}>
               <Icon name="trash" size="sm" color={colors.error} />
             </Pressable>
           )}

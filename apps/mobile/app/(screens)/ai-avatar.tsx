@@ -87,6 +87,8 @@ export default function AiAvatarScreen() {
           </Text>
         </View>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('ai.avatar.setProfile')}
           style={styles.setProfileBtn}
           onPress={() => {
             setProfileMutation.mutate(item.avatarUrl);
@@ -127,6 +129,7 @@ export default function AiAvatarScreen() {
               {STYLES.map((style) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t(style.label)}
                   key={style.id}
                   onPress={() => { setSelectedStyle(style.id); haptic.tick(); }}
                   style={[styles.styleCard, { borderColor: tc.border, backgroundColor: tc.bgCard }, selectedStyle === style.id && { borderColor: style.color }]}
@@ -149,6 +152,7 @@ export default function AiAvatarScreen() {
             )}
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('ai.avatar.generate')}
               onPress={() => generateMutation.mutate()}
               disabled={generateMutation.isPending || !user?.avatarUrl}
               style={[styles.generateBtn, (generateMutation.isPending || !user?.avatarUrl) && { opacity: 0.5 }]}

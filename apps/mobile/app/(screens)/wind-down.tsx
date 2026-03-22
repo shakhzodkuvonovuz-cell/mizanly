@@ -132,6 +132,7 @@ export default function WindDownScreen() {
             />
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('windDown.continueScrolling')}
               style={styles.closeBtn}
               onPress={() => {
                 haptic.navigate();

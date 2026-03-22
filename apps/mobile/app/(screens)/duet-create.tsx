@@ -30,6 +30,8 @@ function SimpleSlider({ value, onValueChange, fillColor = colors.emerald, trackC
   return (
     <Pressable
       accessibilityRole="adjustable"
+      accessibilityLabel="Volume slider"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}
       onLayout={(e) => { trackWidth.current = e.nativeEvent.layout.width; }}
       onPress={(e) => {
         if (trackWidth.current <= 0) return;
@@ -382,6 +384,7 @@ export default function DuetCreateScreen() {
                   { id: 'react', icon: 'user' as IconName, label: t('duet.layoutReact') },
                 ].map((layout) => (
                   <Pressable accessibilityRole="button"
+                    accessibilityLabel={layout.label}
                     key={layout.id}
                     style={styles.layoutButton}
                     onPress={() => { haptic.tick(); setLayoutMode(layout.id as LayoutMode); }}
@@ -441,7 +444,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.controlsContainer}>
               {/* Flip Camera */}
-              <Pressable accessibilityRole="button" style={styles.controlButton} onPress={() => { haptic.tick(); setFacing(f => f === 'front' ? 'back' : 'front'); }}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Flip camera" style={styles.controlButton} onPress={() => { haptic.tick(); setFacing(f => f === 'front' ? 'back' : 'front'); }}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlButtonGradient}
@@ -451,7 +454,7 @@ export default function DuetCreateScreen() {
               </Pressable>
 
               {/* Record Button */}
-              <Pressable accessibilityRole="button" style={styles.recordButton} onPress={handleRecord}>
+              <Pressable accessibilityRole="button" accessibilityLabel={isRecording ? "Stop recording" : "Start recording"} style={styles.recordButton} onPress={handleRecord}>
                 <LinearGradient
                   colors={isRecording
                     ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
@@ -472,6 +475,7 @@ export default function DuetCreateScreen() {
 
               {/* Flash Toggle */}
               <Pressable accessibilityRole="button"
+                accessibilityLabel={flashOn ? "Turn flash off" : "Turn flash on"}
                 style={styles.controlButton}
                 onPress={() => { haptic.tick(); setFlashOn(!flashOn); }}
               >
@@ -510,6 +514,7 @@ export default function DuetCreateScreen() {
                   </View>
                   <Text style={styles.audioTitle}>{t('duet.audioSettings')}</Text>
                   <Pressable accessibilityRole="button"
+                    accessibilityLabel={isMuted ? t('duet.muted') : t('duet.muteOriginal')}
                     style={[styles.muteButton, { backgroundColor: tc.surface }, isMuted && styles.muteButtonActive]}
                     onPress={() => setIsMuted(!isMuted)}
                   >
@@ -550,6 +555,7 @@ export default function DuetCreateScreen() {
           {/* Next Button */}
           <Animated.View entering={FadeInUp.delay(350).duration(400)}>
             <Pressable accessibilityRole="button"
+              accessibilityLabel={t('common.next')}
               style={styles.nextButton}
               onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '' } })}
             >

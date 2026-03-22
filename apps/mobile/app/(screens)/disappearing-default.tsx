@@ -176,6 +176,7 @@ function DisappearingDefaultContent() {
                   ]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={option.label}
                 >
                   <View style={styles.optionTextContainer}>
                     <Text style={[styles.optionLabel, { color: tc.text.primary }, isSelected && styles.optionLabelSelected]}>

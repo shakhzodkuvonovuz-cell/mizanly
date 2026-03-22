@@ -174,7 +174,7 @@ function CalendarDay({
 
   if (hasEvent && onPress) {
     return (
-      <Pressable accessibilityRole="button" onPress={onPress}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${day}`} onPress={onPress}>
         {content}
       </Pressable>
     );
@@ -351,7 +351,7 @@ export default function IslamicCalendarScreen() {
             >
               {/* Month Header */}
               <View style={styles.monthHeader}>
-                <Pressable accessibilityRole="button" onPress={handlePrevMonth} style={styles.monthNavButton}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={handlePrevMonth} style={styles.monthNavButton}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.monthNavGradient}
@@ -365,7 +365,7 @@ export default function IslamicCalendarScreen() {
                   <Text style={[styles.monthTitle, { color: tc.text.secondary }]}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
                 </View>
 
-                <Pressable accessibilityRole="button" onPress={handleNextMonth} style={styles.monthNavButton}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={handleNextMonth} style={styles.monthNavButton}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.monthNavGradient}
@@ -446,7 +446,7 @@ export default function IslamicCalendarScreen() {
 
           {/* Quick Links */}
           <View style={styles.quickLinks}>
-            <Pressable accessibilityRole="button" style={styles.quickLink} onPress={() => navigate('/(screens)/prayer-times')}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.islamicCalendar.prayerTimes')} style={styles.quickLink} onPress={() => navigate('/(screens)/prayer-times')}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                 style={styles.quickLinkGradient}
@@ -456,7 +456,7 @@ export default function IslamicCalendarScreen() {
               </LinearGradient>
             </Pressable>
 
-            <Pressable accessibilityRole="button" style={styles.quickLink} onPress={() => navigate('/(screens)/quran-share')}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('screens.islamicCalendar.quran')} style={styles.quickLink} onPress={() => navigate('/(screens)/quran-share')}>
               <LinearGradient
                 colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
                 style={styles.quickLinkGradient}

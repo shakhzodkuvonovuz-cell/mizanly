@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Share,
-  Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +14,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -114,7 +114,7 @@ function CampaignScreenContent() {
       >
         {/* Campaign image */}
         {campaign.imageUrl ? (
-          <Image source={{ uri: campaign.imageUrl }} style={styles.campaignImage} />
+          <ProgressiveImage uri={campaign.imageUrl} width="100%" height={200} borderRadius={radius.lg} style={styles.campaignImageMargin} />
         ) : (
           <View style={[styles.imagePlaceholder, { backgroundColor: tc.bgCard }]}>
             <Icon name="heart" size="xl" color={colors.emerald} />
@@ -197,10 +197,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
   },
   // Image
-  campaignImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: radius.lg,
+  campaignImageMargin: {
     marginBottom: spacing.base,
   },
   imagePlaceholder: {

@@ -55,12 +55,12 @@ function ContactRow({
         colors={colors.gradient.cardDark}
         style={styles.row}
       >
-        <Pressable accessibilityRole="button" onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
+        <Pressable accessibilityRole="button" accessibilityLabel={user.displayName} onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
           <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
         </Pressable>
 
         <View style={styles.info}>
-          <Pressable accessibilityRole="button" onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`@${user.username}`} onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
             <View style={styles.nameRow}>
               <Text style={[styles.name, { color: tc.text.primary }]} numberOfLines={1}>{user.displayName}</Text>
               {user.isVerified && <VerifiedBadge size={13} />}
@@ -71,7 +71,7 @@ function ContactRow({
 
         <View style={styles.actionCol}>
           {user.isFollowing ? (
-            <Pressable accessibilityRole="button" onPress={onToggleFollow} disabled={followLoading} style={[styles.followingBtn, { borderColor: tc.border }]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('contactSync.following')} onPress={onToggleFollow} disabled={followLoading} style={[styles.followingBtn, { borderColor: tc.border }]}>
               <Text style={[styles.followingText, { color: tc.text.secondary }]}>{t('contactSync.following')}</Text>
             </Pressable>
           ) : (

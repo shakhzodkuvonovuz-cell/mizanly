@@ -473,7 +473,7 @@ export class SearchService {
     const myFollowing = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
-      take: 5000,
+      take: 1000,
     });
     const myFollowingIds = myFollowing.map((f) => f.followingId);
 

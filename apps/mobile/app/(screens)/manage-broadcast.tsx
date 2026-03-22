@@ -154,6 +154,7 @@ export default function ManageBroadcastScreen() {
         </View>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t('screens.manage-broadcast.manageSubscriber')}
           onPress={() => handleAction(item)}
         >
           <LinearGradient

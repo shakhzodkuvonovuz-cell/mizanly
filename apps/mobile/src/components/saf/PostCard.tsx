@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Alert, Share, Pressable } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -120,7 +121,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       haptic.success();
     },
     onError: () => {
-      Alert.alert(tr('common.error'), tr('saf.couldNotShareAsStory'));
+      showToast({ message: tr('saf.couldNotShareAsStory'), variant: 'error' });
     },
   });
 

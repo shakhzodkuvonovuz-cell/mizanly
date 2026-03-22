@@ -111,6 +111,7 @@ export default function AiAssistantScreen() {
             {TABS.map((tab) => (
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t(tab.label)}
                 key={tab.id}
                 onPress={() => { setActiveTab(tab.id); haptic.tick(); }}
                 style={[styles.tab, { backgroundColor: tc.bgCard, borderColor: tc.border }, activeTab === tab.id && styles.tabActive]}
@@ -150,6 +151,7 @@ export default function AiAssistantScreen() {
           <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.generateSection}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('ai.generate')}
               onPress={handleGenerate}
               disabled={isLoading || (!input.trim() && activeTab !== 'ideas')}
               style={[styles.generateBtn, (isLoading || (!input.trim() && activeTab !== 'ideas')) && { opacity: 0.5 }]}
@@ -182,6 +184,7 @@ export default function AiAssistantScreen() {
                 >
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={t('ai.suggestions')}
                     style={[styles.captionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                     onPress={() => handleCopyCaption(suggestion.caption, i)}
                   >
@@ -209,7 +212,7 @@ export default function AiAssistantScreen() {
             <Animated.View entering={FadeIn.duration(300)} style={styles.results}>
               <View style={styles.hashtagHeader}>
                 <Text style={[styles.resultsTitle, { color: tc.text.secondary }]}>{t('ai.suggestions')}</Text>
-                <Pressable onPress={handleCopyHashtags} style={styles.copyAllBtn}>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('ai.copyAll')} onPress={handleCopyHashtags} style={styles.copyAllBtn}>
                   <Icon name="layers" size="xs" color={colors.emerald} />
                   <Text style={styles.copyAllText}>{t('ai.copyAll')}</Text>
                 </Pressable>
@@ -219,6 +222,7 @@ export default function AiAssistantScreen() {
                   <Animated.View key={tag} entering={FadeInUp.delay(i * 50).duration(200)}>
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={`#${tag}`}
                       style={styles.hashtagChip}
                       onPress={() => { Clipboard.setString(`#${tag}`); haptic.save(); }}
                     >

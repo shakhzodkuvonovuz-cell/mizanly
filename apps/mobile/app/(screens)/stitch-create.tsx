@@ -214,6 +214,7 @@ export default function StitchCreateScreen() {
                 <View style={styles.durationButtons}>
                   {DURATION_OPTIONS.map((duration) => (
                     <Pressable accessibilityRole="button"
+                      accessibilityLabel={t('stitch.originalDuration', { seconds: duration })}
                       key={duration}
                       style={styles.durationButton}
                       onPress={() => { haptic.tick(); setSelectedDuration(duration); }}
@@ -269,6 +270,7 @@ export default function StitchCreateScreen() {
                       entering={FadeInUp.delay(index * 50).duration(300)}
                     >
                       <Pressable accessibilityRole="button"
+                        accessibilityLabel={t(transition.labelKey)}
                         style={styles.transitionButton}
                         onPress={() => { haptic.tick(); setSelectedTransition(transition.id); }}
                       >
@@ -335,7 +337,7 @@ export default function StitchCreateScreen() {
                 {/* Recording Controls */}
                 <View style={styles.recordingControls}>
                   {/* Flip Camera */}
-                  <Pressable accessibilityRole="button" style={styles.controlButtonSmall} onPress={() => { haptic.tick(); setFacing(f => f === 'front' ? 'back' : 'front'); }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('stitch.flipCamera')} style={styles.controlButtonSmall} onPress={() => { haptic.tick(); setFacing(f => f === 'front' ? 'back' : 'front'); }}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.controlButtonGradientSmall}
@@ -345,7 +347,7 @@ export default function StitchCreateScreen() {
                   </Pressable>
 
                   {/* Record Button */}
-                  <Pressable accessibilityRole="button" style={styles.recordButtonSmall} onPress={handleRecord}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={isRecording ? t('stitch.stopRecording') : t('stitch.startRecording')} style={styles.recordButtonSmall} onPress={handleRecord}>
                     <LinearGradient
                       colors={isRecording
                         ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
@@ -366,6 +368,7 @@ export default function StitchCreateScreen() {
 
                   {/* Flash Toggle */}
                   <Pressable accessibilityRole="button"
+                    accessibilityLabel={flashOn ? t('stitch.flashOff') : t('stitch.flashOn')}
                     style={styles.controlButtonSmall}
                     onPress={() => { haptic.tick(); setFlashOn(!flashOn); }}
                   >
@@ -453,6 +456,7 @@ export default function StitchCreateScreen() {
 
                 {/* Play Preview Button */}
                 <Pressable accessibilityRole="button"
+                  accessibilityLabel={t('stitch.playPreview')}
                   style={styles.playPreviewButton}
                   onPress={() => setShowPreview(true)}
                 >
@@ -478,10 +482,10 @@ export default function StitchCreateScreen() {
             colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
             style={styles.bottomBarGradient}
           >
-            <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={() => router.back()}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" style={styles.nextButton} onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '' } })}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.next')} style={styles.nextButton} onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '' } })}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.nextButtonGradient}

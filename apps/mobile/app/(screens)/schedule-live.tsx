@@ -244,12 +244,12 @@ export default function ScheduleLiveScreen() {
               {thumbnail ? (
                 <View style={styles.thumbnailPreview}>
                   <ProgressiveImage uri={thumbnail.uri} width="100%" height={200} />
-                  <Pressable style={styles.removeThumbnail} onPress={removeThumbnail}>
+                  <Pressable style={styles.removeThumbnail} onPress={removeThumbnail} accessibilityRole="button" accessibilityLabel={t('screens.schedule-live.removeThumbnail')}>
                     <Icon name="x" size={12} color="#fff" />
                   </Pressable>
                 </View>
               ) : (
-                <Pressable style={styles.thumbnailPlaceholder} onPress={pickThumbnail}>
+                <Pressable style={styles.thumbnailPlaceholder} onPress={pickThumbnail} accessibilityRole="button" accessibilityLabel={t('screens.schedule-live.addThumbnail')}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                     style={styles.thumbnailIconBg}
@@ -272,6 +272,7 @@ export default function ScheduleLiveScreen() {
               <Text style={styles.inputLabel}>{t('screens.schedule-live.scheduleTimeLabel')}</Text>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('screens.schedule-live.scheduleTimeLabel')}
                 style={styles.dateSelector}
                 onPress={() => setShowDatePicker(true)}
               >
@@ -307,6 +308,7 @@ export default function ScheduleLiveScreen() {
               {dayOptions.map((day, idx) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={day.label}
                   key={idx}
                   style={[styles.pickerChip, selectedDayIndex === idx && styles.pickerChipActive]}
                   onPress={() => setSelectedDayIndex(idx)}
@@ -326,6 +328,7 @@ export default function ScheduleLiveScreen() {
               {HOURS.map((hour) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={`${t('screens.schedule-live.hour')} ${hour.toString().padStart(2, '0')}`}
                   key={hour}
                   style={[styles.pickerChip, selectedHour === hour && styles.pickerChipActive]}
                   onPress={() => setSelectedHour(hour)}
@@ -345,6 +348,7 @@ export default function ScheduleLiveScreen() {
               {MINUTES.map((minute) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={`${t('screens.schedule-live.minute')} ${minute.toString().padStart(2, '0')}`}
                   key={minute}
                   style={[styles.pickerChip, selectedMinute === minute && styles.pickerChipActive]}
                   onPress={() => setSelectedMinute(minute)}

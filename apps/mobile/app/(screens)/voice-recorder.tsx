@@ -235,6 +235,15 @@ export default function VoiceRecorderScreen() {
 
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={
+                  isRecording
+                    ? t('screens.voiceRecorder.tapToStop')
+                    : isPlaying
+                      ? t('screens.voiceRecorder.tapToStopPlayback')
+                      : isRecorded
+                        ? t('screens.voiceRecorder.tapToListen')
+                        : t('screens.voiceRecorder.tapToStart')
+                }
                 style={s.recordButtonWrap}
                 onPress={isRecording ? stop : isPlaying ? stopPlay : isRecorded ? play : start}
               >

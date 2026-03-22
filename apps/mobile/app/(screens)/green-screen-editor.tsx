@@ -211,6 +211,7 @@ export default function GreenScreenEditorScreen() {
               >
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t(`screens.greenScreen.color.${color.name}`)}
                   style={[
                     styles.colorCircle,
                     { backgroundColor: color.color },
@@ -239,6 +240,7 @@ export default function GreenScreenEditorScreen() {
               >
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t(`screens.greenScreen.gradient.${gradient.name}`)}
                   style={[
                     styles.gradientPreview,
                     selectedGradient === gradient.name && styles.gradientPreviewActive
@@ -275,6 +277,7 @@ export default function GreenScreenEditorScreen() {
               >
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t(`screens.greenScreen.bg.${image.name}`)}
                   style={styles.imageCard}
                   onPress={() => setSelectedBackground(image.name)}
                 >
@@ -302,6 +305,7 @@ export default function GreenScreenEditorScreen() {
               >
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={t(`screens.greenScreen.bg.${video.name}`)}
                   style={styles.videoCard}
                   onPress={() => setSelectedBackground(video.name)}
                 >
@@ -323,7 +327,7 @@ export default function GreenScreenEditorScreen() {
       case 'custom':
         return (
           <View style={styles.customContainer}>
-            <Pressable style={styles.uploadButton} onPress={handlePickImage}>
+            <Pressable style={styles.uploadButton} onPress={handlePickImage} accessibilityRole="button" accessibilityLabel={t('screens.greenScreen.uploadImage')}>
               <LinearGradient
                 colors={colors.gradient.cardDark}
                 style={[styles.uploadButtonGradient, styles.uploadButtonDashed]}
@@ -339,7 +343,7 @@ export default function GreenScreenEditorScreen() {
               </LinearGradient>
             </Pressable>
 
-            <Pressable style={styles.uploadButton} onPress={handlePickVideo}>
+            <Pressable style={styles.uploadButton} onPress={handlePickVideo} accessibilityRole="button" accessibilityLabel={t('screens.greenScreen.uploadVideo')}>
               <LinearGradient
                 colors={colors.gradient.cardDark}
                 style={[styles.uploadButtonGradient, styles.uploadButtonDashed]}
@@ -425,6 +429,7 @@ export default function GreenScreenEditorScreen() {
                   {/* Record Button Overlay */}
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={isRecording ? t('common.stop') : t('screens.greenScreen.record')}
                     style={styles.recordOverlayButton}
                     onPress={handleRecord}
                   >
@@ -455,6 +460,7 @@ export default function GreenScreenEditorScreen() {
                   {/* Record Button Overlay */}
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={isRecording ? t('common.stop') : t('screens.greenScreen.record')}
                     style={styles.recordOverlayButton}
                     onPress={handleRecord}
                   >
@@ -484,6 +490,7 @@ export default function GreenScreenEditorScreen() {
               {categories.map((category) => (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={category.label}
                   key={category.id}
                   style={styles.categoryButton}
                   onPress={() => { haptic.tick(); setSelectedCategory(category.id); }}
@@ -579,10 +586,10 @@ export default function GreenScreenEditorScreen() {
             colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
             style={styles.bottomBarGradient}
           >
-            <Pressable style={styles.cancelButton} onPress={() => router.back()}>
+            <Pressable style={styles.cancelButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable style={styles.applyButton} onPress={() => navigate('/(screens)/camera')}>
+            <Pressable style={styles.applyButton} onPress={() => navigate('/(screens)/camera')} accessibilityRole="button" accessibilityLabel={t('screens.greenScreen.applyAndRecord')}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.applyButtonGradient}
