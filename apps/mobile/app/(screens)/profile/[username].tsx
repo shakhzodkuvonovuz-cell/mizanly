@@ -31,6 +31,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { useAnimatedIcon } from '@/hooks/useAnimatedIcon';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, animation, fontSizeExt, lineHeight, letterSpacing } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
@@ -219,10 +220,25 @@ export default function ProfileScreen() {
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [loadingHighlightId, setLoadingHighlightId] = useState<string | null>(null);
 
+  // Follow button pulse animation
+  const followPulse = useAnimatedIcon('pulse');
+
+  // Sticky tab bar: track the Y offset of the original tab bar
+  const tabBarY = useSharedValue(0);
+  const showStickyTabs = useSharedValue(0);
+  const stickyTabsStyle = useAnimatedStyle(() => ({
+    opacity: showStickyTabs.value,
+    transform: [{ translateY: showStickyTabs.value === 1 ? 0 : -50 }],
+  }));
+
   // Parallax scroll tracking
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (e) => { scrollY.value = e.contentOffset.y; },
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+      // Show sticky tabs when scrolled past the original tab bar
+      showStickyTabs.value = e.contentOffset.y >= tabBarY.value && tabBarY.value > 0 ? 1 : 0;
+    },
   });
 
   const coverAnimStyle = useAnimatedStyle(() => ({
@@ -304,7 +320,10 @@ export default function ProfileScreen() {
       if (!profile) return Promise.reject(new Error('Profile not loaded'));
       return isFollowing ? followsApi.unfollow(profile.id) : followsApi.follow(profile.id);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', username] }),
+    onSuccess: () => {
+      if (!isFollowing) followPulse.trigger();
+      queryClient.invalidateQueries({ queryKey: ['profile', username] });
+    },
   });
 
   const blockMutation = useMutation({
@@ -503,11 +522,13 @@ export default function ProfileScreen() {
           </View>
         ) : (
           <View style={[styles.actionBtns, { flexDirection: rtlFlexRow(isRTL) }]}>
-            <FollowButton
-              isFollowing={isFollowing}
-              isPending={followMutation.isPending}
-              onPress={() => { haptic.follow(); followMutation.mutate(); }}
-            />
+            <Animated.View style={followPulse.animatedStyle}>
+              <FollowButton
+                isFollowing={isFollowing}
+                isPending={followMutation.isPending}
+                onPress={() => { haptic.follow(); followMutation.mutate(); }}
+              />
+            </Animated.View>
             <Pressable
               style={styles.msgBtn}
               onPress={async () => {
@@ -703,14 +724,19 @@ export default function ProfileScreen() {
       )}
 
       {/* Tabs */}
-      <TabSelector
-        tabs={isOwnProfile ? [
-          ...PROFILE_TABS,
-          { key: 'liked', label: t('profile.liked') },
-        ] : PROFILE_TABS}
-        activeKey={activeTab}
-        onTabChange={(key) => { haptic.tick(); setActiveTab(key as Tab); }}
-      />
+      <View
+        onLayout={(e) => { tabBarY.value = e.nativeEvent.layout.y; }}
+        style={[styles.tabBarBg, { backgroundColor: tc.bg }]}
+      >
+        <TabSelector
+          tabs={isOwnProfile ? [
+            ...PROFILE_TABS,
+            { key: 'liked', label: t('profile.liked') },
+          ] : PROFILE_TABS}
+          activeKey={activeTab}
+          onTabChange={(key) => { haptic.tick(); setActiveTab(key as Tab); }}
+        />
+      </View>
     </View>
   );
 
@@ -803,6 +829,19 @@ export default function ProfileScreen() {
     <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
+
+      {/* Sticky tab bar — appears when original tabs scroll out of view */}
+      <Animated.View pointerEvents="box-none" style={[styles.stickyTabBar, { backgroundColor: tc.bg, borderBottomColor: tc.border }, stickyTabsStyle]}>
+        <TabSelector
+          tabs={isOwnProfile ? [
+            ...PROFILE_TABS,
+            { key: 'liked', label: t('profile.liked') },
+          ] : PROFILE_TABS}
+          activeKey={activeTab}
+          onTabChange={(key) => { haptic.tick(); setActiveTab(key as Tab); }}
+        />
+      </Animated.View>
+
       <Animated.FlatList
         key={activeTab === 'threads' ? 'list' : 'grid'}
         removeClippedSubviews={true}
@@ -1012,6 +1051,15 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     position: 'absolute', top: 8, right: 8,
     backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: radius.full,
     padding: 4,
+  },
+  tabBarBg: { },
+  stickyTabBar: {
+    position: 'absolute',
+    top: 44,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    borderBottomWidth: 0.5,
   },
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 2 },
