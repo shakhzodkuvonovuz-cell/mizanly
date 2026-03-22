@@ -1,24 +1,26 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  RefreshControl, Dimensions,
+  Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
+import { formatCount } from '@/utils/formatCount';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { reelTemplatesApi } from '@/services/reelTemplatesApi';
@@ -86,7 +88,7 @@ export default function ReelTemplatesScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<TabKey>('trending');
@@ -134,12 +136,12 @@ export default function ReelTemplatesScreen() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleCardPress = useCallback((template: ReelTemplate) => {
-    haptic.light();
+    haptic.tick();
     setSelectedTemplate((prev) => (prev?.id === template.id ? null : template));
   }, [haptic]);
 
   const handleUseTemplate = useCallback((template: ReelTemplate) => {
-    haptic.light();
+    haptic.navigate();
     reelTemplatesApi.use(template.id).catch(() => {
       // silently increment use count
     });
@@ -171,10 +173,11 @@ export default function ReelTemplatesScreen() {
           {/* Thumbnail */}
           <View style={styles.cardImageWrap}>
             {item.sourceReel?.thumbnailUrl ? (
-              <Image
-                source={{ uri: item.sourceReel.thumbnailUrl }}
-                style={styles.cardImage}
-                contentFit="cover"
+              <ProgressiveImage
+                uri={item.sourceReel.thumbnailUrl}
+                width={CARD_WIDTH}
+                height={CARD_IMAGE_HEIGHT}
+                borderRadius={radius.md}
               />
             ) : (
               <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
@@ -200,9 +203,7 @@ export default function ReelTemplatesScreen() {
             <View style={styles.cardMeta}>
               <Icon name="trending-up" size={12} color={colors.gold} />
               <Text style={styles.cardUseCount}>
-                {item.useCount >= 1000
-                  ? `${(item.useCount / 1000).toFixed(1)}k`
-                  : item.useCount}
+                {formatCount(item.useCount)}
               </Text>
               {item.sourceReel?.user && (
                 <Avatar
@@ -338,8 +339,7 @@ export default function ReelTemplatesScreen() {
             templates.length === 0 && styles.listContentEmpty,
           ]}
           refreshControl={
-            <RefreshControl
-              tintColor={colors.emerald}
+            <BrandedRefreshControl
               refreshing={isRefetching && !isLoading}
               onRefresh={handleRefresh}
             />
