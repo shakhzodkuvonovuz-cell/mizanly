@@ -12,6 +12,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { showToast } from '@/components/ui/Toast';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { stickersApi } from '@/services/api';
@@ -51,7 +53,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
         <Pressable accessibilityRole="button" onPress={onPress}>
           <View style={styles.coverWrap}>
             {coverImage ? (
-              <Image source={{ uri: coverImage }} style={styles.cover} contentFit="cover" />
+              <ProgressiveImage uri={coverImage} width={60} height={60} borderRadius={radius.md} />
             ) : (
               <LinearGradient
                 colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
@@ -138,9 +140,11 @@ function StickerBrowserScreenInner() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sticker-browse'] });
       queryClient.invalidateQueries({ queryKey: ['sticker-featured'] });
+      showToast({ message: t('screens.sticker-browser.packAdded'), variant: 'success' });
     },
     onError: () => {
       haptic.error();
+      showToast({ message: t('screens.sticker-browser.addFailed'), variant: 'error' });
     },
   });
 
@@ -149,9 +153,11 @@ function StickerBrowserScreenInner() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sticker-browse'] });
       queryClient.invalidateQueries({ queryKey: ['sticker-featured'] });
+      showToast({ message: t('screens.sticker-browser.packRemoved'), variant: 'success' });
     },
     onError: () => {
       haptic.error();
+      showToast({ message: t('screens.sticker-browser.removeFailed'), variant: 'error' });
     },
   });
 
@@ -181,7 +187,7 @@ function StickerBrowserScreenInner() {
           {featuredData.map((pack) => (
             <Pressable accessibilityRole="button" key={pack.id} style={styles.featuredCard} onPress={() => setSelectedPack(pack)}>
               {pack.coverUrl ? (
-                <Image source={{ uri: pack.coverUrl }} style={styles.featuredCover} contentFit="cover" />
+                <ProgressiveImage uri={pack.coverUrl} width={120} height={120} borderRadius={radius.md} />
               ) : (
                 <View style={[styles.featuredCover, styles.placeholderCover]}>
                   <Icon name="smile" size={32} color={colors.text.tertiary} />

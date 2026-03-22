@@ -748,7 +748,29 @@
     "spoiler": "Spoiler",
     "tapToReveal": "Görmek için dokun",
     "viewOnce": "Bir kez görüntüle",
-    "viewOnceOpened": "Açıldı"
+    "viewOnceOpened": "Açıldı",
+    "pinnedMessage": "Sabitlenmiş Mesaj",
+    "startConversation": "Sohbeti başlatmak için mesaj gönderin",
+    "editingMessage": "Mesaj düzenleniyor",
+    "slideToCancel": "İptal etmek için kaydırın",
+    "unpinMessage": "Sabitlemeyi Kaldır",
+    "pinMessage": "Mesajı Sabitle",
+    "unstarMessage": "Yıldızı Kaldır",
+    "starMessage": "Mesajı Yıldızla",
+    "reactWith": "Tepki ver",
+    "chatFoldersDescription": "Sohbetlerinizi hızlı erişim için klasörlere düzenleyin",
+    "quickFilters": "Hızlı Filtreler",
+    "customFolders": "Özel Klasörler",
+    "createFolder": "Klasör Oluştur",
+    "newFolder": "Yeni Klasör",
+    "chatCount": "{{count}} sohbet",
+    "folderDeleted": "Klasör silindi",
+    "channels": "Kanallar",
+    "personal": "Kişisel",
+    "icon": "Simge",
+    "noConversationsInFilter": "Sohbet bulunamadı",
+    "noConversationsInFilterSubtitle": "Bu filtreyle eşleşen sohbet yok",
+    "folder": "Klasör"
   },
   "minbar": {
     "home": "Ana Sayfa",
@@ -1340,7 +1362,14 @@
     "streamTitle": "Canlı yayın başlığı",
     "streamDesc": "Canlı yayın açıklaması",
     "questionInput": "Soru girişi",
-    "messages": "Mesajlar"
+    "messages": "Mesajlar",
+    "sharedMedia": "Shared media",
+    "scrollToBottom": "Scroll to bottom"
+  },
+  "gif": {
+    "searchPlaceholder": "Search GIFs...",
+    "search": "Search GIFs",
+    "selectGif": "Select GIF"
   },
   "compose": {
     "whatsOnYourMind": "Aklınızda ne var?",
@@ -1894,7 +1923,11 @@
       "downloads": "indirme",
       "noResults": "Sonuç bulunamadı",
       "noResultsSubtitle": "Farklı bir arama terimi deneyin",
-      "addToCollection": "Koleksiyona Ekle"
+      "addToCollection": "Koleksiyona Ekle",
+      "packAdded": "Sticker pack added",
+      "addFailed": "Failed to add sticker pack",
+      "packRemoved": "Sticker pack removed",
+      "removeFailed": "Failed to remove sticker pack"
     },
     "trending-audio": {
       "title": "Trend Sesler",

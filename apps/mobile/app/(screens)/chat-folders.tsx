@@ -122,6 +122,10 @@ export default function ChatFoldersScreen() {
         <Pressable
           accessibilityRole="button"
           style={[styles.folderCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+          onPress={() => {
+            haptic.navigate();
+            router.push(`/(screens)/chat-folder-view?filter=folder&folderId=${item.id as string}`);
+          }}
           onLongPress={() => { setMenuFolder(item); haptic.longPress(); }}
         >
           <View style={[styles.folderIcon, { backgroundColor: color + '15' }]}>

@@ -799,7 +799,29 @@
     "spoiler": "Spoiler",
     "tapToReveal": "Tap to reveal",
     "viewOnce": "View once",
-    "viewOnceOpened": "Opened"
+    "viewOnceOpened": "Opened",
+    "pinnedMessage": "Pinned Message",
+    "startConversation": "Send a message to start the conversation",
+    "editingMessage": "Editing message",
+    "slideToCancel": "Slide to cancel",
+    "unpinMessage": "Unpin Message",
+    "pinMessage": "Pin Message",
+    "unstarMessage": "Unstar",
+    "starMessage": "Star Message",
+    "reactWith": "React with",
+    "chatFoldersDescription": "Organize your chats into folders for quick access",
+    "quickFilters": "Quick Filters",
+    "customFolders": "Custom Folders",
+    "createFolder": "Create Folder",
+    "newFolder": "New Folder",
+    "chatCount": "{{count}} chats",
+    "folderDeleted": "Folder deleted",
+    "channels": "Channels",
+    "personal": "Personal",
+    "icon": "Icon",
+    "noConversationsInFilter": "No conversations",
+    "noConversationsInFilterSubtitle": "No conversations match this filter",
+    "folder": "Folder"
   },
   "minbar": {
     "home": "Home",
@@ -1341,7 +1363,14 @@
     "streamTitle": "Live stream title",
     "streamDesc": "Live stream description",
     "questionInput": "Question input",
-    "messages": "Messages"
+    "messages": "Messages",
+    "sharedMedia": "Shared media",
+    "scrollToBottom": "Scroll to bottom"
+  },
+  "gif": {
+    "searchPlaceholder": "Search GIFs...",
+    "search": "Search GIFs",
+    "selectGif": "Select GIF"
   },
   "compose": {
     "whatsOnYourMind": "What's on your mind?",
@@ -1895,7 +1924,11 @@
       "downloads": "downloads",
       "noResults": "No results found",
       "noResultsSubtitle": "Try a different search term",
-      "addToCollection": "Add to Collection"
+      "addToCollection": "Add to Collection",
+      "packAdded": "Sticker pack added",
+      "addFailed": "Failed to add sticker pack",
+      "packRemoved": "Sticker pack removed",
+      "removeFailed": "Failed to remove sticker pack"
     },
     "trending-audio": {
       "title": "Trending Audio",

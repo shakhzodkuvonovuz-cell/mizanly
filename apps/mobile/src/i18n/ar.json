@@ -748,7 +748,29 @@
     "useStickersHint": "استخدم بعض الملصقات وستظهر هنا",
     "browseMorePacks": "تصفح المزيد من حزم الملصقات",
     "noStickersInPack": "لا توجد ملصقات في هذه الحزمة",
-    "addMorePacks": "أضف المزيد من حزم الملصقات للبدء"
+    "addMorePacks": "أضف المزيد من حزم الملصقات للبدء",
+    "pinnedMessage": "رسالة مثبتة",
+    "startConversation": "أرسل رسالة لبدء المحادثة",
+    "editingMessage": "تعديل الرسالة",
+    "slideToCancel": "اسحب للإلغاء",
+    "unpinMessage": "إلغاء تثبيت الرسالة",
+    "pinMessage": "تثبيت الرسالة",
+    "unstarMessage": "إلغاء التمييز",
+    "starMessage": "تمييز الرسالة",
+    "reactWith": "تفاعل مع",
+    "chatFoldersDescription": "نظّم محادثاتك في مجلدات للوصول السريع",
+    "quickFilters": "فلاتر سريعة",
+    "customFolders": "مجلدات مخصصة",
+    "createFolder": "إنشاء مجلد",
+    "newFolder": "مجلد جديد",
+    "chatCount": "{{count}} محادثات",
+    "folderDeleted": "تم حذف المجلد",
+    "channels": "القنوات",
+    "personal": "شخصي",
+    "icon": "أيقونة",
+    "noConversationsInFilter": "لا توجد محادثات",
+    "noConversationsInFilterSubtitle": "لا توجد محادثات تطابق هذا الفلتر",
+    "folder": "مجلد"
   },
   "minbar": {
     "home": "الرئيسية",
@@ -1274,7 +1296,14 @@
     "streamTitle": "عنوان البث المباشر",
     "streamDesc": "وصف البث المباشر",
     "questionInput": "حقل إدخال السؤال",
-    "messages": "الرسائل"
+    "messages": "الرسائل",
+    "sharedMedia": "وسائط مشتركة",
+    "scrollToBottom": "انتقل للأسفل"
+  },
+  "gif": {
+    "searchPlaceholder": "البحث عن صور متحركة...",
+    "search": "البحث عن صور متحركة",
+    "selectGif": "اختر صورة متحركة"
   },
   "screens": {
     "followers": {
@@ -1693,7 +1722,11 @@
       "downloads": "تنزيلات",
       "noResults": "لا توجد نتائج",
       "noResultsSubtitle": "جرب كلمة بحث مختلفة",
-      "addToCollection": "إضافة للمجموعة"
+      "addToCollection": "إضافة للمجموعة",
+      "packAdded": "تمت إضافة حزمة الملصقات",
+      "addFailed": "فشل في إضافة حزمة الملصقات",
+      "packRemoved": "تمت إزالة حزمة الملصقات",
+      "removeFailed": "فشل في إزالة حزمة الملصقات"
     },
     "trending-audio": {
       "title": "الأصوات الرائجة",

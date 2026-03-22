@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  Alert, Dimensions,
+  Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser, useAuth } from '@clerk/clerk-expo';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { io, Socket } from 'socket.io-client';
@@ -22,9 +22,12 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { api, callsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import type { CallSession } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -49,10 +52,13 @@ export default function CallScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const userId = user?.id;
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const socketRef = useRef<Socket | null>(null);
   const [callStatus, setCallStatus] = useState<CallStatus>('ringing');
   const [isMuted, setIsMuted] = useState(false);
@@ -82,57 +88,69 @@ export default function CallScreen() {
 
   const answerMutation = useMutation({
     mutationFn: () => callsApi.answer(id),
-    onSuccess: () => setCallStatus('connected'),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onSuccess: () => { setCallStatus('connected'); haptic.success(); },
+    onError: (err: Error) => { showToast({ message: err.message, variant: 'error' }); haptic.error(); },
   });
 
   const endCallMutation = useMutation({
     mutationFn: () => callsApi.end(id),
     onSuccess: () => {
       setCallStatus('ended');
+      haptic.delete();
       router.back();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => { showToast({ message: err.message, variant: 'error' }); haptic.error(); },
   });
 
   const declineMutation = useMutation({
     mutationFn: () => callsApi.decline(id),
     onSuccess: () => {
       setCallStatus('declined');
+      haptic.delete();
       router.back();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => { showToast({ message: err.message, variant: 'error' }); haptic.error(); },
   });
 
-  // Setup socket connection
+  // Setup socket connection with JWT auth (matches /chat namespace pattern)
   useEffect(() => {
-    const socket = io(SOCKET_URL, {
-      transports: ['websocket'],
-      auth: { callId: id },
-    });
+    let mounted = true;
+    const connect = async () => {
+      const token = await getToken();
+      if (!token || !mounted) return;
+      const socket = io(SOCKET_URL, {
+        transports: ['websocket'],
+        auth: { token },
+      });
 
-    socket.on('call_accepted', () => {
-      setCallStatus('connected');
-    });
-    socket.on('call_ended', () => {
-      setCallStatus('ended');
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setTimeout(() => router.back(), 2000);
-    });
-    socket.on('call_ringing', () => {
-      setCallStatus('ringing');
-    });
-    socket.on('call_missed', () => {
-      setCallStatus('missed');
-    });
+      socket.on('call_accepted', () => {
+        setCallStatus('connected');
+      });
+      socket.on('call_ended', () => {
+        setCallStatus('ended');
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setTimeout(() => router.back(), 2000);
+      });
+      socket.on('call_ringing', () => {
+        setCallStatus('ringing');
+      });
+      socket.on('call_missed', () => {
+        setCallStatus('missed');
+      });
 
-    socketRef.current = socket;
+      // Join the call room so signaling events reach this client
+      socket.emit('join_call', { callId: id });
+      socketRef.current = socket;
+    };
+    connect();
 
     return () => {
-      socket.disconnect();
+      mounted = false;
+      socketRef.current?.disconnect();
+      socketRef.current = null;
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [id]);
+  }, [id, getToken]);
 
   // Duration timer
   useEffect(() => {
@@ -154,12 +172,14 @@ export default function CallScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleAnswer = () => answerMutation.mutate();
-  const handleDecline = () => declineMutation.mutate();
-  const handleEndCall = () => endCallMutation.mutate();
-  const toggleMute = () => setIsMuted(!isMuted);
-  const toggleSpeaker = () => setIsSpeaker(!isSpeaker);
-  const toggleCamera = () => setIsFrontCamera(!isFrontCamera);
+  const handleAnswer = () => { haptic.success(); answerMutation.mutate(); };
+  const handleDecline = () => { haptic.delete(); declineMutation.mutate(); };
+  const handleEndCall = () => { haptic.delete(); endCallMutation.mutate(); };
+  // Note: Mute/Speaker/Camera are local UI state only. They will control actual
+  // audio/video tracks once WebRTC (RTCPeerConnection) is wired up with iceConfig.
+  const toggleMute = () => { haptic.tick(); setIsMuted(!isMuted); };
+  const toggleSpeaker = () => { haptic.tick(); setIsSpeaker(!isSpeaker); };
+  const toggleCamera = () => { haptic.tick(); setIsFrontCamera(!isFrontCamera); };
 
   // Pulsing ring animation for ringing state
   const pulseScale = useSharedValue(1);
@@ -201,7 +221,7 @@ export default function CallScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('calls.call')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
@@ -223,10 +243,10 @@ export default function CallScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         {/* Premium gradient background */}
         <LinearGradient
-          colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.8)', colors.dark.bg]}
+          colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.8)', tc.bg]}
           style={styles.gradientBg}
         />
 
@@ -252,10 +272,10 @@ export default function CallScreen() {
           </View>
 
           {/* Name with animated entrance */}
-          <Animated.Text entering={FadeInUp.delay(100).duration(400)} style={styles.name}>
+          <Animated.Text entering={FadeInUp.delay(100).duration(400)} style={[styles.name, { color: tc.text.primary }]}>
             {displayName}
           </Animated.Text>
-          <Animated.Text entering={FadeInUp.delay(150).duration(400)} style={styles.username}>
+          <Animated.Text entering={FadeInUp.delay(150).duration(400)} style={[styles.username, { color: tc.text.secondary }]}>
             @{otherUser?.username}
           </Animated.Text>
 

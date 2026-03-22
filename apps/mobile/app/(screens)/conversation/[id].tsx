@@ -46,6 +46,7 @@ import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
 import { io, Socket } from 'socket.io-client';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { navigate } from '@/utils/navigation';
 
 interface TenorGifResult {
@@ -238,7 +239,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
   }, []);
 
   return (
-    <Pressable style={styles.voicePlayer} onPress={toggle}>
+    <Pressable style={styles.voicePlayer} onPress={toggle} accessibilityRole="button" accessibilityLabel={playing ? 'Pause voice message' : 'Play voice message'}>
       <Icon name={playing ? 'volume-x' : 'play'} size={18} color={isOwn ? '#fff' : colors.emerald} />
       <View style={styles.voiceWaveform}>
         {waveformHeights.map((height, i) => (
@@ -316,7 +317,7 @@ function GifPicker({ visible, onClose, onSelect }: {
             onSubmitEditing={handleSearch}
             returnKeyType="search"
           />
-          <Pressable onPress={handleSearch} style={styles.gifSearchButton}>
+          <Pressable onPress={handleSearch} style={styles.gifSearchButton} accessibilityRole="button" accessibilityLabel={t('gif.search')}>
             <Icon name="search" size="sm" color={colors.text.secondary} />
           </Pressable>
         </View>
@@ -335,6 +336,8 @@ function GifPicker({ visible, onClose, onSelect }: {
               <Pressable
                 style={[styles.gifItem, { backgroundColor: tc.bgElevated }]}
                 onPress={() => onSelect(item.media_formats.gif.url)}
+                accessibilityRole="button"
+                accessibilityLabel={t('gif.selectGif')}
               >
                 <Image
                   source={{ uri: item.media_formats.gif.url }}
@@ -473,6 +476,8 @@ const MessageBubble = memo(function MessageBubble({
           isOwn ? [styles.bubbleOwn, ownRadius, { overflow: 'hidden' as const }] : [styles.bubbleOther, otherRadius],
         ]}
         delayLongPress={300}
+        accessibilityRole="button"
+        accessibilityLabel={`${message.sender.displayName}: ${message.content || t('common.media')}`}
       >
         {isOwn && (
           <LinearGradient
@@ -546,7 +551,7 @@ const MessageBubble = memo(function MessageBubble({
         ) : (
           <>
             {message.mediaUrl && (
-              <Image source={{ uri: message.mediaUrl }} style={styles.bubbleMedia} contentFit="cover" />
+              <ProgressiveImage uri={message.mediaUrl} width={200} height={200} borderRadius={radius.md} style={{ marginBottom: spacing.xs }} accessibilityLabel={t('accessibility.sharedMedia')} />
             )}
             {message.content && (
               <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
@@ -650,12 +655,12 @@ const MessageBubble = memo(function MessageBubble({
                   if (hasOwn) {
                     messagesApi.removeReaction(conversationId, message.id, emoji)
                       .then(handleReactionSuccess)
-                      .catch(() => Alert.alert(t('common.error'), t('errors.removeReactionFailed')))
+                      .catch(() => showToast({ message: t('errors.removeReactionFailed'), variant: 'error' }))
                       .finally(() => setIsReacting(false));
                   } else {
                     messagesApi.reactToMessage(conversationId, message.id, emoji)
                       .then(handleReactionSuccess)
-                      .catch(() => Alert.alert(t('common.error'), t('errors.addReactionFailed')))
+                      .catch(() => showToast({ message: t('errors.addReactionFailed'), variant: 'error' }))
                       .finally(() => setIsReacting(false));
                   }
                 }}
@@ -1478,11 +1483,13 @@ export default function ConversationScreen() {
                   paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
                   borderBottomWidth: 1, borderBottomColor: tc.border,
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('risalah.pinnedMessage')}
               >
                 <Icon name="map-pin" size="xs" color={colors.emerald} />
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
                   <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs }}>
-                    Pinned Message
+                    {t('risalah.pinnedMessage')}
                   </Text>
                   <Text numberOfLines={1} style={{ color: colors.text.primary, fontSize: fontSize.sm }}>
                     {pinnedMessage.content}
@@ -1521,7 +1528,7 @@ export default function ConversationScreen() {
               <View style={styles.emptyWrap}>
                 <Avatar uri={avatarUri} name={name} size="2xl" />
                 <Text style={styles.emptyName}>{name}</Text>
-                <Text style={styles.emptyHint}>Send a message to start the conversation</Text>
+                <Text style={styles.emptyHint}>{t('risalah.startConversation')}</Text>
               </View>
             )}
             contentContainerStyle={styles.messageList}
@@ -1580,7 +1587,7 @@ export default function ConversationScreen() {
           {editingMsg && (
             <View style={[styles.replyBanner, { backgroundColor: tc.bgElevated }]}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>Editing message</Text>
+                <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.editingMessage')}</Text>
                 <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs }} numberOfLines={1}>
                   {editingMsg.content}
                 </Text>
@@ -1736,7 +1743,7 @@ export default function ConversationScreen() {
                 <View style={styles.recordingDot} />
                 <Text style={styles.recordingTimer}>{formatRecordingTime(recordingTime)}</Text>
               </View>
-              <Text style={styles.slideCancelHint}>Slide to cancel</Text>
+              <Text style={styles.slideCancelHint}>{t('risalah.slideToCancel')}</Text>
             </View>
           )}
         </View>
@@ -1764,7 +1771,7 @@ export default function ConversationScreen() {
                       queryClient.invalidateQueries({ queryKey: ['messages', id] });
                       haptic.like();
                     })
-                    .catch(() => Alert.alert(t('common.error'), t('errors.addReactionFailed')));
+                    .catch(() => showToast({ message: t('errors.addReactionFailed'), variant: 'error' }));
                 }
                 setContextMenuMsg(null);
               }}
@@ -1811,7 +1818,7 @@ export default function ConversationScreen() {
           }}
         />
         <BottomSheetItem
-          label={contextMenuMsg?.isPinned ? 'Unpin Message' : 'Pin Message'}
+          label={contextMenuMsg?.isPinned ? t('risalah.unpinMessage') : t('risalah.pinMessage')}
           icon={<Icon name="map-pin" size="sm" color={contextMenuMsg?.isPinned ? colors.error : colors.text.primary} />}
           onPress={() => {
             if (contextMenuMsg) {
@@ -1829,7 +1836,7 @@ export default function ConversationScreen() {
           }}
         />
         <BottomSheetItem
-          label={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? 'Unstar' : 'Star Message'}
+          label={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? t('risalah.unstarMessage') : t('risalah.starMessage')}
           icon={<Icon name="bookmark" size="sm" color={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? colors.gold : colors.text.primary} />}
           onPress={() => {
             if (contextMenuMsg) {
@@ -1911,7 +1918,7 @@ export default function ConversationScreen() {
       {/* Forward picker */}
       <BottomSheet visible={!!forwardMsg} onClose={() => setForwardMsg(null)}>
         <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600', padding: spacing.base }}>
-          Forward to...
+          {t('risalah.forwardTo')}
         </Text>
         {conversationsQuery.isLoading ? (
           <View style={{ padding: spacing.base, gap: spacing.sm }}>
@@ -1934,7 +1941,7 @@ export default function ConversationScreen() {
                   });
                   setForwardMsg(null);
                   haptic.success();
-                  Alert.alert(t('messages.forwarded'), t('messages.forwardedSuccess', { name: conversationName(conv, user?.id, t) }));
+                  showToast({ message: t('messages.forwardedSuccess', { name: conversationName(conv, user?.id, t) }), variant: 'success' });
                 }
               }}
             />
@@ -1952,7 +1959,7 @@ export default function ConversationScreen() {
         snapPoint={180}
       >
         <View style={styles.reactionPicker}>
-          <Text style={styles.reactionPickerTitle}>React with</Text>
+          <Text style={styles.reactionPickerTitle}>{t('risalah.reactWith')}</Text>
           <View style={styles.reactionGrid}>
             {['❤️', '👍', '😂', '😮', '😢', '🤲'].map((emoji) => (
               <Pressable
@@ -1964,8 +1971,9 @@ export default function ConversationScreen() {
                     messagesApi.reactToMessage(id, contextMenuMsg.id, emoji)
                       .then(() => {
                         queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                        haptic.like();
                       })
-                      .catch(() => Alert.alert(t('common.error'), t('errors.addReactionFailed')));
+                      .catch(() => showToast({ message: t('errors.addReactionFailed'), variant: 'error' }));
                   }
                   setShowReactionPicker(false);
                   setContextMenuMsg(null);

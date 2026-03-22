@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  Linking,
+  Linking, useWindowDimensions,
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,6 +9,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import { BLURHASH_POST } from '@/utils/blurhash';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,6 +19,7 @@ import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
@@ -67,7 +69,7 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
 
   return (
     <AnimatedPressable
-      style={[styles.mediaItem, animatedStyle]}
+      style={[styles.mediaItem, { backgroundColor: tc.bgCard }, animatedStyle]}
       onPress={item.type === 'image' ? onImagePress : onVideoPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
@@ -76,9 +78,11 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
     >
       <Image
         source={{ uri: item.url }}
+        placeholder={{ blurhash: BLURHASH_POST }}
         style={styles.mediaThumbnail}
         contentFit="cover"
-        transition={200}
+        transition={300}
+        recyclingKey={item.url}
         accessibilityLabel={item.type === 'image' ? t('conversationMedia.accessibility.imageShared') : t('conversationMedia.accessibility.videoThumbnail')}
         accessibilityRole="image"
       />
@@ -113,6 +117,7 @@ export default function ConversationMediaScreen() {
   const conversationId = params.id || params.conversationId;
   const router = useRouter();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [activeTab, setActiveTab] = useState<TabKey>('media');
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
@@ -357,7 +362,7 @@ export default function ConversationMediaScreen() {
         <TabSelector
           tabs={tabs}
           activeKey={activeTab}
-          onTabChange={(key: string) => setActiveTab(key as TabKey)}
+          onTabChange={(key: string) => { haptic.tick(); setActiveTab(key as TabKey); }}
           variant="underline"
           style={[styles.tabSelector, { borderBottomColor: tc.border }]}
         />
@@ -453,7 +458,6 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: radius.md,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgCard,
   },
   mediaThumbnail: {
     width: '100%',
