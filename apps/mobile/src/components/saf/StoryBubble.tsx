@@ -76,9 +76,8 @@ export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: 
         uri={user.avatarUrl}
         name={user.displayName}
         size="lg"
-        showStoryRing={hasUnread}
-        showRing={!hasUnread && !isOwn}
-        ringColor={hasUnread ? colors.emerald : tc.borderLight}
+        showStoryRing={group.stories.length > 0}
+        storyViewed={!hasUnread}
       />
       {isOwn && (
         <Animated.View style={[styles.addBtn, { borderColor: tc.bg }, pulseStyle]}>

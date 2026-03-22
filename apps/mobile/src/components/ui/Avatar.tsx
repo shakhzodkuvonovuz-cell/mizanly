@@ -1,14 +1,19 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   withSpring,
+  withRepeat,
+  withTiming,
+  withSequence,
   useSharedValue,
+  Easing,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, avatar as avatarSizes, animation, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { imagePresets } from '@/utils/image';
 import { BLURHASH_AVATAR } from '@/utils/blurhash';
 
@@ -22,6 +27,8 @@ interface AvatarProps {
   ringColor?: string;
   showOnline?: boolean;
   showStoryRing?: boolean;
+  /** When true, story ring renders as static gray (viewed). Default: false. */
+  storyViewed?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
   /** Per-content blurhash string from API. Falls back to default avatar blurhash. */
@@ -38,16 +45,61 @@ export const Avatar = memo(function Avatar({
   ringColor,
   showOnline,
   showStoryRing,
+  storyViewed = false,
   onPress,
   accessibilityLabel,
   blurhash,
 }: AvatarProps) {
   const tc = useThemeColors();
+  const reducedMotion = useReducedMotion();
   const dim = avatarSizes[size];
   const textSize = dim * 0.4;
   // Use CDN-optimized image sized to the avatar dimension
   const optimizedUri = uri ? imagePresets.avatar(uri, dim <= 64 ? 'sm' : dim <= 128 ? 'md' : 'lg') : undefined;
   const scale = useSharedValue(1);
+
+  // Ring rotation for unseen stories (continuous, like Instagram)
+  const ringRotation = useSharedValue(0);
+
+  useEffect(() => {
+    if (showStoryRing && !storyViewed && !reducedMotion) {
+      ringRotation.value = 0;
+      ringRotation.value = withRepeat(
+        withTiming(1, { duration: 3000, easing: Easing.linear }),
+        -1, // infinite
+        false, // no reverse
+      );
+    } else {
+      ringRotation.value = 0;
+    }
+  }, [showStoryRing, storyViewed, reducedMotion, ringRotation]);
+
+  const ringAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${ringRotation.value * 360}deg` }],
+  }));
+
+  // Online dot pulse animation
+  const onlinePulse = useSharedValue(1);
+
+  useEffect(() => {
+    if (showOnline && !reducedMotion) {
+      onlinePulse.value = 1;
+      onlinePulse.value = withRepeat(
+        withSequence(
+          withTiming(1.3, { duration: 1000 }),
+          withTiming(1, { duration: 1000 }),
+        ),
+        -1, // infinite
+        false, // no reverse — sequence already goes up then down
+      );
+    } else {
+      onlinePulse.value = 1;
+    }
+  }, [showOnline, reducedMotion, onlinePulse]);
+
+  const onlinePulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: onlinePulse.value }],
+  }));
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -66,52 +118,89 @@ export const Avatar = memo(function Avatar({
   const innerDim = dim - (ringWidth + ringPadding) * 2;
   const onlineDotSize = Math.max(10, dim * 0.22);
 
+  /** Renders the avatar image or fallback initials */
+  const renderAvatarContent = (contentDim: number) =>
+    uri ? (
+      <Image
+        source={{ uri: optimizedUri }}
+        style={[styles.img, { width: contentDim, height: contentDim, borderRadius: radius.full }]}
+        contentFit="cover"
+        placeholder={{ blurhash: blurhash ?? BLURHASH_AVATAR }}
+        transition={300}
+      />
+    ) : (
+      <Text style={[styles.fallback, { fontSize: textSize, color: tc.text.primary }]}>
+        {name?.[0]?.toUpperCase() ?? '?'}
+      </Text>
+    );
+
   const content = (
     <>
-      {showStoryRing ? (
-        <LinearGradient
-          colors={[colors.goldLight, colors.emerald, colors.emeraldDark]}
-          start={{ x: 0.2, y: 1 }}
-          end={{ x: 0.8, y: 0 }}
+      {showStoryRing && !storyViewed ? (
+        /* Unseen story: rotating emerald→gold gradient ring */
+        <Animated.View style={[{ width: dim, height: dim }, ringAnimatedStyle]}>
+          <LinearGradient
+            colors={[colors.goldLight, colors.emerald, colors.emeraldDark]}
+            start={{ x: 0.2, y: 1 }}
+            end={{ x: 0.8, y: 0 }}
+            style={[
+              styles.ringGradient,
+              {
+                width: dim,
+                height: dim,
+                borderRadius: radius.full,
+                padding: ringWidth,
+              },
+            ]}
+          >
+            <View style={[styles.ringInner, { borderRadius: radius.full, backgroundColor: tc.bg }]}>
+              <View
+                style={[
+                  styles.inner,
+                  {
+                    width: innerDim,
+                    height: innerDim,
+                    borderRadius: radius.full,
+                    backgroundColor: tc.surface,
+                  },
+                ]}
+              >
+                {renderAvatarContent(innerDim)}
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+      ) : showStoryRing && storyViewed ? (
+        /* Viewed story: static gray ring */
+        <View
           style={[
-            styles.ringGradient,
+            styles.wrap,
             {
               width: dim,
               height: dim,
               borderRadius: radius.full,
-              padding: ringWidth,
+              borderWidth: ringWidth,
+              borderColor: tc.text.tertiary,
+              padding: ringPadding,
             },
           ]}
         >
-          <View style={[styles.ringInner, { borderRadius: radius.full, backgroundColor: tc.bg }]}>
-            <View
-              style={[
-                styles.inner,
-                {
-                  width: innerDim,
-                  height: innerDim,
-                  borderRadius: radius.full,
-                  backgroundColor: tc.surface,
-                },
-              ]}
-            >
-              {uri ? (
-                <Image
-                  source={{ uri: optimizedUri }}
-                  style={[styles.img, { width: innerDim, height: innerDim, borderRadius: radius.full }]}
-                  contentFit="cover"
-                  placeholder={{ blurhash: blurhash ?? BLURHASH_AVATAR }}
-                  transition={300}
-                />
-              ) : (
-                <Text style={[styles.fallback, { fontSize: textSize, color: tc.text.primary }]}>
-                  {name?.[0]?.toUpperCase() ?? '?'}
-                </Text>
-              )}
-            </View>
+          <View
+            style={[
+              styles.inner,
+              {
+                width: innerDim,
+                height: innerDim,
+                borderRadius: radius.full,
+                backgroundColor: tc.surface,
+              },
+            ]}
+          >
+            {renderAvatarContent(innerDim)}
           </View>
-        </LinearGradient>
+        </View>
       ) : (
+        /* No story ring: plain avatar (with optional showRing border) */
         <View
           style={[
             styles.wrap,
@@ -157,7 +246,7 @@ export const Avatar = memo(function Avatar({
       )}
 
       {showOnline && (
-        <View
+        <Animated.View
           style={[
             styles.onlineDot,
             {
@@ -166,9 +255,10 @@ export const Avatar = memo(function Avatar({
               borderRadius: radius.full,
               borderWidth: Math.max(2, onlineDotSize * 0.2),
               borderColor: tc.bg,
-              bottom: showRing ? 0 : -1,
-              right: showRing ? 0 : -1,
+              bottom: showRing || showStoryRing ? 0 : -1,
+              right: showRing || showStoryRing ? 0 : -1,
             },
+            onlinePulseStyle,
           ]}
         />
       )}
