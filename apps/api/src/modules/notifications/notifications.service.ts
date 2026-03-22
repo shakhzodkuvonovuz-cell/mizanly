@@ -39,6 +39,10 @@ export class NotificationsService {
             isVerified: true,
           },
         },
+        post: { select: { id: true, thumbnailUrl: true, mediaUrls: true } },
+        reel: { select: { id: true, thumbnailUrl: true } },
+        thread: { select: { id: true, mediaUrls: true } },
+        video: { select: { id: true, thumbnailUrl: true } },
       },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -47,8 +51,26 @@ export class NotificationsService {
 
     const hasMore = notifications.length > limit;
     const items = hasMore ? notifications.slice(0, limit) : notifications;
+
+    // Compute isFollowing for each actor so the client can show follow-back buttons
+    const actorIds = [...new Set(items.map((n) => n.actorId).filter(Boolean))] as string[];
+    const followedActors = actorIds.length > 0
+      ? await this.prisma.follow.findMany({
+          where: { followerId: userId, followingId: { in: actorIds } },
+          select: { followingId: true },
+        })
+      : [];
+    const followingSet = new Set(followedActors.map((f) => f.followingId));
+
+    const enrichedItems = items.map((n) => ({
+      ...n,
+      actor: n.actor
+        ? { ...n.actor, isFollowing: followingSet.has(n.actor.id) }
+        : n.actor,
+    }));
+
     return {
-      data: items,
+      data: enrichedItems,
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
   }

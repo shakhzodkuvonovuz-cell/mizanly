@@ -1170,6 +1170,8 @@
     "viewContent": "İçeriği görüntüle"
   },
   "settings": {
+    "title": "Ayarlar",
+    "searchSettings": "Ayarlarda ara...",
     "settings": "Ayarlar",
     "account": "Hesap",
     "privacy": "Gizlilik",

@@ -1171,6 +1171,8 @@
     "viewContent": "View content"
   },
   "settings": {
+    "title": "Settings",
+    "searchSettings": "Search settings...",
     "settings": "Settings",
     "account": "Account",
     "privacy": "Privacy",

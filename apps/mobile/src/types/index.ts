@@ -472,12 +472,17 @@ export interface Notification {
   reelId?: string;
   videoId?: string;
   followRequestId?: string;
+  conversationId?: string;
   title?: string;
   body?: string;
   isRead: boolean;
   readAt?: string;
   createdAt: string;
   actor?: User;
+  post?: { id: string; thumbnailUrl?: string; mediaUrls?: string[] };
+  reel?: { id: string; thumbnailUrl?: string };
+  thread?: { id: string; mediaUrls?: string[] };
+  video?: { id: string; thumbnailUrl?: string };
 }
 
 // ── Search ──

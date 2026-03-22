@@ -1170,6 +1170,8 @@
     "viewContent": "عرض المحتوى"
   },
   "settings": {
+    "title": "الإعدادات",
+    "searchSettings": "البحث في الإعدادات...",
     "settings": "الإعدادات",
     "account": "Account",
     "privacy": "الخصوصية",

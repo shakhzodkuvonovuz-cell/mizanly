@@ -29,6 +29,7 @@ describe('NotificationsService', () => {
               create: jest.fn(),
               count: jest.fn(),
             },
+            follow: { findMany: jest.fn().mockResolvedValue([]) },
             block: { findFirst: jest.fn().mockResolvedValue(null) },
             mute: { findFirst: jest.fn().mockResolvedValue(null) },
             settings: { findUnique: jest.fn().mockResolvedValue(null) },
@@ -63,6 +64,7 @@ describe('NotificationsService', () => {
         {
           id: 'notif-1',
           userId,
+          actorId: 'actor-1',
           type: 'LIKE',
           isRead: false,
           createdAt: new Date(),
@@ -73,9 +75,14 @@ describe('NotificationsService', () => {
             avatarUrl: 'https://example.com/avatar.jpg',
             isVerified: false,
           },
+          post: null,
+          reel: null,
+          thread: null,
+          video: null,
         },
       ];
       prisma.notification.findMany.mockResolvedValue(mockNotifications);
+      prisma.follow.findMany.mockResolvedValue([]);
 
       const result = await service.getNotifications(userId);
 
@@ -91,12 +98,53 @@ describe('NotificationsService', () => {
               isVerified: true,
             },
           },
+          post: { select: { id: true, thumbnailUrl: true, mediaUrls: true } },
+          reel: { select: { id: true, thumbnailUrl: true } },
+          thread: { select: { id: true, mediaUrls: true } },
+          video: { select: { id: true, thumbnailUrl: true } },
         },
         take: 31,
         orderBy: { createdAt: 'desc' },
       });
-      expect(result.data).toEqual(mockNotifications.slice(0, 30));
+      // Actor should be enriched with isFollowing: false
+      expect(result.data[0].actor).toEqual({
+        ...mockNotifications[0].actor,
+        isFollowing: false,
+      });
       expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should enrich actor with isFollowing: true when user follows them', async () => {
+      const userId = 'user-123';
+      const mockNotifications = [
+        {
+          id: 'notif-1',
+          userId,
+          actorId: 'actor-1',
+          type: 'FOLLOW',
+          isRead: false,
+          createdAt: new Date(),
+          actor: {
+            id: 'actor-1',
+            username: 'actor1',
+            displayName: 'Actor One',
+            avatarUrl: null,
+            isVerified: false,
+          },
+          post: null,
+          reel: null,
+          thread: null,
+          video: null,
+        },
+      ];
+      prisma.notification.findMany.mockResolvedValue(mockNotifications);
+      prisma.follow.findMany.mockResolvedValue([{ followingId: 'actor-1' }]);
+
+      const result = await service.getNotifications(userId);
+
+      expect(result.data[0].actor).toEqual(
+        expect.objectContaining({ isFollowing: true }),
+      );
     });
 
     it('should apply mentions filter', async () => {

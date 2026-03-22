@@ -16,8 +16,10 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
+import { showToast } from '@/components/ui/Toast';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
-import { colors, spacing, fontSize, radius, lineHeight, letterSpacing } from '@/theme';
+import { colors, spacing, fontSize, radius, lineHeight, letterSpacing, fonts } from '@/theme';
 import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
@@ -74,6 +76,16 @@ function notificationTarget(n: Notification): string | null {
   if (n.commentId && n.postId) return `/(screens)/post/${n.postId}`;
   if (n.conversationId) return `/(screens)/conversation/${n.conversationId}`;
   if (n.actor?.username) return `/(screens)/profile/${n.actor.username}`;
+  return null;
+}
+
+/** Extract a thumbnail URL from nested content relations */
+function getContentThumbnail(n: Notification): string | null {
+  if (n.post?.thumbnailUrl) return n.post.thumbnailUrl;
+  if (n.post?.mediaUrls?.[0]) return n.post.mediaUrls[0];
+  if (n.reel?.thumbnailUrl) return n.reel.thumbnailUrl;
+  if (n.video?.thumbnailUrl) return n.video.thumbnailUrl;
+  if (n.thread?.mediaUrls?.[0]) return n.thread.mediaUrls[0];
   return null;
 }
 
@@ -202,6 +214,14 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
+  const followMutation = useMutation({
+    mutationFn: (userId: string) => followsApi.follow(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      showToast({ message: t('notifications.followed'), variant: 'success' });
+    },
+  });
+
   const handlePress = () => {
     haptic.navigate();
     if (!notification.isRead) readMutation.mutate();
@@ -214,6 +234,9 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
   // Check if this is an aggregated like notification
   const isAggregated = notification._aggregatedCount && notification._aggregatedCount > 1;
   const aggregatedActors = notification._aggregatedActors ?? [];
+
+  // Content thumbnail for likes/comments/mentions on posts/reels/videos/threads
+  const thumbnailUrl = getContentThumbnail(notification);
 
   return (
     <Pressable
@@ -283,6 +306,27 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
           <Text style={styles.rowTime}>{timeAgo}</Text>
         </View>
 
+        {/* Follow-back button for FOLLOW notifications */}
+        {notification.type === 'FOLLOW' && !notification.actor?.isFollowing && notification.actor?.id && (
+          <Pressable
+            onPress={() => {
+              followMutation.mutate(notification.actor!.id);
+              haptic.follow();
+            }}
+            style={[styles.followBackBtn, { backgroundColor: colors.emerald }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('notifications.followBack')}
+          >
+            <Text style={styles.followBackText}>{t('common.follow')}</Text>
+          </Pressable>
+        )}
+        {notification.type === 'FOLLOW' && notification.actor?.isFollowing && (
+          <View style={[styles.followingBadge, { backgroundColor: tc.surface }]}>
+            <Text style={[styles.followingText, { color: tc.text.secondary }]}>{t('common.following')}</Text>
+          </View>
+        )}
+
+        {/* Follow request actions */}
         {notification.type === 'FOLLOW_REQUEST' && !notification.isRead && (
           <FollowRequestActions
             requestId={notification.followRequestId}
@@ -291,6 +335,22 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
               queryClient.invalidateQueries({ queryKey: ['notifications'] });
             }}
           />
+        )}
+
+        {/* Content thumbnail on the right */}
+        {thumbnailUrl && notification.type !== 'FOLLOW' && notification.type !== 'FOLLOW_REQUEST' && (
+          <Pressable
+            onPress={handlePress}
+            style={styles.notifThumb}
+            accessibilityLabel={t('notifications.viewContent')}
+          >
+            <ProgressiveImage
+              uri={thumbnailUrl}
+              width={44}
+              height={44}
+              borderRadius={radius.sm}
+            />
+          </Pressable>
         )}
       </Animated.View>
     </Pressable>
@@ -523,4 +583,29 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
 
   requestDone: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   requestActions: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center' },
+
+  notifThumb: {
+    marginLeft: spacing.sm,
+  },
+  followBackBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.sm,
+    marginLeft: spacing.sm,
+  },
+  followBackText: {
+    color: '#fff',
+    fontSize: fontSize.sm,
+    fontFamily: fonts.bodyBold,
+  },
+  followingBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.sm,
+    marginLeft: spacing.sm,
+  },
+  followingText: {
+    fontSize: fontSize.sm,
+    fontFamily: fonts.bodyMedium,
+  },
 });
