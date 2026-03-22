@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  RefreshControl, TextInput, Alert,
+  RefreshControl, TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import { searchApi, parentalApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import type { User } from '@/types';
 
@@ -55,7 +56,7 @@ export default function LinkChildAccountScreen() {
       router.back();
     },
     onError: (err: Error) => {
-      Alert.alert(t('common.error'), err.message);
+      showToast({ message: err.message, variant: 'error' });
     },
   });
 
@@ -83,7 +84,7 @@ export default function LinkChildAccountScreen() {
         } else {
           haptic.error();
           setConfirmPin('');
-          Alert.alert(t('parentalControls.pinMismatch'), t('parentalControls.pinMismatchMessage'));
+          showToast({ message: t('parentalControls.pinMismatchMessage'), variant: 'error' });
         }
       }
     } else {

@@ -35,6 +35,7 @@ import { liveApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -163,7 +164,7 @@ export default function LiveViewerScreen() {
       queryClient.invalidateQueries({ queryKey: ['live-participants', id] });
     },
     onError: (err: Error) => {
-      Alert.alert(t('common.error'), err.message || t('screens.live.joinError'));
+      showToast({ message: err.message || t('screens.live.joinError'), variant: 'error' });
     },
   });
 
@@ -236,7 +237,7 @@ export default function LiveViewerScreen() {
       });
     } catch (error: unknown) {
       if (error instanceof Error && error.message) {
-        Alert.alert(t('screens.live.errorSharing'), error.message);
+        showToast({ message: error.message, variant: 'error' });
       }
     }
   }, [live?.id, live?.title]);

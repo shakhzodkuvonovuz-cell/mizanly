@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, Alert } from 'react-native';
+// Note: Alert kept for destructive delete confirmation only
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';

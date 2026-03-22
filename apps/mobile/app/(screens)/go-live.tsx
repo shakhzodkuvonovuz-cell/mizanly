@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
-  Alert, Switch, Platform,
+  Switch, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -116,7 +116,7 @@ export default function GoLiveScreen() {
     if (!canGoLive) return;
     // WebRTC not yet installed — only scheduled streams are supported
     if (!isScheduled) {
-      Alert.alert(t('common.comingSoon'), t('live.liveNotAvailable'));
+      showToast({ message: t('live.liveNotAvailable'), variant: 'info' });
       return;
     }
     createMutation.mutate();

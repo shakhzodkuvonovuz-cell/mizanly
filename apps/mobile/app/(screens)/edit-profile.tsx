@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Alert, Switch, Platform, KeyboardAvoidingView,
+  ScrollView, Switch, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
@@ -80,13 +80,13 @@ export default function EditProfileScreen() {
       setShowAddLink(false);
       queryClient.invalidateQueries({ queryKey: ['profile-links'] });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const deleteLinkMutation = useMutation({
     mutationFn: (id: string) => profileLinksApi.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile-links'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   // Seed form from loaded profile

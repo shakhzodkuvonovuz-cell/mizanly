@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Alert,
+  FlatList,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
@@ -20,6 +20,7 @@ import type { FollowRequest } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 function RequestRow({
   request,
@@ -103,13 +104,13 @@ export default function FollowRequestsScreen() {
   const acceptMutation = useMutation({
     mutationFn: (id: string) => followsApi.acceptRequest(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-requests'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const declineMutation = useMutation({
     mutationFn: (id: string) => followsApi.declineRequest(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-requests'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const [refreshing, setRefreshing] = useState(false);

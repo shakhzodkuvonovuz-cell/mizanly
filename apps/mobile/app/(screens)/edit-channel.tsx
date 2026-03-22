@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Alert } from 'react-native';
+// Note: Alert kept for destructive unsaved-changes discard confirmation only
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -117,13 +118,13 @@ export default function EditChannelScreen() {
         haptic.tick();
       }
     } catch (e) {
-      Alert.alert(t('common.error'), t('screens.editChannel.failedToPickImage'));
+      showToast({ message: t('screens.editChannel.failedToPickImage'), variant: 'error' });
     }
   };
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert(t('screens.editChannel.required'), t('screens.editChannel.pleaseEnterName'));
+      showToast({ message: t('screens.editChannel.pleaseEnterName'), variant: 'error' });
       return;
     }
     // NOTE (Finding 27): avatarUrl may be a local file:// URI from the picker.

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, Alert,
+  View, Text, StyleSheet, TextInput,
   KeyboardAvoidingView, Platform, ScrollView, RefreshControl,
   Pressable,
 } from 'react-native';
@@ -21,6 +21,7 @@ import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { videosApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import type { EndScreen } from '@/types';
 import type { IconName } from '@/components/ui/Icon';
 
@@ -120,10 +121,10 @@ export default function EndScreenEditorScreen() {
       }))),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['end-screens', videoId] });
-      Alert.alert(t('endScreens.saved'));
+      showToast({ message: t('endScreens.saved'), variant: 'success' });
       router.back();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleAddItem = useCallback(() => {
@@ -148,7 +149,7 @@ export default function EndScreenEditorScreen() {
   const handleSave = useCallback(() => {
     const invalid = items.find((item) => !item.label.trim());
     if (invalid) {
-      Alert.alert(t('common.error'), t('endScreens.labelRequired'));
+      showToast({ message: t('endScreens.labelRequired'), variant: 'error' });
       return;
     }
     saveMutation.mutate();

@@ -6,7 +6,6 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Alert,
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -26,6 +25,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -131,19 +131,19 @@ export default function EnableTipsScreen() {
     haptic.save();
     // Tip settings are saved locally. Backend persistence requires Stripe Connect integration.
     // Show feedback that settings are saved locally.
-    Alert.alert(
-      t('screens.enableTips.savedTitle', 'Settings Saved'),
-      t('screens.enableTips.savedLocallyMessage', 'Your tip preferences are saved on this device. They will sync to your account once payment processing is connected.'),
-    );
+    showToast({
+      message: t('screens.enableTips.savedLocallyMessage', 'Your tip preferences are saved on this device. They will sync to your account once payment processing is connected.'),
+      variant: 'success',
+    });
   }, [haptic, t]);
 
   const handleConnectPayment = useCallback(() => {
     haptic.tick();
     // Stripe Connect onboarding is required before creators can receive tips.
-    Alert.alert(
-      t('screens.enableTips.connectRequiredTitle', 'Payment Setup Required'),
-      t('screens.enableTips.connectRequiredMessage', 'Stripe Connect integration is being set up. You will be notified when you can connect your payment account to start receiving tips.'),
-    );
+    showToast({
+      message: t('screens.enableTips.connectRequiredMessage', 'Stripe Connect integration is being set up. You will be notified when you can connect your payment account to start receiving tips.'),
+      variant: 'info',
+    });
   }, [haptic, t]);
 
   return (
