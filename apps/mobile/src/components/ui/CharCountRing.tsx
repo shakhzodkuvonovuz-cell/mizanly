@@ -1,6 +1,18 @@
+import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withSpring,
+  interpolateColor,
+} from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { colors } from '@/theme';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface CharCountRingProps {
   current: number;
@@ -14,15 +26,70 @@ const SHOW_AT = 0.7;
 
 export function CharCountRing({ current, max, size = 28 }: CharCountRingProps) {
   const ratio = Math.min(current / max, 1);
+  const prevRatioRef = useRef(ratio);
+
+  // Animated progress value
+  const animatedRatio = useSharedValue(ratio);
+  const scaleValue = useSharedValue(1);
+
+  useEffect(() => {
+    if (ratio < SHOW_AT) {
+      animatedRatio.value = ratio;
+      return;
+    }
+
+    // Animate progress change
+    animatedRatio.value = withTiming(ratio, { duration: 200 });
+
+    // Pulse when hitting the limit
+    if (ratio >= 1 && prevRatioRef.current < 1) {
+      scaleValue.value = withSequence(
+        withSpring(1.25, { damping: 6, stiffness: 300 }),
+        withSpring(1, { damping: 10, stiffness: 200 }),
+      );
+    }
+
+    prevRatioRef.current = ratio;
+  }, [ratio, animatedRatio, scaleValue]);
+
   if (ratio < SHOW_AT) return null;
 
   const remaining = max - current;
-  const offset = CIRCUMFERENCE * (1 - ratio);
+
+  // Compute color based on ratio for the static text
   const color = ratio >= 1 ? colors.error : ratio >= 0.9 ? colors.gold : colors.emerald;
 
+  // Animated stroke dashoffset and color
+  const animatedProps = useAnimatedProps(() => {
+    const offset = CIRCUMFERENCE * (1 - animatedRatio.value);
+    // Interpolate color: emerald -> gold -> red
+    const strokeColor =
+      animatedRatio.value >= 1
+        ? colors.error
+        : animatedRatio.value >= 0.9
+          ? interpolateColor(
+              animatedRatio.value,
+              [0.9, 1],
+              [colors.gold, colors.error],
+            )
+          : interpolateColor(
+              animatedRatio.value,
+              [SHOW_AT, 0.9],
+              [colors.emerald, colors.gold],
+            );
+    return {
+      strokeDashoffset: offset,
+      stroke: strokeColor,
+    };
+  });
+
+  const containerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleValue.value }],
+  }));
+
   return (
-    <View
-      style={[styles.wrap, { width: size, height: size }]}
+    <Animated.View
+      style={[styles.wrap, { width: size, height: size }, containerStyle]}
       accessibilityLabel={`${remaining} characters remaining`}
       accessibilityRole="text"
     >
@@ -33,22 +100,21 @@ export function CharCountRing({ current, max, size = 28 }: CharCountRingProps) {
           strokeWidth={2.5}
           fill="none"
         />
-        <Circle
+        <AnimatedCircle
           cx={14} cy={14} r={R}
-          stroke={color}
           strokeWidth={2.5}
           fill="none"
           strokeDasharray={CIRCUMFERENCE}
-          strokeDashoffset={offset}
           strokeLinecap="round"
           rotation={-90}
           origin="14,14"
+          animatedProps={animatedProps}
         />
       </Svg>
       {ratio >= 0.9 && (
         <Text style={[styles.count, { color }]}>{remaining}</Text>
       )}
-    </View>
+    </Animated.View>
   );
 }
 

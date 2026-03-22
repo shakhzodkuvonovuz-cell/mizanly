@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withRepeat } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
@@ -63,6 +64,7 @@ export default function AudioRoomScreen() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const { t } = useTranslation();
+  const [reactionsSheetVisible, setReactionsSheetVisible] = useState(false);
 
   const pulseAnim = useSharedValue(1);
 
@@ -209,6 +211,44 @@ export default function AudioRoomScreen() {
     } catch (err) {
       Alert.alert(t('common.error'), t('audioRoom.failedToAcceptHand'));
     }
+  };
+
+  const handleDeclineHand = async (userId: string) => {
+    if (!room) return;
+    try {
+      await audioRoomsApi.changeRole(room.id, { userId, role: 'listener' });
+      fetchData();
+    } catch (err) {
+      Alert.alert(t('common.error'), t('audioRoom.failedToDeclineHand'));
+    }
+  };
+
+  const handleEndRoom = () => {
+    if (!room) return;
+    Alert.alert(
+      t('audioRoom.endRoomTitle'),
+      t('audioRoom.endRoomConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('audioRoom.endRoomButton'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await audioRoomsApi.delete(room.id);
+              router.back();
+            } catch (err) {
+              Alert.alert(t('common.error'), t('audioRoom.failedToEndRoom'));
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleReaction = (emoji: string) => {
+    setReactionsSheetVisible(false);
+    // Reactions are visual-only in audio rooms; future: emit via socket
   };
 
   // Loading skeleton
@@ -442,7 +482,7 @@ export default function AudioRoomScreen() {
                         <Text style={styles.acceptText}>{t('common.accept')}</Text>
                       </LinearGradient>
                     </Pressable>
-                    <Pressable>
+                    <Pressable onPress={() => handleDeclineHand(hand.userId)} accessibilityRole="button">
                       <Text style={styles.declineText}>{t('common.decline')}</Text>
                     </Pressable>
                   </View>
@@ -496,7 +536,11 @@ export default function AudioRoomScreen() {
             </Pressable>
 
             {/* Reactions */}
-            <Pressable style={styles.controlButton}>
+            <Pressable
+              accessibilityRole="button"
+              style={styles.controlButton}
+              onPress={() => setReactionsSheetVisible(true)}
+            >
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.controlButtonInner}
@@ -516,13 +560,33 @@ export default function AudioRoomScreen() {
             </Pressable>
           </LinearGradient>
 
-          {/* End Room (Host Only - Mock) */}
-          <Pressable style={styles.endRoomButton}>
-            <Text style={styles.endRoomText}>End Room</Text>
+          {/* End Room (Host Only) */}
+          <Pressable
+            accessibilityRole="button"
+            style={styles.endRoomButton}
+            onPress={handleEndRoom}
+          >
+            <Text style={styles.endRoomText}>{t('audioRoom.endRoom')}</Text>
           </Pressable>
         </View>
+        {/* Reactions BottomSheet */}
+        <BottomSheet visible={reactionsSheetVisible} onClose={() => setReactionsSheetVisible(false)}>
+          <View style={styles.reactionsGrid}>
+            {['🔥', '❤️', '👏', '😂', '🤲', '💯', '🎉', '👍'].map((emoji) => (
+              <Pressable
+                key={emoji}
+                accessibilityRole="button"
+                accessibilityLabel={`React with ${emoji}`}
+                style={styles.reactionButton}
+                onPress={() => handleReaction(emoji)}
+              >
+                <Text style={styles.reactionEmoji}>{emoji}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </BottomSheet>
       </SafeAreaView>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -839,5 +903,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontFamily: fonts.medium,
     color: colors.error,
+  },
+  reactionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    padding: spacing.xl,
+  },
+  reactionButton: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionEmoji: {
+    fontSize: 28,
   },
 });

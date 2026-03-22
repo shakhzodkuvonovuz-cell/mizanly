@@ -1563,6 +1563,23 @@
       "loadErrorSubtitle": "Please pull to refresh",
       "urlPlaceholder": "URL (https://...)"
     },
+    "bookmarkFolders": {
+      "title": "Bookmark Folders",
+      "emptyTitle": "No bookmark folders",
+      "emptySubtitle": "Save bookmarks to folders to organize them",
+      "createFolderButton": "Create Folder",
+      "createFolderLabel": "Create new folder",
+      "createSheetTitle": "New Folder",
+      "collectionCreatedHint": "Save a bookmark to this folder name and it will appear here automatically.",
+      "folderNamePlaceholder": "Folder name",
+      "createButton": "Create",
+      "emptyNameError": "Folder name cannot be empty",
+      "deleteAlertTitle": "Delete Folder",
+      "deleteAlertMessage": "All bookmarks in this folder will be moved to the default collection.",
+      "deleteButton": "Delete",
+      "deleteFailed": "Failed to delete folder",
+      "itemsCount": "{{count}} items"
+    },
     "saved": {
       "title": "Saved",
       "tabPosts": "Posts",
@@ -3432,5 +3449,37 @@
     "categoryEducation": "Education",
     "categoryFoodBank": "Food Bank",
     "categoryCleanup": "Cleanup"
+  },
+  "audioRoom": {
+    "failedToLoad": "Failed to load audio room",
+    "failedToToggleMute": "Failed to toggle mute",
+    "failedToRaiseHand": "Failed to raise hand",
+    "failedToLeaveRoom": "Failed to leave room",
+    "failedToAcceptHand": "Failed to accept hand",
+    "failedToDeclineHand": "Failed to decline hand",
+    "failedToEndRoom": "Failed to end room",
+    "endRoom": "End Room",
+    "endRoomTitle": "End Room",
+    "endRoomConfirm": "Are you sure you want to end this room? All participants will be disconnected.",
+    "endRoomButton": "End Room",
+    "hostedBy": "Hosted by @{{username}}",
+    "live": "LIVE",
+    "listening": "{{count}} listening",
+    "started": "Started {{timeAgo}}",
+    "speakers": "Speakers",
+    "listeners": "Listeners",
+    "raisedHands": "Raised Hands"
+  },
+  "video": {
+    "title": "Video",
+    "notFound": "Video not found",
+    "notFoundSubtitle": "This video may have been removed or is no longer available",
+    "chapters": "Chapters",
+    "showChapters": "Show chapters",
+    "hideChapters": "Hide chapters",
+    "nowPlaying": "NOW",
+    "options": "Options",
+    "saveToPlaylist": "Save to Playlist",
+    "upNext": "Up Next"
   }
 }

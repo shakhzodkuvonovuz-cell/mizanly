@@ -90,6 +90,85 @@ function ChapterMarker({ chapter, index, total, currentProgress, videoDuration, 
   );
 }
 
+// Up Next recommended videos section (extracted to avoid Rules of Hooks issues)
+function UpNextSection({ videoId, tc }: { videoId: string; tc: ReturnType<typeof useThemeColors> }) {
+  const styles = createStyles(tc);
+  const router = useRouter();
+  const { t } = useTranslation();
+
+  const suggestedQuery = useQuery({
+    queryKey: ['video-suggested', videoId],
+    queryFn: () => videosApi.getRecommended(videoId, 5),
+    enabled: !!videoId,
+  });
+
+  const suggested = suggestedQuery.data ?? [];
+
+  if (suggestedQuery.isLoading) {
+    return (
+      <View style={styles.upNextSection}>
+        <Text style={styles.upNextTitle}>{t('video.upNext')}</Text>
+        {[1, 2, 3].map(i => (
+          <View key={i} style={styles.upNextSkeletonRow}>
+            <Skeleton.Rect width={120} height={68} borderRadius={radius.sm} />
+            <View style={{ flex: 1, gap: spacing.xs }}>
+              <Skeleton.Rect width="90%" height={14} borderRadius={radius.sm} />
+              <Skeleton.Rect width="60%" height={12} borderRadius={radius.sm} />
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (suggested.length === 0) return null;
+
+  return (
+    <View style={styles.upNextSection}>
+      <Text style={styles.upNextTitle}>{t('video.upNext')}</Text>
+      {suggested.map((video) => (
+        <Pressable
+          key={video.id}
+          style={styles.upNextItem}
+          onPress={() => router.push(`/(screens)/video/${video.id}`)}
+          accessibilityLabel={video.title}
+          accessibilityRole="button"
+        >
+          <View style={styles.upNextThumbnail}>
+            {video.thumbnailUrl ? (
+              <Animated.Image
+                source={{ uri: video.thumbnailUrl }}
+                style={styles.upNextThumbnailImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={[styles.upNextThumbnailImage, { backgroundColor: tc.surface, justifyContent: 'center', alignItems: 'center' }]}>
+                <Icon name="video" size="md" color={colors.text.tertiary} />
+              </View>
+            )}
+            {video.duration > 0 && (
+              <View style={styles.upNextDuration}>
+                <Text style={styles.upNextDurationText}>
+                  {Math.floor(video.duration / 60)}:{(Math.floor(video.duration % 60)).toString().padStart(2, '0')}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.upNextInfo}>
+            <Text style={styles.upNextVideoTitle} numberOfLines={2}>{video.title}</Text>
+            <Text style={styles.upNextChannelName} numberOfLines={1}>
+              {video.channel?.name ?? ''}
+            </Text>
+            <Text style={styles.upNextStats}>
+              {formatCount(video.viewsCount)} {t('minbar.views')}
+            </Text>
+          </View>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export default function VideoDetailScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
@@ -767,6 +846,9 @@ export default function VideoDetailScreen() {
               </View>
             )}
 
+            {/* Up Next — recommended videos */}
+            <UpNextSection videoId={id} tc={tc} />
+
             {/* Comments preview */}
             <View style={styles.commentsSection}>
               <View style={styles.commentsHeader}>
@@ -1323,5 +1405,71 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontSize: 8,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+
+  // Up Next section
+  upNextSection: {
+    marginBottom: spacing.lg,
+  },
+  upNextTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    marginBottom: spacing.md,
+  },
+  upNextSkeletonRow: {
+    flexDirection: 'row' as const,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  upNextItem: {
+    flexDirection: 'row' as const,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  upNextThumbnail: {
+    width: 120,
+    height: 68,
+    borderRadius: radius.sm,
+    overflow: 'hidden' as const,
+    backgroundColor: tc.surface,
+  },
+  upNextThumbnailImage: {
+    width: '100%' as const,
+    height: '100%' as const,
+  },
+  upNextDuration: {
+    position: 'absolute' as const,
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 2,
+  },
+  upNextDurationText: {
+    color: colors.text.primary,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  upNextInfo: {
+    flex: 1,
+    justifyContent: 'center' as const,
+  },
+  upNextVideoTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginBottom: 2,
+  },
+  upNextChannelName: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+  },
+  upNextStats: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    marginTop: 2,
   },
 });

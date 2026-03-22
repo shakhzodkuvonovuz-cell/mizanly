@@ -10,6 +10,8 @@ import {
 import { Image } from 'expo-image';
 import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, runOnJS } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -78,6 +80,35 @@ export const VideoPlayer = memo(function VideoPlayer({
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const seekBarWidthRef = useRef<number>(1);
 
+  // Double-tap seek indicator state
+  const [seekIndicator, setSeekIndicator] = useState<{ side: 'left' | 'right'; visible: boolean }>({ side: 'left', visible: false });
+  const seekIndicatorOpacity = useSharedValue(0);
+  const seekIndicatorScale = useSharedValue(0.8);
+  const seekIndicatorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showSeekIndicator = useCallback((side: 'left' | 'right') => {
+    setSeekIndicator({ side, visible: true });
+    seekIndicatorOpacity.value = withSequence(
+      withTiming(1, { duration: 100 }),
+      withTiming(1, { duration: 400 }),
+      withTiming(0, { duration: 300 }),
+    );
+    seekIndicatorScale.value = withSequence(
+      withTiming(1.1, { duration: 150 }),
+      withTiming(1, { duration: 150 }),
+      withTiming(0.8, { duration: 400 }),
+    );
+    if (seekIndicatorTimeoutRef.current) clearTimeout(seekIndicatorTimeoutRef.current);
+    seekIndicatorTimeoutRef.current = setTimeout(() => {
+      setSeekIndicator(prev => ({ ...prev, visible: false }));
+    }, 800);
+  }, [seekIndicatorOpacity, seekIndicatorScale]);
+
+  const seekIndicatorStyle = useAnimatedStyle(() => ({
+    opacity: seekIndicatorOpacity.value,
+    transform: [{ scale: seekIndicatorScale.value }],
+  }));
+
   const resetControlsTimeout = useCallback(() => {
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
@@ -145,6 +176,34 @@ export const VideoPlayer = memo(function VideoPlayer({
     resetControlsTimeout();
   }, [status, haptic, resetControlsTimeout]);
 
+  // Double-tap to seek: left side = back 10s, right side = forward 10s
+  const handleDoubleTapSeek = useCallback((x: number) => {
+    const isLeftSide = x < windowWidth / 2;
+    if (isLeftSide) {
+      skipBackward();
+      showSeekIndicator('left');
+    } else {
+      skipForward();
+      showSeekIndicator('right');
+    }
+  }, [windowWidth, skipBackward, skipForward, showSeekIndicator]);
+
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd((event) => {
+      'worklet';
+      runOnJS(handleDoubleTapSeek)(event.x);
+    });
+
+  const singleTapGesture = Gesture.Tap()
+    .numberOfTaps(1)
+    .onEnd(() => {
+      'worklet';
+      runOnJS(resetControlsTimeout)();
+    });
+
+  const composedGesture = Gesture.Exclusive(doubleTapGesture, singleTapGesture);
+
   const handleSeek = useCallback(async (value: number) => {
     if (!videoRef.current || !status?.isLoaded) return;
     const newPosition = value * (status.durationMillis ?? 0);
@@ -192,10 +251,6 @@ export const VideoPlayer = memo(function VideoPlayer({
   const durationMillis = status?.isLoaded ? (status.durationMillis ?? 0) : (duration ? duration * 1000 : 0);
   const progress = durationMillis > 0 ? position / durationMillis : 0;
 
-  const handleVideoPress = () => {
-    resetControlsTimeout();
-  };
-
   // Prefer HLS URL (adaptive bitrate) over raw R2 URL
   const effectiveUri = hlsUrl || uri;
 
@@ -218,8 +273,9 @@ export const VideoPlayer = memo(function VideoPlayer({
           style={styles.ambientGradient}
         />
       )}
-      {/* Video */}
-      <Pressable onPress={handleVideoPress} style={styles.videoPressable}>
+      {/* Video — double-tap left/right to seek back/forward 10s */}
+      <GestureDetector gesture={composedGesture}>
+      <Animated.View style={styles.videoPressable}>
         <Video
           ref={videoRef}
           source={{ uri: effectiveUri }}
@@ -339,7 +395,25 @@ export const VideoPlayer = memo(function VideoPlayer({
             </View>
           </LinearGradient>
         )}
-      </Pressable>
+
+        {/* Double-tap seek indicator */}
+        {seekIndicator.visible && (
+          <Animated.View
+            style={[
+              styles.seekIndicatorContainer,
+              seekIndicator.side === 'left' ? styles.seekIndicatorLeft : styles.seekIndicatorRight,
+              seekIndicatorStyle,
+            ]}
+            pointerEvents="none"
+          >
+            <View style={styles.seekIndicatorBubble}>
+              <Icon name={seekIndicator.side === 'left' ? 'rewind' : 'fast-forward'} size="sm" color={colors.text.primary} />
+              <Text style={styles.seekIndicatorText}>10s</Text>
+            </View>
+          </Animated.View>
+        )}
+      </Animated.View>
+      </GestureDetector>
 
       {/* Speed selector bottom sheet */}
       <BottomSheet visible={speedSheetVisible} onClose={() => setSpeedSheetVisible(false)}>
@@ -521,5 +595,33 @@ const styles = StyleSheet.create({
   },
   seekBarTouchable: {
     ...StyleSheet.absoluteFillObject,
+  },
+  seekIndicatorContainer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: '40%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  seekIndicatorLeft: {
+    left: 0,
+  },
+  seekIndicatorRight: {
+    right: 0,
+  },
+  seekIndicatorBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.glass.dark,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  seekIndicatorText: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '700',
   },
 });

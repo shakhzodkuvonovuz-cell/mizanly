@@ -86,10 +86,8 @@ export default function BookmarkFoldersScreen() {
       Alert.alert(t('common.error'), t('screens.bookmarkFolders.emptyNameError'));
       return;
     }
-    // Backend collections are implicit (created when first bookmark is saved to them).
-    // Create an empty placeholder by saving a dummy bookmark to this collection name,
-    // then removing it — or inform the user that folders appear when bookmarks are added.
-    // TODO: Add explicit createCollection / deleteCollection endpoints to bookmarks backend
+    // Collections are implicit in the backend (created when first bookmark is saved to them).
+    // Inform the user the folder name is ready — it will appear when they save a bookmark to it.
     Alert.alert(
       t('screens.bookmarkFolders.createSheetTitle'),
       t('screens.bookmarkFolders.collectionCreatedHint'),
@@ -109,11 +107,20 @@ export default function BookmarkFoldersScreen() {
           text: t('screens.bookmarkFolders.deleteButton'),
           style: 'destructive',
           onPress: async () => {
-            // TODO: Add deleteCollection endpoint to bookmarks backend.
-            // Collections are implicit (groupBy collectionName). To delete, all bookmarks
-            // in this collection should be moved to 'default' via bookmarksApi.moveToCollection.
-            // For now, inform the user and refresh.
-            collectionsQuery.refetch();
+            try {
+              // Fetch all saved posts in this collection and move them to 'default'
+              const postsRes = await bookmarksApi.getSavedPosts(folderName);
+              const posts = postsRes?.data ?? [];
+              await Promise.all(
+                posts.map((post: { id: string }) =>
+                  bookmarksApi.moveToCollection(post.id, 'default').catch(() => {})
+                )
+              );
+              collectionsQuery.refetch();
+            } catch {
+              Alert.alert(t('common.error'), t('screens.bookmarkFolders.deleteFailed'));
+              collectionsQuery.refetch();
+            }
           },
         },
       ]

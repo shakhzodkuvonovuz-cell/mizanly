@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Alert,
-  RefreshControl, FlatList, TextInput, Platform, Share, Dimensions,
-  Pressable,
+  FlatList, TextInput, Platform, Share, Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -420,6 +419,10 @@ export default function LiveViewerScreen() {
   const listeners = participants.filter((p: LiveParticipant) => p.role === 'LISTENER');
   const raisedHands = participants.filter((p: LiveParticipant) => p.raisedHand);
 
+  const isVideoStream = live.liveType === 'VIDEO';
+  const currentUserParticipant = participants.find((p: LiveParticipant) => p.userId === user?.id);
+  const isHandRaised = currentUserParticipant?.raisedHand;
+
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
@@ -430,6 +433,60 @@ export default function LiveViewerScreen() {
           ))}
         </View>
 
+        {/* Full-screen video background for VIDEO streams */}
+        {isVideoStream && live.videoUrl ? (
+          <Video
+            ref={videoRef}
+            source={{ uri: live.videoUrl }}
+            style={StyleSheet.absoluteFill}
+            resizeMode={ResizeMode.COVER}
+            useNativeControls={false}
+            shouldPlay
+            isLooping={false}
+          />
+        ) : live.liveType === 'AUDIO' ? (
+          /* Audio space UI (if audio) - full screen background */
+          <View style={StyleSheet.absoluteFill}>
+            <LinearGradient
+              colors={[tc.bgElevated, tc.surface]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            >
+              <View style={styles.audioVisualizerFullscreen}>
+                <View style={styles.audioVisualizer}>
+                  {audioBars.map((bar, i) => (
+                    <AudioBar key={i} value={bar} />
+                  ))}
+                </View>
+                <Text style={styles.audioLabel}>{t('screens.live.audioSpace')}</Text>
+                <Text style={styles.audioHint}>{t('screens.live.audioSpaceDesc')}</Text>
+                {/* Waveform decoration */}
+                <View style={styles.waveformDecoration}>
+                  {[...Array(20)].map((_, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.waveformDot,
+                        { opacity: 0.1 + (i / 20) * 0.3 },
+                      ]}
+                    />
+                  ))}
+                </View>
+              </View>
+            </LinearGradient>
+          </View>
+        ) : null}
+
+        {/* Gradient overlay for readability on top of video */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.6)', 'transparent', 'transparent', 'rgba(0,0,0,0.8)']}
+          locations={[0, 0.25, 0.6, 1]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+
+        {/* Top controls: header + LIVE badge */}
         <GlassHeader
           title={t('screens.live.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -460,156 +517,69 @@ export default function LiveViewerScreen() {
           </Animated.View>
         </Animated.View>
 
-        <ScrollView
-          style={{ paddingTop: insets.top + 44 }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Video player (if video stream) */}
-          {live.liveType === 'VIDEO' && live.videoUrl && (
-            <Video
-              ref={videoRef}
-              source={{ uri: live.videoUrl }}
-              style={styles.videoPlayer}
-              resizeMode={ResizeMode.CONTAIN}
-              useNativeControls
-              shouldPlay
-              isLooping={false}
-            />
-          )}
-
-          {/* Audio space UI (if audio) */}
-          {live.liveType === 'AUDIO' && (
-            <View style={styles.audioContainer}>
-              <LinearGradient
-                colors={[tc.bgElevated, tc.surface]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.audioGradient}
-              >
-                <View style={styles.audioVisualizer}>
-                  {audioBars.map((bar, i) => (
-                    <AudioBar key={i} value={bar} />
-                  ))}
-                </View>
-                <Text style={styles.audioLabel}>{t('screens.live.audioSpace')}</Text>
-                <Text style={styles.audioHint}>{t('screens.live.audioSpaceDesc')}</Text>
-                {/* Waveform decoration */}
-                <View style={styles.waveformDecoration}>
-                  {[...Array(20)].map((_, i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.waveformDot,
-                        { opacity: 0.1 + (i / 20) * 0.3 },
-                      ]}
-                    />
-                  ))}
-                </View>
-              </LinearGradient>
+        {/* Bottom overlay: stream info + controls */}
+        <View style={[styles.bottomOverlay, { paddingBottom: insets.bottom + spacing.base }]}>
+          {/* Host info row */}
+          {hostParticipant && (
+            <View style={styles.overlayHostRow}>
+              <Avatar uri={hostParticipant.user.avatarUrl} name={hostParticipant.user.username} size="sm" />
+              <Text style={styles.overlayHostName}>{hostParticipant.user.username}</Text>
+              <View style={styles.overlayLiveDot} />
             </View>
           )}
 
-          {/* Stream info */}
-          <View style={styles.content}>
-            <Text style={styles.liveTitle}>{live.title}</Text>
-            <View style={styles.liveStats}>
-              <Icon name="eye" size="xs" color={colors.gold} />
-              <Text style={styles.liveStatsTextGold}>
-                {live.viewersCount.toLocaleString()} {t('screens.live.watching')}
-              </Text>
-              <Text style={styles.liveStatsDot}>•</Text>
-              <Text style={styles.liveStatsText}>
-                {formatDistanceToNowStrict(new Date(live.startedAt || live.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
-              </Text>
-            </View>
+          {/* Title */}
+          <Text style={styles.overlayTitle} numberOfLines={2}>{live.title}</Text>
 
-            {/* Host row with crown */}
-            {hostParticipant && (
-              <View style={styles.hostRow}>
-                <View style={styles.hostAvatarContainer}>
-                  <Avatar uri={hostParticipant.user.avatarUrl} name={hostParticipant.user.username} size="lg" />
-                  <LinearGradient
-                    colors={[colors.gold, '#A67C00']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.hostCrownBadgeLarge}
-                  >
-                    <Icon name="check" size={12} color="#fff" />
-                  </LinearGradient>
-                </View>
-                <View style={styles.hostInfo}>
-                  <Text style={styles.hostName}>{t('screens.live.hostedBy')} {hostParticipant.user.username}</Text>
-                  <View style={styles.liveStatusRow}>
-                    <Animated.View style={[styles.liveStatusDot, pulseStyle]} />
-                    <Text style={styles.hostStatus}>{t('screens.live.liveNow')}</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* Description */}
-            {live.description && (
-              <View style={styles.descriptionContainer}>
-                <Text style={styles.descriptionText}>{live.description}</Text>
-              </View>
-            )}
-
-            {/* Quick actions */}
-            <View style={styles.actionRow}>
-              <Pressable style={styles.actionButton} onPress={handleRaiseHand}>
-                <Icon
-                  name={participants.find((p: LiveParticipant) => p.userId === user?.id)?.raisedHand ? 'user' : 'user'}
-                  size="md"
-                  color={participants.find((p: LiveParticipant) => p.userId === user?.id)?.raisedHand ? colors.emerald : colors.text.primary}
-                />
-                <Text style={styles.actionLabel}>
-                  {participants.find((p: LiveParticipant) => p.userId === user?.id)?.raisedHand ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}
-                </Text>
-              </Pressable>
-              <Pressable style={styles.actionButton} onPress={() => setShowChat(true)}>
-                <Icon name="message-circle" size="md" color={colors.text.primary} />
-                <Text style={styles.actionLabel}>{t('screens.live.chat')}</Text>
-              </Pressable>
-              <Pressable style={styles.actionButton} onPress={handleShare}>
-                <Icon name="share" size="md" color={colors.text.primary} />
-                <Text style={styles.actionLabel}>{t('common.share')}</Text>
-              </Pressable>
-            </View>
-
-            {/* Speakers avatars */}
-            {speakers.length > 0 && (
-              <View style={styles.speakersSection}>
-                <Text style={styles.sectionTitle}>{t('screens.live.speakers')} ({speakers.length})</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
-                  {speakers.map((p: LiveParticipant) => (
-                    <View key={p.id} style={styles.avatarWrap}>
-                      <Avatar uri={p.user.avatarUrl} name={p.user.username} size="xl" />
-                      <Text style={styles.avatarName}>{p.user.username}</Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Raised hands */}
-            {raisedHands.length > 0 && (
-              <View style={styles.raisedHandsSection}>
-                <Text style={styles.sectionTitle}>{t('screens.live.raisedHands')} ({raisedHands.length})</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
-                  {raisedHands.map((p: LiveParticipant) => (
-                    <View key={p.id} style={styles.avatarWrap}>
-                      <Avatar uri={p.user.avatarUrl} name={p.user.username} size="lg" />
-                      <Text style={styles.avatarName}>{p.user.username}</Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+          {/* Stats */}
+          <View style={styles.liveStats}>
+            <Icon name="eye" size="xs" color={colors.gold} />
+            <Text style={styles.liveStatsTextGold}>
+              {live.viewersCount.toLocaleString()} {t('screens.live.watching')}
+            </Text>
+            <Text style={styles.liveStatsDot}>•</Text>
+            <Text style={styles.overlayStatsText}>
+              {formatDistanceToNowStrict(new Date(live.startedAt || live.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
+            </Text>
           </View>
-        </ScrollView>
+
+          {/* Quick actions row */}
+          <View style={styles.overlayActionRow}>
+            <Pressable style={styles.overlayActionButton} onPress={handleRaiseHand} accessibilityRole="button">
+              <View style={[styles.overlayActionCircle, isHandRaised && styles.overlayActionCircleActive]}>
+                <Icon name="edit" size="md" color={isHandRaised ? '#fff' : colors.text.primary} />
+              </View>
+              <Text style={styles.overlayActionLabel}>
+                {isHandRaised ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}
+              </Text>
+            </Pressable>
+            <Pressable style={styles.overlayActionButton} onPress={() => setShowChat(true)} accessibilityRole="button">
+              <View style={styles.overlayActionCircle}>
+                <Icon name="message-circle" size="md" color={colors.text.primary} />
+              </View>
+              <Text style={styles.overlayActionLabel}>{t('screens.live.chat')}</Text>
+            </Pressable>
+            <Pressable style={styles.overlayActionButton} onPress={handleShare} accessibilityRole="button">
+              <View style={styles.overlayActionCircle}>
+                <Icon name="share" size="md" color={colors.text.primary} />
+              </View>
+              <Text style={styles.overlayActionLabel}>{t('common.share')}</Text>
+            </Pressable>
+            {/* Reaction bar inline */}
+            {['🔥', '❤️', '👏'].map((emoji) => (
+              <Pressable
+                accessibilityRole="button"
+                key={emoji}
+                style={styles.overlayActionButton}
+                onPress={() => addFloatingReaction(emoji)}
+              >
+                <View style={styles.overlayActionCircle}>
+                  <Text style={styles.overlayReactionEmoji}>{emoji}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
         {/* Participants bottom sheet */}
         <BottomSheet visible={showParticipants} onClose={() => setShowParticipants(false)} snapPoint={0.7}>
@@ -756,9 +726,82 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.text.secondary,
     fontSize: fontSize.sm,
   },
+  audioVisualizerFullscreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   content: {
     paddingHorizontal: spacing.base,
     paddingTop: spacing.base,
+  },
+  // Full-screen overlay styles
+  bottomOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.lg,
+  },
+  overlayHostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  overlayHostName: {
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  overlayLiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.emerald,
+  },
+  overlayTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  overlayStatsText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: fontSize.sm,
+  },
+  overlayActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  overlayActionButton: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  overlayActionCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overlayActionCircleActive: {
+    backgroundColor: colors.emerald,
+  },
+  overlayActionLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  overlayReactionEmoji: {
+    fontSize: 20,
   },
   liveTitle: {
     color: colors.text.primary,

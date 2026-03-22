@@ -355,6 +355,12 @@ function ShareIntentHandler() {
   return null;
 }
 
+/** StatusBar style that follows the user's theme preference. */
+function ThemeAwareStatusBar() {
+  const tc = useThemeColors();
+  return <StatusBar style={tc.isDark ? 'light' : 'dark'} />;
+}
+
 export default function RootLayout() {
 
   const [fontsLoaded] = useFonts({
@@ -381,7 +387,7 @@ export default function RootLayout() {
         <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
           <ClerkLoaded>
             <QueryClientProvider client={queryClient}>
-              <StatusBar style="light" />
+              <ThemeAwareStatusBar />
               <OfflineBanner />
               <IslamicThemeBanner />
               <AuthGuard />
