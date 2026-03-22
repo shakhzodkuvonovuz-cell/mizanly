@@ -41,6 +41,7 @@ class UpdateTierDto {
 
 @ApiTags('Monetization')
 @Controller('monetization')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class MonetizationController {
   constructor(private monetizationService: MonetizationService) {}
 

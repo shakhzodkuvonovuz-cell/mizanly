@@ -542,8 +542,15 @@ describe('ThreadsService', () => {
   // ═══════════════════════════════════════════════════════
 
   describe('like', () => {
-    it('should like thread (self-like, no notification)', async () => {
+    it('should throw BadRequestException when liking own thread', async () => {
       prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', userId: 'user-1', isRemoved: false });
+
+      await expect(service.like('thread-1', 'user-1')).rejects.toThrow(BadRequestException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should like thread by another user', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', userId: 'owner-99', isRemoved: false });
       prisma.threadReaction.findUnique.mockResolvedValue(null);
       prisma.$transaction.mockResolvedValue([{}, {}]);
 

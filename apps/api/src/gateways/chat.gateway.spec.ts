@@ -95,6 +95,9 @@ describe('ChatGateway', () => {
               findUnique: jest.fn().mockResolvedValue(null),
               updateMany: jest.fn().mockResolvedValue({ count: 1 }),
             },
+            userSettings: {
+              findUnique: jest.fn().mockResolvedValue(null),
+            },
           },
         },
         {

@@ -122,16 +122,31 @@ describe('MonetizationService', () => {
       });
     });
 
-    it('should compute platform fee with precise rounding', async () => {
+    it('should compute platform fee with precise Decimal rounding', async () => {
       const mockReceiver = { id: 'receiver1' };
       mockPrismaService.user.findUnique.mockResolvedValue(mockReceiver);
       mockPrismaService.tip.create.mockImplementation((args: any) => Promise.resolve(args.data));
 
       await service.sendTip('sender1', 'receiver1', 10.01);
       const createCall = mockPrismaService.tip.create.mock.calls[0][0];
-      // 10.01 * 0.10 = 1.001 → rounded to 1.00 at 2 decimal places
+      // 10.01 * 0.10 = 1.001 → Decimal rounds to 1.00 at 2 decimal places
       expect(createCall.data.platformFee).toBe(1);
       expect(createCall.data.status).toBe('pending');
+    });
+
+    it('should handle tip at exact minimum amount ($0.50)', async () => {
+      const mockReceiver = { id: 'receiver1' };
+      mockPrismaService.user.findUnique.mockResolvedValue(mockReceiver);
+      mockPrismaService.tip.create.mockImplementation((args: any) => Promise.resolve(args.data));
+
+      await service.sendTip('sender1', 'receiver1', 0.50);
+      const createCall = mockPrismaService.tip.create.mock.calls[0][0];
+      expect(createCall.data.amount).toBe(0.5);
+      expect(createCall.data.platformFee).toBe(0.05);
+    });
+
+    it('should throw for amount above maximum', async () => {
+      await expect(service.sendTip('sender1', 'receiver1', 10001)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -325,6 +340,30 @@ describe('MonetizationService', () => {
     it('should throw BadRequestException for empty name', async () => {
       await expect(service.createTier('user1', '  ', 10, [])).rejects.toThrow(BadRequestException);
     });
+
+    it('should throw BadRequestException for invalid tier level', async () => {
+      await expect(service.createTier('user1', 'Test', 10, [], 'diamond')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept valid tier levels', async () => {
+      mockPrismaService.membershipTier.create.mockResolvedValue({
+        id: 'tier1', userId: 'user1', name: 'Gold', price: 10,
+        currency: 'USD', benefits: [], level: 'gold', isActive: true,
+      });
+      const result = await service.createTier('user1', 'Gold', 10, [], 'gold');
+      expect(result.level).toBe('gold');
+    });
+
+    it('should default to bronze level when not specified', async () => {
+      mockPrismaService.membershipTier.create.mockResolvedValue({
+        id: 'tier1', userId: 'user1', name: 'Basic', price: 5,
+        currency: 'USD', benefits: [], level: 'bronze', isActive: true,
+      });
+      await service.createTier('user1', 'Basic', 5, []);
+      expect(mockPrismaService.membershipTier.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ level: 'bronze' }),
+      });
+    });
   });
 
   describe('getUserTiers', () => {
@@ -488,12 +527,13 @@ describe('MonetizationService', () => {
       expect(result).toEqual(mockSubscription);
       expect(mockPrismaService.membershipSubscription.upsert).toHaveBeenCalledWith({
         where: { tierId_userId: { tierId: 'tier1', userId: 'subscriber' } },
-        update: { status: 'pending', startDate: expect.any(Date) },
+        update: { status: 'pending', startDate: expect.any(Date), endDate: expect.any(Date) },
         create: {
           tierId: 'tier1',
           userId: 'subscriber',
           status: 'pending',
           startDate: expect.any(Date),
+          endDate: expect.any(Date),
         },
       });
     });
@@ -516,11 +556,43 @@ describe('MonetizationService', () => {
     it('should throw BadRequestException for duplicate active subscription', async () => {
       mockPrismaService.membershipTier.findUnique.mockResolvedValue(existingTier);
       mockPrismaService.membershipSubscription.findUnique.mockResolvedValue({
+        id: 'sub-1',
         tierId: 'tier1',
         userId: 'subscriber',
         status: 'active',
+        endDate: new Date(Date.now() + 86400000), // expires tomorrow — still active
       });
       await expect(service.subscribe('tier1', 'subscriber')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should allow re-subscription when existing subscription is expired', async () => {
+      const expiredSub = {
+        id: 'sub-expired',
+        tierId: 'tier1',
+        userId: 'subscriber',
+        status: 'active',
+        endDate: new Date(Date.now() - 86400000), // expired yesterday
+      };
+      const mockSubscription = {
+        id: 'sub-new',
+        tierId: 'tier1',
+        userId: 'subscriber',
+        status: 'pending',
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 86400000),
+      };
+      mockPrismaService.membershipTier.findUnique.mockResolvedValue(existingTier);
+      mockPrismaService.membershipSubscription.findUnique.mockResolvedValue(expiredSub);
+      mockPrismaService.membershipSubscription.update.mockResolvedValue({ ...expiredSub, status: 'expired' });
+      mockPrismaService.membershipSubscription.upsert.mockResolvedValue(mockSubscription);
+
+      const result = await service.subscribe('tier1', 'subscriber');
+      expect(result.status).toBe('pending');
+      // Should mark old subscription as expired
+      expect(mockPrismaService.membershipSubscription.update).toHaveBeenCalledWith({
+        where: { id: 'sub-expired' },
+        data: { status: 'expired' },
+      });
     });
   });
 

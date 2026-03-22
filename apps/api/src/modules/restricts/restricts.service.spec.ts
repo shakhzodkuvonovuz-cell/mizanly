@@ -128,4 +128,26 @@ describe('RestrictsService', () => {
       await expect(service.unrestrict('u1', 'u2')).rejects.toThrow('Network error');
     });
   });
+
+  describe('getRestrictedIds', () => {
+    it('should return restricted user IDs', async () => {
+      prisma.restrict.findMany.mockResolvedValue([
+        { restrictedId: 'u2' },
+        { restrictedId: 'u3' },
+      ]);
+      const result = await service.getRestrictedIds('u1');
+      expect(result).toEqual(['u2', 'u3']);
+      expect(prisma.restrict.findMany).toHaveBeenCalledWith({
+        where: { restricterId: 'u1' },
+        select: { restrictedId: true },
+        take: 50,
+      });
+    });
+
+    it('should return empty array when no restricts', async () => {
+      prisma.restrict.findMany.mockResolvedValue([]);
+      const result = await service.getRestrictedIds('u1');
+      expect(result).toEqual([]);
+    });
+  });
 });

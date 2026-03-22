@@ -52,12 +52,40 @@ export class StoriesService {
   ) {}
 
   async getFeedStories(userId: string) {
-    const follows = await this.prisma.follow.findMany({
-      where: { followerId: userId },
-      select: { followingId: true },
-      take: 50,
-    });
-    const ids = [userId, ...follows.map((f) => f.followingId)];
+    const [follows, blocks, mutes, restricts] = await Promise.all([
+      this.prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { followingId: true },
+        take: 50,
+      }),
+      this.prisma.block.findMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        select: { blockerId: true, blockedId: true },
+        take: 50,
+      }),
+      this.prisma.mute.findMany({
+        where: { userId },
+        select: { mutedId: true },
+        take: 50,
+      }),
+      this.prisma.restrict.findMany({
+        where: { restricterId: userId },
+        select: { restrictedId: true },
+        take: 50,
+      }),
+    ]);
+
+    // Build excluded set: blocked (both directions) + muted + restricted
+    const excluded = new Set<string>();
+    for (const b of blocks) {
+      if (b.blockerId === userId) excluded.add(b.blockedId);
+      else excluded.add(b.blockerId);
+    }
+    for (const m of mutes) excluded.add(m.mutedId);
+    for (const r of restricts) excluded.add(r.restrictedId);
+
+    const followingIds = follows.map((f) => f.followingId).filter((id) => !excluded.has(id));
+    const ids = [userId, ...followingIds];
 
     const rawStories = await this.prisma.story.findMany({
       where: {
@@ -97,11 +125,13 @@ export class StoriesService {
 
     // Check which stories the current user has already seen
     const storyIds = stories.map((s) => s.id);
-    const views = await this.prisma.storyView.findMany({
-      where: { viewerId: userId, storyId: { in: storyIds } },
-      select: { storyId: true },
-      take: 50,
-    });
+    const views = storyIds.length > 0
+      ? await this.prisma.storyView.findMany({
+          where: { viewerId: userId, storyId: { in: storyIds } },
+          select: { storyId: true },
+          take: 100, // Match the story fetch limit
+        })
+      : [];
     const viewedIds = new Set(views.map((v) => v.storyId));
 
     const result = Array.from(grouped.values()).map((group) => ({
@@ -197,6 +227,19 @@ export class StoriesService {
       if (story.isArchived) throw new NotFoundException('Story not found');
       if (story.expiresAt && story.expiresAt < new Date()) throw new NotFoundException('Story has expired');
 
+      // Private account: only approved followers can view stories
+      const author = await this.prisma.user.findUnique({
+        where: { id: story.userId },
+        select: { isPrivate: true },
+      });
+      if (author?.isPrivate) {
+        if (!viewerId) throw new ForbiddenException('This account is private');
+        const follow = await this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: viewerId, followingId: story.userId } },
+        });
+        if (!follow) throw new ForbiddenException('This account is private');
+      }
+
       // Record view if viewer is authenticated and not the owner
       if (viewerId) {
         this.prisma.storyView.upsert({
@@ -271,12 +314,15 @@ export class StoriesService {
     if (story.userId !== ownerId) throw new ForbiddenException('Only owner can see viewers');
 
     const views = await this.prisma.storyView.findMany({
-      where: {
-        storyId,
-        ...(cursor && { viewerId: { gt: cursor } }),
-      },
+      where: { storyId },
       take: limit + 1,
-      orderBy: { viewerId: 'asc' },
+      orderBy: { createdAt: 'desc' },
+      ...(cursor
+        ? {
+            cursor: { storyId_viewerId: { storyId, viewerId: cursor } },
+            skip: 1,
+          }
+        : {}),
     });
 
     // Fetch user details separately

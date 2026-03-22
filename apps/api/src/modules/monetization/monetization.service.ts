@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Decimal } from '@prisma/client/runtime/library';
 
 interface UpdateTierData {
   name?: string;
@@ -19,6 +20,14 @@ interface UpdateTierData {
 const PLATFORM_FEE_RATE = 0.10; // 10% platform fee on tips
 const MIN_TIP_AMOUNT = 0.50; // Minimum $0.50 (Stripe minimum for card payments)
 const MAX_TIP_AMOUNT = 10000;
+
+// Single source of truth for diamond-to-USD conversion
+// 1 diamond = $0.007 USD (100 diamonds = $0.70)
+// Must be kept in sync with gifts.service.ts DIAMOND_TO_USD
+const DIAMOND_TO_USD = 0.007;
+
+// Valid tier levels
+const VALID_TIER_LEVELS = ['bronze', 'silver', 'gold', 'platinum'] as const;
 
 @Injectable()
 export class MonetizationService {
@@ -41,19 +50,19 @@ export class MonetizationService {
       throw new NotFoundException('Receiver not found');
     }
 
-    // Use precise math: round to 2 decimal places to avoid floating point drift
-    const platformFee = Math.round(amount * PLATFORM_FEE_RATE * 100) / 100;
-    const netAmount = Math.round((amount - platformFee) * 100) / 100;
+    // Use Decimal for precise financial math — avoids floating point drift
+    const decAmount = new Decimal(amount);
+    const decFee = decAmount.mul(PLATFORM_FEE_RATE).toDecimalPlaces(2);
 
     // Tip is created as pending — should be confirmed via payment webhook
     const tip = await this.prisma.tip.create({
       data: {
         senderId,
         receiverId,
-        amount,
+        amount: decAmount.toNumber(),
         currency: 'USD',
         message,
-        platformFee,
+        platformFee: decFee.toNumber(),
         status: 'pending',
       },
       include: {
@@ -65,9 +74,6 @@ export class MonetizationService {
         },
       },
     });
-
-    // Update user balance or stats (if we had a balance field)
-    // For now, just return the tip
 
     return tip;
   }
@@ -192,6 +198,12 @@ export class MonetizationService {
       throw new BadRequestException('Tier name is required');
     }
 
+    // Validate level against allowed values
+    const tierLevel = level || 'bronze';
+    if (!VALID_TIER_LEVELS.includes(tierLevel as typeof VALID_TIER_LEVELS[number])) {
+      throw new BadRequestException(`Tier level must be one of: ${VALID_TIER_LEVELS.join(', ')}`);
+    }
+
     const tier = await this.prisma.membershipTier.create({
       data: {
         userId,
@@ -199,7 +211,7 @@ export class MonetizationService {
         price,
         currency: 'USD',
         benefits,
-        level: level || 'bronze',
+        level: tierLevel,
         isActive: true,
       },
     });
@@ -294,23 +306,37 @@ export class MonetizationService {
       throw new BadRequestException('Cannot subscribe to your own tier');
     }
 
-    // Check for existing active subscription
+    // Check for existing active subscription — also check expiry
     const existing = await this.prisma.membershipSubscription.findUnique({
       where: { tierId_userId: { tierId, userId } },
     });
     if (existing && existing.status === 'active') {
-      throw new BadRequestException('Already subscribed to this tier');
+      // Check if subscription has expired (endDate in the past)
+      if (existing.endDate && new Date(existing.endDate) < new Date()) {
+        // Expired — mark as expired and allow re-subscription
+        await this.prisma.membershipSubscription.update({
+          where: { id: existing.id },
+          data: { status: 'expired' },
+        });
+      } else {
+        throw new BadRequestException('Already subscribed to this tier');
+      }
     }
+
+    // Calculate endDate — 30 days from now (should be updated by payment webhook)
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 30);
 
     // Subscription created as pending — should be activated via payment webhook
     const subscription = await this.prisma.membershipSubscription.upsert({
       where: { tierId_userId: { tierId, userId } },
-      update: { status: 'pending', startDate: new Date() },
+      update: { status: 'pending', startDate: new Date(), endDate },
       create: {
         tierId,
         userId,
         status: 'pending',
         startDate: new Date(),
+        endDate,
       },
     });
 

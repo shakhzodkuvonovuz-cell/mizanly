@@ -29,7 +29,6 @@ export class AdminService {
 
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
-    if (cursor) where.createdAt = { lt: new Date(cursor) };
 
     const reports = await this.prisma.report.findMany({
       where,
@@ -53,6 +52,8 @@ export class AdminService {
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      // Proper Prisma ID-based cursor pagination (replaces fragile Date cursor)
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = reports.length > limit;
@@ -61,7 +62,7 @@ export class AdminService {
     return {
       data: result,
       meta: {
-        cursor: hasMore ? result[result.length - 1].createdAt.toISOString() : null,
+        cursor: hasMore ? result[result.length - 1].id : null,
         hasMore,
       },
     };
@@ -115,31 +116,66 @@ export class AdminService {
     } else if (action === 'BAN_USER') {
       status = 'RESOLVED';
       actionTaken = 'PERMANENT_BAN';
+    } else if (action === 'TEMP_BAN') {
+      status = 'RESOLVED';
+      actionTaken = 'TEMP_BAN';
+    } else if (action === 'MUTE') {
+      status = 'RESOLVED';
+      actionTaken = 'TEMP_MUTE';
     }
 
     // Fetch report to get target content/user IDs
     const report = await this.prisma.report.findUnique({
       where: { id: reportId },
-      select: { reportedPostId: true, reportedCommentId: true, reportedUserId: true },
+      select: { reportedPostId: true, reportedCommentId: true, reportedMessageId: true, reportedUserId: true },
     });
     if (!report) throw new NotFoundException('Report not found');
 
-    // Actually remove content when action is REMOVE_CONTENT
+    // Actually remove content when action is REMOVE_CONTENT (Finding 07, Audit 13)
     if (actionTaken === 'CONTENT_REMOVED') {
+      const removals: Promise<unknown>[] = [];
       if (report.reportedPostId) {
-        await this.prisma.post.update({ where: { id: report.reportedPostId }, data: { isRemoved: true } }).catch(() => {});
+        removals.push(this.prisma.post.update({ where: { id: report.reportedPostId }, data: { isRemoved: true } }).catch(() => {}));
       }
       if (report.reportedCommentId) {
-        await this.prisma.comment.update({ where: { id: report.reportedCommentId }, data: { isRemoved: true } }).catch(() => {});
+        removals.push(this.prisma.comment.update({ where: { id: report.reportedCommentId }, data: { isRemoved: true } }).catch(() => {}));
       }
+      if (report.reportedMessageId) {
+        removals.push(this.prisma.message.update({ where: { id: report.reportedMessageId }, data: { isDeleted: true } }).catch(() => {}));
+      }
+      await Promise.all(removals);
     }
 
-    // Actually ban user when action is BAN_USER
+    // Actually ban user when action is BAN_USER or TEMP_BAN
     if (actionTaken === 'PERMANENT_BAN' && report.reportedUserId) {
       await this.banUser(adminId, report.reportedUserId, note || 'Banned via report resolution');
     }
+    if (actionTaken === 'TEMP_BAN' && report.reportedUserId) {
+      await this.banUser(adminId, report.reportedUserId, note || 'Temp banned via report resolution', 72); // 72-hour temp ban
+    }
 
-    // Create moderation log for audit trail
+    // Handle TEMP_MUTE
+    if (actionTaken === 'TEMP_MUTE' && report.reportedUserId) {
+      await this.prisma.user.update({
+        where: { id: report.reportedUserId },
+        data: { isMuted: true },
+      }).catch(() => {});
+    }
+
+    // Finding 30 (Audit 13): Handle WARNING — notify the reported user
+    if (actionTaken === 'WARNING' && report.reportedUserId) {
+      await this.prisma.notification.create({
+        data: {
+          userId: report.reportedUserId,
+          actorId: adminId,
+          type: 'SYSTEM' as any,
+          title: 'Content Warning',
+          body: `Your content was flagged. Repeated violations may result in account restrictions.`,
+        },
+      }).catch(() => {}); // Don't fail resolution if notification fails
+    }
+
+    // Create moderation log for audit trail (Finding 21, Audit 13)
     if (actionTaken !== 'NONE') {
       await this.prisma.moderationLog.create({
         data: {
@@ -148,6 +184,7 @@ export class AdminService {
           targetUserId: report.reportedUserId,
           targetPostId: report.reportedPostId,
           targetCommentId: report.reportedCommentId,
+          targetMessageId: report.reportedMessageId,
           reportId,
           reason: note || `Report resolved: ${action}`,
           explanation: `Admin resolved report ${reportId} with action: ${action}`,

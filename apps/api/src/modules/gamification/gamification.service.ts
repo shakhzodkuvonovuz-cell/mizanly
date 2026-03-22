@@ -78,16 +78,19 @@ export class GamificationService {
     const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays === 1) {
-      // Continue streak — atomic increment + conditional longestDays update in single query
-      await this.prisma.$executeRaw`
-        UPDATE user_streaks
-        SET "currentDays" = "currentDays" + 1,
-            "lastActiveDate" = ${today},
-            "longestDays" = GREATEST("longestDays", "currentDays" + 1)
-        WHERE "userId" = ${userId} AND "streakType" = ${streakType}
-      `;
-      const updated = await this.prisma.userStreak.findUnique({
-        where: { userId_streakType: { userId, streakType } },
+      // Continue streak — atomic increment + conditional longestDays update in a transaction
+      // to ensure the read-after-write sees the updated data
+      const updated = await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`
+          UPDATE user_streaks
+          SET "currentDays" = "currentDays" + 1,
+              "lastActiveDate" = ${today},
+              "longestDays" = GREATEST("longestDays", "currentDays" + 1)
+          WHERE "userId" = ${userId} AND "streakType" = ${streakType}
+        `;
+        return tx.userStreak.findUnique({
+          where: { userId_streakType: { userId, streakType } },
+        });
       });
       if (!updated) return streak;
 

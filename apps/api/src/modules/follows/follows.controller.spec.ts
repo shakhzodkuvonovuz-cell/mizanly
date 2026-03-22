@@ -95,7 +95,7 @@ describe('FollowsController', () => {
 
       const result = await controller.getOwnRequests(userId);
 
-      expect(service.getOwnRequests).toHaveBeenCalledWith(userId);
+      expect(service.getOwnRequests).toHaveBeenCalledWith(userId, undefined);
       expect(result).toHaveLength(1);
     });
   });

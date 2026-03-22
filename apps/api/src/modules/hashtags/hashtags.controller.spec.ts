@@ -45,7 +45,7 @@ describe('HashtagsController', () => {
     it('should call service.getTrendingRaw with default limit 50', async () => {
       service.getTrendingRaw.mockResolvedValue([{ name: 'ramadan', count: 100 }] as any);
 
-      const result = await controller.getTrending();
+      const result = await controller.getTrending({} as any);
 
       expect(service.getTrendingRaw).toHaveBeenCalledWith(50);
       expect(result).toHaveLength(1);
@@ -54,7 +54,7 @@ describe('HashtagsController', () => {
     it('should parse and cap custom limit', async () => {
       service.getTrendingRaw.mockResolvedValue([] as any);
 
-      await controller.getTrending('25');
+      await controller.getTrending({ limit: '25' } as any);
 
       expect(service.getTrendingRaw).toHaveBeenCalledWith(25);
     });
@@ -62,7 +62,7 @@ describe('HashtagsController', () => {
 
   describe('search', () => {
     it('should return empty data when query is falsy', async () => {
-      const result = await controller.search('', undefined);
+      const result = await controller.search({ q: '', limit: undefined } as any);
 
       expect(result).toEqual({ data: [], meta: { total: 0 } });
       expect(service.search).not.toHaveBeenCalled();
@@ -71,7 +71,7 @@ describe('HashtagsController', () => {
     it('should call service.search with query and default limit 20', async () => {
       service.search.mockResolvedValue({ data: [{ name: 'islam' }], meta: { total: 1 } } as any);
 
-      await controller.search('islam', undefined);
+      await controller.search({ q: 'islam', limit: undefined } as any);
 
       expect(service.search).toHaveBeenCalledWith('islam', 20);
     });
@@ -79,7 +79,7 @@ describe('HashtagsController', () => {
     it('should parse custom limit', async () => {
       service.search.mockResolvedValue({ data: [], meta: { total: 0 } } as any);
 
-      await controller.search('test', '10');
+      await controller.search({ q: 'test', limit: '10' } as any);
 
       expect(service.search).toHaveBeenCalledWith('test', 10);
     });

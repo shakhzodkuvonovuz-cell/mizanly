@@ -213,7 +213,7 @@ export function VideoControls({
           accessibilityRole="button"
           onPress={handlePlayPause}
           style={styles.playButton}
-          accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+          accessibilityLabel={isPlaying ? t('common.pause') : t('common.play')}
         >
           <Icon name={isPlaying ? 'pause' : 'play'} size={48} color={colors.text.primary} />
         </Pressable>
@@ -253,7 +253,7 @@ export function VideoControls({
           accessibilityRole="button"
           onPress={handleVolumeButtonPress}
           style={styles.iconButton}
-          accessibilityLabel={volume === 0 ? 'Unmute' : 'Mute'}
+          accessibilityLabel={volume === 0 ? t('minbar.unmute') : t('minbar.mute')}
         >
           <Icon name={volumeIcon} size="md" color={colors.text.primary} />
           <Text style={styles.iconLabel}>{Math.round(volume * 100)}%</Text>
@@ -261,7 +261,21 @@ export function VideoControls({
       </View>
 
       {/* Seek bar */}
-      <View style={styles.seekBarContainer}>
+      <View
+        style={styles.seekBarContainer}
+        accessible={true}
+        accessibilityRole="adjustable"
+        accessibilityLabel={t('minbar.seekBar', { current: formatTime(currentTime), total: formatTime(duration) })}
+        accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}
+        accessibilityActions={[
+          { name: 'increment', label: t('minbar.skipForward') },
+          { name: 'decrement', label: t('minbar.skipBack') },
+        ]}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === 'increment') handleSkipForward();
+          else if (event.nativeEvent.actionName === 'decrement') handleSkipBackward();
+        }}
+      >
         <View
           style={styles.seekBarBackground}
           onLayout={(e) => { seekBarWidthRef.current = e.nativeEvent.layout.width || 1; }}
@@ -269,7 +283,6 @@ export function VideoControls({
           <View style={[styles.seekBarProgress, { width: `${progress * 100}%` }]} />
         </View>
         <Pressable
-          accessibilityRole="button"
           style={StyleSheet.absoluteFill}
           onPress={(e) => {
             const { locationX } = e.nativeEvent;

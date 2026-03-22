@@ -266,8 +266,11 @@ describe('Final Push Part 3 — breaking 3800', () => {
             storyView: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             storyHighlightAlbum: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             storyStickerResponse: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
-            follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findFirst: jest.fn().mockResolvedValue(null) },
-            user: { findMany: jest.fn().mockResolvedValue([]) },
+            follow: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn().mockResolvedValue(null) },
+            block: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
+            mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
+            user: { findUnique: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
             conversation: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, message: { create: jest.fn() },
             $transaction: jest.fn().mockResolvedValue([{}, {}]), $queryRaw: jest.fn().mockResolvedValue([]),
           }},
@@ -451,7 +454,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
 
     it('getOwnRequests — returns pending requests', async () => {
       const result = await service.getOwnRequests('u1');
-      expect(result).toEqual([]);
+      expect(result).toEqual({ data: [], meta: { cursor: null, hasMore: false } });
     });
 
     it('getSuggestions — returns users', async () => {

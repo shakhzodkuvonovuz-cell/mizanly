@@ -334,7 +334,7 @@ export class PostsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Hide a comment on your post (author only)' })
   hideComment(
-    @Param('id') id: string,
+    @Param('id') _postId: string,
     @Param('commentId') commentId: string,
     @CurrentUser('id') userId: string,
   ) {
@@ -347,7 +347,7 @@ export class PostsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Unhide a comment on your post (author only)' })
   unhideComment(
-    @Param('id') id: string,
+    @Param('id') _postId: string,
     @Param('commentId') commentId: string,
     @CurrentUser('id') userId: string,
   ) {

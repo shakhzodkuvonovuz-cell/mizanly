@@ -209,22 +209,18 @@ export class PersonalizedFeedService {
       return this.getTrendingFeed(space, cursor, limit);
     }
 
-    // Get excluded user IDs (blocked both directions + muted)
-    const excludedUserIds = await this.getExcludedUserIds(userId);
-
-    // Check if user has enough interactions for personalization
-    const interactionCount = await this.prisma.feedInteraction.count({
-      where: { userId },
-    });
+    // Parallelize excluded user IDs, interaction count, and interest vector computation
+    const contentType = this.spaceToContentType(space);
+    const [excludedUserIds, interactionCount, interestVector] = await Promise.all([
+      this.getExcludedUserIds(userId),
+      this.prisma.feedInteraction.count({ where: { userId } }),
+      this.embeddingsService.getUserInterestVector(userId),
+    ]);
 
     if (interactionCount < 10) {
       // Cold start: trending + editorial picks (72.11)
       return this.getColdStartFeed(userId, space, cursor, limit, excludedUserIds);
     }
-
-    // Full personalized pipeline
-    const contentType = this.spaceToContentType(space);
-    const interestVector = await this.embeddingsService.getUserInterestVector(userId);
 
     if (!interestVector) {
       return this.getTrendingFeed(space, cursor, limit, excludedUserIds);
@@ -246,10 +242,8 @@ export class PersonalizedFeedService {
     const feedItems: FeedItem[] = [];
     const contentIds = candidates.map(c => c.contentId);
 
-    const [engagementData, authorMapFull] = await Promise.all([
-      this.getContentMetadata(contentIds, contentType),
-      this.getAuthorMap(contentIds, contentType),
-    ]);
+    // Fetch engagement data (includes userId) — single query instead of two separate ones
+    const engagementData = await this.getContentMetadata(contentIds, contentType);
 
     const excludedSet = new Set(excludedUserIds);
 
@@ -257,9 +251,8 @@ export class PersonalizedFeedService {
       const meta = engagementData.get(candidate.contentId);
       if (!meta) continue;
 
-      // Filter out content from blocked/muted users
-      const author = authorMapFull.get(candidate.contentId);
-      if (author && excludedSet.has(author)) continue;
+      // Filter out content from blocked/muted users (userId included in metadata)
+      if (meta.userId && excludedSet.has(meta.userId)) continue;
 
       const reasons: string[] = [];
       let score = candidate.similarity * 0.35;
@@ -297,7 +290,12 @@ export class PersonalizedFeedService {
     feedItems.sort((a, b) => b.score - a.score);
 
     // Diversity injection: no same-author back-to-back, with backfill from skipped items
-    const diversifyAuthorMap = await this.getAuthorMap(feedItems.slice(0, limit * 3).map(f => f.id), contentType);
+    // Use userId from the already-fetched engagement data instead of a separate query
+    const diversifyAuthorMap = new Map<string, string>();
+    for (const item of feedItems.slice(0, limit * 3)) {
+      const meta = engagementData.get(item.id);
+      if (meta?.userId) diversifyAuthorMap.set(item.id, meta.userId);
+    }
     const diversified: FeedItem[] = [];
     const skipped: FeedItem[] = [];
     let lastAuthor = '';
@@ -570,26 +568,27 @@ export class PersonalizedFeedService {
   private async getContentMetadata(
     ids: string[],
     contentType: EmbeddingContentType,
-  ): Promise<Map<string, { likesCount: number; commentsCount?: number; sharesCount?: number; viewsCount: number; hashtags: string[]; createdAt: Date }>> {
-    const map = new Map<string, { likesCount: number; commentsCount?: number; sharesCount?: number; viewsCount: number; hashtags: string[]; createdAt: Date }>();
+  ): Promise<Map<string, { likesCount: number; commentsCount?: number; sharesCount?: number; viewsCount: number; hashtags: string[]; createdAt: Date; userId?: string }>> {
+    const map = new Map<string, { likesCount: number; commentsCount?: number; sharesCount?: number; viewsCount: number; hashtags: string[]; createdAt: Date; userId?: string }>();
     if (ids.length === 0) return map;
 
+    // Fetch engagement data AND userId in a single query (merged from former getAuthorMap)
     if (contentType === EmbeddingContentType.POST) {
       const items = await this.prisma.post.findMany({
         where: { id: { in: ids } },
-        select: { id: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
       });
       items.forEach(i => map.set(i.id, i));
     } else if (contentType === EmbeddingContentType.REEL) {
       const items = await this.prisma.reel.findMany({
         where: { id: { in: ids } },
-        select: { id: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
       });
       items.forEach(i => map.set(i.id, i));
     } else if (contentType === EmbeddingContentType.THREAD) {
       const items = await this.prisma.thread.findMany({
         where: { id: { in: ids } },
-        select: { id: true, likesCount: true, repliesCount: true, repostsCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        select: { id: true, userId: true, likesCount: true, repliesCount: true, repostsCount: true, viewsCount: true, hashtags: true, createdAt: true },
       });
       items.forEach(i => map.set(i.id, {
         likesCount: i.likesCount,
@@ -598,6 +597,7 @@ export class PersonalizedFeedService {
         viewsCount: i.viewsCount,
         hashtags: i.hashtags,
         createdAt: i.createdAt,
+        userId: i.userId,
       }));
     }
 

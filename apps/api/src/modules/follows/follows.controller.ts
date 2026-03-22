@@ -26,9 +26,12 @@ export class FollowsController {
   // --- Static routes MUST come before :userId param routes ---
 
   @Get('requests/incoming')
-  @ApiOperation({ summary: 'Own incoming follow requests' })
-  getOwnRequests(@CurrentUser('id') userId: string) {
-    return this.followsService.getOwnRequests(userId);
+  @ApiOperation({ summary: 'Own incoming follow requests (cursor paginated)' })
+  getOwnRequests(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.followsService.getOwnRequests(userId, cursor);
   }
 
   @Post('requests/:id/accept')
@@ -84,6 +87,16 @@ export class FollowsController {
     @Param('userId') targetUserId: string,
   ) {
     return this.followsService.unfollow(currentUserId, targetUserId);
+  }
+
+  @Delete(':userId/remove-follower')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove a user from your followers' })
+  removeFollower(
+    @CurrentUser('id') currentUserId: string,
+    @Param('userId') followerUserId: string,
+  ) {
+    return this.followsService.removeFollower(currentUserId, followerUserId);
   }
 
   @Get(':userId/followers')

@@ -31,6 +31,14 @@ export class EmbeddingsService {
     this.apiAvailable = !!this.apiKey;
     if (!this.apiAvailable) {
       this.logger.warn('GEMINI_API_KEY not set — embedding features disabled');
+    } else {
+      // Note: Gemini API requires the key as a URL query parameter (not a header).
+      // This is Google's required authentication method for this API.
+      // Ensure error responses are not logged with full URLs to prevent key leakage.
+      this.logger.warn(
+        'GEMINI_API_KEY is passed as a URL query parameter per Google API requirements. ' +
+        'Ensure HTTP error logs do not expose full request URLs.',
+      );
     }
   }
 
@@ -260,7 +268,12 @@ export class EmbeddingsService {
   }
 
   /**
-   * Find similar content using pgvector KNN cosine similarity
+   * Find similar content using pgvector KNN cosine similarity.
+   *
+   * PERFORMANCE NOTE: For production with >100K embeddings, create an HNSW index:
+   *   CREATE INDEX embeddings_vector_idx ON embeddings USING hnsw (vector vector_cosine_ops);
+   * This changes the scan from O(n) sequential to O(log n) approximate nearest neighbor.
+   * Run REINDEX after bulk data loads. Requires pgvector extension v0.5+.
    */
   async findSimilar(
     contentId: string,

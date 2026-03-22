@@ -282,8 +282,8 @@ export class FollowsService {
     };
   }
 
-  async getOwnRequests(userId: string) {
-    return this.prisma.followRequest.findMany({
+  async getOwnRequests(userId: string, cursor?: string, limit = 20) {
+    const requests = await this.prisma.followRequest.findMany({
       where: { receiverId: userId, status: 'PENDING' },
       include: {
         sender: {
@@ -297,8 +297,19 @@ export class FollowsService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
+
+    const hasMore = requests.length > limit;
+    const items = hasMore ? requests.slice(0, limit) : requests;
+    return {
+      data: items,
+      meta: {
+        cursor: hasMore ? items[items.length - 1].id : null,
+        hasMore,
+      },
+    };
   }
 
   async acceptRequest(currentUserId: string, requestId: string) {
@@ -423,6 +434,41 @@ export class FollowsService {
     });
 
     return suggestions;
+  }
+
+  /**
+   * Remove a follower — lets a user kick someone from following them.
+   * Unlike unfollow (I stop following you), this is "I remove you from my followers".
+   */
+  async removeFollower(currentUserId: string, followerUserId: string) {
+    if (currentUserId === followerUserId) {
+      throw new BadRequestException('Cannot remove yourself as a follower');
+    }
+
+    const existing = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: followerUserId,
+          followingId: currentUserId,
+        },
+      },
+    });
+    if (!existing) return { message: 'Follower removed' }; // idempotent
+
+    await this.prisma.$transaction([
+      this.prisma.follow.delete({
+        where: {
+          followerId_followingId: {
+            followerId: followerUserId,
+            followingId: currentUserId,
+          },
+        },
+      }),
+      this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${followerUserId}`,
+      this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${currentUserId}`,
+    ]);
+
+    return { message: 'Follower removed' };
   }
 
   async checkFollowing(followerId: string, followingId: string) {

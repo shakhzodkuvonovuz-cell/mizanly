@@ -490,12 +490,13 @@ describe('FollowsService', () => {
   });
 
   describe('getOwnRequests', () => {
-    it('should return pending follow requests', async () => {
+    it('should return pending follow requests with pagination', async () => {
       prisma.followRequest.findMany.mockResolvedValue([
         { id: 'req-1', sender: { id: 'user-2', username: 'requester' }, status: 'PENDING' },
       ]);
       const result = await service.getOwnRequests('user-1');
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
     });
   });
 
@@ -509,6 +510,35 @@ describe('FollowsService', () => {
       const result = await service.getSuggestions('user-1');
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('removeFollower', () => {
+    it('should remove a follower and decrement counts', async () => {
+      prisma.follow.findUnique.mockResolvedValue({
+        followerId: 'follower-1',
+        followingId: 'user-1',
+      });
+      prisma.follow.delete.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.$transaction.mockImplementation(async (queries: any[]) => {
+        for (const q of queries) await q;
+      });
+
+      const result = await service.removeFollower('user-1', 'follower-1');
+      expect(result).toEqual({ message: 'Follower removed' });
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should return success idempotently if not a follower', async () => {
+      prisma.follow.findUnique.mockResolvedValue(null);
+      const result = await service.removeFollower('user-1', 'nobody');
+      expect(result).toEqual({ message: 'Follower removed' });
+    });
+
+    it('should throw BadRequestException when removing yourself', async () => {
+      await expect(service.removeFollower('user-1', 'user-1'))
+        .rejects.toThrow(BadRequestException);
     });
   });
 });

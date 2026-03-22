@@ -27,7 +27,7 @@ export class PaymentsService {
       this.logger.warn('STRIPE_SECRET_KEY not set — payment operations will fail');
     }
     this.stripe = new Stripe(secretKey || '', {
-      apiVersion: '2026-02-25.clover',
+      apiVersion: '2025-02-24.acacia' as Stripe.LatestApiVersion,
     });
   }
 

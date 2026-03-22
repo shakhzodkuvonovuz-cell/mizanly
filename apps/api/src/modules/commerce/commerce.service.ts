@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
@@ -49,6 +49,46 @@ export class CommerceService {
     });
     if (!product) throw new NotFoundException('Product not found');
     return product;
+  }
+
+  async updateProduct(userId: string, productId: string, dto: {
+    title?: string; description?: string; price?: number; images?: string[];
+    category?: string; isHalal?: boolean; isMuslimOwned?: boolean; stock?: number;
+    tags?: string[]; location?: string; shippingInfo?: string; halalCertUrl?: string; status?: string;
+  }) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
+    if (product.sellerId !== userId) throw new ForbiddenException('Not the product owner');
+
+    if (dto.price !== undefined && dto.price <= 0) {
+      throw new BadRequestException('Price must be positive');
+    }
+    if (dto.status && !['active', 'draft', 'archived'].includes(dto.status)) {
+      throw new BadRequestException('Invalid product status');
+    }
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: dto,
+      include: { seller: { select: USER_SELECT } },
+    });
+  }
+
+  async deleteProduct(userId: string, productId: string) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
+    if (product.sellerId !== userId) throw new ForbiddenException('Not the product owner');
+
+    // Check for active orders
+    const activeOrders = await this.prisma.order.count({
+      where: { productId, status: { in: ['pending', 'paid', 'shipped'] } },
+    });
+    if (activeOrders > 0) {
+      throw new BadRequestException('Cannot delete product with active orders');
+    }
+
+    await this.prisma.product.delete({ where: { id: productId } });
+    return { message: 'Product deleted successfully' };
   }
 
   async reviewProduct(userId: string, productId: string, rating: number, comment?: string) {
@@ -125,14 +165,35 @@ export class CommerceService {
   }
 
   async getMyOrders(userId: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = { buyerId: userId };
-    if (cursor) where.id = { lt: cursor };
+    limit = Math.min(Math.max(limit, 1), 50);
+
+    const orders = await this.prisma.order.findMany({
+      where: { buyerId: userId },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      include: { product: { select: { id: true, title: true, images: true, price: true } } },
+    });
+
+    const hasMore = orders.length > limit;
+    if (hasMore) orders.pop();
+    return { data: orders, meta: { cursor: orders[orders.length - 1]?.id || null, hasMore } };
+  }
+
+  async getSellerOrders(sellerId: string, cursor?: string, limit = 20, status?: string) {
+    limit = Math.min(Math.max(limit, 1), 50);
+    const where: Record<string, unknown> = { product: { sellerId } };
+    if (status) where.status = status;
 
     const orders = await this.prisma.order.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
-      include: { product: { select: { id: true, title: true, images: true, price: true } } },
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      include: {
+        product: { select: { id: true, title: true, images: true, price: true } },
+        buyer: { select: USER_SELECT },
+      },
     });
 
     const hasMore = orders.length > limit;
@@ -228,6 +289,31 @@ export class CommerceService {
     return review;
   }
 
+  async updateBusiness(userId: string, businessId: string, dto: {
+    name?: string; description?: string; category?: string; address?: string;
+    lat?: number; lng?: number; phone?: string; website?: string;
+    avatarUrl?: string; coverUrl?: string; isMuslimOwned?: boolean; halalCertUrl?: string;
+  }) {
+    const business = await this.prisma.halalBusiness.findUnique({ where: { id: businessId } });
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId !== userId) throw new ForbiddenException('Not the business owner');
+
+    return this.prisma.halalBusiness.update({
+      where: { id: businessId },
+      data: dto,
+      include: { owner: { select: USER_SELECT } },
+    });
+  }
+
+  async deleteBusiness(userId: string, businessId: string) {
+    const business = await this.prisma.halalBusiness.findUnique({ where: { id: businessId } });
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId !== userId) throw new ForbiddenException('Not the business owner');
+
+    await this.prisma.halalBusiness.delete({ where: { id: businessId } });
+    return { message: 'Business deleted successfully' };
+  }
+
   // ── Zakat ───────────────────────────────────────────────
 
   async createZakatFund(userId: string, dto: {
@@ -239,14 +325,15 @@ export class CommerceService {
   }
 
   async getZakatFunds(cursor?: string, limit = 20, category?: string) {
+    limit = Math.min(Math.max(limit, 1), 50);
     const where: Record<string, unknown> = { status: 'active' };
     if (category) where.category = category;
-    if (cursor) where.id = { lt: cursor };
 
     const funds = await this.prisma.zakatFund.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { recipient: { select: USER_SELECT }, _count: { select: { donations: true } } },
     });
 
@@ -263,6 +350,11 @@ export class CommerceService {
     const fund = await this.prisma.zakatFund.findUnique({ where: { id: fundId } });
     if (!fund || fund.status !== 'active') throw new NotFoundException('Fund not found or closed');
 
+    // Prevent self-donation (fund creator donating to own fund)
+    if (fund.recipientId === userId) {
+      throw new BadRequestException('Cannot donate to your own zakat fund');
+    }
+
     // Create donation as pending — fund amounts should only be updated
     // after payment is confirmed via Stripe webhook
     const donation = await this.prisma.zakatDonation.create({
@@ -277,6 +369,14 @@ export class CommerceService {
   async createTreasury(userId: string, circleId: string, dto: {
     title: string; description?: string; goalAmount: number; currency?: string;
   }) {
+    // Verify user is a member of the circle
+    const membership = await this.prisma.circleMember.findUnique({
+      where: { circleId_userId: { circleId, userId } },
+    });
+    if (!membership) {
+      throw new ForbiddenException('You must be a member of the circle to create a treasury');
+    }
+
     return this.prisma.communityTreasury.create({
       data: { circleId, createdById: userId, ...dto, currency: dto.currency || 'USD' },
     });
@@ -286,15 +386,114 @@ export class CommerceService {
     if (!amount || amount <= 0 || amount > 1_000_000) {
       throw new BadRequestException('Invalid contribution amount');
     }
-    const treasury = await this.prisma.communityTreasury.findUnique({ where: { id: treasuryId } });
+    const treasury = await this.prisma.communityTreasury.findUnique({
+      where: { id: treasuryId },
+      select: { id: true, status: true, circleId: true, goalAmount: true, raisedAmount: true },
+    });
     if (!treasury || treasury.status !== 'active') throw new NotFoundException();
 
-    // Contribution created as pending — should be confirmed via payment webhook
-    await this.prisma.treasuryContribution.create({
-      data: { treasuryId, userId, amount },
+    // Verify user is a member of the circle
+    const membership = await this.prisma.circleMember.findUnique({
+      where: { circleId_userId: { circleId: treasury.circleId, userId } },
+    });
+    if (!membership) {
+      throw new ForbiddenException('You must be a member of the circle to contribute');
+    }
+
+    // Check if fund goal has already been reached
+    if (Number(treasury.raisedAmount) >= Number(treasury.goalAmount)) {
+      throw new BadRequestException('Treasury goal has already been reached');
+    }
+
+    // Use transaction to prevent race condition on raisedAmount
+    return this.prisma.$transaction(async (tx) => {
+      // Re-check treasury status atomically
+      const current = await tx.communityTreasury.findUnique({
+        where: { id: treasuryId },
+        select: { status: true, raisedAmount: true, goalAmount: true },
+      });
+      if (!current || current.status !== 'active') {
+        throw new BadRequestException('Treasury is no longer active');
+      }
+
+      await tx.treasuryContribution.create({
+        data: { treasuryId, userId, amount },
+      });
+
+      // Update raised amount atomically
+      const updated = await tx.communityTreasury.update({
+        where: { id: treasuryId },
+        data: { raisedAmount: { increment: amount } },
+      });
+
+      // Auto-complete if goal reached
+      if (Number(updated.raisedAmount) >= Number(updated.goalAmount)) {
+        await tx.communityTreasury.update({
+          where: { id: treasuryId },
+          data: { status: 'completed' },
+        });
+      }
+
+      return { success: true };
+    });
+  }
+
+  // ── Waqf (Endowment) ───────────────────────────────────
+
+  async getWaqfFunds(cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(limit, 1), 50);
+
+    const funds = await this.prisma.waqfFund.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      include: { creator: { select: USER_SELECT } },
     });
 
-    return { success: true };
+    const hasMore = funds.length > limit;
+    if (hasMore) funds.pop();
+    return { data: funds, meta: { cursor: funds[funds.length - 1]?.id || null, hasMore } };
+  }
+
+  async contributeWaqf(userId: string, fundId: string, amount: number) {
+    if (!amount || amount <= 0 || amount > 1_000_000) {
+      throw new BadRequestException('Invalid contribution amount');
+    }
+
+    const fund = await this.prisma.waqfFund.findUnique({ where: { id: fundId } });
+    if (!fund || !fund.isActive) throw new NotFoundException('Waqf fund not found or closed');
+
+    // Prevent self-contribution
+    if (fund.createdById === userId) {
+      throw new BadRequestException('Cannot contribute to your own waqf fund');
+    }
+
+    // Use transaction to atomically update raisedAmount
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.waqfFund.findUnique({
+        where: { id: fundId },
+        select: { isActive: true, raisedAmount: true, goalAmount: true },
+      });
+      if (!current || !current.isActive) {
+        throw new BadRequestException('Waqf fund is no longer active');
+      }
+
+      const updated = await tx.waqfFund.update({
+        where: { id: fundId },
+        data: { raisedAmount: { increment: amount } },
+      });
+
+      // Auto-complete if goal reached
+      if (Number(updated.raisedAmount) >= Number(updated.goalAmount)) {
+        await tx.waqfFund.update({
+          where: { id: fundId },
+          data: { isActive: false },
+        });
+      }
+
+      return { success: true, raisedAmount: Number(updated.raisedAmount) };
+    });
   }
 
   // ── Premium Subscription ────────────────────────────────

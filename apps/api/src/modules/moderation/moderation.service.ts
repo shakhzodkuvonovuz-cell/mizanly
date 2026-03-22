@@ -140,9 +140,10 @@ export class ModerationService {
 
     await this.prisma.report.create({
       data: {
-        // For auto-flagged content, the reporter is the system (use the content creator as reporter
-        // since a system user may not exist; the autoFlagged flag in description distinguishes it)
-        reporterId: data.autoFlagged ? (data.reportedUserId || data.reporterId) : data.reporterId,
+        // Finding 28 (Audit 13): For auto-flagged content, reporterId is null (system-generated).
+        // Previously set reporterId to the content creator, which made the user appear to report themselves.
+        // reporterId is optional (String?) in schema, so null is valid.
+        reporterId: data.autoFlagged ? null : data.reporterId,
         reportedUserId: data.reportedUserId,
         reportedPostId: data.reportedPostId,
         reportedCommentId: data.reportedCommentId,

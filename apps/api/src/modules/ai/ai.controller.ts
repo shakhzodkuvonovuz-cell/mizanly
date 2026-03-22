@@ -1,6 +1,6 @@
 import {
   Controller, Post, Get,
-  Body, Param, Query, UseGuards,
+  Body, Param, Query, UseGuards, BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -18,19 +18,29 @@ import {
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
+  /** Enforce per-user daily AI quota — throws if exhausted */
+  private async enforceQuota(userId: string): Promise<void> {
+    const allowed = await this.aiService.checkDailyQuota(userId);
+    if (!allowed) {
+      throw new BadRequestException('Daily AI usage limit reached. Try again tomorrow.');
+    }
+  }
+
   @Post('suggest-captions')
   @UseGuards(ClerkAuthGuard)
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get AI-suggested captions' })
-  suggestCaptions(@Body() dto: SuggestCaptionsDto) {
+  async suggestCaptions(@CurrentUser('id') userId: string, @Body() dto: SuggestCaptionsDto) {
+    await this.enforceQuota(userId);
     return this.aiService.suggestCaptions(dto.content || '', dto.mediaDescription);
   }
 
   @Post('suggest-hashtags')
   @UseGuards(ClerkAuthGuard)
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get AI-suggested hashtags' })
-  suggestHashtags(@Body() dto: SuggestHashtagsDto) {
+  async suggestHashtags(@CurrentUser('id') userId: string, @Body() dto: SuggestHashtagsDto) {
+    await this.enforceQuota(userId);
     return this.aiService.suggestHashtags(dto.content);
   }
 
@@ -46,7 +56,8 @@ export class AiController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Translate text' })
-  translate(@Body() dto: TranslateDto) {
+  async translate(@CurrentUser('id') userId: string, @Body() dto: TranslateDto) {
+    await this.enforceQuota(userId);
     return this.aiService.translateText(dto.text, dto.targetLanguage, dto.contentId, dto.contentType);
   }
 
@@ -54,7 +65,8 @@ export class AiController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Moderate content' })
-  moderate(@Body() dto: ModerateDto) {
+  async moderate(@CurrentUser('id') userId: string, @Body() dto: ModerateDto) {
+    await this.enforceQuota(userId);
     return this.aiService.moderateContent(dto.text, dto.contentType);
   }
 
@@ -62,15 +74,17 @@ export class AiController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Get smart reply suggestions' })
-  smartReplies(@Body() dto: SmartRepliesDto) {
+  async smartReplies(@CurrentUser('id') userId: string, @Body() dto: SmartRepliesDto) {
+    await this.enforceQuota(userId);
     return this.aiService.suggestSmartReplies(dto.conversationContext, dto.lastMessages);
   }
 
   @Post('summarize')
   @UseGuards(ClerkAuthGuard)
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Summarize content' })
-  summarize(@Body() dto: SummarizeDto) {
+  async summarize(@CurrentUser('id') userId: string, @Body() dto: SummarizeDto) {
+    await this.enforceQuota(userId);
     return this.aiService.summarizeContent(dto.text, dto.maxLength);
   }
 
@@ -86,7 +100,8 @@ export class AiController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Generate AI captions for video' })
-  generateCaptions(@Param('videoId') videoId: string, @Body() dto: GenerateCaptionsDto) {
+  async generateCaptions(@CurrentUser('id') userId: string, @Param('videoId') videoId: string, @Body() dto: GenerateCaptionsDto) {
+    await this.enforceQuota(userId);
     return this.aiService.generateVideoCaptions(videoId, dto.audioUrl, dto.language);
   }
 
@@ -101,7 +116,8 @@ export class AiController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Generate AI avatar' })
-  generateAvatar(@CurrentUser('id') userId: string, @Body() dto: GenerateAvatarDto) {
+  async generateAvatar(@CurrentUser('id') userId: string, @Body() dto: GenerateAvatarDto) {
+    await this.enforceQuota(userId);
     return this.aiService.generateAvatar(userId, dto.sourceUrl, dto.style || 'default');
   }
 

@@ -7,6 +7,11 @@ import Redis from 'ioredis';
  * Content safety & moderation service.
  * Handles AI moderation, forward limits, kindness reminders,
  * auto-removal, appeals, and viral content rate limiting.
+ *
+ * NOTE: This service overlaps with ModerationService (moderation.service.ts).
+ * ContentSafetyService handles automated pipeline moderation (auto-remove, appeals, forward limits).
+ * ModerationService handles admin/moderator queue, manual review, and user-facing moderation checks.
+ * Future consolidation: merge into a single ModerationService when moderation pipeline is refactored.
  */
 @Injectable()
 export class ContentSafetyService {

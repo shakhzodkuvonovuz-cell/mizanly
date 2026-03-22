@@ -72,8 +72,14 @@ export class RestrictsService {
       take: 50,
     });
 
+    // Preserve chronological order from restrict records (findMany doesn't guarantee order)
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    const orderedUsers = userIds
+      .map((id) => userMap.get(id))
+      .filter((u): u is NonNullable<typeof u> => !!u);
+
     return {
-      data: users,
+      data: orderedUsers,
       meta: {
         hasMore,
         cursor: restricts[restricts.length - 1]?.restrictedId,
@@ -91,5 +97,18 @@ export class RestrictsService {
       },
     });
     return !!restrict;
+  }
+
+  /**
+   * Get all user IDs that the given user has restricted.
+   * Used by feed/story/comment services to filter restricted users' content.
+   */
+  async getRestrictedIds(userId: string): Promise<string[]> {
+    const restricts = await this.prisma.restrict.findMany({
+      where: { restricterId: userId },
+      select: { restrictedId: true },
+      take: 50,
+    });
+    return restricts.map((r) => r.restrictedId);
   }
 }

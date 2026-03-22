@@ -73,13 +73,13 @@ describe('Integration: Post Lifecycle', () => {
   });
 
   it('should react to a post with LIKE', async () => {
-    const result = await postsService.react('post-1', 'user-1', 'LIKE');
+    const result = await postsService.react('post-1', 'user-2', 'LIKE');
     expect(result).toHaveProperty('reaction', 'LIKE');
   });
 
   it('should update existing reaction', async () => {
-    prisma.postReaction.findUnique.mockResolvedValue({ userId: 'user-1', postId: 'post-1', reaction: 'LIKE' });
-    const result = await postsService.react('post-1', 'user-1', 'LOVE');
+    prisma.postReaction.findUnique.mockResolvedValue({ userId: 'user-2', postId: 'post-1', reaction: 'LIKE' });
+    const result = await postsService.react('post-1', 'user-2', 'LOVE');
     expect(result).toHaveProperty('reaction', 'LOVE');
     expect(prisma.postReaction.update).toHaveBeenCalled();
   });

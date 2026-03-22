@@ -162,9 +162,10 @@ const styles = StyleSheet.create({
   },
   speedButton: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm, // 8pt vertical padding — with hitSlop={8} gives 48pt effective touch target (WCAG)
     borderRadius: radius.sm,
     backgroundColor: colors.dark.surface,
+    minHeight: 32, // ensures minimum 32pt before hitSlop
   },
   speedText: {
     color: colors.text.primary,
@@ -172,8 +173,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   actionButton: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     justifyContent: 'center',
     alignItems: 'center',

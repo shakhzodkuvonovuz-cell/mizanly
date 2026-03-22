@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { animation, colors, fontSize, radius, spacing } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 // Confetti particle positions (pre-computed for performance)
 const CONFETTI_PARTICLES = Array.from({ length: 12 }, (_, i) => ({
@@ -25,13 +26,24 @@ const CONFETTI_PARTICLES = Array.from({ length: 12 }, (_, i) => ({
 export const CaughtUpCard = memo(function CaughtUpCard() {
   const { t } = useTranslation();
   const haptic = useHaptic();
-  const checkScale = useSharedValue(0);
-  const ringScale = useSharedValue(0.8);
-  const ringOpacity = useSharedValue(0);
-  const textOpacity = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+  const checkScale = useSharedValue(reducedMotion ? 1 : 0);
+  const ringScale = useSharedValue(reducedMotion ? 1.4 : 0.8);
+  const ringOpacity = useSharedValue(reducedMotion ? 0.3 : 0);
+  const textOpacity = useSharedValue(reducedMotion ? 1 : 0);
   const confettiProgress = useSharedValue(0);
 
   useEffect(() => {
+    // Skip animations when reduced motion is enabled — show final state immediately
+    if (reducedMotion) {
+      checkScale.value = 1;
+      ringScale.value = 1.4;
+      ringOpacity.value = 0.3;
+      textOpacity.value = 1;
+      haptic.success();
+      return;
+    }
+
     // 1. Check icon scales in with bounce (after 200ms delay)
     checkScale.value = withDelay(
       200,
@@ -65,7 +77,7 @@ export const CaughtUpCard = memo(function CaughtUpCard() {
 
     // 5. Success haptic
     setTimeout(() => haptic.success(), 300);
-  }, []);
+  }, [reducedMotion]);
 
   const checkStyle = useAnimatedStyle(() => ({
     transform: [{ scale: checkScale.value }],

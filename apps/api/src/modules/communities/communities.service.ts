@@ -282,12 +282,10 @@ export class CommunitiesService {
       throw new ConflictException('Already a member');
     }
 
-    // Handle privacy
-    if (circle.privacy === CirclePrivacy.INVITE_ONLY) {
-      throw new ForbiddenException('This community is invite-only');
+    // Handle privacy — both INVITE_ONLY and PRIVATE communities require invitation
+    if (circle.privacy === CirclePrivacy.INVITE_ONLY || circle.privacy === CirclePrivacy.PRIVATE) {
+      throw new ForbiddenException('This community is private — contact the owner or an admin to be invited');
     }
-    // For private communities, maybe require approval? For now, allow join.
-    // In future, create pending request.
 
     await this.prisma.$transaction([
       this.prisma.circleMember.create({
@@ -447,6 +445,7 @@ export class CommunitiesService {
     return this.prisma.communityRole.findMany({
       where: { communityId },
       orderBy: { position: 'asc' },
+      take: 50,
     });
   }
 

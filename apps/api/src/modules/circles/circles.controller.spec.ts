@@ -97,7 +97,7 @@ describe('CirclesController', () => {
 
       const result = await controller.getMembers('c-1', userId);
 
-      expect(service.getMembers).toHaveBeenCalledWith('c-1', userId);
+      expect(service.getMembers).toHaveBeenCalledWith('c-1', userId, undefined);
       expect(result).toEqual(mockMembers);
     });
   });

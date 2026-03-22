@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res, Header } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, Header, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
@@ -47,6 +47,19 @@ export class OgController {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.send(html);
+  }
+
+  @Get('og/unfurl')
+  @ApiOperation({ summary: 'Fetch URL metadata (OG tags) for link preview' })
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  async unfurl(@Query('url') url?: string) {
+    if (!url) throw new BadRequestException('url query parameter is required');
+    try {
+      new URL(url);
+    } catch {
+      throw new BadRequestException('Invalid URL');
+    }
+    return this.ogService.fetchUrlMetadata(url);
   }
 
   @Get('sitemap.xml')

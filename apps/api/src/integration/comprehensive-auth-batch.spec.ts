@@ -106,7 +106,7 @@ describe('Comprehensive Auth + Abuse — batch tests', () => {
 
     it('should return own pending follow requests', async () => {
       const result = await service.getOwnRequests('u1');
-      expect(result).toEqual([]);
+      expect(result).toEqual({ data: [], meta: { cursor: null, hasMore: false } });
     });
   });
 

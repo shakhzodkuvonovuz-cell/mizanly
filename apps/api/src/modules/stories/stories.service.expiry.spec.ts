@@ -48,6 +48,13 @@ describe('StoriesService — 24-Hour Expiry', () => {
             },
             block: {
               findFirst: jest.fn().mockResolvedValue(null),
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            mute: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
             },
             conversation: {
               findFirst: jest.fn().mockResolvedValue(null),

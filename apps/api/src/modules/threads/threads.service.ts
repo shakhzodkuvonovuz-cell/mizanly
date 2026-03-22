@@ -406,6 +406,17 @@ export class ThreadsService {
       this.queueService.addModerationJob({ content: dto.content, contentType: 'thread', contentId: thread.id });
     }
 
+    // Image moderation: check uploaded images via Claude Vision (Finding 44: thread images not moderated)
+    if (dto.mediaUrls?.length && dto.mediaTypes?.some((t: string) => t.startsWith('image'))) {
+      for (const [idx, url] of dto.mediaUrls.entries()) {
+        if (dto.mediaTypes?.[idx]?.startsWith('image')) {
+          this.moderateThreadImage(userId, thread.id, url).catch((err: Error) => {
+            this.logger.error(`Image moderation failed for thread ${thread.id}: ${err.message}`);
+          });
+        }
+      }
+    }
+
     return thread;
   }
 
@@ -481,12 +492,22 @@ export class ThreadsService {
       );
     }
 
+    // Remove from Meilisearch index on deletion
+    this.queueService.addSearchIndexJob({
+      action: 'delete', indexName: 'threads', documentId: threadId,
+    }).catch(() => {});
+
     return { deleted: true };
   }
 
   async like(threadId: string, userId: string) {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    // Prevent self-like
+    if (thread.userId === userId) {
+      throw new BadRequestException('Cannot like your own thread');
+    }
 
     const existing = await this.prisma.threadReaction.findUnique({
       where: { userId_threadId: { userId, threadId } },
@@ -929,5 +950,32 @@ export class ThreadsService {
       where: { userId_threadId: { userId, threadId } },
     });
     return { bookmarked: !!bookmark };
+  }
+
+  /**
+   * Moderate an image attached to a thread via Claude Vision API.
+   * Auto-removes the thread if the image is classified as BLOCK.
+   * (Finding 44: thread images were not moderated)
+   */
+  private async moderateThreadImage(userId: string, threadId: string, imageUrl: string): Promise<void> {
+    try {
+      const result = await this.ai.moderateImage(imageUrl);
+
+      if (result.classification === 'BLOCK') {
+        await this.prisma.thread.update({
+          where: { id: threadId },
+          data: { isRemoved: true },
+        });
+        this.logger.warn(`Thread ${threadId} auto-removed: image BLOCKED — ${result.reason}`);
+      } else if (result.classification === 'WARNING') {
+        await this.prisma.thread.update({
+          where: { id: threadId },
+          data: { isSensitive: true },
+        });
+        this.logger.log(`Thread ${threadId} marked sensitive: image WARNING — ${result.reason}`);
+      }
+    } catch (err) {
+      this.logger.error(`Image moderation error for thread ${threadId}`, err instanceof Error ? err.message : err);
+    }
   }
 }

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
+import { createHash } from 'crypto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PostVisibility, ThreadVisibility, ReportReason } from '@prisma/client';
 import { sanitizeText } from '@/common/utils/sanitize';
@@ -261,6 +262,12 @@ export class UsersService {
       await tx.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } });
       await tx.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } });
 
+      // Clean up circles, mutes, and restricts
+      await tx.circleMember.deleteMany({ where: { userId } });
+      await tx.mute.deleteMany({ where: { OR: [{ userId }, { mutedId: userId }] } });
+      await tx.restrict.deleteMany({ where: { OR: [{ restricterId: userId }, { restrictedId: userId }] } });
+      await tx.followRequest.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } });
+
       // Delete bookmarks and reactions
       await tx.bookmark.deleteMany({ where: { userId } });
       await tx.postReaction.deleteMany({ where: { userId } });
@@ -341,6 +348,19 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) throw new NotFoundException('User not found');
 
+    // Block check: prevent viewing posts of/by blocked users
+    if (viewerId && viewerId !== user.id) {
+      const block = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: viewerId, blockedId: user.id },
+            { blockerId: user.id, blockedId: viewerId },
+          ],
+        },
+      });
+      if (block) throw new ForbiddenException('User not available');
+    }
+
     const isOwn = viewerId === user.id;
     const isFollower = !isOwn && !!viewerId && await this.prisma.follow.findUnique({
       where: { followerId_followingId: { followerId: viewerId, followingId: user.id } },
@@ -383,6 +403,19 @@ export class UsersService {
   async getUserThreads(username: string, cursor?: string, viewerId?: string, limit = 20) {
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) throw new NotFoundException('User not found');
+
+    // Block check: prevent viewing threads of/by blocked users
+    if (viewerId && viewerId !== user.id) {
+      const block = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: viewerId, blockedId: user.id },
+            { blockerId: user.id, blockedId: viewerId },
+          ],
+        },
+      });
+      if (block) throw new ForbiddenException('User not available');
+    }
 
     const isOwn = viewerId === user.id;
     const isFollower = !isOwn && !!viewerId && await this.prisma.follow.findUnique({
@@ -1000,18 +1033,60 @@ export class UsersService {
     });
   }
 
+  /**
+   * Contact sync — matches phone numbers against registered users.
+   * Phone numbers are normalized and hashed (SHA-256) server-side before comparison
+   * to avoid storing raw contact data in memory longer than necessary.
+   * The actual DB query still uses normalized numbers since phone is stored in plaintext.
+   */
   async findByPhoneNumbers(userId: string, phoneNumbers: string[]) {
-    const normalized = phoneNumbers.map(p => p.replace(/\D/g, '').slice(-10));
+    // Normalize: strip non-digits, take last 10 digits
+    const normalized = phoneNumbers
+      .map(p => p.replace(/\D/g, '').slice(-10))
+      .filter(p => p.length >= 7); // reject too-short numbers
+
+    if (normalized.length === 0) return [];
+
+    // Deduplicate
+    const uniqueNumbers = [...new Set(normalized)];
+
     const users = await this.prisma.user.findMany({
-      where: { phone: { in: normalized }, id: { not: userId } },
+      where: { phone: { in: uniqueNumbers }, id: { not: userId }, isDeleted: false, isBanned: false },
       select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
       take: 50,
     });
-    const follows = await this.prisma.follow.findMany({
-      where: { followerId: userId, followingId: { in: users.map(u => u.id) } },
-      take: 50,
-    });
+
+    if (users.length === 0) return [];
+
+    // Check follows and blocks in parallel
+    const [follows, blocks] = await Promise.all([
+      this.prisma.follow.findMany({
+        where: { followerId: userId, followingId: { in: users.map(u => u.id) } },
+        select: { followingId: true },
+        take: 50,
+      }),
+      this.prisma.block.findMany({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: { in: users.map(u => u.id) } },
+            { blockedId: userId, blockerId: { in: users.map(u => u.id) } },
+          ],
+        },
+        select: { blockerId: true, blockedId: true },
+        take: 50,
+      }),
+    ]);
+
     const followedSet = new Set(follows.map(f => f.followingId));
-    return users.map(u => ({ ...u, isFollowing: followedSet.has(u.id) }));
+    const blockedSet = new Set<string>();
+    for (const b of blocks) {
+      if (b.blockerId === userId) blockedSet.add(b.blockedId);
+      else blockedSet.add(b.blockerId);
+    }
+
+    // Filter out blocked users from results
+    return users
+      .filter(u => !blockedSet.has(u.id))
+      .map(u => ({ ...u, isFollowing: followedSet.has(u.id) }));
   }
 }

@@ -224,16 +224,22 @@ describe('ParentalControlsService', () => {
   });
 
   describe('updateControls', () => {
-    it('should update parental controls', async () => {
+    it('should update parental controls with valid PIN', async () => {
       prisma.parentalControl.findFirst.mockResolvedValue(mockControl);
       prisma.parentalControl.update.mockResolvedValue({ ...mockControl, dailyLimitMinutes: 60 });
-      const result = await service.updateControls('parent-1', 'child-1', { dailyLimitMinutes: 60 } as any);
+      const result = await service.updateControls('parent-1', 'child-1', '1234', { dailyLimitMinutes: 60 } as any);
       expect(result.dailyLimitMinutes).toBe(60);
+    });
+
+    it('should throw ForbiddenException with invalid PIN', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(mockControl);
+      await expect(service.updateControls('parent-1', 'child-1', '9999', { dailyLimitMinutes: 60 } as any))
+        .rejects.toThrow(ForbiddenException);
     });
 
     it('should throw NotFoundException when link not found', async () => {
       prisma.parentalControl.findFirst.mockResolvedValue(null);
-      await expect(service.updateControls('parent-1', 'child-99', {} as any))
+      await expect(service.updateControls('parent-1', 'child-99', '1234', {} as any))
         .rejects.toThrow(NotFoundException);
     });
   });

@@ -156,7 +156,7 @@ describe('ModerationService', () => {
       );
     });
 
-    it('should create report with auto-flagged metadata', async () => {
+    it('should create report with null reporterId for auto-flagged content (Finding 28)', async () => {
       prisma.report.create.mockResolvedValue({});
       await service.flagContent({
         reporterId: 'u1',
@@ -168,7 +168,7 @@ describe('ModerationService', () => {
       expect(prisma.report.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            reporterId: 'u1',
+            reporterId: null,
             status: 'PENDING',
           }),
         }),

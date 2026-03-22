@@ -75,12 +75,13 @@ export class ChatExportService {
       throw new NotFoundException('Conversation not found');
     }
 
-    // 3. Fetch all messages in batches of 100
+    // 3. Fetch messages in batches of 100 (capped at 10,000 to prevent OOM)
+    const MAX_EXPORT_MESSAGES = 10_000;
     const allMessages: ExportedMessage[] = [];
     let cursor: string | undefined;
     let hasMore = true;
 
-    while (hasMore) {
+    while (hasMore && allMessages.length < MAX_EXPORT_MESSAGES) {
       const messages = await this.prisma.message.findMany({
         where: { conversationId, isDeleted: false },
         select: {

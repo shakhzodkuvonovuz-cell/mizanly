@@ -90,6 +90,7 @@ export class MosquesController {
 
   @UseGuards(OptionalClerkAuthGuard)
   @Get(':id/feed')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get mosque community feed' })
   @ApiQuery({ name: 'cursor', required: false, type: String })
   async getFeed(@Param('id') mosqueId: string, @Query('cursor') cursor?: string) {

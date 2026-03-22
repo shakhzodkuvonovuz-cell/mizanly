@@ -62,7 +62,7 @@ function EndScreenCard({ item, index, onPress }: EndScreenCardProps) {
       entering={FadeInUp.delay(index * 100).duration(400).springify()}
       style={[styles.cardWrapper, getPositionStyle(item.position)]}
     >
-      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={item.label}>
+      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={item.label} hitSlop={6}>
         <LinearGradient
           colors={[...gradientColors]}
           start={{ x: 0, y: 0 }}

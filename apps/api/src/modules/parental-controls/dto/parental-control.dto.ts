@@ -35,6 +35,13 @@ export class UnlinkChildDto {
 }
 
 export class UpdateParentalControlDto {
+  @ApiProperty({ description: '4-digit PIN to verify parent identity (required)' })
+  @IsString()
+  @MinLength(4)
+  @MaxLength(4)
+  @Matches(/^\d{4}$/, { message: 'PIN must be exactly 4 digits' })
+  pin: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsBoolean()

@@ -184,7 +184,9 @@
     "linkCopied": "Link has been copied to clipboard",
     "spam": "Spam",
     "inappropriate": "Inappropriate",
-    "misinformation": "Misinformation"
+    "misinformation": "Misinformation",
+    "openLink": "Open link",
+    "menuOpened": "Menu opened"
   },
   "auth": {
     "signIn": "Sign In",
@@ -883,7 +885,10 @@
     "skipBack": "Skip back 10 seconds",
     "skipForward": "Skip forward 10 seconds",
     "missingChannel": "Missing channel",
-    "pleaseSelectChannel": "Please select a channel."
+    "pleaseSelectChannel": "Please select a channel.",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "seekBar": "Video position: {{current}} of {{total}}"
   },
   "profile": {
     "followers": "Followers",
@@ -3244,6 +3249,14 @@
     "stop": "Stop",
     "speed": "Speed",
     "readingAloud": "Reading aloud"
+  },
+  "autocomplete": {
+    "hashtags": "Hashtags",
+    "people": "People",
+    "noHashtagsFound": "No hashtags found for \"{{query}}\"",
+    "noUsersFound": "No users found for \"{{query}}\"",
+    "hashtagResults": "hashtag results",
+    "userResults": "user results"
   },
   "dailyBriefing": {
     "title": "Morning Briefing",

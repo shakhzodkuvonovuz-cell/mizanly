@@ -89,6 +89,13 @@ export class ChannelsService {
       select: CHANNEL_SELECT,
     });
 
+    // AI moderation: check channel name + description (Finding 46: channel names not moderated)
+    const moderationText = [dto.name, dto.description].filter(Boolean).join('\n');
+    if (moderationText) {
+      this.queueService.addModerationJob({ content: moderationText, contentType: 'post', contentId: channel.id })
+        .catch((err: unknown) => this.logger.error(`Moderation queue failed for channel ${channel.id}`, err instanceof Error ? err.message : err));
+    }
+
     // Gamification: award XP for channel creation
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'channel_created' }).catch(() => {});
 

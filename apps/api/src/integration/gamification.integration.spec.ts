@@ -68,6 +68,10 @@ describe('Integration: Gamification', () => {
       },
       leaderboardEntry: { findMany: jest.fn().mockResolvedValue([]) },
       $executeRaw: jest.fn().mockResolvedValue(1),
+      $transaction: jest.fn().mockImplementation(async (fnOrArr: any) => {
+        if (typeof fnOrArr === 'function') return fnOrArr(prismaValue);
+        return Promise.resolve(fnOrArr);
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({

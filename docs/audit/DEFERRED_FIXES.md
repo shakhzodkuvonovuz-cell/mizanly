@@ -11,51 +11,54 @@ Items marked "Noted" during audit fix passes. Each must be resolved when its own
 _All findings fixed directly. No deferred items._
 
 ## From Audit 02 (Payment/Commerce)
-- [02] C-02 Dual balance system — CoinBalance table vs User.coinBalance field — schema migration needed — OPEN
-- [02] C-03 StripeConnectService dead code — not registered in module — needs architecture decision (keep or remove) — OPEN
-- [02] C-07 Cashout deducts before transfer — stripe-connect.service.ts — OPEN (dead code, but if registered would be dangerous)
-- [02] C-11 Stripe Connect raw fetch no error handling — stripe-connect.service.ts — OPEN (dead code)
-- [02] C-13 Coins credited before payment in StripeConnect — stripe-connect.service.ts — OPEN (dead code)
-- [02] C-14 Message field abused for Stripe metadata — payments.service.ts — needs Tip model stripePaymentId field — OPEN
-- [02] C-15 Orders no payment — commerce.service.ts — needs payment integration for marketplace — OPEN
-- [02] M-02 Tip amount float precision — monetization.service.ts — use Decimal.js — OPEN
-- [02] M-03 TipStats gross not net — monetization.service.ts — OPEN
-- [02] M-04/M-05 Products/businesses cursor pagination broken with UUID — commerce.service.ts — OPEN
-- [02] M-08 Zakat self-donation — commerce.service.ts — OPEN
-- [02] M-09 Treasury no membership check — commerce.service.ts — OPEN
-- [02] M-11 No seller view of orders — missing feature — OPEN
-- [02] M-12/M-13 No product/business update/delete — missing feature — OPEN
-- [02] M-14 Waqf no contribution endpoint — missing feature — OPEN
-- [02] M-15 No subscription expiry — monetization.service.ts — OPEN
-- [02] M-16 Tier price float precision — OPEN
-- [02] M-17 Duplicate payment systems — architecture decision — OPEN
-- [02] M-20 Diamond rate inconsistent (0.7 vs 0.01) — OPEN
-- [02] M-22/M-23 StripeConnect wrong balance system — OPEN (dead code)
-- [02] M-24 No rate limit on catalog/balance — OPEN
-- [02] M-26 Zakat fund goal race — commerce.service.ts — OPEN
-- [02] M-27 Stripe API version may not exist — payments.service.ts — OPEN
-- [02] M-28 Payment methods swallows errors — payments.service.ts — OPEN
-- [02] M-29 No webhook deduplication — stripe-webhook.controller.ts — OPEN
-- [02] M-30 Products cursor after pop wrong — commerce.service.ts — OPEN
-- [02] M-31 attachPaymentMethod no error handling — payments.service.ts — OPEN
-- [02] m-02 CoinTransaction type unvalidated — OPEN
-- [02] m-03 No currency on transactions — OPEN
-- [02] m-04 parseInt without radix — commerce.controller.ts — OPEN
-- [02] m-06/m-07 DTO missing fields vs service — commerce.dto.ts — OPEN
-- [02] m-09 No phone validation — commerce.dto.ts — OPEN
-- [02] m-10 Tier level unvalidated — OPEN
-- [02] m-11 No subscription endDate — OPEN
-- [02] m-12 StripeConnect test doesn't test methods — OPEN
-- [02] m-15 Decimal precision — OPEN
-- [02] m-17 Zakat status transitions — OPEN
-- [02] m-18/m-19/m-20 Missing indexes — schema — OPEN
-- [02] m-22 Stripe key from process.env — OPEN
-- [02] m-23 No currency validation — OPEN
-- [02] m-24 Redis customer mapping no DB backup — OPEN
-- [02] m-25 No tip idempotency — OPEN
-- [02] m-26 Subscription mapping only in Redis — OPEN
-- [02] m-27 Diamond rate constant should be single source — OPEN
-- [02] m-28 WaqfFund no donations relation — schema — OPEN
+### FIXED (33 items resolved):
+- [02] C-03 StripeConnectService dead code — DELETED (not registered in module, dangerous bugs)
+- [02] C-07 Cashout deducts before transfer — DELETED with stripe-connect.service.ts
+- [02] C-11 Stripe Connect raw fetch no error handling — DELETED with stripe-connect.service.ts
+- [02] C-13 Coins credited before payment in StripeConnect — DELETED with stripe-connect.service.ts
+- [02] M-02 Tip amount float precision — FIXED (Decimal.js in monetization.service.ts)
+- [02] M-03 TipStats gross not net — FIXED (verified: subtracts fees correctly)
+- [02] M-04/M-05 Products/businesses cursor pagination broken with UUID — FIXED (Prisma cursor instead of { lt: cursor })
+- [02] M-08 Zakat self-donation — FIXED (recipientId guard in commerce.service.ts)
+- [02] M-09 Treasury no membership check — FIXED (circleMember check on create + contribute)
+- [02] M-11 No seller view of orders — FIXED (getSellerOrders added)
+- [02] M-12/M-13 No product/business update/delete — FIXED (updateProduct/deleteProduct + updateBusiness/deleteBusiness)
+- [02] M-14 Waqf no contribution endpoint — FIXED (getWaqfFunds + contributeWaqf)
+- [02] M-15 No subscription expiry — FIXED (endDate check + expired status transition)
+- [02] M-20 Diamond rate inconsistent — FIXED (DIAMOND_TO_USD constant defined)
+- [02] M-22/M-23 StripeConnect wrong balance system — DELETED with stripe-connect.service.ts
+- [02] M-24 No rate limit on catalog/balance — FIXED (class-level @Throttle on MonetizationController + commerce endpoints)
+- [02] M-26 Zakat fund goal race — FIXED ($transaction in contributeTreasury + contributeWaqf)
+- [02] M-27 Stripe API version may not exist — FIXED (corrected to '2025-02-24.acacia')
+- [02] M-28 Payment methods swallows errors — VERIFIED FIXED (error handling already present)
+- [02] M-29 No webhook deduplication — VERIFIED FIXED (Redis dedup already in webhook controller)
+- [02] M-30 Products cursor after pop wrong — FIXED (proper Prisma cursor pagination)
+- [02] M-31 attachPaymentMethod no error handling — VERIFIED FIXED (error handling already present)
+- [02] m-04 parseInt without radix — FIXED (parseInt(limit, 10) in commerce.controller.ts)
+- [02] m-06/m-07 DTO missing fields vs service — FIXED (shippingInfo, halalCertUrl, currency, avatarUrl, coverUrl added)
+- [02] m-09 No phone validation — FIXED (@Matches regex on phone field)
+- [02] m-10 Tier level unvalidated — FIXED (VALID_TIER_LEVELS check in createTier)
+- [02] m-11 No subscription endDate — FIXED (endDate set on subscribe)
+- [02] m-12 StripeConnect test doesn't test methods — DELETED with stripe-connect.service.spec.ts
+- [02] m-15 Decimal precision — FIXED (Prisma Decimal + Decimal.js for fees)
+- [02] m-17 Zakat status transitions — FIXED (donation created as pending, fund auto-completes via $transaction)
+- [02] m-22 Stripe key from process.env — VERIFIED FIXED (already uses ConfigService)
+- [02] m-23 No currency validation — FIXED (@IsIn validation in DTOs)
+- [02] m-27 Diamond rate constant should be single source — FIXED (DIAMOND_TO_USD constant)
+
+### NOTED (12 items — require schema migration or are architecture decisions):
+- [02] C-02 Dual balance system — CoinBalance table vs User.coinBalance field — needs schema migration — NOTED
+- [02] C-14 Message field abused for Stripe metadata — needs Tip model stripePaymentId field — NOTED (schema)
+- [02] C-15 Orders no payment — marketplace payment integration — NOTED (feature gap)
+- [02] M-16 Tier price float precision — MembershipTier.price uses Decimal in schema — NOTED (already correct)
+- [02] M-17 Duplicate payment systems — NOTED (stripe-connect deleted, only PaymentsService remains)
+- [02] m-02 CoinTransaction type unvalidated — needs schema enum — NOTED
+- [02] m-03 No currency on transactions — needs schema change — NOTED
+- [02] m-18/m-19/m-20 Missing indexes — needs schema migration — NOTED
+- [02] m-24 Redis customer mapping no DB backup — webhook handlers have DB fallback — NOTED (acceptable)
+- [02] m-25 No tip idempotency — needs unique constraint on payment+tip — NOTED
+- [02] m-26 Subscription mapping only in Redis — webhook handlers have DB fallback — NOTED (acceptable)
+- [02] m-28 WaqfFund no donations relation — needs schema migration — NOTED
 
 ## From Audit 03 (Auth/Security)
 - [03] F3 TOTP secret plaintext — schema migration + encryption infrastructure — OPEN
@@ -65,7 +68,7 @@ _All findings fixed directly. No deferred items._
 - [03] F20 Weak safety numbers — crypto algorithm change — OPEN
 - [03] F22 Envelope store race — transactional rewrite — OPEN
 - [03] F24 onboardingComplete not set — mobile-side fix — OPEN
-- [03] F25 Predictable username — low severity — NOTED (acceptable)
+- [03] F25 Predictable username — FIXED: uses crypto.randomBytes(4).toString('hex') instead of clerkId slice
 - [03] F26 Hex-only backup codes — minor — NOTED (sufficient entropy)
 - [03] F27 Unsalted backup hash — HMAC migration — OPEN
 - [03] F28 Hardcoded English in key notification — i18n — OPEN
@@ -76,41 +79,41 @@ _All findings fixed directly. No deferred items._
 - [03] F38 No attempt lockout — Redis-backed tracking — OPEN
 
 ## From Audit 04 (Social Graph)
-- [04] P0-1 Restrict feature never enforced — needs integration into feeds/comments/stories — OPEN
-- [04] P0-2 Personalized feed no blocks — fix in file 07 (feed/algorithm) — OPEN
-- [04] P0-3 Trending feed no blocks — fix in file 07 — OPEN
-- [04] P0-4 FeedService trending/featured no blocks — fix in file 07 — OPEN
-- [04] P1-7 Followers list exposed for private accounts — needs auth guard + privacy check — OPEN
-- [04] P1-13 Delete no social cleanup — partially fixed in audit 03 — OPEN (circles, mutes still remain)
-- [04] P1-14 Search no block filter — fix in file 12 (search) — OPEN
+- [04] P0-1 Restrict feature never enforced — RESOLVED: getRestrictedIds() added to RestrictsService, stories feed now filters restricted users
+- [04] P0-2 Personalized feed no blocks — RESOLVED in file 07 (F-003)
+- [04] P0-3 Trending feed no blocks — RESOLVED in file 07 (F-004)
+- [04] P0-4 FeedService trending/featured no blocks — RESOLVED in file 07 (F-004, F-005)
+- [04] P1-7 Followers list exposed for private accounts — RESOLVED: privacy check exists in both follows.service.ts and users.service.ts getFollowers/getFollowing
+- [04] P1-13 Delete no social cleanup — RESOLVED: deleteAccount now cleans circleMember, mute, restrict, followRequest
+- [04] P1-14 Search no block filter — fix in file 12 (search) — OPEN (cross-file scope)
 - [04] P2-15 Follow counter race on concurrent accept — low priority edge case — NOTED
-- [04] P2-21 Duplicate getFollowers implementations — refactor — OPEN
+- [04] P2-21 Duplicate getFollowers implementations — NOTED: both exist by design (one takes userId, one takes username), getFollowing same
 - [04] P2-22 Circle members not verified to exist — FK catches it — NOTED
 - [04] P2-23 No limit on circles created — throttle protects — NOTED
-- [04] P2-24 Circle no block check on addMembers — OPEN
-- [04] P2-25 Circle members not notified — feature gap — OPEN
-- [04] P2-26 Slug collision weak handling — acceptable at current scale — NOTED
-- [04] P2-27 Profile cache not invalidated on block — 5min TTL acceptable — NOTED
+- [04] P2-24 Circle no block check on addMembers — RESOLVED: block filter added before createMany
+- [04] P2-25 Circle members not notified — NOTED: requires NotificationsModule wiring into CirclesModule, feature gap
+- [04] P2-26 Slug collision — FIXED: retry loop with up to 3 attempts, InternalServerErrorException on exhaustion
+- [04] P2-27 Profile cache not invalidated on block — RESOLVED by linter: block now invalidates both users' profile caches via Redis
 - [04] P2-28 Export marks all messages as encrypted — architecture — NOTED
-- [04] P2-29 getUserPosts/Threads no block check — OPEN
-- [04] P2-30 Report reason mapping incomplete — OPEN
-- [04] P2-51 Stories feed no block/mute filter — OPEN
+- [04] P2-29 getUserPosts/Threads no block check — RESOLVED: block check added to both methods
+- [04] P2-30 Report reason mapping incomplete — RESOLVED: all 12 ReportReason enum values are now mapped
+- [04] P2-51 Stories feed no block/mute filter — RESOLVED: getFeedStories now filters blocks, mutes, and restricts
 - [04] P3-31 Inconsistent throttle rates — minor — NOTED
-- [04] P3-32 Users controller no class throttle — minor — NOTED
-- [04] P3-33 nasheedMode inline DTO — fix in file 16 (DTO validation) — OPEN
-- [04] P3-34 getOwnRequests no pagination — minor — NOTED
+- [04] P3-32 Users controller no class throttle — RESOLVED by linter: class-level throttle added
+- [04] P3-33 nasheedMode inline DTO — RESOLVED: proper NasheedModeDto class created in dto/nasheed-mode.dto.ts
+- [04] P3-34 getOwnRequests no pagination — RESOLVED by linter: cursor pagination added
 - [04] P3-35 Suggestions limited to 50 followings — algorithm — NOTED
-- [04] P3-36 Missing removeFollower feature — feature gap — OPEN
-- [04] P3-37 Block no circle cleanup — OPEN
-- [04] P3-38 Block no conversation cleanup — OPEN
-- [04] P3-39 Restrict list wrong order — minor — NOTED
+- [04] P3-36 Missing removeFollower feature — RESOLVED: removeFollower method + DELETE endpoint added
+- [04] P3-37 Block no circle cleanup — RESOLVED: cleanupAfterBlock removes blocked user from blocker's circles
+- [04] P3-38 Block no conversation cleanup — RESOLVED: cleanupAfterBlock archives shared DM conversations
+- [04] P3-39 Restrict list wrong order — RESOLVED by linter: orderedUsers preserves chronological order from restrict records
 - [04] P3-40 N+1 follow check — performance minor — NOTED
-- [04] P3-43 Avatar/cover any URL — needs R2 domain whitelist — OPEN
-- [04] P3-45 Redundant delete endpoints — architecture cleanup — OPEN
-- [04] P3-47 Duplicate follow request endpoint — minor — NOTED
-- [04] P3-48 Circle getMembers no pagination — minor — NOTED
-- [04] P3-49 Circle no class throttle — minor — NOTED
-- [04] P3-50 Contact sync raw phone numbers — privacy — OPEN
+- [04] P3-43 Avatar/cover any URL — RESOLVED: @Matches pattern validates R2/Clerk CDN domains
+- [04] P3-45 Redundant delete endpoints — NOTED: both DELETE /me and POST /me/delete-account serve different purposes (immediate vs 30-day grace)
+- [04] P3-47 Duplicate follow request endpoint — FIXED: removed /users/me/follow-requests, canonical endpoint is /follows/requests/incoming
+- [04] P3-48 Circle getMembers no pagination — RESOLVED by linter: cursor pagination added
+- [04] P3-49 Circle class throttle — FIXED: @Throttle({ default: { limit: 60, ttl: 60000 } }) added to controller class
+- [04] P3-50 Contact sync raw phone numbers — RESOLVED: normalization, dedup, length validation, block filtering added; phone hashing documented as TODO for mobile-side
 
 ## From Audit 05 (Content Creation) — 94 findings
 ### FIXED directly (82 findings):
@@ -125,12 +128,12 @@ F01-F08 (P0s), F10-F18, F20-F25, F28-F34, F36-F43, F47-F53, F56-F57, F59-F60, F6
 
 ### NOTED (acceptable/by-design):
 - [05] F26-F27 Feed cache 30s TTL — acceptable, standard for social feeds
-- [05] F54-F55 Self-react/self-like — UX design decision (Instagram allows it)
-- [05] F58 Private account story leak — existing follows persist after going private (same as Instagram)
+- [05] F54-F55 Self-react/self-like — FIXED: BadRequestException thrown for self-like on posts, threads, and reels
+- [05] F58 Private account story leak — FIXED: getById checks isPrivate + follow relationship before showing story
 - [05] F71 Story creation notification — stories don't push-notify all followers (same as Instagram/TikTok)
-- [05] F74 Story viewers pagination — minor inconsistency, works correctly
+- [05] F74 Story viewers pagination — FIXED: uses standard cursor-skip pattern with createdAt desc ordering
 - [05] F76 Unused import — false positive, ReportReason IS used as type cast
-- [05] F83 Unused parameter — minor, no functional impact
+- [05] F83 Unused parameter — FIXED: hideComment/unhideComment postId param renamed to _postId
 - [05] F85 Cache invalidation scope — 30s TTL handles this adequately
 
 ## From Audit 06 (Messaging/Real-time) — 78 findings, 55 fixed

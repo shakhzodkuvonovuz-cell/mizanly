@@ -59,7 +59,13 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
             await this.processBlurHash(job);
             break;
           case 'video-transcode':
-            // Cloudflare Stream handles transcoding via webhook — no server-side work needed
+            // Video transcoding is fully handled by Cloudflare Stream:
+            // 1. Videos are uploaded directly to Stream via upload.service.ts
+            // 2. Stream automatically transcodes to HLS/DASH adaptive bitrate
+            // 3. When transcoding completes, Stream sends a webhook to stream.controller.ts
+            // 4. The webhook handler sets video.status = 'PUBLISHED' and video.publishedAt
+            // No server-side transcoding is needed — this job type exists for completeness
+            // and to provide a hook if a non-Stream video pipeline is ever needed.
             this.logger.debug(`Video transcode for ${job.data.mediaKey} — delegated to Cloudflare Stream`);
             await job.updateProgress(100);
             break;
@@ -128,13 +134,41 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
         { name: 'large', width: 1200, height: 1200 },
       ];
 
+      // Upload each resized variant to R2
+      const r2AccountId = this.config.get<string>('R2_ACCOUNT_ID') || this.config.get<string>('CLOUDFLARE_ACCOUNT_ID');
+      const r2AccessKey = this.config.get<string>('R2_ACCESS_KEY_ID') || this.config.get<string>('CLOUDFLARE_R2_ACCESS_KEY');
+      const r2SecretKey = this.config.get<string>('R2_SECRET_ACCESS_KEY') || this.config.get<string>('CLOUDFLARE_R2_SECRET_KEY');
+      const r2Bucket = this.config.get<string>('R2_BUCKET_NAME') || 'mizanly-media';
+
       for (const size of sizes) {
-        await sharp.default(stripped)
+        const resizedBuffer = await sharp.default(stripped)
           .resize(size.width, size.height, { fit: 'inside', withoutEnlargement: true })
           .jpeg({ quality: 80 })
           .toBuffer();
-        // TODO: Upload each variant to R2 when upload service supports programmatic uploads
-        // Current upload service only generates presigned URLs for client-side uploads
+
+        // Upload to R2 if credentials are available
+        if (r2AccountId && r2AccessKey && r2SecretKey) {
+          const variantKey = mediaKey.replace(/(\.[^.]+)$/, `-${size.name}$1`);
+          try {
+            const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
+            const s3 = new S3Client({
+              region: 'auto',
+              endpoint: `https://${r2AccountId}.r2.cloudflarestorage.com`,
+              credentials: { accessKeyId: r2AccessKey, secretAccessKey: r2SecretKey },
+            });
+            await s3.send(new PutObjectCommand({
+              Bucket: r2Bucket,
+              Key: variantKey,
+              Body: resizedBuffer,
+              ContentType: 'image/jpeg',
+            }));
+            this.logger.debug(`Uploaded ${size.name} variant: ${variantKey}`);
+          } catch (uploadErr) {
+            this.logger.warn(`Failed to upload ${size.name} variant for ${mediaKey}: ${uploadErr instanceof Error ? uploadErr.message : uploadErr}`);
+          }
+        } else {
+          this.logger.debug(`R2 credentials not configured — skipping ${size.name} variant upload for ${mediaKey}`);
+        }
       }
 
       await job.updateProgress(100);

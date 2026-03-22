@@ -43,7 +43,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
       },
       {
         connection: { url: redisUrl },
-        concurrency: 10,
+        concurrency: 25,
         settings: {
           backoffStrategy: (attemptsMade: number) => {
             // Custom backoff: 1s, 5s, 30s, 5min, 30min

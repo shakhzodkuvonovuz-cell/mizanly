@@ -1,14 +1,21 @@
 import {
   Injectable,
+  Inject,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
+import Redis from 'ioredis';
 
 @Injectable()
 export class BlocksService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(BlocksService.name);
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
+  ) {}
 
   async block(blockerId: string, blockedId: string) {
     if (blockerId === blockedId) {
@@ -18,7 +25,7 @@ export class BlocksService {
     // Validate target user exists
     const target = await this.prisma.user.findUnique({
       where: { id: blockedId },
-      select: { id: true },
+      select: { id: true, username: true },
     });
     if (!target) throw new NotFoundException('User not found');
 
@@ -89,7 +96,73 @@ export class BlocksService {
       throw err;
     }
 
+    // Invalidate profile cache for both users so blocked state is immediately visible
+    if (target.username) {
+      this.redis.del(`user:${target.username}`).catch(() => {});
+    }
+    // Also invalidate blocker's profile cache (follower counts changed)
+    const blocker = await this.prisma.user.findUnique({
+      where: { id: blockerId },
+      select: { username: true },
+    });
+    if (blocker?.username) {
+      this.redis.del(`user:${blocker.username}`).catch(() => {});
+    }
+
+    // Post-block cleanup (non-blocking): remove from circles + archive DM conversations
+    this.cleanupAfterBlock(blockerId, blockedId).catch((err) =>
+      this.logger.error(`Block cleanup failed for ${blockerId}->${blockedId}: ${err.message}`),
+    );
+
     return { message: 'User blocked' };
+  }
+
+  /**
+   * After a block: remove blocked user from blocker's circles,
+   * and archive shared DM conversations for both parties.
+   */
+  private async cleanupAfterBlock(blockerId: string, blockedId: string): Promise<void> {
+    // Remove blocked user from any circles owned by the blocker
+    const blockerCircles = await this.prisma.circle.findMany({
+      where: { ownerId: blockerId },
+      select: { id: true },
+      take: 50,
+    });
+    if (blockerCircles.length > 0) {
+      const circleIds = blockerCircles.map((c) => c.id);
+      const result = await this.prisma.circleMember.deleteMany({
+        where: { circleId: { in: circleIds }, userId: blockedId },
+      });
+      // Decrement membersCount for affected circles
+      if (result.count > 0) {
+        for (const circleId of circleIds) {
+          await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = GREATEST("membersCount" - 1, 1) WHERE id = ${circleId}`.catch(() => {});
+        }
+      }
+    }
+
+    // Archive shared 1:1 DM conversations for both parties
+    const sharedConversations = await this.prisma.conversation.findMany({
+      where: {
+        isGroup: false,
+        AND: [
+          { members: { some: { userId: blockerId } } },
+          { members: { some: { userId: blockedId } } },
+        ],
+      },
+      select: { id: true },
+      take: 50,
+    });
+    if (sharedConversations.length > 0) {
+      const convIds = sharedConversations.map((c) => c.id);
+      await this.prisma.conversationMember.updateMany({
+        where: {
+          conversationId: { in: convIds },
+          userId: { in: [blockerId, blockedId] },
+        },
+        data: { isArchived: true },
+      });
+    }
   }
 
   async unblock(blockerId: string, blockedId: string) {

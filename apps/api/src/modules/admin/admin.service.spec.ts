@@ -115,6 +115,22 @@ describe('AdminService', () => {
       expect(result.meta.hasMore).toBe(false);
     });
 
+    it('should paginate with ID cursor', async () => {
+      const reports = Array.from({ length: 21 }, (_, i) => ({
+        id: `report-${i}`,
+        status: 'PENDING',
+        createdAt: new Date(`2026-03-${String(i + 1).padStart(2, '0')}`),
+      }));
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findMany.mockResolvedValue(reports);
+
+      const result = await service.getReports('admin-id');
+
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('report-19');
+      expect(result.data.length).toBe(20);
+    });
+
     it('should filter by status', async () => {
       prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
       prisma.report.findMany.mockResolvedValue([]);
@@ -127,6 +143,18 @@ describe('AdminService', () => {
         orderBy: { createdAt: 'desc' },
         take: 21,
       });
+    });
+
+    it('should use cursor-based pagination when cursor provided', async () => {
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findMany.mockResolvedValue([]);
+
+      await service.getReports('admin-id', undefined, 'report-cursor-id');
+
+      expect(prisma.report.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        cursor: { id: 'report-cursor-id' },
+        skip: 1,
+      }));
     });
 
     it('should reject non-admin', async () => {
@@ -222,6 +250,55 @@ describe('AdminService', () => {
       });
     });
 
+    it('should remove post when action is REMOVE_CONTENT', async () => {
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: 'post-1',
+        reportedCommentId: null,
+        reportedUserId: 'user-1',
+      });
+      prisma.report.update.mockResolvedValue({ id: 'report-1', status: 'RESOLVED' });
+      (prisma.post as any) = { ...prisma.post, update: jest.fn().mockResolvedValue({}) };
+
+      await service.resolveReport('admin-id', 'report-1', 'REMOVE_CONTENT');
+
+      expect(prisma.report.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          actionTaken: 'CONTENT_REMOVED',
+        }),
+      }));
+    });
+
+    it('should ban user when action is BAN_USER', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // assertAdmin
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // assertAdmin for banUser
+        .mockResolvedValueOnce({ id: 'target-1', role: 'USER' }); // target check in banUser
+      prisma.report.findUnique.mockResolvedValue({
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedUserId: 'target-1',
+      });
+      prisma.report.update.mockResolvedValue({ id: 'report-1', status: 'RESOLVED' });
+      prisma.user.update.mockResolvedValue({ id: 'target-1', isBanned: true });
+
+      await service.resolveReport('admin-id', 'report-1', 'BAN_USER', 'Spam');
+
+      expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'target-1' },
+        data: expect.objectContaining({ isBanned: true }),
+      }));
+    });
+
+    it('should throw NotFoundException when report not found', async () => {
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(null);
+
+      await expect(service.resolveReport('admin-id', 'missing', 'WARN')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
     it('should reject non-admin', async () => {
       prisma.user.findUnique.mockResolvedValue({ role: 'USER' });
 
@@ -282,6 +359,43 @@ describe('AdminService', () => {
         data: expect.objectContaining({
           isDeactivated: true,
           banReason: 'Spam',
+          banExpiresAt: expect.any(Date),
+        }),
+      });
+    });
+
+    it('should reject banning admin users', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // admin check
+        .mockResolvedValueOnce({ id: 'other-admin', role: 'ADMIN' }); // target is also admin
+
+      await expect(service.banUser('admin-id', 'other-admin', 'Reason')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should throw NotFoundException for missing target', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // admin check
+        .mockResolvedValueOnce(null); // target not found
+
+      await expect(service.banUser('admin-id', 'missing', 'Reason')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should set banExpiresAt when duration provided', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER' });
+      prisma.user.update.mockResolvedValue({ id: 'user-1', isBanned: true });
+
+      await service.banUser('admin-id', 'user-1', 'Temp ban', 24);
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: expect.objectContaining({
+          isBanned: true,
           banExpiresAt: expect.any(Date),
         }),
       });

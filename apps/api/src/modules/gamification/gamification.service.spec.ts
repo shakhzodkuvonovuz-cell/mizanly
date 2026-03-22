@@ -30,8 +30,8 @@ describe('GamificationService', () => {
             profileCustomization: { findUnique: jest.fn(), create: jest.fn(), upsert: jest.fn() },
             comment: { groupBy: jest.fn() },
             user: { findMany: jest.fn() },
-            $transaction: jest.fn().mockResolvedValue([]),
-            $executeRaw: jest.fn(),
+            $transaction: jest.fn(),
+            $executeRaw: jest.fn().mockResolvedValue(1),
           },
         },
       ],
@@ -39,6 +39,14 @@ describe('GamificationService', () => {
 
     service = module.get<GamificationService>(GamificationService);
     prisma = module.get(PrismaService) as any;
+
+    // Configure $transaction to handle both interactive (fn) and batch (array) modes
+    prisma.$transaction.mockImplementation((fnOrArray: unknown) => {
+      if (typeof fnOrArray === 'function') {
+        return (fnOrArray as (tx: typeof prisma) => Promise<unknown>)(prisma);
+      }
+      return Promise.all(fnOrArray as Promise<unknown>[]);
+    });
   });
 
   describe('getStreaks', () => {

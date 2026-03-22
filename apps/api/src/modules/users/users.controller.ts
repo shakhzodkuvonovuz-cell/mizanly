@@ -20,13 +20,10 @@ import { ContactSyncDto } from './dto/contact-sync.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { IsBoolean } from 'class-validator';
-
-class NasheedModeDto {
-  @IsBoolean() nasheedMode: boolean;
-}
+import { NasheedModeDto } from './dto/nasheed-mode.dto';
 
 @ApiTags('Users')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
@@ -124,16 +121,7 @@ export class UsersController {
     return this.usersService.getSavedVideos(userId, cursor);
   }
 
-  @Get('me/follow-requests')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Incoming follow requests' })
-  getFollowRequests(
-    @CurrentUser('id') userId: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.usersService.getFollowRequests(userId, cursor);
-  }
+  // Follow requests moved to FollowsController: GET /follows/requests/incoming
 
   @Get('me/watch-later')
   @UseGuards(ClerkAuthGuard)

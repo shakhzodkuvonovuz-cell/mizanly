@@ -83,13 +83,14 @@ describe('ParentalControlsController', () => {
   });
 
   describe('updateControls', () => {
-    it('should call parentalControlsService.updateControls with parentUserId, childId, and dto', async () => {
-      const dto = { screenTimeLimit: 120, contentFilter: 'strict' };
+    it('should call parentalControlsService.updateControls with parentUserId, childId, pin, and controls', async () => {
+      const dto = { pin: '1234', screenTimeLimit: 120, contentFilter: 'strict' };
       service.updateControls.mockResolvedValue({ updated: true } as any);
 
       await controller.updateControls(userId, 'child-1', dto as any);
 
-      expect(service.updateControls).toHaveBeenCalledWith(userId, 'child-1', dto);
+      // Controller destructures pin from DTO and passes it separately
+      expect(service.updateControls).toHaveBeenCalledWith(userId, 'child-1', '1234', { screenTimeLimit: 120, contentFilter: 'strict' });
     });
   });
 

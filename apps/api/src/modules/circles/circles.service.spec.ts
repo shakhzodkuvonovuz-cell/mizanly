@@ -25,6 +25,9 @@ describe('CirclesService', () => {
         deleteMany: jest.fn(),
         findMany: jest.fn(),
       },
+      block: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       $executeRaw: jest.fn().mockResolvedValue(0),
     };
 
@@ -210,6 +213,41 @@ describe('CirclesService', () => {
       await expect(service.addMembers('circle-abc', 'user-123', ['user-456']))
         .rejects.toThrow(NotFoundException);
     });
+
+    it('should filter out blocked users from addMembers', async () => {
+      const userId = 'user-123';
+      const circleId = 'circle-abc';
+      const existingCircle = { id: circleId, ownerId: userId };
+      prisma.circle.findUnique.mockResolvedValue(existingCircle);
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: userId, blockedId: 'user-789' },
+      ]);
+      prisma.circleMember.createMany.mockResolvedValue({ count: 1 });
+
+      const result = await service.addMembers(circleId, userId, ['user-456', 'user-789']);
+
+      // user-789 should be filtered out by block check
+      expect(prisma.circleMember.createMany).toHaveBeenCalledWith({
+        data: [{ circleId, userId: 'user-456' }],
+        skipDuplicates: true,
+      });
+      expect(result).toEqual({ added: 1 });
+    });
+
+    it('should return added:0 if all members are blocked', async () => {
+      const userId = 'user-123';
+      const circleId = 'circle-abc';
+      const existingCircle = { id: circleId, ownerId: userId };
+      prisma.circle.findUnique.mockResolvedValue(existingCircle);
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: userId, blockedId: 'user-456' },
+        { blockerId: 'user-789', blockedId: userId },
+      ]);
+
+      const result = await service.addMembers(circleId, userId, ['user-456', 'user-789']);
+      expect(result).toEqual({ added: 0 });
+      expect(prisma.circleMember.createMany).not.toHaveBeenCalled();
+    });
   });
 
   describe('removeMembers', () => {
@@ -239,7 +277,7 @@ describe('CirclesService', () => {
   });
 
   describe('getMembers', () => {
-    it('should return members if user is owner', async () => {
+    it('should return members with pagination if user is owner', async () => {
       const userId = 'user-123';
       const circleId = 'circle-abc';
       const existingCircle = { id: circleId, ownerId: userId };
@@ -256,7 +294,8 @@ describe('CirclesService', () => {
         where: { circleId },
         include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       }));
-      expect(result).toEqual(mockMembers);
+      expect(result.data).toEqual(mockMembers);
+      expect(result.meta.hasMore).toBe(false);
     });
 
     it('should throw NotFoundException if circle not found', async () => {

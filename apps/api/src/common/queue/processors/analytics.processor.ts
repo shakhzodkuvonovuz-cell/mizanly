@@ -94,7 +94,11 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
   private async processEngagementTracking(job: Job<EngagementJobData>): Promise<void> {
     const { type, userId, contentType, contentId } = job.data;
     this.logger.debug(`Tracked engagement: ${type} by ${userId} on ${contentType}/${contentId}`);
-    // Engagement tracking is handled by the AnalyticsService in real-time.
-    // This queue entry provides durable recording for delayed/batch analytics.
+    // Real-time engagement tracking is handled by AnalyticsService (analytics.service.ts)
+    // which writes to Redis pipelines for instant counters (views, likes, shares).
+    // FeedService.logInteraction() also records per-user engagement in the FeedInteraction table.
+    // This queue processor exists for durable batch analytics (e.g., daily aggregation,
+    // cohort analysis) but has no separate storage target yet. When a data warehouse or
+    // analytics DB is added, this processor should write engagement events there.
   }
 }

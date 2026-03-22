@@ -153,6 +153,13 @@ export class VideosService {
         }).catch((e) => this.logger.error('Failed to update video status', e));
       });
 
+    // AI moderation: check title + description via queue (Finding 45: video content not moderated)
+    const moderationText = [dto.title, dto.description].filter(Boolean).join('\n');
+    if (moderationText) {
+      this.queueService.addModerationJob({ content: moderationText, contentType: 'post', contentId: video[0].id })
+        .catch((err: unknown) => this.logger.error(`Moderation queue failed for video ${video[0].id}`, err instanceof Error ? err.message : err));
+    }
+
     // Gamification: award XP + update streak
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' });
     this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });

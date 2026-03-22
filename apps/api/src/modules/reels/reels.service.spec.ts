@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -374,21 +374,20 @@ describe('ReelsService', () => {
       expect(result).toEqual({ liked: true });
     });
 
-    it('should not notify when liking own reel', async () => {
+    it('should throw BadRequestException when liking own reel', async () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
       const mockReel = {
         id: reelId,
         userId, // same user
         status: ReelStatus.READY,
+        isRemoved: false,
       };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.$transaction.mockResolvedValue([{}, {}, {}]);
 
-      await service.like(reelId, userId);
-
-      expect(notifications.create).not.toHaveBeenCalled();
+      await expect(service.like(reelId, userId)).rejects.toThrow(BadRequestException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException on duplicate like (P2002)', async () => {

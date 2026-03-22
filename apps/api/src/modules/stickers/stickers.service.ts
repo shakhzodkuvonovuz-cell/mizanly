@@ -66,8 +66,10 @@ export class StickersService {
   }
 
   async searchPacks(query: string) {
+    // Return empty results for empty/whitespace-only queries instead of matching all packs
+    if (!query || query.trim().length === 0) return [];
     return this.prisma.stickerPack.findMany({
-      where: { name: { contains: query, mode: 'insensitive' } },
+      where: { name: { contains: query.trim(), mode: 'insensitive' } },
       take: 20,
     });
   }
@@ -87,9 +89,9 @@ export class StickersService {
         where: { userId_packId: { userId, packId } },
       });
     } catch (error) {
-      // P2025: record not found — idempotent, treat as already removed
+      // P2025: record not found — pack was not in the user's collection
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        return { removed: true };
+        throw new NotFoundException('Sticker pack not found in your collection');
       }
       throw error;
     }
@@ -107,11 +109,12 @@ export class StickersService {
   }
 
   async getRecentStickers(userId: string) {
-    // Direct query for stickers from user's packs, ordered by most recently added
+    // Direct query for stickers from user's packs, limited to 10 most recent packs
     const userPacks = await this.prisma.userStickerPack.findMany({
       where: { userId },
       select: { packId: true },
-      take: 50,
+      orderBy: { addedAt: 'desc' },
+      take: 10,
     });
     if (userPacks.length === 0) return [];
 

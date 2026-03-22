@@ -253,13 +253,16 @@ export class ReportsService {
       }),
     ];
 
-    // Actually remove content when action is CONTENT_REMOVED
+    // Actually remove content when action is CONTENT_REMOVED (Finding 07, Audit 13)
     if (actionTaken === ModerationAction.CONTENT_REMOVED) {
       if (report.reportedPostId) {
         ops.push(this.prisma.post.update({ where: { id: report.reportedPostId }, data: { isRemoved: true } }));
       }
       if (report.reportedCommentId) {
         ops.push(this.prisma.comment.update({ where: { id: report.reportedCommentId }, data: { isRemoved: true } }));
+      }
+      if (report.reportedMessageId) {
+        ops.push(this.prisma.message.update({ where: { id: report.reportedMessageId }, data: { isDeleted: true } }));
       }
     }
 
@@ -276,6 +279,19 @@ export class ReportsService {
       ops.push(this.prisma.user.update({
         where: { id: report.reportedUserId },
         data: { isMuted: true },
+      }));
+    }
+
+    // Finding 30 (Audit 13): Handle WARNING action — notify the reported user
+    if (actionTaken === ModerationAction.WARNING && report.reportedUserId) {
+      ops.push(this.prisma.notification.create({
+        data: {
+          userId: report.reportedUserId,
+          actorId: adminId,
+          type: 'SYSTEM' as any,
+          title: 'Content Warning',
+          body: `Your content was flagged for ${report.reason}. Repeated violations may result in account restrictions.`,
+        },
       }));
     }
 

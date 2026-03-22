@@ -230,7 +230,21 @@ export class FeedService {
       take: Math.min(offset + limit + 1, 100),
     });
 
-    // Score by engagement RATE, not total
+    // Scoring formula: engagementRate = engagementTotal / ageHours
+    // where engagementTotal = likes*1 + comments*2 + shares*3 + saves*2
+    // This is a simple time-decay engagement rate that favors fresh viral content.
+    //
+    // CURSOR NOTE (Audit 21 F18-20): This feed uses offset-based pagination (not
+    // createdAt cursor) because the sort order is by engagement score, not time.
+    // Using a createdAt cursor with score-sorted results would produce duplicates
+    // and missed items. The offset cursor (string-encoded integer) correctly paginates
+    // through the score-sorted result set.
+    //
+    // PERFORMANCE NOTE: At scale, this should be computed in SQL:
+    //   ORDER BY ("likesCount" + "commentsCount" * 2 + "sharesCount" * 3 + "savesCount" * 2)
+    //            / POWER(GREATEST(EXTRACT(EPOCH FROM NOW() - "createdAt") / 3600, 1), 1.5)
+    //            DESC LIMIT $limit
+    // This eliminates the need to fetch 100 rows and sort in JS.
     const scored = posts.map((post) => {
       const ageHours = Math.max(1, (Date.now() - post.createdAt.getTime()) / 3600000);
       const engagementTotal =
@@ -380,9 +394,18 @@ export class FeedService {
 
   async getNearbyContent(lat: number, lng: number, radiusKm: number, cursor?: string, userId?: string) {
     const limit = 20;
-    // Find posts with locationName that were created nearby
-    // Since we don't have lat/lng on posts, we search for posts with any locationName
-    // and sort by recency. In production, you'd use PostGIS or a geo index.
+    // STUB: Currently returns all geo-tagged posts without actual distance filtering.
+    // The Post model lacks lat/lng fields, so true proximity search is not possible.
+    //
+    // To implement real nearby content:
+    // 1. Add `latitude Float?` and `longitude Float?` fields to the Post model
+    // 2. Install PostGIS extension: `CREATE EXTENSION IF NOT EXISTS postgis;`
+    // 3. Add a geography column: `ALTER TABLE "Post" ADD COLUMN geog geography(Point, 4326);`
+    // 4. Create spatial index: `CREATE INDEX posts_geog_idx ON "Post" USING GIST(geog);`
+    // 5. Query with ST_DWithin: `WHERE ST_DWithin(geog, ST_MakePoint($lng, $lat)::geography, $radiusKm * 1000)`
+    //
+    // Alternatively, use the Haversine formula (as mosques.service does) with lat/lng columns
+    // and a bounding box pre-filter for index usage.
     const posts = await this.prisma.post.findMany({
       where: {
         locationName: { not: null },

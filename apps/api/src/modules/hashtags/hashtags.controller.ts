@@ -5,6 +5,7 @@ import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { HashtagsService } from './hashtags.service';
+import { TrendingQueryDto, SearchQueryDto } from './dto/hashtag-query.dto';
 
 @ApiTags('Hashtags')
 @Throttle({ default: { limit: 60, ttl: 60000 } })
@@ -15,18 +16,18 @@ export class HashtagsController {
   @Get('trending')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get trending hashtags' })
-  async getTrending(@Query('limit') limit?: string) {
-    const limitNum = limit ? Math.min(parseInt(limit, 10), 100) : 50;
+  async getTrending(@Query() dto: TrendingQueryDto) {
+    const limitNum = dto.limit ? Math.min(parseInt(dto.limit, 10), 100) : 50;
     return this.service.getTrendingRaw(limitNum);
   }
 
   @Get('search')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Search hashtags by prefix' })
-  async search(@Query('q') query: string, @Query('limit') limit?: string) {
-    if (!query) return { data: [], meta: { total: 0 } };
-    const limitNum = limit ? Math.min(parseInt(limit, 10), 50) : 20;
-    return this.service.search(query, limitNum);
+  async search(@Query() dto: SearchQueryDto) {
+    if (!dto.q) return { data: [], meta: { total: 0 } };
+    const limitNum = dto.limit ? Math.min(parseInt(dto.limit, 10), 50) : 20;
+    return this.service.search(dto.q, limitNum);
   }
 
   @Get('following')

@@ -12,6 +12,7 @@ import { createClerkClient } from '@clerk/backend';
 import { RegisterDto } from './dto/register.dto';
 import { SetInterestsDto } from './dto/set-interests.dto';
 import { AnalyticsService } from '../../common/services/analytics.service';
+import { randomBytes } from 'crypto';
 
 /** Minimum age required to register (COPPA compliance) */
 const MINIMUM_AGE = 13;
@@ -242,6 +243,14 @@ export class AuthService {
     return suggestions;
   }
 
+  // TODO: [ARCH/F19] Missing Clerk webhook events:
+  // - user.updated → sync profile changes (email, phone, avatar)
+  // - session.created → track login events, enforce 2FA
+  // - session.revoked → clean up active sessions
+  // - organization.* → community/circle sync
+  // Currently only user.created and user.deleted are handled.
+  // Requires CLERK_WEBHOOK_SECRET to be set (currently empty).
+
   // Called by webhook handler
   async syncClerkUser(clerkId: string, data: {
     email: string;
@@ -261,15 +270,15 @@ export class AuthService {
       });
     }
 
-    // New user — generate collision-resistant username
-    const baseUsername = `user_${clerkId.replace(/[^a-zA-Z0-9]/g, '').slice(-12)}`;
+    // New user — generate cryptographically random username (not derived from clerkId)
+    const randomSuffix = randomBytes(4).toString('hex');
+    const baseUsername = `user_${randomSuffix}`;
     let username = baseUsername;
 
-    // Check for username collision and add random suffix if needed
+    // Check for username collision and add another random suffix if needed
     const usernameConflict = await this.prisma.user.findUnique({ where: { username } });
     if (usernameConflict) {
-      const suffix = Math.random().toString(36).slice(2, 6);
-      username = `${baseUsername}_${suffix}`;
+      username = `user_${randomBytes(4).toString('hex')}`;
     }
 
     return this.prisma.user.create({

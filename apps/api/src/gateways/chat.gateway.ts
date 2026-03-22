@@ -1,4 +1,4 @@
-import { Inject, Logger } from '@nestjs/common';
+import { Inject, Logger, OnModuleInit } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -53,7 +53,7 @@ import {
   pingInterval: 25000,
   pingTimeout: 60000,
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(ChatGateway.name);
   // Presence tracking via Redis (supports horizontal scaling)
@@ -65,6 +65,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Hash: quran:room:{roomId} → { hostId, currentSurah, currentVerse, reciterId }
   // Set:  quran:room:{roomId}:participants → socket IDs
   private readonly QURAN_ROOM_TTL = 3600; // 1 hour auto-cleanup
+  private readonly MAX_QURAN_ROOM_PARTICIPANTS = 50;
 
   constructor(
     private messagesService: MessagesService,
@@ -72,6 +73,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private config: ConfigService,
     @Inject('REDIS') private redis: Redis,
   ) {}
+
+  /**
+   * Subscribe to Redis pub/sub for real-time notification delivery.
+   * When NotificationsService publishes to 'notification:new', emit
+   * the notification to the user's Socket.io room.
+   */
+  async onModuleInit() {
+    try {
+      // Create a duplicate Redis connection for subscribing (pub/sub requires dedicated connection)
+      const subscriber = this.redis.duplicate();
+      await subscriber.subscribe('notification:new');
+      subscriber.on('message', (_channel: string, message: string) => {
+        try {
+          const { userId, notification } = JSON.parse(message);
+          if (userId && notification) {
+            this.server.to(`user:${userId}`).emit('new_notification', notification);
+          }
+        } catch (e) {
+          this.logger.debug('Failed to parse notification pub/sub message', e);
+        }
+      });
+      this.logger.log('Subscribed to notification:new Redis channel');
+    } catch (e) {
+      this.logger.warn('Failed to subscribe to notification Redis channel — real-time notifications disabled', e);
+    }
+  }
 
   /** Get all socket IDs for a user from Redis presence */
   private async getUserSockets(userId: string): Promise<string[]> {
@@ -350,6 +377,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } catch {
       throw new WsException('Not a member of this conversation');
     }
+    // Respect user privacy: only emit typing indicator if activityStatus is enabled
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId: client.data.userId },
+      select: { activityStatus: true },
+    });
+    if (settings && !settings.activityStatus) return; // User has disabled activity visibility
     client.to(`conversation:${dto.conversationId}`).emit('user_typing', {
       userId: client.data.userId,
       isTyping: dto.isTyping,
@@ -370,6 +403,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     await this.messagesService.markRead(dto.conversationId, client.data.userId);
+    // Respect user privacy: only broadcast read receipt if activityStatus is enabled
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId: client.data.userId },
+      select: { activityStatus: true },
+    });
+    if (settings && !settings.activityStatus) return; // User has disabled read receipts
     this.server
       .to(`conversation:${dto.conversationId}`)
       .emit('messages_read', { userId: client.data.userId });
@@ -556,15 +595,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }).catch((e) => this.logger.error('Failed to update delivery', e));
 
     // Emit delivery receipt only to the message sender, not the entire room (F11 — privacy)
-    const msg = await this.prisma.message.findUnique({
-      where: { id: dto.messageId },
-      select: { senderId: true },
-    });
-    if (msg?.senderId) {
-      const senderSockets = await this.getUserSockets(msg.senderId);
-      for (const s of senderSockets) {
-        this.server.to(s).emit('delivery_receipt', { messageId: dto.messageId, deliveredAt: now.toISOString(), deliveredTo: client.data.userId });
+    try {
+      const msg = await this.prisma.message.findUnique({
+        where: { id: dto.messageId },
+        select: { senderId: true },
+      });
+      if (msg?.senderId) {
+        const senderSockets = await this.getUserSockets(msg.senderId);
+        for (const s of senderSockets) {
+          this.server.to(s).emit('delivery_receipt', { messageId: dto.messageId, deliveredAt: now.toISOString(), deliveredTo: client.data.userId });
+        }
       }
+    } catch (e) {
+      this.logger.error(`Failed to emit delivery receipt for message ${dto.messageId}`, e);
     }
   }
 
@@ -593,8 +636,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.redis.expire(roomKey, this.QURAN_ROOM_TTL);
     }
 
-    // Add participant and track on socket for disconnect cleanup
+    // Enforce participant cap
     const partKey = this.quranParticipantsKey(roomId);
+    const currentCount = await this.redis.scard(partKey);
+    if (currentCount >= this.MAX_QURAN_ROOM_PARTICIPANTS) {
+      client.emit('error', { message: `Room is full (max ${this.MAX_QURAN_ROOM_PARTICIPANTS} participants)` });
+      return;
+    }
+
+    // Add participant and track on socket for disconnect cleanup
     await this.redis.sadd(partKey, client.id);
     await this.redis.expire(partKey, this.QURAN_ROOM_TTL);
     client.join(`quran:${roomId}`);

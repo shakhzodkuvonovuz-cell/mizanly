@@ -24,7 +24,7 @@ describe('BlocksService', () => {
               findMany: jest.fn(),
             },
             user: {
-              findUnique: jest.fn().mockResolvedValue({ id: 'user-456' }),
+              findUnique: jest.fn().mockResolvedValue({ id: 'user-456', username: 'blocked-user' }),
             },
             follow: {
               findMany: jest.fn(),
@@ -32,6 +32,18 @@ describe('BlocksService', () => {
             },
             followRequest: {
               deleteMany: jest.fn(),
+            },
+            circle: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            circleMember: {
+              deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+            },
+            conversation: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            conversationMember: {
+              updateMany: jest.fn().mockResolvedValue({ count: 0 }),
             },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
@@ -85,7 +97,7 @@ describe('BlocksService', () => {
     it('should return success idempotently if already blocked', async () => {
       const blockerId = 'user-123';
       const blockedId = 'user-456';
-      prisma.user.findUnique.mockResolvedValue({ id: blockedId });
+      prisma.user.findUnique.mockResolvedValue({ id: blockedId, username: 'blocked-user' });
       prisma.block.findUnique.mockResolvedValue({ blockerId, blockedId });
 
       const result = await service.block(blockerId, blockedId);
@@ -97,7 +109,7 @@ describe('BlocksService', () => {
     it('should include executeRaw in transaction when follows existed', async () => {
       const blockerId = 'user-123';
       const blockedId = 'user-456';
-      prisma.user.findUnique.mockResolvedValue({ id: blockedId });
+      prisma.user.findUnique.mockResolvedValue({ id: blockedId, username: 'blocked-user' });
       prisma.block.findUnique.mockResolvedValue(null);
       prisma.follow.findMany.mockResolvedValue([
         { followerId: blockerId, followingId: blockedId },
@@ -229,7 +241,7 @@ describe('BlocksService', () => {
     });
 
     it('should not include counter updates when no follows existed', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'user-456' });
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-456', username: 'blocked-user' });
       prisma.block.findUnique.mockResolvedValue(null);
       prisma.follow.findMany.mockResolvedValue([]);
       prisma.$transaction.mockResolvedValue([]);
@@ -275,6 +287,84 @@ describe('BlocksService', () => {
       expect(prisma.block.findMany).toHaveBeenCalledWith(expect.objectContaining({
         take: 6,
       }));
+    });
+  });
+
+  describe('cleanupAfterBlock', () => {
+    it('should remove blocked user from blocker circles and archive DM conversations', async () => {
+      const blockerId = 'user-123';
+      const blockedId = 'user-456';
+
+      // Setup: block is created successfully
+      prisma.user.findUnique.mockResolvedValue({ id: blockedId, username: 'blocked-user' });
+      prisma.block.findUnique.mockResolvedValue(null);
+      prisma.follow.findMany.mockResolvedValue([]);
+      prisma.$transaction.mockResolvedValue([]);
+
+      // Setup: cleanup finds circles and conversations
+      prisma.circle.findMany.mockResolvedValue([{ id: 'circle-1' }]);
+      prisma.circleMember.deleteMany.mockResolvedValue({ count: 1 });
+      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.conversation.findMany.mockResolvedValue([{ id: 'conv-1' }]);
+      prisma.conversationMember.updateMany.mockResolvedValue({ count: 2 });
+
+      await service.block(blockerId, blockedId);
+
+      // Wait for async cleanup
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(prisma.circle.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { ownerId: blockerId },
+      }));
+      expect(prisma.circleMember.deleteMany).toHaveBeenCalledWith({
+        where: { circleId: { in: ['circle-1'] }, userId: blockedId },
+      });
+      expect(prisma.conversation.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({
+          isGroup: false,
+        }),
+      }));
+      expect(prisma.conversationMember.updateMany).toHaveBeenCalledWith({
+        where: {
+          conversationId: { in: ['conv-1'] },
+          userId: { in: [blockerId, blockedId] },
+        },
+        data: { isArchived: true },
+      });
+    });
+
+    it('should not fail if cleanup encounters no circles or conversations', async () => {
+      const blockerId = 'user-123';
+      const blockedId = 'user-456';
+      prisma.user.findUnique.mockResolvedValue({ id: blockedId, username: 'blocked-user' });
+      prisma.block.findUnique.mockResolvedValue(null);
+      prisma.follow.findMany.mockResolvedValue([]);
+      prisma.$transaction.mockResolvedValue([]);
+      prisma.circle.findMany.mockResolvedValue([]);
+      prisma.conversation.findMany.mockResolvedValue([]);
+
+      const result = await service.block(blockerId, blockedId);
+      expect(result).toEqual({ message: 'User blocked' });
+    });
+  });
+
+  describe('getBlockedIds', () => {
+    it('should return all blocked user IDs in both directions', async () => {
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user-123', blockedId: 'user-456' },
+        { blockerId: 'user-789', blockedId: 'user-123' },
+      ]);
+
+      const result = await service.getBlockedIds('user-123');
+      expect(result).toContain('user-456');
+      expect(result).toContain('user-789');
+      expect(result).not.toContain('user-123');
+    });
+
+    it('should return empty array when no blocks', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      const result = await service.getBlockedIds('user-123');
+      expect(result).toEqual([]);
     });
   });
 });

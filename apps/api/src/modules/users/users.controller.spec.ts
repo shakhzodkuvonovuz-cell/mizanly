@@ -133,14 +133,6 @@ describe('UsersController', () => {
     });
   });
 
-  describe('getFollowRequests', () => {
-    it('should call service.getFollowRequests with userId and cursor', async () => {
-      mockService.getFollowRequests.mockResolvedValue({ data: [] });
-      await controller.getFollowRequests('user-1', 'cursor-1');
-      expect(mockService.getFollowRequests).toHaveBeenCalledWith('user-1', 'cursor-1');
-    });
-  });
-
   describe('getWatchLater', () => {
     it('should call service.getWatchLater with userId and cursor', async () => {
       mockService.getWatchLater.mockResolvedValue({ data: [] });

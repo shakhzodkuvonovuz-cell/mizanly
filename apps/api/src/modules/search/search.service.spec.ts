@@ -51,6 +51,7 @@ describe('SearchService', () => {
             channel: {
               findMany: jest.fn(),
             },
+            $queryRaw: jest.fn().mockResolvedValue([]),
           },
         },
       ],
@@ -341,6 +342,7 @@ describe('SearchService', () => {
             { name: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
           ],
+          user: { isBanned: false, isDeleted: false, isDeactivated: false },
         },
         select: expect.any(Object),
         take: 21,
@@ -528,6 +530,7 @@ describe('SearchService', () => {
             { name: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
           ],
+          user: { isBanned: false, isDeleted: false, isDeactivated: false },
         },
         select: expect.any(Object),
         take: 21,
@@ -586,10 +589,10 @@ describe('SearchService', () => {
 
   describe('trending', () => {
     it('should return trending hashtags and threads from last 24h', async () => {
-      const mockPosts = [
-        { hashtags: ['trending', 'news'] },
-        { hashtags: ['trending'] },
-        { hashtags: ['news'] },
+      // New implementation uses $queryRaw for SQL aggregation instead of post.findMany
+      const mockTopTags = [
+        { tag: 'trending', cnt: BigInt(2) },
+        { tag: 'news', cnt: BigInt(2) },
       ];
       const mockHashtagRecords = [
         { id: 'tag-1', name: 'trending', postsCount: 500 },
@@ -603,20 +606,13 @@ describe('SearchService', () => {
           user: { id: 'user-1', username: 'trendy' },
         },
       ];
-      prisma.post.findMany.mockResolvedValue(mockPosts);
+      prisma.$queryRaw.mockResolvedValue(mockTopTags);
       prisma.hashtag.findMany.mockResolvedValue(mockHashtagRecords);
       prisma.thread.findMany.mockResolvedValue(mockThreads);
 
       const result = await service.trending();
 
-      expect(prisma.post.findMany).toHaveBeenCalledWith({
-        where: {
-          createdAt: { gte: expect.any(Date) },
-          hashtags: { isEmpty: false },
-        },
-        select: { hashtags: true },
-        take: 500,
-      });
+      expect(prisma.$queryRaw).toHaveBeenCalled();
       expect(prisma.hashtag.findMany).toHaveBeenCalledWith({
         where: { name: { in: ['trending', 'news'] } },
       });

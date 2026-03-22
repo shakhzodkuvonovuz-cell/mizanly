@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CirclesService } from './circles.service';
@@ -9,6 +9,7 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Circles')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('circles')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()
@@ -37,8 +38,14 @@ export class CirclesController {
   delete(@Param('id') id: string, @CurrentUser('id') userId: string) { return this.circlesService.delete(id, userId); }
 
   @Get(':id/members')
-  @ApiOperation({ summary: 'Get circle members' })
-  getMembers(@Param('id') id: string, @CurrentUser('id') userId: string) { return this.circlesService.getMembers(id, userId); }
+  @ApiOperation({ summary: 'Get circle members (cursor paginated)' })
+  getMembers(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.circlesService.getMembers(id, userId, cursor);
+  }
 
   @Post(':id/members')
   @ApiOperation({ summary: 'Add members to circle' })

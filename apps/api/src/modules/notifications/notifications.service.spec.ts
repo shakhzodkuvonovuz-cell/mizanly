@@ -41,6 +41,12 @@ describe('NotificationsService', () => {
             getActiveTokensForUser: jest.fn(),
           },
         },
+        {
+          provide: 'REDIS',
+          useValue: {
+            publish: jest.fn().mockReturnValue({ catch: jest.fn() }),
+          },
+        },
       ],
     }).compile();
 

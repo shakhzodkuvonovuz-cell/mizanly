@@ -11,6 +11,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
   width: DimensionValue;
@@ -19,15 +20,18 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
   style?: object;
 }) {
   const tc = useThemeColors();
+  const reducedMotion = useReducedMotion();
   const shimmer = useSharedValue(0);
 
   useEffect(() => {
+    // Skip shimmer animation when reduced motion is enabled — show static loading state
+    if (reducedMotion) return;
     shimmer.value = withRepeat(
       withTiming(1, { duration: animation.timing.shimmer, easing: Easing.inOut(Easing.ease) }),
       -1,
       false,
     );
-  }, [shimmer]);
+  }, [shimmer, reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: interpolate(shimmer.value, [0, 1], I18nManager.isRTL ? [300, -300] : [-300, 300]) }],

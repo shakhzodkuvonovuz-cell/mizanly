@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { View, StyleSheet, Pressable, Platform, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Platform, useWindowDimensions, KeyboardAvoidingView, AccessibilityInfo } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -44,12 +44,16 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
     };
   }, []);
 
-  const maxHeight = snapPoint ? SCREEN_HEIGHT * snapPoint : undefined;
+  // Clamp snapPoint to 0-1 range (percentage of screen height)
+  const clampedSnap = snapPoint ? Math.min(Math.max(snapPoint, 0.1), 1) : undefined;
+  const maxHeight = clampedSnap ? SCREEN_HEIGHT * clampedSnap : undefined;
 
   const open = useCallback(() => {
     backdropOpacity.value = withTiming(1, { duration: animation.timing.normal });
     translateY.value = withSpring(0, animation.spring.responsive);
-  }, [translateY, backdropOpacity]);
+    // Announce to screen readers that a menu has opened
+    AccessibilityInfo.announceForAccessibility(t('common.menuOpened') || 'Menu opened');
+  }, [translateY, backdropOpacity, t]);
 
   const close = useCallback(() => {
     haptic.light();
@@ -112,19 +116,25 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
         />
       </Animated.View>
 
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.sheet, sheetStyle, maxHeight ? { maxHeight } : undefined, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]} accessibilityViewIsModal={true}>
-          {Platform.OS === 'ios' ? (
-            <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(33, 40, 59, 0.92)', borderTopWidth: 0.5, borderTopColor: colors.glass.border }]} />
-          )}
-          <View style={styles.handleContainer}>
-            <View style={[styles.handle, { backgroundColor: tc.borderLight }]} />
-          </View>
-          <View style={styles.content}>{children}</View>
-        </Animated.View>
-      </GestureDetector>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardAvoid}
+        pointerEvents="box-none"
+      >
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.sheet, sheetStyle, maxHeight ? { maxHeight } : undefined, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]} accessibilityViewIsModal={true}>
+            {Platform.OS === 'ios' ? (
+              <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+            ) : (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(33, 40, 59, 0.92)', borderTopWidth: 0.5, borderTopColor: colors.glass.border }]} />
+            )}
+            <View style={styles.handleContainer}>
+              <View style={[styles.handle, { backgroundColor: tc.borderLight }]} />
+            </View>
+            <View style={styles.content}>{children}</View>
+          </Animated.View>
+        </GestureDetector>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -177,11 +187,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  sheet: {
+  keyboardAvoid: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  sheet: {
+    position: 'relative',
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     overflow: 'hidden',

@@ -82,13 +82,13 @@ describe('Integration: Thread Lifecycle', () => {
   });
 
   it('should like a thread', async () => {
-    const result = await threadsService.like('thread-1', 'user-1');
+    const result = await threadsService.like('thread-1', 'user-2');
     expect(result).toHaveProperty('liked', true);
   });
 
   it('should unlike a thread', async () => {
-    prisma.threadReaction.findUnique.mockResolvedValue({ userId: 'user-1', threadId: 'thread-1' });
-    const result = await threadsService.unlike('thread-1', 'user-1');
+    prisma.threadReaction.findUnique.mockResolvedValue({ userId: 'user-2', threadId: 'thread-1' });
+    const result = await threadsService.unlike('thread-1', 'user-2');
     expect(result).toHaveProperty('liked', false);
   });
 

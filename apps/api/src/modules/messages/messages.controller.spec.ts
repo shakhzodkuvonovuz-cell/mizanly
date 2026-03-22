@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
+import { ChatGateway } from '../../gateways/chat.gateway';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
@@ -42,6 +43,7 @@ describe('MessagesController', () => {
       providers: [
         ...globalMockProviders,
         { provide: MessagesService, useValue: mockService },
+        { provide: ChatGateway, useValue: { server: { to: jest.fn().mockReturnValue({ emit: jest.fn() }) } } },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },

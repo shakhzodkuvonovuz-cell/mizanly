@@ -33,6 +33,7 @@ describe('UsersService', () => {
             },
             block: {
               findFirst: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
             },
             follow: {
               findUnique: jest.fn(),
@@ -113,6 +114,10 @@ describe('UsersService', () => {
               block: { deleteMany: jest.fn().mockResolvedValue({}) },
               bookmark: { deleteMany: jest.fn().mockResolvedValue({}) },
               postReaction: { deleteMany: jest.fn().mockResolvedValue({}) },
+              circleMember: { deleteMany: jest.fn().mockResolvedValue({}) },
+              mute: { deleteMany: jest.fn().mockResolvedValue({}) },
+              restrict: { deleteMany: jest.fn().mockResolvedValue({}) },
+              followRequest: { deleteMany: jest.fn().mockResolvedValue({}) },
             })),
           },
         },
@@ -427,6 +432,7 @@ describe('UsersService', () => {
       const viewerId = 'viewer-123';
       const mockUser = { id: 'user-456' };
       prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.block.findFirst.mockResolvedValue(null);
       prisma.follow.findUnique.mockResolvedValue(null);
       const mockPosts = [
         { id: 'post-1', content: 'public post', likesCount: 5 },
@@ -446,6 +452,42 @@ describe('UsersService', () => {
         }),
       );
       expect(result.data).toEqual(mockPosts.slice(0, 20));
+    });
+
+    it('should throw ForbiddenException if viewer is blocked by user', async () => {
+      const username = 'testuser';
+      const viewerId = 'viewer-123';
+      const mockUser = { id: 'user-456' };
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.block.findFirst.mockResolvedValue({ blockerId: 'user-456', blockedId: viewerId });
+
+      await expect(service.getUserPosts(username, undefined, viewerId))
+        .rejects.toThrow(ForbiddenException);
+    });
+
+    it('should not check block when viewer is the owner', async () => {
+      const username = 'testuser';
+      const viewerId = 'user-456';
+      const mockUser = { id: 'user-456' };
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.post.findMany.mockResolvedValue([]);
+
+      const result = await service.getUserPosts(username, undefined, viewerId);
+      expect(prisma.block.findFirst).not.toHaveBeenCalled();
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('getUserThreads', () => {
+    it('should throw ForbiddenException if viewer is blocked', async () => {
+      const username = 'testuser';
+      const viewerId = 'viewer-123';
+      const mockUser = { id: 'user-456' };
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.block.findFirst.mockResolvedValue({ blockerId: viewerId, blockedId: 'user-456' });
+
+      await expect(service.getUserThreads(username, undefined, viewerId))
+        .rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -1045,6 +1087,7 @@ describe('UsersService', () => {
         { id: 'u2', username: 'friend', displayName: 'Friend', avatarUrl: null, isVerified: false },
       ]);
       prisma.follow.findMany.mockResolvedValue([{ followingId: 'u2' }]);
+      prisma.block.findMany.mockResolvedValue([]);
 
       const result = await service.findByPhoneNumbers('user-1', ['+1234567890']);
       expect(result).toHaveLength(1);
@@ -1053,19 +1096,50 @@ describe('UsersService', () => {
 
     it('should return empty for no matches', async () => {
       prisma.user.findMany.mockResolvedValue([]);
-      prisma.follow.findMany.mockResolvedValue([]);
       const result = await service.findByPhoneNumbers('user-1', ['+0000000000']);
       expect(result).toEqual([]);
     });
 
     it('should normalize phone numbers', async () => {
       prisma.user.findMany.mockResolvedValue([]);
-      prisma.follow.findMany.mockResolvedValue([]);
       await service.findByPhoneNumbers('user-1', ['+1 (234) 567-8900', '0561234567']);
       expect(prisma.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             phone: { in: expect.any(Array) },
+          }),
+        }),
+      );
+    });
+
+    it('should filter out blocked users from contact sync results', async () => {
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'u2', username: 'friend', displayName: 'Friend', avatarUrl: null, isVerified: false },
+        { id: 'u3', username: 'blocked', displayName: 'Blocked', avatarUrl: null, isVerified: false },
+      ]);
+      prisma.follow.findMany.mockResolvedValue([]);
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'user-1', blockedId: 'u3' },
+      ]);
+
+      const result = await service.findByPhoneNumbers('user-1', ['+1234567890', '+0987654321']);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('u2');
+    });
+
+    it('should return empty for too-short phone numbers', async () => {
+      const result = await service.findByPhoneNumbers('user-1', ['123', '45']);
+      expect(result).toEqual([]);
+    });
+
+    it('should deduplicate phone numbers', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      await service.findByPhoneNumbers('user-1', ['+1234567890', '1234567890', '+1 234-567-890']);
+      // All normalize to '1234567890', should deduplicate before query
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            phone: { in: ['1234567890'] },
           }),
         }),
       );

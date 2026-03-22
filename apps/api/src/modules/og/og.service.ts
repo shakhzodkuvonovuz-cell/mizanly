@@ -250,6 +250,85 @@ Sitemap: ${this.appUrl}/sitemap.xml
 </html>`;
   }
 
+  /**
+   * Fetch Open Graph metadata from an external URL.
+   * Used by the mobile LinkPreview component to display rich link previews.
+   * Includes SSRF protection: blocks private IPs and non-HTTPS URLs.
+   */
+  async fetchUrlMetadata(url: string): Promise<{
+    url: string;
+    domain: string;
+    title: string | null;
+    description: string | null;
+    imageUrl: string | null;
+    faviconUrl: string | null;
+  }> {
+    // SSRF protection
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      throw new NotFoundException('Invalid URL protocol');
+    }
+    const blockedHosts = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
+    if (blockedHosts.some(h => parsed.hostname.includes(h))) {
+      throw new NotFoundException('URL not accessible');
+    }
+    const domain = parsed.hostname.replace('www.', '');
+
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'MizanlyBot/1.0 (+https://mizanly.com)' },
+        signal: AbortSignal.timeout(5000),
+        redirect: 'follow',
+      });
+
+      if (!response.ok) {
+        return { url, domain, title: null, description: null, imageUrl: null, faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=64` };
+      }
+
+      const html = await response.text();
+
+      // Parse OG tags from HTML
+      const getMetaContent = (property: string): string | null => {
+        const patterns = [
+          new RegExp(`<meta\\s+property=["']${property}["']\\s+content=["']([^"']*)["']`, 'i'),
+          new RegExp(`<meta\\s+content=["']([^"']*)["']\\s+property=["']${property}["']`, 'i'),
+          new RegExp(`<meta\\s+name=["']${property}["']\\s+content=["']([^"']*)["']`, 'i'),
+          new RegExp(`<meta\\s+content=["']([^"']*)["']\\s+name=["']${property}["']`, 'i'),
+        ];
+        for (const pattern of patterns) {
+          const match = html.match(pattern);
+          if (match?.[1]) return match[1];
+        }
+        return null;
+      };
+
+      const title = getMetaContent('og:title')
+        || getMetaContent('twitter:title')
+        || html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]
+        || null;
+
+      const description = getMetaContent('og:description')
+        || getMetaContent('twitter:description')
+        || getMetaContent('description')
+        || null;
+
+      const imageUrl = getMetaContent('og:image')
+        || getMetaContent('twitter:image')
+        || null;
+
+      return {
+        url,
+        domain,
+        title: title ? truncate(title.trim(), 200) : null,
+        description: description ? truncate(description.trim(), 300) : null,
+        imageUrl,
+        faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+      };
+    } catch {
+      return { url, domain, title: null, description: null, imageUrl: null, faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=64` };
+    }
+  }
+
   private renderHtml(meta: {
     title: string;
     description: string;

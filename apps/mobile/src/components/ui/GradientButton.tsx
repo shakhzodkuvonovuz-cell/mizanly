@@ -43,7 +43,7 @@ const sizeConfig: Record<ButtonSize, {
   iconSize: number;
 }> = {
   sm: {
-    height: 36,
+    height: 40, // minimum 40pt for WCAG touch target compliance (with borderRadius rounding)
     paddingHorizontal: spacing.md,
     fontSize: fontSize.sm,
     iconSize: 16,

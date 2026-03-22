@@ -88,6 +88,7 @@ export class WebhooksService {
       where: { circleId, isActive: true },
       select: { id: true, name: true, url: true, events: true, isActive: true, lastUsedAt: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -164,6 +165,7 @@ export class WebhooksService {
   async dispatch(circleId: string, event: WebhookEvent, data: Record<string, unknown>) {
     const webhooks = await this.prisma.webhook.findMany({
       where: { circleId, isActive: true, url: { not: null } },
+      take: 100,
     });
 
     const matching = webhooks.filter(w => w.events.includes(event));

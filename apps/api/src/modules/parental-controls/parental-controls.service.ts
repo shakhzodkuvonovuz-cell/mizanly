@@ -160,6 +160,7 @@ export class ParentalControlsService {
   async updateControls(
     parentUserId: string,
     childUserId: string,
+    pin: string,
     dto: UpdateParentalControlDto,
   ) {
     const control = await this.prisma.parentalControl.findFirst({
@@ -167,6 +168,13 @@ export class ParentalControlsService {
     });
     if (!control) {
       throw new NotFoundException('Parental control link not found');
+    }
+
+    // Finding 33: Require PIN verification before updating parental controls
+    // Prevents unauthorized changes if parent's device is compromised
+    const pinValid = await verifyPin(pin, control.pin);
+    if (!pinValid) {
+      throw new ForbiddenException('Invalid PIN');
     }
 
     return this.prisma.parentalControl.update({

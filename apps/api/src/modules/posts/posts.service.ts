@@ -640,12 +640,23 @@ export class PostsService {
     }
 
     await this.redis.del(`feed:foryou:${userId}:first`);
+
+    // Remove from Meilisearch index on deletion
+    this.queueService.addSearchIndexJob({
+      action: 'delete', indexName: 'posts', documentId: postId,
+    }).catch(() => {});
+
     return { deleted: true };
   }
 
   async react(postId: string, userId: string, reaction: string = 'LIKE') {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+
+    // Prevent self-like/self-react
+    if (post.userId === userId) {
+      throw new BadRequestException('Cannot react to your own post');
+    }
 
     const existing = await this.prisma.postReaction.findUnique({
       where: { userId_postId: { userId, postId } },

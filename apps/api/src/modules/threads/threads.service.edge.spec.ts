@@ -239,10 +239,11 @@ describe('ThreadsService — edge cases', () => {
     });
 
     it('should throw ConflictException when already reacted', async () => {
-      prisma.thread.findUnique.mockResolvedValue(mockThread);
-      prisma.threadReaction.findUnique.mockResolvedValue({ userId, threadId: 'thread-1', reaction: 'LIKE' });
+      const otherUser = 'other-user-1';
+      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, userId: 'thread-author' });
+      prisma.threadReaction.findUnique.mockResolvedValue({ userId: otherUser, threadId: 'thread-1', reaction: 'LIKE' });
 
-      await expect(service.like('thread-1', userId))
+      await expect(service.like('thread-1', otherUser))
         .rejects.toThrow(ConflictException);
     });
   });

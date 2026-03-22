@@ -34,6 +34,17 @@ describe('StoriesService', () => {
             },
             user: {
               findMany: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue({ isPrivate: false }),
+            },
+            block: {
+              findMany: jest.fn().mockResolvedValue([]),
+              findFirst: jest.fn(),
+            },
+            mute: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
             },
             storyHighlightAlbum: {
               findMany: jest.fn(),
@@ -43,8 +54,23 @@ describe('StoriesService', () => {
               delete: jest.fn(),
               count: jest.fn(),
             },
+            conversation: {
+              findFirst: jest.fn(),
+              create: jest.fn(),
+              update: jest.fn(),
+            },
+            message: {
+              create: jest.fn(),
+            },
+            storyStickerResponse: {
+              findFirst: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              create: jest.fn(),
+              update: jest.fn(),
+            },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
+            $queryRaw: jest.fn().mockResolvedValue([]),
           },
         },
       ],
@@ -148,6 +174,58 @@ describe('StoriesService', () => {
       expect(result[0].hasUnread).toBe(false); // story-1 viewed
       expect(result[1].user.id).toBe('user-456');
       expect(result[1].hasUnread).toBe(true); // story-2 not viewed
+    });
+
+    it('should exclude blocked, muted, and restricted users from stories feed', async () => {
+      const userId = 'user-123';
+      prisma.follow.findMany.mockResolvedValue([
+        { followingId: 'blocked-user' },
+        { followingId: 'muted-user' },
+        { followingId: 'restricted-user' },
+        { followingId: 'normal-user' },
+      ]);
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: userId, blockedId: 'blocked-user' },
+      ]);
+      prisma.mute.findMany.mockResolvedValue([
+        { mutedId: 'muted-user' },
+      ]);
+      prisma.restrict.findMany.mockResolvedValue([
+        { restrictedId: 'restricted-user' },
+      ]);
+      prisma.story.findMany.mockResolvedValue([]);
+      prisma.storyView.findMany.mockResolvedValue([]);
+
+      await service.getFeedStories(userId);
+
+      // The story query should NOT include blocked/muted/restricted user IDs
+      const storyCall = prisma.story.findMany.mock.calls[0][0];
+      const queriedUserIds = storyCall.where.userId.in;
+      expect(queriedUserIds).toContain(userId); // own stories always included
+      expect(queriedUserIds).toContain('normal-user');
+      expect(queriedUserIds).not.toContain('blocked-user');
+      expect(queriedUserIds).not.toContain('muted-user');
+      expect(queriedUserIds).not.toContain('restricted-user');
+    });
+
+    it('should exclude users who blocked the current user from stories feed', async () => {
+      const userId = 'user-123';
+      prisma.follow.findMany.mockResolvedValue([
+        { followingId: 'reverse-blocker' },
+      ]);
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: 'reverse-blocker', blockedId: userId }, // reverse block
+      ]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.story.findMany.mockResolvedValue([]);
+      prisma.storyView.findMany.mockResolvedValue([]);
+
+      await service.getFeedStories(userId);
+
+      const storyCall = prisma.story.findMany.mock.calls[0][0];
+      const queriedUserIds = storyCall.where.userId.in;
+      expect(queriedUserIds).not.toContain('reverse-blocker');
     });
   });
 

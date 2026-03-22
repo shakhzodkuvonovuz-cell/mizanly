@@ -9,8 +9,8 @@ import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CommerceService } from './commerce.service';
 import {
-  CreateProductDto, ReviewDto, CreateOrderDto, UpdateOrderStatusDto,
-  CreateBusinessDto, CreateZakatFundDto, DonateZakatDto,
+  CreateProductDto, UpdateProductDto, ReviewDto, CreateOrderDto, UpdateOrderStatusDto,
+  CreateBusinessDto, UpdateBusinessDto, CreateZakatFundDto, DonateZakatDto,
   CreateTreasuryDto, ContributeTreasuryDto, SubscribePremiumDto,
 } from './dto/commerce.dto';
 
@@ -32,19 +32,37 @@ export class CommerceController {
 
   @Get('products')
   @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Browse marketplace' })
   getProducts(
     @Query('cursor') cursor?: string, @Query('limit') limit?: string,
     @Query('category') category?: string, @Query('search') search?: string,
   ) {
-    return this.commerceService.getProducts(cursor, limit ? parseInt(limit) : undefined, category, search);
+    return this.commerceService.getProducts(cursor, limit ? parseInt(limit, 10) : undefined, category, search);
   }
 
   @Get('products/:id')
   @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Get product detail' })
   getProduct(@Param('id') id: string) {
     return this.commerceService.getProduct(id);
+  }
+
+  @Patch('products/:id')
+  @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Update product listing (owner only)' })
+  updateProduct(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: UpdateProductDto) {
+    return this.commerceService.updateProduct(userId, id, dto);
+  }
+
+  @Delete('products/:id')
+  @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Delete product listing (owner only)' })
+  deleteProduct(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.commerceService.deleteProduct(userId, id);
   }
 
   @Post('products/:id/review')
@@ -66,9 +84,20 @@ export class CommerceController {
 
   @Get('orders/me')
   @UseGuards(ClerkAuthGuard)
-  @ApiOperation({ summary: 'Get my orders' })
+  @ApiOperation({ summary: 'Get my orders (buyer)' })
   getMyOrders(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
     return this.commerceService.getMyOrders(userId, cursor);
+  }
+
+  @Get('orders/selling')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Get orders for my products (seller)' })
+  getSellerOrders(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.commerceService.getSellerOrders(userId, cursor, undefined, status);
   }
 
   @Patch('orders/:id/status')
@@ -90,6 +119,7 @@ export class CommerceController {
 
   @Get('businesses')
   @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Browse halal businesses' })
   getBusinesses(
     @Query('cursor') cursor?: string, @Query('category') category?: string,
@@ -99,6 +129,22 @@ export class CommerceController {
       cursor, undefined, category,
       lat ? parseFloat(lat) : undefined, lng ? parseFloat(lng) : undefined,
     );
+  }
+
+  @Patch('businesses/:id')
+  @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Update halal business (owner only)' })
+  updateBusiness(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: UpdateBusinessDto) {
+    return this.commerceService.updateBusiness(userId, id, dto);
+  }
+
+  @Delete('businesses/:id')
+  @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Delete halal business (owner only)' })
+  deleteBusiness(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.commerceService.deleteBusiness(userId, id);
   }
 
   @Post('businesses/:id/review')
@@ -119,6 +165,7 @@ export class CommerceController {
 
   @Get('zakat/funds')
   @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Browse zakat funds' })
   getZakatFunds(@Query('cursor') cursor?: string, @Query('category') category?: string) {
     return this.commerceService.getZakatFunds(cursor, undefined, category);
@@ -130,6 +177,24 @@ export class CommerceController {
   @ApiOperation({ summary: 'Donate to zakat fund' })
   donateZakat(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: DonateZakatDto) {
     return this.commerceService.donateZakat(userId, id, dto);
+  }
+
+  // ── Waqf (Endowment) ─────────────────────────────────
+
+  @Get('waqf/funds')
+  @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @ApiOperation({ summary: 'Browse waqf funds' })
+  getWaqfFunds(@Query('cursor') cursor?: string) {
+    return this.commerceService.getWaqfFunds(cursor);
+  }
+
+  @Post('waqf/funds/:id/contribute')
+  @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Contribute to waqf fund' })
+  contributeWaqf(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: ContributeTreasuryDto) {
+    return this.commerceService.contributeWaqf(userId, id, dto.amount);
   }
 
   // ── Community Treasury ──────────────────────────────────

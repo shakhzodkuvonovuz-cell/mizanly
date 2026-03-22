@@ -168,6 +168,7 @@ export class MessagesService {
     const members = await this.prisma.conversationMember.findMany({
       where: { conversationId, userId: { not: senderId } },
       select: { userId: true },
+      take: 200,
     });
     const otherUserIds = members.map(m => m.userId);
     if (otherUserIds.length > 0) {
@@ -361,6 +362,7 @@ export class MessagesService {
         ],
       },
       select: { blockerId: true, blockedId: true },
+      take: 50,
     });
     if (blocks.length > 0) {
       throw new BadRequestException('Cannot create group with blocked users');
@@ -405,6 +407,7 @@ export class MessagesService {
     const existingUsers = await this.prisma.user.findMany({
       where: { id: { in: memberIds } },
       select: { id: true },
+      take: 200,
     });
     const existingIds = new Set(existingUsers.map(u => u.id));
     const invalidIds = memberIds.filter(id => !existingIds.has(id));
@@ -420,6 +423,7 @@ export class MessagesService {
           { blockedId: userId, blockerId: { in: memberIds } },
         ],
       },
+      take: 50,
     });
     if (blocks.length > 0) throw new BadRequestException('Cannot add blocked users');
 

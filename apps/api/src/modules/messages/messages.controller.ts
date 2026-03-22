@@ -18,6 +18,7 @@ import {
   IsString, IsOptional, IsArray, MaxLength, IsBoolean, IsEnum, IsUrl, IsUUID, ArrayMaxSize, IsNumber, IsISO8601, IsInt, Min, Max, Matches,
 } from 'class-validator';
 import { MessagesService } from './messages.service';
+import { ChatGateway } from '../../gateways/chat.gateway';
 
 class SetLockCodeDto {
   @IsOptional() @IsString() @Matches(/^\d{4,8}$/, { message: 'Lock code must be 4-8 digits' }) code?: string | null;
@@ -179,7 +180,10 @@ class ScheduleMessageDto {
 @ApiBearerAuth()
 @Throttle({ default: { limit: 60, ttl: 60000 } })
 export class MessagesController {
-  constructor(private messagesService: MessagesService) {}
+  constructor(
+    private messagesService: MessagesService,
+    private chatGateway: ChatGateway,
+  ) {}
 
   @Get('conversations')
   @ApiOperation({ summary: 'Get all conversations for current user' })
@@ -342,12 +346,20 @@ export class MessagesController {
   @Delete('groups/:id/members/:userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Remove member from group (creator only)' })
-  removeMember(
+  async removeMember(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @Param('userId') targetUserId: string,
   ) {
-    return this.messagesService.removeGroupMember(id, userId, targetUserId);
+    const result = await this.messagesService.removeGroupMember(id, userId, targetUserId);
+    // Emit room_evicted event to the kicked user's socket(s) so the client
+    // can leave the socket room and show an appropriate UI notification
+    if (this.chatGateway.server) {
+      this.chatGateway.server
+        .to(`user:${targetUserId}`)
+        .emit('room_evicted', { conversationId: id, removedBy: userId });
+    }
+    return result;
   }
 
   @Patch('conversations/:id/lock-code')

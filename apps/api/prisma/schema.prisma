@@ -2032,7 +2032,6 @@ model UserSettings {
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
-  @@index([userId])
   @@map("user_settings")
 }
 
@@ -2255,7 +2254,6 @@ model TwoFactorSecret {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@index([userId])
   @@map("two_factor_secrets")
 }
 
@@ -2612,7 +2610,6 @@ model PrayerNotificationSetting {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@index([userId])
   @@map("prayer_notification_settings")
 }
 
@@ -2627,7 +2624,6 @@ model ContentFilterSetting {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@index([userId])
   @@map("content_filter_settings")
 }
 

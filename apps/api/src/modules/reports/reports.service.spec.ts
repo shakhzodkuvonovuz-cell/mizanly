@@ -27,17 +27,24 @@ describe('ReportsService', () => {
             },
             post: {
               findUnique: jest.fn(),
+              update: jest.fn(),
             },
             comment: {
               findUnique: jest.fn(),
+              update: jest.fn(),
             },
             message: {
               findUnique: jest.fn(),
+              update: jest.fn(),
             },
             user: {
               findUnique: jest.fn(),
+              update: jest.fn(),
             },
             moderationLog: {
+              create: jest.fn(),
+            },
+            notification: {
               create: jest.fn(),
             },
             $transaction: jest.fn(),

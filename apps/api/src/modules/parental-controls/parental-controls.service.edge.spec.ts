@@ -87,7 +87,7 @@ describe('ParentalControlsService — edge cases', () => {
 
   it('should throw NotFoundException when updating controls for unlinked child', async () => {
     prisma.parentalControl.findFirst.mockResolvedValue(null);
-    await expect(service.updateControls(parentId, childId, { restrictedMode: true }))
+    await expect(service.updateControls(parentId, childId, '1234', { restrictedMode: true }))
       .rejects.toThrow(NotFoundException);
   });
 

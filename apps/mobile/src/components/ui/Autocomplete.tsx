@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, StyleSheet,
   FlatList, Keyboard,
   Pressable,
+  AccessibilityInfo,
 } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { Avatar } from './Avatar';
@@ -62,11 +63,23 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
       if (type === 'hashtag') {
         // Search for hashtags
         const data = await searchApi.search(searchQuery, 'hashtag');
-        setResults(data.hashtags ?? []);
+        const items = data.hashtags ?? [];
+        setResults(items);
+        if (items.length > 0) {
+          AccessibilityInfo.announceForAccessibility(
+            `${items.length} ${type === 'hashtag' ? t('autocomplete.hashtagResults') : t('autocomplete.userResults')} found`,
+          );
+        }
       } else {
         // Search for users/mentions
         const data = await searchApi.search(searchQuery, 'user');
-        setResults(data.people ?? []);
+        const items = data.people ?? [];
+        setResults(items);
+        if (items.length > 0) {
+          AccessibilityInfo.announceForAccessibility(
+            `${items.length} ${t('autocomplete.userResults')} found`,
+          );
+        }
       }
     } catch {
       setResults([]);
@@ -95,7 +108,12 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
     if (type === 'hashtag') {
       const hashtag = item as HashtagResult;
       return (
-        <Pressable style={styles.item} onPress={() => handleSelect(item)}>
+        <Pressable
+          style={styles.item}
+          onPress={() => handleSelect(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`#${hashtag.name}, ${hashtag.postsCount.toLocaleString()} posts`}
+        >
           <View style={styles.hashtagIcon}>
             <Icon name="hash" size="md" color={colors.emerald} />
           </View>
@@ -111,7 +129,12 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
 
     const user = item as User;
     return (
-      <Pressable style={styles.item} onPress={() => handleSelect(item)}>
+      <Pressable
+        style={styles.item}
+        onPress={() => handleSelect(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`${user.displayName}, @${user.username}`}
+      >
         <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
         <View style={styles.itemContent}>
           <Text style={styles.itemTitle}>{user.displayName}</Text>
@@ -125,9 +148,14 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
     <Animated.View style={[styles.container, { backgroundColor: tc.bgElevated, borderColor: tc.border }, animatedStyle]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
-          {type === 'hashtag' ? 'Hashtags' : 'People'}
+          {type === 'hashtag' ? t('autocomplete.hashtags') : t('autocomplete.people')}
         </Text>
-        <Pressable onPress={onClose} hitSlop={8}>
+        <Pressable
+          onPress={onClose}
+          hitSlop={8}
+          accessibilityLabel={t('common.close')}
+          accessibilityRole="button"
+        >
           <Icon name="x" size="sm" color={colors.text.secondary} />
         </Pressable>
       </View>
@@ -141,8 +169,8 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
         <View style={styles.empty}>
           <Text style={styles.emptyText}>
             {type === 'hashtag'
-              ? `No hashtags found for "${query}"`
-              : `No users found for "${query}"`}
+              ? t('autocomplete.noHashtagsFound', { query })
+              : t('autocomplete.noUsersFound', { query })}
           </Text>
           {type === 'hashtag' && (
             <Pressable

@@ -63,6 +63,13 @@ export class EncryptionService {
    * Compute a safety number for two users in a conversation.
    * Concatenates both fingerprints (sorted by userId for deterministic order),
    * hashes with SHA-256, and formats as groups of 5 digits (60 digits total).
+   *
+   * TODO: [ARCH/F20] Current safety number generation is weak:
+   * - Uses hex→decimal conversion which loses entropy
+   * - Should use Signal Protocol's NumericFingerprint approach:
+   *   HMAC-SHA256(version || fingerprint_a || fingerprint_b) → 30 bytes → 60 decimal digits
+   *   Each 5-byte chunk → decimal mod 100000 → 5 digits
+   * - This would provide proper 256-bit security level for verification.
    */
   async computeSafetyNumber(userIdA: string, userIdB: string): Promise<string | null> {
     const keys = await this.prisma.encryptionKey.findMany({
@@ -156,13 +163,18 @@ export class EncryptionService {
         take: 50,
       });
 
-      // Create system messages in each conversation
+      // Create system messages in each conversation.
+      // Use a structured JSON message type so the client can render localized text
+      // instead of hardcoded English (Finding 28: i18n for system messages).
       for (const { conversationId } of memberships) {
         await this.prisma.message.create({
           data: {
             conversationId,
             senderId: userId,
-            content: `Security code changed for ${name}. Tap to verify.`,
+            content: JSON.stringify({
+              type: 'SECURITY_CODE_CHANGED',
+              params: { username: name },
+            }),
             messageType: 'SYSTEM',
           },
         });
@@ -206,6 +218,12 @@ export class EncryptionService {
     }));
   }
 
+  /**
+   * TODO: [ARCH/F22] storeEnvelope has a race condition:
+   * Two concurrent calls can read the same max version and create envelopes
+   * with the same version number. Fix: use $transaction with serializable
+   * isolation like rotateKey below, or use a DB sequence/auto-increment.
+   */
   async storeEnvelope(senderId: string, data: StoreEnvelopeData) {
     // Verify sender is member of the conversation
     const membership = await this.prisma.conversationMember.findUnique({

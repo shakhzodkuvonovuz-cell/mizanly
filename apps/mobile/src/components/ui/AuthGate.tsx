@@ -46,7 +46,7 @@ export function AuthGate({ children, onAuthenticated }: AuthGateProps) {
       <Pressable onPress={handlePress}>
         {children}
       </Pressable>
-      <BottomSheet visible={showAuth} onClose={() => setShowAuth(false)} snapPoint={320}>
+      <BottomSheet visible={showAuth} onClose={() => setShowAuth(false)} snapPoint={0.45}>
         <View style={styles.container}>
           <Text style={[styles.title, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('auth.joinMizanly')}
@@ -104,7 +104,7 @@ export function useAuthGate() {
   }, [isSignedIn, haptic]);
 
   const AuthSheet = useCallback(() => (
-    <BottomSheet visible={showAuth} onClose={() => setShowAuth(false)} snapPoint={320}>
+    <BottomSheet visible={showAuth} onClose={() => setShowAuth(false)} snapPoint={0.45}>
       <View style={styles.container}>
         <Text style={[styles.title, { textAlign: rtlTextAlign(isRTL) }]}>
           {t('auth.joinMizanly')}

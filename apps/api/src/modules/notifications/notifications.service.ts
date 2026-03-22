@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from './push-trigger.service';
 import { NotificationType, Prisma } from '@prisma/client';
+import Redis from 'ioredis';
 
 @Injectable()
 export class NotificationsService {
@@ -9,6 +10,7 @@ export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     private pushTrigger: PushTriggerService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   async getNotifications(
@@ -128,11 +130,30 @@ export class NotificationsService {
       return null;
     }
 
+    // Fetch all pre-creation checks in parallel: settings, user prefs, block/mute
+    const [settings, user, blockExists, muteExists] = await Promise.all([
+      this.prisma.settings.findUnique({
+        where: { userId: params.userId },
+        select: { notifyLikes: true, notifyComments: true, notifyFollows: true, notifyMentions: true, notifyMessages: true, notifyLiveStreams: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: params.userId },
+        select: { notificationsOn: true },
+      }),
+      this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: params.userId, blockedId: params.actorId },
+            { blockedId: params.userId, blockerId: params.actorId },
+          ],
+        },
+      }),
+      this.prisma.mute.findFirst({
+        where: { userId: params.userId, mutedId: params.actorId },
+      }),
+    ]);
+
     // Check user's per-type notification settings
-    const settings = await this.prisma.settings.findUnique({
-      where: { userId: params.userId },
-      select: { notifyLikes: true, notifyComments: true, notifyFollows: true, notifyMentions: true, notifyMessages: true, notifyLiveStreams: true },
-    });
     if (settings) {
       const typeToSetting: Record<string, keyof typeof settings> = {
         LIKE: 'notifyLikes', REEL_LIKE: 'notifyLikes', VIDEO_LIKE: 'notifyLikes',
@@ -147,26 +168,9 @@ export class NotificationsService {
     }
 
     // Check if user has global notifications disabled
-    const user = await this.prisma.user.findUnique({
-      where: { id: params.userId },
-      select: { notificationsOn: true },
-    });
     if (user && !user.notificationsOn) return null;
 
     // Don't notify if recipient has blocked or muted the actor
-    const [blockExists, muteExists] = await Promise.all([
-      this.prisma.block.findFirst({
-        where: {
-          OR: [
-            { blockerId: params.userId, blockedId: params.actorId },
-            { blockedId: params.userId, blockerId: params.actorId },
-          ],
-        },
-      }),
-      this.prisma.mute.findFirst({
-        where: { userId: params.userId, mutedId: params.actorId },
-      }),
-    ]);
     if (blockExists || muteExists) return null;
 
     const notification = await this.prisma.notification.create({
@@ -188,6 +192,27 @@ export class NotificationsService {
 
     // Fire push notification (non-blocking, logged on failure)
     this.pushTrigger.triggerPush(notification.id).catch((e) => this.logger.error('Push trigger failed', e));
+
+    // Emit real-time socket notification to the user's room (C-03: socket delivery)
+    // The ChatGateway joins users to `user:{userId}` rooms on connect.
+    // We publish to a Redis channel; the gateway subscribes and emits to the socket room.
+    this.redis.publish('notification:new', JSON.stringify({
+      userId: params.userId,
+      notification: {
+        id: notification.id,
+        type: notification.type,
+        actorId: notification.actorId,
+        postId: notification.postId,
+        threadId: notification.threadId,
+        reelId: notification.reelId,
+        videoId: notification.videoId,
+        commentId: notification.commentId,
+        conversationId: notification.conversationId,
+        title: params.title,
+        body: params.body,
+        createdAt: notification.createdAt,
+      },
+    })).catch((e) => this.logger.debug('Redis notification publish failed', e));
 
     return notification;
   }

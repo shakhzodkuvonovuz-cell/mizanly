@@ -8,6 +8,9 @@ export const colors = {
   emerald: '#0A7B4F',
   emeraldLight: '#0D9B63',
   emeraldDark: '#066B42',
+  // WCAG AA accessible text variants — use for small text on dark backgrounds
+  // emeraldLight (#0D9B63) passes WCAG AA 4.5:1 on #0D1117
+  // goldLight (#D4A94F) passes WCAG AA 4.5:1 on #0D1117
   gold: '#C8963E',
   goldLight: '#D4A94F',
   cream: '#FEFCF7',
@@ -41,7 +44,7 @@ export const colors = {
   // Text (dark mode defaults — use useThemeColors() for theme-aware values)
   text: {
     primary: '#FFFFFF',
-    secondary: '#8B949E',
+    secondary: '#9BA4AE', // WCAG AA ≥4.5:1 on dark.bgCard (#1C2333) — was #8B949E (3.7:1 on cards)
     tertiary: '#8B949E', // WCAG AA compliant (≥4.5:1 on dark.bg)
     inverse: '#1E293B',
     onColor: '#FFFFFF',

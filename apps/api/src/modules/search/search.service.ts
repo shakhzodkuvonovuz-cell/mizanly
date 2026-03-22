@@ -255,6 +255,8 @@ export class SearchService {
               { name: { contains: query, mode: 'insensitive' } },
               { description: { contains: query, mode: 'insensitive' } },
             ],
+            // Filter out channels owned by banned or deleted users
+            user: { isBanned: false, isDeleted: false, isDeactivated: false },
           },
           select: CHANNEL_SEARCH_SELECT,
           take,
@@ -290,8 +292,12 @@ export class SearchService {
       }
     }
 
-    // For people, tags, or no type specified, return the aggregate SearchResults format
-    // At this point, type is narrowed to 'people' | 'tags' | undefined
+    // For people, tags, or no type specified, return the aggregate SearchResults format.
+    // PERFORMANCE NOTE: When Meilisearch is not deployed (MEILISEARCH_HOST empty), each
+    // content type runs a Prisma ILIKE '%query%' full-text scan. At scale, deploy
+    // Meilisearch (see docs/DEPLOYMENT.md) to use pre-indexed search instead of 7
+    // parallel table scans. The MeilisearchService is already wired up — just set
+    // MEILISEARCH_HOST and MEILISEARCH_API_KEY in the environment.
     const results: SearchResults = {};
     const isAggregate = !type;
 
@@ -368,6 +374,8 @@ export class SearchService {
             { name: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
           ],
+          // Filter out channels owned by banned or deleted users
+          user: { isBanned: false, isDeleted: false, isDeactivated: false },
         },
         select: CHANNEL_SEARCH_SELECT,
         take: 5,
@@ -387,39 +395,28 @@ export class SearchService {
   }
 
   async trending() {
-    // Trending hashtags: highest growth in last 24h
-    const recentPosts = await this.prisma.post.findMany({
-      where: {
-        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-        hashtags: { isEmpty: false },
-      },
-      select: { hashtags: true },
-      take: 500,
-    });
+    // Trending hashtags: SQL aggregation using unnest instead of loading 500 posts into JS
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const topTags = await this.prisma.$queryRaw<Array<{ tag: string; cnt: bigint }>>`
+      SELECT unnest(hashtags) as tag, COUNT(*) as cnt
+      FROM "Post"
+      WHERE "createdAt" >= ${twentyFourHoursAgo}
+        AND array_length(hashtags, 1) > 0
+      GROUP BY tag
+      ORDER BY cnt DESC
+      LIMIT 20
+    `;
 
-    // Count hashtag frequency in last 24h
-    const freq = new Map<string, number>();
-    for (const post of recentPosts) {
-      for (const tag of post.hashtags) {
-        if (tag.trim() === '') continue;
-        freq.set(tag, (freq.get(tag) || 0) + 1);
-      }
-    }
+    const topTagNames = topTags.map(t => t.tag);
+    const hashtagRecords = topTagNames.length > 0
+      ? await this.prisma.hashtag.findMany({ where: { name: { in: topTagNames } } })
+      : [];
 
-    // Get hashtag records for top tags
-    const topTagNames = [...freq.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .map(([name]) => name);
-
-    const hashtagRecords = await this.prisma.hashtag.findMany({
-      where: { name: { in: topTagNames } },
-    });
-
-    // Merge recent count into records
+    // Merge recent count from SQL aggregation into hashtag records
+    const freqMap = new Map(topTags.map(t => [t.tag, Number(t.cnt)]));
     const hashtags = hashtagRecords.map(record => ({
       ...record,
-      recentCount: freq.get(record.name) || 0,
+      recentCount: freqMap.get(record.name) || 0,
     })).sort((a, b) => b.recentCount - a.recentCount);
 
     // Threads stays the same (already engagement-sorted)

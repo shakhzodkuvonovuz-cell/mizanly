@@ -72,7 +72,24 @@ export class MeilisearchService implements OnModuleInit {
         sortableAttributes: ['likesCount', 'createdAt'],
       });
 
-      this.logger.log('Meilisearch indexes configured');
+      await this.updateSettings('reels', {
+        searchableAttributes: ['caption', 'hashtags'],
+        filterableAttributes: ['userId', 'status'],
+        sortableAttributes: ['likesCount', 'viewsCount', 'createdAt'],
+      });
+
+      await this.updateSettings('videos', {
+        searchableAttributes: ['title', 'description', 'tags'],
+        filterableAttributes: ['userId', 'channelId', 'category', 'status'],
+        sortableAttributes: ['viewsCount', 'likesCount', 'publishedAt', 'createdAt'],
+      });
+
+      await this.updateSettings('hashtags', {
+        searchableAttributes: ['name'],
+        sortableAttributes: ['postsCount', 'createdAt'],
+      });
+
+      this.logger.log('Meilisearch indexes configured (6/6)');
     } catch (error) {
       this.logger.error('Meilisearch initialization failed', error);
     }

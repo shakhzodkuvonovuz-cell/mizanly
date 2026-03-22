@@ -34,6 +34,9 @@ export class QueueService implements OnModuleDestroy {
   // ── Notification Jobs ─────────────────────────────────────
 
   async addPushNotificationJob(data: { notificationId: string }): Promise<string> {
+    // FRAGILE: 'custom' backoff type requires the Worker (NotificationProcessor) to define
+    // a backoffStrategy in its settings. If the worker is in a separate process or hasn't
+    // started yet, BullMQ will throw. The strategy is defined in notification.processor.ts.
     const job = await this.notificationsQueue.add('push-trigger', data, {
       attempts: 3,
       backoff: { type: 'custom' },
@@ -103,6 +106,9 @@ export class QueueService implements OnModuleDestroy {
     payload: Record<string, unknown>;
     webhookId: string;
   }): Promise<string> {
+    // FRAGILE: 'custom' backoff type requires the Worker (WebhookProcessor) to define
+    // a backoffStrategy in its settings. The strategy (1s, 5s, 30s, 5m, 30m) is
+    // defined in webhook.processor.ts. If the worker hasn't started, this will throw.
     const job = await this.webhooksQueue.add('deliver', data, {
       attempts: 5,
       backoff: { type: 'custom' },

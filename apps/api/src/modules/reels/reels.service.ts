@@ -5,6 +5,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreateReelDto } from './dto/create-reel.dto';
@@ -430,12 +431,22 @@ export class ReelsService {
       });
     }
 
+    // Remove from Meilisearch index on deletion
+    this.queueService.addSearchIndexJob({
+      action: 'delete', indexName: 'reels', documentId: reelId,
+    }).catch(() => {});
+
     return { deleted: true };
   }
 
   async like(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
+
+    // Prevent self-like
+    if (reel.userId === userId) {
+      throw new BadRequestException('Cannot like your own reel');
+    }
 
     try {
       await this.prisma.$transaction([

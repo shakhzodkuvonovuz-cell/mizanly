@@ -227,6 +227,7 @@ export function MiniPlayer() {
                   source={{ uri: miniPlayerVideo.thumbnailUri }}
                   style={styles.thumbnail}
                   resizeMode="cover"
+                  accessibilityLabel={`Thumbnail for ${miniPlayerVideo.title || 'video'}`}
                 />
               ) : (
                 <View style={styles.thumbnailPlaceholder}>
@@ -254,7 +255,7 @@ export function MiniPlayer() {
               onPress={handlePlayPause}
               style={styles.actionButton}
               hitSlop={4}
-              accessibilityLabel={miniPlayerPlaying ? 'Pause' : 'Play'}
+              accessibilityLabel={miniPlayerPlaying ? t('common.pause') : t('common.play')}
               accessibilityRole="button"
             >
               <Icon
@@ -365,8 +366,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
   },
   actionButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     justifyContent: 'center',
     alignItems: 'center',

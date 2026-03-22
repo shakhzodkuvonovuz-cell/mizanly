@@ -19,6 +19,7 @@ describe('AiController', () => {
         {
           provide: AiService,
           useValue: {
+            checkDailyQuota: jest.fn().mockResolvedValue(true),
             suggestCaptions: jest.fn(),
             suggestHashtags: jest.fn(),
             suggestPostingTime: jest.fn(),
@@ -49,7 +50,7 @@ describe('AiController', () => {
       const mockCaptions = [{ caption: 'Beautiful sunset', tone: 'casual' }];
       service.suggestCaptions.mockResolvedValue(mockCaptions as any);
 
-      const result = await controller.suggestCaptions({ content: 'sunset photo', mediaDescription: 'A sunset over the ocean' });
+      const result = await controller.suggestCaptions(userId, { content: 'sunset photo', mediaDescription: 'A sunset over the ocean' });
 
       expect(service.suggestCaptions).toHaveBeenCalledWith('sunset photo', 'A sunset over the ocean');
       expect(result).toEqual(mockCaptions);
@@ -58,7 +59,7 @@ describe('AiController', () => {
     it('should default to empty string when content is not provided', async () => {
       service.suggestCaptions.mockResolvedValue([] as any);
 
-      await controller.suggestCaptions({ mediaDescription: 'test' } as any);
+      await controller.suggestCaptions(userId, { mediaDescription: 'test' } as any);
 
       expect(service.suggestCaptions).toHaveBeenCalledWith('', 'test');
     });
@@ -69,7 +70,7 @@ describe('AiController', () => {
       const mockTags = ['#sunset', '#nature', '#photography'];
       service.suggestHashtags.mockResolvedValue(mockTags as any);
 
-      const result = await controller.suggestHashtags({ content: 'Beautiful nature photo' });
+      const result = await controller.suggestHashtags(userId, { content: 'Beautiful nature photo' });
 
       expect(service.suggestHashtags).toHaveBeenCalledWith('Beautiful nature photo');
       expect(result).toEqual(mockTags);
@@ -94,7 +95,7 @@ describe('AiController', () => {
       service.translateText.mockResolvedValue(mockTranslation as any);
 
       const dto = { text: 'Hello', targetLanguage: 'fr', contentId: 'post-1', contentType: 'post' };
-      const result = await controller.translate(dto as any);
+      const result = await controller.translate(userId, dto as any);
 
       expect(service.translateText).toHaveBeenCalledWith('Hello', 'fr', 'post-1', 'post');
       expect(result).toEqual(expect.objectContaining({ translatedText: 'Bonjour' }));
@@ -106,7 +107,7 @@ describe('AiController', () => {
       const mockResult = { safe: true, flags: [], confidence: 0.98, suggestion: null, category: null };
       service.moderateContent.mockResolvedValue(mockResult as any);
 
-      const result = await controller.moderate({ text: 'Normal post content', contentType: 'post' } as any);
+      const result = await controller.moderate(userId, { text: 'Normal post content', contentType: 'post' } as any);
 
       expect(service.moderateContent).toHaveBeenCalledWith('Normal post content', 'post');
       expect(result).toEqual(expect.objectContaining({ safe: true }));
@@ -119,7 +120,7 @@ describe('AiController', () => {
       service.suggestSmartReplies.mockResolvedValue(mockReplies as any);
 
       const dto = { conversationContext: 'casual chat', lastMessages: ['How are you?'] };
-      const result = await controller.smartReplies(dto as any);
+      const result = await controller.smartReplies(userId, dto as any);
 
       expect(service.suggestSmartReplies).toHaveBeenCalledWith('casual chat', ['How are you?']);
       expect(result).toEqual(mockReplies);
@@ -131,7 +132,7 @@ describe('AiController', () => {
       const mockSummary = { summary: 'Short summary of long article' };
       service.summarizeContent.mockResolvedValue(mockSummary as any);
 
-      const result = await controller.summarize({ text: 'Very long text...', maxLength: 100 } as any);
+      const result = await controller.summarize(userId, { text: 'Very long text...', maxLength: 100 } as any);
 
       expect(service.summarizeContent).toHaveBeenCalledWith('Very long text...', 100);
       expect(result).toEqual(mockSummary);
@@ -155,7 +156,7 @@ describe('AiController', () => {
       const mockCaptions = { id: 'cap-1', videoId: 'vid-1', language: 'en', srt: 'subtitle data' };
       service.generateVideoCaptions.mockResolvedValue(mockCaptions as any);
 
-      const result = await controller.generateCaptions('vid-1', { audioUrl: 'https://audio.url', language: 'en' } as any);
+      const result = await controller.generateCaptions(userId, 'vid-1', { audioUrl: 'https://audio.url', language: 'en' } as any);
 
       expect(service.generateVideoCaptions).toHaveBeenCalledWith('vid-1', 'https://audio.url', 'en');
       expect(result).toEqual(expect.objectContaining({ videoId: 'vid-1' }));
@@ -196,7 +197,7 @@ describe('AiController', () => {
     it('should default style to "default" when not provided', async () => {
       service.generateAvatar.mockResolvedValue({} as any);
 
-      await controller.generateAvatar(userId, { sourceUrl: 'https://photo.url' } as any);
+      await controller.generateAvatar(userId, { sourceUrl: 'https://photo.url', style: undefined } as any);
 
       expect(service.generateAvatar).toHaveBeenCalledWith(userId, 'https://photo.url', 'default');
     });

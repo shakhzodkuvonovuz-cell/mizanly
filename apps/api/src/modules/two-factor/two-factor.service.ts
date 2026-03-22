@@ -2,9 +2,11 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as qrcode from 'qrcode';
-import { createHash, createHmac, randomBytes } from 'crypto';
+import { createHash, createHmac, randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
 
 // ── Native TOTP implementation (replaces otplib) ──
@@ -82,9 +84,61 @@ function buildOtpauthUri(issuer: string, label: string, secret: string): string 
   return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(label)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
 }
 
+// ── AES-256-GCM encryption for TOTP secrets at rest (Finding 3) ──
+
+function encryptSecret(plaintext: string, encryptionKey: string | undefined): string {
+  if (!encryptionKey) {
+    // If no encryption key configured, store as-is with prefix for identification
+    return `plain:${plaintext}`;
+  }
+  const key = Buffer.from(encryptionKey, 'hex'); // 32 bytes = 256 bits
+  const iv = randomBytes(12); // 96-bit IV for GCM
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  // Format: enc:iv:authTag:ciphertext (all hex)
+  return `enc:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`;
+}
+
+function decryptSecret(stored: string, encryptionKey: string | undefined): string {
+  if (stored.startsWith('plain:')) {
+    return stored.slice(6);
+  }
+  if (!stored.startsWith('enc:')) {
+    // Legacy unencrypted value — return as-is for backward compatibility
+    return stored;
+  }
+  if (!encryptionKey) {
+    throw new BadRequestException('TOTP encryption key not configured — cannot decrypt');
+  }
+  const parts = stored.split(':');
+  // enc:iv:authTag:ciphertext
+  const iv = Buffer.from(parts[1], 'hex');
+  const authTag = Buffer.from(parts[2], 'hex');
+  const encrypted = Buffer.from(parts[3], 'hex');
+  const key = Buffer.from(encryptionKey, 'hex');
+  const decipher = createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
+  return decipher.update(encrypted) + decipher.final('utf8');
+}
+
 @Injectable()
 export class TwoFactorService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(TwoFactorService.name);
+  private readonly encryptionKey: string | undefined;
+
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {
+    this.encryptionKey = this.config.get<string>('TOTP_ENCRYPTION_KEY');
+    if (!this.encryptionKey) {
+      this.logger.warn(
+        'TOTP_ENCRYPTION_KEY not set — TOTP secrets will be stored unencrypted. ' +
+        'Generate a 32-byte hex key: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      );
+    }
+  }
 
   /**
    * Generate a TOTP secret, create QR code, generate backup codes
@@ -110,12 +164,15 @@ export class TwoFactorService {
     const backupCodes = this.generateBackupCodes(8);
     const backupCodesHashed = backupCodes.map(code => this.hashBackupCode(code));
 
+    // Encrypt TOTP secret before storing (Finding 3: plaintext TOTP secrets)
+    const encryptedSecret = encryptSecret(secret, this.encryptionKey);
+
     // Create or update the secret record
     if (secretRecord) {
       secretRecord = await this.prisma.twoFactorSecret.update({
         where: { userId },
         data: {
-          secret,
+          secret: encryptedSecret,
           backupCodes: backupCodesHashed,
           isEnabled: false,
           verifiedAt: null,
@@ -125,14 +182,14 @@ export class TwoFactorService {
       secretRecord = await this.prisma.twoFactorSecret.create({
         data: {
           userId,
-          secret,
+          secret: encryptedSecret,
           backupCodes: backupCodesHashed,
           isEnabled: false,
         },
       });
     }
 
-    // Generate QR data URI
+    // Generate QR data URI (use plaintext secret for TOTP URI)
     const otpauth = buildOtpauthUri('Mizanly', user.email, secret);
     const qrDataUri = await qrcode.toDataURL(otpauth);
 
@@ -157,8 +214,9 @@ export class TwoFactorService {
       throw new BadRequestException('Two-factor authentication is already enabled');
     }
 
-    // Validate the TOTP token
-    const isValid = verifyTotp(code, secretRecord.secret);
+    // Validate the TOTP token (decrypt stored secret first)
+    const plaintextSecret = decryptSecret(secretRecord.secret, this.encryptionKey);
+    const isValid = verifyTotp(code, plaintextSecret);
     if (!isValid) {
       return false;
     }
@@ -179,6 +237,13 @@ export class TwoFactorService {
    * Validate a TOTP code for login flow.
    * Returns true if 2FA is not enabled (user doesn't need to provide code).
    * For sensitive operations that REQUIRE 2FA, use validateStrict() instead.
+   *
+   * TODO: [ARCH/F16] 2FA is currently disconnected from Clerk login flow.
+   * Clerk handles authentication externally and issues JWTs. To enforce 2FA at login:
+   * 1. Use Clerk custom session claims or metadata to mark 2FA-required users
+   * 2. Add a Clerk middleware/webhook that checks 2FA status before issuing session
+   * 3. Or: require 2FA validation on first API call after login (session-level flag)
+   * This requires Clerk dashboard configuration + custom session management.
    */
   async validate(userId: string, code: string): Promise<boolean> {
     const secretRecord = await this.prisma.twoFactorSecret.findUnique({
@@ -189,7 +254,8 @@ export class TwoFactorService {
       return true;
     }
 
-    return verifyTotp(code, secretRecord.secret);
+    const plaintextSecret = decryptSecret(secretRecord.secret, this.encryptionKey);
+    return verifyTotp(code, plaintextSecret);
   }
 
   /**
@@ -203,7 +269,8 @@ export class TwoFactorService {
     if (!secretRecord || !secretRecord.isEnabled) {
       return false; // 2FA not enabled — cannot verify
     }
-    return verifyTotp(code, secretRecord.secret);
+    const plaintextSecret = decryptSecret(secretRecord.secret, this.encryptionKey);
+    return verifyTotp(code, plaintextSecret);
   }
 
   /**
@@ -216,7 +283,8 @@ export class TwoFactorService {
     if (!secretRecord) {
       throw new BadRequestException('Two-factor authentication not set up');
     }
-    return verifyTotp(code, secretRecord.secret);
+    const plaintextSecret = decryptSecret(secretRecord.secret, this.encryptionKey);
+    return verifyTotp(code, plaintextSecret);
   }
 
   /**
@@ -269,8 +337,10 @@ export class TwoFactorService {
       throw new BadRequestException('Two-factor authentication not enabled');
     }
 
-    const hashedInput = this.hashBackupCode(backupCode);
-    const index = secretRecord.backupCodes.indexOf(hashedInput);
+    // Find matching backup code (supports both salted HMAC and legacy SHA-256 formats)
+    const index = secretRecord.backupCodes.findIndex(
+      (stored) => this.verifyBackupCode(backupCode, stored),
+    );
     if (index === -1) {
       return false;
     }
@@ -304,9 +374,28 @@ export class TwoFactorService {
   }
 
   /**
-   * Hash a backup code using SHA-256
+   * Hash a backup code using HMAC-SHA256 with a random salt.
+   * Format: salt:hmac where salt is 16 bytes hex.
+   * (Finding 27: unsalted SHA-256 was vulnerable to rainbow tables)
    */
   private hashBackupCode(backupCode: string): string {
-    return createHash('sha256').update(backupCode).digest('hex');
+    const salt = randomBytes(16).toString('hex');
+    const hmac = createHmac('sha256', salt).update(backupCode).digest('hex');
+    return `${salt}:${hmac}`;
+  }
+
+  /**
+   * Verify a backup code against a stored hash.
+   * Supports both legacy (unsalted SHA-256) and new (salted HMAC-SHA256) formats.
+   */
+  private verifyBackupCode(backupCode: string, storedHash: string): boolean {
+    if (storedHash.includes(':')) {
+      // New format: salt:hmac
+      const [salt, hash] = storedHash.split(':');
+      const hmac = createHmac('sha256', salt).update(backupCode).digest('hex');
+      return hmac === hash;
+    }
+    // Legacy format: plain SHA-256 (for backward compatibility during migration)
+    return createHash('sha256').update(backupCode).digest('hex') === storedHash;
   }
 }

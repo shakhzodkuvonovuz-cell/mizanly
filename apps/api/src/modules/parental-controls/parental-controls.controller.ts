@@ -64,13 +64,14 @@ export class ParentalControlsController {
   }
 
   @Patch(':childId')
-  @ApiOperation({ summary: 'Update parental controls for a child' })
+  @ApiOperation({ summary: 'Update parental controls for a child (requires PIN)' })
   updateControls(
     @CurrentUser('id') parentUserId: string,
     @Param('childId') childId: string,
     @Body() dto: UpdateParentalControlDto,
   ) {
-    return this.parentalControlsService.updateControls(parentUserId, childId, dto);
+    const { pin, ...controls } = dto;
+    return this.parentalControlsService.updateControls(parentUserId, childId, pin, controls);
   }
 
   @Post(':childId/pin')

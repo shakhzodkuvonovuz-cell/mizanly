@@ -5,6 +5,7 @@ import {
   FlatList, Alert,
   Pressable,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { Icon } from './Icon';
 import { BottomSheet, BottomSheetItem } from './BottomSheet';
 import { Skeleton } from './Skeleton';
@@ -93,20 +94,41 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
   };
 
   const handleCurrentLocation = async () => {
-    Alert.alert(
-      'Current Location',
-      'This would request device location permissions and fetch your current location.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Use Current',
-          onPress: () => {
-            onSelect({ name: 'Current Location' });
-            onClose();
-          }
-        },
-      ]
-    );
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          t('common.permissionDenied'),
+          t('common.locationPermissionRequired'),
+        );
+        return;
+      }
+      setLoading(true);
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      // Attempt reverse geocoding for a human-readable name
+      let locationName = t('common.currentLocation');
+      try {
+        const [geo] = await Location.reverseGeocodeAsync({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+        if (geo) {
+          locationName = [geo.name, geo.city, geo.country].filter(Boolean).join(', ');
+        }
+      } catch {
+        // Reverse geocode failed — use generic name
+      }
+      onSelect({
+        name: locationName,
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+      onClose();
+    } catch {
+      Alert.alert(t('common.error'), t('common.locationFetchFailed'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
