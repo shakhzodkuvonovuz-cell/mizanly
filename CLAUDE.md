@@ -30,15 +30,15 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: Post-Test Expansion (as of 2026-03-21)
-All 5 spaces built + Telegram + Discord + WeChat feature parity + 4 feature batches + comprehensive 60-dimension audit + 13-pass deep gap analysis (418 findings) + test expansion + **72-agent deep audit remediation (files 01-16 complete)**. 208 screens, 82 controllers, 79 backend modules, 187 Prisma models, 259 test suites (3,800 tests, 100% pass), 201K lines of source code.
+## Status: Deep Audit Remediation (as of 2026-03-22)
+All 5 spaces built + Telegram + Discord + WeChat feature parity + 4 feature batches + comprehensive 60-dimension audit + 13-pass deep gap analysis (418 findings) + test expansion + **72-agent deep audit remediation (files 01-36 complete)**. 203 screens, 82 controllers, 79 backend modules, 188 Prisma models, 277 test suites (3,974 tests, 100% pass), 160K lines of TypeScript source code.
 Backend: NestJS with 79 modules (87 services, 82 controllers, 171 test files). Core: Redis, BullMQ job queues (6 queues, 5 processors), rate limiting (all 82 controllers), Stripe (Decimal money fields), Cloudflare Stream, Email (Resend), Meilisearch. AI: Claude API (text moderation + image moderation via Vision) + Whisper transcription + Gemini embeddings. Commerce: marketplace, Zakat (multi-asset, Decimal precision, configurable gold/silver prices via env), Waqf, virtual currency (coins/gifts/diamonds). Gamification: streaks, XP/levels, achievements, challenges, series, daily Islamic tasks (morning briefing). Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions, persistent voice channels, granular role permissions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties, community notes, mosque social graph.
 **Batch 4 fixes:** Real prayer times (Aladhan API + local solar calculator fallback), Quran text API (Quran.com v4, 114 surahs, verse search, random ayah), real image moderation (Claude Vision SAFE/WARNING/BLOCK), 50+ FK relations wired with onDelete rules, mosque finder (Haversine DB query + OSM Overpass fallback), Ramadan from Hijri calendar, charity amounts Decimal, configurable Zakat prices, privacy policy + ToS endpoints, TURN/STUN config, 12 memoized UI components.
 **Test expansion:** Batch 1 added 548 service tests (happy+error+auth per method). Batch 2 (running) adding 63 controller specs + 27 service expansions + gateway + integration tests. Batch 3 planned for edge cases, authorization matrix, error recovery, concurrency, abuse vectors.
-Mobile: 208 screens, 35 UI components, 23 hooks, 19 API services. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) at 2,740 keys each. All screens reachable via navigation (0 orphans). ScreenErrorBoundary on all screens. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
+Mobile: 203 screens, 66 UI components, 19 hooks, 19 API services. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) at 2,838 keys each. All screens reachable via navigation (0 orphans). ScreenErrorBoundary on all screens. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
 Islamic: prayer times (Aladhan API, 8 calc methods, 6 adhan reciters, local solar fallback), Quran (Quran.com API, 114 surahs, 4 reciters, reading plans, tafsir, rooms, verse search), hadith (200+), dhikr counter + challenges, zakat calculator (configurable prices), mosque finder (Haversine + OSM) + social graph, Hajj companion, Ramadan mode, Eid cards, nasheed mode, scholar verification + live Q&A, fatwa Q&A, halal restaurant finder, dua collection (100+), fasting tracker, 99 Names of Allah, hifz tracker, daily morning briefing, Islamic calendar theming (5 overlays auto-activated by Hijri date).
 **Known gaps:** 418 findings originally documented. **Key blockers resolved in audit remediation:** SQL injection in embeddings (FIXED file 07), moderation fail-open (FIXED file 10), banned users bypassing auth (FIXED file 03/13), admin report resolution no-ops (FIXED file 13), cascade deletes on financial records (FIXED file 15). **Remaining blockers:** Apple IAP not installed (App Store rejection), google-services.json missing (Android push), video upload not wired from mobile, R2 credentials not filled in, payments API unused on mobile.
-**Current work: 72-agent deep audit remediation — files 01-16 complete, file 17 next. 3,800 tests passing.**
+**Current work: 72-agent deep audit remediation — files 01-36 complete, file 37 next. 3,974 tests passing.**
 
 ## Key Documentation Files
 
@@ -62,7 +62,7 @@ Islamic: prayer times (Aladhan API, 8 calc methods, 6 adhan reciters, local sola
 - `docs/audit/DEFERRED_FIXES.md` — **READ BEFORE STARTING EVERY NEW AUDIT FILE.** Master tracker of all deferred/noted items across all 72 files. Contains: (1) items deferred because they cross into another file's scope, (2) items that need schema migration, (3) items that are acceptable risk. OPEN items MUST be resolved when their owning file is reached. Updated after each file is processed. This file prevents findings from being lost across sessions or context compression.
 - `docs/audit/DEEP_AUDIT_INDEX_2026_MARCH21.md` — Index of all 72 agents with scope descriptions, finding counts, top criticals per agent. Use to understand what each audit file covers and plan remediation order.
 - `docs/audit/SESSION_CONTINUATION_PROMPT.md` — **USE THIS TO START A NEW SESSION.** Contains full context, rules, patterns, and instructions for continuing the audit remediation from where we left off.
-- **Progress so far:** Files 01-16 complete. Next: file 17. Total 3,800 tests, 0 failures.
+- **Progress so far:** Files 01-36 complete. Next: file 37. Total 3,974 tests, 0 failures.
 
 **USER'S BRAINSTORM FEATURES — Designed, not yet built:**
 - `docs/features/DATA_IMPORT_ARCHITECTURE.md` — Data import from Instagram/TikTok/X/YouTube/WhatsApp
@@ -191,7 +191,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - ~~ScreenErrorBoundary coverage~~ — ✅ Batch 85 (196/196 screens)
 - Remaining: 43 inline renderItems in utility screens (negligible impact)
 
-### 72-Agent Deep Audit Remediation (files 01-16 complete)
+### 72-Agent Deep Audit Remediation (files 01-36 complete)
 **Security fixes:**
 - SQL injection in embeddings service — validated against enum whitelist (file 07)
 - ClerkAuthGuard now checks isBanned/isDeactivated/isDeleted + auto-unbans expired temp bans (files 03/13)
@@ -236,6 +236,36 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - 4 double-prefix controllers fixed (events, retention, reports, embeddings)
 - Route shadowing fixed (series/continue-watching, mosque my/memberships)
 - Trending feed pagination changed to offset-based (was producing duplicates)
+
+**Files 17-33 (infrastructure + mobile):**
+- Error handling: ApiError/ApiNetworkError typed classes, 30s request timeout, withRetry utility (file 17)
+- Rate limiting: all 13 WebSocket events rate-limited, connection flood protection (file 18)
+- Queue: SearchIndexingProcessor created (jobs were permanently lost) (file 19)
+- Redis: error logging, graceful shutdown, proxy expanded to all commands (file 20)
+- Performance: React.memo, useCallback, refs for FlashList, reel snapping (file 28)
+- Theme: useThemeColors hook, ALL 244 files migrated to theme-aware colors, light mode functional (file 33)
+- Navigation: navigate() utility replaced 227 `as never` casts (file 22)
+- i18n: synchronous language bundling, RTL for Urdu, date-fns locale wired (file 26)
+- Accessibility: useReducedMotion, WCAG contrast, touch targets, modal focus (file 27)
+- TypeScript: 398 type safety findings fixed, navigate() utility (file 30)
+- 14 new mobile API service files created for unused backend endpoints (file 25)
+
+**Files 34-36 (auth + security + content detail):**
+- Onboarding flow fixed: authApi.register called, onboardingComplete set, madhab saveable (file 34)
+- Inline 2FA verification using Clerk attemptSecondFactor (file 34)
+- 2FA backup codes: clipboard copy + Share download implemented (was all stubs) (file 35)
+- userId removed from 2FA validate/backup requests (security fix) (file 35)
+- Account deletion requires biometric re-auth (file 35)
+- Parental PIN lockout after 5 failed attempts (file 35)
+- Email/phone masked in account settings (file 35)
+- Reel comment reply-to wired end-to-end: parentId in DTO→service→DB (file 36)
+- ReelCommentReaction model + like/unlike endpoints added (file 36)
+- CommentsSheet Rules of Hooks fixed (CommentItem extracted) (file 36)
+- Video comments paginated with useInfiniteQuery (was first page only) (file 36)
+- Post/thread share functionality added (file 36)
+- Dead code removed (~100 lines unused state/handlers in video detail) (file 36)
+
+**Progress so far:** Files 01-36 complete. Next: file 37. Total 3,974 tests, 0 failures.
 
 ---
 
@@ -284,7 +314,7 @@ mizanly/
 │   │   ├── src/modules/         # 79 feature modules
 │   │   ├── src/common/          # ClerkAuthGuard (checks isBanned/isDeactivated/isDeleted + auto-unban expired), OptionalClerkAuthGuard, decorators, sentry, queue, email
 │   │   ├── src/gateways/        # Socket.io /chat namespace (chat, calls, Quran rooms)
-│   │   └── prisma/schema.prisma # 187 models, 3,859 lines
+│   │   └── prisma/schema.prisma # 188 models, 4,084 lines
 │   └── mobile/                  # React Native Expo SDK 52
 │       ├── app/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, minbar, create
@@ -489,7 +519,7 @@ fonts.arabicBold = 'NotoNaskhArabic_700Bold'
 
 ## i18n
 - **Languages:** en (English), ar (Arabic), tr (Turkish), ur (Urdu), bn (Bengali), fr (French), id (Indonesian), ms (Malay)
-- **Keys:** 2,740 per language, all 8 files at 100% parity
+- **Keys:** 2,838 per language, all 8 files at 100% parity
 - **Config:** `src/i18n/index.ts` — auto-detects device locale, falls back to `en`
 - **Adding a language:** Create `xx.json`, import in `index.ts`, add to resources + resolveLanguage()
 - **Key structure:** Nested dot notation (`risalah.chats`, `tabs.createSheet.photoOrVideoPost`)

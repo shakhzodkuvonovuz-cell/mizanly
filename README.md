@@ -86,29 +86,28 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Mobile (TSX + TS) | 130,911 |
-| Backend (TS — modules + tests) | 24,644 |
-| Data (JSON + Prisma + SQL) | 40,293 |
-| Scripts (JS + CSS) | 5,327 |
-| **Total Source Lines** | **201,175** |
-| Mobile Screens | 208 |
+| Source Lines (TS/TSX) | 107,032 |
+| Test Lines (*.spec.ts) | 55,462 |
+| Total TypeScript | 160,746 |
+| Mobile Screens | 203 |
 | Backend Modules | 79 |
 | Backend Controllers | 82 |
-| Prisma Models | 187 |
-| Prisma Schema Lines | 4,050+ |
-| Test Suites | 259 |
-| Tests Passing | 3,800 (100%) |
-| UI Components | 35 |
-| Custom Hooks | 23 |
-| Service Files | 19 |
-| Translation Keys | 2,740 per language |
+| Backend Services | 94 |
+| Prisma Models | 188 |
+| Prisma Schema Lines | 4,084 |
+| Test Suites | 277 |
+| Tests Passing | 3,974 (100%) |
+| UI Components | 66 |
+| Custom Hooks | 19 |
+| API Service Files | 19 |
+| Translation Keys | 2,838 per language |
 | Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
-| REST Endpoints | 843+ |
+| REST Endpoints | 850+ |
 | Socket Events | 16 |
-| Backend Services | 87 |
-| DTOs | 100+ |
-| Audit Findings Fixed | 760+ (across 16 deep audit files) |
-| Development Time | 18+ days (Mar 3–21, 2026) |
+| DTOs | 120+ |
+| Audit Findings Fixed | 1,800+ (across 36 deep audit files) |
+| Git Commits | 816 |
+| Development Time | 19 days (Mar 3–22, 2026) |
 
 ---
 
@@ -470,7 +469,7 @@ mizanly/
 ├── apps/
 │   ├── api/                          # NestJS backend (REST + WebSocket)
 │   │   ├── prisma/
-│   │   │   └── schema.prisma         # 187 models, 4,049 lines
+│   │   │   └── schema.prisma         # 188 models, 4,084 lines
 │   │   ├── src/
 │   │   │   ├── config/
 │   │   │   │   └── prisma.service.ts # Prisma client singleton
@@ -587,7 +586,7 @@ mizanly/
 │       │   ├── components/
 │       │   │   ├── ui/              # 33 reusable UI components
 │       │   │   └── islamic/         # Islamic-specific components
-│       │   ├── hooks/               # 23 custom hooks
+│       │   ├── hooks/               # 19 custom hooks
 │       │   ├── services/            # 19 API service files
 │       │   ├── stores/              # Zustand global store
 │       │   ├── theme/               # Design tokens
@@ -700,7 +699,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## UI Component Library
 
-35 reusable components in `apps/mobile/src/components/ui/`:
+66 reusable components in `apps/mobile/src/components/`:
 
 | Component | File | Description |
 |-----------|------|-------------|
@@ -748,7 +747,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Custom Hooks
 
-23 hooks in `apps/mobile/src/hooks/`:
+19 hooks in `apps/mobile/src/hooks/`:
 
 | Hook | File | Description |
 |------|------|-------------|
@@ -890,10 +889,10 @@ All 79 NestJS modules in `apps/api/src/modules/`:
 
 ## Database Schema (166 Models)
 
-The Prisma schema (`apps/api/prisma/schema.prisma`) contains 187 models across 4,049 lines with 447 relations. Models are organized by domain:
+The Prisma schema (`apps/api/prisma/schema.prisma`) contains 188 models across 4,084 lines with 450+ relations. Models are organized by domain:
 
 <details>
-<summary>Click to expand all 187 models grouped by domain</summary>
+<summary>Click to expand all 188 models grouped by domain</summary>
 
 ### Core Social (8 models)
 `User` `Follow` `FollowRequest` `Post` `Comment` `PostReaction` `CommentReaction` `SavedPost`
@@ -980,7 +979,7 @@ Real-time features are powered by a Socket.io gateway at the `/chat` namespace (
 
 ## Internationalization (i18n)
 
-Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. All language files maintain 100% key parity (2,740 keys each).
+Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. All language files maintain 100% key parity (2,838 keys each).
 
 | File | Keys | Description |
 |------|------|-------------|
@@ -1005,7 +1004,7 @@ Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. A
 
 ---
 
-## All Screens (208 Total)
+## All Screens (203 Total)
 
 <details>
 <summary>Click to expand complete screen list</summary>
@@ -1605,7 +1604,7 @@ The codebase has undergone a comprehensive 72-agent deep audit with 4,300+ findi
 | **Database Indexes** | 20+ indexes added (notifications, reports, moderation logs, calls, events) |
 | **Word Filter** | Placeholder patterns replaced with real hate speech/NSFW/harassment detection |
 | **Rate Limiting** | Per-endpoint @Throttle on all 82 controllers (AI moderation: 5/min, feeds: 30/min) |
-| **Tests** | 259 suites, 3,800 tests, 100% pass rate |
+| **Tests** | 277 suites, 3,974 tests, 100% pass rate |
 
 ---
 
@@ -1623,7 +1622,7 @@ Full roadmap with 200+ features across 16 tiers:
 | 13 | Audit & Hardening — P0-P2 bug fixes, screen wiring, i18n cleanup, type safety, security | 53-64 | Complete |
 | 14 | 2026 Competitor Parity — Multi-guest live, group calls, video chapters, demographics, Quran audio, Zakat calculator, webhooks, role permissions, 8 languages | 65-85 | Complete |
 | 15 | Performance — Unbounded query caps, DB indexes, optimistic updates, memo components, Sentry | A1-C, 85 | Complete |
-| 16 | **72-Agent Deep Audit** — SQL injection fixes, fail-closed moderation, cascade delete safety, auth guard hardening, 100+ DTO validations, SSRF prevention, webhook security, notification settings enforcement, appeal workflow | Files 01-16 | **In Progress (16/72 files, 760+ findings fixed, 3,800 tests)** |
+| 16 | **72-Agent Deep Audit** — SQL injection fixes, fail-closed moderation, cascade delete safety, auth guard hardening, 100+ DTO validations, SSRF prevention, webhook security, notification settings enforcement, appeal workflow, 2FA security, onboarding flow, content detail screens, theme system, RTL, accessibility | Files 01-36 | **In Progress (36/72 files, 1,800+ findings fixed, 3,974 tests)** |
 
 ---
 
