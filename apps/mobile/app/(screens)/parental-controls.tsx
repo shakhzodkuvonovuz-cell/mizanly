@@ -18,12 +18,13 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { parentalApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import type { ParentalControl } from '@/types';
 import { navigate } from '@/utils/navigation';
+import { formatCount } from '@/utils/formatCount';
 
 // ── PIN Pad ──
 function PinPad({
@@ -38,11 +39,11 @@ function PinPad({
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const [pin, setPin] = useState('');
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { isRTL } = useTranslation();
 
   const handleDigit = (d: string) => {
-    haptic.light();
+    haptic.tick();
     const next = pin + d;
     setPin(next);
     if (next.length === 4) {
@@ -52,7 +53,7 @@ function PinPad({
   };
 
   const handleDelete = () => {
-    haptic.light();
+    haptic.tick();
     setPin((p) => p.slice(0, -1));
   };
 
@@ -107,7 +108,7 @@ function AgeRatingSelector({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   return (
     <View style={styles.ageRatingRow}>
       {AGE_RATINGS.map((r) => (
@@ -115,7 +116,7 @@ function AgeRatingSelector({
           accessibilityRole="button"
           key={r}
           style={[styles.ageRatingChip, value === r && styles.ageRatingChipActive]}
-          onPress={() => { haptic.light(); onChange(r); }}
+          onPress={() => { haptic.tick(); onChange(r); }}
 
         >
           <Text style={[styles.ageRatingText, value === r && styles.ageRatingTextActive]}>
@@ -141,7 +142,7 @@ function DmRestrictionSelector({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const labels: Record<string, string> = {
     none: t('parentalControls.dmNone'),
     contacts_only: t('parentalControls.dmContactsOnly'),
@@ -154,7 +155,7 @@ function DmRestrictionSelector({
           accessibilityRole="button"
           key={opt}
           style={[styles.dmChip, value === opt && styles.ageRatingChipActive]}
-          onPress={() => { haptic.light(); onChange(opt); }}
+          onPress={() => { haptic.tick(); onChange(opt); }}
 
         >
           <Text style={[styles.ageRatingText, value === opt && styles.ageRatingTextActive]}>
@@ -178,13 +179,13 @@ function ToggleRow({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { isRTL } = useTranslation();
   return (
     <Pressable
       accessibilityRole="button"
       style={[styles.toggleRow, { flexDirection: rtlFlexRow(isRTL) }]}
-      onPress={() => { haptic.light(); onToggle(!value); }}
+      onPress={() => { haptic.tick(); onToggle(!value); }}
 
     >
       <Text style={[styles.toggleLabel, { textAlign: rtlTextAlign(isRTL) }]}>{label}</Text>
@@ -232,15 +233,15 @@ function DigestCard({ childId }: { childId: string }) {
 
       <View style={[styles.digestStats, { flexDirection: rtlFlexRow(isRTL) }]}>
         <View style={styles.digestStatItem}>
-          <Text style={styles.digestStatValue}>{d.postsCount}</Text>
+          <Text style={styles.digestStatValue}>{formatCount(d.postsCount)}</Text>
           <Text style={styles.digestStatLabel}>{t('parentalControls.posts')}</Text>
         </View>
         <View style={styles.digestStatItem}>
-          <Text style={styles.digestStatValue}>{d.messagesCount}</Text>
+          <Text style={styles.digestStatValue}>{formatCount(d.messagesCount)}</Text>
           <Text style={styles.digestStatLabel}>{t('parentalControls.messages')}</Text>
         </View>
         <View style={styles.digestStatItem}>
-          <Text style={styles.digestStatValue}>{d.totalScreenTimeMinutes}m</Text>
+          <Text style={styles.digestStatValue}>{formatCount(d.totalScreenTimeMinutes)}m</Text>
           <Text style={styles.digestStatLabel}>{t('parentalControls.screenTime')}</Text>
         </View>
       </View>
@@ -281,7 +282,7 @@ function ChildCard({
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const [expanded, setExpanded] = useState(false);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -427,7 +428,7 @@ export default function ParentalControlsScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
 

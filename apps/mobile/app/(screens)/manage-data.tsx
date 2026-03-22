@@ -221,7 +221,7 @@ export default function ManageDataScreen() {
           style={styles.body}
           contentContainerStyle={styles.bodyContent}
         >
-          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <Animated.View entering={FadeInUp.delay(0).duration(400).springify()}>
             <LinearGradient
               colors={colors.gradient.cardDark}
               style={styles.card}

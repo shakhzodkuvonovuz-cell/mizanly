@@ -19,7 +19,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { monetizationApi } from '@/services/monetizationApi';
@@ -63,7 +63,7 @@ function TierCard({
   index: number;
   onToggle: () => void;
 }) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const tc = useThemeColors();
   const tierColors = TIER_COLORS[tier.level];
@@ -95,7 +95,7 @@ function TierCard({
           <Pressable
             accessibilityRole="button"
             onPress={() => {
-              haptic.light();
+              haptic.tick();
               onToggle();
             }}
            
@@ -155,7 +155,7 @@ function TierCard({
 
 export default function MembershipTiersScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [tiers, setTiers] = useState<MembershipTier[]>([]);
@@ -306,7 +306,7 @@ export default function MembershipTiersScreen() {
                     <Pressable
                       accessibilityRole="button"
                       onPress={() => {
-                        haptic.light();
+                        haptic.tick();
                         setIsCreating(true);
                       }}
                      

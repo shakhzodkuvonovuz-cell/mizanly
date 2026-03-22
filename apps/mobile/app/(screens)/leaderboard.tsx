@@ -22,8 +22,9 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, fontSizeExt } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { formatCount } from '@/utils/formatCount';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 type LeaderboardTab = 'xp' | 'streaks' | 'helpers';
@@ -78,7 +79,7 @@ function PodiumCard({
         <View style={[styles.podiumScoreRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="trending-up" size="xs" color={medalColor} />
           <Text style={[styles.podiumScore, { color: medalColor }]}>
-            {entry.score.toLocaleString()}
+            {formatCount(entry.score)}
           </Text>
         </View>
       </Pressable>
@@ -136,7 +137,7 @@ function LeaderboardRow({
               @{entry.username}
             </Text>
           </View>
-          <Text style={styles.listScore}>{entry.score.toLocaleString()}</Text>
+          <Text style={styles.listScore}>{formatCount(entry.score)}</Text>
         </LinearGradient>
       </Pressable>
     </Animated.View>
@@ -173,7 +174,7 @@ function LoadingSkeleton() {
 function LeaderboardScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('xp');
   const tc = useThemeColors();
@@ -192,7 +193,7 @@ function LeaderboardScreen() {
 
   const handleTabChange = useCallback(
     (tab: LeaderboardTab) => {
-      haptic.light();
+      haptic.tick();
       setActiveTab(tab);
     },
     [haptic],

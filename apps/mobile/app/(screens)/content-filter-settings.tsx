@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -142,6 +143,7 @@ function ContentFilterSettingsContent() {
         showsVerticalScrollIndicator={false}
       >
         {/* Strictness Level Section */}
+        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
         <Text style={styles.sectionHeader}>{t('contentFilter.strictness')}</Text>
 
         {LEVELS.map((level) => {
@@ -193,7 +195,10 @@ function ContentFilterSettingsContent() {
           );
         })}
 
+        </Animated.View>
+
         {/* Individual Toggles Section */}
+        <Animated.View entering={FadeInUp.delay(60).duration(400)}>
         <Text style={[styles.sectionHeader, { marginTop: spacing.xl }]}>
           {t('contentFilter.title')}
         </Text>
@@ -244,13 +249,17 @@ function ContentFilterSettingsContent() {
           </View>
         </LinearGradient>
 
+        </Animated.View>
+
         {/* Info footer */}
+        <Animated.View entering={FadeInUp.delay(120).duration(400)}>
         <View style={styles.infoRow}>
           <Icon name="eye" size="sm" color={colors.text.tertiary} />
           <Text style={styles.infoText}>
             {t('contentFilter.moderateDesc')}
           </Text>
         </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );

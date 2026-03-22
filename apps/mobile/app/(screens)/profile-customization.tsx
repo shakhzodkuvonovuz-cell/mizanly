@@ -23,7 +23,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -107,12 +107,12 @@ function ToggleRow({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   return (
     <Pressable
       onPress={() => {
-        haptic.light();
+        haptic.tick();
         onToggle(!value);
       }}
       style={[styles.toggleRow, { flexDirection: rtlFlexRow(isRTL) }]}
@@ -158,7 +158,7 @@ function ProfileCustomizationScreen() {
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
@@ -206,7 +206,7 @@ function ProfileCustomizationScreen() {
   });
 
   const handlePickBackgroundImage = useCallback(async () => {
-    haptic.light();
+    haptic.tick();
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -232,7 +232,7 @@ function ProfileCustomizationScreen() {
   }, [haptic]);
 
   const handleSave = useCallback(() => {
-    haptic.medium();
+    haptic.save();
     saveMutation.mutate({
       accentColor,
       layoutStyle,
@@ -283,7 +283,7 @@ function ProfileCustomizationScreen() {
                 <Pressable
                   key={color}
                   onPress={() => {
-                    haptic.light();
+                    haptic.tick();
                     setAccentColor(color);
                   }}
                   accessibilityRole="radio"
@@ -308,7 +308,7 @@ function ProfileCustomizationScreen() {
                 <Pressable
                   key={layout.key}
                   onPress={() => {
-                    haptic.light();
+                    haptic.tick();
                     setLayoutStyle(layout.key);
                   }}
                   accessibilityRole="radio"
@@ -352,7 +352,7 @@ function ProfileCustomizationScreen() {
                 <Pressable
                   key={font.key}
                   onPress={() => {
-                    haptic.light();
+                    haptic.tick();
                     setBioFont(font.key);
                   }}
                   accessibilityRole="radio"

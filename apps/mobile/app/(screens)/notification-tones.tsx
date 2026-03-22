@@ -15,7 +15,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -49,7 +49,7 @@ function NotificationTonesScreen() {
     currentTone?: string;
   }>();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
 
   const conversationId = params.conversationId;
@@ -78,13 +78,13 @@ function NotificationTonesScreen() {
 
   // ── Handlers ──
   const handleSelect = useCallback((toneId: string) => {
-    haptic.light();
+    haptic.tick();
     setSelectedTone(toneId);
   }, [haptic]);
 
   const handlePreview = useCallback((toneId: string) => {
     // Audio files not yet available — preview is a visual-only indicator
-    haptic.light();
+    haptic.tick();
     setPlayingTone(toneId);
     // Auto-clear after brief visual feedback
     setTimeout(() => setPlayingTone(null), 1500);

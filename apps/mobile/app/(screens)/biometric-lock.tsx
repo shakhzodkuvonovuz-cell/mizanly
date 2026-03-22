@@ -14,7 +14,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { rtlTextAlign } from '@/utils/rtl';
 
 type BiometricType = 'faceId' | 'fingerprint' | 'unknown';
@@ -24,7 +24,7 @@ export default function BiometricLockScreen() {
   const tc = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const biometricLockEnabled = useStore((s) => s.biometricLockEnabled);
   const setBiometricLockEnabled = useStore((s) => s.setBiometricLockEnabled);
@@ -68,7 +68,7 @@ export default function BiometricLockScreen() {
   }, [t]);
 
   const handleToggle = useCallback(async () => {
-    haptic.light();
+    haptic.tick();
 
     if (!biometricLockEnabled) {
       // Enabling: authenticate first to confirm
@@ -88,7 +88,7 @@ export default function BiometricLockScreen() {
   }, [biometricLockEnabled, authenticate, setBiometricLockEnabled, haptic, t]);
 
   const handleTestAuth = useCallback(async () => {
-    haptic.light();
+    haptic.tick();
     const success = await authenticate();
     if (success) {
       Alert.alert(t('biometric.title'), t('biometric.testSuccess'));

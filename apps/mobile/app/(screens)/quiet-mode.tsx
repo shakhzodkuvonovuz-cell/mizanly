@@ -15,7 +15,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -41,7 +41,7 @@ export default function QuietModeScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
 
   const [isActive, setIsActive] = useState(false);
@@ -80,13 +80,13 @@ export default function QuietModeScreen() {
   };
 
   const handleToggleActive = (v: boolean) => {
-    haptic.light();
+    haptic.tick();
     setIsActive(v);
     save({ isActive: v });
   };
 
   const handleToggleSchedule = (v: boolean) => {
-    haptic.light();
+    haptic.tick();
     setIsScheduled(v);
     save({ isScheduled: v });
   };

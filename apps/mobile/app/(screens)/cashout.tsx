@@ -23,7 +23,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { api } from '@/services/api';
 
 // ── Local types ──
@@ -70,7 +71,7 @@ function CashoutContent() {
   const router = useRouter();
   const tc = useThemeColors();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState<WalletBalance | null>(null);
@@ -113,7 +114,7 @@ function CashoutContent() {
 
   const handleMax = useCallback(() => {
     if (!balance) return;
-    haptic.light();
+    haptic.tick();
     setAmountText(String(balance.diamonds));
   }, [balance, haptic]);
 
@@ -241,7 +242,7 @@ function CashoutContent() {
             <View style={styles.balanceRow}>
               <Icon name="layers" size="md" color={colors.gold} />
               <Text style={styles.balanceDiamonds}>
-                {balance?.diamonds ?? 0}
+                {formatCount(balance?.diamonds ?? 0)}
               </Text>
             </View>
             <Text style={styles.balanceUsd}>

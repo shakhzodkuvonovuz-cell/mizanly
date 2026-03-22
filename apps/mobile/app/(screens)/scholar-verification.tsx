@@ -21,7 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -134,7 +134,7 @@ function ScholarVerificationContent() {
   const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -179,12 +179,12 @@ function ScholarVerificationContent() {
       t('scholar.addDocument'),
       t('scholar.documentUploadPlaceholder'),
     );
-    haptic.light();
+    haptic.tick();
   }, [haptic, t]);
 
   const handleRemoveDocument = useCallback((index: number) => {
     setDocumentUrls(prev => prev.filter((_, i) => i !== index));
-    haptic.light();
+    haptic.tick();
   }, [haptic]);
 
   const handleSubmit = useCallback(async () => {
@@ -405,7 +405,7 @@ function ScholarVerificationContent() {
             onPress={() => {
               setSpecialization(spec.key);
               setSpecSheetVisible(false);
-              haptic.light();
+              haptic.tick();
             }}
           />
         ))}
@@ -421,7 +421,7 @@ function ScholarVerificationContent() {
             onPress={() => {
               setMadhab(m.key);
               setMadhabSheetVisible(false);
-              haptic.light();
+              haptic.tick();
             }}
           />
         ))}

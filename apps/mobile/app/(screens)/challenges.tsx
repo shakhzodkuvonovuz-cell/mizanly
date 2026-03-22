@@ -24,7 +24,8 @@ import { colors, spacing, fontSize, radius, fonts, shadow, fontSizeExt } from '@
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
 
@@ -155,7 +156,7 @@ function ChallengeCard({
               <View style={[styles.metaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Icon name="users" size="xs" color={colors.text.tertiary} />
                 <Text style={styles.metaText}>
-                  {t('gamification.challenges.participants', { count: challenge.participantsCount })}
+                  {t('gamification.challenges.participants', { count: formatCount(challenge.participantsCount) })}
                 </Text>
               </View>
               <View style={[styles.metaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -227,7 +228,7 @@ function LoadingSkeleton() {
 function ChallengesScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<ChallengeTab>('discover');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -311,7 +312,7 @@ function ChallengesScreen() {
           <Pressable
             key={tab.key}
             onPress={() => {
-              haptic.light();
+              haptic.tick();
               setActiveTab(tab.key);
             }}
             accessibilityRole="tab"
@@ -345,7 +346,7 @@ function ChallengesScreen() {
           renderItem={({ item: cat }) => (
             <Pressable
               onPress={() => {
-                haptic.light();
+                haptic.tick();
                 setSelectedCategory(cat.key);
               }}
               accessibilityRole="tab"

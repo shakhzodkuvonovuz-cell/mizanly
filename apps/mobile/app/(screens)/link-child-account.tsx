@@ -17,7 +17,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, parentalApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
@@ -26,7 +26,7 @@ import type { User } from '@/types';
 export default function LinkChildAccountScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -70,7 +70,7 @@ export default function LinkChildAccountScreen() {
   };
 
   const handlePinDigit = (digit: string, isConfirm: boolean) => {
-    haptic.light();
+    haptic.tick();
     if (isConfirm) {
       const next = confirmPin + digit;
       setConfirmPin(next);
@@ -96,7 +96,7 @@ export default function LinkChildAccountScreen() {
   };
 
   const handlePinDelete = (isConfirm: boolean) => {
-    haptic.light();
+    haptic.tick();
     if (isConfirm) {
       setConfirmPin((p) => p.slice(0, -1));
     } else {

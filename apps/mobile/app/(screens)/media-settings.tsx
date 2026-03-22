@@ -18,7 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
@@ -76,11 +76,11 @@ function SettingRow({
   disabled?: boolean;
   isRTL: boolean;
 }) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   const handleToggle = (val: boolean) => {
-    haptic.light();
+    haptic.tick();
     onToggle(val);
   };
 
@@ -139,7 +139,7 @@ function LoadingSkeleton() {
 export default function MediaSettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
 
   const [settings, setSettings] = useState<MediaSettings>(DEFAULT_SETTINGS);
@@ -185,7 +185,7 @@ export default function MediaSettingsScreen() {
   }, []);
 
   const handleDataSaverToggle = (val: boolean) => {
-    haptic.medium();
+    haptic.save();
     const updated: MediaSettings = {
       ...settings,
       dataSaver: val,
@@ -338,7 +338,7 @@ export default function MediaSettingsScreen() {
                     key={option}
                     style={[styles.settingRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}
                     onPress={() => {
-                      haptic.light();
+                      haptic.tick();
                       setAutoPlay(option);
                       settingsApi.updateAutoPlay(option).catch(() => {});
                       useStore.getState().setAutoPlaySetting(option);
@@ -376,7 +376,7 @@ export default function MediaSettingsScreen() {
                   onToggle={(v: boolean) => {
                     useStore.getState().setAmbientModeEnabled(v);
                     setAmbientMode(v);
-                    haptic.light();
+                    haptic.tick();
                   }}
                   isRTL={isRTL}
                 />

@@ -20,7 +20,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { monetizationApi } from '@/services/monetizationApi';
 import { settingsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -43,7 +43,7 @@ function CustomToggle({
   label: string;
   description?: string;
 }) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   return (
@@ -55,7 +55,7 @@ function CustomToggle({
       <Pressable
         accessibilityRole="button"
         onPress={() => {
-          haptic.light();
+          haptic.tick();
           onValueChange(!value);
         }}
 
@@ -78,7 +78,7 @@ function CustomToggle({
 
 export default function EnableTipsScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export default function EnableTipsScreen() {
   }, [haptic, t]);
 
   const handleConnectPayment = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     // TODO: Integrate Stripe Connect onboarding for creators to receive tips
     Alert.alert(t('common.comingSoon'), t('screens.enableTips.connectComingSoon'));
   }, [haptic, t]);
@@ -224,7 +224,7 @@ export default function EnableTipsScreen() {
                         accessibilityRole="button"
                         key={amount}
                         onPress={() => {
-                          haptic.light();
+                          haptic.tick();
                           setMinTipAmount(amount);
                           setCustomAmount('');
                         }}

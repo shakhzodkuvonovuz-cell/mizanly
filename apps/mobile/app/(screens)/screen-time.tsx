@@ -15,7 +15,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { settingsApi } from '@/services/api';
 import { useStore } from '@/store';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
@@ -134,7 +134,7 @@ export default function ScreenTimeScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
   const { screenTimeLimitMinutes, setScreenTimeLimitMinutes } = useStore();
@@ -299,7 +299,7 @@ export default function ScreenTimeScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => {
-              haptic.light();
+              haptic.tick();
               setLimitSheetVisible(true);
             }}
           >
@@ -335,7 +335,7 @@ export default function ScreenTimeScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => {
-              haptic.light();
+              haptic.tick();
               const next = !takeBreakEnabled;
               setTakeBreakEnabled(next);
               AsyncStorage.setItem('screen-time-take-break', String(next));

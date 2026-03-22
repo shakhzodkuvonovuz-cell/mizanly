@@ -21,7 +21,7 @@ import { colors, spacing, fontSize, radius, fonts, fontSizeExt } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
 
@@ -180,7 +180,7 @@ function LoadingSkeleton() {
 function AchievementsScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = (screenWidth - spacing.base * 2 - CARD_GAP) / 2;
@@ -213,7 +213,7 @@ function AchievementsScreen() {
 
   const handleCategoryChange = useCallback(
     (cat: AchievementCategory) => {
-      haptic.light();
+      haptic.tick();
       setSelectedCategory(cat);
     },
     [haptic],

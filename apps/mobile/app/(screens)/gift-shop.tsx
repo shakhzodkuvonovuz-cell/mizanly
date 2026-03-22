@@ -18,10 +18,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { giftsApi } from '@/services/giftsApi';
+import { formatCount } from '@/utils/formatCount';
 import type { GiftCatalogItem, GiftHistoryItem } from '@/services/giftsApi';
 
 const COIN_PACKAGES = [
@@ -47,7 +48,7 @@ type TabKey = 'shop' | 'history';
 function GiftShopContent() {
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
@@ -103,7 +104,7 @@ function GiftShopContent() {
   }, [refetchBalance, refetchCatalog, refetchHistory]);
 
   const handleBuyCoins = (amount: number) => {
-    haptic.medium();
+    haptic.save();
     // TODO: Integrate Stripe payment before crediting coins
     // Currently the backend credits coins without collecting payment
     Alert.alert(
@@ -113,7 +114,7 @@ function GiftShopContent() {
   };
 
   const handleGiftTap = (gift: GiftCatalogItem | { type: string; name: string; coins: number }) => {
-    haptic.light();
+    haptic.tick();
     setSelectedGift({
       type: gift.type,
       name: gift.name,
@@ -160,7 +161,7 @@ function GiftShopContent() {
         <View style={styles.balanceItem}>
           <Icon name="bookmark" size="sm" color={colors.gold} />
           <Text style={styles.balanceCount}>
-            {balance?.coins?.toLocaleString() ?? '0'}
+            {formatCount(balance?.coins ?? 0)}
           </Text>
           <Text style={styles.balanceLabel}>{t('giftShop.coins', 'Coins')}</Text>
         </View>
@@ -168,7 +169,7 @@ function GiftShopContent() {
         <View style={styles.balanceItem}>
           <Icon name="trending-up" size="sm" color={colors.info} />
           <Text style={styles.balanceCount}>
-            {balance?.diamonds?.toLocaleString() ?? '0'}
+            {formatCount(balance?.diamonds ?? 0)}
           </Text>
           <Text style={styles.balanceLabel}>{t('giftShop.diamonds', 'Diamonds')}</Text>
         </View>

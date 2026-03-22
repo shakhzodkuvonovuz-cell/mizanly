@@ -16,7 +16,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -27,7 +27,7 @@ export default function WindDownScreen() {
   const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<'breatheIn' | 'breatheOut'>('breatheIn');
 
@@ -121,7 +121,7 @@ export default function WindDownScreen() {
             <GradientButton
               label={t('windDown.closeApp')}
               onPress={() => {
-                haptic.light();
+                haptic.navigate();
                 if (Platform.OS === 'android') {
                   BackHandler.exitApp();
                 } else {
@@ -134,7 +134,7 @@ export default function WindDownScreen() {
               accessibilityRole="button"
               style={styles.closeBtn}
               onPress={() => {
-                haptic.light();
+                haptic.navigate();
                 router.back();
               }}
             >

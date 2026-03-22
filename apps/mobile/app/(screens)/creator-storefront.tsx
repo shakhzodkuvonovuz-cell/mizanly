@@ -22,9 +22,10 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, fontSizeExt } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';
+import { formatCount } from '@/utils/formatCount';
 
 interface StorefrontProduct {
   id: string;
@@ -53,7 +54,7 @@ function CreatorStorefrontContent() {
   const router = useRouter();
   const tc = useThemeColors();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const { userId, username } = useLocalSearchParams<{ userId: string; username: string }>();
 
@@ -98,7 +99,7 @@ function CreatorStorefrontContent() {
   }, [fetchStorefront]);
 
   const handleProductPress = useCallback((productId: string) => {
-    haptic.light();
+    haptic.navigate();
     navigate('/(screens)/product-detail', { productId });
   }, [haptic, router]);
 
@@ -107,11 +108,7 @@ function CreatorStorefrontContent() {
     router.push('/(screens)/marketplace');
   }, [haptic, router]);
 
-  const formatFollowers = (count: number): string => {
-    if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-    if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
-    return count.toString();
-  };
+  const formatFollowers = (count: number): string => formatCount(count);
 
   const renderProduct = useCallback(({ item, index }: { item: StorefrontProduct; index: number }) => (
     <Animated.View entering={FadeInUp.delay(100 + index * 50).duration(400)}>

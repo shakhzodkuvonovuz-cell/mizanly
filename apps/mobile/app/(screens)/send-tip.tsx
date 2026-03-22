@@ -20,10 +20,11 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { monetizationApi } from '@/services/monetizationApi';
+import { formatCount } from '@/utils/formatCount';
 import { paymentsApi } from '@/services/paymentsApi';
 import { usersApi } from '@/services/api';
 import type { User } from '@/types';
@@ -83,7 +84,7 @@ export default function SendTipScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ username?: string }>();
   const [creator, setCreator] = useState<User | null>(null);
@@ -96,13 +97,10 @@ export default function SendTipScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const formattedFollowers = useMemo(() => {
-    const count = creator?._count?.followers;
-    if (count == null) return '0';
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-    return count.toString();
-  }, [creator?._count?.followers]);
+  const formattedFollowers = useMemo(
+    () => formatCount(creator?._count?.followers),
+    [creator?._count?.followers],
+  );
 
   const fetchCreator = useCallback(async () => {
     const username = params.username;
@@ -137,7 +135,7 @@ export default function SendTipScreen() {
   const total = tipAmount + platformFee;
 
   const handleAmountSelect = useCallback((amount: number) => {
-    haptic.light();
+    haptic.tick();
     setSelectedAmount(amount);
     setCustomAmount('');
   }, [haptic]);
@@ -151,7 +149,7 @@ export default function SendTipScreen() {
       Alert.alert(t('common.error'), t('monetization.errors.selectTipAmount'));
       return;
     }
-    haptic.medium();
+    haptic.send();
     setIsSending(true);
     try {
       // Create PaymentIntent for the tip via Stripe

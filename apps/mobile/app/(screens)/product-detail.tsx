@@ -25,11 +25,12 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
+import { formatCount } from '@/utils/formatCount';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -97,7 +98,7 @@ function ProductDetailContent() {
   const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -132,7 +133,7 @@ function ProductDetailContent() {
   };
 
   const handleRelatedPress = (productId: string) => {
-    haptic.light();
+    haptic.navigate();
     navigate('/(screens)/product-detail', { id: productId });
   };
 
@@ -268,7 +269,7 @@ function ProductDetailContent() {
           <View style={styles.ratingRow}>
             {renderStars(product.rating, 'sm')}
             <Text style={styles.ratingText}>
-              {product.rating.toFixed(1)} ({product.reviewCount} {t('product.reviews', 'reviews')})
+              {product.rating.toFixed(1)} ({formatCount(product.reviewCount)} {t('product.reviews', 'reviews')})
             </Text>
           </View>
         </Animated.View>

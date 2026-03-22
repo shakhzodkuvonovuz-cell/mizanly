@@ -22,11 +22,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
+import { formatCount } from '@/utils/formatCount';
 
 const { width: screenWidth } = Dimensions.get('window');
 const GRID_GAP = spacing.sm;
@@ -87,7 +88,7 @@ function renderStars(rating: number) {
 function MarketplaceContent() {
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
 
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
@@ -126,12 +127,12 @@ function MarketplaceContent() {
   };
 
   const handleCategoryPress = (key: CategoryKey) => {
-    haptic.light();
+    haptic.tick();
     setSelectedCategory(key);
   };
 
   const handleProductPress = (product: Product) => {
-    haptic.light();
+    haptic.navigate();
     navigate('/(screens)/product-detail', { id: product.id });
   };
 
@@ -210,7 +211,7 @@ function MarketplaceContent() {
           </Text>
           <View style={styles.ratingRow}>
             {renderStars(item.rating)}
-            <Text style={styles.reviewCount}>({item.reviewCount})</Text>
+            <Text style={styles.reviewCount}>({formatCount(item.reviewCount)})</Text>
           </View>
           <View style={styles.sellerRow}>
             <Avatar

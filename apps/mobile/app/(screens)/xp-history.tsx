@@ -25,6 +25,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
+import { formatCount } from '@/utils/formatCount';
 
 interface XPData {
   level: number;
@@ -95,7 +96,7 @@ function LevelBadge({ xpData, isRTL }: { xpData: XPData; isRTL: boolean }) {
             {t('gamification.xp.level', { level: xpData.level })}
           </Text>
           <Text style={[styles.totalXP, { textAlign: rtlTextAlign(isRTL) }]}>
-            {t('gamification.xp.totalXP', { xp: xpData.totalXP.toLocaleString() })}
+            {t('gamification.xp.totalXP', { xp: formatCount(xpData.totalXP) })}
           </Text>
         </View>
 
