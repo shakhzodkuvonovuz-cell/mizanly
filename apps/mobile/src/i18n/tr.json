@@ -2010,7 +2010,9 @@
     "mention": "Bahset",
     "duet": "Düet",
     "greenScreen": "Yeşil Ekran",
-    "audioLibrary": "Ses Kütüphanesi"
+    "audioLibrary": "Ses Kütüphanesi",
+    "gallery": "Galeri",
+    "record": "Kaydet"
   },
   "createVideo": {
     "selectThumbnail": "Küçük resim seçin",

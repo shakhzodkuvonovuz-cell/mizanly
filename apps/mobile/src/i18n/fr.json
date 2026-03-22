@@ -2011,7 +2011,9 @@
     "mention": "Mention",
     "duet": "Duet",
     "greenScreen": "Green Screen",
-    "audioLibrary": "Audio Library"
+    "audioLibrary": "Audio Library",
+    "gallery": "Galerie",
+    "record": "Enregistrer"
   },
   "createVideo": {
     "selectThumbnail": "Select thumbnail",

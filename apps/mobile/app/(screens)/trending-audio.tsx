@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Audio } from 'expo-av';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -29,6 +30,47 @@ export default function TrendingAudioScreen() {
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
   const [refreshing, setRefreshing] = useState(false);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const playAudio = useCallback(async (id: string, uri: string) => {
+    try {
+      // Stop current if playing something else
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+
+      if (playingId === id) {
+        // Was playing this one — toggle off
+        setPlayingId(null);
+        return;
+      }
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true },
+      );
+      soundRef.current = sound;
+      setPlayingId(id);
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setPlayingId(null);
+          sound.unloadAsync().catch(() => {});
+          soundRef.current = null;
+        }
+      });
+    } catch (err) {
+      console.warn('Audio playback failed:', err);
+      setPlayingId(null);
+    }
+  }, [playingId]);
+
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync().catch(() => {}); };
+  }, []);
 
   const { data: tracks, isLoading, isError, refetch } = useQuery({
     queryKey: ['trending-audio'],
@@ -70,12 +112,21 @@ export default function TrendingAudioScreen() {
             </LinearGradient>
           )}
           {/* Play button overlay */}
-          <LinearGradient
-            colors={[colors.emerald, colors.emeraldDark]}
-            style={styles.playButton}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              haptic.light();
+              playAudio(item.id, item.audioUrl);
+            }}
+            hitSlop={8}
           >
-            <Icon name="play" size="xs" color={colors.text.primary} />
-          </LinearGradient>
+            <LinearGradient
+              colors={[colors.emerald, colors.emeraldDark]}
+              style={styles.playButton}
+            >
+              <Icon name={playingId === item.id ? 'loader' : 'play'} size="xs" color={colors.text.primary} />
+            </LinearGradient>
+          </Pressable>
         </View>
 
         <View style={styles.info}>

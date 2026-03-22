@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, Pressable, Dimensions, RefreshControl,
@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Audio } from 'expo-av';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { Icon } from '@/components/ui/Icon';
@@ -39,6 +40,8 @@ export default function SoundScreen() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   const formatNumber = formatCount;
 
@@ -49,6 +52,42 @@ export default function SoundScreen() {
   });
 
   const track = trackQuery.data;
+
+  const playPreview = useCallback(async () => {
+    if (!track?.audioUrl) return;
+
+    // If already playing, stop
+    if (soundRef.current) {
+      try { await soundRef.current.stopAsync(); await soundRef.current.unloadAsync(); } catch { /* ignore */ }
+      soundRef.current = null;
+      setIsPlayingPreview(false);
+      return;
+    }
+
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: track.audioUrl },
+        { shouldPlay: true },
+      );
+      soundRef.current = sound;
+      setIsPlayingPreview(true);
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsPlayingPreview(false);
+          sound.unloadAsync().catch(() => {});
+          soundRef.current = null;
+        }
+      });
+    } catch (err) {
+      console.warn('Audio playback failed:', err);
+      setIsPlayingPreview(false);
+    }
+  }, [track?.audioUrl]);
+
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync().catch(() => {}); };
+  }, []);
 
   // Fetch reels using this audio (paginated)
   const reelsQuery = useInfiniteQuery({
@@ -200,6 +239,20 @@ export default function SoundScreen() {
                       <Icon name="music" size="xl" color={colors.gold} />
                     </LinearGradient>
                   )}
+                  {/* Play preview overlay */}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={isPlayingPreview ? t('common.pause') : t('common.play')}
+                    onPress={playPreview}
+                    style={styles.coverPlayOverlay}
+                  >
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
+                      style={styles.coverPlayButton}
+                    >
+                      <Icon name={isPlayingPreview ? 'loader' : 'play'} size="lg" color="#FFF" />
+                    </LinearGradient>
+                  </Pressable>
                   {track.isTrending && (
                     <LinearGradient
                       colors={[colors.emerald, colors.gold]}
@@ -302,6 +355,22 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: 'rgba(255,255,255,0.1)',
   },
   coverPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverPlayOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverPlayButton: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

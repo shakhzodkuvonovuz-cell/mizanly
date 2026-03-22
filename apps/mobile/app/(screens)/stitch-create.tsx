@@ -6,6 +6,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -180,12 +181,24 @@ export default function StitchCreateScreen() {
 
                 {/* Video Preview */}
                 <View style={styles.videoPreviewContainer}>
-                  <LinearGradient
-                    colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
-                    style={styles.videoPreview}
-                  >
-                    <Icon name="play" size="xl" color={colors.text.tertiary} />
-                  </LinearGradient>
+                  {videoUrl ? (
+                    <Video
+                      source={{ uri: videoUrl }}
+                      style={styles.videoPreview}
+                      resizeMode={ResizeMode.COVER}
+                      shouldPlay
+                      isLooping
+                      isMuted={false}
+                      useNativeControls={false}
+                    />
+                  ) : (
+                    <LinearGradient
+                      colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
+                      style={styles.videoPreview}
+                    >
+                      <Icon name="play" size="xl" color={colors.text.tertiary} />
+                    </LinearGradient>
+                  )}
                 </View>
 
                 {/* Duration Selector */}

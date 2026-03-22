@@ -6,6 +6,7 @@ import Animated, { FadeInUp, withSpring, useAnimatedStyle, withRepeat } from 're
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -227,11 +228,24 @@ export default function DuetCreateScreen() {
                           <Text style={styles.panelLabel}>{t('duet.original')}</Text>
                         </LinearGradient>
                       </View>
-                      <View style={[styles.videoPanel, { backgroundColor: tc.bgCard }]}>
-                        <View style={styles.videoPanelInner}>
-                          <Icon name="play" size="xl" color={colors.text.tertiary} />
+                      {videoUrl ? (
+                        <Video
+                          source={{ uri: videoUrl }}
+                          style={[styles.videoPanel, { backgroundColor: tc.bgCard }]}
+                          resizeMode={ResizeMode.COVER}
+                          shouldPlay
+                          isLooping
+                          isMuted={isMuted}
+                          volume={originalVolume / 100}
+                          useNativeControls={false}
+                        />
+                      ) : (
+                        <View style={[styles.videoPanel, { backgroundColor: tc.bgCard }]}>
+                          <View style={styles.videoPanelInner}>
+                            <Icon name="play" size="xl" color={colors.text.tertiary} />
+                          </View>
                         </View>
-                      </View>
+                      )}
                       <Text style={styles.panelUsername}>@{originalCreator.username}</Text>
                     </View>
 
@@ -270,9 +284,22 @@ export default function DuetCreateScreen() {
                           <Text style={styles.panelLabel}>{t('duet.original')}</Text>
                         </LinearGradient>
                       </View>
-                      <View style={[styles.videoPanelTopBottom, { backgroundColor: tc.bgCard }]}>
-                        <Icon name="play" size="lg" color={colors.text.tertiary} />
-                      </View>
+                      {videoUrl ? (
+                        <Video
+                          source={{ uri: videoUrl }}
+                          style={[styles.videoPanelTopBottom, { backgroundColor: tc.bgCard }]}
+                          resizeMode={ResizeMode.COVER}
+                          shouldPlay
+                          isLooping
+                          isMuted={isMuted}
+                          volume={originalVolume / 100}
+                          useNativeControls={false}
+                        />
+                      ) : (
+                        <View style={[styles.videoPanelTopBottom, { backgroundColor: tc.bgCard }]}>
+                          <Icon name="play" size="lg" color={colors.text.tertiary} />
+                        </View>
+                      )}
                     </View>
                     <View style={styles.dividerHorizontal} />
                     <View style={styles.topBottomPanel}>
@@ -305,9 +332,22 @@ export default function DuetCreateScreen() {
                           <Text style={styles.panelLabel}>{t('duet.original')}</Text>
                         </LinearGradient>
                       </View>
-                      <View style={[styles.videoPanelReact, { backgroundColor: tc.bgCard }]}>
-                        <Icon name="play" size="lg" color={colors.text.tertiary} />
-                      </View>
+                      {videoUrl ? (
+                        <Video
+                          source={{ uri: videoUrl }}
+                          style={[styles.videoPanelReact, { backgroundColor: tc.bgCard }]}
+                          resizeMode={ResizeMode.COVER}
+                          shouldPlay
+                          isLooping
+                          isMuted={isMuted}
+                          volume={originalVolume / 100}
+                          useNativeControls={false}
+                        />
+                      ) : (
+                        <View style={[styles.videoPanelReact, { backgroundColor: tc.bgCard }]}>
+                          <Icon name="play" size="lg" color={colors.text.tertiary} />
+                        </View>
+                      )}
                     </View>
                     <View style={styles.reactYourPanel}>
                       <CameraView

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput,
   FlatList, Dimensions, RefreshControl,
@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Audio } from 'expo-av';
 import { useQuery } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -35,6 +36,7 @@ interface AudioTrackDisplay {
   useCount: number;
   category: string;
   isFavorite: boolean;
+  audioUrl: string;
 }
 
 function formatDuration(seconds: number): string {
@@ -52,6 +54,7 @@ function mapApiTrack(track: ApiAudioTrack): AudioTrackDisplay {
     useCount: track.usageCount ?? 0,
     category: track.genre || 'Trending',
     isFavorite: false,
+    audioUrl: track.audioUrl,
   };
 }
 
@@ -191,14 +194,53 @@ export default function AudioLibraryScreen() {
     return matchesSearch && matchesFavorites;
   }), [allTracks, searchQuery, favoritesOnly]);
 
-  const handlePlay = useCallback((trackId: string) => {
-    if (currentTrackId === trackId) {
-      setIsPlaying(!isPlaying);
-    } else {
-      setCurrentTrackId(trackId);
-      setIsPlaying(true);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const handlePlay = useCallback(async (trackId: string) => {
+    // Stop current if already playing
+    if (soundRef.current) {
+      try { await soundRef.current.stopAsync(); await soundRef.current.unloadAsync(); } catch { /* ignore */ }
+      soundRef.current = null;
     }
-  }, [currentTrackId, isPlaying]);
+
+    if (currentTrackId === trackId && isPlaying) {
+      // Was playing this track — toggle off
+      setIsPlaying(false);
+      setCurrentTrackId(null);
+      return;
+    }
+
+    const track = allTracks.find(t => t.id === trackId);
+    if (!track?.audioUrl) return;
+
+    setCurrentTrackId(trackId);
+    setIsPlaying(true);
+
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: track.audioUrl },
+        { shouldPlay: true },
+      );
+      soundRef.current = sound;
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsPlaying(false);
+          setCurrentTrackId(null);
+          sound.unloadAsync().catch(() => {});
+          soundRef.current = null;
+        }
+      });
+    } catch (err) {
+      console.warn('Audio playback failed:', err);
+      setIsPlaying(false);
+      setCurrentTrackId(null);
+    }
+  }, [currentTrackId, isPlaying, allTracks]);
+
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync().catch(() => {}); };
+  }, []);
 
   const handleSelect = useCallback((track: AudioTrackDisplay) => {
     setSelectedTrack(track);

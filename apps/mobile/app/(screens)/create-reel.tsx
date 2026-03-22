@@ -13,6 +13,7 @@ import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { Video, ResizeMode } from 'expo-av';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -69,6 +70,84 @@ export default function CreateReelScreen() {
   const captionInputRef = useRef<TextInput>(null);
 
   const videoRef = useRef<Video>(null);
+
+  // Camera recording state
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [facing, setFacing] = useState<'front' | 'back'>('back');
+  const [recordTime, setRecordTime] = useState(0);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (isRecording) {
+      recordTimerRef.current = setInterval(() => {
+        setRecordTime((prev) => {
+          if (prev >= 60) {
+            if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+            return 60;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } else {
+      if (recordTimerRef.current) {
+        clearInterval(recordTimerRef.current);
+        recordTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+    };
+  }, [isRecording]);
+
+  const handleCameraRecord = async () => {
+    if (!cameraRef.current) return;
+
+    if (isRecording) {
+      cameraRef.current.stopRecording();
+      setIsRecording(false);
+    } else {
+      setIsRecording(true);
+      setRecordTime(0);
+      try {
+        const result = await cameraRef.current.recordAsync({ maxDuration: 60 });
+        if (result?.uri) {
+          setVideo({
+            uri: result.uri,
+            type: 'video',
+            duration: recordTime || 0,
+            width: undefined,
+            height: undefined,
+          });
+          setShowCamera(false);
+          generateFrames(result.uri, (recordTime || 0) * 1000);
+        }
+      } catch (_err: unknown) {
+        // Recording was cancelled or failed
+      } finally {
+        setIsRecording(false);
+      }
+    }
+  };
+
+  const handleOpenCamera = async () => {
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission();
+      if (!result.granted) {
+        Alert.alert(t('camera.permissionRequired'), t('camera.permissionMessage'));
+        return;
+      }
+    }
+    setShowCamera(true);
+  };
+
+  const formatRecordTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Request permissions on mount
   useEffect(() => {
@@ -341,19 +420,119 @@ export default function CreateReelScreen() {
                 </LinearGradient>
               </Pressable>
             </Animated.View>
-          ) : (
-            <Pressable style={[styles.uploadPlaceholder, { backgroundColor: tc.surface, borderColor: tc.border }]} onPress={pickVideo}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
-                style={styles.uploadPlaceholderGradient}
-              >
-                <View style={styles.uploadIconContainer}>
-                  <Icon name="video" size="xl" color={colors.emerald} />
+          ) : showCamera ? (
+            <View style={styles.cameraSection}>
+              {/* Mode toggle */}
+              <View style={styles.modeToggle}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setShowCamera(false)}
+                  style={[styles.modeTab, !showCamera && styles.modeTabActive]}
+                >
+                  <Icon name="image" size="sm" color={!showCamera ? '#FFF' : colors.text.secondary} />
+                  <Text style={[styles.modeText, !showCamera && styles.modeTextActive]}>{t('createReel.gallery')}</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={handleOpenCamera}
+                  style={[styles.modeTab, showCamera && styles.modeTabActive]}
+                >
+                  <Icon name="camera" size="sm" color={showCamera ? '#FFF' : colors.text.secondary} />
+                  <Text style={[styles.modeText, showCamera && styles.modeTextActive]}>{t('createReel.record')}</Text>
+                </Pressable>
+              </View>
+
+              {/* Camera view */}
+              <View style={styles.cameraContainer}>
+                <CameraView
+                  ref={cameraRef}
+                  style={styles.camera}
+                  facing={facing}
+                  mode="video"
+                />
+
+                {/* Timer overlay */}
+                {isRecording && (
+                  <View style={styles.cameraTimerOverlay}>
+                    <View style={styles.cameraTimerBadge}>
+                      <View style={styles.cameraRecordingDot} />
+                      <Text style={styles.cameraTimerText}>{formatRecordTime(recordTime)}</Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Camera controls */}
+                <View style={styles.cameraControls}>
+                  {/* Flip camera */}
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => setFacing(f => f === 'back' ? 'front' : 'back')}
+                    style={styles.cameraFlipButton}
+                  >
+                    <Icon name="repeat" size="md" color="#fff" />
+                  </Pressable>
+
+                  {/* Record button */}
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={handleCameraRecord}
+                    style={styles.recordButton}
+                  >
+                    <View style={styles.recordButtonOuter}>
+                      {isRecording ? (
+                        <View style={styles.recordDotActive} />
+                      ) : (
+                        <View style={styles.recordDot} />
+                      )}
+                    </View>
+                  </Pressable>
+
+                  {/* Close camera */}
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => setShowCamera(false)}
+                    style={styles.cameraFlipButton}
+                  >
+                    <Icon name="x" size="md" color="#fff" />
+                  </Pressable>
                 </View>
-                <Text style={styles.uploadText}>{t('createReel.selectVideo')}</Text>
-                <Text style={styles.uploadSubtext}>{t('createReel.videoRequirements')}</Text>
-              </LinearGradient>
-            </Pressable>
+              </View>
+            </View>
+          ) : (
+            <View>
+              {/* Mode toggle */}
+              <View style={styles.modeToggle}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setShowCamera(false)}
+                  style={[styles.modeTab, !showCamera && styles.modeTabActive]}
+                >
+                  <Icon name="image" size="sm" color={!showCamera ? '#FFF' : colors.text.secondary} />
+                  <Text style={[styles.modeText, !showCamera && styles.modeTextActive]}>{t('createReel.gallery')}</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={handleOpenCamera}
+                  style={[styles.modeTab, showCamera && styles.modeTabActive]}
+                >
+                  <Icon name="camera" size="sm" color={showCamera ? '#FFF' : colors.text.secondary} />
+                  <Text style={[styles.modeText, showCamera && styles.modeTextActive]}>{t('createReel.record')}</Text>
+                </Pressable>
+              </View>
+
+              <Pressable style={[styles.uploadPlaceholder, { backgroundColor: tc.surface, borderColor: tc.border }]} onPress={pickVideo}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+                  style={styles.uploadPlaceholderGradient}
+                >
+                  <View style={styles.uploadIconContainer}>
+                    <Icon name="video" size="xl" color={colors.emerald} />
+                  </View>
+                  <Text style={styles.uploadText}>{t('createReel.selectVideo')}</Text>
+                  <Text style={styles.uploadSubtext}>{t('createReel.videoRequirements')}</Text>
+                </LinearGradient>
+              </Pressable>
+            </View>
           )}
 
           {/* Thumbnail filmstrip */}
@@ -969,6 +1148,124 @@ const styles = StyleSheet.create({
   },
   toggleThumbActive: {
     alignSelf: 'flex-end' as const,
+  },
+
+  // Mode toggle (Gallery / Record)
+  modeToggle: {
+    flexDirection: 'row' as const,
+    marginBottom: spacing.md,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(45,53,72,0.4)',
+    padding: 3,
+  },
+  modeTab: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  modeTabActive: {
+    backgroundColor: colors.emerald,
+  },
+  modeText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600' as const,
+    color: colors.text.secondary,
+  },
+  modeTextActive: {
+    color: '#FFF',
+  },
+
+  // Camera section
+  cameraSection: {
+    marginBottom: spacing.lg,
+  },
+  cameraContainer: {
+    width: VIDEO_PREVIEW_WIDTH,
+    height: VIDEO_PREVIEW_HEIGHT,
+    borderRadius: radius.lg,
+    overflow: 'hidden' as const,
+    position: 'relative' as const,
+  },
+  camera: {
+    width: '100%' as const,
+    height: '100%' as const,
+  },
+  cameraTimerOverlay: {
+    position: 'absolute' as const,
+    top: spacing.md,
+    left: 0,
+    right: 0,
+    alignItems: 'center' as const,
+  },
+  cameraTimerBadge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  cameraRecordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    backgroundColor: colors.error,
+  },
+  cameraTimerText: {
+    color: '#FFF',
+    fontSize: fontSize.sm,
+    fontWeight: '600' as const,
+  },
+  cameraControls: {
+    position: 'absolute' as const,
+    bottom: spacing.lg,
+    left: 0,
+    right: 0,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: spacing.xl,
+  },
+  cameraFlipButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  recordButton: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  recordButtonOuter: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    borderWidth: 4,
+    borderColor: '#FFF',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  recordDot: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    backgroundColor: colors.error,
+  },
+  recordDotActive: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.sm,
+    backgroundColor: colors.error,
   },
 
   // Selected track bar

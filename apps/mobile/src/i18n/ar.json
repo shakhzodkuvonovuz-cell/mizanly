@@ -1809,7 +1809,9 @@
     "mention": "إشارة",
     "duet": "ديو",
     "greenScreen": "شاشة خضراء",
-    "audioLibrary": "مكتبة الصوت"
+    "audioLibrary": "مكتبة الصوت",
+    "gallery": "المعرض",
+    "record": "تسجيل"
   },
   "createVideo": {
     "selectThumbnail": "اختر صورة مصغرة",
