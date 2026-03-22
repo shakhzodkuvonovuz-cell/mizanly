@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, Alert, Share,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { showToast } from '@/components/ui/Toast';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,6 +20,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { threadsApi } from '@/services/api';
 import type { ThreadReply } from '@/types';
@@ -231,6 +233,54 @@ export default function ThreadDetailScreen() {
     return [...rawReplies].sort((a, b) => (b.likesCount ?? 0) - (a.likesCount ?? 0));
   }, [rawReplies, replySort]);
 
+  // Sticky bar — local like/bookmark state
+  const thread = threadQuery.data;
+  const [localLiked, setLocalLiked] = useState(false);
+  const [localLikes, setLocalLikes] = useState(0);
+  const [localBookmarked, setLocalBookmarked] = useState(false);
+
+  const lastSyncedThreadId = useRef<string | null>(null);
+  if (thread && thread.id !== lastSyncedThreadId.current) {
+    lastSyncedThreadId.current = thread.id;
+    setLocalLiked(thread.userReaction === 'LIKE');
+    setLocalLikes(thread.likesCount ?? 0);
+    setLocalBookmarked(thread.isBookmarked ?? false);
+  }
+
+  const threadLikeMutation = useMutation({
+    mutationFn: () => localLiked ? threadsApi.unlike(id) : threadsApi.like(id),
+    onMutate: () => {
+      setLocalLiked(prev => !prev);
+      setLocalLikes(prev => localLiked ? prev - 1 : prev + 1);
+    },
+    onError: () => {
+      setLocalLiked(prev => !prev);
+      setLocalLikes(prev => localLiked ? prev + 1 : prev - 1);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['thread', id] }),
+  });
+
+  const threadBookmarkMutation = useMutation({
+    mutationFn: () => localBookmarked ? threadsApi.unbookmark(id) : threadsApi.bookmark(id),
+    onMutate: () => setLocalBookmarked(prev => !prev),
+    onError: () => setLocalBookmarked(prev => !prev),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['thread', id] }),
+  });
+
+  const handleStickyLike = useCallback(() => {
+    haptic.like();
+    threadLikeMutation.mutate();
+  }, [haptic, threadLikeMutation]);
+
+  const handleStickyBookmark = useCallback(() => {
+    haptic.save();
+    threadBookmarkMutation.mutate();
+  }, [haptic, threadBookmarkMutation]);
+
+  const handleStickyReply = useCallback(() => {
+    inputRef.current?.focus();
+  }, []);
+
   const handleRefresh = useCallback(() => {
     threadQuery.refetch();
     repliesQuery.refetch();
@@ -417,8 +467,49 @@ export default function ThreadDetailScreen() {
           )}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 140 }}
         />
+
+        {/* Sticky glass action bar */}
+        {thread && (
+          <View style={styles.stickyBar}>
+            {Platform.OS === 'ios' ? (
+              <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+            ) : (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(13, 17, 23, 0.95)' }]} />
+            )}
+            <View style={styles.stickyBarContent}>
+              <ActionButton
+                icon={<Icon name="heart" size="sm" color={tc.text.secondary} />}
+                activeIcon={<Icon name="heart-filled" size="sm" color={colors.like} fill={colors.like} />}
+                isActive={localLiked}
+                count={localLikes > 0 ? localLikes : undefined}
+                onPress={handleStickyLike}
+                activeColor={colors.like}
+                accessibilityLabel={localLiked ? t('accessibility.unlikeThread') : t('accessibility.likeThread')}
+              />
+              <ActionButton
+                icon={<Icon name="message-circle" size="sm" color={tc.text.secondary} />}
+                count={thread.repliesCount > 0 ? thread.repliesCount : undefined}
+                onPress={handleStickyReply}
+                accessibilityLabel={t('accessibility.replyToThread')}
+              />
+              <ActionButton
+                icon={<Icon name="share" size="sm" color={tc.text.secondary} />}
+                onPress={handleShare}
+                accessibilityLabel={t('common.share')}
+              />
+              <ActionButton
+                icon={<Icon name="bookmark" size="sm" color={localBookmarked ? colors.bookmark : tc.text.tertiary} />}
+                activeIcon={<Icon name="bookmark-filled" size="sm" color={colors.bookmark} fill={colors.bookmark} />}
+                isActive={localBookmarked}
+                onPress={handleStickyBookmark}
+                activeColor={colors.bookmark}
+                accessibilityLabel={localBookmarked ? t('accessibility.unbookmarkThread') : t('accessibility.bookmarkThread')}
+              />
+            </View>
+          </View>
+        )}
 
         {/* Reply Input */}
         {user && (
@@ -573,4 +664,16 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   sendBtn: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
   sendBtnDisabled: { color: colors.text.tertiary },
+  stickyBar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  stickyBarContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
+  },
 });

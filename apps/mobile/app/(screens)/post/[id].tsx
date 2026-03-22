@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { showToast } from '@/components/ui/Toast';
 import Animated, {
   useSharedValue,
@@ -24,6 +25,7 @@ import { RichText } from '@/components/ui/RichText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PostCard } from '@/components/saf/PostCard';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -252,6 +254,55 @@ export default function PostDetailScreen() {
 
   const rawComments: Comment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
+  // Sticky bar — local like/save state
+  const post = postQuery.data;
+  const [localLiked, setLocalLiked] = useState(false);
+  const [localLikes, setLocalLikes] = useState(0);
+  const [localSaved, setLocalSaved] = useState(false);
+
+  // Sync from server data
+  const lastSyncedPostId = useRef<string | null>(null);
+  if (post && post.id !== lastSyncedPostId.current) {
+    lastSyncedPostId.current = post.id;
+    setLocalLiked(post.userReaction === 'LIKE');
+    setLocalLikes(post.likesCount);
+    setLocalSaved(post.isSaved ?? false);
+  }
+
+  const likeMutation = useMutation({
+    mutationFn: () => localLiked ? postsApi.unreact(id) : postsApi.react(id, 'LIKE'),
+    onMutate: () => {
+      setLocalLiked(prev => !prev);
+      setLocalLikes(prev => localLiked ? prev - 1 : prev + 1);
+    },
+    onError: () => {
+      setLocalLiked(prev => !prev);
+      setLocalLikes(prev => localLiked ? prev + 1 : prev - 1);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['post', id] }),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: () => localSaved ? postsApi.unsave(id) : postsApi.save(id),
+    onMutate: () => setLocalSaved(prev => !prev),
+    onError: () => setLocalSaved(prev => !prev),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['post', id] }),
+  });
+
+  const handleStickyLike = useCallback(() => {
+    haptic.like();
+    likeMutation.mutate();
+  }, [haptic, likeMutation]);
+
+  const handleStickySave = useCallback(() => {
+    haptic.save();
+    saveMutation.mutate();
+  }, [haptic, saveMutation]);
+
+  const handleStickyComment = useCallback(() => {
+    inputRef.current?.focus();
+  }, []);
+
   // Sort comments: "top" by likes descending, "latest" by creation date (API default)
   const comments = useMemo(() => {
     if (commentSort === 'latest') return rawComments;
@@ -442,8 +493,49 @@ export default function PostDetailScreen() {
           )}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 140 }}
         />
+
+        {/* Sticky glass action bar */}
+        {post && (
+          <View style={styles.stickyBar}>
+            {Platform.OS === 'ios' ? (
+              <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+            ) : (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(13, 17, 23, 0.95)' }]} />
+            )}
+            <View style={styles.stickyBarContent}>
+              <ActionButton
+                icon={<Icon name="heart" size="sm" color={tc.text.secondary} />}
+                activeIcon={<Icon name="heart-filled" size="sm" color={colors.like} fill={colors.like} />}
+                isActive={localLiked}
+                count={localLikes > 0 ? localLikes : undefined}
+                onPress={handleStickyLike}
+                activeColor={colors.like}
+                accessibilityLabel={localLiked ? t('accessibility.unlikePost') : t('accessibility.likePost')}
+              />
+              <ActionButton
+                icon={<Icon name="message-circle" size="sm" color={tc.text.secondary} />}
+                count={post.commentsCount > 0 ? post.commentsCount : undefined}
+                onPress={handleStickyComment}
+                accessibilityLabel={t('accessibility.commentPost')}
+              />
+              <ActionButton
+                icon={<Icon name="share" size="sm" color={tc.text.secondary} />}
+                onPress={handleShare}
+                accessibilityLabel={t('common.share')}
+              />
+              <ActionButton
+                icon={<Icon name="bookmark" size="sm" color={localSaved ? colors.bookmark : tc.text.tertiary} />}
+                activeIcon={<Icon name="bookmark-filled" size="sm" color={colors.bookmark} fill={colors.bookmark} />}
+                isActive={localSaved}
+                onPress={handleStickySave}
+                activeColor={colors.bookmark}
+                accessibilityLabel={localSaved ? t('accessibility.unsavePost') : t('accessibility.savePost')}
+              />
+            </View>
+          </View>
+        )}
 
         {/* Comment Input */}
         {user && (
@@ -597,5 +689,17 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: 36, height: 36, borderRadius: radius.full,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.active.emerald10,
+  },
+  stickyBar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  stickyBarContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
   },
 });

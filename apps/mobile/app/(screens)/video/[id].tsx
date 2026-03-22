@@ -3,6 +3,8 @@ import {
   View, Text, StyleSheet, Pressable, ScrollView, FlatList, Share,
   RefreshControl, TextInput, KeyboardAvoidingView, Platform, AppState, Dimensions,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -179,6 +181,7 @@ export default function VideoDetailScreen() {
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
   const videoRef = useRef<Video>(null);
   const progressRef = useRef(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -597,6 +600,7 @@ export default function VideoDetailScreen() {
 
         <ScrollView
           style={{ marginTop: 88 }}
+          contentContainerStyle={{ paddingBottom: 80 }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
           }
@@ -694,47 +698,6 @@ export default function VideoDetailScreen() {
                 <Icon name="bar-chart-2" size="xs" color={colors.gold} />
                 <Text style={styles.videoStatTextGold}>{durationText}</Text>
               </View>
-            </View>
-
-            {/* Action row */}
-            <View style={styles.actionRow}>
-              <ActionButton
-                icon={<Icon name="heart" size="md" color={tc.text.primary} />}
-                activeIcon={<Icon name="heart-filled" size="md" color={colors.error} />}
-                isActive={video.isLiked}
-                count={video.likesCount}
-                onPress={handleLike}
-                activeColor={colors.error}
-                accessibilityLabel={t('common.like')}
-              />
-              <ActionButton
-                icon={<Icon name="thumbs-down" size="md" color={tc.text.primary} />}
-                activeIcon={<Icon name="thumbs-down" size="md" color={colors.error} />}
-                isActive={video.isDisliked}
-                count={video.dislikesCount}
-                onPress={handleDislike}
-                activeColor={colors.error}
-                accessibilityLabel={t('minbar.dislike')}
-              />
-              <ActionButton
-                icon={<Icon name="message-circle" size="md" color={tc.text.primary} />}
-                count={video.commentsCount}
-                onPress={() => setCommentSheetOpen(true)}
-                accessibilityLabel={t('accessibility.commentReel')}
-              />
-              <ActionButton
-                icon={<Icon name="bookmark" size="md" color={tc.text.primary} />}
-                activeIcon={<Icon name="bookmark-filled" size="md" color={colors.gold} />}
-                isActive={video.isBookmarked}
-                onPress={handleBookmark}
-                activeColor={colors.gold}
-                accessibilityLabel={t('common.bookmark')}
-              />
-              <ActionButton
-                icon={<Icon name="share" size="md" color={tc.text.primary} />}
-                onPress={handleShare}
-                accessibilityLabel={t('common.share')}
-              />
             </View>
 
             {/* Channel row */}
@@ -880,6 +843,54 @@ export default function VideoDetailScreen() {
           </Animated.View>
         </ScrollView>
 
+        {/* Sticky glass action bar */}
+        <View style={[styles.stickyBar, { paddingBottom: insets.bottom || spacing.base }]}>
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(13, 17, 23, 0.95)' }]} />
+          )}
+          <View style={styles.stickyBarContent}>
+            <ActionButton
+              icon={<Icon name="heart" size="md" color={tc.text.primary} />}
+              activeIcon={<Icon name="heart-filled" size="md" color={colors.error} />}
+              isActive={video.isLiked}
+              count={video.likesCount}
+              onPress={handleLike}
+              activeColor={colors.error}
+              accessibilityLabel={t('common.like')}
+            />
+            <ActionButton
+              icon={<Icon name="thumbs-down" size="md" color={tc.text.primary} />}
+              activeIcon={<Icon name="thumbs-down" size="md" color={colors.error} />}
+              isActive={video.isDisliked}
+              count={video.dislikesCount}
+              onPress={handleDislike}
+              activeColor={colors.error}
+              accessibilityLabel={t('minbar.dislike')}
+            />
+            <ActionButton
+              icon={<Icon name="message-circle" size="md" color={tc.text.primary} />}
+              count={video.commentsCount}
+              onPress={() => setCommentSheetOpen(true)}
+              accessibilityLabel={t('accessibility.commentReel')}
+            />
+            <ActionButton
+              icon={<Icon name="bookmark" size="md" color={tc.text.primary} />}
+              activeIcon={<Icon name="bookmark-filled" size="md" color={colors.gold} />}
+              isActive={video.isBookmarked}
+              onPress={handleBookmark}
+              activeColor={colors.gold}
+              accessibilityLabel={t('common.bookmark')}
+            />
+            <ActionButton
+              icon={<Icon name="share" size="md" color={tc.text.primary} />}
+              onPress={handleShare}
+              accessibilityLabel={t('common.share')}
+            />
+          </View>
+        </View>
+
         {/* Comments bottom sheet */}
         <BottomSheet visible={commentSheetOpen} onClose={() => setCommentSheetOpen(false)} snapPoint={0.7}>
           <View style={styles.sheetHeader}>
@@ -1003,15 +1014,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.base,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginVertical: spacing.lg,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: tc.border,
-    paddingVertical: spacing.sm,
   },
   channelRow: {
     flexDirection: 'row',
@@ -1467,5 +1469,22 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
+  },
+  stickyBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    zIndex: 50,
+    overflow: 'hidden',
+  },
+  stickyBarContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
   },
 });
