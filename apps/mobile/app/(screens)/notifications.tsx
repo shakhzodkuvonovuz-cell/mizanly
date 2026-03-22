@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -305,6 +306,10 @@ export default function NotificationsScreen() {
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const headerHeight = insets.top + 44 + spacing.sm;
+
+  const { onScroll: onScrollElastic, headerAnimatedStyle } = useScrollLinkedHeader(headerHeight);
 
   const NOTIF_TABS = [
     { key: 'all', label: t('notifications.all') },
@@ -347,9 +352,6 @@ export default function NotificationsScreen() {
     await query.refetch();
   }, [query]);
 
-  const insets = useSafeAreaInsets();
-  const headerHeight = insets.top + 44 + spacing.sm;
-
   if (query.isError) {
     return (
       <View style={styles.container}>
@@ -373,22 +375,24 @@ export default function NotificationsScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <GlassHeader
-          title={t('notifications.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
-          rightActions={[{
-            icon: (
-              <GradientButton
-                label={t('notifications.markAllRead')}
-                size="sm"
-                variant="ghost"
-                onPress={() => markAllMutation.mutate()}
-              />
-            ),
-            onPress: () => markAllMutation.mutate(),
-            accessibilityLabel: t('notifications.markAllReadAccessibility'),
-          }]}
-        />
+        <Animated.View style={headerAnimatedStyle}>
+          <GlassHeader
+            title={t('notifications.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
+            rightActions={[{
+              icon: (
+                <GradientButton
+                  label={t('notifications.markAllRead')}
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => markAllMutation.mutate()}
+                />
+              ),
+              onPress: () => markAllMutation.mutate(),
+              accessibilityLabel: t('notifications.markAllReadAccessibility'),
+            }]}
+          />
+        </Animated.View>
 
         <View style={{ paddingTop: headerHeight }}>
           <TabSelector
@@ -409,6 +413,8 @@ export default function NotificationsScreen() {
             if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
           }}
           onEndReachedThreshold={0.4}
+          onScroll={onScrollElastic}
+          scrollEventThrottle={16}
           refreshControl={<RefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={onRefresh} tintColor={colors.emerald} />}
           ListEmptyComponent={() =>
             query.isLoading ? (

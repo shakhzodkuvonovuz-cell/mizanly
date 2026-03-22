@@ -21,6 +21,32 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 type LayoutMode = 'side-by-side' | 'top-bottom' | 'react';
 
+function SimpleSlider({ value, onValueChange, fillColor = colors.emerald, trackColor = 'rgba(255,255,255,0.2)' }: { value: number; onValueChange: (v: number) => void; fillColor?: string; trackColor?: string }) {
+  const trackWidth = useRef(0);
+  return (
+    <Pressable
+      accessibilityRole="adjustable"
+      onLayout={(e) => { trackWidth.current = e.nativeEvent.layout.width; }}
+      onPress={(e) => {
+        if (trackWidth.current <= 0) return;
+        const ratio = e.nativeEvent.locationX / trackWidth.current;
+        onValueChange(Math.max(0, Math.min(1, ratio)));
+      }}
+      style={sliderStyles.hitArea}
+    >
+      <View style={[sliderStyles.track, { backgroundColor: trackColor }]}>
+        <View style={[sliderStyles.fill, { width: `${value * 100}%`, backgroundColor: fillColor }]} />
+      </View>
+    </Pressable>
+  );
+}
+
+const sliderStyles = StyleSheet.create({
+  hitArea: { height: 44, justifyContent: 'center' },
+  track: { height: 6, borderRadius: radius.full, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: radius.full },
+});
+
 export default function DuetCreateScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -451,17 +477,23 @@ export default function DuetCreateScreen() {
                     <Text style={styles.volumeLabel}>{t('duet.originalAudio')}</Text>
                     <Text style={styles.volumeValue}>{originalVolume}%</Text>
                   </View>
-                  <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
-                    <View style={[styles.sliderFill, { width: `${originalVolume}%`, backgroundColor: isMuted ? tc.surface : colors.emerald }]} />
-                  </View>
+                  <SimpleSlider
+                    value={originalVolume / 100}
+                    onValueChange={(v) => setOriginalVolume(Math.round(v * 100))}
+                    fillColor={isMuted ? tc.surface : colors.emerald}
+                    trackColor={tc.surface}
+                  />
 
                   <View style={[styles.volumeRow, styles.volumeRowSecond]}>
                     <Text style={styles.volumeLabel}>{t('duet.yourAudio')}</Text>
                     <Text style={styles.volumeValue}>{yourVolume}%</Text>
                   </View>
-                  <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
-                    <View style={[styles.sliderFill, { width: `${yourVolume}%` }]} />
-                  </View>
+                  <SimpleSlider
+                    value={yourVolume / 100}
+                    onValueChange={(v) => setYourVolume(Math.round(v * 100))}
+                    fillColor={colors.emerald}
+                    trackColor={tc.surface}
+                  />
                 </View>
               </LinearGradient>
             </View>
@@ -877,17 +909,7 @@ const styles = StyleSheet.create({
     color: colors.emerald,
     fontFamily: fonts.mono,
   },
-  sliderTrack: {
-    height: 6,
-    backgroundColor: colors.dark.surface,
-    borderRadius: radius.full,
-    overflow: 'hidden',
-  },
-  sliderFill: {
-    height: '100%',
-    backgroundColor: colors.emerald,
-    borderRadius: radius.full,
-  },
+  // sliderTrack/sliderFill removed — replaced by interactive SimpleSlider component
   nextButton: {
     marginHorizontal: spacing.base,
     marginTop: spacing.lg,

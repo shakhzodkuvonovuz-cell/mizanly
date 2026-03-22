@@ -20,6 +20,32 @@ import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+function SimpleSlider({ value, onValueChange, fillColor = colors.emerald, trackColor = 'rgba(255,255,255,0.2)' }: { value: number; onValueChange: (v: number) => void; fillColor?: string; trackColor?: string }) {
+  const trackWidth = useRef(0);
+  return (
+    <Pressable
+      accessibilityRole="adjustable"
+      onLayout={(e) => { trackWidth.current = e.nativeEvent.layout.width; }}
+      onPress={(e) => {
+        if (trackWidth.current <= 0) return;
+        const ratio = e.nativeEvent.locationX / trackWidth.current;
+        onValueChange(Math.max(0, Math.min(1, ratio)));
+      }}
+      style={sliderHitStyles.hitArea}
+    >
+      <View style={[sliderHitStyles.track, { backgroundColor: trackColor }]}>
+        <View style={[sliderHitStyles.fill, { width: `${value * 100}%`, backgroundColor: fillColor }]} />
+      </View>
+    </Pressable>
+  );
+}
+
+const sliderHitStyles = StyleSheet.create({
+  hitArea: { height: 44, justifyContent: 'center' },
+  track: { height: 8, borderRadius: radius.full, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: radius.full },
+});
+
 type CategoryType = 'solid' | 'gradients' | 'images' | 'videos' | 'custom';
 
 const SOLID_COLORS = [
@@ -511,30 +537,24 @@ export default function GreenScreenEditorScreen() {
                   <Text style={styles.sliderLabel}>{t('screens.greenScreen.backgroundBlur')}</Text>
                   <Text style={styles.sliderValue}>{blurIntensity}%</Text>
                 </View>
-                <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
-                  <LinearGradient
-                    colors={[colors.emerald, 'rgba(10,123,79,0.3)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[styles.sliderFill, { width: `${blurIntensity}%` }]}
-                  />
-                  <View style={[styles.sliderThumb, { borderColor: tc.bg }, { left: `${blurIntensity}%` }]} />
-                </View>
+                <SimpleSlider
+                  value={blurIntensity / 100}
+                  onValueChange={(v) => setBlurIntensity(Math.round(v * 100))}
+                  fillColor={colors.emerald}
+                  trackColor={tc.surface}
+                />
 
                 {/* Edge Smoothing */}
                 <View style={[styles.sliderRow, styles.sliderRowSecond]}>
                   <Text style={styles.sliderLabel}>{t('screens.greenScreen.edgeSmoothing')}</Text>
                   <Text style={styles.sliderValue}>{edgeSmoothing}%</Text>
                 </View>
-                <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
-                  <LinearGradient
-                    colors={[colors.emerald, 'rgba(10,123,79,0.3)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[styles.sliderFill, { width: `${edgeSmoothing}%` }]}
-                  />
-                  <View style={[styles.sliderThumb, { borderColor: tc.bg }, { left: `${edgeSmoothing}%` }]} />
-                </View>
+                <SimpleSlider
+                  value={edgeSmoothing / 100}
+                  onValueChange={(v) => setEdgeSmoothing(Math.round(v * 100))}
+                  fillColor={colors.emerald}
+                  trackColor={tc.surface}
+                />
               </LinearGradient>
             </View>
           </Animated.View>
@@ -881,28 +901,7 @@ const styles = StyleSheet.create({
     color: colors.emerald,
     fontFamily: fonts.mono,
   },
-  sliderTrack: {
-    height: 8,
-    backgroundColor: colors.dark.surface,
-    borderRadius: radius.full,
-    marginTop: spacing.xs,
-    position: 'relative',
-  },
-  sliderFill: {
-    height: '100%',
-    borderRadius: radius.full,
-  },
-  sliderThumb: {
-    position: 'absolute',
-    width: 20,
-    height: 20,
-    borderRadius: radius.full,
-    backgroundColor: colors.gold,
-    top: -6,
-    marginLeft: -10,
-    borderWidth: 2,
-    borderColor: colors.dark.bg,
-  },
+  // sliderTrack/sliderFill/sliderThumb removed — replaced by interactive SimpleSlider component
   bottomSpacing: {
     height: 100,
   },

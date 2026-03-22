@@ -442,6 +442,8 @@ export default function DiscoverScreen() {
           keyExtractor={(item, index) => `${item.id ?? index}`}
           numColumns={3}
           columnWrapperStyle={styles.gridRow}
+          onScroll={onScrollElastic}
+          scrollEventThrottle={16}
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
               <ExploreGridItem item={item} isFeature={isFeatureIndex(index)} />
