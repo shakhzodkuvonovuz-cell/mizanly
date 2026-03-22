@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { RichText } from '@/components/ui/RichText';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { channelsApi, channelPostsApi } from '@/services/api';
 import type { ChannelPost, Channel, PaginatedResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
@@ -120,12 +121,12 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
             color={liked ? colors.error : colors.text.secondary}
           />
           <Text style={[styles.postActionCount, liked && styles.likedCount]}>
-            {likeCount}
+            {formatCount(likeCount)}
           </Text>
         </Pressable>
         <Pressable style={styles.postAction}>
           <Icon name="message-circle" size="sm" color={colors.text.secondary} />
-          <Text style={styles.postActionCount}>{post.commentsCount}</Text>
+          <Text style={styles.postActionCount}>{formatCount(post.commentsCount)}</Text>
         </Pressable>
         <Pressable style={styles.postAction}>
           <Icon name="share" size="sm" color={colors.text.secondary} />

@@ -26,6 +26,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { videosApi, channelsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -604,7 +605,7 @@ export default function VideoDetailScreen() {
             <View style={styles.videoStatsRow}>
               <View style={styles.statItem}>
                 <Icon name="eye" size="xs" color={colors.text.secondary} />
-                <Text style={styles.videoStatText}>{video.viewsCount.toLocaleString()}</Text>
+                <Text style={styles.videoStatText}>{formatCount(video.viewsCount)}</Text>
               </View>
               <Text style={styles.statDivider}>•</Text>
               <View style={styles.statItem}>
@@ -677,7 +678,7 @@ export default function VideoDetailScreen() {
               <View style={styles.channelInfo}>
                 <Text style={styles.channelName}>{video.channel?.name}</Text>
                 <Text style={styles.channelSubscribers}>
-                  {(video.channel?.subscribersCount ?? 0).toLocaleString()} {t('channel.subscribers')}
+                  {formatCount(video.channel?.subscribersCount ?? 0)} {t('channel.subscribers')}
                 </Text>
               </View>
               <Pressable

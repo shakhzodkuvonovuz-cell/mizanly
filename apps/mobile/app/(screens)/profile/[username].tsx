@@ -32,6 +32,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
 import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -110,7 +111,7 @@ function StatItem({ num, label, onPress }: { num: number; label: string; onPress
         accessibilityLabel={`${num} ${label}`}
         accessibilityRole={onPress ? "button" : "text"}
       >
-        <Text style={styles.statNum}>{num}</Text>
+        <Text style={styles.statNum}>{formatCount(num)}</Text>
         <Text style={styles.statLabel}>{label}</Text>
       </Pressable>
     </Animated.View>

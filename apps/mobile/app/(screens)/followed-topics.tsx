@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { hashtagsApi } from '@/services/api';
@@ -130,12 +131,6 @@ function FollowedTopicsContent() {
     },
     [followedTopics],
   );
-
-  const formatCount = (count: number): string => {
-    if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-    if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
-    return String(count);
-  };
 
   const renderHashtagItem = useCallback(
     ({ item, index }: { item: HashtagInfo; index: number }) => {

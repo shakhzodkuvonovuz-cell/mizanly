@@ -13,6 +13,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -38,11 +39,7 @@ const formatDuration = (sec: number) => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-const formatViews = (n: number) => {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-};
+const formatViews = formatCount;
 
 function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: () => void; index: number }) {
   const tc = useThemeColors();

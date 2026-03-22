@@ -13,6 +13,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { stickersApi } from '@/services/api';
 import type { StickerPack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -62,7 +63,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
           <View style={styles.cardInfo}>
             <Text style={styles.cardTitle} numberOfLines={1}>{pack.name}</Text>
             <Text style={styles.cardSubtitle}>
-              {pack.stickers?.length || 0} {t('screens.sticker-browser.stickers')} • {pack.downloadCount || 0} {t('screens.sticker-browser.downloads')}
+              {formatCount(pack.stickers?.length || 0)} {t('screens.sticker-browser.stickers')} • {formatCount(pack.downloadCount || 0)} {t('screens.sticker-browser.downloads')}
             </Text>
           </View>
           <Pressable accessibilityRole="button" onPress={handleToggle}>

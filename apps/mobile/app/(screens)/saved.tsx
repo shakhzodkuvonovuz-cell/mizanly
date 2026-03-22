@@ -7,6 +7,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 // AsyncStorage import removed — folder filtering uses API collection names, not local storage
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -296,8 +297,10 @@ export default function SavedScreen() {
             refreshControl={
               <RefreshControl refreshing={refreshingPosts} onRefresh={onRefreshPosts} tintColor={colors.emerald} />
             }
-            renderItem={({ item }) => (
-              <PostGrid post={item} onPress={() => router.push(`/(screens)/post/${item.id}`)} />
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+                <PostGrid post={item} onPress={() => router.push(`/(screens)/post/${item.id}`)} />
+              </Animated.View>
             )}
             ListEmptyComponent={() =>
               !savedPostsQuery.isLoading ? (
@@ -333,8 +336,10 @@ export default function SavedScreen() {
             refreshControl={
               <RefreshControl refreshing={refreshingThreads} onRefresh={onRefreshThreads} tintColor={colors.emerald} />
             }
-            renderItem={({ item }) => (
-              <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+                <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+              </Animated.View>
             )}
             ListEmptyComponent={() =>
               !savedThreadsQuery.isLoading ? (
@@ -383,8 +388,10 @@ export default function SavedScreen() {
             refreshControl={
               <RefreshControl refreshing={refreshingReels} onRefresh={onRefreshReels} tintColor={colors.emerald} />
             }
-            renderItem={({ item }) => (
-              <ReelGrid reel={item} onPress={() => router.push(`/(screens)/reel/${item.id}`)} />
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+                <ReelGrid reel={item} onPress={() => router.push(`/(screens)/reel/${item.id}`)} />
+              </Animated.View>
             )}
             ListEmptyComponent={() =>
               !savedReelsQuery.isLoading ? (
@@ -420,8 +427,10 @@ export default function SavedScreen() {
             refreshControl={
               <RefreshControl refreshing={refreshingVideos} onRefresh={onRefreshVideos} tintColor={colors.emerald} />
             }
-            renderItem={({ item }) => (
-              <VideoRow video={item} onPress={() => router.push(`/(screens)/video/${item.id}`)} />
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+                <VideoRow video={item} onPress={() => router.push(`/(screens)/video/${item.id}`)} />
+              </Animated.View>
             )}
             ListEmptyComponent={() =>
               !savedVideosQuery.isLoading ? (

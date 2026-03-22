@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -150,12 +151,14 @@ export default function BookmarkFoldersScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
           }
-          renderItem={({ item }) => (
-            <FolderCard
-              folder={item}
-              onPress={() => handleFolderPress(item.id)}
-              onLongPress={() => handleDeleteFolder(item.name)}
-            />
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+              <FolderCard
+                folder={item}
+                onPress={() => handleFolderPress(item.id)}
+                onLongPress={() => handleDeleteFolder(item.name)}
+              />
+            </Animated.View>
           )}
           ListEmptyComponent={() => (
             <EmptyState

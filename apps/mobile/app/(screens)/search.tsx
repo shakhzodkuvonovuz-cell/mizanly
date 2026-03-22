@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { useHaptic } from '@/hooks/useHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, postsApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
@@ -54,7 +55,7 @@ function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
         </View>
         <Text style={[styles.userHandle, { textAlign: rtlTextAlign(isRTL) }]}>@{user.username}</Text>
         {user._count && (
-          <Text style={[styles.userFollowers, { textAlign: rtlTextAlign(isRTL) }]}>{user._count.followers} {t('search.followers')}</Text>
+          <Text style={[styles.userFollowers, { textAlign: rtlTextAlign(isRTL) }]}>{formatCount(user._count.followers)} {t('search.followers')}</Text>
         )}
       </View>
       {user.isFollowing ? (
@@ -89,7 +90,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
         <Text style={[styles.videoChannel, { textAlign: rtlTextAlign(isRTL) }]}>{video.channel?.name || t('common.unknown')}</Text>
         <View style={[styles.videoStats, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="eye" size={14} color={colors.text.secondary} />
-          <Text style={styles.videoStat}>{video.viewsCount.toLocaleString()} {t('search.views')}</Text>
+          <Text style={styles.videoStat}>{formatCount(video.viewsCount)} {t('search.views')}</Text>
           <Icon name="clock" size={14} color={colors.text.secondary} />
           <Text style={styles.videoStat}>{durationText}</Text>
         </View>
@@ -117,9 +118,9 @@ function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => voi
         </View>
         <Text style={[styles.channelHandle, { textAlign: rtlTextAlign(isRTL) }]}>@{channel.handle}</Text>
         <View style={[styles.channelStats, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Text style={styles.channelStat}>{channel.subscribersCount.toLocaleString()} {t('search.subscribers')}</Text>
+          <Text style={styles.channelStat}>{formatCount(channel.subscribersCount)} {t('search.subscribers')}</Text>
           <Text style={styles.channelStat}>•</Text>
-          <Text style={styles.channelStat}>{channel.videosCount.toLocaleString()} {t('search.videosCount')}</Text>
+          <Text style={styles.channelStat}>{formatCount(channel.videosCount)} {t('search.videosCount')}</Text>
         </View>
       </View>
     </Pressable>

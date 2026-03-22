@@ -30,6 +30,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { gamificationApi } from '@/services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -240,7 +241,7 @@ function SeriesDetailContent() {
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Icon name="users" size="sm" color={colors.gold} />
-            <Text style={styles.statValue}>{series.followersCount.toLocaleString()}</Text>
+            <Text style={styles.statValue}>{formatCount(series.followersCount)}</Text>
             <Text style={styles.statLabel}>{t('series.followers', 'followers')}</Text>
           </View>
         </View>

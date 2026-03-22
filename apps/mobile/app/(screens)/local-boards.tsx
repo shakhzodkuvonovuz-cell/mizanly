@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -72,11 +73,11 @@ export default function LocalBoardsScreen() {
           <View style={styles.boardStats}>
             <View style={styles.stat}>
               <Icon name="users" size="xs" color={colors.text.tertiary} />
-              <Text style={styles.statText}>{item.membersCount as number} {t('community.members')}</Text>
+              <Text style={styles.statText}>{formatCount(item.membersCount as number)} {t('community.members')}</Text>
             </View>
             <View style={styles.stat}>
               <Icon name="layers" size="xs" color={colors.text.tertiary} />
-              <Text style={styles.statText}>{item.postsCount as number} {t('community.posts')}</Text>
+              <Text style={styles.statText}>{formatCount(item.postsCount as number)} {t('community.posts')}</Text>
             </View>
           </View>
         </LinearGradient>

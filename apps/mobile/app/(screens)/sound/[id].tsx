@@ -11,6 +11,7 @@ import { Image as ExpoImage } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -39,11 +40,7 @@ export default function SoundScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
 
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-    return num.toString();
-  };
+  const formatNumber = formatCount;
 
   // Fetch audio track details
   const trackQuery = useQuery({

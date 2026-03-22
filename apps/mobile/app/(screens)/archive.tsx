@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
@@ -104,8 +105,9 @@ export default function ArchiveScreen() {
     );
   }, [selectedStory, deleteMutation]);
 
-  const renderGridItem = useCallback(({ item }: { item: Story }) => {
+  const renderGridItem = useCallback(({ item, index }: { item: Story; index: number }) => {
     return (
+      <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
       <Pressable
         accessibilityRole="button"
         style={styles.gridItem as ViewStyle}
@@ -125,6 +127,7 @@ export default function ArchiveScreen() {
           </View>
         )}
       </Pressable>
+      </Animated.View>
     );
   }, [handleStoryPress, handleStoryLongPress]);
 

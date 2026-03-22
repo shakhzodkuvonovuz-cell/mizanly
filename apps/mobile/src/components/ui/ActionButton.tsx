@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useHaptic } from '@/hooks/useHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { animation, colors, spacing, fontSize } from '@/theme';
 
 interface ActionButtonProps {
@@ -74,7 +75,7 @@ export const ActionButton = memo(function ActionButton({
             isActive && { color: activeColor },
           ]}
         >
-          {count}
+          {formatCount(count)}
         </Text>
       )}
     </AnimatedPressable>

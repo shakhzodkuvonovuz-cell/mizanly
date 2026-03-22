@@ -14,6 +14,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { audioTracksApi } from '@/services/api';
@@ -139,7 +140,7 @@ function AudioCard({
           <Text style={styles.trackArtist} numberOfLines={1}>{track.artist}</Text>
           <View style={styles.trackMeta}>
             <Text style={styles.trackDuration}>{track.duration}</Text>
-            <Text style={styles.trackUses}>{track.useCount.toLocaleString()} {t('audioLibrary.uses')}</Text>
+            <Text style={styles.trackUses}>{formatCount(track.useCount)} {t('audioLibrary.uses')}</Text>
           </View>
         </View>
 
@@ -347,7 +348,7 @@ export default function AudioLibraryScreen() {
                 <Text style={styles.selectedTrackArtist}>{selectedTrack.artist}</Text>
                 <View style={styles.selectedTrackMeta}>
                   <Text style={styles.selectedTrackMetaText}>{selectedTrack.duration}</Text>
-                  <Text style={styles.selectedTrackMetaText}>{selectedTrack.useCount.toLocaleString()} {t('audioLibrary.uses')}</Text>
+                  <Text style={styles.selectedTrackMetaText}>{formatCount(selectedTrack.useCount)} {t('audioLibrary.uses')}</Text>
                   <Text style={styles.selectedTrackMetaText}>{t(`audioLibrary.category.${selectedTrack.category.toLowerCase()}`)}</Text>
                 </View>
                 <GradientButton

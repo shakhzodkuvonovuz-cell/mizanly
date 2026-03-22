@@ -18,6 +18,7 @@ import type { IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { creatorApi } from '@/services/creatorApi';
@@ -139,11 +140,7 @@ function PostInsightsContent() {
     setRefreshing(false);
   }, [loadData]);
 
-  const formatNumber = (n: number): string => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-    return String(n);
-  };
+  const formatNumber = formatCount;
 
   const engagementMetrics: EngagementMetric[] = insights
     ? [

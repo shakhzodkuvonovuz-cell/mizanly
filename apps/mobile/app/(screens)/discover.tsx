@@ -10,7 +10,7 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -83,9 +84,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
             <Icon name="hash" size={12} color={colors.gold} />
             <Text style={styles.hashtagTextGold}>#{item.name}</Text>
             <Text style={styles.hashtagCountGold}>
-              {item.postsCount + item.threadsCount > 1000
-                ? `${Math.floor((item.postsCount + item.threadsCount) / 1000)}k`
-                : item.postsCount + item.threadsCount}
+              {formatCount(item.postsCount + item.threadsCount)}
             </Text>
           </Pressable>
         )}
@@ -176,7 +175,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
             <View style={styles.featuredViews}>
               <Icon name="eye" size={12} color={colors.text.secondary} />
               <Text style={styles.featuredViewsText}>
-                {item.viewsCount > 1000 ? `${Math.floor(item.viewsCount / 1000)}k` : item.viewsCount}
+                {formatCount(item.viewsCount)}
               </Text>
             </View>
           </View>
@@ -420,7 +419,11 @@ export default function DiscoverScreen() {
           keyExtractor={(item, index) => `${item.id ?? index}`}
           numColumns={3}
           columnWrapperStyle={styles.gridRow}
-          renderItem={({ item }) => <ExploreGridItem item={item} />}
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+              <ExploreGridItem item={item} />
+            </Animated.View>
+          )}
           ListHeaderComponent={
             <>
               <CategoryPills active={activeCategory} onSelect={setActiveCategory} categories={CATEGORIES} />

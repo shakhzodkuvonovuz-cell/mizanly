@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Dimensions, RefreshControl,
-  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -20,6 +19,7 @@ import type { Post } from '@/types';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHaptic } from '@/hooks/useHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -135,7 +135,7 @@ export default function HashtagScreen() {
           titleComponent={
             <View style={styles.headerInfo}>
               <Text style={styles.tagName}>#{tag}</Text>
-              <Text style={styles.postCount}>{totalCount.toLocaleString()} {t('screens.hashtag.posts')}</Text>
+              <Text style={styles.postCount}>{formatCount(totalCount)} {t('screens.hashtag.posts')}</Text>
             </View>
           }
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
@@ -156,7 +156,7 @@ export default function HashtagScreen() {
               <Icon name="hash" size="lg" color={colors.emerald} />
             </LinearGradient>
             <Text style={styles.tagNameLarge}>#{tag}</Text>
-            <Text style={styles.postCountGold}>{totalCount.toLocaleString()} {t('screens.hashtag.posts')}</Text>
+            <Text style={styles.postCountGold}>{formatCount(totalCount)} {t('screens.hashtag.posts')}</Text>
             <View style={styles.followButtonWrap}>
               <GradientButton
                 label={isFollowing ? t('common.following') : t('common.follow')}

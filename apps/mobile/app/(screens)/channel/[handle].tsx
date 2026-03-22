@@ -24,6 +24,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { channelsApi, videosApi, playlistsApi } from '@/services/api';
 import type { Video, Playlist } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -92,7 +93,7 @@ function VideoCard({ video }: { video: Video }) {
           <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
           <Text style={styles.videoCardChannelName} numberOfLines={1}>{video.channel.name}</Text>
           <Text style={styles.videoStats} numberOfLines={1}>
-            {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
+            {formatCount(video.viewsCount)} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </View>
         <Pressable style={styles.moreButton} hitSlop={8} onPress={() => {/* Video options: handled by parent channel menu */}}>
@@ -126,7 +127,7 @@ function VideoCard({ video }: { video: Video }) {
               </View>
               <Text style={styles.featuredTitle} numberOfLines={2}>{video.title}</Text>
               <View style={styles.featuredStats}>
-                <Text style={styles.featuredStatText}>{video.viewsCount.toLocaleString()} {t('minbar.viewCount')}</Text>
+                <Text style={styles.featuredStatText}>{formatCount(video.viewsCount)} {t('minbar.viewCount')}</Text>
                 <Text style={styles.featuredStatDot}>•</Text>
                 <Text style={styles.featuredStatText}>{durationText}</Text>
               </View>
@@ -356,19 +357,19 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       <View style={[styles.statsEnhanced, { backgroundColor: tc.surface }]}>
         <View style={styles.statItemEnhanced}>
           <Icon name="users" size="sm" color={colors.emerald} />
-          <Text style={styles.statNumEnhanced}>{channel?.subscribersCount?.toLocaleString() ?? '0'}</Text>
+          <Text style={styles.statNumEnhanced}>{formatCount(channel?.subscribersCount ?? 0)}</Text>
           <Text style={styles.statLabelEnhanced}>{t('channel.subscribers')}</Text>
         </View>
         <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
           <Icon name="video" size="sm" color={colors.gold} />
-          <Text style={styles.statNumEnhanced}>{channel?.videosCount?.toLocaleString() ?? '0'}</Text>
+          <Text style={styles.statNumEnhanced}>{formatCount(channel?.videosCount ?? 0)}</Text>
           <Text style={styles.statLabelEnhanced}>{t('minbar.videos')}</Text>
         </View>
         <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
           <Icon name="eye" size="sm" color={colors.text.secondary} />
-          <Text style={styles.statNumEnhanced}>{channel?.totalViews?.toLocaleString() ?? '0'}</Text>
+          <Text style={styles.statNumEnhanced}>{formatCount(channel?.totalViews ?? 0)}</Text>
           <Text style={styles.statLabelEnhanced}>{t('minbar.viewCount')}</Text>
         </View>
       </View>
@@ -542,7 +543,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                   </View>
                   <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
                     <Text style={styles.aboutMetaLabel}>{t('channel.totalViews')}</Text>
-                    <Text style={styles.aboutMetaValue}>{channel.totalViews?.toLocaleString() ?? '0'}</Text>
+                    <Text style={styles.aboutMetaValue}>{formatCount(channel.totalViews ?? 0)}</Text>
                   </View>
                 </View>
               )}

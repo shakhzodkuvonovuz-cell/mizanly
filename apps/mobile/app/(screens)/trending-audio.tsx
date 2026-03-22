@@ -15,6 +15,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -47,11 +48,7 @@ export default function TrendingAudioScreen() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const formatUsage = (count: number) => {
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M ${t('screens.trending-audio.reels')}`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K ${t('screens.trending-audio.reels')}`;
-    return `${count} ${t('screens.trending-audio.reels')}`;
-  };
+  const formatUsage = (count: number) => `${formatCount(count)} ${t('screens.trending-audio.reels')}`;
 
   const renderItem = ({ item, index }: { item: AudioTrack; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>

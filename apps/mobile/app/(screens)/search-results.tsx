@@ -18,6 +18,7 @@ import { PostCard } from '@/components/saf/PostCard';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, hashtagsApi, followsApi } from '@/services/api';
 import type { User, Post, Thread, Reel } from '@/types';
@@ -53,7 +54,7 @@ function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: ()
           </LinearGradient>
           <View>
             <Text style={styles.hashtagName}>#{hashtag.name}</Text>
-            <Text style={styles.hashtagCount}>{hashtag.postsCount} {t('common.posts')}</Text>
+            <Text style={styles.hashtagCount}>{formatCount(hashtag.postsCount)} {t('common.posts')}</Text>
           </View>
         </LinearGradient>
       </Pressable>
@@ -87,7 +88,7 @@ function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => voi
           >
             <Icon name="play" size={12} color="#FFF" />
           </LinearGradient>
-          <Text style={styles.reelGridViews}>{reel.viewsCount.toLocaleString()}</Text>
+          <Text style={styles.reelGridViews}>{formatCount(reel.viewsCount)}</Text>
         </LinearGradient>
       </Pressable>
     </Animated.View>
@@ -121,7 +122,7 @@ function UserRow({ user, onPress, index, onFollow }: { user: User; onPress: () =
             </View>
             <Text style={styles.userHandle}>@{user.username}</Text>
             {user._count && (
-              <Text style={styles.userFollowers}>{user._count.followers} {t('screens.search-results.followers')}</Text>
+              <Text style={styles.userFollowers}>{formatCount(user._count.followers)} {t('screens.search-results.followers')}</Text>
             )}
           </View>
         </Pressable>
