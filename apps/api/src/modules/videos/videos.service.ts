@@ -389,6 +389,11 @@ export class VideosService {
       });
     }
 
+    // Remove from Meilisearch index on deletion
+    this.queueService.addSearchIndexJob({
+      action: 'delete', indexName: 'videos', documentId: videoId,
+    }).catch(() => {});
+
     return { deleted: true };
   }
 
