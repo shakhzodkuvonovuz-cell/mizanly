@@ -1,18 +1,13 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, SectionList, RefreshControl,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  withDelay,
-} from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -20,8 +15,8 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
@@ -147,12 +142,12 @@ function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDon
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const [done, setDone] = useState<'accepted' | 'declined' | null>(null);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
 
   const acceptMutation = useMutation({
     mutationFn: () => followsApi.acceptRequest(requestId!),
-    onSuccess: () => { haptic.success(); setDone('accepted'); onDone(); },
+    onSuccess: () => { haptic.follow(); setDone('accepted'); onDone(); },
   });
   const declineMutation = useMutation({
     mutationFn: () => followsApi.declineRequest(requestId!),
@@ -194,23 +189,12 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
   const styles = createStyles(tc);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const iconInfo = notificationIcon(notification.type);
 
-  // Entrance animation
-  const slideIn = useSharedValue(8);
-  const fadeIn = useSharedValue(0);
-
-  useEffect(() => {
-    slideIn.value = withSpring(0, animation.spring.responsive);
-    fadeIn.value = withDelay(index * 50, withTiming(1, { duration: 300 }));
-  }, []);
-
-  const entranceStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: slideIn.value }],
-    opacity: fadeIn.value,
-  }));
+  // Entrance animation — staggered fade-in per item (capped at 10 to avoid long waits)
+  const entranceAnimation = FadeInUp.delay(Math.min(index, 10) * 30).duration(300).springify();
 
   const readMutation = useMutation({
     mutationFn: () => notificationsApi.markRead(notification.id),
@@ -218,7 +202,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
   });
 
   const handlePress = () => {
-    haptic.light();
+    haptic.navigate();
     if (!notification.isRead) readMutation.mutate();
     const target = notificationTarget(notification);
     if (target) navigate(target);
@@ -242,7 +226,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
       accessibilityRole="button"
       accessibilityLabel={`View notification from ${notification.actor?.displayName ?? t('notifications.someone')}`}
     >
-      <Animated.View style={[styles.rowInner, { flexDirection: rtlFlexRow(isRTL) }, entranceStyle]}>
+      <Animated.View entering={entranceAnimation} style={[styles.rowInner, { flexDirection: rtlFlexRow(isRTL) }]}>
         {/* Unread accent bar */}
         {!notification.isRead && <View style={[styles.unreadBar, rtlAbsoluteStart(isRTL, 0)]} />}
 
@@ -319,7 +303,7 @@ export default function NotificationsScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
 
   const NOTIF_TABS = [
@@ -353,7 +337,7 @@ export default function NotificationsScreen() {
   const markAllMutation = useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
     onSuccess: () => {
-      haptic.success();
+      haptic.tick();
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       setUnread(0);
     },

@@ -219,7 +219,7 @@ function FeaturedSection({ items }: { items: FeaturedItem[] }) {
 
 type ExploreItem = Post | Reel | Thread | Video;
 
-const ExploreGridItem = memo(function ExploreGridItem({ item }: { item: ExploreItem }) {
+const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { item: ExploreItem; isFeature?: boolean }) {
   const { t } = useTranslation();
   const tc = useThemeColors();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.96 });
@@ -253,7 +253,7 @@ const ExploreGridItem = memo(function ExploreGridItem({ item }: { item: ExploreI
 
   return (
     <AnimatedPressable
-      style={[styles.gridItem, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }, animatedStyle]}
+      style={[styles.gridItem, isFeature && styles.gridItemFeature, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }, animatedStyle]}
       onPress={handlePress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
@@ -421,7 +421,7 @@ export default function DiscoverScreen() {
           columnWrapperStyle={styles.gridRow}
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-              <ExploreGridItem item={item} />
+              <ExploreGridItem item={item} isFeature={index % 7 === 0} />
             </Animated.View>
           )}
           ListHeaderComponent={
@@ -681,6 +681,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     borderWidth: 0.5,
     borderColor: colors.dark.borderLight,
+  },
+  gridItemFeature: {
+    height: ITEM_WIDTH * 1.35,
   },
   gridImage: {
     width: '100%',

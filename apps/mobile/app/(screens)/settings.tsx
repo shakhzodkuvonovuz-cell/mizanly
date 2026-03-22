@@ -16,7 +16,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlChevron, rtlMargin } from '@/utils/rtl';
@@ -26,7 +26,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const translateX = useSharedValue(value ? 20 : 0);
   const scale = useSharedValue(1);
 
@@ -35,7 +35,7 @@ function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange
   }, [value]);
 
   const handlePress = () => {
-    haptic.light();
+    haptic.tick();
     scale.value = withSequence(
       withSpring(0.95, { damping: 10 }),
       withSpring(1, { damping: 10 })
@@ -91,10 +91,10 @@ function Row({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { isRTL } = useTranslation();
   const handlePress = onPress ? () => {
-    haptic.selection();
+    haptic.navigate();
     onPress();
   } : undefined;
 
@@ -295,93 +295,100 @@ export default function SettingsScreen() {
 
         <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
           {/* Content Section */}
-          <SectionHeader title={t('settings.sections.content')} icon="layers" />
-          <LinearGradient
-            colors={colors.gradient.cardDark}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.card}
-          >
-            <Row
-              label={t('settings.contentPreferences')}
-              icon={<Icon name="settings" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/content-settings')}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('settings.drafts')}
-              icon={<Icon name="clock" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/drafts')}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('settings.archive')}
-              icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/archive')}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('settings.watchHistory')}
-              icon={<Icon name="play" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/watch-history')}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('downloads.title')}
-              icon={<Icon name="layers" size="sm" color={colors.emerald} />}
-              onPress={() => navigate('/(screens)/downloads')}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('nasheed.settingsLabel')}
-              icon={<Icon name="mic" size="sm" color={colors.gold} />}
-              onPress={() => navigate('/(screens)/nasheed-mode')}
-              isLast
-            />
-          </LinearGradient>
+          <Animated.View entering={FadeInUp.delay(0).duration(400).springify()}>
+            <SectionHeader title={t('settings.sections.content')} icon="layers" />
+            <LinearGradient
+              colors={colors.gradient.cardDark}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.card}
+            >
+              <Row
+                label={t('settings.contentPreferences')}
+                icon={<Icon name="settings" size="sm" color={colors.emerald} />}
+                onPress={() => router.push('/(screens)/content-settings')}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('settings.drafts')}
+                icon={<Icon name="clock" size="sm" color={colors.gold} />}
+                onPress={() => router.push('/(screens)/drafts')}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('settings.archive')}
+                icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
+                onPress={() => router.push('/(screens)/archive')}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('settings.watchHistory')}
+                icon={<Icon name="play" size="sm" color={colors.gold} />}
+                onPress={() => router.push('/(screens)/watch-history')}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('downloads.title')}
+                icon={<Icon name="layers" size="sm" color={colors.emerald} />}
+                onPress={() => navigate('/(screens)/downloads')}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('nasheed.settingsLabel')}
+                icon={<Icon name="mic" size="sm" color={colors.gold} />}
+                onPress={() => navigate('/(screens)/nasheed-mode')}
+                isLast
+              />
+            </LinearGradient>
+          </Animated.View>
 
           {/* Appearance Section */}
-          <SectionHeader title={t('settings.appearance')} icon="eye" />
-          <LinearGradient
-            colors={colors.gradient.cardDark}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.card}
-          >
-            <Row
-              label={t('settings.appearance')}
-              icon={<Icon name="eye" size="sm" color={colors.emerald} />}
-              hint={t('settings.hints.themeDarkMode')}
-              onPress={() => router.push('/(screens)/theme-settings')}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('settings.saved')}
-              icon={<Icon name="bookmark-filled" size="sm" color={colors.gold} />}
-              hint={t('settings.hints.savedPosts')}
-              onPress={() => router.push('/(screens)/saved')}
-              isLast
-            />
-          </LinearGradient>
+          <Animated.View entering={FadeInUp.delay(60).duration(400).springify()}>
+            <SectionHeader title={t('settings.appearance')} icon="eye" />
+            <LinearGradient
+              colors={colors.gradient.cardDark}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.card}
+            >
+              <Row
+                label={t('settings.appearance')}
+                icon={<Icon name="eye" size="sm" color={colors.emerald} />}
+                hint={t('settings.hints.themeDarkMode')}
+                onPress={() => router.push('/(screens)/theme-settings')}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('settings.saved')}
+                icon={<Icon name="bookmark-filled" size="sm" color={colors.gold} />}
+                hint={t('settings.hints.savedPosts')}
+                onPress={() => router.push('/(screens)/saved')}
+                isLast
+              />
+            </LinearGradient>
+          </Animated.View>
 
           {/* Profile Section */}
-          <SectionHeader title={t('settings.sections.profile')} icon="user" />
-          <LinearGradient
-            colors={colors.gradient.cardDark}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.card}
-          >
-            <Row
-              label={t('profile.shareProfile')}
-              icon={<Icon name="share" size="sm" color={colors.emerald} />}
-              hint={t('settings.hints.shareProfile')}
-              onPress={() => router.push('/(screens)/share-profile')}
-              isLast
-            />
-          </LinearGradient>
+          <Animated.View entering={FadeInUp.delay(120).duration(400).springify()}>
+            <SectionHeader title={t('settings.sections.profile')} icon="user" />
+            <LinearGradient
+              colors={colors.gradient.cardDark}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.card}
+            >
+              <Row
+                label={t('profile.shareProfile')}
+                icon={<Icon name="share" size="sm" color={colors.emerald} />}
+                hint={t('settings.hints.shareProfile')}
+                onPress={() => router.push('/(screens)/share-profile')}
+                isLast
+              />
+            </LinearGradient>
+          </Animated.View>
 
           {/* Privacy Section */}
+          <Animated.View entering={FadeInUp.delay(180).duration(400).springify()}>
           <SectionHeader title={t('settings.privacy')} icon="lock" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -425,8 +432,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Notifications Section */}
+          <Animated.View entering={FadeInUp.delay(240).duration(400).springify()}>
           <SectionHeader title={t('settings.notifications')} icon="bell" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -476,8 +485,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Wellbeing Section */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400).springify()}>
           <SectionHeader title={t('settings.sections.wellbeing')} icon="smile" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -527,8 +538,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Islamic Section */}
+          <Animated.View entering={FadeInUp.delay(360).duration(400).springify()}>
           <SectionHeader title={t('islamic.prayerTimes')} icon="globe" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -663,8 +676,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Accessibility Section */}
+          <Animated.View entering={FadeInUp.delay(420).duration(400).springify()}>
           <SectionHeader title={t('settings.accessibility')} icon="volume-x" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -681,8 +696,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Blocked & Muted Section */}
+          <Animated.View entering={FadeInUp.delay(480).duration(400).springify()}>
           <SectionHeader title={t('settings.sections.blockedMuted')} icon="slash" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -721,8 +738,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Circles Section */}
+          <Animated.View entering={FadeInUp.delay(540).duration(400).springify()}>
           <SectionHeader title={t('settings.sections.closeFriends')} icon="users" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -738,8 +757,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* AI Section */}
+          <Animated.View entering={FadeInUp.delay(600).duration(400).springify()}>
           <SectionHeader title={t('settings.sections.ai')} icon="loader" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -759,8 +780,10 @@ export default function SettingsScreen() {
               onPress={() => navigate('/(screens)/ai-avatar')}
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Creator Section */}
+          <Animated.View entering={FadeInUp.delay(660).duration(400).springify()}>
           <SectionHeader title={t('settings.sections.creator')} icon="bar-chart-2" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -817,8 +840,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Community Section */}
+          <Animated.View entering={FadeInUp.delay(720).duration(400).springify()}>
           <SectionHeader title={t('settings.sections.community')} icon="users" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -887,8 +912,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Gamification Section */}
+          <Animated.View entering={FadeInUp.delay(780).duration(400).springify()}>
           <SectionHeader title={t('gamification.settingsSection')} icon="trending-up" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -933,8 +960,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Account Section */}
+          <Animated.View entering={FadeInUp.delay(840).duration(400).springify()}>
           <SectionHeader title={t('settings.account')} icon="user" />
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -1012,8 +1041,10 @@ export default function SettingsScreen() {
               isLast
             />
           </LinearGradient>
+          </Animated.View>
 
           {/* Premium Sign Out Button */}
+          <Animated.View entering={FadeInUp.delay(900).duration(400).springify()}>
           <Pressable style={styles.signOutButton} onPress={handleSignOut}>
             <LinearGradient
               colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
@@ -1057,6 +1088,7 @@ export default function SettingsScreen() {
           </LinearGradient>
 
           <Text style={styles.version}>{t('settings.versionLabel')}</Text>
+          </Animated.View>
         </ScrollView>
       </View>
   
