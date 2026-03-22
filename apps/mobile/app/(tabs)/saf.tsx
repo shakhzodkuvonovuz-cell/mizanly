@@ -10,10 +10,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedReaction,
+  runOnJS,
   withSpring,
   FadeIn,
+  FadeInDown,
   FadeInUp,
   FadeOut,
+  FadeOutUp,
   SlideOutRight,
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius, animation, fonts, tabBar, lineHeight, letterSpacing } from '@/theme';
@@ -233,7 +237,35 @@ export default function SafScreen() {
   const bellPress = useAnimatedPress();
   const cameraPress = useAnimatedPress();
   const profilePress = useAnimatedPress();
-  const { onScroll, headerAnimatedStyle, titleAnimatedStyle } = useScrollLinkedHeader(56);
+  const { onScroll, headerAnimatedStyle, titleAnimatedStyle, scrollY } = useScrollLinkedHeader(56);
+
+  // ── "New posts" banner state ──
+  const [hasScrolledDown, setHasScrolledDown] = useState(false);
+  const [newPostsAvailable, setNewPostsAvailable] = useState(false);
+
+  // Watch scroll position from UI thread → update React state via runOnJS
+  useAnimatedReaction(
+    () => scrollY.value,
+    (currentY) => {
+      if (currentY > 200) {
+        runOnJS(setHasScrolledDown)(true);
+      } else if (currentY < 50) {
+        runOnJS(setHasScrolledDown)(false);
+      }
+    },
+    [scrollY],
+  );
+
+  // Poll for new posts every 30s when user has scrolled down
+  const newPostsCheck = useQuery({
+    queryKey: ['saf-new-posts-check', feedType],
+    queryFn: async () => {
+      const res = await postsApi.getFeed(feedType, undefined);
+      return res?.data?.[0]?.id ?? null;
+    },
+    refetchInterval: hasScrolledDown ? 30_000 : false,
+    enabled: hasScrolledDown && !newPostsAvailable,
+  });
 
   useQuery({
     queryKey: ['notifications-count'],
@@ -294,6 +326,32 @@ export default function SafScreen() {
   });
 
   const rawPosts: Post[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
+
+  // Compare latest server post with current top of feed
+  useEffect(() => {
+    if (newPostsCheck.data && rawPosts.length > 0) {
+      const latestServerId = newPostsCheck.data;
+      const currentTopId = rawPosts[0]?.id;
+      if (latestServerId && latestServerId !== currentTopId) {
+        setNewPostsAvailable(true);
+      }
+    }
+  }, [newPostsCheck.data, rawPosts]);
+
+  // Clear banner when user scrolls back to top
+  useEffect(() => {
+    if (!hasScrolledDown) {
+      setNewPostsAvailable(false);
+    }
+  }, [hasScrolledDown]);
+
+  const handleNewPostsBanner = useCallback(() => {
+    feedRef.current?.scrollToOffset({ offset: 0, animated: true });
+    feedQuery.refetch();
+    setNewPostsAvailable(false);
+    setHasScrolledDown(false);
+    haptic.navigate();
+  }, [feedQuery, haptic]);
 
   // Interleave suggested user cards into the feed every N posts
   const suggestedUsers = useMemo(
@@ -559,6 +617,25 @@ export default function SafScreen() {
         </View>
       </Animated.View>
 
+      {/* "New posts" banner — slides in when new content arrives while scrolled down */}
+      {newPostsAvailable && hasScrolledDown && (
+        <Animated.View
+          entering={FadeInDown.duration(300).springify()}
+          exiting={FadeOutUp.duration(200)}
+          style={styles.newPostsBanner}
+        >
+          <Pressable
+            onPress={handleNewPostsBanner}
+            style={styles.newPostsBannerButton}
+            accessibilityLabel={t('saf.newPosts')}
+            accessibilityRole="button"
+          >
+            <Icon name="arrow-left" size="xs" color="#fff" style={{ transform: [{ rotate: '90deg' }] }} />
+            <Text style={styles.newPostsBannerText}>{t('saf.newPosts')}</Text>
+          </Pressable>
+        </Animated.View>
+      )}
+
       <FlashList
         ref={feedRef}
         data={feedItems}
@@ -619,6 +696,33 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     fontFamily: fonts.body,
+  },
+  newPostsBanner: {
+    position: 'absolute',
+    top: 100,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    alignItems: 'center',
+  },
+  newPostsBannerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.emerald,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  newPostsBannerText: {
+    color: '#fff',
+    fontSize: fontSize.sm,
+    fontFamily: fonts.bodyBold,
   },
   // TODO: colors.dark.border overridden by inline style with tc.border from useThemeColors()
   storySeparator: {
