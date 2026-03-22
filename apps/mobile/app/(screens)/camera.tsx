@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Dimensions,
   StatusBar, Animated as RNAnimated,
@@ -10,7 +10,9 @@ import Animated, {
   withTiming, withRepeat, withSequence, interpolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useCameraPermissions } from 'expo-camera';
 import { Icon } from '@/components/ui/Icon';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -22,6 +24,7 @@ type CameraMode = 'photo' | 'video' | 'story';
 export default function CameraScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const [permission, requestPermission] = useCameraPermissions();
   const [mode, setMode] = useState<CameraMode>('photo');
   const [isRecording, setIsRecording] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
@@ -101,8 +104,15 @@ export default function CameraScreen() {
     opacity: interpolate(pulseAnim.value, [1, 1.1], [0.8, 1]),
   }));
 
+  // Request camera permission on mount if not yet determined
+  useEffect(() => {
+    if (!permission?.granted && permission?.canAskAgain !== false) {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
+
   // Start pulse animation on mount
-  useState(() => {
+  useEffect(() => {
     pulseAnim.value = withRepeat(
       withSequence(
         withTiming(1.05, { duration: 1000 }),
@@ -111,13 +121,30 @@ export default function CameraScreen() {
       -1,
       true
     );
-  });
+  }, []);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  if (!permission?.granted) {
+    return (
+      <ScreenErrorBoundary>
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <StatusBar barStyle="light-content" />
+          <EmptyState
+            icon="camera"
+            title={t('camera.permissionRequired')}
+            subtitle={t('camera.permissionMessage')}
+            actionLabel={t('camera.grantPermission')}
+            onAction={requestPermission}
+          />
+        </View>
+      </ScreenErrorBoundary>
+    );
+  }
 
   return (
     <ScreenErrorBoundary>
@@ -162,7 +189,7 @@ export default function CameraScreen() {
               style={[styles.controlPill, flashOn && styles.controlPillActive]}
               onPress={() => setFlashOn(!flashOn)}
             >
-              <Icon name={flashOn ? 'eye' : 'eye-off'} size="sm" color="#fff" />
+              <Icon name="sun" size="sm" color="#fff" />
             </Pressable>
 
             {/* Camera Flip */}
@@ -205,7 +232,18 @@ export default function CameraScreen() {
           {/* Capture Controls */}
           <View style={styles.captureContainer}>
             {/* Gallery Shortcut */}
-            <Pressable style={styles.galleryButton}>
+            <Pressable
+              style={styles.galleryButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('screens.camera.gallery')}
+              onPress={async () => {
+                const ImagePicker = await import('expo-image-picker');
+                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'] });
+                if (!result.canceled && result.assets[0]) {
+                  router.push({ pathname: '/(screens)/create-post', params: { mediaUri: result.assets[0].uri } });
+                }
+              }}
+            >
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.galleryThumbnail}
@@ -458,7 +496,7 @@ const styles = StyleSheet.create({
   stopButton: {
     width: 28,
     height: 28,
-    borderRadius: 4,
+    borderRadius: radius.sm,
     backgroundColor: colors.error,
   },
 

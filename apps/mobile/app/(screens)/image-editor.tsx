@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, Pressable, ScrollView, Dimensions,
   Image as RNImage, StatusBar,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Image } from 'expo-image';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
   withTiming, interpolate,
@@ -45,6 +46,7 @@ const ASPECT_RATIOS: { value: AspectRatio; label: string; ratio: number }[] = [
 
 export default function ImageEditorScreen() {
   const router = useRouter();
+  const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<EditTab>('filter');
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('normal');
@@ -201,13 +203,20 @@ export default function ImageEditorScreen() {
         {/* Image Preview */}
         <View style={styles.previewContainer}>
           <Animated.View style={[styles.imageWrapper, animatedImageStyle]}>
-            <LinearGradient
-              colors={['#2D3548', '#1C2333']}
-              style={[styles.imagePlaceholder, getFilterStyle(selectedFilter)]}
-            >
-              <Icon name="image" size="xl" color={colors.text.tertiary} />
-              <Text style={styles.imagePlaceholderText}>{t('screens.imageEditor.yourImage')}</Text>
-            </LinearGradient>
+            {imageUri ? (
+              <View style={styles.imagePlaceholder}>
+                <Image source={{ uri: imageUri }} style={styles.preview} contentFit="contain" />
+                <View style={[styles.filterOverlayLayer, getFilterStyle(selectedFilter)]} />
+              </View>
+            ) : (
+              <LinearGradient
+                colors={['#2D3548', '#1C2333']}
+                style={[styles.imagePlaceholder, getFilterStyle(selectedFilter)]}
+              >
+                <Icon name="image" size="xl" color={colors.text.tertiary} />
+                <Text style={styles.imagePlaceholderText}>{t('screens.imageEditor.yourImage')}</Text>
+              </LinearGradient>
+            )}
 
             {/* Crop Frame Overlay */}
             {activeTab === 'crop' && (
@@ -309,6 +318,13 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     fontSize: fontSize.base,
     marginTop: spacing.sm,
+  },
+  preview: {
+    width: '100%',
+    height: '100%',
+  },
+  filterOverlayLayer: {
+    ...StyleSheet.absoluteFillObject,
   },
 
   // Crop Overlay

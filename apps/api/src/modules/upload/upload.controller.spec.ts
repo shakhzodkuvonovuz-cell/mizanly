@@ -67,5 +67,31 @@ describe('UploadController', () => {
     it('should throw ForbiddenException when key has insufficient segments', () => {
       expect(() => controller.deleteFile('nouser', userId)).toThrow(ForbiddenException);
     });
+
+    it('should propagate service errors', async () => {
+      service.deleteFile.mockRejectedValue(new Error('R2 not configured'));
+      await expect(controller.deleteFile('posts/user-123/abc.jpg', userId)).rejects.toThrow('R2 not configured');
+    });
+  });
+
+  describe('getPresignedUrl — error cases', () => {
+    it('should propagate service errors', async () => {
+      service.getPresignedUrl.mockRejectedValue(new Error('R2 credentials missing'));
+      await expect(controller.getPresignedUrl(userId, { contentType: 'image/jpeg', folder: 'posts' } as any)).rejects.toThrow('R2 credentials missing');
+    });
+  });
+
+  describe('getPresignedUrl — content type variations', () => {
+    it('should handle video content type', async () => {
+      service.getPresignedUrl.mockResolvedValue({ url: 'https://r2.example.com/presigned', key: 'stories/user-123/abc.mp4' } as any);
+      await controller.getPresignedUrl(userId, { contentType: 'video/mp4', folder: 'stories' } as any);
+      expect(service.getPresignedUrl).toHaveBeenCalledWith(userId, 'video/mp4', 'stories', 300, undefined);
+    });
+
+    it('should handle audio content type', async () => {
+      service.getPresignedUrl.mockResolvedValue({ url: 'https://r2.example.com/presigned', key: 'voice-posts/user-123/abc.m4a' } as any);
+      await controller.getPresignedUrl(userId, { contentType: 'audio/m4a', folder: 'voice-posts' } as any);
+      expect(service.getPresignedUrl).toHaveBeenCalledWith(userId, 'audio/m4a', 'voice-posts', 300, undefined);
+    });
   });
 });

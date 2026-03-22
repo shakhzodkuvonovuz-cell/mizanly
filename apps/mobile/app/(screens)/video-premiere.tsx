@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Platform } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Platform, Alert } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -49,6 +49,16 @@ export default function VideoPremiereScreen() {
     },
   });
 
+  const handleSchedule = useCallback(() => {
+    const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(date);
+    const isValidTime = /^\d{2}:\d{2}$/.test(time);
+    if (!isValidDate || !isValidTime) {
+      Alert.alert(t('common.error'), t('premiere.invalidDateTime'));
+      return;
+    }
+    createMutation.mutate();
+  }, [date, time, t, createMutation]);
+
   const isValid = date.length >= 10 && time.length >= 5;
 
   return (
@@ -67,7 +77,7 @@ export default function VideoPremiereScreen() {
 
           {/* Date */}
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.section}>
-            <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
+            <Text style={styles.label}>{t('premiere.dateLabel')}</Text>
             <TextInput
               style={styles.input}
               value={date}
@@ -80,7 +90,7 @@ export default function VideoPremiereScreen() {
 
           {/* Time */}
           <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.section}>
-            <Text style={styles.label}>Time (HH:MM)</Text>
+            <Text style={styles.label}>{t('premiere.timeLabel')}</Text>
             <TextInput
               style={styles.input}
               value={time}
@@ -92,7 +102,7 @@ export default function VideoPremiereScreen() {
 
           {/* Theme */}
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.section}>
-            <Text style={styles.label}>Countdown Theme</Text>
+            <Text style={styles.label}>{t('premiere.countdownTheme')}</Text>
             <View style={styles.themeRow}>
               {THEMES.map(theme => (
                 <Pressable
@@ -130,7 +140,7 @@ export default function VideoPremiereScreen() {
           <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.submitSection}>
             <Pressable
               accessibilityRole="button"
-              onPress={() => createMutation.mutate()}
+              onPress={handleSchedule}
               disabled={!isValid || createMutation.isPending}
               style={[styles.submitBtn, (!isValid || createMutation.isPending) && { opacity: 0.5 }]}
             >

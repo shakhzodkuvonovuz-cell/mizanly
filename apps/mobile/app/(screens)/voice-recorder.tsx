@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { uploadApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -35,6 +36,7 @@ export default function VoiceRecorderScreen() {
   const sound = useRef<Audio.Sound | null>(null);
   const timer = useRef<NodeJS.Timeout | null>(null);
   const levelTimer = useRef<NodeJS.Timeout | null>(null);
+  const stopRef = useRef<() => void>(() => {});
 
   useEffect(() => () => {
     timer.current && clearInterval(timer.current);
@@ -61,8 +63,14 @@ export default function VoiceRecorderScreen() {
     setTime(0);
     setLevels([]);
     haptic.medium();
+    const timeRef = { value: 0 };
     timer.current = setInterval(() => {
-      setTime((t) => t >= MAX_TIME ? (stop(), t) : t + 1);
+      timeRef.value += 1;
+      if (timeRef.value >= MAX_TIME) {
+        stopRef.current();
+        return;
+      }
+      setTime(timeRef.value);
     }, 1000);
     levelTimer.current = setInterval(() => {
       setLevels((l) => {
@@ -71,7 +79,7 @@ export default function VoiceRecorderScreen() {
         return updated;
       });
     }, 100);
-  }, [haptic]);
+  }, [haptic]); // stop is accessed via stopRef to avoid stale closure
 
   const stop = useCallback(async () => {
     timer.current && clearInterval(timer.current);
@@ -89,7 +97,10 @@ export default function VoiceRecorderScreen() {
     setUri(u);
     setState('recorded');
     haptic.light();
-  }, [haptic]);
+  }, [haptic, t]);
+
+  // Keep stopRef in sync with the latest stop callback
+  stopRef.current = stop;
 
   const play = useCallback(async () => {
     if (!uri) return;
@@ -116,11 +127,22 @@ export default function VoiceRecorderScreen() {
     setState('recorded');
   }, []);
 
-  const send = useCallback(() => {
+  const send = useCallback(async () => {
     if (!uri) return;
     setUploading(true);
-    router.back();
-  }, [uri, router]);
+    try {
+      const presign = await uploadApi.getPresignUrl('audio/m4a', 'voice-messages');
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      await fetch(presign.uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': 'audio/m4a' } });
+      // Navigate back after successful upload
+      router.back();
+    } catch {
+      Alert.alert(t('common.error'), t('voiceRecorder.uploadFailed'));
+    } finally {
+      setUploading(false);
+    }
+  }, [uri, router, t]);
 
   const cancel = useCallback(() => {
     if (state !== 'idle') {
@@ -147,6 +169,9 @@ export default function VoiceRecorderScreen() {
   const isRecording = state === 'recording';
   const isRecorded = state === 'recorded';
   const isPlaying = state === 'playing';
+
+  // Memoize idle amplitude bars to prevent re-allocation on each render
+  const idleBars = useMemo(() => Array(20).fill(0), []);
 
   return (
     <ScreenErrorBoundary>
@@ -180,7 +205,7 @@ export default function VoiceRecorderScreen() {
               </View>
 
               <View style={s.amplitudeContainer}>
-                {(isRecording ? levels : Array(20).fill(0)).map((l, idx) => (
+                {(isRecording ? levels : idleBars).map((l, idx) => (
                   <View
                     key={idx}
                     style={[

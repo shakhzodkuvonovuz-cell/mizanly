@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,12 +24,12 @@ type TransitionType = 'cut' | 'fade' | 'slide' | 'zoom' | 'wipe';
 
 const DURATION_OPTIONS: DurationOption[] = [1, 2, 3, 5];
 
-const TRANSITIONS: { id: TransitionType; name: string; icon: IconName }[] = [
-  { id: 'cut', name: 'Cut', icon: 'scissors' },
-  { id: 'fade', name: 'Fade', icon: 'eye' },
-  { id: 'slide', name: 'Slide', icon: 'chevron-right' },
-  { id: 'zoom', name: 'Zoom', icon: 'maximize' },
-  { id: 'wipe', name: 'Wipe', icon: 'layers' },
+const TRANSITIONS: { id: TransitionType; labelKey: string; icon: IconName }[] = [
+  { id: 'cut', labelKey: 'stitch.transitionCut', icon: 'scissors' },
+  { id: 'fade', labelKey: 'stitch.transitionFade', icon: 'eye' },
+  { id: 'slide', labelKey: 'stitch.transitionSlide', icon: 'chevron-right' },
+  { id: 'zoom', labelKey: 'stitch.transitionZoom', icon: 'maximize' },
+  { id: 'wipe', labelKey: 'stitch.transitionWipe', icon: 'layers' },
 ];
 
 export default function StitchCreateScreen() {
@@ -37,6 +37,12 @@ export default function StitchCreateScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
+  const { reelId, username, displayName, videoUrl } = useLocalSearchParams<{
+    reelId: string;
+    username?: string;
+    displayName?: string;
+    videoUrl?: string;
+  }>();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>(5);
   const [selectedTransition, setSelectedTransition] = useState<TransitionType>('fade');
@@ -82,9 +88,9 @@ export default function StitchCreateScreen() {
   }, [isRecording, selectedDuration]);
 
   const originalCreator = {
-    username: 'viral_dancer',
-    displayName: 'Viral Dancer',
-    isVerified: true,
+    username: username || t('stitch.unknownCreator'),
+    displayName: displayName || username || t('stitch.unknownCreator'),
+    isVerified: false,
   };
 
   const onRefresh = useCallback(() => {
@@ -168,7 +174,7 @@ export default function StitchCreateScreen() {
                       <Text style={styles.creatorName}>{originalCreator.displayName}</Text>
                       {originalCreator.isVerified && <VerifiedBadge size={13} />}
                     </View>
-                    <Text style={styles.stitchSubtitle}>Stitching from @{originalCreator.username}</Text>
+                    <Text style={styles.stitchSubtitle}>{t('stitch.stitchingFrom', { username: originalCreator.username })}</Text>
                   </View>
                 </View>
 
@@ -183,10 +189,10 @@ export default function StitchCreateScreen() {
                 </View>
 
                 {/* Duration Selector */}
-                <Text style={styles.durationLabel}>Use first:</Text>
+                <Text style={styles.durationLabel}>{t('stitch.useFirst')}</Text>
                 <View style={styles.durationButtons}>
                   {DURATION_OPTIONS.map((duration) => (
-                    <Pressable accessibilityRole="button" accessibilityRole="button"
+                    <Pressable accessibilityRole="button"
                       key={duration}
                       style={styles.durationButton}
                       onPress={() => setSelectedDuration(duration)}
@@ -215,8 +221,8 @@ export default function StitchCreateScreen() {
                     <View style={[styles.progressBarFill, { width: `${(selectedDuration / 60) * 100}%` }]} />
                   </View>
                   <View style={styles.progressLabels}>
-                    <Text style={styles.progressLabel}>Original: {selectedDuration}s</Text>
-                    <Text style={styles.progressLabel}>Yours: {yourClipDuration}s max</Text>
+                    <Text style={styles.progressLabel}>{t('stitch.originalDuration', { seconds: selectedDuration })}</Text>
+                    <Text style={styles.progressLabel}>{t('stitch.yoursDuration', { seconds: yourClipDuration })}</Text>
                   </View>
                 </View>
               </LinearGradient>
@@ -230,7 +236,7 @@ export default function StitchCreateScreen() {
                 colors={colors.gradient.cardDark}
                 style={styles.transitionGradient}
               >
-                <Text style={styles.transitionTitle}>Transition</Text>
+                <Text style={styles.transitionTitle}>{t('stitch.transition')}</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -241,7 +247,7 @@ export default function StitchCreateScreen() {
                       key={transition.id}
                       entering={FadeInUp.delay(index * 50).duration(300)}
                     >
-                      <Pressable accessibilityRole="button" accessibilityRole="button"
+                      <Pressable accessibilityRole="button"
                         style={styles.transitionButton}
                         onPress={() => setSelectedTransition(transition.id)}
                       >
@@ -261,7 +267,7 @@ export default function StitchCreateScreen() {
                             styles.transitionButtonText,
                             selectedTransition === transition.id && styles.transitionButtonTextActive
                           ]}>
-                            {transition.name}
+                            {t(transition.labelKey)}
                           </Text>
                         </LinearGradient>
                       </Pressable>
@@ -290,8 +296,8 @@ export default function StitchCreateScreen() {
                     </LinearGradient>
                   </View>
                   <View>
-                    <Text style={styles.yourClipTitle}>Your Response</Text>
-                    <Text style={styles.yourClipSubtitle}>Record your reaction or continuation</Text>
+                    <Text style={styles.yourClipTitle}>{t('stitch.yourResponse')}</Text>
+                    <Text style={styles.yourClipSubtitle}>{t('stitch.recordReaction')}</Text>
                   </View>
                 </View>
 
@@ -338,7 +344,7 @@ export default function StitchCreateScreen() {
                   </Pressable>
 
                   {/* Flash Toggle */}
-                  <Pressable accessibilityRole="button" accessibilityRole="button"
+                  <Pressable accessibilityRole="button"
                     style={styles.controlButtonSmall}
                     onPress={() => setFlashOn(!flashOn)}
                   >
@@ -362,7 +368,7 @@ export default function StitchCreateScreen() {
                   {isRecording && (
                     <View style={styles.recordingBadge}>
                       <View style={styles.recordingDot} />
-                      <Text style={styles.recordingBadgeText}>Recording</Text>
+                      <Text style={styles.recordingBadgeText}>{t('stitch.recording')}</Text>
                     </View>
                   )}
                 </View>
@@ -377,7 +383,7 @@ export default function StitchCreateScreen() {
                 colors={colors.gradient.cardDark}
                 style={styles.previewCardGradient}
               >
-                <Text style={styles.previewCardTitle}>Preview</Text>
+                <Text style={styles.previewCardTitle}>{t('stitch.preview')}</Text>
 
                 {/* Sequence Thumbnails */}
                 <View style={styles.sequenceContainer}>
@@ -401,7 +407,7 @@ export default function StitchCreateScreen() {
                     >
                       <Icon name="chevron-right" size="sm" color={colors.gold} />
                     </LinearGradient>
-                    <Text style={styles.transitionName}>{TRANSITIONS.find(t => t.id === selectedTransition)?.name}</Text>
+                    <Text style={styles.transitionName}>{t(TRANSITIONS.find(tr => tr.id === selectedTransition)?.labelKey || '')}</Text>
                   </View>
 
                   <View style={styles.sequenceItem}>
@@ -414,18 +420,18 @@ export default function StitchCreateScreen() {
                         <Text style={styles.sequenceDurationText}>{recordTime}s</Text>
                       </View>
                     </LinearGradient>
-                    <Text style={styles.sequenceLabel}>You</Text>
+                    <Text style={styles.sequenceLabel}>{t('stitch.you')}</Text>
                   </View>
                 </View>
 
                 {/* Total Duration */}
                 <View style={styles.totalDurationContainer}>
-                  <Text style={styles.totalDurationLabel}>Total Duration</Text>
+                  <Text style={styles.totalDurationLabel}>{t('stitch.totalDuration')}</Text>
                   <Text style={styles.totalDurationValue}>{formatTime(totalDuration)}</Text>
                 </View>
 
                 {/* Play Preview Button */}
-                <Pressable accessibilityRole="button" accessibilityRole="button"
+                <Pressable accessibilityRole="button"
                   style={styles.playPreviewButton}
                   onPress={() => setShowPreview(true)}
                 >
@@ -434,7 +440,7 @@ export default function StitchCreateScreen() {
                     style={styles.playPreviewGradient}
                   >
                     <Icon name="play" size="sm" color="#FFF" />
-                    <Text style={styles.playPreviewText}>Play Preview</Text>
+                    <Text style={styles.playPreviewText}>{t('stitch.playPreview')}</Text>
                   </LinearGradient>
                 </Pressable>
               </LinearGradient>
@@ -454,7 +460,7 @@ export default function StitchCreateScreen() {
             <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" style={styles.nextButton} onPress={() => navigate('/(screens)/create-reel')}>
+            <Pressable accessibilityRole="button" style={styles.nextButton} onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '' } })}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.nextButtonGradient}

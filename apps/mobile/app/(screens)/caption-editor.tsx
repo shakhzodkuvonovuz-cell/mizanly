@@ -114,11 +114,13 @@ export default function CaptionEditorScreen() {
           return `${i + 1}\n${startFormatted} --> ${endFormatted}\n${c.text}\n`;
         })
         .join('\n');
-      // Upload as a new track (the SRT URL would be generated server-side)
+      // Upload as a new track — srtContent holds the raw SRT text, not a URL.
+      // The backend field is named `srtUrl` but here we pass SRT content directly;
+      // the server generates the actual URL after persisting the content.
       await subtitlesApi.upload(videoId, {
         label: 'Auto-generated',
         language: 'en',
-        srtUrl: srtContent,
+        srtContent,
       });
     },
     onSuccess: () => {

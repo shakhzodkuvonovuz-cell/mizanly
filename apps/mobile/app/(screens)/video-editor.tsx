@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,18 +24,18 @@ type QualityOption = '720p' | '1080p' | '4K';
 
 const SPEED_OPTIONS: SpeedOption[] = [0.25, 0.5, 1, 1.5, 2, 3];
 
-const FILTERS: { id: FilterName; name: string; color: string }[] = [
-  { id: 'original', name: 'Original', color: '#FFFFFF' },
-  { id: 'warm', name: 'Warm', color: '#D4A94F' },
-  { id: 'cool', name: 'Cool', color: colors.extended.blue },
-  { id: 'bw', name: 'B&W', color: '#8B949E' },
-  { id: 'vintage', name: 'Vintage', color: '#C8963E' },
-  { id: 'vivid', name: 'Vivid', color: '#0A7B4F' },
-  { id: 'dramatic', name: 'Dramatic', color: '#F85149' },
-  { id: 'fade', name: 'Fade', color: '#6E7781' },
+const FILTERS: { id: FilterName; labelKey: string; color: string }[] = [
+  { id: 'original', labelKey: 'videoEditor.filterOriginal', color: '#FFFFFF' },
+  { id: 'warm', labelKey: 'videoEditor.filterWarm', color: '#D4A94F' },
+  { id: 'cool', labelKey: 'videoEditor.filterCool', color: colors.extended.blue },
+  { id: 'bw', labelKey: 'videoEditor.filterBW', color: '#8B949E' },
+  { id: 'vintage', labelKey: 'videoEditor.filterVintage', color: '#C8963E' },
+  { id: 'vivid', labelKey: 'videoEditor.filterVivid', color: '#0A7B4F' },
+  { id: 'dramatic', labelKey: 'videoEditor.filterDramatic', color: '#F85149' },
+  { id: 'fade', labelKey: 'videoEditor.filterFade', color: '#6E7781' },
 ];
 
-const FONT_OPTIONS = ['Default', 'Bold', 'Handwritten'];
+const FONT_OPTION_KEYS = ['default', 'bold', 'handwritten'];
 const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', colors.extended.blue];
 
 export default function VideoEditorScreen() {
@@ -56,7 +56,7 @@ export default function VideoEditorScreen() {
   const [selectedQuality, setSelectedQuality] = useState<QualityOption>('1080p');
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(45);
-  const [selectedFont, setSelectedFont] = useState('Default');
+  const [selectedFont, setSelectedFont] = useState('default');
   const [selectedTextColor, setSelectedTextColor] = useState('#FFFFFF');
   const [captionText, setCaptionText] = useState('');
   const [originalVolume, setOriginalVolume] = useState(80);
@@ -65,6 +65,9 @@ export default function VideoEditorScreen() {
   const [exportProgress, setExportProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoUri = params.videoUri || null;
+
+  // Memoize waveform data to prevent re-randomizing on each render (FINDING 38-013)
+  const waveformData = useMemo(() => Array.from({ length: 40 }, () => Math.random() * 30 + 10), []);
 
   // Animated export progress
   const exportProgressAnim = useSharedValue(0);
@@ -149,13 +152,13 @@ export default function VideoEditorScreen() {
       const FFmpegKit = await import('ffmpeg-kit-react-native').catch(() => null);
 
       if (!FFmpegKit || !videoUri) {
-        // Simulate export progress for demo/development
+        // Simulate export progress for demo/development — FFmpeg not available
         for (let i = 0; i <= 100; i += 5) {
           await new Promise(r => setTimeout(r, 100));
           setExportProgress(i);
           exportProgressAnim.value = withTiming(i, { duration: 80 });
         }
-        Alert.alert(t('videoEditor.exportComplete'), '', [
+        Alert.alert(t('videoEditor.exportSimulated'), t('videoEditor.ffmpegNotAvailable'), [
           { text: 'OK', onPress: () => router.back() },
         ]);
         return;
@@ -323,7 +326,7 @@ export default function VideoEditorScreen() {
                       ]}
                     >
                       <View style={[styles.filterPreview, { backgroundColor: filter.color }]} />
-                      <Text style={styles.filterName}>{filter.name}</Text>
+                      <Text style={styles.filterName}>{t(filter.labelKey)}</Text>
                     </LinearGradient>
                   </Pressable>
                 </Animated.View>
@@ -348,8 +351,8 @@ export default function VideoEditorScreen() {
 
             <Text style={styles.toolSubTitle}>{t('videoEditor.fontStyle')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fontScroll}>
-              {FONT_OPTIONS.map((font) => (
-                <Pressable accessibilityRole="button" accessibilityRole="button"
+              {FONT_OPTION_KEYS.map((font) => (
+                <Pressable accessibilityRole="button"
                   key={font}
                   style={styles.fontButton}
                   onPress={() => setSelectedFont(font)}
@@ -365,7 +368,7 @@ export default function VideoEditorScreen() {
                       styles.fontButtonText,
                       selectedFont === font && styles.fontButtonTextActive
                     ]}>
-                      {font}
+                      {t(`videoEditor.font.${font}`)}
                     </Text>
                   </LinearGradient>
                 </Pressable>
@@ -560,12 +563,12 @@ export default function VideoEditorScreen() {
               {/* Waveform Strip */}
               <View style={styles.waveformContainer}>
                 <View style={styles.waveform}>
-                  {Array.from({ length: 40 }).map((_, i) => (
+                  {waveformData.map((h, i) => (
                     <View
                       key={i}
                       style={[
                         styles.waveformBar,
-                        { height: Math.random() * 30 + 10 }
+                        { height: h }
                       ]}
                     />
                   ))}

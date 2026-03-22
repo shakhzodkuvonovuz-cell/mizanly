@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, withSpring, useAnimatedStyle, withRepeat } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,6 +38,12 @@ export default function DuetCreateScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { reelId, username, displayName, videoUrl } = useLocalSearchParams<{
+    reelId: string;
+    username?: string;
+    displayName?: string;
+    videoUrl?: string;
+  }>();
   const tc = useThemeColors();
 
   useEffect(() => {
@@ -70,10 +76,10 @@ export default function DuetCreateScreen() {
   }, [isRecording]);
 
   const originalCreator = {
-    username: 'creative_artist',
-    displayName: 'Creative Artist',
-    isVerified: true,
-    videoTitle: 'Amazing Dance Routine 💃',
+    username: username || t('duet.unknownCreator'),
+    displayName: displayName || username || t('duet.unknownCreator'),
+    isVerified: false,
+    videoTitle: '',
     avatarUrl: null,
   };
 
@@ -158,7 +164,7 @@ export default function DuetCreateScreen() {
                       {originalCreator.isVerified && <VerifiedBadge size={13} />}
                     </View>
                     <Text style={styles.creatorUsername}>@{originalCreator.username}</Text>
-                    <Text style={styles.duetSubtitle}>Duetting with @{originalCreator.username}</Text>
+                    <Text style={styles.duetSubtitle}>{t('duet.duettingWith', { username: originalCreator.username })}</Text>
                   </View>
                 </View>
                 <View style={styles.videoTitleBadge}>
@@ -192,7 +198,7 @@ export default function DuetCreateScreen() {
                           colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                           style={styles.panelLabelGradient}
                         >
-                          <Text style={styles.panelLabel}>Original</Text>
+                          <Text style={styles.panelLabel}>{t('duet.original')}</Text>
                         </LinearGradient>
                       </View>
                       <View style={[styles.videoPanel, { backgroundColor: tc.bgCard }]}>
@@ -213,7 +219,7 @@ export default function DuetCreateScreen() {
                           colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
                           style={styles.panelLabelGradient}
                         >
-                          <Text style={[styles.panelLabel, styles.panelLabelActive]}>You</Text>
+                          <Text style={[styles.panelLabel, styles.panelLabelActive]}>{t('duet.you')}</Text>
                         </LinearGradient>
                       </View>
                       <CameraView
@@ -235,7 +241,7 @@ export default function DuetCreateScreen() {
                           colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                           style={styles.panelLabelGradient}
                         >
-                          <Text style={styles.panelLabel}>Original</Text>
+                          <Text style={styles.panelLabel}>{t('duet.original')}</Text>
                         </LinearGradient>
                       </View>
                       <View style={[styles.videoPanelTopBottom, { backgroundColor: tc.bgCard }]}>
@@ -249,7 +255,7 @@ export default function DuetCreateScreen() {
                           colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
                           style={styles.panelLabelGradient}
                         >
-                          <Text style={[styles.panelLabel, styles.panelLabelActive]}>You</Text>
+                          <Text style={[styles.panelLabel, styles.panelLabelActive]}>{t('duet.you')}</Text>
                         </LinearGradient>
                       </View>
                       <CameraView
@@ -270,7 +276,7 @@ export default function DuetCreateScreen() {
                           colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                           style={styles.panelLabelGradient}
                         >
-                          <Text style={styles.panelLabel}>Original</Text>
+                          <Text style={styles.panelLabel}>{t('duet.original')}</Text>
                         </LinearGradient>
                       </View>
                       <View style={[styles.videoPanelReact, { backgroundColor: tc.bgCard }]}>
@@ -294,12 +300,12 @@ export default function DuetCreateScreen() {
           {/* Layout Selector */}
           <Animated.View entering={FadeInUp.delay(150).duration(400)}>
             <View style={styles.layoutSelectorContainer}>
-              <Text style={styles.layoutSelectorTitle}>Layout</Text>
+              <Text style={styles.layoutSelectorTitle}>{t('duet.layout')}</Text>
               <View style={styles.layoutButtons}>
                 {[
-                  { id: 'side-by-side', icon: 'layout' as IconName, label: 'Side by Side' },
-                  { id: 'top-bottom', icon: 'layers' as IconName, label: 'Top & Bottom' },
-                  { id: 'react', icon: 'user' as IconName, label: 'React' },
+                  { id: 'side-by-side', icon: 'layout' as IconName, label: t('duet.layoutSideBySide') },
+                  { id: 'top-bottom', icon: 'layers' as IconName, label: t('duet.layoutTopBottom') },
+                  { id: 'react', icon: 'user' as IconName, label: t('duet.layoutReact') },
                 ].map((layout) => (
                   <Pressable accessibilityRole="button"
                     key={layout.id}
@@ -345,12 +351,12 @@ export default function DuetCreateScreen() {
                   styles.timerText,
                   isTimeRunningOut && styles.timerTextWarning
                 ]}>
-                  {formatTime(recordTime)} / 00:60
+                  {formatTime(recordTime)} / 01:00
                 </Text>
                 {isRecording && (
                   <View style={styles.recordingIndicator}>
                     <View style={styles.recordingDot} />
-                    <Text style={styles.recordingText}>Recording...</Text>
+                    <Text style={styles.recordingText}>{t('duet.recording')}</Text>
                   </View>
                 )}
               </LinearGradient>
@@ -428,21 +434,21 @@ export default function DuetCreateScreen() {
                       <Icon name="volume-2" size="sm" color={colors.emerald} />
                     </LinearGradient>
                   </View>
-                  <Text style={styles.audioTitle}>Audio Settings</Text>
+                  <Text style={styles.audioTitle}>{t('duet.audioSettings')}</Text>
                   <Pressable accessibilityRole="button"
                     style={[styles.muteButton, { backgroundColor: tc.surface }, isMuted && styles.muteButtonActive]}
                     onPress={() => setIsMuted(!isMuted)}
                   >
                     <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="xs" color={isMuted ? colors.error : colors.text.secondary} />
                     <Text style={[styles.muteButtonText, isMuted && styles.muteButtonTextActive]}>
-                      {isMuted ? 'Muted' : 'Mute Original'}
+                      {isMuted ? t('duet.muted') : t('duet.muteOriginal')}
                     </Text>
                   </Pressable>
                 </View>
 
                 <View style={styles.volumeSliders}>
                   <View style={styles.volumeRow}>
-                    <Text style={styles.volumeLabel}>Original Audio</Text>
+                    <Text style={styles.volumeLabel}>{t('duet.originalAudio')}</Text>
                     <Text style={styles.volumeValue}>{originalVolume}%</Text>
                   </View>
                   <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
@@ -450,7 +456,7 @@ export default function DuetCreateScreen() {
                   </View>
 
                   <View style={[styles.volumeRow, styles.volumeRowSecond]}>
-                    <Text style={styles.volumeLabel}>Your Audio</Text>
+                    <Text style={styles.volumeLabel}>{t('duet.yourAudio')}</Text>
                     <Text style={styles.volumeValue}>{yourVolume}%</Text>
                   </View>
                   <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
@@ -465,7 +471,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(350).duration(400)}>
             <Pressable accessibilityRole="button"
               style={styles.nextButton}
-              onPress={() => navigate('/(screens)/create-reel')}
+              onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '' } })}
             >
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}

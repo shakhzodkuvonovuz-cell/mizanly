@@ -31,11 +31,7 @@ const CARD_IMAGE_HEIGHT = CARD_WIDTH * (16 / 9);
 
 type TabKey = 'trending' | 'recent' | 'mine';
 
-const TABS = [
-  { key: 'trending', label: 'Trending' },
-  { key: 'recent', label: 'Recent' },
-  { key: 'mine', label: 'My Templates' },
-] as const;
+const TAB_KEYS = ['trending', 'recent', 'mine'] as const;
 
 function formatMs(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -95,6 +91,11 @@ export default function ReelTemplatesScreen() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('trending');
   const [selectedTemplate, setSelectedTemplate] = useState<ReelTemplate | null>(null);
+
+  const TABS = useMemo(() => TAB_KEYS.map((key) => ({
+    key,
+    label: t(`reelTemplates.tab.${key}`),
+  })), [t]);
 
   const isTrending = activeTab === 'trending';
   const queryKey = ['reel-templates', activeTab];

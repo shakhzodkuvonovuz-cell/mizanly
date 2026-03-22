@@ -1,6 +1,8 @@
+// Note: Background segmentation requires expo-gl or react-native-vision-camera with frame processors — not yet installed
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,49 +23,49 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 type CategoryType = 'solid' | 'gradients' | 'images' | 'videos' | 'custom';
 
 const SOLID_COLORS = [
-  { name: 'Black', color: '#0D1117' },
-  { name: 'White', color: '#FFFFFF' },
-  { name: 'Emerald', color: '#0A7B4F' },
-  { name: 'Gold', color: '#C8963E' },
-  { name: 'Blue', color: colors.extended.blue },
-  { name: 'Red', color: '#F85149' },
-  { name: 'Purple', color: colors.extended.purple },
-  { name: 'Pink', color: '#F778BA' },
-  { name: 'Orange', color: '#F0883E' },
-  { name: 'Yellow', color: '#D4A94F' },
-  { name: 'Cyan', color: '#39D0D8' },
-  { name: 'Gray', color: '#6E7781' },
+  { name: 'black', color: '#0D1117' },
+  { name: 'white', color: '#FFFFFF' },
+  { name: 'emerald', color: '#0A7B4F' },
+  { name: 'gold', color: '#C8963E' },
+  { name: 'blue', color: colors.extended.blue },
+  { name: 'red', color: '#F85149' },
+  { name: 'purple', color: colors.extended.purple },
+  { name: 'pink', color: '#F778BA' },
+  { name: 'orange', color: '#F0883E' },
+  { name: 'yellow', color: '#D4A94F' },
+  { name: 'cyan', color: '#39D0D8' },
+  { name: 'gray', color: '#6E7781' },
 ];
 
 const GRADIENT_BACKGROUNDS = [
-  { name: 'Sunset', colors: ['#F0883E', '#F85149'] as [string, string] },
-  { name: 'Ocean', colors: [colors.extended.blue, colors.emerald] as [string, string] },
-  { name: 'Forest', colors: ['#0A7B4F', '#066B42'] as [string, string] },
-  { name: 'Midnight', colors: ['#0D1117', '#21283B'] as [string, string] },
-  { name: 'Rose', colors: ['#F778BA', '#F85149'] as [string, string] },
-  { name: 'Arctic', colors: ['#39D0D8', '#FFFFFF'] as [string, string] },
-  { name: 'Desert', colors: ['#C8963E', '#F0883E'] as [string, string] },
-  { name: 'Aurora', colors: [colors.emerald, colors.extended.purple] as [string, string] },
+  { name: 'sunset', colors: ['#F0883E', '#F85149'] as [string, string] },
+  { name: 'ocean', colors: [colors.extended.blue, colors.emerald] as [string, string] },
+  { name: 'forest', colors: ['#0A7B4F', '#066B42'] as [string, string] },
+  { name: 'midnight', colors: ['#0D1117', '#21283B'] as [string, string] },
+  { name: 'rose', colors: ['#F778BA', '#F85149'] as [string, string] },
+  { name: 'arctic', colors: ['#39D0D8', '#FFFFFF'] as [string, string] },
+  { name: 'desert', colors: ['#C8963E', '#F0883E'] as [string, string] },
+  { name: 'aurora', colors: [colors.emerald, colors.extended.purple] as [string, string] },
 ];
 
 const IMAGE_BACKGROUNDS = [
-  { name: 'Beach' },
-  { name: 'Mountains' },
-  { name: 'City' },
-  { name: 'Studio' },
-  { name: 'Space' },
-  { name: 'Library' },
-  { name: 'Cafe' },
-  { name: 'Garden' },
+  { name: 'beach' },
+  { name: 'mountains' },
+  { name: 'city' },
+  { name: 'studio' },
+  { name: 'space' },
+  { name: 'library' },
+  { name: 'cafe' },
+  { name: 'garden' },
 ];
 
 const VIDEO_BACKGROUNDS = [
-  { name: 'Particles' },
-  { name: 'Rain' },
-  { name: 'Fire' },
-  { name: 'Bokeh' },
-  { name: 'Clouds' },
-  { name: 'Matrix' },
+  { name: 'particles' },
+  { name: 'rain' },
+  { name: 'fire' },
+  { name: 'bokeh' },
+  { name: 'clouds' },
+  { name: 'matrix' },
 ];
 
 export default function GreenScreenEditorScreen() {
@@ -71,8 +73,8 @@ export default function GreenScreenEditorScreen() {
   const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('solid');
-  const [selectedBackground, setSelectedBackground] = useState<string>('Emerald');
-  const [selectedGradient, setSelectedGradient] = useState<string>('Forest');
+  const [selectedBackground, setSelectedBackground] = useState<string>('emerald');
+  const [selectedGradient, setSelectedGradient] = useState<string>('forest');
   const [blurIntensity, setBlurIntensity] = useState(30);
   const [edgeSmoothing, setEdgeSmoothing] = useState(50);
   const [isRecording, setIsRecording] = useState(false);
@@ -124,6 +126,30 @@ export default function GreenScreenEditorScreen() {
     { id: 'custom', label: t('screens.greenScreen.custom') },
   ];
 
+  const handlePickImage = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setSelectedBackground(result.assets[0].uri);
+      setSelectedCategory('custom');
+    }
+  }, []);
+
+  const handlePickVideo = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setSelectedBackground(result.assets[0].uri);
+      setSelectedCategory('custom');
+    }
+  }, []);
+
   const getBackgroundStyle = () => {
     switch (selectedCategory) {
       case 'solid':
@@ -160,7 +186,7 @@ export default function GreenScreenEditorScreen() {
                     <Icon name="check" size="xs" color="#FFF" />
                   )}
                 </Pressable>
-                <Text style={styles.colorName}>{color.name}</Text>
+                <Text style={styles.colorName}>{t(`screens.greenScreen.color.${color.name}`)}</Text>
               </Animated.View>
             ))}
           </View>
@@ -196,7 +222,7 @@ export default function GreenScreenEditorScreen() {
                     )}
                   </LinearGradient>
                 </Pressable>
-                <Text style={styles.gradientName}>{gradient.name}</Text>
+                <Text style={styles.gradientName}>{t(`screens.greenScreen.gradient.${gradient.name}`)}</Text>
               </Animated.View>
             ))}
           </View>
@@ -222,7 +248,7 @@ export default function GreenScreenEditorScreen() {
                   >
                     <Icon name="image" size="md" color={colors.text.tertiary} />
                   </LinearGradient>
-                  <Text style={styles.imageName}>{image.name}</Text>
+                  <Text style={styles.imageName}>{t(`screens.greenScreen.bg.${image.name}`)}</Text>
                 </Pressable>
               </Animated.View>
             ))}
@@ -251,7 +277,7 @@ export default function GreenScreenEditorScreen() {
                       <Icon name="play" size="sm" color="#FFF" />
                     </View>
                   </LinearGradient>
-                  <Text style={styles.videoName}>{video.name}</Text>
+                  <Text style={styles.videoName}>{t(`screens.greenScreen.bg.${video.name}`)}</Text>
                 </Pressable>
               </Animated.View>
             ))}
@@ -261,7 +287,7 @@ export default function GreenScreenEditorScreen() {
       case 'custom':
         return (
           <View style={styles.customContainer}>
-            <Pressable style={styles.uploadButton}>
+            <Pressable style={styles.uploadButton} onPress={handlePickImage}>
               <LinearGradient
                 colors={colors.gradient.cardDark}
                 style={[styles.uploadButtonGradient, styles.uploadButtonDashed]}
@@ -277,7 +303,7 @@ export default function GreenScreenEditorScreen() {
               </LinearGradient>
             </Pressable>
 
-            <Pressable style={styles.uploadButton}>
+            <Pressable style={styles.uploadButton} onPress={handlePickVideo}>
               <LinearGradient
                 colors={colors.gradient.cardDark}
                 style={[styles.uploadButtonGradient, styles.uploadButtonDashed]}

@@ -105,7 +105,7 @@ export default function CreateReelScreen() {
   const pickVideo = useCallback(async () => {
     haptic.light();
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: ['videos'],
       allowsEditing: true,
       aspect: [9, 16],
       quality: 1,
@@ -378,7 +378,7 @@ export default function CreateReelScreen() {
                   accessibilityRole="button"
                   onPress={async () => {
                     const result = await ImagePicker.launchImageLibraryAsync({
-                      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                      mediaTypes: ['images'],
                       quality: 0.8,
                     });
                     if (!result.canceled && result.assets[0]) {
