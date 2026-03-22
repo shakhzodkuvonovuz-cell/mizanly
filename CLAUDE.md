@@ -58,6 +58,13 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ## REMAINING TECHNICAL DEBT
 
+**Installed but NOT wired (packages exist, zero usage in screens):**
+- react-native-shared-element — installed but no `<SharedElement>` in any screen
+- react-native-maps — installed but MosqueFinder doesn't use `<MapView>`
+- Lottie animations — no .json animation files exist, no LottieView used anywhere
+- Social auth Google/Apple — sign-in/sign-up screens have disabled OAuth buttons ("disabled until OAuth configured"). Needs Clerk dashboard setup.
+- Payments on mobile — only send-tip.tsx uses paymentsApi. donate.tsx, gift-shop.tsx, waqf.tsx still have TODO stubs for Stripe integration.
+
 **Cannot fix via code (need external services/humans):**
 - 5 languages (ur, bn, fr, id, ms) at 14-15% translated — needs human translator
 - Schema enum migrations — 41 String fields should be enums (high-risk, needs careful planning)
@@ -70,6 +77,7 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 - AI dubbing, AI restyle, AI "Best Moments", Friends Map, camera effects, TV app
 - Bakra "not interested" swipe-left gesture
 - Profile story highlights row
+- Account deep dive (creation country, username history)
 - Data import from Instagram/TikTok/X/YouTube/WhatsApp (spec exists)
 
 ---
