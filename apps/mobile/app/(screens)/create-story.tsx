@@ -6,9 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { PanGestureHandler, PinchGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
-  useSharedValue, useAnimatedStyle, useAnimatedGestureHandler,
+  useSharedValue, useAnimatedStyle,
   withSpring, runOnJS, withTiming, withDelay, FadeIn,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
@@ -36,13 +35,14 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CANVAS_H = SCREEN_H * 0.7;
 
 // ── Filter presets ──
+// Full filter effects require expo-gl shader pipeline — opacity-only for now
 const FILTERS = [
   { id: 'none', label: 'Normal', style: {} },
-  { id: 'warm', label: 'Warm', style: { tintColor: 'rgba(255,180,100,0.15)' } },
-  { id: 'cool', label: 'Cool', style: { tintColor: 'rgba(100,150,255,0.15)' } },
-  { id: 'vintage', label: 'Vintage', style: { tintColor: 'rgba(200,150,80,0.2)' } },
-  { id: 'noir', label: 'Noir', style: { tintColor: 'rgba(0,0,0,0.3)' } },
-  { id: 'emerald', label: 'Emerald', style: { tintColor: 'rgba(10,123,79,0.15)' } },
+  { id: 'warm', label: 'Warm', style: { opacity: 0.85 } },
+  { id: 'cool', label: 'Cool', style: { opacity: 0.85 } },
+  { id: 'vintage', label: 'Vintage', style: { opacity: 0.8 } },
+  { id: 'noir', label: 'Noir', style: { opacity: 0.7 } },
+  { id: 'emerald', label: 'Emerald', style: { opacity: 0.9 } },
 ];
 
 // ── Font options ──
@@ -140,9 +140,18 @@ export default function CreateStoryScreen() {
   const [sliderMin, setSliderMin] = useState('0');
   const [sliderMax, setSliderMax] = useState('100');
 
-  // ── Close friends / Subscribers ──
+  // ── Close friends / Subscribers (mutually exclusive) ──
   const [closeFriendsOnly, setCloseFriendsOnly] = useState(false);
   const [subscribersOnly, setSubscribersOnly] = useState(false);
+
+  const handleCloseFriendsToggle = (val: boolean) => {
+    setCloseFriendsOnly(val);
+    if (val) setSubscribersOnly(false);
+  };
+  const handleSubscribersToggle = (val: boolean) => {
+    setSubscribersOnly(val);
+    if (val) setCloseFriendsOnly(false);
+  };
 
   // ── Active tool ──
   const [activeTool, setActiveTool] = useState<'text' | 'filter' | 'sticker' | null>(null);
@@ -295,8 +304,12 @@ export default function CreateStoryScreen() {
     mutationFn: async () => {
       let mediaUrl = '';
       if (mediaUri) {
-        const upload = await uploadApi.getPresignUrl(mediaType === 'video' ? 'video/mp4' : 'image/jpeg', 'stories');
-        mediaUrl = upload.publicUrl;
+        const contentType = mediaType === 'video' ? 'video/mp4' : 'image/jpeg';
+        const upload = await uploadApi.getPresignUrl(contentType, 'stories');
+        // Actually upload the media blob to R2
+        const response = await fetch(mediaUri);
+        const blob = await response.blob();
+        await fetch(upload.uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
         mediaUrl = upload.publicUrl;
       }
       return storiesApi.create({
@@ -685,6 +698,7 @@ export default function CreateStoryScreen() {
           <View style={{ marginBottom: spacing.md }}>
             <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: spacing.sm }}>{t('stories.background')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {/* Note: BG_GRADIENTS is a compile-time constant array — hook count is stable */}
               {BG_GRADIENTS.map((g, i) => {
                 const isActive = i === bgGradientIndex;
                 const animatedStyle = useAnimatedStyle(() => ({
@@ -796,7 +810,7 @@ export default function CreateStoryScreen() {
                     color: i === fontIndex ? '#fff' : colors.text.primary,
                     fontSize: fontSize.sm, fontFamily: f.fontFamily, fontWeight: f.fontWeight,
                   }}>
-                    {f.label}
+                    {t(`stories.font${f.id.charAt(0).toUpperCase() + f.id.slice(1)}`, { defaultValue: f.label })}
                   </Text>
                 </Pressable>
               ))}
@@ -829,7 +843,7 @@ export default function CreateStoryScreen() {
                   fontSize: fontSizeExt.tiny,
                   marginTop: 4,
                 }}>
-                  {f.label}
+                  {t(`stories.filter${f.id.charAt(0).toUpperCase() + f.id.slice(1)}`, { defaultValue: f.label })}
                 </Text>
               </Pressable>
             ))}
@@ -1026,7 +1040,7 @@ export default function CreateStoryScreen() {
         <View style={{ marginTop: spacing.lg }}>
           {/* Close friends toggle */}
           <Pressable
-            onPress={() => setCloseFriendsOnly(!closeFriendsOnly)}
+            onPress={() => handleCloseFriendsToggle(!closeFriendsOnly)}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
               backgroundColor: closeFriendsOnly ? colors.active.emerald10 : tc.bgElevated,
@@ -1050,7 +1064,7 @@ export default function CreateStoryScreen() {
           </Pressable>
           {/* Subscribers-only toggle */}
           <Pressable
-            onPress={() => setSubscribersOnly(!subscribersOnly)}
+            onPress={() => handleSubscribersToggle(!subscribersOnly)}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
               backgroundColor: subscribersOnly ? 'rgba(200,150,62,0.1)' : tc.bgElevated,

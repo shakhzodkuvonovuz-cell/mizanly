@@ -2670,7 +2670,17 @@
     "pickFromGallery": "Pick from gallery",
     "takePhoto": "Take photo",
     "subscribersOnly": "Subscribers only",
-    "closeFriendsOnly": "Close friends only"
+    "closeFriendsOnly": "Close friends only",
+    "filterNone": "Normal",
+    "filterWarm": "Warm",
+    "filterCool": "Cool",
+    "filterVintage": "Vintage",
+    "filterNoir": "Noir",
+    "filterEmerald": "Emerald",
+    "fontDefault": "Default",
+    "fontSerif": "Serif",
+    "fontMono": "Mono",
+    "fontBold": "Bold"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -2784,7 +2794,15 @@
     "failedToStartRehearsal": "ریہرسل شروع کرنے میں ناکامی۔",
     "datePickerPlaceholder": "تاریخ/وقت منتخب کنندہ یہاں ظاہر ہوگا",
     "datePickerHint": "آسانی کے لیے، ابھی سے 30 منٹ بعد کا شیڈول ہوگا۔",
-    "preparingStream": "لائیو اسٹریم تیار ہو رہا ہے..."
+    "preparingStream": "لائیو اسٹریم تیار ہو رہا ہے...",
+    "liveNotAvailable": "Live streaming requires WebRTC. You can schedule a stream for later."
+  },
+  "voicePost": {
+    "maxDuration": "Max {{time}}",
+    "tapToStop": "Tap to stop",
+    "tapToReRecord": "Tap to re-record",
+    "tapToRecord": "Tap to record",
+    "postVoice": "Post Voice"
   },
   "seriesEnhanced": {
     "episodes": "اقساط",

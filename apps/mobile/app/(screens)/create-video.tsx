@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
-  Alert, Image,
+  Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -451,7 +452,7 @@ export default function CreateVideoScreen() {
               multiline
               maxLength={5000}
             />
-            <Text style={styles.charCount}>{description.length}/5000</Text>
+            <CharCountRing current={description.length} max={5000} size={24} />
           </View>
 
           {/* Category */}
@@ -545,13 +546,13 @@ export default function CreateVideoScreen() {
           </View>
         </ScrollView>
 
-        {/* Upload progress */}
+        {/* Upload progress — progress callbacks require XMLHttpRequest or expo-file-system */}
         {uploading && (
           <View style={[styles.progressContainer, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
             <View style={[styles.progressBar, { backgroundColor: tc.border }]}>
-              <View style={[styles.progressFill, { width: `${uploadProgress * 100}%` }]} />
+              <View style={[styles.progressFill, { width: '100%' }]} />
             </View>
-            <Text style={styles.progressText}>{t('createVideo.uploading')} {Math.round(uploadProgress * 100)}%</Text>
+            <Text style={styles.progressText}>{t('createVideo.uploading')}</Text>
           </View>
         )}
 

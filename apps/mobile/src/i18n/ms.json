@@ -2669,7 +2669,17 @@
     "pickFromGallery": "Pick from gallery",
     "takePhoto": "Take photo",
     "subscribersOnly": "Subscribers only",
-    "closeFriendsOnly": "Close friends only"
+    "closeFriendsOnly": "Close friends only",
+    "filterNone": "Normal",
+    "filterWarm": "Warm",
+    "filterCool": "Cool",
+    "filterVintage": "Vintage",
+    "filterNoir": "Noir",
+    "filterEmerald": "Emerald",
+    "fontDefault": "Default",
+    "fontSerif": "Serif",
+    "fontMono": "Mono",
+    "fontBold": "Bold"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -2783,7 +2793,15 @@
     "failedToStartRehearsal": "Gagal memulakan latihan.",
     "datePickerPlaceholder": "Pemilih tarikh/masa akan muncul di sini",
     "datePickerHint": "Untuk kemudahan, kami akan menjadualkan 30 minit dari sekarang.",
-    "preparingStream": "Menyediakan siaran langsung..."
+    "preparingStream": "Menyediakan siaran langsung...",
+    "liveNotAvailable": "Live streaming requires WebRTC. You can schedule a stream for later."
+  },
+  "voicePost": {
+    "maxDuration": "Max {{time}}",
+    "tapToStop": "Tap to stop",
+    "tapToReRecord": "Tap to re-record",
+    "tapToRecord": "Tap to record",
+    "postVoice": "Post Voice"
   },
   "seriesEnhanced": {
     "episodes": "Episod",

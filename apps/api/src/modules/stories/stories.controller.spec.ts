@@ -153,4 +153,48 @@ describe('StoriesController', () => {
       expect(mockService.addStoryToHighlight).toHaveBeenCalledWith('story-1', 'hl-1', 'user-1');
     });
   });
+
+  describe('create — error cases', () => {
+    it('should propagate service errors on create', async () => {
+      mockService.create.mockRejectedValue(new Error('Upload failed'));
+      await expect(controller.create('user-1', { mediaUrl: 'url', mediaType: 'IMAGE' })).rejects.toThrow('Upload failed');
+    });
+  });
+
+  describe('delete — error cases', () => {
+    it('should propagate ForbiddenException when deleting others story', async () => {
+      const { ForbiddenException } = require('@nestjs/common');
+      mockService.delete.mockRejectedValue(new ForbiddenException('Not your story'));
+      await expect(controller.delete('story-1', 'other-user')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should propagate NotFoundException when story not found', async () => {
+      const { NotFoundException } = require('@nestjs/common');
+      mockService.delete.mockRejectedValue(new NotFoundException('Story not found'));
+      await expect(controller.delete('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('markViewed — error handling', () => {
+    it('should propagate error when story not found', async () => {
+      const { NotFoundException } = require('@nestjs/common');
+      mockService.markViewed.mockRejectedValue(new NotFoundException('Story not found'));
+      await expect(controller.markViewed('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('createHighlight — error handling', () => {
+    it('should propagate error on empty title', async () => {
+      mockService.createHighlight.mockRejectedValue(new Error('Title required'));
+      await expect(controller.createHighlight('user-1', { title: '', coverUrl: 'url' })).rejects.toThrow('Title required');
+    });
+  });
+
+  describe('deleteHighlight — error handling', () => {
+    it('should propagate error when not owner', async () => {
+      const { ForbiddenException } = require('@nestjs/common');
+      mockService.deleteHighlight.mockRejectedValue(new ForbiddenException('Not owner'));
+      await expect(controller.deleteHighlight('hl-1', 'other-user')).rejects.toThrow(ForbiddenException);
+    });
+  });
 });

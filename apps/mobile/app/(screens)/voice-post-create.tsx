@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import Animated, { FadeInUp, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { uploadApi, postsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -32,6 +33,13 @@ export default function VoicePostCreateScreen() {
 
   const pulseScale = useSharedValue(1);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulseScale.value }] }));
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const startRecording = useCallback(async () => {
     try {
@@ -79,9 +87,19 @@ export default function VoicePostCreateScreen() {
 
   const postMutation = useMutation({
     mutationFn: async () => {
-      // In production: upload audio to R2, then call API
-      // For now, simulate success
-      return { success: true };
+      if (!recordingUri) throw new Error('No recording');
+      // Upload audio to R2
+      const presign = await uploadApi.getPresignUrl('audio/m4a', 'voice-posts');
+      const response = await fetch(recordingUri);
+      const blob = await response.blob();
+      await fetch(presign.uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': 'audio/m4a' } });
+      // Create voice post via API
+      return postsApi.create({
+        postType: 'VOICE',
+        content: '',
+        mediaUrls: [presign.publicUrl],
+        mediaTypes: ['audio'],
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voice-posts'] });
@@ -106,7 +124,7 @@ export default function VoicePostCreateScreen() {
             <Text style={[styles.timer, isRecording && { color: colors.error }]}>
               {formatTime(duration)}
             </Text>
-            <Text style={styles.maxDuration}>Max {formatTime(MAX_DURATION)}</Text>
+            <Text style={styles.maxDuration}>{t('voicePost.maxDuration', { time: formatTime(MAX_DURATION) })}</Text>
           </Animated.View>
 
           {/* Waveform placeholder */}
@@ -145,7 +163,7 @@ export default function VoicePostCreateScreen() {
               </LinearGradient>
             </Pressable>
             <Text style={styles.recordHint}>
-              {isRecording ? 'Tap to stop' : recordingUri ? 'Tap to re-record' : 'Tap to record'}
+              {isRecording ? t('voicePost.tapToStop') : recordingUri ? t('voicePost.tapToReRecord') : t('voicePost.tapToRecord')}
             </Text>
           </Animated.View>
 
@@ -160,7 +178,7 @@ export default function VoicePostCreateScreen() {
               >
                 <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.postGradient}>
                   <Icon name="send" size="sm" color="#FFF" />
-                  <Text style={styles.postText}>Post Voice</Text>
+                  <Text style={styles.postText}>{t('voicePost.postVoice')}</Text>
                 </LinearGradient>
               </Pressable>
             </Animated.View>

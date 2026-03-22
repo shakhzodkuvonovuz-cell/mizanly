@@ -2670,7 +2670,17 @@
     "pickFromGallery": "Pick from gallery",
     "takePhoto": "Take photo",
     "subscribersOnly": "Subscribers only",
-    "closeFriendsOnly": "Close friends only"
+    "closeFriendsOnly": "Close friends only",
+    "filterNone": "Normal",
+    "filterWarm": "Warm",
+    "filterCool": "Cool",
+    "filterVintage": "Vintage",
+    "filterNoir": "Noir",
+    "filterEmerald": "Emerald",
+    "fontDefault": "Default",
+    "fontSerif": "Serif",
+    "fontMono": "Mono",
+    "fontBold": "Bold"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -2784,7 +2794,15 @@
     "failedToStartRehearsal": "Impossible de démarrer la répétition.",
     "datePickerPlaceholder": "Le sélecteur de date/heure apparaîtra ici",
     "datePickerHint": "Pour simplifier, la planification sera dans 30 minutes.",
-    "preparingStream": "Préparation de la diffusion..."
+    "preparingStream": "Préparation de la diffusion...",
+    "liveNotAvailable": "Live streaming requires WebRTC. You can schedule a stream for later."
+  },
+  "voicePost": {
+    "maxDuration": "Max {{time}}",
+    "tapToStop": "Tap to stop",
+    "tapToReRecord": "Tap to re-record",
+    "tapToRecord": "Tap to record",
+    "postVoice": "Post Voice"
   },
   "seriesEnhanced": {
     "episodes": "Épisodes",

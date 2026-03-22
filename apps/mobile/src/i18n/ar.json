@@ -2500,7 +2500,17 @@
     "pickFromGallery": "اختر من المعرض",
     "takePhoto": "التقط صورة",
     "subscribersOnly": "للمشتركين فقط",
-    "closeFriendsOnly": "الأصدقاء المقربون فقط"
+    "closeFriendsOnly": "الأصدقاء المقربون فقط",
+    "filterNone": "عادي",
+    "filterWarm": "دافئ",
+    "filterCool": "بارد",
+    "filterVintage": "كلاسيكي",
+    "filterNoir": "أسود",
+    "filterEmerald": "زمردي",
+    "fontDefault": "افتراضي",
+    "fontSerif": "Serif",
+    "fontMono": "Mono",
+    "fontBold": "غامق"
   },
   "windDown": {
     "title": "حان وقت الراحة",
@@ -2783,7 +2793,15 @@
     "failedToStartRehearsal": "فشل بدء التمرين.",
     "datePickerPlaceholder": "منتقي التاريخ/الوقت سيظهر هنا",
     "datePickerHint": "للتبسيط، سنقوم بالجدولة بعد 30 دقيقة من الآن.",
-    "preparingStream": "جارٍ تحضير البث المباشر..."
+    "preparingStream": "جارٍ تحضير البث المباشر...",
+    "liveNotAvailable": "يتطلب البث المباشر WebRTC. يمكنك جدولة بث لاحقاً."
+  },
+  "voicePost": {
+    "maxDuration": "الحد الأقصى {{time}}",
+    "tapToStop": "انقر للإيقاف",
+    "tapToReRecord": "انقر لإعادة التسجيل",
+    "tapToRecord": "انقر للتسجيل",
+    "postVoice": "نشر صوتي"
   },
   "seriesEnhanced": {
     "episodes": "الحلقات",

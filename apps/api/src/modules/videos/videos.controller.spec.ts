@@ -199,4 +199,40 @@ describe('VideosController', () => {
       expect(mockService.report).toHaveBeenCalledWith('vid-1', 'user-1', 'spam');
     });
   });
+
+  describe('create — error cases', () => {
+    it('should propagate service errors on create', async () => {
+      mockService.create.mockRejectedValue(new Error('Upload failed'));
+      await expect(controller.create('user-1', {} as any)).rejects.toThrow('Upload failed');
+    });
+  });
+
+  describe('delete — error cases', () => {
+    it('should propagate ForbiddenException when deleting others video', async () => {
+      const { ForbiddenException } = require('@nestjs/common');
+      mockService.delete.mockRejectedValue(new ForbiddenException('Not your video'));
+      await expect(controller.delete('vid-1', 'other-user')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should propagate NotFoundException when video not found', async () => {
+      const { NotFoundException } = require('@nestjs/common');
+      mockService.delete.mockRejectedValue(new NotFoundException('Video not found'));
+      await expect(controller.delete('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('comment — error cases', () => {
+    it('should propagate error on comment failure', async () => {
+      mockService.comment.mockRejectedValue(new Error('Comment failed'));
+      await expect(controller.comment('vid-1', 'user-1', { content: 'test' } as any)).rejects.toThrow('Comment failed');
+    });
+  });
+
+  describe('like — idempotent', () => {
+    it('should return success on duplicate like', async () => {
+      mockService.like.mockResolvedValue({ liked: true });
+      const result = await controller.like('vid-1', 'user-1');
+      expect(result).toEqual({ liked: true });
+    });
+  });
 });

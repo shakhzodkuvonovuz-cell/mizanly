@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
   ScrollView, Platform, Alert, Dimensions,
-  Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
@@ -238,7 +237,16 @@ export default function CreatePostScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Pressable onPress={() => {
+            if (content.trim() || media.length > 0) {
+              Alert.alert(t('createPost.discardTitle'), t('createPost.discardMessage'), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('createPost.discard'), style: 'destructive', onPress: () => router.back() },
+              ]);
+            } else {
+              router.back();
+            }
+          }} hitSlop={8}>
             <Icon name="x" size="md" color={colors.text.primary} />
           </Pressable>
           <Text style={styles.headerTitle}>{t('saf.newPost')}</Text>

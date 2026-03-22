@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   TextInput, FlatList, RefreshControl, Alert, ScrollView,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';

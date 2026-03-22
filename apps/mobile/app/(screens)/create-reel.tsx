@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
   ScrollView, Alert, Dimensions, Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -131,12 +132,12 @@ export default function CreateReelScreen() {
   };
 
   const extractHashtags = (text: string) => {
-    const matches = text.match(/#[a-zA-Z0-9_]+/g) || [];
+    const matches = text.match(/#[\w\u0600-\u06FF]+/g) || [];
     return matches.map(tag => tag.slice(1).toLowerCase());
   };
 
   const extractMentions = (text: string) => {
-    const matches = text.match(/@[a-zA-Z0-9_]+/g) || [];
+    const matches = text.match(/@[\w\u0600-\u06FF]+/g) || [];
     return matches.map(mention => mention.slice(1).toLowerCase());
   };
 
@@ -201,8 +202,15 @@ export default function CreateReelScreen() {
         });
         if (!videoUploadRes.ok) throw new Error('Video upload failed');
 
-        // Step 2: Upload thumbnail if we have one (for now reuse video URL)
-        let thumbnailUrl = presign.publicUrl; // TODO: generate thumbnail
+        // Step 2: Upload thumbnail if we have one
+        let thumbnailUrl = presign.publicUrl;
+        if (thumbnailUri) {
+          const thumbPresign = await uploadApi.getPresignUrl('image/jpeg', 'thumbnails');
+          const thumbResponse = await fetch(thumbnailUri);
+          const thumbBlob = await thumbResponse.blob();
+          await fetch(thumbPresign.uploadUrl, { method: 'PUT', body: thumbBlob, headers: { 'Content-Type': 'image/jpeg' } });
+          thumbnailUrl = thumbPresign.publicUrl;
+        }
 
         // Step 3: Create reel
         return await reelsApi.create({

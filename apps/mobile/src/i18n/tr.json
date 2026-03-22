@@ -2669,7 +2669,17 @@
     "pickFromGallery": "Galeriden seç",
     "takePhoto": "Fotoğraf çek",
     "subscribersOnly": "Yalnızca aboneler",
-    "closeFriendsOnly": "Yalnızca yakın arkadaşlar"
+    "closeFriendsOnly": "Yalnızca yakın arkadaşlar",
+    "filterNone": "Normal",
+    "filterWarm": "Sıcak",
+    "filterCool": "Soğuk",
+    "filterVintage": "Retro",
+    "filterNoir": "Siyah Beyaz",
+    "filterEmerald": "Zümrüt",
+    "fontDefault": "Varsayılan",
+    "fontSerif": "Serif",
+    "fontMono": "Mono",
+    "fontBold": "Kalın"
   },
   "windDown": {
     "title": "Dinlenme Zamanı",
@@ -2783,7 +2793,15 @@
     "failedToStartRehearsal": "Prova başlatılamadı.",
     "datePickerPlaceholder": "Tarih/saat seçici burada görünecek",
     "datePickerHint": "Basitlik için, şu andan itibaren 30 dakika sonrası planlanacak.",
-    "preparingStream": "Canlı yayın hazırlanıyor..."
+    "preparingStream": "Canlı yayın hazırlanıyor...",
+    "liveNotAvailable": "Canlı yayın WebRTC gerektirir. Daha sonrası için bir yayın planlayabilirsiniz."
+  },
+  "voicePost": {
+    "maxDuration": "Maks {{time}}",
+    "tapToStop": "Durdurmak için dokun",
+    "tapToReRecord": "Yeniden kaydetmek için dokun",
+    "tapToRecord": "Kaydetmek için dokun",
+    "postVoice": "Sesli Paylaş"
   },
   "seriesEnhanced": {
     "episodes": "Bölümler",

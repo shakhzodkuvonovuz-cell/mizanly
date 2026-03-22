@@ -9,7 +9,6 @@ import {
   TextInput,
   Switch,
   Dimensions,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,7 +26,10 @@ import type { Community } from '@/types/communities';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Alert , Pressable } from 'react-native';
+import { Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -55,6 +57,7 @@ export default function CreateEventScreen() {
   const [reminder1h, setReminder1h] = useState(true);
   const [reminder1d, setReminder1d] = useState(true);
   const [hasCover, setHasCover] = useState(false);
+  const [coverUri, setCoverUri] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +71,19 @@ export default function CreateEventScreen() {
   const [tempDate, setTempDate] = useState(new Date());
   const [communities, setCommunities] = useState<Community[]>([]);
   const [communitiesLoading, setCommunitiesLoading] = useState(false);
+
+  const pickCoverPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setCoverUri(result.assets[0].uri);
+      setHasCover(true);
+    }
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -175,28 +191,30 @@ export default function CreateEventScreen() {
           <Pressable
             accessibilityRole="button"
             style={[styles.coverContainer, hasCover && styles.coverHasImage]}
-            onPress={() => setHasCover(!hasCover)}
-                     >
-            <LinearGradient
-              colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-              style={styles.coverGradient}
-            >
-              <View style={styles.coverContent}>
-                <Icon name="camera" size={48} color={colors.gold} />
-                <Text style={styles.coverTitle}>
-                  {hasCover ? t('events.changeCoverPhoto') : t('events.addCoverPhoto')}
-                </Text>
-                {!hasCover && (
+            onPress={pickCoverPhoto}
+          >
+            {coverUri ? (
+              <>
+                <Image source={{ uri: coverUri }} style={styles.coverGradient} contentFit="cover" />
+                <View style={styles.coverOverlay}>
+                  <Pressable style={[styles.changeButton, { backgroundColor: tc.surface }]} onPress={pickCoverPhoto}>
+                    <Text style={styles.changeText}>{t('common.change')}</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              <LinearGradient
+                colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                style={styles.coverGradient}
+              >
+                <View style={styles.coverContent}>
+                  <Icon name="camera" size={48} color={colors.gold} />
+                  <Text style={styles.coverTitle}>
+                    {t('events.addCoverPhoto')}
+                  </Text>
                   <Text style={styles.coverHint}>{t('events.tapToUpload')}</Text>
-                )}
-              </View>
-            </LinearGradient>
-            {hasCover && (
-              <View style={styles.coverOverlay}>
-                <Pressable style={[styles.changeButton, { backgroundColor: tc.surface }]}>
-                  <Text style={styles.changeText}>{t('common.change')}</Text>
-                </Pressable>
-              </View>
+                </View>
+              </LinearGradient>
             )}
           </Pressable>
         </Animated.View>
@@ -566,7 +584,10 @@ export default function CreateEventScreen() {
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
-        <Pressable>
+        <Pressable onPress={async () => {
+          await AsyncStorage.setItem('event-draft', JSON.stringify({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity }));
+          Alert.alert(t('common.saved'));
+        }}>
           <Text style={styles.draftText}>{t('events.saveDraft')}</Text>
         </Pressable>
         <Pressable onPress={handleSubmit} disabled={submitting}>
@@ -579,21 +600,33 @@ export default function CreateEventScreen() {
         </Pressable>
       </View>
 
-      {/* Date Picker Bottom Sheet */}
+      {/* Date Picker Bottom Sheet — @react-native-community/datetimepicker not installed, using quick-select options */}
       <BottomSheet visible={showDatePicker !== null} onClose={() => setShowDatePicker(null)} snapPoint={0.6}>
         <Text style={styles.sheetTitle}>{t('events.selectDateTime')}</Text>
         <View style={styles.datePickerPlaceholder}>
           <Text style={styles.datePickerText}>
-            {t('events.datePickerPlaceholder')}
+            {showDatePicker === 'start' ? t('events.selectStartDate') : t('events.selectEndDate')}
           </Text>
-          <Text style={styles.datePickerHint}>
-            {t('events.datePickerHint')}
-          </Text>
-          <Pressable style={styles.confirmButton} onPress={() => handleDateSelect(tempDate)}>
-            <LinearGradient colors={[colors.emerald, colors.emeraldDark]} style={styles.confirmButtonGradient}>
-              <Text style={styles.confirmButtonText}>{t('common.confirm')}</Text>
-            </LinearGradient>
-          </Pressable>
+          {[
+            { label: t('events.inOneHour'), hours: 1 },
+            { label: t('events.inTwoHours'), hours: 2 },
+            { label: t('events.tomorrow'), hours: 24 },
+            { label: t('events.nextWeek'), hours: 168 },
+          ].map((option) => {
+            const optionDate = new Date();
+            optionDate.setHours(optionDate.getHours() + option.hours);
+            return (
+              <Pressable
+                key={option.hours}
+                style={styles.confirmButton}
+                onPress={() => handleDateSelect(optionDate)}
+              >
+                <LinearGradient colors={colors.gradient.cardDark} style={styles.confirmButtonGradient}>
+                  <Text style={styles.confirmButtonText}>{option.label} — {formatDateTime(optionDate)}</Text>
+                </LinearGradient>
+              </Pressable>
+            );
+          })}
         </View>
       </BottomSheet>
     </SafeAreaView>

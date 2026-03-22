@@ -32,7 +32,7 @@ export default function SchedulePostScreen() {
   const now = new Date();
   const [selectedDate, setSelectedDate] = useState(now.getDate() + 2);
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
-  const [currentYear] = useState(now.getFullYear());
+  const [currentYear, setCurrentYear] = useState(now.getFullYear());
   const [selectedHour, setSelectedHour] = useState(6);
   const [selectedMinute, setSelectedMinute] = useState(0);
   const [selectedAmPm, setSelectedAmPm] = useState<AmPm>('PM');
@@ -68,21 +68,33 @@ export default function SchedulePostScreen() {
   const changeMonth = (delta: number) => {
     setCurrentMonth((prev) => {
       let newMonth = prev + delta;
-      if (newMonth > 11) newMonth = 0;
-      if (newMonth < 0) newMonth = 11;
+      if (newMonth > 11) { newMonth = 0; setCurrentYear(y => y + 1); }
+      if (newMonth < 0) { newMonth = 11; setCurrentYear(y => y - 1); }
       return newMonth;
     });
   };
 
+  const getNextWeekend = () => {
+    const d = new Date();
+    const daysUntilSat = (6 - d.getDay() + 7) % 7 || 7;
+    d.setDate(d.getDate() + daysUntilSat);
+    return d.getDate();
+  };
+  const getNextWeek = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.getDate();
+  };
   const quickDates = [
-    { label: t('common.tomorrow'), day: today + 1 },
-    { label: t('screens.schedule-post.thisWeekend'), day: 15 },
-    { label: t('screens.schedule-post.nextWeek'), day: 20 },
+    { label: t('common.tomorrow'), day: new Date(now.getTime() + 86400000).getDate() },
+    { label: t('screens.schedule-post.thisWeekend'), day: getNextWeekend() },
+    { label: t('screens.schedule-post.nextWeek'), day: getNextWeek() },
   ];
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
+  // Note: Backend auto-publisher not yet implemented — scheduled posts require a BullMQ cron job
   const handleSchedule = async () => {
     setIsScheduling(true);
     haptic.medium();
@@ -252,12 +264,12 @@ export default function SchedulePostScreen() {
                 {/* Day cells */}
                 {Array.from({ length: daysInMonth }, (_, i) => {
                   const day = i + 1;
-                  const isToday = day === today && currentMonth === 2;
+                  const isToday = day === today && currentMonth === now.getMonth() && currentYear === now.getFullYear();
                   const isSelected = day === selectedDate;
-                  const isPast = day < today && currentMonth === 2;
+                  const isPast = (currentYear < now.getFullYear()) || (currentYear === now.getFullYear() && currentMonth < now.getMonth()) || (currentYear === now.getFullYear() && currentMonth === now.getMonth() && day < today);
 
                   return (
-                      <Pressable accessibilityRole="button" accessibilityRole="button"
+                      <Pressable accessibilityRole="button"
                         key={day}
                         style={styles.calendarDay}
                         onPress={() => !isPast && setSelectedDate(day)}
@@ -286,7 +298,7 @@ export default function SchedulePostScreen() {
               {/* Quick Date Buttons */}
               <View style={styles.quickDates}>
                 {quickDates.map((quick) => (
-                  <Pressable accessibilityRole="button" accessibilityRole="button"
+                  <Pressable accessibilityRole="button"
                     key={quick.label}
                     style={styles.quickDateButton}
                     onPress={() => setSelectedDate(quick.day)}
@@ -336,7 +348,7 @@ export default function SchedulePostScreen() {
               <Text style={styles.timeLabel}>{t('screens.schedule-live.hour')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hourScroll}>
                 {hours.map((hour) => (
-                  <Pressable accessibilityRole="button" accessibilityRole="button"
+                  <Pressable accessibilityRole="button"
                     key={hour}
                     style={styles.timeOptionButton}
                     onPress={() => setSelectedHour(hour)}
@@ -363,7 +375,7 @@ export default function SchedulePostScreen() {
               <Text style={styles.timeLabel}>{t('screens.schedule-live.minute')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.minuteScroll}>
                 {minutes.map((minute) => (
-                  <Pressable accessibilityRole="button" accessibilityRole="button"
+                  <Pressable accessibilityRole="button"
                     key={minute}
                     style={styles.timeOptionButton}
                     onPress={() => setSelectedMinute(minute)}
@@ -389,7 +401,7 @@ export default function SchedulePostScreen() {
               {/* AM/PM Toggle */}
               <View style={styles.ampmContainer}>
                 {(['AM', 'PM'] as AmPm[]).map((ampm) => (
-                  <Pressable accessibilityRole="button" accessibilityRole="button"
+                  <Pressable accessibilityRole="button"
                     key={ampm}
                     style={styles.ampmButton}
                     onPress={() => setSelectedAmPm(ampm)}
@@ -437,7 +449,7 @@ export default function SchedulePostScreen() {
                 <Icon name="globe" size="sm" color={colors.text.secondary} />
                 <View style={styles.timezoneInfo}>
                   <Text style={styles.timezoneLabel}>{t('screens.schedule-post.timezone')}</Text>
-                  <Text style={styles.timezoneValue}>UTC+3 (Arabia Standard Time)</Text>
+                  <Text style={styles.timezoneValue}>{`UTC${-(new Date().getTimezoneOffset() / 60) >= 0 ? '+' : ''}${-(new Date().getTimezoneOffset() / 60)} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`}</Text>
                 </View>
               </View>
             </LinearGradient>

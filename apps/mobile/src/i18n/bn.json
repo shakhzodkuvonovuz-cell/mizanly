@@ -2669,7 +2669,17 @@
     "pickFromGallery": "Pick from gallery",
     "takePhoto": "Take photo",
     "subscribersOnly": "Subscribers only",
-    "closeFriendsOnly": "Close friends only"
+    "closeFriendsOnly": "Close friends only",
+    "filterNone": "Normal",
+    "filterWarm": "Warm",
+    "filterCool": "Cool",
+    "filterVintage": "Vintage",
+    "filterNoir": "Noir",
+    "filterEmerald": "Emerald",
+    "fontDefault": "Default",
+    "fontSerif": "Serif",
+    "fontMono": "Mono",
+    "fontBold": "Bold"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -2783,7 +2793,15 @@
     "failedToStartRehearsal": "রিহার্সাল শুরু করতে ব্যর্থ।",
     "datePickerPlaceholder": "তারিখ/সময় পিকার এখানে দেখা যাবে",
     "datePickerHint": "সরলতার জন্য, এখন থেকে ৩০ মিনিট পরে সময়সূচী করা হবে।",
-    "preparingStream": "লাইভ স্ট্রিম প্রস্তুত হচ্ছে..."
+    "preparingStream": "লাইভ স্ট্রিম প্রস্তুত হচ্ছে...",
+    "liveNotAvailable": "Live streaming requires WebRTC. You can schedule a stream for later."
+  },
+  "voicePost": {
+    "maxDuration": "Max {{time}}",
+    "tapToStop": "Tap to stop",
+    "tapToReRecord": "Tap to re-record",
+    "tapToRecord": "Tap to record",
+    "postVoice": "Post Voice"
   },
   "seriesEnhanced": {
     "episodes": "পর্বসমূহ",

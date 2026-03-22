@@ -111,6 +111,11 @@ export default function GoLiveScreen() {
 
   const handleGoLive = () => {
     if (!canGoLive) return;
+    // WebRTC not yet installed — only scheduled streams are supported
+    if (!isScheduled) {
+      Alert.alert(t('common.comingSoon'), t('live.liveNotAvailable'));
+      return;
+    }
     createMutation.mutate();
   };
 
