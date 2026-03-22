@@ -77,8 +77,15 @@ export function useAmbientColor(imageUri: string | undefined | null) {
         }
 
         // Darken extracted colors for ambient use (30% opacity)
-        const dom = `${primary}4D`;
-        const sec = `${accent}33`;
+        // Only append hex alpha to hex colors; non-hex colors (rgb, hsl) pass through as-is
+        const normalizePrimary = primary.startsWith('#') ? primary : `#${primary}`;
+        const normalizeAccent = accent.startsWith('#') ? accent : `#${accent}`;
+        const dom = primary.startsWith('#') || /^[0-9a-fA-F]{6}$/.test(primary)
+          ? `${normalizePrimary}4D`
+          : primary;
+        const sec = accent.startsWith('#') || /^[0-9a-fA-F]{6}$/.test(accent)
+          ? `${normalizeAccent}33`
+          : accent;
 
         colorCache.set(imageUri, { dominant: dom, secondary: sec });
         if (mountedRef.current) {

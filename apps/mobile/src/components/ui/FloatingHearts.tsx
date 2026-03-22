@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { colors } from '@/theme';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface HeartParticle {
   id: number;
@@ -87,6 +88,7 @@ export function FloatingHearts({ trigger, color, count = 8 }: FloatingHeartsProp
   const prevTrigger = useRef(trigger);
   const nextIdRef = useRef(0);
   const heartColor = color ?? colors.like;
+  const reducedMotion = useReducedMotion();
 
   const removeParticle = useCallback((id: number) => {
     setParticles((prev) => prev.filter((p) => p.id !== id));
@@ -94,6 +96,12 @@ export function FloatingHearts({ trigger, color, count = 8 }: FloatingHeartsProp
 
   useEffect(() => {
     if (trigger > prevTrigger.current) {
+      // Skip particle animation when reduced motion is enabled
+      if (reducedMotion) {
+        prevTrigger.current = trigger;
+        return;
+      }
+
       const newParticles: HeartParticle[] = [];
       for (let i = 0; i < count; i++) {
         newParticles.push({
@@ -107,7 +115,7 @@ export function FloatingHearts({ trigger, color, count = 8 }: FloatingHeartsProp
       setParticles((prev) => [...prev, ...newParticles]);
     }
     prevTrigger.current = trigger;
-  }, [trigger, count]);
+  }, [trigger, count, reducedMotion]);
 
   if (particles.length === 0) return null;
 

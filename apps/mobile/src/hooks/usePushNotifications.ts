@@ -70,19 +70,27 @@ export function usePushNotifications(isSignedIn: boolean) {
           });
         }
 
-        const tokenData = await Notifications.getExpoPushTokenAsync({
-          projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-        });
+        const projectId = process.env.EXPO_PUBLIC_PROJECT_ID;
+        if (!projectId || projectId === 'SET_ME') {
+          if (__DEV__) console.warn('[Push] EXPO_PUBLIC_PROJECT_ID not configured — push notifications disabled');
+          return;
+        }
+        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
 
         const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
         await devicesApi.register(tokenData.data, platform);
         registered.current = true;
 
-        // Listen for token refreshes (e.g. after app reinstall, OS token rotation)
-        tokenSubscription.current = Notifications.addPushTokenListener(async (newToken) => {
+        // Listen for native token refreshes (e.g. after app reinstall, OS token rotation).
+        // The native token (APNs/FCM) is not what Expo Push API uses — we need to re-fetch
+        // the Expo push token which wraps the native token.
+        tokenSubscription.current = Notifications.addPushTokenListener(async () => {
           try {
+            const refreshedToken = await Notifications.getExpoPushTokenAsync({
+              projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+            });
             const newPlatform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
-            await devicesApi.register(newToken.data, newPlatform);
+            await devicesApi.register(refreshedToken.data, newPlatform);
           } catch {
             // Token refresh registration is non-critical
           }

@@ -6,6 +6,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import type { ViewStyle } from 'react-native';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface FadeInProps {
   children: React.ReactNode;
@@ -22,9 +23,16 @@ interface FadeInProps {
  *   {isLoading ? <Skeleton.PostCard /> : <FadeIn><PostCard /></FadeIn>}
  */
 export function FadeIn({ children, duration = 300, delay = 0, style }: FadeInProps) {
-  const opacity = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+  const opacity = useSharedValue(reducedMotion ? 1 : 0);
 
   useEffect(() => {
+    // Skip animation if reduced motion is enabled — content is already visible
+    if (reducedMotion) {
+      opacity.value = 1;
+      return;
+    }
+
     const startFade = () => {
       opacity.value = withTiming(1, {
         duration,
@@ -36,7 +44,7 @@ export function FadeIn({ children, duration = 300, delay = 0, style }: FadeInPro
       return () => clearTimeout(timer);
     }
     startFade();
-  }, [opacity, duration, delay]);
+  }, [opacity, duration, delay, reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

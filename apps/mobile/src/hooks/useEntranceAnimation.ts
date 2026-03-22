@@ -29,6 +29,9 @@ export function useEntranceAnimation(options?: EntranceAnimationOptions) {
     easing: Easing.out(Easing.cubic),
   };
 
+  // Intentional fire-once pattern: entrance animation should only run on mount,
+  // not re-trigger when delay/duration/translateY options change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     opacity.value = withDelay(delay, withTiming(1, timingConfig));
     translateY.value = withDelay(delay, withTiming(0, timingConfig));

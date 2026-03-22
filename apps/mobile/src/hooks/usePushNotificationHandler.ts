@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { navigate } from '@/utils/navigation';
 
@@ -88,8 +88,9 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
         // Listener for notification tap response (app opened from background/quit)
         responseListener.current = Notifications.addNotificationResponseReceivedListener(
           (response) => {
-            const data = response.notification.request.content.data as NotificationData;
-            handleNotificationNavigation(data);
+            const data = response.notification.request.content.data;
+            if (!data || typeof data !== 'object') return;
+            handleNotificationNavigation(data as NotificationData);
           }
         );
       } catch {
@@ -113,7 +114,7 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
   /**
    * Navigate to appropriate screen based on notification type
    */
-  const handleNotificationNavigation = (data: NotificationData) => {
+  const handleNotificationNavigation = useCallback((data: NotificationData) => {
     if (!data.type) {
       // Fallback to notifications screen
       navigate('/(screens)/notifications');
@@ -215,14 +216,14 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
         navigate('/(screens)/notifications');
         break;
     }
-  };
+  }, []);
 
   /**
    * Manual trigger for notification navigation (useful for deep links)
    */
-  const navigateFromNotification = (data: NotificationData) => {
+  const navigateFromNotification = useCallback((data: NotificationData) => {
     handleNotificationNavigation(data);
-  };
+  }, [handleNotificationNavigation]);
 
   return { navigateFromNotification };
 }

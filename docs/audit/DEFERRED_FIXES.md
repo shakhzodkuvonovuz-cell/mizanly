@@ -671,6 +671,8 @@ F1 (JSON.parse — file 30), F3 (isRTL — file 26), F4 (changeLanguage — file
 ### FIXED directly (30):
 F2 (biometrics bypass → return false), F5/F6/F9-F12 (deleted 4 dead hooks: useBackgroundUpload, useFpsMonitor, useVideoPreload, usePulseGlow — 238 lines removed), F13/F14 (ambient color LRU at 50), F18/F19 (Islamic theme minute timer), F22 (haptic useCallback), F27 (push platform handles web), F29 (TTS resume→restart), F38 (network null→not offline), F44 (push re-register on sign-in), F46/F47 (TTS LANGUAGE_MAP wired), F50 (Esc preventDefault only when canGoBack)
 
-### NOTED (17 — minor/dead/architectural):
-- F7/F8 usePayment/useReducedMotion — kept for future wiring
-- F16/F17/F24/F25/F26/F28/F30/F33-F52 — P3 items, platform limits, dead hook internals
+### FIXED in second pass (17 additional — ALL remaining):
+F7 (usePayment deleted — 122 lines dead code), F8 (useReducedMotion wired into FadeIn/FloatingHearts/DoubleTapHeart — accessibility animations now respect system preference), F16 (useEntranceAnimation: eslint-disable with explanation), F23 (useChatLock: all 5 functions wrapped in useCallback), F24 (usePiP: removed redundant double-guard), F25 (usePiP: iOS behavior documented), F26 (usePushNotifications: projectId validated, fails gracefully if SET_ME), F28 (usePushNotificationHandler: handleNotificationNavigation + navigateFromNotification wrapped in useCallback), F30 (useTTS cycleSpeed: ignoringStopRef prevents onStopped race), F34 (useAmbientColor: hex normalization before alpha append), F39 (useIsWeb: IS_WEB constant exported alongside hook), F42 (usePushNotificationHandler: null guard before cast), F45 (usePushNotifications: token refresh re-fetches Expo token), F48 (useTTS: isQuranText requires 2+ pattern matches)
+
+### NOTED (0 remaining):
+All 52 findings addressed.

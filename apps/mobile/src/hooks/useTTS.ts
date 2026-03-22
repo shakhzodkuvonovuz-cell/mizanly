@@ -25,18 +25,22 @@ function isArabicText(text: string): boolean {
   return arabicChars > text.length * 0.3;
 }
 
-// Simple Quran verse detection (بسم الله, surah references, ayah numbering patterns)
+// Quran verse detection — requires at least 2 pattern matches to avoid false positives.
+// Single patterns like (2:255) or بِسْمِ اللَّهِ alone are too broad and match
+// non-Quran text (e.g., version numbers, common Islamic greetings).
 function isQuranText(text: string): boolean {
   const quranPatterns = [
     /سورة/,            // "Surah" in Arabic
     /آية/,              // "Ayah" in Arabic
-    /﷽/,               // Bismillah Unicode
-    /بِسْمِ اللَّهِ/,    // Bismillah
-    /\(\d+:\d+\)/,      // (2:255) style references
+    /﷽/,               // Bismillah Unicode ligature
+    /بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ/, // Full Bismillah (more specific than partial)
+    /\(\d+:\d+\)/,      // (2:255) style verse references
     /Surah\s+\w+/i,     // English surah references
     /Quran\s+\d+/i,     // Quran chapter references
   ];
-  return quranPatterns.some((p) => p.test(text));
+  const matchCount = quranPatterns.filter((p) => p.test(text)).length;
+  // Require at least 2 matching patterns to classify as Quran text
+  return matchCount >= 2;
 }
 
 function detectLanguage(text: string): string {
@@ -71,6 +75,9 @@ export function useTTS() {
 
   const currentSpeedRef = useRef(ttsSpeed);
   currentSpeedRef.current = ttsSpeed;
+  // Flag to suppress the onStopped callback during speed cycling (avoids race condition
+  // where Speech.stop()'s onStopped fires and sets ttsPlaying=false before Speech.speak starts)
+  const ignoringStopRef = useRef(false);
 
   // Stop speech when component unmounts while speaking
   useEffect(() => {
@@ -102,6 +109,11 @@ export function useTTS() {
           setTTSPlaying(false);
         },
         onStopped: () => {
+          // Ignore stop events triggered by cycleSpeed — it will immediately re-speak
+          if (ignoringStopRef.current) {
+            ignoringStopRef.current = false;
+            return;
+          }
           setTTSPlaying(false);
         },
         onError: () => {
@@ -145,13 +157,21 @@ export function useTTS() {
 
     // If currently playing, restart with new speed
     if (ttsPlaying && ttsText) {
+      // Set flag so the onStopped from Speech.stop() doesn't reset ttsPlaying
+      ignoringStopRef.current = true;
       Speech.stop();
       const language = detectLanguage(ttsText);
       Speech.speak(ttsText, {
         language,
         rate: newSpeed,
         onDone: () => setTTSPlaying(false),
-        onStopped: () => setTTSPlaying(false),
+        onStopped: () => {
+          if (ignoringStopRef.current) {
+            ignoringStopRef.current = false;
+            return;
+          }
+          setTTSPlaying(false);
+        },
         onError: () => setTTSPlaying(false),
       });
     }

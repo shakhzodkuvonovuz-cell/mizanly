@@ -34,7 +34,8 @@ export function usePiP({ isPlaying, onPiPChange }: PiPConfig) {
         };
         NativeModules.PiPModule?.enterPiPMode?.();
       }
-      // iOS: handled via expo-av useNativeControls
+      // iOS: expo-av handles PiP natively via useNativeControls prop on the Video component.
+      // This state update is for tracking only — the actual PiP window is managed by AVPlayerViewController.
       setIsPiPActive(true);
       onPiPChangeRef.current?.(true);
     } catch {
@@ -50,14 +51,15 @@ export function usePiP({ isPlaying, onPiPChange }: PiPConfig) {
   // Auto-enter PiP when app goes to background while video is playing
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'background' && isPlaying && isPiPSupported) {
+      // No need to check isPlaying/isPiPSupported here — enterPiP already guards both
+      if (state === 'background') {
         enterPiP();
       } else if (state === 'active' && isPiPActive) {
         exitPiP();
       }
     });
     return () => subscription.remove();
-  }, [isPlaying, isPiPActive, isPiPSupported, enterPiP, exitPiP]);
+  }, [isPiPActive, enterPiP, exitPiP]);
 
   return { isPiPActive, isPiPSupported, enterPiP, exitPiP };
 }
