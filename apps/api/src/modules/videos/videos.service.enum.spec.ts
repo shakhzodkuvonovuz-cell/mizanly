@@ -44,18 +44,18 @@ describe('VideosService — enum validation', () => {
   it('should accept valid category EDUCATION', async () => {
     prisma.video.findMany.mockResolvedValue([]);
     const result = await service.getFeed('u1', 'EDUCATION');
-    expect(result).toBeDefined();
+    expect(result).toEqual({ data: [], meta: { cursor: null, hasMore: false } });
   });
 
   it('should accept category "all" (no filter)', async () => {
     prisma.video.findMany.mockResolvedValue([]);
     const result = await service.getFeed('u1', 'all');
-    expect(result).toBeDefined();
+    expect(result).toEqual({ data: [], meta: { cursor: null, hasMore: false } });
   });
 
   it('should accept no category', async () => {
     prisma.video.findMany.mockResolvedValue([]);
     const result = await service.getFeed('u1');
-    expect(result).toBeDefined();
+    expect(result).toEqual({ data: [], meta: { cursor: null, hasMore: false } });
   });
 });

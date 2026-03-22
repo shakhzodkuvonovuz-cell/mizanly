@@ -203,6 +203,9 @@ export class FeedService {
     return [...excluded];
   }
 
+  // PERF TODO: Offset pagination with in-app scoring refetches all rows per page.
+  // Fix: Move scoring to SQL (ORDER BY engagement_score DESC, id), use keyset cursor.
+  // Impact: O(n) per page → O(log n). Priority: when daily active users > 10K.
   /**
    * Trending feed — posts from last 7 days scored by engagement rate.
    * Works without auth (for anonymous browsing + new user cold start).

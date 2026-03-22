@@ -166,7 +166,7 @@ class EncryptionService {
       }
 
       // If no senderId or decryption failed, key is unavailable
-      console.debug(`[Encryption] Cannot decrypt key for conversation ${conversationId} — sender key unavailable`);
+      if (__DEV__) console.debug(`[Encryption] Cannot decrypt key for conversation ${conversationId} — sender key unavailable`);
       return null;
     } catch {
       return null;

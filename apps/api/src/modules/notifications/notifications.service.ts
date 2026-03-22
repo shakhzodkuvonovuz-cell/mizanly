@@ -39,6 +39,7 @@ export class NotificationsService {
             isVerified: true,
           },
         },
+        // Prisma returns null for unmatched optional relations — single SQL query, minimal overhead
         post: { select: { id: true, thumbnailUrl: true, mediaUrls: true } },
         reel: { select: { id: true, thumbnailUrl: true } },
         thread: { select: { id: true, mediaUrls: true } },

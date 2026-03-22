@@ -116,6 +116,10 @@ export class PostsService {
         ...mutes.map((m) => m.mutedId),
       ];
 
+      // PERF TODO: For-you feed re-scores all 200 candidate posts per page request.
+      // Fix: Cache scored results in Redis with 60s TTL, paginate from cache.
+      // Impact: CPU reduction ~80% for feed requests. Priority: when DAU > 10K.
+
       // Fetch recent posts from last 72 hours
       const recentPosts = await this.prisma.post.findMany({
         where: {

@@ -42,18 +42,18 @@ describe('LiveService — enum validation', () => {
   it('should accept valid liveType VIDEO_STREAM', async () => {
     prisma.liveSession.findMany.mockResolvedValue([]);
     const result = await service.getActive('VIDEO_STREAM');
-    expect(result).toBeDefined();
+    expect(result).toEqual({ data: [], meta: { cursor: null, hasMore: false } });
   });
 
   it('should accept valid liveType AUDIO_SPACE', async () => {
     prisma.liveSession.findMany.mockResolvedValue([]);
     const result = await service.getActive('AUDIO_SPACE');
-    expect(result).toBeDefined();
+    expect(result).toEqual({ data: [], meta: { cursor: null, hasMore: false } });
   });
 
   it('should accept undefined liveType (no filter)', async () => {
     prisma.liveSession.findMany.mockResolvedValue([]);
     const result = await service.getActive();
-    expect(result).toBeDefined();
+    expect(result).toEqual({ data: [], meta: { cursor: null, hasMore: false } });
   });
 });

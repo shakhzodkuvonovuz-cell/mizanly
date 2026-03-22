@@ -147,7 +147,7 @@
 - [ ] **SCH-E30-41** (12 more minor enum candidates across CoinTransaction, Waqf, etc.)
 
 ### Missing Constraints
-- [ ] **SCH-U1** MessageReaction needs `@@unique([userId, messageId])` or composite PK — allows duplicate reactions
+- [x] ~~**SCH-U1**~~ FALSE FINDING — MessageReaction already has @@unique([messageId, userId, emoji])
 
 ### GPS Precision
 - [ ] **SCH-F1** Float lat/lng on HalalBusiness, HalalRestaurant, MosqueCommunity — should be `Decimal(10,8)` for sub-meter accuracy (8 fields total)
@@ -623,12 +623,12 @@ The explore agent only searched `/src/` directory and missed `/app/` where scree
 
 | Severity | Count | Examples |
 |----------|-------|---------|
-| **CRITICAL** | 12 | socket.io not integrated, 5 languages untranslated, corrupted icons, CORS localhost |
+| **CRITICAL** | 10 | 5 languages untranslated, corrupted icons, CORS localhost, unbounded feed queries |
 | **HIGH** | 25 | npm vulns (18), unbounded queries (4), deployment config (3) |
 | **MEDIUM** | 67 | Enum candidates (41), silent catches, test gaps, component adoption, accessibility |
 | **LOW** | 52 | Touch targets, console.log, RTL properties, GPS precision, extra i18n keys |
 | **PASSING** | 222 | Module wiring, buttons, deep linking, error boundaries, offline, loading, empty states |
-| **TOTAL** | ~378 | |
+| **TOTAL** | ~376 | |
 
 ---
 
@@ -636,12 +636,44 @@ The explore agent only searched `/src/` directory and missed `/app/` where scree
 
 | # | ID | Fix | Effort |
 |---|-----|-----|--------|
-| 1 | WS-C1 | Integrate socket.io-client on mobile for real-time chat | 4-8 hours |
-| 2 | DEP-C2 + APP-1 | Create proper icon + splash assets | 1 hour |
-| 3 | DEP-C4 | Fix CORS for production domains | 5 min |
-| 4 | DEP-C5 | Fix railway.json NODE_ENV | 5 min |
-| 5 | PKG-H1-H18 | npm audit fix (18 HIGH vulns) | 30 min |
-| 6 | PERF-C1-C4 | Cap unbounded queries take:5000→take:100 | 30 min |
-| 7 | TST-C1-C4 | Write tests for ClerkAuthGuard, Meilisearch, Email, OptionalGuard | 4 hours |
-| 8 | SEC-CATCH | Replace 79 silent .catch(()=>{}) with logging | 2 hours |
-| 9 | CMP-M1 | Replace 47 raw RefreshControl with BrandedRefreshControl | 2 hours |
+| 1 | DEP-C2 + APP-1 | Create proper icon + splash assets | 1 hour |
+| 2 | DEP-C4 | Fix CORS for production domains | 5 min |
+| 3 | DEP-C5 | Fix railway.json NODE_ENV | 5 min |
+| 4 | PKG-H1-H18 | npm audit fix (18 HIGH vulns) | 30 min |
+| 5 | PERF-C1-C4 | Cap unbounded queries take:5000→take:100 | 30 min |
+| 6 | TST-C1-C4 | Write tests for ClerkAuthGuard, Meilisearch, Email, OptionalGuard | 4 hours |
+| 7 | SEC-CATCH | Replace remaining silent .catch(()=>{}) with logging | 2 hours |
+| 8 | I18N-C1-C5 | Translate 5 languages (requires human translator) | Days |
+| 9 | SCH-E1-E41 | Convert 41 String fields to Prisma enums | 4 hours |
+
+---
+
+## SESSION PROGRESS (Batch 3 completed)
+
+### Fixed in this session:
+- [x] 189→0 TypeScript errors (38 files)
+- [x] 4,277→4,422 tests (+145 new tests)
+- [x] 47→0 raw RefreshControl
+- [x] 21→0 silent backend catches (replaced with logging)
+- [x] 22→0 missing a11y i18n keys (103 keys in all 8 langs)
+- [x] 20→0 hardcoded English a11y labels
+- [x] 7 mobile silent catch bugs fixed
+- [x] Socket.io: reconnection + token refresh + event alignment (4 screens)
+- [x] SOCKET_URL deduplicated to shared utility
+- [x] Stale root docs deleted (13 files)
+- [x] Stale docs/ files deleted (~24 files)
+- [x] Plan docs archived to docs/archive/
+- [x] 7 ungated console statements gated behind __DEV__
+- [x] Moderation verifyAdmin check added
+- [x] RetentionController tests expanded
+- [x] Enum test anti-patterns fixed
+- [x] Feed pagination documented with fix path
+- [x] Server start verified (0 errors)
+- [x] Prisma schema → DB sync verified
+
+### False findings corrected:
+- GIT-C1: .env not in git (was never committed)
+- DEP-C1: .env not tracked
+- WS-C1: Socket.io IS integrated across 4 screens
+- SCH-U1: MessageReaction already has @@unique
+- API-C1: Empty controller prefixes are correct (mobile calls root paths)

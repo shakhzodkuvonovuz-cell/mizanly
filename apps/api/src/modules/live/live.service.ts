@@ -80,6 +80,7 @@ export class LiveService {
 
     const sessions = await this.prisma.liveSession.findMany({
       where,
+      // Host is always required — lightweight scalar select, no N+1
       include: { host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
       orderBy: { currentViewers: 'desc' },
       take: limit + 1,
