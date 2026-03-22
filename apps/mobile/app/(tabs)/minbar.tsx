@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,7 +30,11 @@ import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const THUMBNAIL_HEIGHT = Math.round(SCREEN_WIDTH * 9 / 16);
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -103,7 +108,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
       {/* Thumbnail */}
       <View style={[styles.thumbnailContainer, { backgroundColor: tc.surface }]}>
         {video.thumbnailUrl ? (
-          <Image source={{ uri: video.thumbnailUrl }} style={styles.thumbnail} />
+          <ProgressiveImage uri={video.thumbnailUrl} width="100%" height={THUMBNAIL_HEIGHT} contentFit="cover" />
         ) : (
           <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
             <Icon name="video" size="lg" color={colors.text.secondary} />
@@ -291,7 +296,7 @@ export default function MinbarScreen() {
               >
                 <View style={[styles.continueThumbWrap, { backgroundColor: tc.bgCard }]}>
                   {item.thumbnailUrl ? (
-                    <Image source={{ uri: item.thumbnailUrl }} style={styles.continueThumb} />
+                    <ProgressiveImage uri={item.thumbnailUrl} width={200} height={112} contentFit="cover" />
                   ) : (
                     <View style={[styles.continueThumb, styles.continueThumbPlaceholder, { backgroundColor: tc.surface }]}>
                       <Icon name="video" size="lg" color={colors.text.secondary} />
@@ -461,7 +466,7 @@ export default function MinbarScreen() {
         onScroll={onScroll}
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
+        refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
       <BottomSheet
         visible={!!selectedVideoId}

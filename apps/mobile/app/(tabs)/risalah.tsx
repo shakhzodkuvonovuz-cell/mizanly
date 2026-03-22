@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Pressable } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -35,6 +35,7 @@ import type { Conversation } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart, rtlMargin, rtlAbsoluteEnd, rtlChevron } from '@/utils/rtl';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -520,10 +521,9 @@ export default function RisalahScreen() {
         windowSize={5}
         removeClippedSubviews={true}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={isRefetching && !isLoading}
             onRefresh={handleRefresh}
-            tintColor={colors.emerald}
           />
         }
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}

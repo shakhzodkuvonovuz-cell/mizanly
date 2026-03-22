@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo, useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
@@ -44,6 +44,7 @@ import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import * as Clipboard from 'expo-clipboard';
 import { useVideoPreloader } from '@/hooks/useVideoPreloader';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { formatCount } from '@/utils/formatCount';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -483,6 +484,7 @@ export default function BakraScreen() {
   const haptic = useHaptic();
   const tc = useThemeColors();
   const [refreshing, setRefreshing] = useState(false);
+  const [bakraFeedType, setBakraFeedType] = useState<'foryou' | 'following'>('foryou');
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
   const reelsRef = useRef(reels);
@@ -500,7 +502,7 @@ export default function BakraScreen() {
   const { onViewableChange, markPlaying, isReady } = useVideoPreloader(3);
 
   const feedQuery = useInfiniteQuery({
-    queryKey: ['reels-feed'],
+    queryKey: ['reels-feed', bakraFeedType],
     queryFn: async ({ pageParam }) => {
       const res = await reelsApi.getFeed(pageParam as string | undefined);
       // If regular feed returns empty on first page, fallback to trending
@@ -566,7 +568,7 @@ export default function BakraScreen() {
     haptic.light();
 
     // Optimistic update: immediately toggle like state in cache
-    queryClient.setQueryData(['reels-feed'], (old: typeof feedQuery.data) => {
+    queryClient.setQueryData(['reels-feed', bakraFeedType], (old: typeof feedQuery.data) => {
       if (!old) return old;
       return {
         ...old,
@@ -593,7 +595,7 @@ export default function BakraScreen() {
     } finally {
       likeInFlight.current = false;
     }
-  }, [haptic, queryClient, feedQuery]);
+  }, [haptic, queryClient, feedQuery, bakraFeedType]);
 
   const bookmarkInFlight = useRef(false);
   const handleBookmark = useCallback(async (reel: Reel) => {
@@ -602,7 +604,7 @@ export default function BakraScreen() {
     haptic.light();
 
     // Optimistic update
-    queryClient.setQueryData(['reels-feed'], (old: typeof feedQuery.data) => {
+    queryClient.setQueryData(['reels-feed', bakraFeedType], (old: typeof feedQuery.data) => {
       if (!old) return old;
       return {
         ...old,
@@ -626,7 +628,7 @@ export default function BakraScreen() {
     } finally {
       bookmarkInFlight.current = false;
     }
-  }, [haptic, queryClient, feedQuery]);
+  }, [haptic, queryClient, feedQuery, bakraFeedType]);
 
   const handleShare = useCallback(async (reel: Reel) => {
     haptic.light();
@@ -669,9 +671,9 @@ export default function BakraScreen() {
 
   const handleFollow = useCallback((userId: string) => {
     followsApi.follow(userId).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['reels-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['reels-feed', bakraFeedType] });
     }).catch(() => {});
-  }, [queryClient]);
+  }, [queryClient, bakraFeedType]);
 
   const handleNavigate = useCallback((path: string) => {
     navigate(path);
@@ -745,7 +747,39 @@ export default function BakraScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
-        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Bakra</Text>
+        {/* Feed type tabs — Following | For You */}
+        <View style={styles.feedTypeContainer}>
+          <Pressable
+            onPress={() => { setBakraFeedType('following'); haptic.light(); }}
+            style={styles.feedTypeTab}
+            accessibilityLabel={t('bakra.following')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: bakraFeedType === 'following' }}
+          >
+            <Text style={[
+              styles.feedTypeText,
+              bakraFeedType === 'following' && styles.feedTypeTextActive,
+            ]}>
+              {t('bakra.following')}
+            </Text>
+            {bakraFeedType === 'following' && <View style={styles.feedTypeIndicator} />}
+          </Pressable>
+          <Pressable
+            onPress={() => { setBakraFeedType('foryou'); haptic.light(); }}
+            style={styles.feedTypeTab}
+            accessibilityLabel={t('bakra.forYou')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: bakraFeedType === 'foryou' }}
+          >
+            <Text style={[
+              styles.feedTypeText,
+              bakraFeedType === 'foryou' && styles.feedTypeTextActive,
+            ]}>
+              {t('bakra.forYou')}
+            </Text>
+            {bakraFeedType === 'foryou' && <View style={styles.feedTypeIndicator} />}
+          </Pressable>
+        </View>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Pressable
             hitSlop={8}
@@ -814,7 +848,7 @@ export default function BakraScreen() {
         snapToInterval={SCREEN_H}
         snapToAlignment="start"
         decelerationRate="fast"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
+        refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
       {commentsReel && (
         <CommentsSheet
@@ -844,11 +878,28 @@ const styles = StyleSheet.create({
     zIndex: 10,
     backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  logo: {
-    color: colors.emerald,
-    fontSize: fontSize.xl,
-    fontFamily: fonts.headingBold,
-    letterSpacing: -0.5,
+  feedTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xl,
+  },
+  feedTypeTab: {
+    alignItems: 'center',
+  },
+  feedTypeText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: fontSize.md,
+    fontFamily: fonts.bodyBold,
+  },
+  feedTypeTextActive: {
+    color: '#FFFFFF',
+  },
+  feedTypeIndicator: {
+    width: 24,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#FFFFFF',
+    marginTop: 4,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   videoContainer: {

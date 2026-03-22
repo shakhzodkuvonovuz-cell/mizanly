@@ -22,6 +22,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { useAnimatedIcon } from '@/hooks/useAnimatedIcon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PostMedia } from './PostMedia';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
@@ -63,6 +64,10 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   const [revealed, setRevealed] = useState(false);
   const [heartTrigger, setHeartTrigger] = useState(0);
 
+  // Icon animations for like (bounce) and bookmark (pulse)
+  const heartAnim = useAnimatedIcon('bounce');
+  const bookmarkAnim = useAnimatedIcon('pulse');
+
   // Double-tap overlay heart
   const overlayHeartScale = useSharedValue(0);
   const overlayHeartOpacity = useSharedValue(0);
@@ -91,6 +96,13 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     onMutate: () => setLocalSaved((p) => !p),
     onError: () => setLocalSaved((p) => !p),
   });
+
+  const handleSave = useCallback(() => {
+    if (!localSaved) {
+      bookmarkAnim.trigger();
+    }
+    saveMutation.mutate();
+  }, [localSaved, bookmarkAnim, saveMutation]);
 
   const deleteMutation = useMutation({
     mutationFn: () => postsApi.delete(post.id),
@@ -183,9 +195,10 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     reactInFlight.current = true;
     if (!localLiked) {
       triggerHeartAnimation();
+      heartAnim.trigger();
     }
     reactMutation.mutate();
-  }, [localLiked, triggerHeartAnimation, reactMutation]);
+  }, [localLiked, triggerHeartAnimation, heartAnim, reactMutation]);
 
   // Double-tap to like handler (Instagram-style: only likes, never unlikes)
   const handleDoubleTapLike = useCallback(() => {
@@ -359,8 +372,8 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       {/* Actions */}
       <View style={styles.actions}>
         <ActionButton
-          icon={<Icon name="heart" size="sm" color={colors.text.secondary} />}
-          activeIcon={<Icon name="heart-filled" size="sm" color={colors.like} fill={colors.like} />}
+          icon={<Animated.View style={heartAnim.animatedStyle}><Icon name="heart" size="sm" color={colors.text.secondary} /></Animated.View>}
+          activeIcon={<Animated.View style={heartAnim.animatedStyle}><Icon name="heart-filled" size="sm" color={colors.like} fill={colors.like} /></Animated.View>}
           isActive={localLiked}
           onPress={handleLike}
           disabled={!viewerId}
@@ -390,10 +403,10 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
         <View style={styles.spacer} />
 
         <ActionButton
-          icon={<Icon name="bookmark" size="sm" color={localSaved ? colors.bookmark : colors.text.tertiary} />}
-          activeIcon={<Icon name="bookmark-filled" size="sm" color={colors.bookmark} fill={colors.bookmark} />}
+          icon={<Animated.View style={bookmarkAnim.animatedStyle}><Icon name="bookmark" size="sm" color={localSaved ? colors.bookmark : colors.text.tertiary} /></Animated.View>}
+          activeIcon={<Animated.View style={bookmarkAnim.animatedStyle}><Icon name="bookmark-filled" size="sm" color={colors.bookmark} fill={colors.bookmark} /></Animated.View>}
           isActive={localSaved}
-          onPress={() => saveMutation.mutate()}
+          onPress={handleSave}
           disabled={!viewerId}
           activeColor={colors.bookmark}
           accessibilityLabel={localSaved ? 'Remove bookmark' : 'Bookmark post'}

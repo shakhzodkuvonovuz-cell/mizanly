@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -9,10 +9,14 @@ import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedReaction,
+  runOnJS,
   withSpring,
   withSequence,
   withTiming,
   FadeInUp,
+  FadeInDown,
+  FadeOutUp,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, animation, radius, tabBar, fonts } from '@/theme';
@@ -27,6 +31,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd, rtlBorderStart } from '@/utils/rtl';
 import type { Thread } from '@/types';
@@ -83,7 +88,24 @@ export default function MajlisScreen() {
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { onScroll, headerAnimatedStyle, titleAnimatedStyle } = useScrollLinkedHeader(56);
+  const { onScroll, headerAnimatedStyle, titleAnimatedStyle, scrollY } = useScrollLinkedHeader(56);
+
+  // ── "New posts" banner state ──
+  const [hasScrolledDown, setHasScrolledDown] = useState(false);
+  const [newPostsAvailable, setNewPostsAvailable] = useState(false);
+
+  // Watch scroll position from UI thread -> update React state via runOnJS
+  useAnimatedReaction(
+    () => scrollY.value,
+    (currentY) => {
+      if (currentY > 200) {
+        runOnJS(setHasScrolledDown)(true);
+      } else if (currentY < 50) {
+        runOnJS(setHasScrolledDown)(false);
+      }
+    },
+    [scrollY],
+  );
 
   const TABS = useMemo(() => [
     { key: 'foryou', label: t('majlis.forYou') },
@@ -135,11 +157,49 @@ export default function MajlisScreen() {
     queryFn: () => hashtagsApi.getTrending(),
   });
 
+  // Poll for new posts every 30s when user has scrolled down
+  const newPostsCheck = useQuery({
+    queryKey: ['majlis-new-posts-check', feedType],
+    queryFn: async () => {
+      const type = feedType === 'video' ? 'foryou' : feedType;
+      const res = await threadsApi.getFeed(type as 'foryou' | 'following' | 'trending' | 'video', undefined);
+      return res?.data?.[0]?.id ?? null;
+    },
+    refetchInterval: hasScrolledDown ? 30_000 : false,
+    enabled: hasScrolledDown && !newPostsAvailable,
+  });
+
   const allThreads: Thread[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
   // Video tab: filter to threads with video media only
   const threads = feedType === 'video'
     ? allThreads.filter((t) => t.mediaTypes?.some((mt: string) => mt.startsWith('video')))
     : allThreads;
+
+  // Compare latest server post with current top of feed
+  useEffect(() => {
+    if (newPostsCheck.data && allThreads.length > 0) {
+      const latestServerId = newPostsCheck.data;
+      const currentTopId = allThreads[0]?.id;
+      if (latestServerId && latestServerId !== currentTopId) {
+        setNewPostsAvailable(true);
+      }
+    }
+  }, [newPostsCheck.data, allThreads]);
+
+  // Clear banner when user scrolls back to top
+  useEffect(() => {
+    if (!hasScrolledDown) {
+      setNewPostsAvailable(false);
+    }
+  }, [hasScrolledDown]);
+
+  const handleNewPostsBanner = useCallback(() => {
+    feedRef.current?.scrollToOffset({ offset: 0, animated: true });
+    feedQuery.refetch();
+    setNewPostsAvailable(false);
+    setHasScrolledDown(false);
+    haptic.light();
+  }, [feedQuery, haptic]);
 
   const listEmpty = useMemo(() => (
     feedQuery.isError ? (
@@ -284,6 +344,25 @@ export default function MajlisScreen() {
         </ScrollView>
       ) : null}
 
+      {/* "New posts" banner — slides in when new content arrives while scrolled down */}
+      {newPostsAvailable && hasScrolledDown && (
+        <Animated.View
+          entering={FadeInDown.duration(300).springify()}
+          exiting={FadeOutUp.duration(200)}
+          style={styles.newPostsBanner}
+        >
+          <Pressable
+            onPress={handleNewPostsBanner}
+            style={styles.newPostsBannerButton}
+            accessibilityLabel={t('saf.newPosts')}
+            accessibilityRole="button"
+          >
+            <Icon name="arrow-left" size="xs" color="#fff" style={{ transform: [{ rotate: '90deg' }] }} />
+            <Text style={styles.newPostsBannerText}>{t('saf.newPosts')}</Text>
+          </Pressable>
+        </Animated.View>
+      )}
+
       <Animated.View style={[{ flex: 1 }, feedAnimStyle]}>
         <FlashList
           ref={feedRef}
@@ -300,7 +379,7 @@ export default function MajlisScreen() {
           onScroll={onScroll}
           scrollEventThrottle={16}
           contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       </Animated.View>
 
@@ -403,5 +482,32 @@ const styles = StyleSheet.create({
   endOfFeedText: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
+  },
+  newPostsBanner: {
+    position: 'absolute',
+    top: 100,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    alignItems: 'center',
+  },
+  newPostsBannerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.emerald,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  newPostsBannerText: {
+    color: '#fff',
+    fontSize: fontSize.sm,
+    fontFamily: fonts.bodyBold,
   },
 });

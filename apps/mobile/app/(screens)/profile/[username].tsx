@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -65,9 +66,10 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
         accessibilityRole="button"
       >
         {post.mediaUrls.length > 0 ? (
-          <Image
-            source={{ uri: post.thumbnailUrl ?? post.mediaUrls[0] }}
-            style={styles.gridImage}
+          <ProgressiveImage
+            uri={post.thumbnailUrl ?? post.mediaUrls[0]}
+            width="100%"
+            height={GRID_ITEM}
             contentFit="cover"
           />
         ) : (
@@ -115,9 +117,10 @@ const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel;
         accessibilityRole="button"
       >
         {reel.thumbnailUrl ? (
-          <Image
-            source={{ uri: reel.thumbnailUrl }}
-            style={styles.gridImage}
+          <ProgressiveImage
+            uri={reel.thumbnailUrl}
+            width="100%"
+            height={GRID_ITEM}
             contentFit="cover"
           />
         ) : (
@@ -453,7 +456,7 @@ export default function ProfileScreen() {
       <Animated.View style={[{ overflow: 'hidden' }, coverAnimStyle]}>
         {profile.coverUrl ? (
           <View>
-            <Image accessible={true} accessibilityLabel="Content image" source={{ uri: profile.coverUrl }} style={styles.cover} contentFit="cover" />
+            <ProgressiveImage uri={profile.coverUrl} width="100%" height={COVER_HEIGHT} contentFit="cover" accessibilityLabel="Cover image" />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.6)']}
               locations={[0.4, 1]}
@@ -603,7 +606,7 @@ export default function ProfileScreen() {
               <View style={styles.highlightRing}>
                 <View style={[styles.highlightCircle, loadingHighlightId === album.id && { opacity: 0.5 }]}>
                   {album.coverUrl ? (
-                    <Image accessible={true} accessibilityLabel="Content image" source={{ uri: album.coverUrl }} style={styles.highlightImg} contentFit="cover" />
+                    <ProgressiveImage uri={album.coverUrl} width={64} height={64} borderRadius={9999} contentFit="cover" accessibilityLabel="Highlight cover" />
                   ) : (
                     <Icon name="image" size="md" color={colors.text.tertiary} />
                   )}

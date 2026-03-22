@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -32,8 +33,10 @@ import { getDateFnsLocale } from '@/utils/localeFormat';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
-const BANNER_HEIGHT = Dimensions.get('window').width / 2.5; // 2.5:1 ratio for cinematic look
-const FEATURED_HEIGHT = Dimensions.get('window').width * 0.56; // 16:9 ratio
+const SCREEN_W = Dimensions.get('window').width;
+const BANNER_HEIGHT = SCREEN_W / 2.5; // 2.5:1 ratio for cinematic look
+const FEATURED_HEIGHT = SCREEN_W * 0.56; // 16:9 ratio
+const THUMB_16_9 = Math.round(SCREEN_W * 9 / 16);
 
 type Tab = 'videos' | 'playlists' | 'about';
 
@@ -68,7 +71,7 @@ function VideoCard({ video }: { video: Video }) {
       {/* Thumbnail */}
       <View style={[styles.thumbnailContainer, { backgroundColor: tc.surface }]}>
         {video.thumbnailUrl ? (
-          <Image source={{ uri: video.thumbnailUrl }} style={styles.thumbnail} />
+          <ProgressiveImage uri={video.thumbnailUrl} width="100%" height={THUMB_16_9} contentFit="cover" />
         ) : (
           <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
             <Icon name="video" size="lg" color={colors.text.secondary} />
@@ -114,7 +117,7 @@ function VideoCard({ video }: { video: Video }) {
     return (
       <Animated.View entering={FadeInUp.delay(100)} style={styles.featuredContainer}>
         <Pressable style={[styles.featuredCard, { backgroundColor: tc.surface }]} onPress={onPress}>
-          <Image source={{ uri: video.thumbnailUrl || '' }} style={styles.featuredThumbnail} />
+          <ProgressiveImage uri={video.thumbnailUrl || ''} width="100%" height={FEATURED_HEIGHT} contentFit="cover" />
           <LinearGradient
             colors={['transparent', 'rgba(13,17,23,0.8)', 'rgba(13,17,23,0.98)']}
             locations={[0.3, 0.7, 1]}
@@ -153,7 +156,7 @@ function VideoCard({ video }: { video: Video }) {
   return (
     <Pressable style={[styles.playlistCard, { backgroundColor: tc.surface }]} onPress={handlePress}>
       {playlist.thumbnailUrl ? (
-        <Image source={{ uri: playlist.thumbnailUrl }} style={[styles.playlistThumbnail, { backgroundColor: tc.bgCard }]} />
+        <ProgressiveImage uri={playlist.thumbnailUrl} width={120} height={68} borderRadius={radius.sm} contentFit="cover" />
       ) : (
         <View style={[styles.playlistThumbnail, { backgroundColor: tc.bgCard }, styles.playlistThumbnailPlaceholder]}>
           <Icon name="layers" size="lg" color={colors.text.tertiary} />
@@ -291,7 +294,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       <View style={styles.bannerContainer}>
         {channel?.bannerUrl ? (
           <>
-            <Image source={{ uri: channel.bannerUrl }} style={[styles.banner, { backgroundColor: tc.bgElevated }]} />
+            <ProgressiveImage uri={channel.bannerUrl} width="100%" height={BANNER_HEIGHT} contentFit="cover" accessibilityLabel="Channel banner" />
             <LinearGradient
               colors={['rgba(13,17,23,0.3)', 'transparent', 'rgba(13,17,23,0.6)']}
               locations={[0, 0.5, 1]}
@@ -399,7 +402,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             onPress={() => channel.trailerVideo && router.push(`/(screens)/video/${channel.trailerVideo.id}`)}
           >
             {channel.trailerVideo.thumbnailUrl ? (
-              <Image source={{ uri: channel.trailerVideo.thumbnailUrl }} style={styles.trailerThumbnail} />
+              <ProgressiveImage uri={channel.trailerVideo.thumbnailUrl} width="100%" height={FEATURED_HEIGHT} contentFit="cover" />
             ) : (
               <View style={[styles.trailerThumbnail, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
                 <Icon name="video" size="xl" color={colors.text.secondary} />
@@ -726,7 +729,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                 >
                   <View style={[styles.trailerPickerThumbWrap, { backgroundColor: tc.bgCard }]}>
                     {item.thumbnailUrl ? (
-                      <Image source={{ uri: item.thumbnailUrl }} style={styles.trailerPickerThumb} />
+                      <ProgressiveImage uri={item.thumbnailUrl} width={100} height={56} contentFit="cover" />
                     ) : (
                       <View style={[styles.trailerPickerThumb, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
                         <Icon name="video" size="sm" color={colors.text.tertiary} />

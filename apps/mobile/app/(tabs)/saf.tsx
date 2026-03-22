@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, RefreshControl, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -45,6 +45,7 @@ import { feedCache, CACHE_KEYS } from '@/utils/feedCache';
 import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
 import { formatCount } from '@/utils/formatCount';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { Post, StoryGroup, SuggestedUser } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -665,7 +666,7 @@ export default function SafScreen() {
         onScroll={onScroll}
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
+        refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         getItemType={(item) => (item._type === 'suggested' ? 'suggested' : 'post')}
       />
     </SafeAreaView>

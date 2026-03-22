@@ -10,7 +10,9 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
 import { useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
@@ -166,7 +168,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
       accessibilityRole="button"
       accessibilityLabel={t('accessibility.viewContent', { title: item.title })}
     >
-      <Image accessible={true} accessibilityLabel={t('accessibility.contentImage')} source={{ uri: item.thumbnailUrl }} style={styles.featuredImage} />
+      <ProgressiveImage uri={item.thumbnailUrl} width="100%" height={FEATURED_HEIGHT} contentFit="cover" accessibilityLabel={t('accessibility.contentImage')} />
       <View style={styles.featuredOverlay}>
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.85)']}
@@ -279,7 +281,7 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
       ]}
     >
       {thumbnailUrl ? (
-        <Image accessible={true} accessibilityLabel={t('accessibility.contentImage')} source={{ uri: thumbnailUrl }} style={styles.gridImage} />
+        <ProgressiveImage uri={thumbnailUrl} width="100%" height={itemHeight} contentFit="cover" accessibilityLabel={t('accessibility.contentImage')} />
       ) : (
         <View style={[styles.gridImage, styles.placeholder, { backgroundColor: tc.surface }]} />
       )}
@@ -314,6 +316,7 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('all');
   const tc = useThemeColors();
+  const { onScroll: onScrollElastic, headerAnimatedStyle } = useScrollLinkedHeader(HEADER_HEIGHT + 44);
 
   const CATEGORIES: { key: CategoryKey; label: string; icon: IconName }[] = [
     { key: 'all', label: t('discover.all'), icon: 'star' },
@@ -424,10 +427,12 @@ export default function DiscoverScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <GlassHeader
-          title={t('discover.title')}
-          rightActions={[{ icon: 'search', onPress: () => navigate('/(screens)/search'), accessibilityLabel: t('common.search') }]}
-        />
+        <Animated.View style={headerAnimatedStyle}>
+          <GlassHeader
+            title={t('discover.title')}
+            rightActions={[{ icon: 'search', onPress: () => navigate('/(screens)/search'), accessibilityLabel: t('common.search') }]}
+          />
+        </Animated.View>
 
         <View style={styles.headerSpacer} />
 
