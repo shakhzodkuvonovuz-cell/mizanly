@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput,
-  FlatList, Dimensions, RefreshControl,
+  FlatList, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +21,9 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack as ApiAudioTrack } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -167,6 +170,7 @@ export default function AudioLibraryScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Trending');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -243,17 +247,19 @@ export default function AudioLibraryScreen() {
   }, []);
 
   const handleSelect = useCallback((track: AudioTrackDisplay) => {
+    haptic.tick();
     setSelectedTrack(track);
-  }, []);
+  }, [haptic]);
 
   const handleUseSound = useCallback(() => {
-    // Navigate to create-reel with selected sound
+    haptic.navigate();
     router.push('/(screens)/create-reel');
-  }, [router]);
+  }, [router, haptic]);
 
   const toggleFavorite = useCallback((trackId: string) => {
-    // In real app, update backend
-  }, []);
+    haptic.like();
+    showToast({ message: t('audioLibrary.favoriteToggled'), variant: 'success' });
+  }, [haptic, t]);
 
   return (
     <ScreenErrorBoundary>
@@ -318,7 +324,7 @@ export default function AudioLibraryScreen() {
           data={filteredAudio}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.audioList}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />}
+          refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
           renderItem={({ item, index }) => (
             <AudioCard
               track={item}

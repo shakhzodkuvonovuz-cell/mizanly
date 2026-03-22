@@ -191,10 +191,13 @@ export default function ReelRemixScreen() {
     }
   }, [recordedUri, caption, t, router]);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 800);
-  }, []);
+    if (originalReelId) {
+      queryClient.invalidateQueries({ queryKey: ['reel', originalReelId] });
+    }
+    setRefreshing(false);
+  }, [originalReelId, queryClient]);
 
   const uploadMutation = useMutation({
     mutationFn: async () => {

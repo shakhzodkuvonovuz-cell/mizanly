@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
+  KeyboardAvoidingView, Platform, FlatList, Alert, Share,
   Dimensions, I18nManager,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -24,13 +24,16 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi, followsApi } from '@/services/api';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { formatCount } from '@/utils/formatCount';
+import { showToast } from '@/components/ui/Toast';
 import type { Comment, Reel } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -54,7 +57,7 @@ function CommentRow({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const [localLiked, setLocalLiked] = useState((comment as Comment & { isLiked?: boolean }).isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
@@ -62,7 +65,7 @@ function CommentRow({
   const isOwn = !!viewerId && comment.user.id === viewerId;
 
   const handleLikeComment = useCallback(async () => {
-    haptic.medium();
+    haptic.like();
     const wasLiked = localLiked;
     setLocalLiked(prev => !prev);
     setLocalLikes(prev => wasLiked ? prev - 1 : prev + 1);
@@ -104,7 +107,7 @@ function CommentRow({
         <View style={[styles.commentMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Text style={styles.commentTime}>{timeAgo}</Text>
           {localLikes > 0 && (
-            <Text style={styles.commentLikesLabel}>{localLikes} {t('saf.likes')}</Text>
+            <Text style={styles.commentLikesLabel}>{formatCount(localLikes)} {t('saf.likes')}</Text>
           )}
           <Pressable onPress={() => onReply(comment.id, comment.user.username)}>
             <Text style={styles.commentAction}>{t('common.reply')}</Text>
@@ -141,7 +144,7 @@ export default function ReelDetailScreen() {
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const videoRef = useRef<Video>(null);
@@ -211,8 +214,9 @@ export default function ReelDetailScreen() {
       setReplyTo(null);
       queryClient.invalidateQueries({ queryKey: ['reel-comments', id] });
       queryClient.invalidateQueries({ queryKey: ['reel', id] });
+      showToast({ message: t('common.done'), variant: 'success' });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message || t('common.error'), variant: 'error' }),
   });
 
   const likeMutation = useMutation({
@@ -274,17 +278,17 @@ export default function ReelDetailScreen() {
 
 
   const handleLike = useCallback(() => {
-    haptic.light();
+    haptic.like();
     likeMutation.mutate();
   }, [haptic, likeMutation]);
 
   const handleBookmark = useCallback(() => {
-    haptic.light();
+    haptic.save();
     bookmarkMutation.mutate();
   }, [haptic, bookmarkMutation]);
 
   const handleShare = useCallback(async () => {
-    haptic.light();
+    haptic.navigate();
     shareMutation.mutate();
     try {
       await Share.share({
@@ -438,7 +442,7 @@ export default function ReelDetailScreen() {
         {/* Comments Header */}
         <View style={styles.commentsHeader}>
           <Text style={styles.commentsTitle}>
-            {reelQuery.data.commentsCount} {t('saf.comments')}
+            {formatCount(reelQuery.data.commentsCount)} {t('saf.comments')}
           </Text>
         </View>
       </View>
@@ -498,10 +502,9 @@ export default function ReelDetailScreen() {
             }}
             onEndReachedThreshold={0.4}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={reelQuery.isRefetching || commentsQuery.isRefetching}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
             ListHeaderComponent={listHeader}

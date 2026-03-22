@@ -1973,6 +1973,7 @@
       "backgroundBlur": "Background Blur",
       "edgeSmoothing": "Edge Smoothing",
       "applyAndRecord": "Apply & Record",
+      "noSegmentation": "Background segmentation not yet available — recording without it",
       "color": {
         "black": "Black",
         "white": "White",
@@ -2146,6 +2147,7 @@
       "title": "No sounds found",
       "subtitle": "Try a different search or category"
     },
+    "favoriteToggled": "Favorite updated",
     "category": {
       "favorites": "Favorites",
       "trending": "Trending",

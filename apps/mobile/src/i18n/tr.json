@@ -1973,6 +1973,7 @@
       "backgroundBlur": "Background Blur",
       "edgeSmoothing": "Edge Smoothing",
       "applyAndRecord": "Apply & Record",
+      "noSegmentation": "Background segmentation not yet available — recording without it",
       "color": {
         "black": "Black",
         "white": "White",
@@ -3254,6 +3255,7 @@
     "title": "Ses Kütüphanesi",
     "searchPlaceholder": "Ses ara...",
     "useThisSound": "Bu sesi kullan",
+    "favoriteToggled": "Favorite updated",
     "emptyState": {
       "title": "Ses bulunamadı",
       "subtitle": "Farklı bir arama veya kategori deneyin"

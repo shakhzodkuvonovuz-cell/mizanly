@@ -1974,6 +1974,7 @@
       "backgroundBlur": "Background Blur",
       "edgeSmoothing": "Edge Smoothing",
       "applyAndRecord": "Apply & Record",
+      "noSegmentation": "Background segmentation not yet available — recording without it",
       "color": {
         "black": "Black",
         "white": "White",
@@ -3249,6 +3250,7 @@
     "title": "Bibliothèque audio",
     "searchPlaceholder": "Rechercher des sons...",
     "useThisSound": "Utiliser ce son",
+    "favoriteToggled": "Favorite updated",
     "emptyState": {
       "title": "Aucun son trouvé",
       "subtitle": "Essayez une autre recherche ou catégorie"

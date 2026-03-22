@@ -240,7 +240,7 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
 
         {/* Reply banner */}
         {replyTo && (
-          <View style={styles.replyBanner}>
+          <View style={[styles.replyBanner, { backgroundColor: tc.surface, borderBottomColor: tc.border }]}>
             <Text style={styles.replyLabel}>{t('saf.replyingTo', { username: replyTo.user.username })}</Text>
             <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
               <Icon name="x" size="xs" color={colors.text.tertiary} />
@@ -263,7 +263,7 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
           <Animated.View style={sendPress.animatedStyle}>
             <Pressable
               accessibilityRole="button"
-              style={[styles.sendButton, newComment.trim().length === 0 && styles.sendButtonDisabled]}
+              style={[styles.sendButton, { backgroundColor: tc.surface }, newComment.trim().length === 0 && styles.sendButtonDisabled]}
               onPress={handleSubmit}
               onPressIn={sendPress.onPressIn}
               onPressOut={sendPress.onPressOut}
@@ -286,7 +286,7 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bgSheet,
+    // backgroundColor set inline via tc.bgSheet
   },
   header: {
     flexDirection: 'row',
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    // borderBottomColor set inline via tc.border
   },
   headerTitle: {
     color: colors.text.primary,
@@ -401,12 +401,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
-    backgroundColor: colors.dark.bgSheet,
+    // borderTopColor + backgroundColor set inline via tc
   },
   input: {
     flex: 1,
-    backgroundColor: colors.dark.surface,
+    // backgroundColor set inline via tc.surface
     color: colors.text.primary,
     fontSize: fontSize.base,
     borderRadius: radius.full,
@@ -419,7 +418,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    // backgroundColor set inline via tc.surface
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -432,9 +431,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.surface,
+    // backgroundColor set inline via tc.surface
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    // borderBottomColor set inline via tc.border
   },
   replyLabel: {
     color: colors.text.secondary,

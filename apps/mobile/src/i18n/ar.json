@@ -1772,6 +1772,7 @@
       "backgroundBlur": "Background Blur",
       "edgeSmoothing": "Edge Smoothing",
       "applyAndRecord": "Apply & Record",
+      "noSegmentation": "Background segmentation not yet available — recording without it",
       "color": {
         "black": "Black",
         "white": "White",
@@ -3254,6 +3255,7 @@
     "title": "مكتبة الصوت",
     "searchPlaceholder": "البحث عن أصوات...",
     "useThisSound": "استخدم هذا الصوت",
+    "favoriteToggled": "Favorite updated",
     "emptyState": {
       "title": "لا توجد أصوات",
       "subtitle": "جرب بحثاً أو فئة مختلفة"

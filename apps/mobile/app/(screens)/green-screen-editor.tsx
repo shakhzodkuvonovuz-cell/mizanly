@@ -1,6 +1,6 @@
 // Note: Background segmentation requires expo-gl or react-native-vision-camera with frame processors — not yet installed
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +16,9 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -110,6 +113,7 @@ export default function GreenScreenEditorScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   useEffect(() => {
     (async () => {
@@ -124,12 +128,17 @@ export default function GreenScreenEditorScreen() {
     if (isRecording) {
       cameraRef.current.stopRecording();
       setIsRecording(false);
+      haptic.tick();
     } else {
+      // Honest: background segmentation is not available — camera just records normally
+      showToast({ message: t('screens.greenScreen.noSegmentation'), variant: 'info' });
       setIsRecording(true);
+      haptic.navigate();
       try {
         const video = await cameraRef.current.recordAsync({ maxDuration: 60 });
         if (video?.uri) {
           setRecordedUri(video.uri);
+          haptic.success();
         }
       } catch (_err: unknown) {
         // Recording was cancelled or failed
@@ -139,9 +148,10 @@ export default function GreenScreenEditorScreen() {
     }
   };
 
+  // No data to refresh on this screen — refresh is a no-op
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    setRefreshing(false);
   }, []);
 
   const categories: { id: CategoryType; label: string }[] = [
@@ -392,7 +402,7 @@ export default function GreenScreenEditorScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Camera Preview */}
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
@@ -476,7 +486,7 @@ export default function GreenScreenEditorScreen() {
                   accessibilityRole="button"
                   key={category.id}
                   style={styles.categoryButton}
-                  onPress={() => setSelectedCategory(category.id)}
+                  onPress={() => { haptic.tick(); setSelectedCategory(category.id); }}
                 >
                   <LinearGradient
                     colors={selectedCategory === category.id

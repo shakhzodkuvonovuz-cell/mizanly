@@ -1974,6 +1974,7 @@
       "backgroundBlur": "Background Blur",
       "edgeSmoothing": "Edge Smoothing",
       "applyAndRecord": "Apply & Record",
+      "noSegmentation": "Background segmentation not yet available — recording without it",
       "color": {
         "black": "Black",
         "white": "White",
@@ -3249,6 +3250,7 @@
     "title": "Perpustakaan Audio",
     "searchPlaceholder": "Cari suara...",
     "useThisSound": "Gunakan suara ini",
+    "favoriteToggled": "Favorite updated",
     "emptyState": {
       "title": "Suara tidak ditemukan",
       "subtitle": "Coba pencarian atau kategori lain"

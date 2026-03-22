@@ -1973,6 +1973,7 @@
       "backgroundBlur": "Background Blur",
       "edgeSmoothing": "Edge Smoothing",
       "applyAndRecord": "Apply & Record",
+      "noSegmentation": "Background segmentation not yet available — recording without it",
       "color": {
         "black": "Black",
         "white": "White",
@@ -3248,6 +3249,7 @@
     "title": "অডিও লাইব্রেরি",
     "searchPlaceholder": "শব্দ খুঁজুন...",
     "useThisSound": "এই শব্দ ব্যবহার করুন",
+    "favoriteToggled": "Favorite updated",
     "emptyState": {
       "title": "কোনো শব্দ পাওয়া যায়নি",
       "subtitle": "ভিন্ন অনুসন্ধান বা বিভাগ চেষ্টা করুন"

@@ -32,7 +32,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { CommentsSheet } from '@/components/bakra/CommentsSheet';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { Platform } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -138,7 +138,7 @@ const ReelItem = memo(function ReelItem({
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const spin = useSharedValue(0);
   const marqueeAnim = useSharedValue(0);
@@ -311,7 +311,7 @@ const ReelItem = memo(function ReelItem({
                   onPress={() => {
                     if (!item.user?.isFollowing) {
                       onFollow(item.user.id);
-                      haptic.medium();
+                      haptic.follow();
                     }
                   }}
                   hitSlop={12}
@@ -403,7 +403,7 @@ const ReelItem = memo(function ReelItem({
           {/* Duet button */}
           <Pressable
             onPress={() => {
-              haptic.light();
+              haptic.navigate();
               onNavigate(`/(screens)/create-reel?duetWith=${item.id}`);
             }}
             style={styles.duetStitchButton}
@@ -417,7 +417,7 @@ const ReelItem = memo(function ReelItem({
           {/* Stitch button */}
           <Pressable
             onPress={() => {
-              haptic.light();
+              haptic.navigate();
               onNavigate(`/(screens)/create-reel?stitchFrom=${item.id}`);
             }}
             style={styles.duetStitchButton}
@@ -481,7 +481,7 @@ export default function BakraScreen() {
   const { t, isRTL } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
@@ -566,7 +566,7 @@ export default function BakraScreen() {
   const handleLike = useCallback(async (reel: Reel) => {
     if (likeInFlight.current) return;
     likeInFlight.current = true;
-    haptic.light();
+    haptic.like();
 
     // Optimistic update: immediately toggle like state in cache
     queryClient.setQueryData(['reels-feed', bakraFeedType], (old: typeof feedQuery.data) => {
@@ -602,7 +602,7 @@ export default function BakraScreen() {
   const handleBookmark = useCallback(async (reel: Reel) => {
     if (bookmarkInFlight.current) return;
     bookmarkInFlight.current = true;
-    haptic.light();
+    haptic.save();
 
     // Optimistic update
     queryClient.setQueryData(['reels-feed', bakraFeedType], (old: typeof feedQuery.data) => {
@@ -632,13 +632,13 @@ export default function BakraScreen() {
   }, [haptic, queryClient, feedQuery, bakraFeedType]);
 
   const handleShare = useCallback(async (reel: Reel) => {
-    haptic.light();
+    haptic.navigate();
     await reelsApi.share(reel.id);
     feedQuery.refetch();
   }, [haptic, feedQuery]);
 
   const handleComment = useCallback((reel: Reel) => {
-    haptic.light();
+    haptic.tick();
     setCommentsReel(reel);
   }, [haptic]);
 
@@ -651,7 +651,7 @@ export default function BakraScreen() {
   }, [router]);
 
   const handleNotInterested = useCallback(async (reel: Reel) => {
-    haptic.light();
+    haptic.tick();
     try {
       await feedApi.reportNotInterested(reel.id, 'reel');
     } catch { /* best effort */ }
@@ -659,7 +659,7 @@ export default function BakraScreen() {
   }, [haptic, t]);
 
   const handleCopyLink = useCallback(async (reel: Reel) => {
-    haptic.light();
+    haptic.tick();
     try {
       const { url } = await reelsApi.getShareLink(reel.id);
       await Clipboard.setStringAsync(url);
@@ -683,7 +683,7 @@ export default function BakraScreen() {
   const doubleTapGesture = useMemo(() => Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
-      haptic.medium();
+      haptic.like();
       const reel = reels[currentIndex];
       if (reel && !reel.isLiked) {
         handleLike(reel);
@@ -749,7 +749,7 @@ export default function BakraScreen() {
       {/* Feed type tabs — Following | For You — absolute overlay on video */}
       <View style={[styles.feedTypeTabs, { top: insets.top + spacing.sm }]}>
         <Pressable
-          onPress={() => { setBakraFeedType('following'); haptic.light(); }}
+          onPress={() => { setBakraFeedType('following'); haptic.tick(); }}
           style={styles.feedTypeTab}
           accessibilityLabel={t('bakra.following')}
           accessibilityRole="tab"
@@ -764,7 +764,7 @@ export default function BakraScreen() {
           {bakraFeedType === 'following' && <View style={styles.feedTypeBar} />}
         </Pressable>
         <Pressable
-          onPress={() => { setBakraFeedType('foryou'); haptic.light(); }}
+          onPress={() => { setBakraFeedType('foryou'); haptic.tick(); }}
           style={styles.feedTypeTab}
           accessibilityLabel={t('bakra.forYou')}
           accessibilityRole="tab"
@@ -785,7 +785,7 @@ export default function BakraScreen() {
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}
             accessibilityLabel={t('accessibility.search')}
             accessibilityRole="button"
           >
@@ -793,7 +793,7 @@ export default function BakraScreen() {
           </Pressable>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/trending-audio'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/trending-audio'); }}
             accessibilityLabel={t('screens.trending-audio.title')}
             accessibilityRole="button"
           >
@@ -801,7 +801,7 @@ export default function BakraScreen() {
           </Pressable>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/create-reel'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/create-reel'); }}
             accessibilityLabel={t('accessibility.uploadReel')}
             accessibilityRole="button"
           >
@@ -814,7 +814,7 @@ export default function BakraScreen() {
       <View style={[styles.shortcutRow, { top: insets.top + spacing.sm + 36 }]}>
         <Pressable
           style={styles.shortcutPill}
-          onPress={() => { haptic.light(); navigate('/(screens)/go-live'); }}
+          onPress={() => { haptic.navigate(); navigate('/(screens)/go-live'); }}
           accessibilityLabel={t('tabs.live')}
           accessibilityRole="button"
         >
@@ -823,7 +823,7 @@ export default function BakraScreen() {
         </Pressable>
         <Pressable
           style={styles.shortcutPill}
-          onPress={() => { haptic.light(); navigate('/(screens)/series-discover'); }}
+          onPress={() => { haptic.navigate(); navigate('/(screens)/series-discover'); }}
           accessibilityLabel={t('series.discoverTitle')}
           accessibilityRole="button"
         >

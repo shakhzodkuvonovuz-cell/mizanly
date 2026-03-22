@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, withSpring, useAnimatedStyle, withRepeat } from 'react-native-reanimated';
@@ -16,6 +16,9 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { navigate } from '@/utils/navigation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -72,6 +75,7 @@ export default function DuetCreateScreen() {
     videoUrl?: string;
   }>();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   useEffect(() => {
     (async () => {
@@ -110,9 +114,10 @@ export default function DuetCreateScreen() {
     avatarUrl: null,
   };
 
+  // No data to refresh on this screen — refresh is a no-op
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    setRefreshing(false);
   }, []);
 
   const formatTime = (seconds: number) => {
@@ -127,12 +132,15 @@ export default function DuetCreateScreen() {
     if (isRecording) {
       cameraRef.current.stopRecording();
       setIsRecording(false);
+      haptic.tick();
     } else {
       setIsRecording(true);
+      haptic.navigate();
       try {
         const video = await cameraRef.current.recordAsync({ maxDuration: 60 });
         if (video?.uri) {
           setRecordedUri(video.uri);
+          haptic.success();
         }
       } catch (_err: unknown) {
         // Recording was cancelled or failed
@@ -170,7 +178,7 @@ export default function DuetCreateScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {/* Original Video Info Card */}
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
@@ -376,7 +384,7 @@ export default function DuetCreateScreen() {
                   <Pressable accessibilityRole="button"
                     key={layout.id}
                     style={styles.layoutButton}
-                    onPress={() => setLayoutMode(layout.id as LayoutMode)}
+                    onPress={() => { haptic.tick(); setLayoutMode(layout.id as LayoutMode); }}
                   >
                     <LinearGradient
                       colors={layoutMode === layout.id
@@ -433,7 +441,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.controlsContainer}>
               {/* Flip Camera */}
-              <Pressable accessibilityRole="button" style={styles.controlButton} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
+              <Pressable accessibilityRole="button" style={styles.controlButton} onPress={() => { haptic.tick(); setFacing(f => f === 'front' ? 'back' : 'front'); }}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlButtonGradient}
@@ -465,7 +473,7 @@ export default function DuetCreateScreen() {
               {/* Flash Toggle */}
               <Pressable accessibilityRole="button"
                 style={styles.controlButton}
-                onPress={() => setFlashOn(!flashOn)}
+                onPress={() => { haptic.tick(); setFlashOn(!flashOn); }}
               >
                 <LinearGradient
                   colors={flashOn

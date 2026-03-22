@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet,
-  FlatList, Pressable, Dimensions, RefreshControl,
+  FlatList, Pressable, Dimensions,
   type ViewStyle, type ImageStyle,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,6 +21,9 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack, Reel } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -39,6 +42,7 @@ export default function SoundScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -107,15 +111,17 @@ export default function SoundScreen() {
   }, [trackQuery, reelsQuery]);
 
   const handleUseSound = useCallback(() => {
+    haptic.navigate();
     router.push({
       pathname: '/(screens)/create-reel',
       params: { audioTrackId: id },
     });
-  }, [router, id]);
+  }, [router, id, haptic]);
 
   const handleReelPress = useCallback((reel: Reel) => {
+    haptic.navigate();
     router.push(`/(screens)/reel/${reel.id}`);
-  }, [router]);
+  }, [router, haptic]);
 
   const handleEndReached = useCallback(() => {
     if (reelsQuery.hasNextPage && !reelsQuery.isFetchingNextPage) {
@@ -311,10 +317,9 @@ export default function SoundScreen() {
             )
           }
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={colors.emerald}
             />
           }
           onEndReached={handleEndReached}

@@ -21,8 +21,9 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CAMERA_H = SCREEN_H * 0.55;
@@ -35,7 +36,7 @@ function DisposableCameraScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ timeLimit?: string }>();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const mainCameraRef = useRef<CameraView>(null);
   const miniCameraRef = useRef<CameraView>(null);
@@ -99,7 +100,7 @@ function DisposableCameraScreen() {
 
   // ── Swap cameras ──
   const swapCameras = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     setMainFacing((prev) => (prev === 'back' ? 'front' : 'back'));
   }, [haptic]);
 
@@ -108,7 +109,7 @@ function DisposableCameraScreen() {
     if (isCapturing || !mainCameraRef.current || !miniCameraRef.current) return;
 
     setIsCapturing(true);
-    haptic.medium();
+    haptic.send();
 
     // Animate capture button
     captureScale.value = withSpring(0.85, animation.spring.snappy);
@@ -147,7 +148,7 @@ function DisposableCameraScreen() {
     setBackPhoto(null);
     setFrontPhoto(null);
     setIsCaptured(false);
-    haptic.light();
+    haptic.tick();
   }, [haptic]);
 
   // ── Share as story ──

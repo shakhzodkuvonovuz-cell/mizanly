@@ -1974,6 +1974,7 @@
       "backgroundBlur": "Background Blur",
       "edgeSmoothing": "Edge Smoothing",
       "applyAndRecord": "Apply & Record",
+      "noSegmentation": "Background segmentation not yet available — recording without it",
       "color": {
         "black": "Black",
         "white": "White",
@@ -3255,6 +3256,7 @@
     "title": "آڈیو لائبریری",
     "searchPlaceholder": "آوازیں تلاش کریں...",
     "useThisSound": "یہ آواز استعمال کریں",
+    "favoriteToggled": "Favorite updated",
     "emptyState": {
       "title": "کوئی آواز نہیں ملی",
       "subtitle": "مختلف تلاش یا زمرہ آزمائیں"
