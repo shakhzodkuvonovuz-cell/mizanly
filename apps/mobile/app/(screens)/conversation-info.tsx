@@ -114,7 +114,7 @@ export default function ConversationInfoScreen() {
       queryClient.invalidateQueries({ queryKey: ['conversation', id] });
     },
     onError: (error) => {
-      Alert.alert(t('common.error'), t('conversation.failedToRemoveMember'));
+      showToast({ message: t('conversation.failedToRemoveMember'), variant: 'error' });
     },
   });
 
@@ -152,7 +152,7 @@ export default function ConversationInfoScreen() {
         if (!uploadRes.ok) throw new Error('Avatar upload failed');
         updateGroupMutation.mutate({ groupAvatarUrl: presign.publicUrl });
       } catch (err) {
-        Alert.alert(t('common.error'), t('conversation.failedToUploadAvatar'));
+        showToast({ message: t('conversation.failedToUploadAvatar'), variant: 'error' });
       }
     }
   };
@@ -521,7 +521,7 @@ export default function ConversationInfoScreen() {
                         text: t('common.block'), style: 'destructive', onPress: () => {
                           blocksApi.block(other.user.id)
                             .then(() => router.replace('/(tabs)/risalah'))
-                            .catch(() => Alert.alert(t('common.error'), t('errors.blockUserFailed')));
+                            .catch(() => showToast({ message: t('errors.blockUserFailed'), variant: 'error' }));
                         },
                       },
                     ]);

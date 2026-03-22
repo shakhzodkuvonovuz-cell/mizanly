@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  RefreshControl, FlatList, Dimensions, Alert, Share,
+  RefreshControl, FlatList, Dimensions, Share,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -271,7 +272,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
   const handleCopyLink = async () => {
     haptic.save();
     await Clipboard.setStringAsync(`mizanly://channel/${channel?.handle ?? handle}`);
-    Alert.alert(t('common.copied'), t('common.linkCopied'));
+    showToast({ message: t('common.linkCopied'), variant: 'success' });
   };
 
   const handleNativeShare = async () => {

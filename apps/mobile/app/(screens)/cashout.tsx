@@ -6,8 +6,8 @@ import {
   TextInput,
   Pressable,
   ScrollView,
-  Alert,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import Animated, {
   FadeIn,
@@ -121,18 +121,12 @@ function CashoutContent() {
   const handleConfirm = useCallback(async () => {
     if (!selectedMethodId || amount <= 0 || !balance) return;
     if (amount > balance.diamonds) {
-      Alert.alert(
-        t('cashout.errorTitle', 'Error'),
-        t('cashout.insufficientBalance', 'Amount exceeds available balance'),
-      );
+      showToast({ message: t('cashout.insufficientBalance', 'Amount exceeds available balance'), variant: 'error' });
       return;
     }
     // Cash out requires Stripe payout integration.
     // Show honest status instead of misleading "Coming Soon".
-    Alert.alert(
-      t('cashout.payoutPendingTitle', 'Payout Setup Pending'),
-      t('cashout.payoutPendingMessage', 'Cash out requires payment processing to be configured. Your balance is tracked and will be available for withdrawal once payouts are enabled.'),
-    );
+    showToast({ message: t('cashout.payoutPendingMessage', 'Cash out requires payment processing to be configured. Your balance is tracked and will be available for withdrawal once payouts are enabled.'), variant: 'info' });
   }, [amount, balance, selectedMethodId, haptic, t]);
 
   if (success) {

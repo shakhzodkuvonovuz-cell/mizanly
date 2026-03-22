@@ -424,7 +424,7 @@ export default function CreateThreadScreen() {
       router.back();
     },
     onError: (err: Error) => {
-      Alert.alert(t('common.error'), err.message || t('compose.failedToPostThread'));
+      showToast({ message: err.message || t('compose.failedToPostThread'), variant: 'error' });
     },
   });
 

@@ -25,7 +25,6 @@ import type { Community } from '@/types/communities';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -580,7 +579,7 @@ export default function CreateEventScreen() {
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <Pressable onPress={async () => {
           await AsyncStorage.setItem('event-draft', JSON.stringify({ title, description, location, eventType, privacy, isOnline, allDay, selectedCommunity }));
-          Alert.alert(t('common.saved'));
+          showToast({ message: t('common.saved'), variant: 'success' });
         }}>
           <Text style={styles.draftText}>{t('events.saveDraft')}</Text>
         </Pressable>

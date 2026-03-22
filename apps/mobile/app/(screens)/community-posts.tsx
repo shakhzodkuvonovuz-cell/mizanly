@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Image as RNImage, ScrollView,
+  FlatList, TextInput, KeyboardAvoidingView, Platform, Image as RNImage, ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -189,7 +189,7 @@ export default function CommunityPostsScreen() {
       showToast({ message: t('communityPosts.postCreated'), variant: 'success' });
     },
     onError: (error) => {
-      Alert.alert(t('common.error'), t('communityPosts.createError'));
+      showToast({ message: t('communityPosts.createError'), variant: 'error' });
       if (__DEV__) console.error('Create post error:', error);
     },
   });
@@ -251,7 +251,7 @@ export default function CommunityPostsScreen() {
       showToast({ message: t('communityPosts.postDeleted'), variant: 'success' });
     },
     onError: (error) => {
-      Alert.alert(t('common.error'), t('communityPosts.deleteError'));
+      showToast({ message: t('communityPosts.deleteError'), variant: 'error' });
       if (__DEV__) console.error('Delete post error:', error);
     },
   });
@@ -456,7 +456,7 @@ export default function CommunityPostsScreen() {
             <BottomSheetItem
               label={t('communityPosts.addPoll')}
               icon={<Icon name="bar-chart-2" size="md" color={tc.text.primary} />}
-              onPress={() => Alert.alert(t('communityPosts.polls'), t('communityPosts.pollsComing'))}
+              onPress={() => showToast({ message: t('communityPosts.pollsComing'), variant: 'info' })}
             />
           </BottomSheet>
 

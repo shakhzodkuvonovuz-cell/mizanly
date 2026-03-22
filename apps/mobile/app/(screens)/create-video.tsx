@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -170,7 +169,7 @@ export default function CreateVideoScreen() {
   const pickVideo = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('createVideo.permissionRequired'), t('createVideo.grantPermission'));
+      showToast({ message: t('createVideo.grantPermission'), variant: 'error' });
       return;
     }
 
@@ -297,15 +296,15 @@ export default function CreateVideoScreen() {
 
   const handleSubmit = () => {
     if (!video) {
-      Alert.alert(t('createVideo.missingVideo'), t('createVideo.selectVideoToUpload'));
+      showToast({ message: t('createVideo.selectVideoToUpload'), variant: 'error' });
       return;
     }
     if (!title.trim()) {
-      Alert.alert(t('createVideo.missingTitle'), t('createVideo.enterVideoTitle'));
+      showToast({ message: t('createVideo.enterVideoTitle'), variant: 'error' });
       return;
     }
     if (!selectedChannelId) {
-      Alert.alert(t('minbar.missingChannel'), t('minbar.pleaseSelectChannel'));
+      showToast({ message: t('minbar.pleaseSelectChannel'), variant: 'error' });
       return;
     }
     uploadMutation.mutate();

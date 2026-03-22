@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch, Share } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { chatExportApi } from '@/services/chatExportApi';
@@ -40,10 +41,7 @@ function ChatExportContent() {
         }
       } catch {
         if (!cancelled) {
-          Alert.alert(
-            t('chatExport.errorTitle', 'Error'),
-            t('chatExport.errorLoadStats', 'Failed to load chat statistics'),
-          );
+          showToast({ message: t('chatExport.errorLoadStats', 'Failed to load chat statistics'), variant: 'error' });
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -68,10 +66,7 @@ function ChatExportContent() {
         message: t('chatExport.shareMessage', 'Chat export from Mizanly'),
       });
     } catch {
-      Alert.alert(
-        t('chatExport.errorTitle', 'Error'),
-        t('chatExport.errorExport', 'Failed to export chat. Please try again.'),
-      );
+      showToast({ message: t('chatExport.errorExport', 'Failed to export chat. Please try again.'), variant: 'error' });
     } finally {
       setExporting(false);
     }

@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation,
+  KeyboardAvoidingView, Platform, FlatList, LayoutAnimation,
 } from 'react-native';
 import { Swipeable, PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
@@ -271,7 +271,7 @@ function GifPicker({ visible, onClose, onSelect }: {
 
   const fetchGifs = useCallback(async (query: string) => {
     if (!apiKey) {
-      Alert.alert(t('common.error'), t('errors.gifServiceNotConfigured'));
+      showToast({ message: t('errors.gifServiceNotConfigured'), variant: 'error' });
       return;
     }
     setLoading(true);
@@ -283,7 +283,7 @@ function GifPicker({ visible, onClose, onSelect }: {
       const data = await resp.json();
       setResults(data.results || []);
     } catch (err) {
-      Alert.alert(t('common.error'), t('errors.gifLoadFailed'));
+      showToast({ message: t('errors.gifLoadFailed'), variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -1062,7 +1062,7 @@ export default function ConversationScreen() {
           setEditingMsg(null);
           setText('');
         })
-        .catch(() => Alert.alert(t('common.error'), t('errors.editMessageFailed')));
+        .catch(() => showToast({ message: t('errors.editMessageFailed'), variant: 'error' }));
       return;
     }
     haptic.send();
@@ -1158,7 +1158,7 @@ export default function ConversationScreen() {
       setReplyTo(null);
       queryClient.invalidateQueries({ queryKey: ['messages', id] });
     } catch {
-      Alert.alert(t('common.error'), t('errors.sendImageFailed'));
+      showToast({ message: t('errors.sendImageFailed'), variant: 'error' });
     } finally {
       setUploadingMedia(false);
     }
@@ -1166,7 +1166,7 @@ export default function ConversationScreen() {
 
   const handleVoiceStart = useCallback(async () => {
     const { granted } = await Audio.requestPermissionsAsync();
-    if (!granted) { Alert.alert(t('common.permissionNeeded'), t('errors.microphoneAccessRequired')); return; }
+    if (!granted) { showToast({ message: t('errors.microphoneAccessRequired'), variant: 'error' }); return; }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const recording = new Audio.Recording();
     await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
@@ -1239,7 +1239,7 @@ export default function ConversationScreen() {
       setReplyTo(null);
       haptic.success();
     } catch {
-      Alert.alert(t('common.error'), t('errors.sendVoiceFailed'));
+      showToast({ message: t('errors.sendVoiceFailed'), variant: 'error' });
     } finally {
       setUploadingVoice(false);
       await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
@@ -1867,7 +1867,7 @@ export default function ConversationScreen() {
                 setEncryptionReady(true);
                 haptic.success();
               } else {
-                Alert.alert(t('common.error'), t('errors.encryptionSetupFailed'));
+                showToast({ message: t('errors.encryptionSetupFailed'), variant: 'error' });
               }
               setContextMenuMsg(null);
             }}
@@ -1895,7 +1895,7 @@ export default function ConversationScreen() {
                 onPress={() => {
                   messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
                     queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                  }).catch(() => Alert.alert(t('common.error'), t('errors.deleteMessageFailed')));
+                  }).catch(() => showToast({ message: t('errors.deleteMessageFailed'), variant: 'error' }));
                   setContextMenuMsg(null);
                 }}
               />
@@ -1907,7 +1907,7 @@ export default function ConversationScreen() {
                 onPress={() => {
                   messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
                     queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                  }).catch(() => Alert.alert(t('common.error'), t('errors.deleteMessageFailed')));
+                  }).catch(() => showToast({ message: t('errors.deleteMessageFailed'), variant: 'error' }));
                   setContextMenuMsg(null);
                 }}
               />

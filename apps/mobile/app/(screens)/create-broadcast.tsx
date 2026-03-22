@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Alert, Platform,
+  ScrollView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { broadcastApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -94,7 +95,7 @@ export default function CreateBroadcastScreen() {
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert(t('common.error'), err.message || t('createBroadcast.createError'));
+      showToast({ message: err.message || t('createBroadcast.createError'), variant: 'error' });
     },
   });
 

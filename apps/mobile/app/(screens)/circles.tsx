@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { circlesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -50,7 +51,7 @@ function CreateSheet({
       onCreated();
       onClose();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   return (
@@ -131,7 +132,7 @@ export default function CirclesScreen() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => circlesApi.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-circles'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleDelete = (circle: Circle) => {

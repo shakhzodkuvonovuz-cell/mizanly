@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl, Pressable,
-  TextInput, Alert,
+  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -21,6 +21,7 @@ import { postsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 const SPACES = [
@@ -59,7 +60,7 @@ function CrossPostContent() {
       }),
     onSuccess: () => {
       haptic.success();
-      Alert.alert(t('crossPost.title'), t('crossPost.success'));
+      showToast({ message: t('crossPost.success'), variant: 'success' });
       router.back();
     },
     onError: () => {
@@ -87,7 +88,7 @@ function CrossPostContent() {
 
   const handleCrossPost = () => {
     if (selectedSpaces.size === 0) {
-      Alert.alert(t('crossPost.noSpaces'));
+      showToast({ message: t('crossPost.noSpaces'), variant: 'error' });
       return;
     }
     haptic.send();

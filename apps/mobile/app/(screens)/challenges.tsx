@@ -6,8 +6,8 @@ import {
   FlatList,
   RefreshControl,
   Pressable,
-  Alert,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -433,7 +433,7 @@ function ChallengesScreen() {
         style={styles.fab}
         onPress={() => {
           haptic.medium();
-          Alert.alert(t('gamification.challenges.create'), t('gamification.challenges.createComingSoon'));
+          showToast({ message: t('gamification.challenges.createComingSoon'), variant: 'info' });
         }}
         accessibilityRole="button"
         accessibilityLabel={t('gamification.challenges.create')}

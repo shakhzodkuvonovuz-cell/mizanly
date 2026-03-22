@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, Alert,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -67,9 +68,9 @@ export default function DMNoteEditorScreen() {
     mutationFn: () => messagesApi.createDMNote(content.trim(), expiryHours),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dm-note'] });
-      Alert.alert(t('dmNotes.posted'));
+      showToast({ message: t('dmNotes.posted'), variant: 'success' });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const deleteMutation = useMutation({
@@ -77,9 +78,9 @@ export default function DMNoteEditorScreen() {
     onSuccess: () => {
       setContent('');
       queryClient.invalidateQueries({ queryKey: ['dm-note'] });
-      Alert.alert(t('dmNotes.deleted'));
+      showToast({ message: t('dmNotes.deleted'), variant: 'success' });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handlePost = useCallback(() => {

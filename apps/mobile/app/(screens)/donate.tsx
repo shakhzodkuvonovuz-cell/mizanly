@@ -6,8 +6,8 @@ import {
   Pressable,
   FlatList,
   StyleSheet,
-  Alert,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -94,10 +94,7 @@ function DonateScreenContent() {
     if (amount < 100) return;
     // TODO: Integrate Stripe payment before creating donation record
     // Currently the backend creates a donation record without collecting payment
-    Alert.alert(
-      t('common.comingSoon', 'Coming Soon'),
-      t('charity.donateComingSoon', 'Donations will be available once payment processing is set up'),
-    );
+    showToast({ message: t('charity.donateComingSoon', 'Donations will be available once payment processing is set up'), variant: 'info' });
   };
 
   const handlePresetPress = (amount: number) => {

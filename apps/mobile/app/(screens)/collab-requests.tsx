@@ -17,6 +17,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { collabsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -65,19 +66,19 @@ export default function CollabRequestsScreen() {
       queryClient.invalidateQueries({ queryKey: ['collabs', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['collabs', 'accepted'] });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const declineMutation = useMutation({
     mutationFn: (collabId: string) => collabsApi.decline(collabId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['collabs', 'pending'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const removeMutation = useMutation({
     mutationFn: (collabId: string) => collabsApi.remove(collabId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['collabs', 'accepted'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const onRefresh = async () => {

@@ -6,11 +6,11 @@ import {
   FlatList,
   Pressable,
   TextInput,
-  Alert,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
 } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
+import { showToast } from '@/components/ui/Toast';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -58,7 +58,7 @@ export default function BroadcastChannelsScreen() {
       loadMyChannels(true);
       navigate(`/(screens)/broadcast/${data.id}`);
     },
-    onError: () => Alert.alert(t('common.error'), t('broadcastChannels.createError')),
+    onError: () => showToast({ message: t('broadcastChannels.createError'), variant: 'error' }),
   });
   const [discoverChannels, setDiscoverChannels] = useState<BroadcastChannelWithSubscription[]>([]);
   const [myChannels, setMyChannels] = useState<BroadcastChannelWithSubscription[]>([]);

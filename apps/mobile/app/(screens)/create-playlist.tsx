@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Switch, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Switch, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 export default function CreatePlaylistScreen() {
   const router = useRouter();
@@ -54,17 +55,17 @@ export default function CreatePlaylistScreen() {
     },
     onError: () => {
       haptic.error();
-      Alert.alert(t('common.error'), t('createPlaylist.createError'));
+      showToast({ message: t('createPlaylist.createError'), variant: 'error' });
     },
   });
 
   const handleCreate = () => {
     if (!title.trim()) {
-      Alert.alert(t('common.required'), t('createPlaylist.titleRequired'));
+      showToast({ message: t('createPlaylist.titleRequired'), variant: 'error' });
       return;
     }
     if (!channelId) {
-      Alert.alert(t('common.error'), t('createPlaylist.channelNotFound'));
+      showToast({ message: t('createPlaylist.channelNotFound'), variant: 'error' });
       return;
     }
     createMutation.mutate({

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Alert,
+  View, Text, StyleSheet, Pressable, ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,6 +17,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -156,7 +157,7 @@ function ChatWallpaperScreen() {
       await AsyncStorage.removeItem(`${WALLPAPER_STORAGE_PREFIX}${conversationId}`);
     }
     setCurrentWallpaper(null);
-    Alert.alert(t('chatWallpaper.defaultSet'), t('chatWallpaper.defaultSetMessage'));
+    showToast({ message: t('chatWallpaper.defaultSetMessage'), variant: 'success' });
   }, [haptic, clearSelections, conversationId, t]);
 
   const handleSave = useCallback(async () => {
@@ -183,7 +184,7 @@ function ChatWallpaperScreen() {
         router.back();
       }
     } catch {
-      Alert.alert(t('common.error'), t('chatWallpaper.saveFailed'));
+      showToast({ message: t('chatWallpaper.saveFailed'), variant: 'error' });
     } finally {
       setSaving(false);
     }

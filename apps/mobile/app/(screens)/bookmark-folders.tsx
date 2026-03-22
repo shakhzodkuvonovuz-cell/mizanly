@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, StyleSheet, Pressable, FlatList,
   Dimensions, Alert,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -85,15 +86,12 @@ export default function BookmarkFoldersScreen() {
   const handleCreateFolder = useCallback(async () => {
     const trimmed = newFolderName.trim();
     if (!trimmed) {
-      Alert.alert(t('common.error'), t('screens.bookmarkFolders.emptyNameError'));
+      showToast({ message: t('screens.bookmarkFolders.emptyNameError'), variant: 'error' });
       return;
     }
     // Collections are implicit in the backend (created when first bookmark is saved to them).
     // Inform the user the folder name is ready — it will appear when they save a bookmark to it.
-    Alert.alert(
-      t('screens.bookmarkFolders.createSheetTitle'),
-      t('screens.bookmarkFolders.collectionCreatedHint'),
-    );
+    showToast({ message: t('screens.bookmarkFolders.collectionCreatedHint'), variant: 'success' });
     setNewFolderName('');
     setCreateSheetVisible(false);
     collectionsQuery.refetch();
@@ -120,7 +118,7 @@ export default function BookmarkFoldersScreen() {
               );
               collectionsQuery.refetch();
             } catch {
-              Alert.alert(t('common.error'), t('screens.bookmarkFolders.deleteFailed'));
+              showToast({ message: t('screens.bookmarkFolders.deleteFailed'), variant: 'error' });
               collectionsQuery.refetch();
             }
           },

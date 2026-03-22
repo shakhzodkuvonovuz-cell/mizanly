@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   TextInput,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -67,13 +67,10 @@ function BoostPostContent() {
         budget: activeBudget,
         duration: selectedDuration,
       });
-      Alert.alert(
-        t('boost.successTitle'),
-        t('boost.successMessage'),
-        [{ text: t('common.ok'), onPress: () => router.back() }],
-      );
+      showToast({ message: t('boost.successMessage'), variant: 'success' });
+      router.back();
     } catch {
-      Alert.alert(t('common.error'), t('boost.errorMessage'));
+      showToast({ message: t('boost.errorMessage'), variant: 'error' });
     } finally {
       setBoosting(false);
     }

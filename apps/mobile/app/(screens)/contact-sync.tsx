@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Alert,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { showToast } from '@/components/ui/Toast';
 import { usersApi, followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -161,7 +162,7 @@ export default function ContactSyncScreen() {
       setHasLoaded(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : t('common.error');
-      Alert.alert(t('common.error'), errorMessage);
+      showToast({ message: errorMessage, variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -196,7 +197,7 @@ export default function ContactSyncScreen() {
       setPendingFollowId(null);
     },
     onError: (err: Error) => {
-      Alert.alert(t('common.error'), err.message);
+      showToast({ message: err.message, variant: 'error' });
       setPendingFollowId(null);
     },
   });

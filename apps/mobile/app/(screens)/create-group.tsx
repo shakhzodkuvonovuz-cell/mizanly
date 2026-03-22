@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  TextInput, FlatList, Alert, ScrollView,
+  TextInput, FlatList, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { showToast } from '@/components/ui/Toast';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -103,7 +104,7 @@ export default function CreateGroupScreen() {
       if (err.message.includes(`at least ${MIN_MEMBERS} members`)) {
         setValidationError(err.message);
       } else {
-        Alert.alert(t('common.error'), err.message || t('groups.couldNotCreateGroup'));
+        showToast({ message: err.message || t('groups.couldNotCreateGroup'), variant: 'error' });
       }
     },
   });

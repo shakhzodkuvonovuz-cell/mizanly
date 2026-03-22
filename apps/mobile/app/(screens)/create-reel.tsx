@@ -28,6 +28,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
+import { showToast } from '@/components/ui/Toast';
 import { MusicPicker } from '@/components/story/MusicPicker';
 import type { AudioTrack } from '@/types';
 
@@ -136,7 +137,7 @@ export default function CreateReelScreen() {
     if (!cameraPermission?.granted) {
       const result = await requestCameraPermission();
       if (!result.granted) {
-        Alert.alert(t('camera.permissionRequired'), t('camera.permissionMessage'));
+        showToast({ message: t('camera.permissionMessage'), variant: 'error' });
         return;
       }
     }
@@ -154,7 +155,7 @@ export default function CreateReelScreen() {
     (async () => {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('createReel.permissionRequired'), t('createReel.permissionMessage'));
+        showToast({ message: t('createReel.permissionMessage'), variant: 'error' });
       }
     })();
   }, []);
@@ -314,17 +315,17 @@ export default function CreateReelScreen() {
     },
     onError: (error: Error) => {
       haptic.error();
-      Alert.alert(t('createReel.uploadFailed'), error.message || t('common.somethingWentWrong'));
+      showToast({ message: error.message || t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
   const handleUpload = () => {
     if (!video) {
-      Alert.alert(t('createReel.noVideo'), t('createReel.selectVideoFirst'));
+      showToast({ message: t('createReel.selectVideoFirst'), variant: 'error' });
       return;
     }
     if (caption.length > 500) {
-      Alert.alert(t('createReel.captionTooLong'), t('createReel.maxCharacters', { max: 500 }));
+      showToast({ message: t('createReel.maxCharacters', { max: 500 }), variant: 'error' });
       return;
     }
     uploadMutation.mutate();

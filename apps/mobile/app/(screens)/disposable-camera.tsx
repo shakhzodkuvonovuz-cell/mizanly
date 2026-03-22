@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Dimensions, Alert,
+  View, Text, StyleSheet, Pressable, Dimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -70,11 +70,8 @@ function DisposableCameraScreen() {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          Alert.alert(
-            t('disposable.timeUp'),
-            t('disposable.timeUpMessage'),
-            [{ text: t('common.ok'), onPress: () => router.back() }],
-          );
+          showToast({ message: t('disposable.timeUpMessage'), variant: 'error' });
+          router.back();
           return 0;
         }
         return prev - 1;
@@ -137,7 +134,7 @@ function DisposableCameraScreen() {
         haptic.success();
       }
     } catch {
-      Alert.alert(t('disposable.captureError'), t('disposable.captureErrorMessage'));
+      showToast({ message: t('disposable.captureErrorMessage'), variant: 'error' });
     } finally {
       setIsCapturing(false);
     }
@@ -195,7 +192,7 @@ function DisposableCameraScreen() {
     },
     onError: () => {
       setIsPosting(false);
-      Alert.alert(t('disposable.shareError'), t('disposable.shareErrorMessage'));
+      showToast({ message: t('disposable.shareErrorMessage'), variant: 'error' });
     },
   });
 

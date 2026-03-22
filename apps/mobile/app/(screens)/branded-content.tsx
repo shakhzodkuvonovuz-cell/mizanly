@@ -6,9 +6,9 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Alert,
   Switch,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,13 +42,10 @@ function BrandedContentContent() {
       } else if (!isPaidPartnership) {
         await promotionsApi.removeBranded(postId);
       }
-      Alert.alert(
-        t('branded.savedTitle'),
-        t('branded.savedMessage'),
-        [{ text: t('common.ok'), onPress: () => router.back() }],
-      );
+      showToast({ message: t('branded.savedMessage'), variant: 'success' });
+      router.back();
     } catch {
-      Alert.alert(t('common.error'), t('branded.saveError'));
+      showToast({ message: t('branded.saveError'), variant: 'error' });
     } finally {
       setSaving(false);
     }

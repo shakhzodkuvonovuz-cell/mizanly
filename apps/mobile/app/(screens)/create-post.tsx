@@ -135,7 +135,7 @@ export default function CreatePostScreen() {
   // ── Media picker ──
   const pickMedia = async () => {
     if (media.length >= 10) {
-      Alert.alert(t('compose.limitReached'), t('compose.mediaLimit'));
+      showToast({ message: t('compose.mediaLimit'), variant: 'error' });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -627,9 +627,9 @@ export default function CreatePostScreen() {
                     visibility,
                     circleId,
                   });
-                  Alert.alert(t('compose.saved'), t('compose.draftSavedToAccount'));
+                  showToast({ message: t('compose.draftSavedToAccount'), variant: 'success' });
                 } catch {
-                  Alert.alert(t('common.error'), t('compose.failedToSaveDraft'));
+                  showToast({ message: t('compose.failedToSaveDraft'), variant: 'error' });
                 }
               }}
               accessibilityLabel={t('accessibility.saveDraftToCloud')}
