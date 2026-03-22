@@ -384,5 +384,262 @@ describe('NotificationsService', () => {
       );
       loggerSpy.mockRestore();
     });
+
+    it('should skip LIKE notification when user has notifyLikes: false', async () => {
+      prisma.settings.findUnique.mockResolvedValue({
+        notifyLikes: false,
+        notifyComments: true,
+        notifyFollows: true,
+        notifyMentions: true,
+        notifyMessages: true,
+        notifyLiveStreams: true,
+      });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'LIKE',
+        postId: 'post-789',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should skip REEL_LIKE notification when user has notifyLikes: false', async () => {
+      prisma.settings.findUnique.mockResolvedValue({
+        notifyLikes: false,
+        notifyComments: true,
+        notifyFollows: true,
+        notifyMentions: true,
+        notifyMessages: true,
+        notifyLiveStreams: true,
+      });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'REEL_LIKE',
+        reelId: 'reel-1',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should skip FOLLOW notification when user has notifyFollows: false', async () => {
+      prisma.settings.findUnique.mockResolvedValue({
+        notifyLikes: true,
+        notifyComments: true,
+        notifyFollows: false,
+        notifyMentions: true,
+        notifyMessages: true,
+        notifyLiveStreams: true,
+      });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'FOLLOW',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should skip FOLLOW_REQUEST notification when user has notifyFollows: false', async () => {
+      prisma.settings.findUnique.mockResolvedValue({
+        notifyLikes: true,
+        notifyComments: true,
+        notifyFollows: false,
+        notifyMentions: true,
+        notifyMessages: true,
+        notifyLiveStreams: true,
+      });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'FOLLOW_REQUEST',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should skip COMMENT notification when user has notifyComments: false', async () => {
+      prisma.settings.findUnique.mockResolvedValue({
+        notifyLikes: true,
+        notifyComments: false,
+        notifyFollows: true,
+        notifyMentions: true,
+        notifyMessages: true,
+        notifyLiveStreams: true,
+      });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'COMMENT',
+        postId: 'post-1',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should skip MENTION notification when user has notifyMentions: false', async () => {
+      prisma.settings.findUnique.mockResolvedValue({
+        notifyLikes: true,
+        notifyComments: true,
+        notifyFollows: true,
+        notifyMentions: false,
+        notifyMessages: true,
+        notifyLiveStreams: true,
+      });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'MENTION',
+        postId: 'post-1',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow LIKE notification when user has notifyLikes: true', async () => {
+      prisma.settings.findUnique.mockResolvedValue({
+        notifyLikes: true,
+        notifyComments: true,
+        notifyFollows: true,
+        notifyMentions: true,
+        notifyMessages: true,
+        notifyLiveStreams: true,
+      });
+
+      const mockNotification = { id: 'notif-allowed', isRead: false, createdAt: new Date() };
+      prisma.notification.create.mockResolvedValue(mockNotification);
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'LIKE',
+        postId: 'post-789',
+      });
+
+      expect(result).toEqual(mockNotification);
+      expect(prisma.notification.create).toHaveBeenCalled();
+    });
+
+    it('should block ALL notifications when global notificationsOn: false', async () => {
+      // Per-type settings allow likes
+      prisma.settings.findUnique.mockResolvedValue({
+        notifyLikes: true,
+        notifyComments: true,
+        notifyFollows: true,
+        notifyMentions: true,
+        notifyMessages: true,
+        notifyLiveStreams: true,
+      });
+
+      // But global notifications are OFF
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: false });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'LIKE',
+        postId: 'post-789',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should block FOLLOW notification when global notificationsOn: false', async () => {
+      prisma.settings.findUnique.mockResolvedValue(null); // No per-type settings
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: false });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'FOLLOW',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow notification when global notificationsOn: true and no per-type settings', async () => {
+      prisma.settings.findUnique.mockResolvedValue(null); // No per-type settings at all
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: true });
+
+      const mockNotification = { id: 'notif-global-on', isRead: false, createdAt: new Date() };
+      prisma.notification.create.mockResolvedValue(mockNotification);
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'LIKE',
+        postId: 'post-1',
+      });
+
+      expect(result).toEqual(mockNotification);
+      expect(prisma.notification.create).toHaveBeenCalled();
+    });
+
+    it('should skip notification when recipient has blocked the actor', async () => {
+      prisma.settings.findUnique.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: true });
+      prisma.block.findFirst.mockResolvedValue({
+        id: 'block-1',
+        blockerId: 'user-123',
+        blockedId: 'actor-456',
+      });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'LIKE',
+        postId: 'post-1',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should skip notification when recipient has muted the actor', async () => {
+      prisma.settings.findUnique.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue({ notificationsOn: true });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.mute.findFirst.mockResolvedValue({
+        id: 'mute-1',
+        userId: 'user-123',
+        mutedId: 'actor-456',
+      });
+
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'COMMENT',
+        postId: 'post-1',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should reject invalid notification type', async () => {
+      const result = await service.create({
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'INVALID_TYPE_XYZ',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
   });
 });
