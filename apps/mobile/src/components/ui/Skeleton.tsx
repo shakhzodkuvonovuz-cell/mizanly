@@ -34,8 +34,13 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
   }, [shimmer, reducedMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(shimmer.value, [0, 1], I18nManager.isRTL ? [300, -300] : [-300, 300]) }],
+    transform: [{ translateX: interpolate(shimmer.value, [0, 1], I18nManager.isRTL ? [400, -400] : [-400, 400]) }],
   }));
+
+  // Emerald brand shimmer — subtle tint instead of generic white
+  const shimmerColors: [string, string, ...string[]] = tc.isDark
+    ? ['transparent', 'rgba(10,123,79,0.03)', 'rgba(10,123,79,0.07)', 'rgba(10,123,79,0.03)', 'transparent']
+    : ['transparent', 'rgba(10,123,79,0.05)', 'rgba(10,123,79,0.10)', 'rgba(10,123,79,0.05)', 'transparent'];
 
   return (
     <View
@@ -54,16 +59,10 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
     >
       <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
         <LinearGradient
-          colors={[
-            'transparent',
-            'rgba(255, 255, 255, 0.05)',
-            'rgba(255, 255, 255, 0.1)',
-            'rgba(255, 255, 255, 0.05)',
-            'transparent',
-          ]}
+          colors={shimmerColors}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
-          style={[StyleSheet.absoluteFill, { width: 300 }]}
+          style={[StyleSheet.absoluteFill, { width: 800 }]}
         />
       </Animated.View>
     </View>
