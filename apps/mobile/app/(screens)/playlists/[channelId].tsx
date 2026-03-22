@@ -43,7 +43,7 @@ export default function ChannelPlaylistsScreen() {
   // If channelId is missing, show error
   if (!channelId) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
@@ -94,7 +94,7 @@ export default function ChannelPlaylistsScreen() {
             </LinearGradient>
           )}
           <View style={styles.cardInfo}>
-            <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+            <Text style={[styles.cardTitle, { color: tc.text.primary }]} numberOfLines={2}>{item.title}</Text>
             <LinearGradient
               colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
               style={styles.videosBadge}
@@ -111,7 +111,7 @@ export default function ChannelPlaylistsScreen() {
   // Loading skeleton
   if (playlistsQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={[styles.skeletonContainer, { paddingTop: insets.top + 56 }]}>
           {[...Array(4)].map((_, i) => (
@@ -131,7 +131,7 @@ export default function ChannelPlaylistsScreen() {
   // Error state
   if (playlistsQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
@@ -149,7 +149,7 @@ export default function ChannelPlaylistsScreen() {
   // Empty state
   if (!playlistsQuery.isFetching && playlists.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
@@ -164,7 +164,7 @@ export default function ChannelPlaylistsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
 
         <FlatList

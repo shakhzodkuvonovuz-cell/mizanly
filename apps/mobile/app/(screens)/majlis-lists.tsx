@@ -112,12 +112,12 @@ export default function MajlisListsScreen() {
           <View style={styles.cardInfo}>
             <View style={styles.titleRow}>
               {!item.isPublic && (
-                <Icon name="lock" size={14} color={colors.text.tertiary} />
+                <Icon name="lock" size={14} color={tc.text.tertiary} />
               )}
-              <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+              <Text style={[styles.name, { color: tc.text.primary }]} numberOfLines={1}>{item.name}</Text>
             </View>
             {!!item.description && (
-              <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
+              <Text style={[styles.desc, { color: tc.text.secondary }]} numberOfLines={2}>{item.description}</Text>
             )}
             <LinearGradient
               colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
@@ -214,22 +214,22 @@ export default function MajlisListsScreen() {
 
         <BottomSheet visible={isSheetVisible} onClose={() => setIsSheetVisible(false)}>
           <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>{t('screens.majlis-lists.createNew')}</Text>
+            <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>{t('screens.majlis-lists.createNew')}</Text>
 
-            <Text style={styles.inputLabel}>{t('screens.majlis-lists.name')}</Text>
+            <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('screens.majlis-lists.name')}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: tc.surface }]}
               placeholder={t('screens.majlis-lists.namePlaceholder')}
-              placeholderTextColor={colors.text.secondary}
+              placeholderTextColor={tc.text.secondary}
               value={newName}
               onChangeText={setNewName}
             />
 
-            <Text style={styles.inputLabel}>{t('screens.majlis-lists.descriptionOptional')}</Text>
+            <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('screens.majlis-lists.descriptionOptional')}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: tc.surface }, styles.textArea]}
               placeholder={t('screens.majlis-lists.descPlaceholder')}
-              placeholderTextColor={colors.text.secondary}
+              placeholderTextColor={tc.text.secondary}
               value={newDesc}
               onChangeText={setNewDesc}
               multiline
@@ -238,14 +238,14 @@ export default function MajlisListsScreen() {
 
             <View style={styles.toggleRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.toggleTitle}>{t('screens.majlis-lists.publicList')}</Text>
-                <Text style={styles.toggleDesc}>{t('screens.majlis-lists.publicListDesc')}</Text>
+                <Text style={[styles.toggleTitle, { color: tc.text.primary }]}>{t('screens.majlis-lists.publicList')}</Text>
+                <Text style={[styles.toggleDesc, { color: tc.text.secondary }]}>{t('screens.majlis-lists.publicListDesc')}</Text>
               </View>
               <Switch 
                 value={isPublic}
                 onValueChange={setIsPublic}
                 trackColor={{ false: tc.surface, true: colors.emerald }}
-                thumbColor={colors.text.primary}
+                thumbColor={tc.text.primary}
               />
             </View>
 

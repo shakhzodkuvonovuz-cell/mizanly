@@ -70,8 +70,8 @@ export default function MentorshipScreen() {
       >
         <Avatar uri={item.avatarUrl as string | null} name={item.displayName as string || ''} size="lg" />
         <View style={{ flex: 1 }}>
-          <Text style={styles.mentorName}>{item.displayName as string}</Text>
-          <Text style={styles.mentorUsername}>@{item.username as string}</Text>
+          <Text style={[styles.mentorName, { color: tc.text.primary }]}>{item.displayName as string}</Text>
+          <Text style={[styles.mentorUsername, { color: tc.text.secondary }]}>@{item.username as string}</Text>
         </View>
         <View style={styles.requestBtn}>
           <Icon name="send" size="sm" color={colors.emerald} />
@@ -88,7 +88,7 @@ export default function MentorshipScreen() {
         <View style={[styles.mentorCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Avatar uri={other?.avatarUrl as string | null} name={other?.displayName as string || ''} size="lg" />
           <View style={{ flex: 1 }}>
-            <Text style={styles.mentorName}>{other?.displayName as string}</Text>
+            <Text style={[styles.mentorName, { color: tc.text.primary }]}>{other?.displayName as string}</Text>
             <View style={styles.badges}>
               <View style={[styles.badge, { backgroundColor: isMentor ? colors.gold + '20' : colors.emerald + '20' }]}>
                 <Text style={[styles.badgeText, { color: isMentor ? colors.gold : colors.emerald }]}>
@@ -101,7 +101,7 @@ export default function MentorshipScreen() {
                 </Text>
               </View>
             </View>
-            <Text style={styles.topicText}>{item.topic as string}</Text>
+            <Text style={[styles.topicText, { color: tc.text.tertiary }]}>{item.topic as string}</Text>
           </View>
         </View>
       </Animated.View>
@@ -135,11 +135,11 @@ export default function MentorshipScreen() {
         {activeTab === 'find' ? (
           <>
             <View style={[styles.searchWrap, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-              <Icon name="search" size="sm" color={colors.text.tertiary} />
+              <Icon name="search" size="sm" color={tc.text.tertiary} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: tc.text.primary }]}
                 placeholder={t('common.searchUsers')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />

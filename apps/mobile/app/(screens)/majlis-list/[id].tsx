@@ -82,12 +82,12 @@ export default function MajlisListDetailScreen() {
   const listHeader = useMemo(() => {
     if (!listData) return null;
     return (
-      <View style={styles.listInfo}>
-        <Text style={styles.listName}>{listData.name}</Text>
+      <View style={[styles.listInfo, { borderBottomColor: tc.border }]}>
+        <Text style={[styles.listName, { color: tc.text.primary }]}>{listData.name}</Text>
         {listData.description ? (
-          <Text style={styles.listDesc}>{listData.description}</Text>
+          <Text style={[styles.listDesc, { color: tc.text.secondary }]}>{listData.description}</Text>
         ) : null}
-        <Text style={styles.memberCount}>
+        <Text style={[styles.memberCount, { color: tc.text.tertiary }]}>
           {listData.membersCount ?? 0} {t('screens.majlis-lists.members')}
         </Text>
       </View>

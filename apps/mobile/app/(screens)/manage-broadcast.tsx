@@ -148,8 +148,8 @@ export default function ManageBroadcastScreen() {
           <Icon name="user" size="sm" color={colors.emerald} />
         </LinearGradient>
         <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1}>{item.displayName || item.username}</Text>
-          <Text style={styles.username} numberOfLines={1}>@{item.username}</Text>
+          <Text style={[styles.name, { color: tc.text.primary }]} numberOfLines={1}>{item.displayName || item.username}</Text>
+          <Text style={[styles.username, { color: tc.text.secondary }]} numberOfLines={1}>@{item.username}</Text>
         </View>
         <Pressable
           accessibilityRole="button"
@@ -159,7 +159,7 @@ export default function ManageBroadcastScreen() {
             colors={colors.gradient.cardDark}
             style={styles.actionButton}
           >
-            <Icon name="more-horizontal" size={20} color={colors.text.secondary} />
+            <Icon name="more-horizontal" size={20} color={tc.text.secondary} />
           </LinearGradient>
         </Pressable>
       </LinearGradient>

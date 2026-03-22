@@ -73,7 +73,7 @@ function PodiumCard({
             <Text style={styles.medalText}>{position}</Text>
           </View>
         </View>
-        <Text style={styles.podiumName} numberOfLines={1}>
+        <Text style={[styles.podiumName, { color: tc.text.primary }]} numberOfLines={1}>
           {entry.displayName}
         </Text>
         <View style={[styles.podiumScoreRow, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -99,6 +99,7 @@ function LeaderboardRow({
   isRTL: boolean;
 }) {
   const router = useRouter();
+  const tc = useThemeColors();
 
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 600)).duration(400)}>
@@ -119,21 +120,21 @@ function LeaderboardRow({
             isCurrentUser && styles.currentUserRow,
           ]}
         >
-          <Text style={styles.rankText}>
+          <Text style={[styles.rankText, { color: tc.text.secondary }]}>
             {entry.rank}
           </Text>
           <Avatar uri={entry.avatarUrl} name={entry.displayName} size="sm" />
           <View style={styles.listNameWrap}>
             <View style={[styles.nameRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Text
-                style={[styles.listName, { textAlign: rtlTextAlign(isRTL) }]}
+                style={[styles.listName, { textAlign: rtlTextAlign(isRTL), color: tc.text.primary }]}
                 numberOfLines={1}
               >
                 {entry.displayName}
               </Text>
               {entry.isVerified && <VerifiedBadge size={13} />}
             </View>
-            <Text style={[styles.listUsername, { textAlign: rtlTextAlign(isRTL) }]}>
+            <Text style={[styles.listUsername, { textAlign: rtlTextAlign(isRTL), color: tc.text.tertiary }]}>
               @{entry.username}
             </Text>
           </View>

@@ -84,7 +84,7 @@ function TierCard({
               <Icon name="star" size="sm" color={tierColors.color} />
             </LinearGradient>
             <View>
-              <Text style={styles.tierName}>{tier.name}</Text>
+              <Text style={[styles.tierName, { color: tc.text.primary }]}>{tier.name}</Text>
               <Text style={[styles.tierPrice, { color: tierColors.color }]}>
                 ${tier.price.toFixed(2)}/month
               </Text>
@@ -119,7 +119,7 @@ function TierCard({
           colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
           style={styles.membersBadge}
         >
-          <Icon name="users" size="xs" color={colors.text.tertiary} />
+          <Icon name="users" size="xs" color={tc.text.tertiary} />
           <Text style={styles.membersText}>{t('monetization.members', { count: tier._count?.subscriptions ?? 0 })}</Text>
         </LinearGradient>
 
@@ -144,7 +144,7 @@ function TierCard({
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
             style={styles.editButtonGradient}
           >
-            <Icon name="pencil" size="xs" color={colors.text.secondary} />
+            <Icon name="pencil" size="xs" color={tc.text.secondary} />
             <Text style={styles.editButtonText}>{t('monetization.editTier')}</Text>
           </LinearGradient>
         </Pressable>
@@ -284,8 +284,8 @@ export default function MembershipTiersScreen() {
                       <Icon name="star" size="sm" color={colors.gold} />
                     </LinearGradient>
                     <View style={styles.infoContent}>
-                      <Text style={styles.infoTitle}>{t('monetization.infoTitle')}</Text>
-                      <Text style={styles.infoSubtitle}>{t('monetization.infoSubtitle')}</Text>
+                      <Text style={[styles.infoTitle, { color: tc.text.primary }]}>{t('monetization.infoTitle')}</Text>
+                      <Text style={[styles.infoSubtitle, { color: tc.text.secondary }]}>{t('monetization.infoSubtitle')}</Text>
                     </View>
                   </LinearGradient>
                 </Animated.View>
@@ -315,7 +315,7 @@ export default function MembershipTiersScreen() {
                         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
                         style={styles.createButton}
                       >
-                        <Icon name="circle-plus" size="lg" color={colors.text.tertiary} />
+                        <Icon name="circle-plus" size="lg" color={tc.text.tertiary} />
                         <Text style={styles.createButtonText}>{t('monetization.addMembershipTier')}</Text>
                       </LinearGradient>
                     </Pressable>
@@ -326,7 +326,7 @@ export default function MembershipTiersScreen() {
                       colors={colors.gradient.cardDark}
                       style={styles.createFormCard}
                     >
-                      <Text style={styles.createFormTitle}>{t('monetization.createNewTier')}</Text>
+                      <Text style={[styles.createFormTitle, { color: tc.text.primary }]}>{t('monetization.createNewTier')}</Text>
 
                       {/* Name Input */}
                       <LinearGradient
@@ -339,7 +339,7 @@ export default function MembershipTiersScreen() {
                           value={newTierName}
                           onChangeText={setNewTierName}
                           placeholder="e.g., Premium Supporter"
-                          placeholderTextColor={colors.text.tertiary}
+                          placeholderTextColor={tc.text.tertiary}
                         />
                       </LinearGradient>
 
@@ -356,7 +356,7 @@ export default function MembershipTiersScreen() {
                             value={newTierPrice}
                             onChangeText={setNewTierPrice}
                             placeholder="9.99"
-                            placeholderTextColor={colors.text.tertiary}
+                            placeholderTextColor={tc.text.tertiary}
                             keyboardType="decimal-pad"
                           />
                           <Text style={styles.priceSuffix}>/month</Text>
@@ -374,7 +374,7 @@ export default function MembershipTiersScreen() {
                           value={newTierBenefits}
                           onChangeText={setNewTierBenefits}
                           placeholder="• Exclusive content&#10;• Early access&#10;• Monthly Q&A"
-                          placeholderTextColor={colors.text.tertiary}
+                          placeholderTextColor={tc.text.tertiary}
                           multiline
                           numberOfLines={4}
                           textAlignVertical="top"
@@ -428,7 +428,7 @@ export default function MembershipTiersScreen() {
                       >
                         <Icon name="bar-chart-2" size="sm" color={colors.gold} />
                       </LinearGradient>
-                      <Text style={styles.revenueTitle}>Monthly Revenue</Text>
+                      <Text style={[styles.revenueTitle, { color: tc.text.primary }]}>Monthly Revenue</Text>
                     </View>
 
                     <Text style={styles.revenueAmount}>

@@ -64,21 +64,21 @@ export default function LocalBoardsScreen() {
               <Icon name="map-pin" size="md" color={colors.emerald} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.boardName}>{item.name as string}</Text>
-              <Text style={styles.boardLocation}>{item.city as string}, {item.country as string}</Text>
+              <Text style={[styles.boardName, { color: tc.text.primary }]}>{item.name as string}</Text>
+              <Text style={[styles.boardLocation, { color: tc.text.secondary }]}>{item.city as string}, {item.country as string}</Text>
             </View>
           </View>
           {Boolean(item.description) && (
-            <Text style={styles.boardDesc} numberOfLines={2}>{item.description as string}</Text>
+            <Text style={[styles.boardDesc, { color: tc.text.secondary }]} numberOfLines={2}>{item.description as string}</Text>
           )}
           <View style={styles.boardStats}>
             <View style={styles.stat}>
-              <Icon name="users" size="xs" color={colors.text.tertiary} />
-              <Text style={styles.statText}>{formatCount(item.membersCount as number)} {t('community.members')}</Text>
+              <Icon name="users" size="xs" color={tc.text.tertiary} />
+              <Text style={[styles.statText, { color: tc.text.tertiary }]}>{formatCount(item.membersCount as number)} {t('community.members')}</Text>
             </View>
             <View style={styles.stat}>
-              <Icon name="layers" size="xs" color={colors.text.tertiary} />
-              <Text style={styles.statText}>{formatCount(item.postsCount as number)} {t('community.posts')}</Text>
+              <Icon name="layers" size="xs" color={tc.text.tertiary} />
+              <Text style={[styles.statText, { color: tc.text.tertiary }]}>{formatCount(item.postsCount as number)} {t('community.posts')}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -95,11 +95,11 @@ export default function LocalBoardsScreen() {
         />
 
         <View style={[styles.searchWrap, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-          <Icon name="search" size="sm" color={colors.text.tertiary} />
+          <Icon name="search" size="sm" color={tc.text.tertiary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: tc.text.primary }]}
             placeholder={t('community.searchByCity')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             value={search}
             onChangeText={handleSearchChange}
           />

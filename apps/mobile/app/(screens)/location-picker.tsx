@@ -177,11 +177,11 @@ function LocationPickerContent() {
           {/* Search Bar */}
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.searchContainer}>
             <View style={[styles.searchBar, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-              <Icon name="search" size="sm" color={colors.text.tertiary} />
+              <Icon name="search" size="sm" color={tc.text.tertiary} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: tc.text.primary }]}
                 placeholder={t('location.searchPlaceholder', 'Search for an address...')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 onSubmitEditing={handleSearchAddress}
@@ -192,7 +192,7 @@ function LocationPickerContent() {
                 <Skeleton.Circle size={20} />
               ) : searchQuery.length > 0 ? (
                 <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                  <Icon name="x" size="xs" color={colors.text.tertiary} />
+                  <Icon name="x" size="xs" color={tc.text.tertiary} />
                 </Pressable>
               ) : null}
             </View>
@@ -224,28 +224,28 @@ function LocationPickerContent() {
                 <>
                   <View style={[styles.mapPlaceholder, { backgroundColor: tc.surface }]}>
                     <Icon name="map-pin" size="xl" color={colors.emerald} />
-                    <Text style={styles.mapLabel}>
+                    <Text style={[styles.mapLabel, { color: tc.text.tertiary }]}>
                       {t('location.mapPreview', 'Map Preview')}
                     </Text>
                   </View>
                   <View style={styles.coordsRow}>
-                    <Text style={styles.coordLabel}>{t('location.lat', 'Lat')}</Text>
-                    <Text style={styles.coordValue}>{location.latitude.toFixed(6)}</Text>
+                    <Text style={[styles.coordLabel, { color: tc.text.tertiary }]}>{t('location.lat', 'Lat')}</Text>
+                    <Text style={[styles.coordValue, { color: tc.text.primary }]}>{location.latitude.toFixed(6)}</Text>
                     <Text style={[styles.coordLabel, styles.coordLabelRight]}>
                       {t('location.lng', 'Lng')}
                     </Text>
-                    <Text style={styles.coordValue}>{location.longitude.toFixed(6)}</Text>
+                    <Text style={[styles.coordValue, { color: tc.text.primary }]}>{location.longitude.toFixed(6)}</Text>
                   </View>
                   {address ? (
-                    <Text style={styles.addressText} numberOfLines={2}>
+                    <Text style={[styles.addressText, { color: tc.text.secondary }]} numberOfLines={2}>
                       {address}
                     </Text>
                   ) : null}
                 </>
               ) : (
                 <View style={styles.emptyMap}>
-                  <Icon name="map-pin" size="xl" color={colors.text.tertiary} />
-                  <Text style={styles.emptyMapText}>
+                  <Icon name="map-pin" size="xl" color={tc.text.tertiary} />
+                  <Text style={[styles.emptyMapText, { color: tc.text.tertiary }]}>
                     {t('location.noLocation', 'No location selected')}
                   </Text>
                 </View>
@@ -268,16 +268,16 @@ function LocationPickerContent() {
 
           {/* Manual Coordinate Input */}
           <Animated.View entering={FadeInUp.delay(400).duration(300)} style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>
               {t('location.manualEntry', 'Manual Coordinates')}
             </Text>
             <View style={styles.coordInputRow}>
               <View style={styles.coordInputWrapper}>
-                <Text style={styles.inputLabel}>{t('location.latitude', 'Latitude')}</Text>
+                <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('location.latitude', 'Latitude')}</Text>
                 <TextInput
                   style={[styles.coordInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                   placeholder="e.g. 21.4225"
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   value={manualLat}
                   onChangeText={setManualLat}
                   keyboardType="numeric"
@@ -285,11 +285,11 @@ function LocationPickerContent() {
                 />
               </View>
               <View style={styles.coordInputWrapper}>
-                <Text style={styles.inputLabel}>{t('location.longitude', 'Longitude')}</Text>
+                <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('location.longitude', 'Longitude')}</Text>
                 <TextInput
                   style={[styles.coordInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                   placeholder="e.g. 39.8262"
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   value={manualLng}
                   onChangeText={setManualLng}
                   keyboardType="numeric"

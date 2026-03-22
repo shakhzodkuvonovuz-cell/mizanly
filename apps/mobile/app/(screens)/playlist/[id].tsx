@@ -103,7 +103,7 @@ export default function PlaylistDetailScreen() {
             )}
           </View>
           <View style={styles.videoInfo}>
-            <Text style={styles.videoTitle} numberOfLines={2}>
+            <Text style={[styles.videoTitle, { color: tc.text.primary }]} numberOfLines={2}>
               {item.video.title}
             </Text>
             <LinearGradient
@@ -131,9 +131,9 @@ export default function PlaylistDetailScreen() {
           <ProgressiveImage uri={playlist.thumbnailUrl} width="100%" height={200} borderRadius={radius.md} />
         </LinearGradient>
       ) : null}
-      <Text style={styles.playlistTitle}>{playlist?.title ?? ''}</Text>
+      <Text style={[styles.playlistTitle, { color: tc.text.primary }]}>{playlist?.title ?? ''}</Text>
       {playlist?.description ? (
-        <Text style={styles.playlistDesc}>{playlist.description}</Text>
+        <Text style={[styles.playlistDesc, { color: tc.text.secondary }]}>{playlist.description}</Text>
       ) : null}
       <LinearGradient
         colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -149,7 +149,7 @@ export default function PlaylistDetailScreen() {
 
   if (!playlistId) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('screens.playlist.title')} 
           leftAction={{ 
@@ -168,7 +168,7 @@ export default function PlaylistDetailScreen() {
   // Error state
   if (playlistQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.playlist.title')}
           leftAction={{
@@ -192,7 +192,7 @@ export default function PlaylistDetailScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={playlist?.title ?? t('screens.playlist.title', 'Playlist')}
           leftAction={{

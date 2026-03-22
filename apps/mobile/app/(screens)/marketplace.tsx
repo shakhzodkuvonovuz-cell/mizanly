@@ -78,7 +78,7 @@ function renderStars(rating: number) {
       );
     } else {
       stars.push(
-        <Icon key={`star-${i}`} name="heart" size="xs" color={colors.text.tertiary} />
+        <Icon key={`star-${i}`} name="heart" size="xs" color={tc.text.tertiary} />
       );
     }
   }
@@ -186,7 +186,7 @@ function MarketplaceContent() {
             />
           ) : (
             <View style={[styles.productImagePlaceholder, { backgroundColor: tc.surface }]}>
-              <Icon name="image" size="lg" color={colors.text.tertiary} />
+              <Icon name="image" size="lg" color={tc.text.tertiary} />
             </View>
           )}
           <View style={styles.badgeRow}>
@@ -203,7 +203,7 @@ function MarketplaceContent() {
           </View>
         </View>
         <View style={styles.productInfo}>
-          <Text style={styles.productTitle} numberOfLines={2}>
+          <Text style={[styles.productTitle, { color: tc.text.primary }]} numberOfLines={2}>
             {item.title}
           </Text>
           <Text style={styles.productPrice}>
@@ -211,7 +211,7 @@ function MarketplaceContent() {
           </Text>
           <View style={styles.ratingRow}>
             {renderStars(item.rating)}
-            <Text style={styles.reviewCount}>({formatCount(item.reviewCount)})</Text>
+            <Text style={[styles.reviewCount, { color: tc.text.tertiary }]}>({formatCount(item.reviewCount)})</Text>
           </View>
           <View style={styles.sellerRow}>
             <Avatar
@@ -219,7 +219,7 @@ function MarketplaceContent() {
               name={item.seller.displayName}
               size="xs"
             />
-            <Text style={styles.sellerName} numberOfLines={1}>
+            <Text style={[styles.sellerName, { color: tc.text.secondary }]} numberOfLines={1}>
               {item.seller.displayName}
             </Text>
           </View>
@@ -248,11 +248,11 @@ function MarketplaceContent() {
       {/* Search bar */}
       <View style={styles.searchRow}>
         <View style={[styles.searchInput, { backgroundColor: tc.bgCard, borderColor: tc.border }, searchActive && styles.searchInputActive]}>
-          <Icon name="search" size="sm" color={colors.text.tertiary} />
+          <Icon name="search" size="sm" color={tc.text.tertiary} />
           <TextInput
-            style={styles.searchText}
+            style={[styles.searchText, { color: tc.text.primary }]}
             placeholder={t('marketplace.searchPlaceholder', 'Search products...')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onFocus={() => setSearchActive(true)}
@@ -261,7 +261,7 @@ function MarketplaceContent() {
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery('')}>
-              <Icon name="x" size="sm" color={colors.text.tertiary} />
+              <Icon name="x" size="sm" color={tc.text.tertiary} />
             </Pressable>
           )}
         </View>

@@ -148,11 +148,11 @@ export default function GoLiveScreen() {
               colors={colors.gradient.cardDark}
               style={styles.inputCard}
             >
-              <Text style={styles.inputLabel}>{t('common.title')}</Text>
+              <Text style={[styles.inputLabel, { color: tc.text.primary }]}>{t('common.title')}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
                 placeholder={t('minbar.streamTitlePlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 accessibilityLabel={t('accessibility.streamTitle')}
                 value={title}
                 onChangeText={setTitle}
@@ -171,11 +171,11 @@ export default function GoLiveScreen() {
               colors={colors.gradient.cardDark}
               style={styles.inputCard}
             >
-              <Text style={styles.inputLabel}>{t('common.descriptionOptional')}</Text>
+              <Text style={[styles.inputLabel, { color: tc.text.primary }]}>{t('common.descriptionOptional')}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }, styles.textArea]}
                 placeholder={t('minbar.streamDescPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 accessibilityLabel={t('accessibility.streamDesc')}
                 value={description}
                 onChangeText={setDescription}
@@ -195,7 +195,7 @@ export default function GoLiveScreen() {
               colors={colors.gradient.cardDark}
               style={styles.inputCard}
             >
-              <Text style={styles.inputLabel}>{t('live.streamType')}</Text>
+              <Text style={[styles.inputLabel, { color: tc.text.primary }]}>{t('live.streamType')}</Text>
               <Pressable
                 accessibilityRole="button"
                 style={[styles.typeSelector, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
@@ -207,8 +207,8 @@ export default function GoLiveScreen() {
                 >
                   <Icon name={selectedLiveType.iconName} size="sm" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.typeSelectorText}>{selectedLiveType.label}</Text>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                <Text style={[styles.typeSelectorText, { color: tc.text.primary }]}>{selectedLiveType.label}</Text>
+                <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
               </Pressable>
             </LinearGradient>
           </Animated.View>
@@ -221,8 +221,8 @@ export default function GoLiveScreen() {
             >
               <View style={styles.scheduleRow}>
                 <View>
-                  <Text style={styles.inputLabel}>{t('live.scheduleForLater')}</Text>
-                  <Text style={styles.scheduleSubtitle}>
+                  <Text style={[styles.inputLabel, { color: tc.text.primary }]}>{t('live.scheduleForLater')}</Text>
+                  <Text style={[styles.scheduleSubtitle, { color: tc.text.tertiary }]}>
                     {t('live.scheduleSubtitle')}
                   </Text>
                 </View>
@@ -230,7 +230,7 @@ export default function GoLiveScreen() {
                   value={isScheduled}
                   onValueChange={handleScheduleToggle}
                   trackColor={{ false: tc.border, true: colors.emerald }}
-                  thumbColor={colors.text.primary}
+                  thumbColor={tc.text.primary}
                   ios_backgroundColor={tc.border}
                 />
               </View>
@@ -256,7 +256,7 @@ export default function GoLiveScreen() {
                       minute: '2-digit',
                     })}
                   </Text>
-                  <Icon name="edit" size="sm" color={colors.text.tertiary} />
+                  <Icon name="edit" size="sm" color={tc.text.tertiary} />
                 </Pressable>
               )}
             </LinearGradient>
@@ -275,20 +275,20 @@ export default function GoLiveScreen() {
               accessibilityLabel={t('live.rehearse')}
               accessibilityRole="button"
             >
-              <Icon name="eye-off" size="sm" color={colors.text.secondary} />
-              <Text style={styles.rehearseText}>{t('live.rehearse')}</Text>
+              <Icon name="eye-off" size="sm" color={tc.text.secondary} />
+              <Text style={[styles.rehearseText, { color: tc.text.secondary }]}>{t('live.rehearse')}</Text>
             </Pressable>
           </Animated.View>
         </ScrollView>
 
         {/* Live type picker bottom sheet */}
         <BottomSheet visible={showLiveTypePicker} onClose={() => setShowLiveTypePicker(false)}>
-          <Text style={styles.sheetTitle}>{t('live.selectStreamType')}</Text>
+          <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>{t('live.selectStreamType')}</Text>
           {LIVE_TYPE_OPTIONS.map((opt) => (
             <BottomSheetItem
               key={opt.value}
               label={opt.label}
-              icon={<Icon name={opt.iconName} size="sm" color={colors.text.primary} />}
+              icon={<Icon name={opt.iconName} size="sm" color={tc.text.primary} />}
               onPress={() => {
                 setLiveType(opt.value);
                 setShowLiveTypePicker(false);
@@ -299,13 +299,13 @@ export default function GoLiveScreen() {
 
         {/* Date picker bottom sheet */}
         <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>
-          <Text style={styles.sheetTitle}>{t('live.scheduleTime')}</Text>
+          <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>{t('live.scheduleTime')}</Text>
           {/* In a real app, you would use DateTimePicker component */}
           <View style={styles.datePickerPlaceholder}>
-            <Text style={styles.datePickerText}>
+            <Text style={[styles.datePickerText, { color: tc.text.primary }]}>
               {t('live.datePickerPlaceholder')}
             </Text>
-            <Text style={styles.datePickerHint}>
+            <Text style={[styles.datePickerHint, { color: tc.text.secondary }]}>
               {t('live.datePickerHint')}
             </Text>
             <GradientButton label={t('common.confirm')} onPress={() => handleDateSelect(tempDate)} />
@@ -316,7 +316,7 @@ export default function GoLiveScreen() {
         {uploading && (
           <View style={styles.uploadOverlay}>
             <Skeleton.Circle size={64} />
-            <Text style={styles.uploadText}>{t('live.preparingStream')}</Text>
+            <Text style={[styles.uploadText, { color: tc.text.primary }]}>{t('live.preparingStream')}</Text>
           </View>
         )}
       </SafeAreaView>

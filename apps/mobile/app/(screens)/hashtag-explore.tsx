@@ -81,12 +81,12 @@ export default function HashtagExploreScreen() {
             <Icon name="hash" size="sm" color={colors.emerald} />
           </LinearGradient>
           <View style={styles.info}>
-            <Text style={styles.name} numberOfLines={1}>#{item.name}</Text>
-            <Text style={styles.count}>
+            <Text style={[styles.name, { color: tc.text.primary }]} numberOfLines={1}>#{item.name}</Text>
+            <Text style={[styles.count, { color: tc.text.secondary }]}>
               {item.postsCount?.toLocaleString() || 0} <Text style={styles.countGold}>{t('common.posts')}</Text>
             </Text>
           </View>
-          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+          <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
         </Pressable>
       </LinearGradient>
     </Animated.View>
@@ -133,9 +133,9 @@ export default function HashtagExploreScreen() {
               <Icon name="search" size="xs" color={colors.emerald} />
             </LinearGradient>
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: tc.text.primary }]}
               placeholder={t('screens.hashtag-explore.searchPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -143,7 +143,7 @@ export default function HashtagExploreScreen() {
             />
             {searchQuery.length > 0 && (
               <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
-                <Icon name="x" size="xs" color={colors.text.secondary} />
+                <Icon name="x" size="xs" color={tc.text.secondary} />
               </Pressable>
             )}
           </LinearGradient>
