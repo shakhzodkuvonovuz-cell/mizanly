@@ -21,6 +21,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 function Row({
   label,
@@ -104,7 +105,7 @@ export default function AccountSettingsScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const requestDeletionMutation = useMutation({
@@ -112,7 +113,7 @@ export default function AccountSettingsScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const exportDataMutation = useMutation({
@@ -122,10 +123,10 @@ export default function AccountSettingsScreen() {
         const { Share } = await import('react-native');
         await Share.share({ message: JSON.stringify(data, null, 2), title: 'Mizanly Data Export' });
       } catch {
-        Alert.alert(t('accountSettings.dataReadyTitle'), t('accountSettings.dataReadyMessage'));
+        showToast({ message: t('accountSettings.dataReadyMessage'), variant: 'success' });
       }
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleDeactivate = () => {

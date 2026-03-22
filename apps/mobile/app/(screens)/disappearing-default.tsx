@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 // settingsApi not used — disappearingMessageTimer is local-only (no backend field)
 
 type TimerOption = 'off' | '24h' | '7d' | '90d';
@@ -66,10 +67,7 @@ function DisappearingDefaultContent() {
       await AsyncStorage.setItem('disappearing-message-timer', String(timer?.seconds ?? 0));
     } catch {
       setSelected(prev);
-      Alert.alert(
-        t('disappearingDefault.errorTitle', 'Error'),
-        t('disappearingDefault.errorSave', 'Failed to save timer setting'),
-      );
+      showToast({ message: t('disappearingDefault.errorSave', 'Failed to save timer setting'), variant: 'error' });
     } finally {
       setSaving(false);
     }

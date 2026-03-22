@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  ScrollView, Alert,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -20,6 +20,7 @@ import { useStore, useSafFeedType, useMajlisFeedType } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 type WellbeingSettings = Parameters<typeof settingsApi.updateWellbeing>[0];
 
@@ -157,7 +158,7 @@ export default function ContentSettingsScreen() {
 
   const wellbeingMutation = useMutation<Settings, Error, WellbeingSettings>({
     mutationFn: settingsApi.updateWellbeing,
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleUpdateSensitiveContent = (v: boolean) => {
@@ -173,7 +174,7 @@ export default function ContentSettingsScreen() {
     try {
       await AsyncStorage.setItem('daily-reminder-option', option);
     } catch {
-      Alert.alert(t('common.error'), t('contentSettings.saveError', 'Failed to save setting'));
+      showToast({ message: t('contentSettings.saveError', 'Failed to save setting'), variant: 'error' });
       setDailyReminder(prev);
     }
   };

@@ -32,6 +32,7 @@ interface BlockedUser {
 
 import type { PaginatedResponse } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 export default function BlockedScreen() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function BlockedScreen() {
   const unblockMutation = useMutation({
     mutationFn: (userId: string) => blocksApi.unblock(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocked'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const [refreshing, setRefreshing] = useState(false);

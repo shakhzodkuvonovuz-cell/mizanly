@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +16,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { rtlTextAlign } from '@/utils/rtl';
+import { showToast } from '@/components/ui/Toast';
 
 type BiometricType = 'faceId' | 'fingerprint' | 'unknown';
 
@@ -76,7 +77,7 @@ export default function BiometricLockScreen() {
       if (success) {
         setBiometricLockEnabled(true);
       } else {
-        Alert.alert(t('common.error'), t('biometric.notEnrolled'));
+        showToast({ message: t('biometric.notEnrolled'), variant: 'error' });
       }
     } else {
       // Disabling: authenticate to confirm identity
@@ -91,9 +92,9 @@ export default function BiometricLockScreen() {
     haptic.tick();
     const success = await authenticate();
     if (success) {
-      Alert.alert(t('biometric.title'), t('biometric.testSuccess'));
+      showToast({ message: t('biometric.testSuccess'), variant: 'success' });
     } else {
-      Alert.alert(t('biometric.title'), t('biometric.testFailed'));
+      showToast({ message: t('biometric.testFailed'), variant: 'error' });
     }
   }, [authenticate, haptic, t]);
 

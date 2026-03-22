@@ -25,6 +25,7 @@ import { twoFactorApi } from '@/services/twoFactorApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/types/twoFactor';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 // Mock authenticator apps
 const AUTHENTICATOR_APPS: { name: string; icon: IconName }[] = [
@@ -89,7 +90,7 @@ export default function TwoFactorSetupScreen() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.setupFailed'));
-      Alert.alert(t('common.error'), t('auth.setupFailedMessage'));
+      showToast({ message: t('auth.setupFailedMessage'), variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -108,14 +109,10 @@ export default function TwoFactorSetupScreen() {
       const code = verificationCode.join('');
       await twoFactorApi.verify({ code });
       setActiveStep('backup');
-      Alert.alert(
-        t('auth.twoFactorEnabled'),
-        t('auth.twoFactorEnabledMessage'),
-        [{ text: t('common.ok') }]
-      );
+      showToast({ message: t('auth.twoFactorEnabledMessage'), variant: 'success' });
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.verificationFailed'));
-      Alert.alert(t('common.error'), t('auth.verificationFailedMessage'));
+      showToast({ message: t('auth.verificationFailedMessage'), variant: 'error' });
       // Optionally shake animation
     } finally {
       setIsEnabling(false);
@@ -126,13 +123,13 @@ export default function TwoFactorSetupScreen() {
   const copyBackupCode = async (code: string) => {
     await Clipboard.setStringAsync(code);
     setCopiedCodes(prev => [...prev, code]);
-    Alert.alert(t('common.copied'), t('auth.backupCodeCopied', { code }));
+    showToast({ message: t('auth.backupCodeCopied', { code }), variant: 'success' });
   };
 
   const copyAllBackupCodes = async () => {
     const allCodes = backupCodes.join('\n');
     await Clipboard.setStringAsync(allCodes);
-    Alert.alert(t('common.copied'), t('auth.allBackupCodesCopied'));
+    showToast({ message: t('auth.allBackupCodesCopied'), variant: 'success' });
   };
 
   const downloadBackupCodes = () => {
@@ -316,7 +313,7 @@ export default function TwoFactorSetupScreen() {
                 {/* Manual Secret */}
                 <View style={styles.secretContainer}>
                   <Text style={styles.secretLabel}>{t('auth.enterSecretManually')}</Text>
-                  <Pressable onPress={async () => { await Clipboard.setStringAsync(secret); Alert.alert(t('common.copied')); }}>
+                  <Pressable onPress={async () => { await Clipboard.setStringAsync(secret); showToast({ message: t('common.copied'), variant: 'success' }); }}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                       style={styles.secretBox}

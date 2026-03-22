@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 
 interface TimerOption {
   value: number;
@@ -68,7 +69,7 @@ function DisappearingSettingsContent() {
     },
     onError: (error: Error) => {
       haptic.error();
-      Alert.alert(t('common.error'), error.message);
+      showToast({ message: error.message, variant: 'error' });
     },
   });
 

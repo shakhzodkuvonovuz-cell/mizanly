@@ -19,6 +19,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { BlockedKeyword } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 export default function BlockedKeywordsScreen() {
   const router = useRouter();
@@ -40,13 +41,13 @@ export default function BlockedKeywordsScreen() {
       setNewWord('');
       queryClient.invalidateQueries({ queryKey: ['blocked-keywords'] });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => settingsApi.deleteBlockedKeyword(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocked-keywords'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleAdd = useCallback(() => {

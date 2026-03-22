@@ -24,6 +24,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 export default function TwoFactorVerifyScreen() {
   const router = useRouter();
@@ -88,15 +89,12 @@ export default function TwoFactorVerifyScreen() {
       } else {
         await twoFactorApi.backup({ backupCode });
       }
-      Alert.alert(
-        t('screens.2faVerify.verificationSuccessTitle'),
-        t('screens.2faVerify.verificationSuccessMessage'),
-        [{ text: t('common.continue'), onPress: () => router.back() }]
-      );
+      showToast({ message: t('screens.2faVerify.verificationSuccessMessage'), variant: 'success' });
+      router.back();
     } catch (err) {
       setError(true);
       triggerShake();
-      Alert.alert(t('screens.2faVerify.verificationFailedTitle'), t('screens.2faVerify.invalidCodeMessage'));
+      showToast({ message: t('screens.2faVerify.invalidCodeMessage'), variant: 'error' });
     } finally {
       setLoading(false);
       submittingRef.current = false;

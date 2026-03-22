@@ -19,6 +19,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { usersApi } from '@/services/api';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 interface Account {
   id: string;
@@ -127,10 +128,7 @@ export default function AccountSwitcherScreen() {
       queryClient.clear();
       router.replace('/(tabs)/saf');
     } catch {
-      Alert.alert(
-        t('screens.accountSwitcher.switchError') || 'Switch Failed',
-        t('screens.accountSwitcher.switchErrorMessage') || 'Could not switch accounts. Please try again.',
-      );
+      showToast({ message: t('screens.accountSwitcher.switchErrorMessage') || 'Could not switch accounts. Please try again.', variant: 'error' });
     } finally {
       setSwitching(false);
     }
