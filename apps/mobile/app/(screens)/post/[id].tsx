@@ -227,9 +227,11 @@ export default function PostDetailScreen() {
   const inputRef = useRef<TextInput>(null);
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
+  const [commentSort, setCommentSort] = useState<'top' | 'latest'>('top');
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
   const { t, isRTL } = useTranslation();
   const tts = useTTS();
+  const haptic = useHaptic();
 
   const postQuery = useQuery({
     queryKey: ['post', id],
@@ -247,7 +249,13 @@ export default function PostDetailScreen() {
     enabled: !!id,
   });
 
-  const comments: Comment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const rawComments: Comment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
+  // Sort comments: "top" by likes descending, "latest" by creation date (API default)
+  const comments = useMemo(() => {
+    if (commentSort === 'latest') return rawComments;
+    return [...rawComments].sort((a, b) => (b.likesCount ?? 0) - (a.likesCount ?? 0));
+  }, [rawComments, commentSort]);
 
   const sendMutation = useMutation({
     mutationFn: () =>
@@ -336,6 +344,28 @@ export default function PostDetailScreen() {
           <Text style={[styles.commentsTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('saf.comments', { count: postQuery.data.commentsCount })}
           </Text>
+          <View style={[styles.sortRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+            <Pressable
+              onPress={() => { setCommentSort('top'); haptic.light(); }}
+              style={[styles.sortButton, commentSort === 'top' && styles.sortButtonActive]}
+              accessibilityLabel={t('common.top')}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.sortButtonText, commentSort === 'top' && styles.sortButtonTextActive]}>
+                {t('common.top')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { setCommentSort('latest'); haptic.light(); }}
+              style={[styles.sortButton, commentSort === 'latest' && styles.sortButtonActive]}
+              accessibilityLabel={t('common.latest')}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.sortButtonText, commentSort === 'latest' && styles.sortButtonTextActive]}>
+                {t('common.latest')}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     ) : postQuery.isLoading ? (
@@ -343,7 +373,7 @@ export default function PostDetailScreen() {
         <Skeleton.PostCard />
       </View>
     ) : null
-  ), [postQuery.data, postQuery.isLoading, user?.id, showListenButton, handleListen, isRTL, t]);
+  ), [postQuery.data, postQuery.isLoading, user?.id, showListenButton, handleListen, isRTL, t, commentSort, haptic]);
 
   const listEmpty = useMemo(() => (
     !commentsQuery.isLoading && postQuery.data ? (
@@ -486,6 +516,28 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderTopWidth: 0.5, borderTopColor: tc.border,
   },
   commentsTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  sortRow: {
+    flexDirection: 'row' as const,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  sortButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: 'transparent',
+  },
+  sortButtonActive: {
+    backgroundColor: colors.active.emerald10,
+  },
+  sortButtonText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: '600' as const,
+  },
+  sortButtonTextActive: {
+    color: colors.emerald,
+  },
   swipeContainer: {
     position: 'relative',
     overflow: 'hidden',

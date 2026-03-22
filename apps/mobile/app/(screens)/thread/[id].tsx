@@ -33,12 +33,14 @@ function ReplyRow({
   viewerId,
   onReply,
   onDeleted,
+  depth = 0,
 }: {
   reply: ThreadReply;
   threadId: string;
   viewerId?: string;
   onReply: (id: string, username: string) => void;
   onDeleted: () => void;
+  depth?: number;
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
@@ -49,6 +51,8 @@ function ReplyRow({
   const [likeCount, setLikeCount] = useState(reply.likesCount);
 
   const isOwn = !!viewerId && reply.user.id === viewerId;
+  const clampedDepth = Math.min(depth, 3);
+  const indent = clampedDepth * 24;
 
   const handleLike = useCallback(() => {
     setLiked((prev) => {
@@ -81,7 +85,23 @@ function ReplyRow({
   }, [deleteMutation]);
 
   return (
-    <View style={[styles.replyRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+    <View style={[
+      styles.replyRow,
+      { flexDirection: rtlFlexRow(isRTL) },
+      indent > 0 && (isRTL ? { marginRight: indent } : { marginLeft: indent }),
+    ]}>
+      {/* Indent connecting line */}
+      {indent > 0 && (
+        <View
+          style={[
+            styles.indentLine,
+            isRTL
+              ? { right: -indent + 12 }
+              : { left: -indent + 12 },
+          ]}
+        />
+      )}
+
       {/* Avatar + line column */}
       <View style={[styles.replyLeft, rtlMargin(isRTL, 0, spacing.sm)]}>
         <Avatar uri={reply.user.avatarUrl} name={reply.user.displayName} size="sm" />
@@ -163,6 +183,7 @@ export default function ThreadDetailScreen() {
   const inputRef = useRef<TextInput>(null);
   const [replyText, setReplyText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
+  const [replySort, setReplySort] = useState<'top' | 'latest'>('top');
   const { t, isRTL } = useTranslation();
   const tts = useTTS();
   const haptic = useHaptic();
@@ -183,7 +204,28 @@ export default function ThreadDetailScreen() {
     enabled: !!id,
   });
 
-  const replies: ThreadReply[] = repliesQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const rawReplies: ThreadReply[] = repliesQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
+  // Build depth map: replies with parentId are nested under their parent
+  const depthMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const parentSet = new Set(rawReplies.map((r) => r.id));
+    for (const reply of rawReplies) {
+      if (!reply.parentId || !parentSet.has(reply.parentId)) {
+        map.set(reply.id, 0);
+      } else {
+        const parentDepth = map.get(reply.parentId) ?? 0;
+        map.set(reply.id, parentDepth + 1);
+      }
+    }
+    return map;
+  }, [rawReplies]);
+
+  // Sort replies: "top" by likes descending, "latest" by creation date (API default)
+  const replies = useMemo(() => {
+    if (replySort === 'latest') return rawReplies;
+    return [...rawReplies].sort((a, b) => (b.likesCount ?? 0) - (a.likesCount ?? 0));
+  }, [rawReplies, replySort]);
 
   const handleRefresh = useCallback(() => {
     threadQuery.refetch();
@@ -276,6 +318,28 @@ export default function ThreadDetailScreen() {
           <Text style={[styles.repliesTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('majlis.replies', { count: threadQuery.data.repliesCount })}
           </Text>
+          <View style={[styles.sortRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+            <Pressable
+              onPress={() => { setReplySort('top'); haptic.light(); }}
+              style={[styles.sortButton, replySort === 'top' && styles.sortButtonActive]}
+              accessibilityLabel={t('common.top')}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.sortButtonText, replySort === 'top' && styles.sortButtonTextActive]}>
+                {t('common.top')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { setReplySort('latest'); haptic.light(); }}
+              style={[styles.sortButton, replySort === 'latest' && styles.sortButtonActive]}
+              accessibilityLabel={t('common.latest')}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.sortButtonText, replySort === 'latest' && styles.sortButtonTextActive]}>
+                {t('common.latest')}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     ) : threadQuery.isLoading ? (
@@ -283,7 +347,7 @@ export default function ThreadDetailScreen() {
         <Skeleton.ThreadCard />
       </View>
     ) : null
-  ), [threadQuery.data, threadQuery.isLoading, user?.id, showListenButton, handleListen, isRTL, t]);
+  ), [threadQuery.data, threadQuery.isLoading, user?.id, showListenButton, handleListen, isRTL, t, replySort, haptic]);
 
   const listEmpty = useMemo(() => (
     !repliesQuery.isLoading && threadQuery.data ? (
@@ -345,6 +409,7 @@ export default function ThreadDetailScreen() {
                 queryClient.invalidateQueries({ queryKey: ['thread-replies', id] });
                 queryClient.invalidateQueries({ queryKey: ['thread', id] });
               }}
+              depth={depthMap.get(item.id) ?? 0}
             />
           )}
           ListEmptyComponent={listEmpty}
@@ -426,10 +491,41 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderTopWidth: 0.5, borderTopColor: tc.border,
   },
   repliesTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  sortRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  sortButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: 'transparent',
+  },
+  sortButtonActive: {
+    backgroundColor: colors.active.emerald10,
+  },
+  sortButtonText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  sortButtonTextActive: {
+    color: colors.emerald,
+  },
   replyRow: {
     flexDirection: 'row', paddingHorizontal: spacing.base,
     paddingTop: spacing.md, paddingBottom: spacing.sm,
     borderBottomWidth: 0.5, borderBottomColor: tc.border,
+    position: 'relative' as const,
+  },
+  indentLine: {
+    position: 'absolute' as const,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: tc.border,
+    borderRadius: 1,
   },
   replyLeft: { alignItems: 'center', paddingTop: 2 },
   replyLine: {

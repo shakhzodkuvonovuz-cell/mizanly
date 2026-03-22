@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
-import { Image } from 'expo-image';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,11 +15,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { RichText } from '@/components/ui/RichText';
 import { Icon } from '@/components/ui/Icon';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { colors, spacing, fontSize, animation, radius, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { threadsApi } from '@/services/api';
 import * as Clipboard from 'expo-clipboard';
@@ -30,6 +30,67 @@ interface Props {
   thread: Thread;
   viewerId?: string;
   isOwn?: boolean;
+}
+
+function ImageGrid({ images, onPress }: { images: string[]; onPress: (index: number) => void }) {
+  const count = images.length;
+
+  if (count === 0) return null;
+
+  if (count === 1) {
+    return (
+      <Pressable onPress={() => onPress(0)} style={styles.mediaSingle}>
+        <ProgressiveImage uri={images[0]} width="100%" height={220} borderRadius={radius.md} />
+      </Pressable>
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <View style={styles.imageGrid2}>
+        <Pressable onPress={() => onPress(0)} style={styles.imageGrid2Item}>
+          <ProgressiveImage uri={images[0]} width="100%" height={200} borderRadius={0} />
+        </Pressable>
+        <Pressable onPress={() => onPress(1)} style={styles.imageGrid2Item}>
+          <ProgressiveImage uri={images[1]} width="100%" height={200} borderRadius={0} />
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (count === 3) {
+    return (
+      <View style={styles.imageGrid3}>
+        <Pressable onPress={() => onPress(0)} style={styles.imageGrid3Large}>
+          <ProgressiveImage uri={images[0]} width="100%" height={200} borderRadius={0} />
+        </Pressable>
+        <View style={styles.imageGrid3Right}>
+          <Pressable onPress={() => onPress(1)} style={styles.imageGrid3Small}>
+            <ProgressiveImage uri={images[1]} width="100%" height={98} borderRadius={0} />
+          </Pressable>
+          <Pressable onPress={() => onPress(2)} style={styles.imageGrid3Small}>
+            <ProgressiveImage uri={images[2]} width="100%" height={98} borderRadius={0} />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // 4+ images: 2x2 grid with "+N" overlay on last cell
+  return (
+    <View style={styles.imageGrid4}>
+      {images.slice(0, 4).map((uri, i) => (
+        <Pressable key={uri + i} onPress={() => onPress(i)} style={styles.imageGrid4Item}>
+          <ProgressiveImage uri={uri} width="100%" height={120} borderRadius={0} />
+          {i === 3 && count > 4 && (
+            <View style={styles.moreOverlay}>
+              <Text style={styles.moreText}>+{count - 4}</Text>
+            </View>
+          )}
+        </Pressable>
+      ))}
+    </View>
+  );
 }
 
 export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: Props) {
@@ -245,12 +306,11 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
             onPostPress={() => router.push(`/(screens)/thread/${thread.id}`)}
           />
 
-          {/* Media */}
+          {/* Media grid */}
           {thread.mediaUrls.length > 0 && (
-            <Image
-              source={{ uri: thread.mediaUrls[0] }}
-              style={styles.media}
-              contentFit="cover"
+            <ImageGrid
+              images={thread.mediaUrls}
+              onPress={(index) => router.push(`/(screens)/thread/${thread.id}`)}
             />
           )}
 
@@ -497,6 +557,45 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   media: { width: '100%', height: 220, borderRadius: radius.md, marginBottom: spacing.sm },
+  mediaSingle: { marginBottom: spacing.sm },
+  imageGrid2: {
+    flexDirection: 'row' as const,
+    gap: 2,
+    borderRadius: radius.md,
+    overflow: 'hidden' as const,
+    marginBottom: spacing.sm,
+  },
+  imageGrid2Item: { flex: 1 },
+  imageGrid3: {
+    flexDirection: 'row' as const,
+    gap: 2,
+    borderRadius: radius.md,
+    overflow: 'hidden' as const,
+    marginBottom: spacing.sm,
+  },
+  imageGrid3Large: { flex: 1 },
+  imageGrid3Right: { flex: 1, gap: 2 },
+  imageGrid3Small: { flex: 1 },
+  imageGrid4: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: 2,
+    borderRadius: radius.md,
+    overflow: 'hidden' as const,
+    marginBottom: spacing.sm,
+  },
+  imageGrid4Item: { width: '49%' as unknown as number },
+  moreOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  moreText: {
+    color: '#fff',
+    fontSize: fontSize.xl,
+    fontFamily: fonts.bodyBold,
+  },
   repostOf: {
     borderWidth: 1,
     borderColor: colors.dark.borderLight,
