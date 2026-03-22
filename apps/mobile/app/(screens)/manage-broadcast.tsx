@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -191,10 +192,9 @@ export default function ManageBroadcastScreen() {
           contentContainerStyle={styles.listContent}
           removeClippedSubviews={true}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={refreshing}
               onRefresh={async () => { setRefreshing(true); await refetch(); setRefreshing(false); }}
-              tintColor={colors.emerald}
             />
           }
           ListEmptyComponent={

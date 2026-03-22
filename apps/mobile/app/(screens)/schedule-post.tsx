@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions, Alert, ActivityIndicator } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -26,8 +26,6 @@ export default function SchedulePostScreen() {
   const router = useRouter();
   const haptic = useContextualHaptic();
   const params = useLocalSearchParams<{ space?: string; content?: string; mediaUrls?: string }>();
-  const [refreshing, setRefreshing] = useState(false);
-
   const now = new Date();
   const [selectedDate, setSelectedDate] = useState(now.getDate() + 2);
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
@@ -44,11 +42,6 @@ export default function SchedulePostScreen() {
     hasMedia: !!params.mediaUrls,
     space: (params.space || 'Saf') as SpaceType,
   };
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
 
   const monthNames = Array.from({ length: 12 }, (_, i) =>
     new Date(2024, i, 1).toLocaleDateString(undefined, { month: 'long' })
@@ -166,7 +159,6 @@ export default function SchedulePostScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Post Preview Card */}
         <Animated.View entering={FadeInUp.delay(50).duration(400)}>
