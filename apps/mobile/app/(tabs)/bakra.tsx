@@ -42,6 +42,7 @@ import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import * as Clipboard from 'expo-clipboard';
 import { useVideoPreloader } from '@/hooks/useVideoPreloader';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { formatCount } from '@/utils/formatCount';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -327,21 +328,21 @@ const ReelItem = memo(function ReelItem({
               color={item.isLiked ? colors.error : colors.text.primary}
               style={item.isLiked ? undefined : styles.iconShadow}
             />
-            <Text style={styles.actionCount}>{item.likesCount}</Text>
+            <Text style={styles.actionCount}>{formatCount(item.likesCount)}</Text>
           </ActionButton>
           <ActionButton
             onPress={() => onComment(item)}
             accessibilityLabel={t('accessibility.commentReel')}
           >
             <Icon name="message-circle" size="lg" color={colors.text.primary} style={styles.iconShadow} />
-            <Text style={styles.actionCount}>{item.commentsCount}</Text>
+            <Text style={styles.actionCount}>{formatCount(item.commentsCount)}</Text>
           </ActionButton>
           <ActionButton
             onPress={() => onShare(item)}
             accessibilityLabel={t('accessibility.shareReel')}
           >
             <Icon name="share" size="lg" color={colors.text.primary} style={styles.iconShadow} />
-            <Text style={styles.actionCount}>{item.sharesCount}</Text>
+            <Text style={styles.actionCount}>{formatCount(item.sharesCount)}</Text>
           </ActionButton>
 
           {/* Duet button */}

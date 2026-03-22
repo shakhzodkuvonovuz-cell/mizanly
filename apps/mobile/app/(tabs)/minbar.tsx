@@ -20,7 +20,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { formatCount } from '@/utils/formatCount';
+import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
 import type { Video, VideoCategory } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -150,7 +152,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
             </Text>
           </View>
           <Text style={styles.videoStats} numberOfLines={1}>
-            {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
+            {formatCount(video.viewsCount)} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </View>
         <Pressable
@@ -175,6 +177,7 @@ export default function MinbarScreen() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [feedType, setFeedType] = useState<'home' | 'subscriptions'>('home');
+  const { onScroll, headerAnimatedStyle, titleAnimatedStyle } = useScrollLinkedHeader(56);
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
 
@@ -352,7 +355,7 @@ export default function MinbarScreen() {
     return feedQuery.isLoading ? (
       <View>
         {[1, 2, 3].map((i) => (
-          <View key={i} style={{ marginBottom: spacing.lg }}>
+          <Animated.View key={i} entering={FadeInUp.delay((i - 1) * 80).duration(300)} style={{ marginBottom: spacing.lg }}>
             <Skeleton.Rect width="100%" height={210} borderRadius={0} />
             <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, marginTop: spacing.md, gap: spacing.sm }}>
               <Skeleton.Circle size={36} />
@@ -361,7 +364,7 @@ export default function MinbarScreen() {
                 <Skeleton.Rect width="60%" height={14} borderRadius={4} />
               </View>
             </View>
-          </View>
+          </Animated.View>
         ))}
       </View>
     ) : (
@@ -386,9 +389,9 @@ export default function MinbarScreen() {
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
-        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.minbar')}</Text>
+      {/* Header — collapses proportionally on scroll */}
+      <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
+        <Animated.Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }, titleAnimatedStyle]}>{t('tabs.minbar')}</Animated.Text>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <AnimatedPressable
             hitSlop={8}
@@ -440,7 +443,7 @@ export default function MinbarScreen() {
             </View>
           </AnimatedPressable>
         </View>
-      </View>
+      </Animated.View>
 
       <FlashList
         ref={feedRef}
@@ -455,6 +458,8 @@ export default function MinbarScreen() {
         estimatedItemSize={350}
         windowSize={7}
         maxToRenderPerBatch={5}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
       />

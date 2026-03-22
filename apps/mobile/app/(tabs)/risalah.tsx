@@ -18,6 +18,7 @@ import Animated, {
   withTiming,
   withDelay,
   useSharedValue,
+  FadeInUp,
 } from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -315,10 +316,18 @@ export default function RisalahScreen() {
       <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => refetch()} />
     ) : isLoading ? (
       <View>
-        <Skeleton.ConversationItem />
-        <Skeleton.ConversationItem />
-        <Skeleton.ConversationItem />
-        <Skeleton.ConversationItem />
+        <Animated.View entering={FadeInUp.delay(0).duration(300)}>
+          <Skeleton.ConversationItem />
+        </Animated.View>
+        <Animated.View entering={FadeInUp.delay(80).duration(300)}>
+          <Skeleton.ConversationItem />
+        </Animated.View>
+        <Animated.View entering={FadeInUp.delay(160).duration(300)}>
+          <Skeleton.ConversationItem />
+        </Animated.View>
+        <Animated.View entering={FadeInUp.delay(240).duration(300)}>
+          <Skeleton.ConversationItem />
+        </Animated.View>
       </View>
     ) : (
       <EmptyState

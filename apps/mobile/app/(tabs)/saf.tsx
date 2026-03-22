@@ -12,6 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   FadeIn,
+  FadeInUp,
   FadeOut,
   SlideOutRight,
 } from 'react-native-reanimated';
@@ -36,7 +37,8 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
 import { formatHijriDate } from '@/utils/hijri';
 import { feedCache, CACHE_KEYS } from '@/utils/feedCache';
-import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
+import { formatCount } from '@/utils/formatCount';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Post, StoryGroup, SuggestedUser } from '@/types';
 
@@ -125,7 +127,7 @@ function SuggestedUserRow({
             {user.isVerified && <VerifiedBadge size={13} />}
           </View>
           <Text style={suggestedStyles.bio} numberOfLines={1}>
-            {user.bio || `${user.followersCount ?? 0} ${t('common.followers').toLowerCase()}`}
+            {user.bio || `${formatCount(user.followersCount)} ${t('common.followers').toLowerCase()}`}
           </Text>
         </View>
       </Pressable>
@@ -229,7 +231,7 @@ export default function SafScreen() {
   const bellPress = useAnimatedPress();
   const cameraPress = useAnimatedPress();
   const profilePress = useAnimatedPress();
-  const { onScroll: onScrollDirection, headerAnimatedStyle } = useScrollDirection(56);
+  const { onScroll, headerAnimatedStyle, titleAnimatedStyle } = useScrollLinkedHeader(56);
 
   useQuery({
     queryKey: ['notifications-count'],
@@ -402,9 +404,15 @@ export default function SafScreen() {
       />
     ) : feedQuery.isLoading ? (
       <View>
-        <Skeleton.PostCard />
-        <Skeleton.PostCard />
-        <Skeleton.PostCard />
+        <Animated.View entering={FadeInUp.delay(0).duration(300)}>
+          <Skeleton.PostCard />
+        </Animated.View>
+        <Animated.View entering={FadeInUp.delay(80).duration(300)}>
+          <Skeleton.PostCard />
+        </Animated.View>
+        <Animated.View entering={FadeInUp.delay(160).duration(300)}>
+          <Skeleton.PostCard />
+        </Animated.View>
       </View>
     ) : (
       <EmptyState
@@ -426,7 +434,11 @@ export default function SafScreen() {
       );
     }
     if (!feedQuery.hasNextPage && rawPosts.length > 0) {
-      return <CaughtUpCard />;
+      return (
+        <Animated.View entering={FadeInUp.duration(400).springify()}>
+          <CaughtUpCard />
+        </Animated.View>
+      );
     }
     return null;
   }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, rawPosts.length]);
@@ -436,10 +448,10 @@ export default function SafScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       {/* Header — hides on scroll down, reveals on scroll up */}
       <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
-        <View>
+        <Animated.View style={titleAnimatedStyle}>
           <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Mizanly</Text>
           <Text style={styles.hijriDate}>{formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}</Text>
-        </View>
+        </Animated.View>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <AnimatedPressable
             hitSlop={8}
@@ -524,7 +536,7 @@ export default function SafScreen() {
         estimatedItemSize={400}
         windowSize={7}
         maxToRenderPerBatch={5}
-        onScroll={onScrollDirection}
+        onScroll={onScroll}
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}

@@ -27,6 +27,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd, rtlBorderStart } from '@/utils/rtl';
 import type { Thread } from '@/types';
 
@@ -81,6 +82,8 @@ export default function MajlisScreen() {
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
+
+  const { onScroll, headerAnimatedStyle, titleAnimatedStyle } = useScrollLinkedHeader(56);
 
   const TABS = useMemo(() => [
     { key: 'foryou', label: t('majlis.forYou') },
@@ -143,10 +146,18 @@ export default function MajlisScreen() {
       <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />
     ) : feedQuery.isLoading ? (
       <View>
-        <Skeleton.ThreadCard />
-        <Skeleton.ThreadCard />
-        <Skeleton.ThreadCard />
-        <Skeleton.ThreadCard />
+        <Animated.View entering={FadeInUp.delay(0).duration(300)}>
+          <Skeleton.ThreadCard />
+        </Animated.View>
+        <Animated.View entering={FadeInUp.delay(80).duration(300)}>
+          <Skeleton.ThreadCard />
+        </Animated.View>
+        <Animated.View entering={FadeInUp.delay(160).duration(300)}>
+          <Skeleton.ThreadCard />
+        </Animated.View>
+        <Animated.View entering={FadeInUp.delay(240).duration(300)}>
+          <Skeleton.ThreadCard />
+        </Animated.View>
       </View>
     ) : (
       <EmptyState
@@ -201,9 +212,9 @@ export default function MajlisScreen() {
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
-        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.majlis')}</Text>
+      {/* Header — collapses proportionally on scroll */}
+      <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
+        <Animated.Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }, titleAnimatedStyle]}>{t('tabs.majlis')}</Animated.Text>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Pressable
             hitSlop={8}
@@ -231,7 +242,7 @@ export default function MajlisScreen() {
             <Icon name="search" size="sm" color={colors.text.primary} />
           </Pressable>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Feed tabs */}
       <TabSelector
@@ -286,6 +297,8 @@ export default function MajlisScreen() {
           estimatedItemSize={200}
           windowSize={7}
           maxToRenderPerBatch={5}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
         />
