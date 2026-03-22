@@ -6,6 +6,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius, animation, tabBar } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow } from '@/utils/rtl';
 
 const MINI_PLAYER_HEIGHT = 56;
@@ -13,6 +14,7 @@ const MINI_PLAYER_HEIGHT = 56;
 export function TTSMiniPlayer() {
   const { t, isRTL } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const {
     isActive,
     isPlaying,
@@ -49,7 +51,7 @@ export function TTSMiniPlayer() {
     <Animated.View
       entering={FadeInDown.duration(animation.timing.normal)}
       exiting={SlideOutDown.duration(animation.timing.fast)}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: tc.bgElevated, borderTopColor: tc.border }]}
     >
       {/* Emerald accent line */}
       <View style={styles.accentLine} />
@@ -75,7 +77,7 @@ export function TTSMiniPlayer() {
         {/* Speed button */}
         <Pressable
           onPress={handleSpeed}
-          style={styles.speedButton}
+          style={[styles.speedButton, { backgroundColor: tc.surface }]}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityLabel={t('tts.speed')}
           accessibilityRole="button"

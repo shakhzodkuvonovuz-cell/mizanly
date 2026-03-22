@@ -9,6 +9,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { settingsApi } from '@/services/api';
 
 type TimerOption = 'off' | '24h' | '7d' | '90d';
@@ -27,6 +28,7 @@ function DisappearingDefaultContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<TimerOption>('off');
+  const tc = useThemeColors();
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +96,7 @@ function DisappearingDefaultContent() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('disappearingDefault.title', 'Default Message Timer')}
           leftAction={{
@@ -120,7 +122,7 @@ function DisappearingDefaultContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('disappearingDefault.title', 'Default Message Timer')}
         leftAction={{
@@ -158,7 +160,7 @@ function DisappearingDefaultContent() {
         </Animated.View>
 
         {/* Timer Options */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.optionsCard}>
+        <Animated.View entering={FadeInUp.delay(200).duration(400)} style={[styles.optionsCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           {timerOptions.map((option, index) => {
             const isSelected = selected === option.key;
             return (
@@ -181,18 +183,18 @@ function DisappearingDefaultContent() {
                       {option.subtitle}
                     </Text>
                   </View>
-                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                  <View style={[styles.radioOuter, { borderColor: tc.borderLight }, isSelected && styles.radioOuterSelected]}>
                     {isSelected && <View style={styles.radioInner} />}
                   </View>
                 </Pressable>
-                {index < timerOptions.length - 1 && <View style={styles.divider} />}
+                {index < timerOptions.length - 1 && <View style={[styles.divider, { backgroundColor: tc.border }]} />}
               </View>
             );
           })}
         </Animated.View>
 
         {/* Info Note */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.infoCard}>
+        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={[styles.infoCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.infoRow}>
             <View style={styles.infoIconWrapper}>
               <Icon name="clock" size={18} color={colors.emerald} />

@@ -15,6 +15,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -26,6 +27,7 @@ function OnboardingProfileScreenContent() {
   const { user } = useUser();
   const { username } = useLocalSearchParams<{ username: string }>();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [displayName, setDisplayName] = useState(user?.fullName ?? '');
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
@@ -93,9 +95,9 @@ function OnboardingProfileScreenContent() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       {/* Animated progress bar */}
-      <View style={styles.progressTrack}>
+      <View style={[styles.progressTrack, { backgroundColor: tc.border }]}>
         <Animated.View style={[styles.progressFill, progressStyle]} />
       </View>
 
@@ -111,7 +113,7 @@ function OnboardingProfileScreenContent() {
         />
       ) : (
         <Animated.View style={[styles.avatarPlaceholderWrap, pulseStyle]}>
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: tc.bgElevated }]}>
             <Icon name="camera" size="lg" color={colors.text.tertiary} />
             <Text style={styles.avatarHintInner}>{t('onboarding.profile.addPhoto')}</Text>
           </View>
@@ -124,7 +126,7 @@ function OnboardingProfileScreenContent() {
       {/* Display name with icon */}
       <View style={styles.field}>
         <Text style={styles.label}>{t('onboarding.profile.displayName')}</Text>
-        <View style={[styles.inputRow, nameFocused && styles.inputRowFocused]}>
+        <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }, nameFocused && styles.inputRowFocused]}>
           <Icon
             name="user"
             size="sm"
@@ -148,7 +150,7 @@ function OnboardingProfileScreenContent() {
       {/* Bio with focus glow */}
       <View style={styles.field}>
         <Text style={styles.label}>{t('onboarding.profile.bioLabel')} <Text style={styles.optional}>{t('onboarding.profile.optional')}</Text></Text>
-        <View style={[styles.bioRow, bioFocused && styles.bioRowFocused]}>
+        <View style={[styles.bioRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }, bioFocused && styles.bioRowFocused]}>
           <TextInput
             style={[styles.inputInner, styles.bioInput]}
             value={bio}

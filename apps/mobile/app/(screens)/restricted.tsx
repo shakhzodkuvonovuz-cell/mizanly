@@ -21,6 +21,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { restrictsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface RestrictedUser {
   id: string;
@@ -35,6 +36,8 @@ interface RestrictedPage {
 }
 
 export default function RestrictedScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -203,8 +206,8 @@ export default function RestrictedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   infoText: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
@@ -219,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.06)',
@@ -229,7 +232,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 0.5,
     borderColor: 'rgba(200,150,62,0.15)',

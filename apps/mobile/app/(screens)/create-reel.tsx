@@ -23,6 +23,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { MusicPicker } from '@/components/story/MusicPicker';
@@ -44,6 +45,7 @@ type AutocompleteType = 'hashtag' | 'mention' | null;
 
 export default function CreateReelScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -260,7 +262,7 @@ export default function CreateReelScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('createReel.title')}
           leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
@@ -296,7 +298,7 @@ export default function CreateReelScreen() {
                   <Video
                     ref={videoRef}
                     source={{ uri: video.uri }}
-                    style={styles.videoPreview}
+                    style={[styles.videoPreview, { backgroundColor: tc.surface }]}
                     resizeMode={ResizeMode.COVER}
                     useNativeControls
                     isLooping
@@ -332,7 +334,7 @@ export default function CreateReelScreen() {
               </Pressable>
             </Animated.View>
           ) : (
-            <Pressable style={styles.uploadPlaceholder} onPress={pickVideo}>
+            <Pressable style={[styles.uploadPlaceholder, { backgroundColor: tc.surface, borderColor: tc.border }]} onPress={pickVideo}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
                 style={styles.uploadPlaceholderGradient}
@@ -525,7 +527,7 @@ export default function CreateReelScreen() {
 
           {/* Selected track indicator */}
           {selectedTrack && (
-            <Animated.View entering={FadeIn} style={styles.selectedTrackBar}>
+            <Animated.View entering={FadeIn} style={[styles.selectedTrackBar, { backgroundColor: tc.bgCard }]}>
               <Icon name="volume-x" size="sm" color={colors.emerald} />
               <Text style={styles.selectedTrackText} numberOfLines={1}>
                 {selectedTrack.title} — {selectedTrack.artist}
@@ -577,7 +579,7 @@ export default function CreateReelScreen() {
             </View>
           )}
           {/* Normalize audio toggle */}
-          <View style={styles.toggleRow}>
+          <View style={[styles.toggleRow, { borderBottomColor: tc.border }]}>
             <View style={{ flex: 1 }}>
               <Text style={styles.toggleLabel}>{t('createReel.normalizeAudio')}</Text>
               <Text style={styles.toggleSubtitle}>{t('createReel.normalizeAudioDesc')}</Text>

@@ -3,6 +3,7 @@ import { FlatList, View, StyleSheet } from 'react-native';
 import { useUser } from '@clerk/clerk-expo';
 import { StoryBubble } from './StoryBubble';
 import { colors, spacing } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { StoryGroup } from '@/types';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 
 export const StoryRow = memo(function StoryRow({ groups, onPressGroup, onPressOwn }: Props) {
   const { user } = useUser();
+  const tc = useThemeColors();
 
   // Build own story slot — use API data if available so ring shows when they have stories
   const apiOwnGroup = groups.find((g) => g.user.id === user?.id);
@@ -47,7 +49,7 @@ export const StoryRow = memo(function StoryRow({ groups, onPressGroup, onPressOw
           onPress={() => index === 0 ? onPressOwn() : onPressGroup(item, index - 1)}
         />
       )}
-      style={styles.row}
+      style={[styles.row, { borderBottomColor: tc.border }]}
     />
   );
 });

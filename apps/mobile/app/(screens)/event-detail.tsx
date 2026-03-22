@@ -25,6 +25,7 @@ import { eventsApi } from '@/services/eventsApi';
 import type { EventWithCounts, RsvpStatus as ApiRsvpStatus } from '@/types/events';
 import type { User } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -64,6 +65,7 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>(null);
+  const tc = useThemeColors();
 
   // Fetch event details
   const {
@@ -149,7 +151,7 @@ export default function EventDetailScreen() {
   // Loading skeleton
   if (eventLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('events.event')}
           onBack={() => router.back()}
@@ -174,7 +176,7 @@ export default function EventDetailScreen() {
   // Error state
   if (eventError || !event) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('events.event')}
           onBack={() => router.back()}
@@ -199,7 +201,7 @@ export default function EventDetailScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader
         title={t('events.event')}
         onBack={() => router.back()}
@@ -213,11 +215,11 @@ export default function EventDetailScreen() {
         {/* Cover Image Hero */}
         <Animated.View entering={FadeInUp.duration(400)}>
           <View style={styles.coverContainer}>
-            <View style={styles.coverPlaceholder}>
+            <View style={[styles.coverPlaceholder, { backgroundColor: tc.bgCard }]}>
               <Icon name="image" size={48} color={colors.text.tertiary} />
             </View>
             <LinearGradient
-              colors={['transparent', colors.dark.bg]}
+              colors={['transparent', tc.bg]}
               style={styles.coverGradient}
             />
             <View style={styles.eventBadge}>
@@ -263,7 +265,7 @@ export default function EventDetailScreen() {
               <Text style={styles.infoMain}>{formatEventDate(event.startDate)}</Text>
               <Text style={styles.infoSub}>{formatEventTime(event.startDate, event.endDate)}</Text>
             </View>
-            <Pressable style={styles.addToCalendar}>
+            <Pressable style={[styles.addToCalendar, { backgroundColor: tc.surface }]}>
               <Icon name="calendar" size="xs" color={colors.emerald} />
               <Text style={styles.addText}>{t('events.add')}</Text>
             </Pressable>
@@ -286,7 +288,7 @@ export default function EventDetailScreen() {
               <View style={styles.infoTextContainer}>
                 <Text style={styles.infoMain}>{event.location}</Text>
               </View>
-              <Pressable style={styles.directionsButton}>
+              <Pressable style={[styles.directionsButton, { backgroundColor: tc.surface }]}>
                 <Icon name="map-pin" size="xs" color={colors.text.primary} />
               </Pressable>
             </LinearGradient>
@@ -393,13 +395,13 @@ export default function EventDetailScreen() {
                   {attendees.slice(0, 5).map((attendee, index) => (
                     <View
                       key={attendee.id}
-                      style={[styles.avatarStack, { marginLeft: index > 0 ? -12 : 0 }]}
+                      style={[styles.avatarStack, { borderColor: tc.bg }, { marginLeft: index > 0 ? -12 : 0 }]}
                     >
                       <Avatar uri={attendee.avatarUrl ?? null} name={attendee.displayName ?? attendee.username ?? ''} size="md" />
                     </View>
                   ))}
                   {remainingAttendees > 0 && (
-                    <View style={styles.moreAvatar}>
+                    <View style={[styles.moreAvatar, { borderColor: tc.bg, backgroundColor: tc.surface }]}>
                       <Text style={styles.moreText}>+{remainingAttendees}</Text>
                     </View>
                   )}
@@ -419,7 +421,7 @@ export default function EventDetailScreen() {
       </ScrollView>
 
       {/* Bottom Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <Pressable style={styles.shareEventButton}>
           <LinearGradient
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}

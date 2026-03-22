@@ -28,6 +28,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi } from '@/services/api';
 
@@ -65,6 +66,8 @@ interface SeriesDetail {
 }
 
 function SeriesDetailContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -215,7 +218,7 @@ function SeriesDetailContent() {
           </View>
         )}
         <LinearGradient
-          colors={['transparent', colors.dark.bg]}
+          colors={['transparent', tc.bg]}
           style={styles.heroGradient}
         />
       </View>
@@ -392,10 +395,10 @@ export default function SeriesDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   listContent: {
     paddingBottom: spacing['3xl'],
@@ -418,7 +421,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   heroPlaceholder: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -450,11 +453,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   statItem: {
     flexDirection: 'row',
@@ -474,19 +477,19 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 20,
-    backgroundColor: colors.dark.border,
+    backgroundColor: tc.border,
     marginHorizontal: spacing.lg,
   },
   // Creator
   creatorCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   creatorInfo: {
     flex: 1,
@@ -541,17 +544,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     gap: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   episodeNumber: {
     width: 36,
     height: 36,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   episodeNumberText: {
     color: colors.emerald,

@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -47,6 +48,7 @@ export const VideoTimeline = memo(function VideoTimeline({
   onSeek,
 }: VideoTimelineProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
   const timelineWidth = SCREEN_W - spacing.base * 2;
   const msPerPixel = durationMs / timelineWidth;
@@ -73,7 +75,7 @@ export const VideoTimeline = memo(function VideoTimeline({
   const speeds = [0.5, 1, 1.5, 2];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bgElevated }]}>
       {/* Speed selector for selected segment */}
       {selectedSegment && (
         <View style={styles.speedRow}>

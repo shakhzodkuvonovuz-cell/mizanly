@@ -10,6 +10,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -19,6 +20,7 @@ export default function ForgotPasswordScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
@@ -92,7 +94,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('auth.resetPassword')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
@@ -106,7 +108,7 @@ export default function ForgotPasswordScreen() {
               <View style={styles.form}>
                 <Text style={styles.heading}>{t('auth.resetPassword')}</Text>
                 <Text style={styles.subtitle}>{t('auth.resetPasswordHint')}</Text>
-                <View style={styles.inputRow}>
+                <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
                   <Icon name="mail" size="sm" color={colors.text.tertiary} />
                   <TextInput
                     style={styles.inputInner}
@@ -134,7 +136,7 @@ export default function ForgotPasswordScreen() {
               <View style={styles.form}>
                 <Text style={styles.heading}>{t('auth.verificationCode')}</Text>
                 <Text style={styles.subtitle}>{t('auth.codeSentTo')} {email}</Text>
-                <View style={styles.inputRow}>
+                <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
                   <Icon name="lock" size="sm" color={colors.text.tertiary} />
                   <TextInput
                     style={styles.inputInner}
@@ -162,7 +164,7 @@ export default function ForgotPasswordScreen() {
             {step === 'newPassword' && (
               <View style={styles.form}>
                 <Text style={styles.heading}>{t('auth.newPassword')}</Text>
-                <View style={styles.inputRow}>
+                <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
                   <Icon name="lock" size="sm" color={colors.text.tertiary} />
                   <TextInput
                     style={styles.inputInner}
@@ -173,7 +175,7 @@ export default function ForgotPasswordScreen() {
                     secureTextEntry
                   />
                 </View>
-                <View style={styles.inputRow}>
+                <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
                   <Icon name="lock" size="sm" color={colors.text.tertiary} />
                   <TextInput
                     style={styles.inputInner}

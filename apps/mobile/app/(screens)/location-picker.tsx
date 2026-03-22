@@ -17,6 +17,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface LocationData {
   latitude: number;
@@ -38,6 +39,7 @@ function LocationPickerContent() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [manualLat, setManualLat] = useState('');
   const [manualLng, setManualLng] = useState('');
+  const tc = useThemeColors();
 
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     try {
@@ -146,7 +148,7 @@ function LocationPickerContent() {
   }, [location, address, haptic, router]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('location.shareLocation', 'Share Location')}
         leftAction={{
@@ -169,7 +171,7 @@ function LocationPickerContent() {
         >
           {/* Search Bar */}
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.searchContainer}>
-            <View style={styles.searchBar}>
+            <View style={[styles.searchBar, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <Icon name="search" size="sm" color={colors.text.tertiary} />
               <TextInput
                 style={styles.searchInput}
@@ -204,7 +206,7 @@ function LocationPickerContent() {
 
           {/* Location Display Card */}
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.section}>
-            <View style={styles.locationCard}>
+            <View style={[styles.locationCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               {loading ? (
                 <View style={styles.loadingContainer}>
                   <Skeleton.Rect width={80} height={80} borderRadius={radius.md} />
@@ -215,7 +217,7 @@ function LocationPickerContent() {
                 </View>
               ) : location ? (
                 <>
-                  <View style={styles.mapPlaceholder}>
+                  <View style={[styles.mapPlaceholder, { backgroundColor: tc.surface }]}>
                     <Icon name="map-pin" size="xl" color={colors.emerald} />
                     <Text style={styles.mapLabel}>
                       {t('location.mapPreview', 'Map Preview')}
@@ -268,7 +270,7 @@ function LocationPickerContent() {
               <View style={styles.coordInputWrapper}>
                 <Text style={styles.inputLabel}>{t('location.latitude', 'Latitude')}</Text>
                 <TextInput
-                  style={styles.coordInput}
+                  style={[styles.coordInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                   placeholder="e.g. 21.4225"
                   placeholderTextColor={colors.text.tertiary}
                   value={manualLat}
@@ -280,7 +282,7 @@ function LocationPickerContent() {
               <View style={styles.coordInputWrapper}>
                 <Text style={styles.inputLabel}>{t('location.longitude', 'Longitude')}</Text>
                 <TextInput
-                  style={styles.coordInput}
+                  style={[styles.coordInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                   placeholder="e.g. 39.8262"
                   placeholderTextColor={colors.text.tertiary}
                   value={manualLng}
@@ -306,7 +308,7 @@ function LocationPickerContent() {
         </ScrollView>
 
         {/* Share Button */}
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { backgroundColor: tc.bgElevated, borderTopColor: tc.border }]}>
           <GradientButton
             label={t('location.share', 'Share Location')}
             onPress={handleShareLocation}

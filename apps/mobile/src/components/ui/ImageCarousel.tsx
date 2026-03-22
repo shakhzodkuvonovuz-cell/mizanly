@@ -11,6 +11,7 @@ import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import Animated from 'react-native-reanimated';
 import { colors, spacing, radius, animation, glass } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from './Icon';
 
 export interface ImageCarouselProps {
@@ -31,6 +32,7 @@ export const ImageCarousel = memo(function ImageCarousel({
   blurred = false,
 }: ImageCarouselProps) {
   const { width: screenWidth } = useWindowDimensions();
+  const tc = useThemeColors();
   const flatListRef = useRef<FlatList<string>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -116,7 +118,7 @@ export const ImageCarousel = memo(function ImageCarousel({
           {images.map((_, index) => (
             <Pressable
               key={index}
-              style={[styles.dotBase, index === currentIndex && styles.dotActive]}
+              style={[styles.dotBase, { backgroundColor: tc.surface }, index === currentIndex && styles.dotActive]}
               onPress={() => goToIndex(index)}
               hitSlop={18}
               accessibilityLabel={`Go to image ${index + 1}`}

@@ -24,6 +24,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
@@ -82,6 +83,7 @@ function ChallengeCard({
   isJoining: boolean;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const daysLeft = getDaysLeft(challenge.endDate);
   const progress =
     challenge.targetCount > 0 && challenge.currentProgress != null
@@ -92,7 +94,7 @@ function ChallengeCard({
     <Animated.View entering={FadeInUp.delay(Math.min(index * 80, 600)).duration(400)}>
       <LinearGradient
         colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.15)']}
-        style={styles.challengeCard}
+        style={[styles.challengeCard, { borderColor: tc.borderLight }]}
       >
         {/* Cover image */}
         {challenge.coverImageUrl && (
@@ -132,7 +134,7 @@ function ChallengeCard({
           {/* Progress bar (if joined) */}
           {challenge.isJoined && (
             <View style={styles.progressSection}>
-              <View style={styles.progressTrack}>
+              <View style={[styles.progressTrack, { backgroundColor: tc.surface }]}>
                 <LinearGradient
                   colors={[colors.emeraldLight, colors.emerald]}
                   start={{ x: 0, y: 0 }}
@@ -207,7 +209,7 @@ function LoadingSkeleton() {
         ))}
       </View>
       {Array.from({ length: 3 }).map((_, i) => (
-        <View key={i} style={styles.skeletonCard}>
+        <View key={i} style={[styles.skeletonCard, { backgroundColor: tc.bgCard }]}>
           <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
           <View style={{ padding: spacing.base, gap: spacing.sm }}>
             <Skeleton.Text width="70%" />
@@ -378,7 +380,7 @@ function ChallengesScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('gamification.challenges.title')}
         leftAction={{

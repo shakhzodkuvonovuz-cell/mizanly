@@ -35,6 +35,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -58,6 +59,8 @@ interface LiveParticipant {
 }
 
 export default function LiveViewerScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -251,6 +254,8 @@ export default function LiveViewerScreen() {
 
   // Floating reaction component
   function FloatingReactionBubble({ reaction }: { reaction: FloatingReaction }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
     const yAnim = useSharedValue(0);
     const opacityAnim = useSharedValue(1);
 
@@ -273,6 +278,8 @@ export default function LiveViewerScreen() {
 
   // Audio bar animated component
   function AudioBar({ value }: { value: Animated.SharedValue<number> }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
     const animatedStyle = useAnimatedStyle(() => ({
       height: `${value.value * 100}%`,
     }));
@@ -477,7 +484,7 @@ export default function LiveViewerScreen() {
           {live.liveType === 'AUDIO' && (
             <View style={styles.audioContainer}>
               <LinearGradient
-                colors={[colors.dark.bgElevated, colors.dark.surface]}
+                colors={[tc.bgElevated, tc.surface]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.audioGradient}
@@ -698,7 +705,7 @@ export default function LiveViewerScreen() {
               disabled={!chatMessage.trim()}
             >
               <LinearGradient
-                colors={chatMessage.trim() ? [colors.emerald, '#05593A'] : [colors.dark.surface, colors.dark.surface]}
+                colors={chatMessage.trim() ? [colors.emerald, '#05593A'] : [tc.surface, tc.surface]}
                 style={styles.sendButtonGradient}
               >
                 <Icon name="send" size={14} color={chatMessage.trim() ? '#fff' : colors.text.tertiary} />
@@ -712,17 +719,17 @@ export default function LiveViewerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   videoPlayer: {
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   audioContainer: {
     width: '100%',
     aspectRatio: 2 / 1,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -793,7 +800,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   descriptionContainer: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -809,7 +816,7 @@ const styles = StyleSheet.create({
     marginVertical: spacing.lg,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     paddingVertical: spacing.sm,
   },
   actionButton: {
@@ -855,7 +862,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   sheetTitle: {
     color: colors.text.primary,
@@ -871,7 +878,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   participantInfo: {
     flex: 1,
@@ -913,13 +920,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
   chatInput: {
     flex: 1,
     color: colors.text.primary,
     fontSize: fontSize.base,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -1004,7 +1011,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.dark.bg,
+    borderColor: tc.bg,
   },
   liveStatusRow: {
     flexDirection: 'row',
@@ -1060,7 +1067,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: colors.dark.bg,
+    borderColor: tc.bg,
   },
   hostBadge: {
     width: 20,

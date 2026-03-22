@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -80,6 +81,7 @@ export default function GreenScreenEditorScreen() {
   const [audioPermission, setAudioPermission] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
+  const tc = useThemeColors();
 
   useEffect(() => {
     (async () => {
@@ -130,7 +132,7 @@ export default function GreenScreenEditorScreen() {
       case 'gradients':
         return null; // Rendered with LinearGradient
       default:
-        return { backgroundColor: colors.dark.surface };
+        return { backgroundColor: tc.surface };
     }
   };
 
@@ -315,7 +317,7 @@ export default function GreenScreenEditorScreen() {
   if (!permission?.granted) {
     return (
       <ScreenErrorBoundary>
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader title={t('screens.greenScreen.title')} onBack={() => router.back()} />
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <EmptyState
@@ -333,7 +335,7 @@ export default function GreenScreenEditorScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('screens.greenScreen.title')} showBackButton />
 
         <ScrollView
@@ -483,14 +485,14 @@ export default function GreenScreenEditorScreen() {
                   <Text style={styles.sliderLabel}>{t('screens.greenScreen.backgroundBlur')}</Text>
                   <Text style={styles.sliderValue}>{blurIntensity}%</Text>
                 </View>
-                <View style={styles.sliderTrack}>
+                <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
                   <LinearGradient
                     colors={[colors.emerald, 'rgba(10,123,79,0.3)']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={[styles.sliderFill, { width: `${blurIntensity}%` }]}
                   />
-                  <View style={[styles.sliderThumb, { left: `${blurIntensity}%` }]} />
+                  <View style={[styles.sliderThumb, { borderColor: tc.bg }, { left: `${blurIntensity}%` }]} />
                 </View>
 
                 {/* Edge Smoothing */}
@@ -498,14 +500,14 @@ export default function GreenScreenEditorScreen() {
                   <Text style={styles.sliderLabel}>{t('screens.greenScreen.edgeSmoothing')}</Text>
                   <Text style={styles.sliderValue}>{edgeSmoothing}%</Text>
                 </View>
-                <View style={styles.sliderTrack}>
+                <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
                   <LinearGradient
                     colors={[colors.emerald, 'rgba(10,123,79,0.3)']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={[styles.sliderFill, { width: `${edgeSmoothing}%` }]}
                   />
-                  <View style={[styles.sliderThumb, { left: `${edgeSmoothing}%` }]} />
+                  <View style={[styles.sliderThumb, { borderColor: tc.bg }, { left: `${edgeSmoothing}%` }]} />
                 </View>
               </LinearGradient>
             </View>

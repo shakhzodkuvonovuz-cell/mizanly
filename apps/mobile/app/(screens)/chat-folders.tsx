@@ -14,6 +14,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
 const FOLDER_ICONS: IconName[] = ['users', 'heart', 'globe', 'layers', 'bell', 'bookmark', 'flag', 'lock'];
@@ -21,6 +22,7 @@ const FOLDER_COLORS = [colors.emerald, colors.gold, '#58A6FF', '#9333EA', '#F851
 
 export default function ChatFoldersScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const haptic = useHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -66,7 +68,7 @@ export default function ChatFoldersScreen() {
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
         <Pressable
           accessibilityRole="button"
-          style={styles.folderCard}
+          style={[styles.folderCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
           onLongPress={() => { setMenuFolder(item); haptic.light(); }}
         >
           <View style={[styles.folderIcon, { backgroundColor: color + '15' }]}>
@@ -88,7 +90,7 @@ export default function ChatFoldersScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('risalah.chatFolders')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -107,10 +109,10 @@ export default function ChatFoldersScreen() {
 
         {/* Create form */}
         {createMode && (
-          <Animated.View entering={FadeIn.duration(200)} style={styles.createCard}>
+          <Animated.View entering={FadeIn.duration(200)} style={[styles.createCard, { backgroundColor: tc.bgCard }]}>
             <Text style={styles.createTitle}>New Folder</Text>
             <TextInput
-              style={styles.createInput}
+              style={[styles.createInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newName}
               onChangeText={setNewName}
               placeholder={t('risalah.folderNamePlaceholder')}
@@ -134,7 +136,7 @@ export default function ChatFoldersScreen() {
             </View>
 
             <View style={styles.createActions}>
-              <Pressable onPress={() => setCreateMode(false)} style={styles.cancelBtn}>
+              <Pressable onPress={() => setCreateMode(false)} style={[styles.cancelBtn, { backgroundColor: tc.surface }]}>
                 <Text style={styles.cancelText}>Cancel</Text>
               </Pressable>
               <Pressable

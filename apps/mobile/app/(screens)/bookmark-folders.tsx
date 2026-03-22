@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { bookmarksApi } from '@/services/api';
 import type { BookmarkCollection } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -36,10 +37,11 @@ type FolderCardProps = {
 function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
   const itemCount = folder.itemIds.length;
   const { t } = useTranslation();
+  const tc = useThemeColors();
   // For now, no cover thumbnail; we could later fetch first item's image
   return (
-    <Pressable onPress={onPress} onLongPress={onLongPress} style={styles.folderCard}>
-      <View style={styles.folderIcon}>
+    <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.folderCard, { backgroundColor: tc.bgCard }]}>
+      <View style={[styles.folderIcon, { backgroundColor: tc.bgElevated }]}>
         <Icon name="bookmark" size="xl" color={colors.gold} />
       </View>
       <Text style={styles.folderName} numberOfLines={1}>{folder.name}</Text>
@@ -118,7 +120,7 @@ export default function BookmarkFoldersScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.bookmarkFolders.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
         <View style={[styles.skeletonGrid, { paddingTop: insets.top + 52 }]}>
           {Array.from({ length: 4 }).map((_, i) => (
@@ -131,7 +133,7 @@ export default function BookmarkFoldersScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.bookmarkFolders.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
 
         <FlatList
@@ -178,7 +180,7 @@ export default function BookmarkFoldersScreen() {
           <View style={styles.sheetContent}>
             <Text style={styles.sheetTitle}>{t('screens.bookmarkFolders.createSheetTitle')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
               placeholder={t('screens.bookmarkFolders.folderNamePlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={newFolderName}

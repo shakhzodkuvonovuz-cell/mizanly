@@ -20,6 +20,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { reelTemplatesApi } from '@/services/reelTemplatesApi';
 import type { ReelTemplate } from '@/types/reelTemplates';
 
@@ -44,6 +45,8 @@ function formatMs(ms: number): string {
 }
 
 function TemplateCardSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.cardContainer}>
       <Skeleton.Rect width={CARD_WIDTH} height={CARD_IMAGE_HEIGHT} borderRadius={radius.md} />
@@ -56,6 +59,8 @@ function TemplateCardSkeleton() {
 }
 
 function SegmentTimeline({ segments, totalDurationMs }: { segments: ReelTemplate['segments']; totalDurationMs: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const maxMs = totalDurationMs > 0 ? totalDurationMs : (segments.length > 0 ? segments[segments.length - 1].endMs : 1000);
 
   return (
@@ -81,6 +86,8 @@ function SegmentTimeline({ segments, totalDurationMs }: { segments: ReelTemplate
 }
 
 export default function ReelTemplatesScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -347,10 +354,10 @@ export default function ReelTemplatesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   listContent: {
     padding: spacing.base,
@@ -368,7 +375,7 @@ const styles = StyleSheet.create({
   // Card
   cardContainer: {
     width: CARD_WIDTH,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     overflow: 'hidden',
     borderWidth: 1,
@@ -389,7 +396,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.md,
   },
   cardImagePlaceholder: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -436,7 +443,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingBottom: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
 
   // Timeline
@@ -451,7 +458,7 @@ const styles = StyleSheet.create({
   },
   timelineTrack: {
     height: 8,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.sm,
     overflow: 'hidden',
     position: 'relative',

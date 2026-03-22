@@ -11,9 +11,12 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function QrCodeScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
@@ -131,10 +134,10 @@ export default function QrCodeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   content: {
     flex: 1,

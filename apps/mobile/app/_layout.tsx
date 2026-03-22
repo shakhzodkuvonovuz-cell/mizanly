@@ -29,6 +29,7 @@ import { TTSMiniPlayer } from '@/components/ui/TTSMiniPlayer';
 import { useStore } from '@/store';
 import { colors } from '@/theme';
 import { useIslamicTheme, useIsEidToday } from '@/hooks/useIslamicTheme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { initSentry, setSentryUser } from '@/config/sentry';
 import { navigate } from '@/utils/navigation';
 
@@ -257,6 +258,8 @@ function AppStateHandler() {
 }
 
 function BiometricLockOverlay() {
+  const tc = useThemeColors();
+  const lockStyles = createLockStyles(tc);
   const { t } = useTranslation();
   const biometricLockEnabled = useStore((s) => s.biometricLockEnabled);
   const [isLocked, setIsLocked] = useState(false);
@@ -296,10 +299,10 @@ function BiometricLockOverlay() {
   );
 }
 
-const lockStyles = StyleSheet.create({
+const createLockStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,

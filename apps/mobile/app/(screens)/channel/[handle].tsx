@@ -21,6 +21,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, videosApi, playlistsApi } from '@/services/api';
 import type { Video, Playlist } from '@/types';
@@ -45,6 +46,7 @@ function VideoCard({ video }: { video: Video }) {
   const router = useRouter();
   const haptic = useHaptic();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
@@ -62,7 +64,7 @@ function VideoCard({ video }: { video: Video }) {
   return (
     <Pressable style={styles.videoCard} onPress={handlePress}>
       {/* Thumbnail */}
-      <View style={styles.thumbnailContainer}>
+      <View style={[styles.thumbnailContainer, { backgroundColor: tc.surface }]}>
         {video.thumbnailUrl ? (
           <Image source={{ uri: video.thumbnailUrl }} style={styles.thumbnail} />
         ) : (
@@ -109,7 +111,7 @@ function VideoCard({ video }: { video: Video }) {
 
     return (
       <Animated.View entering={FadeInUp.delay(100)} style={styles.featuredContainer}>
-        <Pressable style={styles.featuredCard} onPress={onPress}>
+        <Pressable style={[styles.featuredCard, { backgroundColor: tc.surface }]} onPress={onPress}>
           <Image source={{ uri: video.thumbnailUrl || '' }} style={styles.featuredThumbnail} />
           <LinearGradient
             colors={['transparent', 'rgba(13,17,23,0.8)', 'rgba(13,17,23,0.98)']}
@@ -147,11 +149,11 @@ function VideoCard({ video }: { video: Video }) {
   };
 
   return (
-    <Pressable style={styles.playlistCard} onPress={handlePress}>
+    <Pressable style={[styles.playlistCard, { backgroundColor: tc.surface }]} onPress={handlePress}>
       {playlist.thumbnailUrl ? (
-        <Image source={{ uri: playlist.thumbnailUrl }} style={styles.playlistThumbnail} />
+        <Image source={{ uri: playlist.thumbnailUrl }} style={[styles.playlistThumbnail, { backgroundColor: tc.bgCard }]} />
       ) : (
-        <View style={[styles.playlistThumbnail, styles.playlistThumbnailPlaceholder]}>
+        <View style={[styles.playlistThumbnail, { backgroundColor: tc.bgCard }, styles.playlistThumbnailPlaceholder]}>
           <Icon name="layers" size="lg" color={colors.text.tertiary} />
         </View>
       )}
@@ -180,6 +182,7 @@ export default function ChannelScreen() {
   const [showMenu, setShowMenu] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showTrailerPicker, setShowTrailerPicker] = useState(false);
+  const tc = useThemeColors();
 
   // Fetch channel
   const channelQuery = useQuery({
@@ -286,7 +289,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       <View style={styles.bannerContainer}>
         {channel?.bannerUrl ? (
           <>
-            <Image source={{ uri: channel.bannerUrl }} style={styles.banner} />
+            <Image source={{ uri: channel.bannerUrl }} style={[styles.banner, { backgroundColor: tc.bgElevated }]} />
             <LinearGradient
               colors={['rgba(13,17,23,0.3)', 'transparent', 'rgba(13,17,23,0.6)']}
               locations={[0, 0.5, 1]}
@@ -295,10 +298,10 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           </>
         ) : (
           <LinearGradient
-            colors={[colors.dark.bgElevated, colors.dark.surface, colors.dark.bgElevated]}
+            colors={[tc.bgElevated, tc.surface, tc.bgElevated]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[styles.banner, styles.bannerPlaceholder]}
+            style={[styles.banner, { backgroundColor: tc.bgElevated }, styles.bannerPlaceholder]}
           >
             <View style={styles.bannerPattern}>
               {[...Array(6)].map((_, i) => (
@@ -314,7 +317,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         <View style={styles.avatarContainer}>
           <Avatar uri={channel?.avatarUrl} name={channel?.name || ''} size="2xl" />
           {channel?.isVerified && (
-            <View style={styles.verifiedBadgeFloating}>
+            <View style={[styles.verifiedBadgeFloating, { backgroundColor: tc.bg }]}>
               <VerifiedBadge size={16} />
             </View>
           )}
@@ -349,19 +352,19 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       </View>
 
       {/* Enhanced Stats with icons */}
-      <View style={styles.statsEnhanced}>
+      <View style={[styles.statsEnhanced, { backgroundColor: tc.surface }]}>
         <View style={styles.statItemEnhanced}>
           <Icon name="users" size="sm" color={colors.emerald} />
           <Text style={styles.statNumEnhanced}>{channel?.subscribersCount.toLocaleString() || '0'}</Text>
           <Text style={styles.statLabelEnhanced}>{t('channel.subscribers')}</Text>
         </View>
-        <View style={styles.statDividerEnhanced} />
+        <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
           <Icon name="video" size="sm" color={colors.gold} />
           <Text style={styles.statNumEnhanced}>{channel?.videosCount.toLocaleString() || '0'}</Text>
           <Text style={styles.statLabelEnhanced}>{t('minbar.videos')}</Text>
         </View>
-        <View style={styles.statDividerEnhanced} />
+        <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
           <Icon name="eye" size="sm" color={colors.text.secondary} />
           <Text style={styles.statNumEnhanced}>{channel?.totalViews.toLocaleString() || '0'}</Text>
@@ -389,14 +392,14 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           <Text style={styles.trailerSectionTitle}>{t('channelTrailer.title')}</Text>
           <Pressable
             accessibilityRole="button"
-            style={styles.trailerCard}
+            style={[styles.trailerCard, { backgroundColor: tc.surface }]}
            
             onPress={() => channel.trailerVideo && router.push(`/(screens)/video/${channel.trailerVideo.id}`)}
           >
             {channel.trailerVideo.thumbnailUrl ? (
               <Image source={{ uri: channel.trailerVideo.thumbnailUrl }} style={styles.trailerThumbnail} />
             ) : (
-              <View style={[styles.trailerThumbnail, styles.trailerThumbnailPlaceholder]}>
+              <View style={[styles.trailerThumbnail, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
                 <Icon name="video" size="xl" color={colors.text.secondary} />
               </View>
             )}
@@ -445,7 +448,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
   if (channelQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
@@ -462,7 +465,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
   if (channelQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
@@ -479,7 +482,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
   if (!channel) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
@@ -498,7 +501,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
@@ -555,13 +558,13 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             ) : (
               <View style={styles.aboutTab}>
                 <Text style={styles.aboutDescription}>{channel.description || 'No description provided.'}</Text>
-                <View style={styles.aboutMeta}>
+                <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
                   <Text style={styles.aboutMetaLabel}>{t('channel.joined')}</Text>
                   <Text style={styles.aboutMetaValue}>
                     {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                   </Text>
                 </View>
-                <View style={styles.aboutMeta}>
+                <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
                   <Text style={styles.aboutMetaLabel}>{t('channel.totalViews')}</Text>
                   <Text style={styles.aboutMetaValue}>{channel.totalViews.toLocaleString()}</Text>
                 </View>
@@ -578,7 +581,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
         {/* More menu bottom sheet */}
         <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
-          <View style={styles.sheetHeader}>
+          <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
             <Text style={styles.sheetTitle}>Channel options</Text>
           </View>
           {isOwner && (
@@ -658,7 +661,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
         {/* Share bottom sheet */}
         <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
-          <View style={styles.sheetHeader}>
+          <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
             <Text style={styles.sheetTitle}>{t('channel.shareChannel')}</Text>
           </View>
           <BottomSheetItem
@@ -681,7 +684,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
         {/* Trailer picker bottom sheet (owner only) */}
         <BottomSheet visible={showTrailerPicker} onClose={() => setShowTrailerPicker(false)} snapPoint={0.7}>
-          <View style={styles.sheetHeader}>
+          <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
             <Text style={styles.sheetTitle}>{t('channelTrailer.setTrailer')}</Text>
           </View>
           <Text style={styles.trailerPickerHint}>{t('channelTrailer.selectVideo')}</Text>
@@ -709,11 +712,11 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                   }}
                   disabled={setTrailerMutation.isPending}
                 >
-                  <View style={styles.trailerPickerThumbWrap}>
+                  <View style={[styles.trailerPickerThumbWrap, { backgroundColor: tc.bgCard }]}>
                     {item.thumbnailUrl ? (
                       <Image source={{ uri: item.thumbnailUrl }} style={styles.trailerPickerThumb} />
                     ) : (
-                      <View style={[styles.trailerPickerThumb, styles.trailerThumbnailPlaceholder]}>
+                      <View style={[styles.trailerPickerThumb, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
                         <Icon name="video" size="sm" color={colors.text.tertiary} />
                       </View>
                     )}

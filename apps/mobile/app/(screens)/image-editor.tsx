@@ -14,6 +14,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -54,6 +55,7 @@ export default function ImageEditorScreen() {
 
   const imageScale = useSharedValue(1);
   const cropFrameScale = useSharedValue(1);
+  const tc = useThemeColors();
 
   const animatedImageStyle = useAnimatedStyle(() => ({
     transform: [{ scale: imageScale.value }],
@@ -84,7 +86,7 @@ export default function ImageEditorScreen() {
             style={[styles.aspectButton, aspectRatio === ar.value && styles.aspectButtonActive]}
             onPress={() => setAspectRatio(ar.value)}
           >
-            <View style={[styles.aspectPreview, { aspectRatio: ar.ratio || 1 }]}>
+            <View style={[styles.aspectPreview, { borderColor: tc.border }, { aspectRatio: ar.ratio || 1 }]}>
               <View style={[styles.aspectInner, aspectRatio === ar.value && styles.aspectInnerActive]} />
             </View>
             <Text style={[styles.aspectLabel, aspectRatio === ar.value && styles.aspectLabelActive]}>
@@ -165,14 +167,14 @@ export default function ImageEditorScreen() {
               colors={[colors.emerald, colors.gold]}
               style={[styles.sliderFill, { width: `${slider.value}%` }]}
             />
-            <View style={[styles.sliderThumb, { left: `${slider.value}%` }]}>
+            <View style={[styles.sliderThumb, { backgroundColor: tc.bg }, { left: `${slider.value}%` }]}>
               <LinearGradient
                 colors={[colors.emerald, colors.emeraldLight || colors.emerald]}
                 style={styles.sliderThumbInner}
               />
             </View>
           </View>
-          <View style={styles.sliderTrackBg} />
+          <View style={[styles.sliderTrackBg, { backgroundColor: tc.border }]} />
         </View>
       ))}
     </View>
@@ -186,7 +188,7 @@ export default function ImageEditorScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <StatusBar barStyle="light-content" />
 
         {/* Header */}

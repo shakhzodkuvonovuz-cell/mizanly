@@ -20,6 +20,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, parentalApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import type { User } from '@/types';
 
@@ -35,6 +36,7 @@ export default function LinkChildAccountScreen() {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [pinStep, setPinStep] = useState<'search' | 'confirm' | 'pin' | 'confirmPin'>('search');
+  const tc = useThemeColors();
 
   const searchResults = useQuery({
     queryKey: ['user-search-link', searchQuery],
@@ -118,7 +120,7 @@ export default function LinkChildAccountScreen() {
 
         <View style={styles.pinDots}>
           {[0, 1, 2, 3].map((i) => (
-            <View key={i} style={[styles.pinDot, i < currentPin.length && styles.pinDotFilled]} />
+            <View key={i} style={[styles.pinDot, { borderColor: tc.border }, i < currentPin.length && styles.pinDotFilled]} />
           ))}
         </View>
 
@@ -127,7 +129,7 @@ export default function LinkChildAccountScreen() {
             <Pressable
               accessibilityRole="button"
               key={i}
-              style={[styles.numKey, d === '' && styles.numKeyEmpty]}
+              style={[styles.numKey, { backgroundColor: tc.bgElevated }, d === '' && styles.numKeyEmpty]}
 
               onPress={() => {
                 if (d === 'del') handlePinDelete(isConfirm);
@@ -151,7 +153,7 @@ export default function LinkChildAccountScreen() {
   if (pinStep === 'pin') {
     return (
       <ScreenErrorBoundary>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader
             title={t('parentalControls.linkChildAccount')}
             leftAction={{ icon: 'arrow-left', onPress: () => setPinStep('confirm'), accessibilityLabel: t('common.back') }}
@@ -168,7 +170,7 @@ export default function LinkChildAccountScreen() {
   if (pinStep === 'confirmPin') {
     return (
       <ScreenErrorBoundary>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader
             title={t('parentalControls.linkChildAccount')}
             leftAction={{ icon: 'arrow-left', onPress: () => { setPinStep('pin'); setPin(''); setConfirmPin(''); }, accessibilityLabel: t('common.back') }}
@@ -185,7 +187,7 @@ export default function LinkChildAccountScreen() {
   if (pinStep === 'confirm' && selectedUser) {
     return (
       <ScreenErrorBoundary>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader
             title={t('parentalControls.linkChildAccount')}
             leftAction={{ icon: 'arrow-left', onPress: () => { setPinStep('search'); setSelectedUser(null); }, accessibilityLabel: t('common.back') }}
@@ -194,7 +196,7 @@ export default function LinkChildAccountScreen() {
             <Animated.View entering={FadeInDown.duration(400)}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                style={styles.confirmCard}
+                style={[styles.confirmCard, { borderColor: tc.border }]}
               >
                 <Avatar
                   uri={selectedUser.avatarUrl ?? null}
@@ -228,7 +230,7 @@ export default function LinkChildAccountScreen() {
   // Search step
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('parentalControls.linkChildAccount')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -236,7 +238,7 @@ export default function LinkChildAccountScreen() {
 
         <View style={[styles.body, { paddingTop: insets.top + 60 }]}>
           {/* Search Input */}
-          <View style={[styles.searchContainer, { flexDirection: rtlFlexRow(isRTL) }]}>
+          <View style={[styles.searchContainer, { backgroundColor: tc.bgElevated, borderColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Icon name="search" size="sm" color={colors.text.tertiary} />
             <TextInput
               style={[styles.searchInput, { textAlign: rtlTextAlign(isRTL) }]}
@@ -268,7 +270,7 @@ export default function LinkChildAccountScreen() {
             renderItem={({ item }) => (
               <Pressable
                 accessibilityRole="button"
-                style={[styles.userRow, { flexDirection: rtlFlexRow(isRTL) }]}
+                style={[styles.userRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => handleSelectUser(item)}
 
               >

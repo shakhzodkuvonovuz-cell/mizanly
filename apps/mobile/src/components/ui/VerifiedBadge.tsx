@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 import { colors } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface VerifiedBadgeProps {
   size?: number;
@@ -13,6 +14,7 @@ export function VerifiedBadge({
   color = colors.emerald,
   variant = 'standard',
 }: VerifiedBadgeProps) {
+  const tc = useThemeColors();
   const label = variant === 'scholar' ? 'Verified scholar' : 'Verified account';
 
   if (variant === 'scholar') {
@@ -21,7 +23,7 @@ export function VerifiedBadge({
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
           {/* Gold ring */}
           <Circle cx="12" cy="12" r="11" fill={colors.gold} />
-          <Circle cx="12" cy="12" r="9.5" fill={colors.dark.bgCard} />
+          <Circle cx="12" cy="12" r="9.5" fill={tc.bgCard} />
           <Circle cx="12" cy="12" r="8.5" fill={colors.gold} />
           {/* Star icon in center */}
           <G>

@@ -17,11 +17,14 @@ import { stickersApi } from '@/services/api';
 import type { StickerPack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack; onPress: () => void; onAdd: () => void; onRemove: () => void; index: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const [isAdded, setIsAdded] = useState(false);
   const haptic = useHaptic();
@@ -81,6 +84,8 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
 }
 
 export default function StickerBrowserScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId?: string }>();
@@ -305,10 +310,10 @@ export default function StickerBrowserScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg
+    backgroundColor: tc.bg
   },
   searchWrap: {
     paddingHorizontal: spacing.base,
@@ -361,7 +366,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   placeholderCover: {
     justifyContent: 'center',
@@ -391,7 +396,7 @@ const styles = StyleSheet.create({
   cover: {
     width: '100%',
     height: '100%',
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   cardInfo: {
     flex: 1,
@@ -411,7 +416,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   addedButton: {
     backgroundColor: colors.active.emerald10,
@@ -450,7 +455,7 @@ const styles = StyleSheet.create({
   gridItem: {
     width: (SCREEN_WIDTH - spacing.base * 2 - spacing.sm * 2) / 3,
     aspectRatio: 1,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     padding: spacing.sm,
   },

@@ -30,6 +30,7 @@ import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Comment, Reel } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -51,6 +52,8 @@ function CommentRow({
   onReply: (id: string, username: string) => void;
   onDeleted: () => void;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   const { t } = useTranslation();
   const [localLiked, setLocalLiked] = useState((comment as Comment & { isLiked?: boolean }).isLiked ?? false);
@@ -121,6 +124,8 @@ function CommentRow({
 }
 
 export default function ReelDetailScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
@@ -532,16 +537,16 @@ export default function ReelDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   // Header is now handled by GlassHeader component
   reelContainer: {
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   videoContainer: {
     width: VIDEO_WIDTH,
     height: VIDEO_HEIGHT,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   video: {
     width: '100%',
@@ -632,7 +637,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderTopWidth: 0.5,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
   commentsTitle: {
     color: colors.text.primary,
@@ -647,7 +652,7 @@ const styles = StyleSheet.create({
   },
   commentBody: { flex: 1 },
   commentBubble: {
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -696,8 +701,8 @@ const styles = StyleSheet.create({
   commentLike: { paddingTop: spacing.xs },
   inputWrap: {
     borderTopWidth: 0.5,
-    borderTopColor: colors.dark.border,
-    backgroundColor: colors.dark.bg,
+    borderTopColor: tc.border,
+    backgroundColor: tc.bg,
     paddingBottom: Platform.OS === 'ios' ? spacing.base : spacing.sm,
   },
   replyBanner: {
@@ -706,7 +711,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   replyBannerText: {
     color: colors.text.secondary,

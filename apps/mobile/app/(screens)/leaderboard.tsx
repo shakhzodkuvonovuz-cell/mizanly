@@ -26,6 +26,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -71,7 +72,7 @@ function PodiumCard({
       >
         <View style={styles.podiumAvatarWrap}>
           <Avatar uri={entry.avatarUrl} name={entry.displayName} size="lg" showRing ringColor={medalColor} />
-          <View style={[styles.medalBadge, { backgroundColor: medalColor }]}>
+          <View style={[styles.medalBadge, { borderColor: tc.bg }, { backgroundColor: medalColor }]}>
             <Text style={styles.medalText}>{position}</Text>
           </View>
         </View>
@@ -180,6 +181,7 @@ function LeaderboardScreen() {
   const haptic = useHaptic();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('xp');
+  const tc = useThemeColors();
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['leaderboard', activeTab],
@@ -277,7 +279,7 @@ function LeaderboardScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('gamification.leaderboard.title')}
         leftAction={{

@@ -17,11 +17,14 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const BREATHING_CYCLE_MS = 8000; // 4s in, 4s out
 
 export default function WindDownScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -80,7 +83,7 @@ export default function WindDownScreen() {
   return (
     <ScreenErrorBoundary>
       <LinearGradient
-        colors={[colors.dark.bg, '#0A1628', '#061118']}
+        colors={[tc.bg, '#0A1628', '#061118']}
         style={styles.container}
         accessibilityLabel={t('windDown.title')}
       >
@@ -138,7 +141,7 @@ export default function WindDownScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1, justifyContent: 'space-between', paddingHorizontal: spacing.xl },
   header: { alignItems: 'center', marginTop: spacing['2xl'] },

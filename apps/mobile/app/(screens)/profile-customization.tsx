@@ -23,6 +23,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 interface ProfileCustomization {
@@ -73,6 +74,8 @@ const LAYOUT_ICONS: Record<string, 'layout' | 'layers' | 'book-open' | 'eye'> = 
 };
 
 function SectionLabel({ text, delay }: { text: string; delay: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Animated.View entering={FadeInUp.delay(delay).duration(400)}>
       <Text style={styles.sectionLabel}>{text}</Text>
@@ -91,6 +94,8 @@ function ToggleRow({
   onToggle: (v: boolean) => void;
   isRTL: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
 
   return (
@@ -113,6 +118,8 @@ function ToggleRow({
 }
 
 function LoadingSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.skeletonWrap}>
       <Skeleton.Rect width={120} height={18} borderRadius={radius.sm} />
@@ -136,6 +143,8 @@ function LoadingSkeleton() {
 }
 
 function ProfileCustomizationScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -429,10 +438,10 @@ export default function ProfileCustomizationScreenWrapper() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scroll: {
     flex: 1,
@@ -490,7 +499,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     minHeight: 100,
   },
   layoutCardActive: {
@@ -522,7 +531,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     minHeight: 80,
   },
   fontCardActive: {
@@ -545,7 +554,7 @@ const styles = StyleSheet.create({
   togglesCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     overflow: 'hidden',
   },
   toggleRow: {
@@ -565,7 +574,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 28,
     borderRadius: radius.lg,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     padding: 3,
     justifyContent: 'center',
   },
@@ -599,7 +608,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     borderStyle: 'dashed',
   },
   uploadText: {
@@ -612,10 +621,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },

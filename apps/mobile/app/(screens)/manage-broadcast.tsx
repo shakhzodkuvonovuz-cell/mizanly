@@ -18,6 +18,7 @@ import type { User } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function ManageBroadcastScreen() {
   const { t, isRTL } = useTranslation();
@@ -29,6 +30,7 @@ export default function ManageBroadcastScreen() {
 
   const [activeTab, setActiveTab] = useState<'subscribers' | 'admins'>('subscribers');
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
 
   const { data: channel, isLoading: isChannelLoading, isError: isChannelError } = useQuery({
     queryKey: ['broadcast-channel', params.channelId],
@@ -99,7 +101,7 @@ export default function ManageBroadcastScreen() {
 
   if (isChannelError || !params.channelId) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.manage-broadcast.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -118,7 +120,7 @@ export default function ManageBroadcastScreen() {
 
   if (isChannelLoading && !channel) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.manage-broadcast.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -165,13 +167,13 @@ export default function ManageBroadcastScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={channel ? t('screens.manage-broadcast.manageChannel', { name: channel.name }) : t('screens.manage-broadcast.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
       
-        <View style={[styles.tabsWrap, { marginTop: insets.top + 52 }]}>
+        <View style={[styles.tabsWrap, { backgroundColor: tc.bg }, { marginTop: insets.top + 52 }]}>
           <TabSelector 
             tabs={[
               { key: 'subscribers', label: `${t('screens.manage-broadcast.subscribers')} (${channel?.subscribersCount || 0})` },

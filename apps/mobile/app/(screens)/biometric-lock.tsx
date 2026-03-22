@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { rtlTextAlign } from '@/utils/rtl';
 
@@ -20,6 +21,7 @@ type BiometricType = 'faceId' | 'fingerprint' | 'unknown';
 
 export default function BiometricLockScreen() {
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -105,7 +107,7 @@ export default function BiometricLockScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('biometric.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -122,7 +124,7 @@ export default function BiometricLockScreen() {
   if (!hasHardware) {
     return (
       <ScreenErrorBoundary>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader
             title={t('biometric.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -141,7 +143,7 @@ export default function BiometricLockScreen() {
   if (!isEnrolled) {
     return (
       <ScreenErrorBoundary>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader
             title={t('biometric.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -159,7 +161,7 @@ export default function BiometricLockScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('biometric.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}

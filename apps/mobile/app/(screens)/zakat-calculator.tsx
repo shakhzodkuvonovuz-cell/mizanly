@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -46,6 +47,8 @@ interface DeductionInput {
 }
 
 function StepIndicator({ currentStep }: { currentStep: Step }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const steps = [
     { num: 1, label: t('screens.zakatCalculator.stepAssets') },
@@ -111,6 +114,8 @@ function InputCard({
   suffix?: string;
   delay?: number;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -153,6 +158,8 @@ function InputCard({
 }
 
 export default function ZakatCalculatorScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useHaptic();
@@ -505,10 +512,10 @@ export default function ZakatCalculatorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   keyboardView: {
     flex: 1,
@@ -589,7 +596,7 @@ const styles = StyleSheet.create({
     right: -50,
     width: 100,
     height: 2,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   stepTitle: {
     fontFamily: fonts.bodySemiBold,
@@ -671,7 +678,7 @@ const styles = StyleSheet.create({
   },
   previewDivider: {
     height: 1,
-    backgroundColor: colors.dark.border,
+    backgroundColor: tc.border,
     marginVertical: spacing.sm,
   },
   previewLabel: {
@@ -774,7 +781,7 @@ const styles = StyleSheet.create({
   },
   calculationDivider: {
     height: 1,
-    backgroundColor: colors.dark.border,
+    backgroundColor: tc.border,
     marginVertical: spacing.md,
   },
   boldValue: {

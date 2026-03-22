@@ -24,6 +24,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { creatorApi } from '@/services/creatorApi';
 import { navigate } from '@/utils/navigation';
 
@@ -73,6 +74,7 @@ const TABS = [
 
 function CreatorDashboardContent() {
   const router = useRouter();
+  const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
@@ -179,7 +181,7 @@ function CreatorDashboardContent() {
     ({ item, index }: { item: OverviewStat; index: number }) => (
       <Animated.View
         entering={FadeInRight.delay(index * 80).duration(300)}
-        style={styles.overviewCard}
+        style={[styles.overviewCard, { backgroundColor: tc.bgCard }]}
       >
         <View style={[styles.overviewIconBg, { backgroundColor: `${item.color}15` }]}>
           <Icon name={item.icon} size="sm" color={item.color} />
@@ -282,7 +284,7 @@ function CreatorDashboardContent() {
                     <Text style={styles.bestTimeDay}>{slot.day}</Text>
                     <Text style={styles.bestTimeHour}>{slot.hour}</Text>
                   </View>
-                  <View style={styles.bestTimeBar}>
+                  <View style={[styles.bestTimeBar, { backgroundColor: tc.surface }]}>
                     <View
                       style={[
                         styles.bestTimeBarFill,
@@ -326,7 +328,7 @@ function CreatorDashboardContent() {
             { label: t('creatorDashboard.other', 'Other'), value: audienceData.genderSplit.other, color: colors.gold },
           ].map((g) => (
             <View key={g.label} style={styles.genderItem}>
-              <View style={styles.genderBarTrack}>
+              <View style={[styles.genderBarTrack, { backgroundColor: tc.surface }]}>
                 <View style={[styles.genderBarFill, { height: `${g.value}%`, backgroundColor: g.color }]} />
               </View>
               <Text style={styles.genderPercent}>{g.value}%</Text>
@@ -346,7 +348,7 @@ function CreatorDashboardContent() {
             style={styles.ageRow}
           >
             <Text style={styles.ageLabel}>{group.range}</Text>
-            <View style={styles.ageBarTrack}>
+            <View style={[styles.ageBarTrack, { backgroundColor: tc.surface }]}>
               <View
                 style={[styles.ageBarFill, { width: `${group.percentage}%` }]}
               />
@@ -363,7 +365,7 @@ function CreatorDashboardContent() {
           <Animated.View
             key={country.name}
             entering={FadeInDown.delay(index * 50).duration(250)}
-            style={styles.countryRow}
+            style={[styles.countryRow, { borderBottomColor: tc.border }]}
           >
             <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
             <Text style={styles.countryName}>{country.name}</Text>
@@ -388,7 +390,7 @@ function CreatorDashboardContent() {
     return (
       <View style={styles.tabContent}>
         {/* Revenue Summary */}
-        <View style={styles.revenueSummary}>
+        <View style={[styles.revenueSummary, { backgroundColor: tc.bgCard }]}>
           <Text style={styles.revenueTotalLabel}>
             {t('creatorDashboard.totalRevenue', 'Total Revenue')}
           </Text>
@@ -404,7 +406,7 @@ function CreatorDashboardContent() {
             { label: t('creatorDashboard.tips', 'Tips'), value: revenueData.tips, icon: 'heart' as IconName, color: colors.like },
             { label: t('creatorDashboard.memberships', 'Memberships'), value: revenueData.memberships, icon: 'users' as IconName, color: colors.emerald },
           ].map((item) => (
-            <View key={item.label} style={styles.revenueItem}>
+            <View key={item.label} style={[styles.revenueItem, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <View style={[styles.revenueItemIcon, { backgroundColor: `${item.color}15` }]}>
                 <Icon name={item.icon} size="sm" color={item.color} />
               </View>
@@ -429,7 +431,7 @@ function CreatorDashboardContent() {
                 style={styles.historyRow}
               >
                 <Text style={styles.historyMonth}>{entry.month}</Text>
-                <View style={styles.historyBarTrack}>
+                <View style={[styles.historyBarTrack, { backgroundColor: tc.surface }]}>
                   <View
                     style={[
                       styles.historyBarFill,
@@ -461,7 +463,7 @@ function CreatorDashboardContent() {
         <View style={styles.skeletonContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.overviewScroll}>
             {Array.from({ length: 4 }).map((_, i) => (
-              <View key={`skel-card-${i}`} style={styles.skeletonCard}>
+              <View key={`skel-card-${i}`} style={[styles.skeletonCard, { backgroundColor: tc.bgCard }]}>
                 <Skeleton.Circle size={32} />
                 <Skeleton.Rect width={60} height={20} borderRadius={radius.sm} />
                 <Skeleton.Rect width={80} height={14} borderRadius={radius.sm} />
@@ -479,7 +481,7 @@ function CreatorDashboardContent() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('creatorDashboard.title', 'Creator Studio')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

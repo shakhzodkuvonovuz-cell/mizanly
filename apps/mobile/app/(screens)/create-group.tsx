@@ -20,6 +20,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, messagesApi, uploadApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -28,6 +29,7 @@ const MIN_MEMBERS = 2;
 
 export default function CreateGroupScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { user } = useUser();
   const haptic = useHaptic();
   const { t } = useTranslation();
@@ -122,7 +124,7 @@ export default function CreateGroupScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
         <GlassHeader
           title={t('groups.createGroup')}
@@ -158,7 +160,7 @@ export default function CreateGroupScreen() {
               {avatarUri ? (
                 <Avatar uri={avatarUri} name={groupName || t('common.group')} size="2xl" />
               ) : (
-                <View style={styles.avatarPlaceholder}>
+                <View style={[styles.avatarPlaceholder, { backgroundColor: tc.bgCard }]}>
                   <Icon name="camera" size={32} color={colors.text.secondary} />
                 </View>
               )}
@@ -187,7 +189,7 @@ export default function CreateGroupScreen() {
               </Text>
               <View style={styles.chips}>
                 {selectedMembers.map(member => (
-                  <View key={member.id} style={styles.chip}>
+                  <View key={member.id} style={[styles.chip, { backgroundColor: tc.bgCard }]}>
                     <Avatar uri={member.avatarUrl} name={member.displayName} size="sm" />
                     <Text style={styles.chipText} numberOfLines={1}>
                       {member.displayName}
@@ -210,7 +212,7 @@ export default function CreateGroupScreen() {
           {/* Member search */}
           <View style={styles.section}>
             <Text style={styles.label}>{t('groups.addMembers')}</Text>
-            <View style={styles.searchWrap}>
+            <View style={[styles.searchWrap, { backgroundColor: tc.bgCard }]}>
               <Icon name="search" size="sm" color={colors.text.secondary} />
               <TextInput
                 style={styles.searchInput}
@@ -243,7 +245,7 @@ export default function CreateGroupScreen() {
                 refreshControl={<RefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
                 renderItem={({ item }) => (
                   <Pressable
-                    style={styles.userRow}
+                    style={[styles.userRow, { borderBottomColor: tc.border }]}
                     onPress={() => handleAddMember(item)}
                     disabled={createMutation.isPending}
 

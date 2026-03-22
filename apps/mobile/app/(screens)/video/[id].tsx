@@ -36,6 +36,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi, channelsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { VideoControls, type VideoQuality, type PlaybackSpeed } from '@/components/ui/VideoControls';
 import { useStore } from '@/store';
 import type { Video as VideoType, VideoComment, VideoChapter } from '@/types';
@@ -45,6 +46,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 
 export default function VideoDetailScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
@@ -402,6 +405,8 @@ export default function VideoDetailScreen() {
 
   // Animated like burst component
   function LikeBurst({ x, y }: { x: number; y: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
     const scaleAnim = useSharedValue(0);
     const opacityAnim = useSharedValue(1);
     const translateY = useSharedValue(0);
@@ -433,6 +438,8 @@ export default function VideoDetailScreen() {
 
   // Chapter marker with progress indicator
   function ChapterMarker({ chapter, index, total, currentProgress }: { chapter: VideoChapter; index: number; total: number; currentProgress: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
     const progressPercent = ((chapter.startTime / (video?.duration || 1)) * 100);
     const isPast = currentProgress > (chapter.startTime / (video?.duration || 1));
     const isCurrent = Math.abs(currentProgress - (chapter.startTime / (video?.duration || 1))) < 0.05;
@@ -785,7 +792,7 @@ export default function VideoDetailScreen() {
                     <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
                     <View style={styles.chapterTimelinePreview}>
                       {chapters.slice(0, 4).map((_, i) => (
-                        <View key={i} style={[styles.timelineDot, { backgroundColor: i === 0 ? colors.gold : colors.dark.border }]} />
+                        <View key={i} style={[styles.timelineDot, { backgroundColor: i === 0 ? colors.gold : tc.border }]} />
                       ))}
                     </View>
                     <Icon
@@ -934,12 +941,12 @@ export default function VideoDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   videoPlayer: {
     width: '100%',
     aspectRatio: 16 / 9,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   content: {
     paddingHorizontal: spacing.base,
@@ -962,7 +969,7 @@ const styles = StyleSheet.create({
     marginVertical: spacing.lg,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     paddingVertical: spacing.sm,
   },
   channelRow: {
@@ -990,7 +997,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   subscribedButton: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   subscribeText: {
     color: colors.text.primary,
@@ -1001,7 +1008,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   descriptionContainer: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
@@ -1073,7 +1080,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   sheetTitle: {
     color: colors.text.primary,
@@ -1090,13 +1097,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
   commentInput: {
     flex: 1,
     color: colors.text.primary,
     fontSize: fontSize.base,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -1293,7 +1300,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 2,
-    backgroundColor: colors.dark.border,
+    backgroundColor: tc.border,
   },
   chapterMarker: {
     flexDirection: 'row',
@@ -1325,7 +1332,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 2,
-    borderColor: colors.dark.bg,
+    borderColor: tc.bg,
   },
   chapterMarkerDotActive: {
     width: 14,

@@ -15,6 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 
 export interface QuizOption {
@@ -39,6 +40,7 @@ interface QuizStickerProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function QuizSticker({ data, onResponse, isCreator = false, style }: QuizStickerProps) {
+  const tc = useThemeColors();
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -101,7 +103,7 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
       <AnimatedPressable
         key={option.id}
         style={[
-          styles.option,
+          styles.option, { backgroundColor: tc.bgElevated },
           isSelected && styles.optionSelected,
           showCorrect && styles.optionCorrect,
           showWrong && styles.optionWrong,
@@ -137,7 +139,7 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
       </View>
 
       {hasAnswered && (
-        <Animated.View style={[styles.feedbackContainer, confettiStyle]}>
+        <Animated.View style={[styles.feedbackContainer, { backgroundColor: tc.bgCard }, confettiStyle]}>
           <Text style={isCorrect ? styles.correctText : styles.wrongText}>
             {isCorrect ? 'Correct! 🎉' : 'Not quite!'}
           </Text>

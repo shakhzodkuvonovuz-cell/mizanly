@@ -7,6 +7,7 @@ import { useStore } from '@/store';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius, fontWeight, shadow } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { navigate } from '@/utils/navigation';
 
 type IconName = React.ComponentProps<typeof Icon>['name'];
@@ -25,6 +26,7 @@ interface WebSidebarProps {
 
 export function WebSidebar({ collapsed = false }: WebSidebarProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const pathname = usePathname();
   const unreadNotifications = useStore(s => s.unreadNotifications);
   const unreadMessages = useStore(s => s.unreadMessages);
@@ -100,7 +102,7 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
   };
 
   return (
-    <View style={[styles.sidebar, collapsed && styles.sidebarCollapsed]}>
+    <View style={[styles.sidebar, { backgroundColor: tc.bgElevated, borderRightColor: tc.border }, collapsed && styles.sidebarCollapsed]}>
       {/* Logo */}
       <Pressable
         style={[styles.logoContainer, collapsed && styles.logoContainerCollapsed]}
@@ -122,7 +124,7 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
       </View>
 
       {/* Divider */}
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: tc.border }]} />
 
       {/* Secondary nav */}
       <View style={styles.navSection}>

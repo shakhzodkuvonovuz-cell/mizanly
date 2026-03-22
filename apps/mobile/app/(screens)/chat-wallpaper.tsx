@@ -17,6 +17,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -44,8 +45,8 @@ interface PatternItem {
 const SOLID_COLORS: SolidColor[] = [
   { name: 'Emerald', value: colors.emerald },
   { name: 'Gold', value: colors.gold },
-  { name: 'Dark', value: colors.dark.bg },
-  { name: 'Surface', value: colors.dark.surface },
+  { name: 'Dark', value: tc.bg },
+  { name: 'Surface', value: tc.surface },
   { name: 'Red', value: '#DC2626' },
   { name: 'Blue', value: '#2563EB' },
   { name: 'Purple', value: '#7C3AED' },
@@ -57,14 +58,14 @@ const SOLID_COLORS: SolidColor[] = [
 ];
 
 const GRADIENT_PAIRS: GradientPair[] = [
-  { name: 'Emerald Night', colors: [colors.emerald, colors.dark.bg] },
-  { name: 'Golden Dusk', colors: [colors.gold, colors.dark.bg] },
-  { name: 'Purple Night', colors: ['#7C3AED', colors.dark.bg] },
-  { name: 'Ocean Deep', colors: ['#2563EB', colors.dark.bg] },
+  { name: 'Emerald Night', colors: [colors.emerald, tc.bg] },
+  { name: 'Golden Dusk', colors: [colors.gold, tc.bg] },
+  { name: 'Purple Night', colors: ['#7C3AED', tc.bg] },
+  { name: 'Ocean Deep', colors: ['#2563EB', tc.bg] },
   { name: 'Emerald Gold', colors: [colors.emerald, colors.gold] },
   { name: 'Sunset', colors: ['#EA580C', '#DC2626'] },
-  { name: 'Teal Depth', colors: ['#0D9488', colors.dark.bg] },
-  { name: 'Rose Night', colors: ['#DB2777', colors.dark.bg] },
+  { name: 'Teal Depth', colors: ['#0D9488', tc.bg] },
+  { name: 'Rose Night', colors: ['#DB2777', tc.bg] },
 ];
 
 const PATTERNS: PatternItem[] = [
@@ -80,6 +81,7 @@ const TABS: WallpaperTab[] = ['solid', 'gradient', 'pattern', 'custom'];
 
 function ChatWallpaperScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const params = useLocalSearchParams<{ conversationId: string }>();
   const { t } = useTranslation();
   const haptic = useHaptic();
@@ -206,7 +208,7 @@ function ChatWallpaperScreen() {
     if (selectedPattern) {
       const pattern = PATTERNS.find((p) => p.name === selectedPattern);
       return (
-        <View style={[styles.previewInner, { backgroundColor: pattern?.color ?? colors.dark.bg }]}>
+        <View style={[styles.previewInner, { backgroundColor: pattern?.color ?? tc.bg }]}>
           <Text style={styles.patternPreviewLabel}>{selectedPattern}</Text>
         </View>
       );
@@ -231,7 +233,7 @@ function ChatWallpaperScreen() {
         );
       }
     }
-    return <View style={[styles.previewInner, { backgroundColor: colors.dark.bg }]} />;
+    return <View style={[styles.previewInner, { backgroundColor: tc.bg }]} />;
   };
 
   // ── Tab rendering ──
@@ -331,7 +333,7 @@ function ChatWallpaperScreen() {
   const renderCustomTab = () => (
     <Animated.View entering={FadeIn.duration(200)} style={styles.customSection}>
       {customImage ? (
-        <View style={styles.customPreviewWrap}>
+        <View style={[styles.customPreviewWrap, { borderColor: tc.border }]}>
           <Image source={{ uri: customImage }} style={styles.customPreview} contentFit="cover" />
           <Pressable
             style={styles.customRemove}
@@ -375,7 +377,7 @@ function ChatWallpaperScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('chatWallpaper.title')}
         leftAction={{
@@ -394,7 +396,7 @@ function ChatWallpaperScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Preview Card */}
-        <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.previewCard}>
+        <Animated.View entering={FadeInUp.delay(100).duration(300)} style={[styles.previewCard, { borderColor: tc.border }]}>
           <View style={styles.previewContainer}>
             {renderPreview()}
             <View style={styles.previewOverlay}>
@@ -404,7 +406,7 @@ function ChatWallpaperScreen() {
         </Animated.View>
 
         {/* Category Tabs */}
-        <View style={styles.tabRow}>
+        <View style={[styles.tabRow, { backgroundColor: tc.bgElevated }]}>
           {TABS.map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -434,7 +436,7 @@ function ChatWallpaperScreen() {
         {/* Default Button */}
         <Pressable
           onPress={handleDefault}
-          style={styles.defaultButton}
+          style={[styles.defaultButton, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
           accessibilityRole="button"
           accessibilityLabel={t('chatWallpaper.useDefault')}
         >

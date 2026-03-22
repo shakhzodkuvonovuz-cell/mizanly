@@ -30,6 +30,7 @@ interface MutedUser {
 
 import type { User, PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type MutedPage = PaginatedResponse<User>;
@@ -49,6 +50,7 @@ export default function MutedScreen() {
   const muted = query.data?.pages.flatMap((p) => p.data) ?? [];
 
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
   const onRefresh = async () => {
     setRefreshing(true);
     await query.refetch();
@@ -63,7 +65,7 @@ export default function MutedScreen() {
 
   if (query.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('screens.muted.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
@@ -81,7 +83,7 @@ export default function MutedScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader
         title={t('screens.muted.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
@@ -90,7 +92,7 @@ export default function MutedScreen() {
       {query.isLoading ? (
         <View style={styles.skeletonList}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <View key={i} style={styles.skeletonRow}>
+            <View key={i} style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
               <Skeleton.Circle size={46} />
               <View style={{ flex: 1, gap: 6 }}>
                 <Skeleton.Rect width={120} height={14} />
@@ -143,7 +145,7 @@ export default function MutedScreen() {
           }}
           ListFooterComponent={() =>
             query.isFetchingNextPage ? (
-              <View style={styles.skeletonRow}>
+              <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
                 <Skeleton.Circle size={46} />
                 <View style={{ flex: 1, gap: 6 }}>
                   <Skeleton.Rect width={120} height={14} />

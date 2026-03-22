@@ -25,6 +25,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { navigate } from '@/utils/navigation';
 
@@ -72,6 +73,8 @@ function EpisodeRow({
   index: number;
   isRTL: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
 
   const handlePress = () => {
@@ -114,6 +117,8 @@ function EpisodeRow({
 }
 
 function LoadingSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.skeletonWrap}>
       <Skeleton.Rect width="100%" height={HERO_HEIGHT} borderRadius={0} />
@@ -142,6 +147,8 @@ function LoadingSkeleton() {
 }
 
 function SeriesDetailScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -196,7 +203,7 @@ function SeriesDetailScreen() {
           />
         )}
         <LinearGradient
-          colors={['transparent', colors.dark.bg]}
+          colors={['transparent', tc.bg]}
           style={styles.heroOverlay}
         />
         <View style={styles.heroContent}>
@@ -331,10 +338,10 @@ export default function SeriesDetailScreenWrapper() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   listContent: {
     paddingBottom: spacing['2xl'],
@@ -448,7 +455,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
     marginBottom: spacing.sm,
   },
   episodesHeaderText: {
@@ -463,17 +470,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     gap: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   episodeNumberWrap: {
     width: 36,
     height: 36,
     borderRadius: radius.sm,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderColor: tc.borderLight,
   },
   episodeNumber: {
     fontFamily: fonts.bodySemiBold,

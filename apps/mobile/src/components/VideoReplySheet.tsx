@@ -12,6 +12,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface VideoReplySheetProps {
   visible: boolean;
@@ -44,6 +45,7 @@ export function VideoReplySheet({
 }: VideoReplySheetProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -177,7 +179,7 @@ export function VideoReplySheet({
     return (
       <View style={styles.content}>
         {/* Original comment card */}
-        <Animated.View entering={FadeIn.duration(300)} style={styles.commentCard}>
+        <Animated.View entering={FadeIn.duration(300)} style={[styles.commentCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Avatar
             uri={commentAuthor.avatarUrl}
             name={commentAuthor.username}
@@ -206,7 +208,7 @@ export function VideoReplySheet({
             />
           </Animated.View>
         ) : (
-          <View style={styles.previewContainer}>
+          <View style={[styles.previewContainer, { backgroundColor: tc.surface }]}>
             <CameraView
               ref={cameraRef}
               style={styles.cameraPreview}
@@ -253,7 +255,7 @@ export function VideoReplySheet({
           <View style={styles.cameraControls}>
             {/* Flip camera */}
             <Pressable
-              style={styles.controlButton}
+              style={[styles.controlButton, { backgroundColor: tc.surface, borderColor: tc.border }]}
               onPress={toggleFacing}
               accessibilityLabel={t('videoReply.flipCamera')}
               accessibilityRole="button"
@@ -273,7 +275,7 @@ export function VideoReplySheet({
 
             {/* Flash toggle */}
             <Pressable
-              style={styles.controlButton}
+              style={[styles.controlButton, { backgroundColor: tc.surface, borderColor: tc.border }]}
               onPress={toggleFlash}
               accessibilityLabel={t('videoReply.toggleFlash')}
               accessibilityRole="button"

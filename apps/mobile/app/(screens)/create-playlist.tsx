@@ -16,10 +16,12 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi, channelsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function CreatePlaylistScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const params = useLocalSearchParams<{ channelId?: string }>();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -75,7 +77,7 @@ export default function CreatePlaylistScreen() {
 
   if (isChannelsError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('createPlaylist.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
@@ -94,7 +96,7 @@ export default function CreatePlaylistScreen() {
 
   if (isChannelsLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('createPlaylist.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
@@ -111,7 +113,7 @@ export default function CreatePlaylistScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('createPlaylist.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
@@ -206,7 +208,7 @@ export default function CreatePlaylistScreen() {
               <Switch
                 value={isPublic}
                 onValueChange={setIsPublic}
-                trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                trackColor={{ false: tc.border, true: colors.emerald }}
                 thumbColor={colors.text.primary}
               />
             </LinearGradient>

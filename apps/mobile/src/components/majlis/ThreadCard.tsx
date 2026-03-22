@@ -21,6 +21,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { threadsApi } from '@/services/api';
 import * as Clipboard from 'expo-clipboard';
 import type { Thread } from '@/types';
@@ -36,6 +37,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const [localLiked, setLocalLiked] = useState(thread.userReaction === 'LIKE');
   const [localLikes, setLocalLikes] = useState(thread.likesCount);
   const [localBookmarked, setLocalBookmarked] = useState(thread.isBookmarked ?? false);
@@ -173,7 +175,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
   return (
     <Animated.View>
     <Pressable
-      style={styles.card}
+      style={[styles.card, { borderBottomColor: tc.border }]}
       onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
      
     >
@@ -254,7 +256,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
 
           {/* Repost of */}
           {thread.repostOf && (
-            <View style={styles.repostOf}>
+            <View style={[styles.repostOf, { borderColor: tc.borderLight }]}>
               <Text style={styles.repostOfHandle}>@{thread.repostOf.user.username}</Text>
               <Text style={styles.repostOfContent} numberOfLines={2}>{thread.repostOf.content}</Text>
             </View>
@@ -262,7 +264,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
 
           {/* Poll */}
           {localPoll && (
-            <View style={styles.pollWrap}>
+            <View style={[styles.pollWrap, { borderColor: tc.border }]}>
               <Text style={styles.pollQuestion}>{localPoll.question}</Text>
               {localPoll.options.map((opt) => {
                 const voted = !!localPoll.userVoteId;
@@ -413,6 +415,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
 });
 
 function PollResultBar({ text, pct, isSelected }: { text: string; pct: number; isSelected: boolean }) {
+  const tc = useThemeColors();
   const width = useSharedValue(0);
 
   // Animate the bar width on mount
@@ -428,7 +431,7 @@ function PollResultBar({ text, pct, isSelected }: { text: string; pct: number; i
   }));
 
   return (
-    <View style={styles.pollResultRow}>
+    <View style={[styles.pollResultRow, { backgroundColor: tc.bgElevated }]}>
       <Animated.View style={[styles.pollBar, barStyle]} />
       <View style={styles.pollResultContent}>
         <Text style={[styles.pollOptionText, isSelected && styles.pollOptionSelected]}>

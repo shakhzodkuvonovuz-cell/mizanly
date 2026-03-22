@@ -13,6 +13,7 @@ import { colors, spacing, radius, fontSize } from '@/theme';
 import { islamicApi } from '@/services/islamicApi';
 import type { HajjStep, HajjProgress } from '@/types/islamic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 interface ChecklistState {
@@ -28,6 +29,7 @@ function HajjStepContent() {
 
   const [expandedDua, setExpandedDua] = useState<number | null>(null);
   const [checklistState, setChecklistState] = useState<boolean[]>([]);
+  const tc = useThemeColors();
 
   const guideQuery = useQuery({
     queryKey: ['hajj-guide'],
@@ -124,7 +126,7 @@ function HajjStepContent() {
 
   if (isLoading || !step) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('hajj.title')} showBack />
         <View style={styles.skeletonContainer}>
           <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
@@ -149,7 +151,7 @@ function HajjStepContent() {
   const headerTitle = t('hajj.stepTitle', { step: stepIndex + 1, name: step.name });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader title={headerTitle} showBack />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -172,7 +174,7 @@ function HajjStepContent() {
             <View style={styles.headerRow}>
               <View
                 style={[
-                  styles.headerCircle,
+                  styles.headerCircle, { backgroundColor: tc.surface, borderColor: tc.border },
                   isCompleted && styles.headerCircleCompleted,
                   isCurrent && styles.headerCircleCurrent,
                 ]}
@@ -200,7 +202,7 @@ function HajjStepContent() {
             <Pressable
               accessibilityRole="button"
               key={duaIndex}
-              style={styles.duaCard}
+              style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
               onPress={() =>
                 setExpandedDua(expandedDua === duaIndex ? null : duaIndex)
               }
@@ -209,7 +211,7 @@ function HajjStepContent() {
               <Text style={styles.duaArabic}>{dua.arabic}</Text>
               {expandedDua === duaIndex && (
                 <Animated.View entering={FadeInDown.duration(200)}>
-                  <View style={styles.duaDivider} />
+                  <View style={[styles.duaDivider, { backgroundColor: tc.border }]} />
                   <Text style={styles.duaTranslit}>{dua.transliteration}</Text>
                   <Text style={styles.duaEnglish}>{dua.english}</Text>
                 </Animated.View>
@@ -238,7 +240,7 @@ function HajjStepContent() {
             >
               <View
                 style={[
-                  styles.checkbox,
+                  styles.checkbox, { borderColor: tc.border },
                   checklistState[idx] && styles.checkboxChecked,
                 ]}
               >

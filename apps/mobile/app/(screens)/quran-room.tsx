@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import type { QuranRoomState } from '@/types/islamic';
 import { navigate } from '@/utils/navigation';
@@ -38,6 +39,8 @@ interface ReciterUpdateEvent {
 }
 
 export default function QuranRoomScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const router = useRouter();
@@ -354,10 +357,10 @@ export default function QuranRoomScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollContent: {
     padding: spacing.base,
@@ -390,7 +393,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   arabicVerse: {
     color: colors.gold,
@@ -416,7 +419,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
@@ -433,7 +436,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   toggleActive: {
     backgroundColor: colors.emerald,

@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from './Icon';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, radius, fontSize, shadow } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -60,6 +61,7 @@ function generateMockMetadata(url: string): LinkMetadata {
 }
 
 export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPreviewProps) {
+  const tc = useThemeColors();
   const [metadata, setMetadata] = useState<LinkMetadata | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -95,7 +97,7 @@ export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPrevi
         accessibilityRole="link"
         accessibilityLabel={`Link to ${url}`}
       >
-        <View style={styles.errorContainer}>
+        <View style={[styles.errorContainer, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }]}>
           <Icon name="link" size="sm" color={colors.emerald} />
           <Text style={styles.errorText} numberOfLines={1}>
             {url}

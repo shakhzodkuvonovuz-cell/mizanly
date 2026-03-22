@@ -11,6 +11,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const THEMES = [
   { id: 'emerald', label: 'premiere.themeEmerald', colors: [colors.emerald, '#0D9B63'] },
@@ -19,6 +20,8 @@ const THEMES = [
 ];
 
 export default function VideoPremiereScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { videoId, videoTitle } = useLocalSearchParams<{ videoId: string; videoTitle?: string }>();
   const router = useRouter();
   const haptic = useHaptic();
@@ -145,29 +148,29 @@ export default function VideoPremiereScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   scroll: { flex: 1 },
   content: { padding: spacing.base, paddingBottom: spacing['2xl'] },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     padding: spacing.base,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     marginBottom: spacing.xl,
   },
   videoTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600', flex: 1 },
   section: { marginBottom: spacing.xl },
   label: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500', marginBottom: spacing.sm },
   input: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     padding: spacing.md,
     color: colors.text.primary,
     fontSize: fontSize.base,
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 2,
     borderColor: 'transparent',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
   },
   themeCardActive: { borderColor: colors.emerald },
   themeGradient: { width: 40, height: 40, borderRadius: radius.full },
@@ -189,11 +192,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     padding: spacing.base,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     marginBottom: spacing.xl,
   },
   toggleLabel: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '500' },
@@ -202,7 +205,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 28,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     padding: 2,
   },

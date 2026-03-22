@@ -30,6 +30,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -39,6 +40,7 @@ type TabKey = 'discover' | 'my';
 
 export default function BroadcastChannelsScreen() {
   const navigation = useNavigation();
+  const tc = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -272,7 +274,7 @@ export default function BroadcastChannelsScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
           rightActions={[{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: t('broadcastChannels.createChannel') }]}
         />
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base }]}>
             <Icon name="search" size="sm" color={colors.text.secondary} style={styles.searchIcon} />
             <TextInput
@@ -327,7 +329,7 @@ export default function BroadcastChannelsScreen() {
           <View style={{ padding: spacing.base, gap: spacing.md }}>
             <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.text.primary }}>{t('broadcastChannels.createChannel')}</Text>
             <TextInput
-              style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base }}
+              style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base }}
               placeholder={t('broadcastChannels.channelNamePlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={newChannelName}
@@ -335,7 +337,7 @@ export default function BroadcastChannelsScreen() {
               maxLength={50}
             />
             <TextInput
-              style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, minHeight: 80 }}
+              style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, minHeight: 80 }}
               placeholder={t('broadcastChannels.descriptionPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={newChannelDesc}

@@ -11,6 +11,7 @@ import { EidFrame } from '@/components/islamic/EidFrame';
 import type { Occasion } from '@/components/islamic/EidFrame';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface OccasionItem {
   id: Occasion;
@@ -34,6 +35,7 @@ export default function EidCardsScreen() {
 
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const tc = useThemeColors();
 
   const handleOccasionPress = (id: Occasion) => {
     setSelectedOccasion(id);
@@ -51,7 +53,7 @@ export default function EidCardsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('eidCards.title')} showBack />
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.grid}>
@@ -60,7 +62,7 @@ export default function EidCardsScreen() {
                 accessibilityRole="button"
                 key={occ.id}
                 onPress={() => handleOccasionPress(occ.id)}
-                style={styles.card}
+                style={[styles.card, { backgroundColor: tc.bgCard }]}
                
               >
                 <Icon name={occ.icon} size="xl" color={colors.gold} />

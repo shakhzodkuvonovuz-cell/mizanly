@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { circlesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const EMOJIS = ['⭕', '⭐', '🌙', '🤝', '💚', '🕌', '📿', '🏠', '💼', '🎓'];
@@ -38,6 +39,7 @@ function CreateSheet({
   onCreated: () => void;
 }) {
   const [name, setName] = useState('');
+  const tc = useThemeColors();
   const [emoji, setEmoji] = useState('⭕');
   const { t } = useTranslation();
 
@@ -77,7 +79,7 @@ function CreateSheet({
 
       {/* Name input */}
       <TextInput
-        style={styles.nameInput}
+        style={[styles.nameInput, { backgroundColor: tc.bgElevated }]}
         value={name}
         onChangeText={setName}
         placeholder={t('screens.circles.circleNamePlaceholder')}
@@ -149,7 +151,7 @@ export default function CirclesScreen() {
 
   if (circlesQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.circles.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -167,7 +169,7 @@ export default function CirclesScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.circles.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}

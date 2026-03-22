@@ -18,6 +18,7 @@ import type { MajlisList } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { navigate } from '@/utils/navigation';
 
 export default function MajlisListsScreen() {
@@ -32,6 +33,7 @@ export default function MajlisListsScreen() {
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const tc = useThemeColors();
 
   const { data: lists, isLoading, isError, refetch } = useQuery({
     queryKey: ['majlis-lists'],
@@ -145,7 +147,7 @@ export default function MajlisListsScreen() {
 
   if (isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.majlis-lists.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -164,7 +166,7 @@ export default function MajlisListsScreen() {
 
   if (isLoading && !lists) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.majlis-lists.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -180,7 +182,7 @@ export default function MajlisListsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.majlis-lists.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -215,7 +217,7 @@ export default function MajlisListsScreen() {
 
             <Text style={styles.inputLabel}>{t('screens.majlis-lists.name')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: tc.surface }]}
               placeholder={t('screens.majlis-lists.namePlaceholder')}
               placeholderTextColor={colors.text.secondary}
               value={newName}
@@ -224,7 +226,7 @@ export default function MajlisListsScreen() {
 
             <Text style={styles.inputLabel}>{t('screens.majlis-lists.descriptionOptional')}</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, { backgroundColor: tc.surface }, styles.textArea]}
               placeholder={t('screens.majlis-lists.descPlaceholder')}
               placeholderTextColor={colors.text.secondary}
               value={newDesc}
@@ -241,7 +243,7 @@ export default function MajlisListsScreen() {
               <Switch 
                 value={isPublic}
                 onValueChange={setIsPublic}
-                trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                trackColor={{ false: tc.surface, true: colors.emerald }}
                 thumbColor={colors.text.primary}
               />
             </View>

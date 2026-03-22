@@ -21,6 +21,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { parentalApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import type { ParentalControl } from '@/types';
 import { navigate } from '@/utils/navigation';
@@ -35,6 +36,8 @@ function PinPad({
   title: string;
   subtitle?: string;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const [pin, setPin] = useState('');
   const haptic = useHaptic();
   const { isRTL } = useTranslation();
@@ -103,6 +106,8 @@ function AgeRatingSelector({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   return (
     <View style={styles.ageRatingRow}>
@@ -135,6 +140,8 @@ function DmRestrictionSelector({
   onChange: (v: string) => void;
   t: (k: string) => string;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   const labels: Record<string, string> = {
     none: t('parentalControls.dmNone'),
@@ -170,6 +177,8 @@ function ToggleRow({
   value: boolean;
   onToggle: (v: boolean) => void;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   const { isRTL } = useTranslation();
   return (
@@ -189,6 +198,8 @@ function ToggleRow({
 
 // ── Activity Digest Card ──
 function DigestCard({ childId }: { childId: string }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const digestQuery = useQuery({
     queryKey: ['parental-digest', childId],
@@ -268,6 +279,8 @@ function ChildCard({
   onUnlink: (childId: string) => void;
   onChangePin: (childId: string) => void;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const [expanded, setExpanded] = useState(false);
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
@@ -411,6 +424,8 @@ function ChildCard({
 
 // ── Main Screen ──
 export default function ParentalControlsScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -666,8 +681,8 @@ export default function ParentalControlsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   listContent: { paddingHorizontal: spacing.base, paddingBottom: 60 },
   pinGate: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
@@ -678,7 +693,7 @@ const styles = StyleSheet.create({
   pinDots: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xl },
   pinDot: {
     width: 16, height: 16, borderRadius: radius.full,
-    borderWidth: 2, borderColor: colors.dark.border,
+    borderWidth: 2, borderColor: tc.border,
   },
   pinDotFilled: { backgroundColor: colors.emerald, borderColor: colors.emerald },
   numPad: {
@@ -688,7 +703,7 @@ const styles = StyleSheet.create({
   numKey: {
     width: 72, height: 72, borderRadius: radius.full,
     alignItems: 'center', justifyContent: 'center', margin: spacing.xs,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   numKeyEmpty: { backgroundColor: 'transparent' },
   numKeyText: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '600' },
@@ -705,7 +720,7 @@ const styles = StyleSheet.create({
 
   // Child Card
   childCard: {
-    borderRadius: radius.lg, borderWidth: 1, borderColor: colors.dark.border,
+    borderRadius: radius.lg, borderWidth: 1, borderColor: tc.border,
     overflow: 'hidden', marginBottom: spacing.md,
   },
   childHeader: {
@@ -718,7 +733,7 @@ const styles = StyleSheet.create({
 
   // Controls Body
   controlsBody: { paddingHorizontal: spacing.base, paddingBottom: spacing.base },
-  controlDivider: { height: 1, backgroundColor: colors.dark.border, marginVertical: spacing.md },
+  controlDivider: { height: 1, backgroundColor: tc.border, marginVertical: spacing.md },
   controlSectionLabel: {
     color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600',
     textTransform: 'uppercase', letterSpacing: 0.5,
@@ -733,7 +748,7 @@ const styles = StyleSheet.create({
   toggleLabel: { color: colors.text.primary, fontSize: fontSize.base, flex: 1 },
   toggleTrack: {
     width: 48, height: 28, borderRadius: radius.lg,
-    backgroundColor: colors.dark.border, padding: 3, justifyContent: 'center',
+    backgroundColor: tc.border, padding: 3, justifyContent: 'center',
   },
   toggleTrackActive: { backgroundColor: colors.emerald },
   toggleThumb: {
@@ -746,7 +761,7 @@ const styles = StyleSheet.create({
   ageRatingRow: { flexDirection: 'row', gap: spacing.sm },
   ageRatingChip: {
     flex: 1, paddingVertical: spacing.sm, borderRadius: radius.md,
-    borderWidth: 1, borderColor: colors.dark.border, alignItems: 'center',
+    borderWidth: 1, borderColor: tc.border, alignItems: 'center',
   },
   ageRatingChipActive: {
     borderColor: colors.emerald, backgroundColor: 'rgba(10,123,79,0.15)',
@@ -757,13 +772,13 @@ const styles = StyleSheet.create({
   // DM chips
   dmChip: {
     flex: 1, paddingVertical: spacing.sm, paddingHorizontal: spacing.xs,
-    borderRadius: radius.md, borderWidth: 1, borderColor: colors.dark.border,
+    borderRadius: radius.md, borderWidth: 1, borderColor: tc.border,
     alignItems: 'center',
   },
 
   // Digest
   digestCard: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    backgroundColor: tc.bgElevated, borderRadius: radius.md,
     padding: spacing.base, marginTop: spacing.sm,
   },
   digestTitle: {
@@ -779,7 +794,7 @@ const styles = StyleSheet.create({
   barChart: { flexDirection: 'row', justifyContent: 'space-between', height: 80, gap: spacing.xs },
   barCol: { flex: 1, alignItems: 'center' },
   barBg: {
-    flex: 1, width: '100%', backgroundColor: colors.dark.surface,
+    flex: 1, width: '100%', backgroundColor: tc.surface,
     borderRadius: radius.sm, overflow: 'hidden', justifyContent: 'flex-end',
   },
   barFill: { width: '100%', borderRadius: radius.sm },
@@ -790,7 +805,7 @@ const styles = StyleSheet.create({
   manageBtn: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
-    borderRadius: radius.md, borderWidth: 1, borderColor: colors.dark.border,
+    borderRadius: radius.md, borderWidth: 1, borderColor: tc.border,
   },
   manageBtnDanger: { borderColor: 'rgba(248,81,73,0.3)' },
   manageBtnText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },

@@ -19,6 +19,7 @@ import { usersApi, followsApi } from '@/services/api';
 import type { User, PaginatedResponse } from '@/types';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
@@ -168,11 +169,12 @@ export default function MutualFollowersScreen() {
   ), []);
 
   const insets = useSafeAreaInsets();
+  const tc = useThemeColors();
   const headerHeight = insets.top + 52;
 
   if (mutualFollowersQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.mutual-followers.title')}
           leftAction={{
@@ -196,7 +198,7 @@ export default function MutualFollowersScreen() {
 
   if (mutualFollowersQuery.isLoading && !mutualFollowersQuery.data) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.mutual-followers.title')}
           leftAction={{
@@ -214,7 +216,7 @@ export default function MutualFollowersScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.mutual-followers.title')}
           leftAction={{

@@ -11,6 +11,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import {
   gregorianToHijri,
@@ -251,6 +252,7 @@ export default function IslamicCalendarScreen() {
 
   // Event detail bottom sheet
   const [selectedEvent, setSelectedEvent] = useState<IslamicEvent | null>(null);
+  const tc = useThemeColors();
 
   const days = useMemo(
     () => generateDaysInMonth(currentMonth, currentYear, todayHijri),
@@ -292,7 +294,7 @@ export default function IslamicCalendarScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('hijri.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

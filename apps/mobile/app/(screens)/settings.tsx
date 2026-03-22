@@ -17,11 +17,14 @@ import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlChevron, rtlMargin } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 // Premium Toggle Switch Component
 function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   const translateX = useSharedValue(value ? 20 : 0);
   const scale = useSharedValue(1);
@@ -46,7 +49,7 @@ function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange
   return (
     <Pressable onPress={handlePress}>
       <LinearGradient
-        colors={value ? [colors.emerald, '#05593A'] : [colors.dark.border, colors.dark.surface]}
+        colors={value ? [colors.emerald, '#05593A'] : [tc.border, tc.surface]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.toggleTrack}
@@ -85,6 +88,8 @@ function Row({
   destructive?: boolean;
   isLast?: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   const { isRTL } = useTranslation();
   const handlePress = onPress ? () => {
@@ -127,6 +132,8 @@ function Row({
 }
 
 function SectionHeader({ title, icon }: { title: string; icon?: React.ComponentProps<typeof Icon>['name'] }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { isRTL } = useTranslation();
   return (
     <View style={[styles.sectionHeaderContainer, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -150,6 +157,8 @@ function SectionHeader({ title, icon }: { title: string; icon?: React.ComponentP
 }
 
 export default function SettingsScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { signOut } = useClerk();
   const queryClient = useQueryClient();
@@ -1054,8 +1063,8 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   body: { flex: 1 },
   bodyContent: { paddingBottom: 60 },
 

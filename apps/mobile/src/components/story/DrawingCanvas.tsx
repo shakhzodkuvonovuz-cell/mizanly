@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -87,6 +88,7 @@ export function DrawingCanvas({
   canvasHeight,
 }: DrawingCanvasProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const insets = useSafeAreaInsets();
 
   // Drawing state
@@ -427,7 +429,7 @@ export function DrawingCanvas({
                   styles.colorSwatch,
                   { backgroundColor: color },
                   isActive && styles.colorSwatchActive,
-                  color === '#000000' && styles.colorSwatchBlack,
+                  color === '#000000' && [styles.colorSwatchBlack, { borderColor: tc.border }],
                 ]}
               />
             );

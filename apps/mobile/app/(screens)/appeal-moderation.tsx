@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { appealsApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -44,6 +45,7 @@ interface AppealHistory {
 
 export default function AppealModerationScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const { reportId } = useLocalSearchParams<{ reportId: string }>();
   const queryClient = useQueryClient();
@@ -95,7 +97,7 @@ export default function AppealModerationScreen() {
   const getStatusBadge = (status: AppealStatus) => {
     switch (status) {
       case 'submitted':
-        return { colors: [colors.dark.surface, colors.dark.surface] as [string, string], text: t('appealModeration.status.submitted') };
+        return { colors: [tc.surface, tc.surface] as [string, string], text: t('appealModeration.status.submitted') };
       case 'review':
         return { colors: [colors.gold, colors.goldLight] as [string, string], text: t('appealModeration.status.underReview') };
       case 'decision':
@@ -119,7 +121,7 @@ export default function AppealModerationScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader title={t('appealModeration.title')} onBack={() => router.back()} />
 
       <ScrollView
@@ -167,7 +169,7 @@ export default function AppealModerationScreen() {
                   Breaking: New study shows significant benefits of intermittent fasting during Ramadan for metabolic health...
                 </Text>
               </View>
-              <View style={styles.contentThumbnail}>
+              <View style={[styles.contentThumbnail, { backgroundColor: tc.surface }]}>
                 <Icon name="image" size="md" color={colors.text.tertiary} />
               </View>
             </View>
@@ -333,7 +335,7 @@ export default function AppealModerationScreen() {
                   <Text
                     style={[
                       styles.statusText,
-                      appealHistory.status === 'review' && { color: colors.dark.bg },
+                      appealHistory.status === 'review' && { color: tc.bg },
                     ]}
                   >
                     {getStatusBadge(appealHistory.status).text}
@@ -413,7 +415,7 @@ export default function AppealModerationScreen() {
       </ScrollView>
 
       {/* Bottom Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <Pressable onPress={() => router.back()}>
           <Text style={styles.cancelText}>{t('common.cancel')}</Text>
         </Pressable>

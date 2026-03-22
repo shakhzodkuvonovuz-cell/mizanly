@@ -19,6 +19,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi, threadsApi, reelsApi, videosApi, usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const REASONS = [
@@ -33,6 +34,8 @@ const REASONS = [
 ] as const;
 
 export default function ReportScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const params = useLocalSearchParams<{ type: string; id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
@@ -190,10 +193,10 @@ export default function ReportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   headerSpacer: {
     height: 100,
@@ -281,10 +284,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   detailsInput: {
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     color: colors.text.primary,
     fontSize: fontSize.base,
     paddingHorizontal: spacing.md,

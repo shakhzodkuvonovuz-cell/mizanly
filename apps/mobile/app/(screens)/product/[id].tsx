@@ -27,6 +27,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { navigate } from '@/utils/navigation';
 
@@ -69,6 +70,8 @@ interface ProductDetail {
 const INSTALLMENT_OPTIONS = [1, 2, 3, 4];
 
 function ImageCarousel({ images }: { images: string[] }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList<string>>(null);
 
@@ -136,6 +139,8 @@ function ReviewCard({
   index: number;
   isRTL: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 400)).duration(400)}>
       <View style={styles.reviewCard}>
@@ -171,6 +176,8 @@ function ReviewCard({
 }
 
 function LoadingSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.skeletonWrap}>
       <Skeleton.Rect width="100%" height={IMAGE_HEIGHT} borderRadius={0} />
@@ -190,6 +197,8 @@ function LoadingSkeleton() {
 }
 
 function ProductDetailScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -461,10 +470,10 @@ export default function ProductDetailScreenWrapper() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   emptyWrap: {
     flex: 1,
@@ -477,7 +486,7 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: '100%',
     height: IMAGE_HEIGHT,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -570,7 +579,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     gap: spacing.md,
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderColor: tc.borderLight,
   },
   sellerInfo: {
     flex: 1,
@@ -603,7 +612,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     gap: spacing.xs,
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderColor: tc.borderLight,
   },
   installmentOptionActive: {
     borderColor: colors.emerald,
@@ -632,7 +641,7 @@ const styles = StyleSheet.create({
   reviewCard: {
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
     gap: spacing.sm,
   },
   reviewHeader: {

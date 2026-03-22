@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { feedApi, postsApi } from '@/services/api';
 import type { Post } from '@/types';
 
@@ -30,6 +31,8 @@ const REASON_MAP: Record<string, { icon: IconName; label: string }> = {
 };
 
 function WhyShowingContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -241,10 +244,10 @@ export default function WhyShowingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   skeletonContainer: {
     padding: spacing.base,
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   postPreview: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
     borderColor: colors.glass.border,
@@ -293,10 +296,10 @@ const styles = StyleSheet.create({
   reasonCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     padding: spacing.base,
     marginBottom: spacing.md,
     gap: spacing.md,
@@ -347,10 +350,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     paddingVertical: spacing.base,
   },
   actionButtonSecondaryText: {

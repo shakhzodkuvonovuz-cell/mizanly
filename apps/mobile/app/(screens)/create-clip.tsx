@@ -13,6 +13,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { clipsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -22,6 +23,7 @@ function formatTime(seconds: number): string {
 
 export default function CreateClipScreen() {
   const { videoId, currentTime, duration, thumbnailUrl, videoTitle } = useLocalSearchParams<{
+  const tc = useThemeColors();
     videoId: string;
     currentTime?: string;
     duration?: string;
@@ -70,7 +72,7 @@ export default function CreateClipScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('clips.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -81,7 +83,7 @@ export default function CreateClipScreen() {
             {thumbnailUrl ? (
               <Image source={{ uri: thumbnailUrl }} style={styles.thumbnail} contentFit="cover" />
             ) : (
-              <View style={[styles.thumbnail, { backgroundColor: colors.dark.surface, justifyContent: 'center', alignItems: 'center' }]}>
+              <View style={[styles.thumbnail, { backgroundColor: tc.surface, justifyContent: 'center', alignItems: 'center' }]}>
                 <Icon name="video" size="xl" color={colors.text.tertiary} />
               </View>
             )}
@@ -94,23 +96,23 @@ export default function CreateClipScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.timeSection}>
             <Text style={styles.sectionLabel}>{t('clips.from')}</Text>
             <View style={styles.timeControls}>
-              <Pressable onPress={() => adjustStart(-5)} style={styles.timeBtn}>
+              <Pressable onPress={() => adjustStart(-5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
                 <Icon name="chevron-left" size="sm" color={colors.text.primary} />
               </Pressable>
-              <View style={styles.timeDisplay}>
+              <View style={[styles.timeDisplay, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 <Text style={styles.timeText}>{formatTime(startTime)}</Text>
               </View>
-              <Pressable onPress={() => adjustStart(5)} style={styles.timeBtn}>
+              <Pressable onPress={() => adjustStart(5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
                 <Icon name="chevron-right" size="sm" color={colors.text.primary} />
               </Pressable>
               <Text style={styles.timeSep}>—</Text>
-              <Pressable onPress={() => adjustEnd(-5)} style={styles.timeBtn}>
+              <Pressable onPress={() => adjustEnd(-5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
                 <Icon name="chevron-left" size="sm" color={colors.text.primary} />
               </Pressable>
-              <View style={styles.timeDisplay}>
+              <View style={[styles.timeDisplay, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 <Text style={styles.timeText}>{formatTime(endTime)}</Text>
               </View>
-              <Pressable onPress={() => adjustEnd(5)} style={styles.timeBtn}>
+              <Pressable onPress={() => adjustEnd(5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
                 <Icon name="chevron-right" size="sm" color={colors.text.primary} />
               </Pressable>
             </View>
@@ -127,7 +129,7 @@ export default function CreateClipScreen() {
               <CharCountRing current={title.length} max={100} size={24} />
             </View>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
               value={title}
               onChangeText={(text) => setTitle(text.slice(0, 100))}
               placeholder={t('clips.titlePlaceholder')}
@@ -137,7 +139,7 @@ export default function CreateClipScreen() {
           </Animated.View>
 
           {/* Source info */}
-          <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.infoCard}>
+          <Animated.View entering={FadeInUp.delay(200).duration(300)} style={[styles.infoCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <Icon name="link" size="sm" color={colors.text.secondary} />
             <Text style={styles.infoText} numberOfLines={1}>{videoTitle || 'Source video'}</Text>
           </Animated.View>

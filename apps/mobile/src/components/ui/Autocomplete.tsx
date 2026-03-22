@@ -9,6 +9,7 @@ import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { searchApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { User } from '@/types';
@@ -29,6 +30,7 @@ interface AutocompleteProps {
 
 export function Autocomplete({ visible, type, query, onSelect, onClose }: AutocompleteProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [results, setResults] = useState<User[] | HashtagResult[]>([]);
   const [loading, setLoading] = useState(false);
   const translateY = useSharedValue(-10);
@@ -120,7 +122,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
   };
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View style={[styles.container, { backgroundColor: tc.bgElevated, borderColor: tc.border }, animatedStyle]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
           {type === 'hashtag' ? 'Hashtags' : 'People'}

@@ -22,6 +22,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { monetizationApi } from '@/services/monetizationApi';
 import { paymentsApi } from '@/services/paymentsApi';
 import { usersApi } from '@/services/api';
@@ -46,6 +47,8 @@ function AmountButton({
   isPopular?: boolean;
   onPress: () => void;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Pressable onPress={onPress} style={styles.amountButton}>
       <LinearGradient
@@ -64,7 +67,7 @@ function AmountButton({
             colors={[colors.gold, colors.goldLight]}
             style={styles.popularBadge}
           >
-            <Icon name="star" size="xs" color={colors.dark.bg} />
+            <Icon name="star" size="xs" color={tc.bg} />
           </LinearGradient>
         )}
         <Text style={[styles.amountText, isSelected && styles.amountTextSelected]}>
@@ -76,6 +79,8 @@ function AmountButton({
 }
 
 function VerifiedBadge({ size = 13 }: { size?: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={[styles.verifiedBadge, { width: size, height: size }]}>
       <LinearGradient
@@ -89,6 +94,8 @@ function VerifiedBadge({ size = 13 }: { size?: number }) {
 }
 
 export default function SendTipScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const haptic = useHaptic();
   const { t } = useTranslation();
@@ -434,10 +441,10 @@ export default function SendTipScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollContent: {
     padding: spacing.base,
@@ -669,7 +676,7 @@ const styles = StyleSheet.create({
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: colors.dark.border,
+    backgroundColor: tc.border,
     marginVertical: spacing.md,
   },
   totalLabel: {

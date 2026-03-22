@@ -6,6 +6,7 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface ContactMessageProps {
   name: string;
@@ -26,6 +27,7 @@ export function ContactMessage({
 }: ContactMessageProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   const handleCallPhone = useCallback(async () => {
     if (!phone) return;
@@ -69,8 +71,8 @@ export function ContactMessage({
     );
   }, [name, haptic, t]);
 
-  const bgColor = isOutgoing ? colors.active.emerald10 : colors.dark.bgCard;
-  const borderColor = isOutgoing ? colors.emerald : colors.dark.border;
+  const bgColor = isOutgoing ? colors.active.emerald10 : tc.bgCard;
+  const borderColor = isOutgoing ? colors.emerald : tc.border;
 
   return (
     <Animated.View entering={FadeIn.duration(200)}>
@@ -89,7 +91,7 @@ export function ContactMessage({
               contentFit="cover"
             />
           ) : (
-            <View style={styles.avatarPlaceholder}>
+            <View style={[styles.avatarPlaceholder, { backgroundColor: tc.surface }]}>
               <Icon name="user" size="md" color={colors.text.tertiary} />
             </View>
           )}
@@ -131,7 +133,7 @@ export function ContactMessage({
 
         {/* Add to Contacts Button */}
         <Pressable
-          style={styles.addButton}
+          style={[styles.addButton, { borderTopColor: tc.border }]}
           onPress={handleAddToContacts}
           accessibilityRole="button"
           accessibilityLabel={t('contact.addToContacts', 'Add to contacts')}

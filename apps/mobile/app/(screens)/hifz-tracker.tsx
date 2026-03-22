@@ -15,6 +15,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -140,7 +141,7 @@ const STATUS_COLORS: Record<string, string> = {
   memorized: colors.emerald,
   in_progress: colors.gold,
   needs_review: '#F59E0B',
-  not_started: colors.dark.surface,
+  not_started: tc.surface,
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -162,11 +163,12 @@ function SurahRow({ surah, progress, onPress }: {
   onPress: () => void;
 }) {
   const { t, isRTL } = useTranslation();
-  const statusColor = STATUS_COLORS[progress.status] || colors.dark.surface;
+  const tc = useThemeColors();
+  const statusColor = STATUS_COLORS[progress.status] || tc.surface;
 
   return (
     <Pressable
-      style={styles.surahRow}
+      style={[styles.surahRow, { borderBottomColor: tc.border }]}
       onPress={onPress}
       accessibilityLabel={`${surah.name} - ${t(STATUS_LABELS[progress.status])}`}
       accessibilityRole="button"
@@ -193,6 +195,7 @@ export default function HifzTrackerScreen() {
   const queryClient = useQueryClient();
   const { t, isRTL } = useTranslation();
   const [statusSheet, setStatusSheet] = useState<{ visible: boolean; surahNum: number }>({ visible: false, surahNum: 0 });
+  const tc = useThemeColors();
 
   const progressQuery = useQuery({
     queryKey: ['hifz-progress'],
@@ -236,15 +239,15 @@ export default function HifzTrackerScreen() {
       {/* Stats */}
       {stats ? (
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { borderLeftColor: colors.emerald }]}>
+          <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.emerald }]}>
             <Text style={[styles.statValue, { color: colors.emerald }]}>{stats.memorized}</Text>
             <Text style={styles.statLabel}>{t('hifz.memorized')}</Text>
           </View>
-          <View style={[styles.statCard, { borderLeftColor: colors.gold }]}>
+          <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.gold }]}>
             <Text style={[styles.statValue, { color: colors.gold }]}>{stats.inProgress}</Text>
             <Text style={styles.statLabel}>{t('hifz.inProgress')}</Text>
           </View>
-          <View style={[styles.statCard, { borderLeftColor: '#F59E0B' }]}>
+          <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: '#F59E0B' }]}>
             <Text style={[styles.statValue, { color: '#F59E0B' }]}>{stats.needsReview}</Text>
             <Text style={styles.statLabel}>{t('hifz.needsReview')}</Text>
           </View>
@@ -263,7 +266,7 @@ export default function HifzTrackerScreen() {
           <Text style={styles.progressText}>
             {t('hifz.totalMemorized', { count: stats.memorized.toString() })} ({stats.percentage}%)
           </Text>
-          <View style={styles.progressBar}>
+          <View style={[styles.progressBar, { backgroundColor: tc.surface }]}>
             <View style={[styles.progressFill, { width: `${stats.percentage}%` }]} />
           </View>
         </View>
@@ -271,7 +274,7 @@ export default function HifzTrackerScreen() {
 
       {/* Review Today */}
       {reviewList.length > 0 && (
-        <View style={styles.reviewSection}>
+        <View style={[styles.reviewSection, { backgroundColor: tc.bgCard }]}>
           <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('hifz.reviewToday')}
           </Text>
@@ -295,7 +298,7 @@ export default function HifzTrackerScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('hifz.title')}
           leftAction={{
@@ -336,7 +339,7 @@ export default function HifzTrackerScreen() {
         >
           <BottomSheetItem
             label={t('hifz.notStarted')}
-            icon={<View style={[styles.sheetDot, { backgroundColor: colors.dark.surface }]} />}
+            icon={<View style={[styles.sheetDot, { backgroundColor: tc.surface }]} />}
             onPress={() => updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'not_started' })}
           />
           <BottomSheetItem

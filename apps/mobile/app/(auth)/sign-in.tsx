@@ -19,6 +19,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, animation, shadow, fonts } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -28,6 +29,7 @@ function SignInScreenContent() {
   const router = useRouter();
   const { t } = useTranslation();
 
+  const tc = useThemeColors();
   const haptic = useHaptic();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -73,7 +75,7 @@ function SignInScreenContent() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         style={styles.inner}
@@ -99,7 +101,7 @@ function SignInScreenContent() {
         {/* Form */}
         <View style={styles.form}>
           {/* Email input with icon */}
-          <View style={[styles.inputRow, emailFocused && styles.inputRowFocused]}>
+          <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }, emailFocused && styles.inputRowFocused]}>
             <Icon
               name="mail"
               size="sm"
@@ -120,7 +122,7 @@ function SignInScreenContent() {
           </View>
 
           {/* Password input with icon + show/hide toggle */}
-          <View style={[styles.inputRow, passwordFocused && styles.inputRowFocused]}>
+          <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }, passwordFocused && styles.inputRowFocused]}>
             <Icon
               name="lock"
               size="sm"
@@ -174,15 +176,15 @@ function SignInScreenContent() {
 
           {/* Divider */}
           <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
             <Text style={styles.dividerText}>{t('auth.or')}</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
           </View>
 
           {/* Social auth */}
           <View style={styles.socialRow}>
             <Pressable
-              style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}
+              style={({ pressed }) => [styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border }, pressed && styles.socialBtnPressed]}
               onPress={() => haptic.light()}
               accessibilityLabel={t('auth.signInWith') + " Google"}
               accessibilityRole="button"
@@ -190,7 +192,7 @@ function SignInScreenContent() {
               <Text style={styles.socialText}>{t('auth.google')}</Text>
             </Pressable>
             <Pressable
-              style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}
+              style={({ pressed }) => [styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border }, pressed && styles.socialBtnPressed]}
               onPress={() => haptic.light()}
               accessibilityLabel={t('auth.signInWith') + " Apple"}
               accessibilityRole="button"

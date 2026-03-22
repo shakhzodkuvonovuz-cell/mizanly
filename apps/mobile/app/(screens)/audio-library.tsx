@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack as ApiAudioTrack } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -79,6 +80,7 @@ function Waveform({ isPlaying, color = colors.emerald }: { isPlaying: boolean; c
     <View style={styles.waveform}>
       {animations.map((anim, i) => {
         const animatedStyle = useAnimatedStyle(() => ({
+        const tc = useThemeColors();
           height: `${30 + anim.value * 70}%`,
         }));
         return (
@@ -215,7 +217,7 @@ export default function AudioLibraryScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('audioLibrary.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}

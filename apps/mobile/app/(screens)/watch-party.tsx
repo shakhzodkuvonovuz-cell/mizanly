@@ -15,9 +15,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
 export default function WatchPartyScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useHaptic();
@@ -150,11 +153,11 @@ export default function WatchPartyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   list: { paddingHorizontal: spacing.base, paddingBottom: spacing['2xl'] },
   skeletons: { gap: spacing.md },
-  partyCard: { backgroundColor: colors.dark.bgCard, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: colors.dark.border, marginBottom: spacing.md },
+  partyCard: { backgroundColor: tc.bgCard, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.md },
   partyHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: '#F85149' + '20', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F85149' },
@@ -170,7 +173,7 @@ const styles = StyleSheet.create({
   joinBtnText: { color: '#FFF', fontSize: fontSize.base, fontWeight: '600' },
   createForm: { padding: spacing.base, gap: spacing.md },
   createTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
-  createInput: { backgroundColor: colors.dark.bgCard, borderRadius: radius.md, borderWidth: 1, borderColor: colors.dark.border, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base },
+  createInput: { backgroundColor: tc.bgCard, borderRadius: radius.md, borderWidth: 1, borderColor: tc.border, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base },
   createBtn: { borderRadius: radius.md, overflow: 'hidden', marginTop: spacing.sm },
   createBtnGradient: { paddingVertical: spacing.md, alignItems: 'center', borderRadius: radius.md },
   createBtnText: { color: '#FFF', fontSize: fontSize.md, fontWeight: '700' },

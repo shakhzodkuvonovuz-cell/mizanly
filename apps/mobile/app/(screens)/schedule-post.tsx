@@ -12,6 +12,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { postsApi, threadsApi, reelsApi } from '@/services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -20,6 +21,8 @@ type SpaceType = 'Saf' | 'Majlis' | 'Bakra';
 type AmPm = 'AM' | 'PM';
 
 export default function SchedulePostScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -502,10 +505,10 @@ export default function SchedulePostScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   previewCard: {
     marginHorizontal: spacing.base,
@@ -526,7 +529,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -573,7 +576,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },

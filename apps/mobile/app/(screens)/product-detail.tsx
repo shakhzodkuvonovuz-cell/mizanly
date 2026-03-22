@@ -26,6 +26,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
@@ -92,6 +93,8 @@ function renderStars(rating: number, size: 'xs' | 'sm' = 'xs') {
 }
 
 function ProductDetailContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -436,10 +439,10 @@ export default function ProductDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollContent: {
     paddingBottom: spacing['3xl'],
@@ -460,7 +463,7 @@ const styles = StyleSheet.create({
     height: screenWidth * 0.8,
   },
   imagePlaceholder: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -535,10 +538,10 @@ const styles = StyleSheet.create({
   // Seller
   sellerCard: {
     marginHorizontal: spacing.base,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     marginBottom: spacing.md,
   },
   sellerInner: {
@@ -593,11 +596,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     padding: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   installmentText: {
     color: colors.text.secondary,
@@ -611,12 +614,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   reviewCard: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -678,11 +681,11 @@ const styles = StyleSheet.create({
   },
   relatedCard: {
     width: 140,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   relatedImage: {
     width: 140,

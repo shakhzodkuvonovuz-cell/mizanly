@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { api, searchApi } from '@/services/api';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const TOPICS: { id: string; label: string; icon: IconName }[] = [
   { id: 'new_muslim', label: 'New Muslim Guidance', icon: 'heart' },
@@ -38,6 +39,7 @@ export default function MentorshipScreen() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [requestSheetOpen, setRequestSheetOpen] = useState(false);
   const [selectedMentorId, setSelectedMentorId] = useState<string | null>(null);
+  const tc = useThemeColors();
 
   const myMentorshipsQuery = useQuery({
     queryKey: ['my-mentorships'],
@@ -57,7 +59,7 @@ export default function MentorshipScreen() {
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
       <Pressable
         accessibilityRole="button"
-        style={styles.mentorCard}
+        style={[styles.mentorCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
 
         onPress={() => {
           setSelectedMentorId(item.id as string);
@@ -82,7 +84,7 @@ export default function MentorshipScreen() {
     const isMentor = !!(item.mentor as Record<string, unknown>);
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-        <View style={styles.mentorCard}>
+        <View style={[styles.mentorCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Avatar uri={other?.avatarUrl as string | null} name={other?.displayName as string || ''} size="lg" />
           <View style={{ flex: 1 }}>
             <Text style={styles.mentorName}>{other?.displayName as string}</Text>
@@ -107,7 +109,7 @@ export default function MentorshipScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('community.mentorship')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -119,7 +121,7 @@ export default function MentorshipScreen() {
             <Pressable
               accessibilityRole="button"
               key={tab}
-              style={[styles.tab, activeTab === tab && styles.tabActive]}
+              style={[styles.tab, { backgroundColor: tc.bgCard, borderColor: tc.border }, activeTab === tab && styles.tabActive]}
               onPress={() => { setActiveTab(tab); haptic.light(); }}
             >
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
@@ -131,7 +133,7 @@ export default function MentorshipScreen() {
 
         {activeTab === 'find' ? (
           <>
-            <View style={styles.searchWrap}>
+            <View style={[styles.searchWrap, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <Icon name="search" size="sm" color={colors.text.tertiary} />
               <TextInput
                 style={styles.searchInput}

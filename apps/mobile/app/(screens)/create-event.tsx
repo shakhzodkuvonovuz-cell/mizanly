@@ -29,6 +29,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Alert , Pressable } from 'react-native';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -41,6 +42,7 @@ type PrivacyType = 'public' | 'members' | 'invite';
 
 export default function CreateEventScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -160,7 +162,7 @@ export default function CreateEventScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader title={t('events.createEvent')} onBack={() => router.back()} />
 
       <ScrollView
@@ -191,7 +193,7 @@ export default function CreateEventScreen() {
             </LinearGradient>
             {hasCover && (
               <View style={styles.coverOverlay}>
-                <Pressable style={styles.changeButton}>
+                <Pressable style={[styles.changeButton, { backgroundColor: tc.surface }]}>
                   <Text style={styles.changeText}>{t('common.change')}</Text>
                 </Pressable>
               </View>
@@ -215,7 +217,7 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.eventName')}</Text>
             </View>
             <TextInput
-              style={styles.titleInput}
+              style={[styles.titleInput, { backgroundColor: tc.surface }]}
               placeholder={t('events.eventNamePlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={title}
@@ -244,7 +246,7 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.description')}</Text>
             </View>
             <TextInput
-              style={styles.descriptionInput}
+              style={[styles.descriptionInput, { backgroundColor: tc.surface }]}
               placeholder={t('events.descriptionPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={description}
@@ -284,7 +286,7 @@ export default function CreateEventScreen() {
               </View>
             </Pressable>
 
-            <View style={styles.dateDivider} />
+            <View style={[styles.dateDivider, { backgroundColor: tc.border }]} />
 
             <Pressable style={styles.dateRow} onPress={() => setShowDatePicker('end')}>
               <Text style={styles.dateLabel}>{t('events.end')}</Text>
@@ -294,12 +296,12 @@ export default function CreateEventScreen() {
               </View>
             </Pressable>
 
-            <View style={styles.toggleRow}>
+            <View style={[styles.toggleRow, { borderTopColor: tc.border }]}>
               <Text style={styles.toggleLabel}>{t('events.allDay')}</Text>
               <Switch
                 value={allDay}
                 onValueChange={setAllDay}
-                trackColor={{ false: colors.dark.surface, true: colors.emeraldLight }}
+                trackColor={{ false: tc.surface, true: colors.emeraldLight }}
                 thumbColor={allDay ? colors.emerald : colors.text.tertiary}
               />
             </View>
@@ -322,18 +324,18 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.location')}</Text>
             </View>
 
-            <View style={styles.toggleRow}>
+            <View style={[styles.toggleRow, { borderTopColor: tc.border }]}>
               <Text style={styles.toggleLabel}>{t('events.onlineEvent')}</Text>
               <Switch
                 value={isOnline}
                 onValueChange={setIsOnline}
-                trackColor={{ false: colors.dark.surface, true: colors.emeraldLight }}
+                trackColor={{ false: tc.surface, true: colors.emeraldLight }}
                 thumbColor={isOnline ? colors.emerald : colors.text.tertiary}
               />
             </View>
 
             <TextInput
-              style={styles.locationInput}
+              style={[styles.locationInput, { backgroundColor: tc.surface }]}
               placeholder={isOnline ? t('events.addMeetingUrl') : t('events.addLocation')}
               placeholderTextColor={colors.text.tertiary}
               value={location}
@@ -378,7 +380,7 @@ export default function CreateEventScreen() {
                         </Text>
                       </LinearGradient>
                     ) : (
-                      <View style={styles.pillInner}>
+                      <View style={[styles.pillInner, { backgroundColor: tc.surface }]}>
                         <Text style={styles.pillText}>
                           {eventTypeLabel}
                         </Text>
@@ -427,7 +429,7 @@ export default function CreateEventScreen() {
                           </Text>
                         </LinearGradient>
                       ) : (
-                        <View style={styles.pillInner}>
+                        <View style={[styles.pillInner, { backgroundColor: tc.surface }]}>
                           <Text style={styles.pillText}>
                             {privacyLabel}
                           </Text>
@@ -457,7 +459,7 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.community')}</Text>
             </View>
 
-            <Pressable style={styles.communityDropdown}>
+            <Pressable style={[styles.communityDropdown, { backgroundColor: tc.surface }]}>
               <Text style={selectedCommunity ? styles.dropdownValue : styles.dropdownPlaceholder}>
                 {selectedCommunity
                   ? communities.find(c => c.id === selectedCommunity)?.name
@@ -530,7 +532,7 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.reminders')}</Text>
             </View>
 
-            <View style={styles.toggleRow}>
+            <View style={[styles.toggleRow, { borderTopColor: tc.border }]}>
               <View style={styles.reminderLabel}>
                 <Icon name="clock" size="xs" color={colors.text.secondary} style={styles.reminderIcon} />
                 <Text style={styles.toggleLabel}>{t('events.remind1Hour')}</Text>
@@ -538,12 +540,12 @@ export default function CreateEventScreen() {
               <Switch
                 value={reminder1h}
                 onValueChange={setReminder1h}
-                trackColor={{ false: colors.dark.surface, true: colors.emeraldLight }}
+                trackColor={{ false: tc.surface, true: colors.emeraldLight }}
                 thumbColor={reminder1h ? colors.emerald : colors.text.tertiary}
               />
             </View>
 
-            <View style={styles.toggleRow}>
+            <View style={[styles.toggleRow, { borderTopColor: tc.border }]}>
               <View style={styles.reminderLabel}>
                 <Icon name="calendar" size="xs" color={colors.text.secondary} style={styles.reminderIcon} />
                 <Text style={styles.toggleLabel}>{t('events.remind1Day')}</Text>
@@ -551,7 +553,7 @@ export default function CreateEventScreen() {
               <Switch
                 value={reminder1d}
                 onValueChange={setReminder1d}
-                trackColor={{ false: colors.dark.surface, true: colors.emeraldLight }}
+                trackColor={{ false: tc.surface, true: colors.emeraldLight }}
                 thumbColor={reminder1d ? colors.emerald : colors.text.tertiary}
               />
             </View>
@@ -563,7 +565,7 @@ export default function CreateEventScreen() {
       </ScrollView>
 
       {/* Bottom Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <Pressable>
           <Text style={styles.draftText}>{t('events.saveDraft')}</Text>
         </Pressable>

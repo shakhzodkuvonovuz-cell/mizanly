@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { islamicApi } from '@/services/islamicApi';
 
@@ -76,6 +77,7 @@ export default function MorningBriefingScreen() {
   const haptic = useHaptic();
   const queryClient = useQueryClient();
   const [reflectionText, setReflectionText] = useState('');
+  const tc = useThemeColors();
 
   const locationQuery = useQuery({
     queryKey: ['briefing-location'],
@@ -123,7 +125,7 @@ export default function MorningBriefingScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('dailyBriefing.title')}
           leftAction={{
@@ -336,7 +338,7 @@ export default function MorningBriefingScreen() {
                         {t('dailyBriefing.gratefulPrompt')}
                       </Text>
                       <TextInput
-                        style={styles.reflectionInput}
+                        style={[styles.reflectionInput, { borderColor: tc.border }]}
                         value={reflectionText}
                         onChangeText={setReflectionText}
                         placeholder={t('dailyBriefing.gratefulPrompt')}

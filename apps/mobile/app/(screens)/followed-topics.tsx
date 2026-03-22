@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { hashtagsApi } from '@/services/api';
 import type { HashtagInfo } from '@/types';
 
@@ -40,6 +41,7 @@ function FollowedTopicsContent() {
   const [suggestedTopics, setSuggestedTopics] = useState<HashtagInfo[]>([]);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tc = useThemeColors();
 
   const loadData = useCallback(async () => {
     try {
@@ -218,7 +220,7 @@ function FollowedTopicsContent() {
     () => (
       <View>
         {/* Search bar */}
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Icon name="search" size="sm" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}
@@ -274,7 +276,7 @@ function FollowedTopicsContent() {
 
   if (loading) {
     return (
-      <View style={[styles.screen, { paddingTop: insets.top + 60 }]}>
+      <View style={[styles.screen, { backgroundColor: tc.bg }, { paddingTop: insets.top + 60 }]}>
         <GlassHeader
           title={t('followedTopics.title', 'Followed Topics')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -296,7 +298,7 @@ function FollowedTopicsContent() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('followedTopics.title', 'Followed Topics')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

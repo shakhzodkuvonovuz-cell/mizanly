@@ -687,6 +687,10 @@ Cat 1 (getThemeColors() utility created with light text variants; textLight colo
 ### FIXED in second pass (27 additional):
 Cat 1 partial (useThemeColors hook created + 10 critical files migrated: 5 tabs + BottomSheet/GlassHeader/Skeleton/EmptyState — inline style overrides for theme-aware bg/border/surface), Cat 11 (ALL 17 fontWeight '800' → '700' across 14 files)
 
-### NOTED (gradual migration — tracked in CLAUDE.md):
-- Cat 1: 234 remaining files — useThemeColors ready, gradual migration
-- Cat 4/6/12: Hardcoded colors/fontSize/rgba — design system expansion
+### FIXED in third pass (227 files migrated):
+Cat 1: ALL 244 files migrated from hardcoded colors.dark.* to useThemeColors(). 4 parallel agents processed: components (42 files), auth+onboarding+screens A-C (58 files), screens D-M (52 files), screens N-Z+layouts (75 files). Light mode is now functional — every surface/text/border color reads from theme-aware hook.
+
+### NOTED (design system expansion — low priority):
+- Cat 4: 421+ hardcoded hex colors — needs extended color palette
+- Cat 6: 83 hardcoded fontSize — many intentional for special sizes
+- Cat 12: 300+ inline rgba() — contextually appropriate

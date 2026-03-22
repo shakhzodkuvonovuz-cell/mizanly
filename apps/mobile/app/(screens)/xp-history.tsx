@@ -19,6 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
 
@@ -72,6 +73,8 @@ function timeAgo(dateStr: string): string {
 }
 
 function LevelBadge({ xpData, isRTL }: { xpData: XPData; isRTL: boolean }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const progress = xpData.nextLevelXP > 0
     ? xpData.currentXP / xpData.nextLevelXP
@@ -124,6 +127,8 @@ function LevelBadge({ xpData, isRTL }: { xpData: XPData; isRTL: boolean }) {
 }
 
 function XPEventRow({ event, index, isRTL }: { event: XPEvent; index: number; isRTL: boolean }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const iconName = getReasonIcon(event.reason);
 
@@ -157,6 +162,8 @@ function XPEventRow({ event, index, isRTL }: { event: XPEvent; index: number; is
 }
 
 function LoadingSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.skeletonWrap}>
       <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
@@ -175,6 +182,8 @@ function LoadingSkeleton() {
 }
 
 function XPHistoryScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -281,10 +290,10 @@ export default function XPHistoryScreenWrapper() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   content: {
     flex: 1,
@@ -349,7 +358,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     overflow: 'hidden',
   },
   progressBarFill: {
@@ -368,7 +377,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   eventIconBg: {
     width: 36,

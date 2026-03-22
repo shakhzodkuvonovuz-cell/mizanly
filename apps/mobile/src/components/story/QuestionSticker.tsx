@@ -18,6 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 
@@ -43,6 +44,7 @@ interface QuestionStickerProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function QuestionSticker({ data, onResponse, isCreator = false, style }: QuestionStickerProps) {
+  const tc = useThemeColors();
   const [inputText, setInputText] = useState('');
   const [submittedQuestions, setSubmittedQuestions] = useState<SubmittedQuestion[]>(
     data.submittedQuestions || []
@@ -120,7 +122,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
       {showInput ? (
         <>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.borderLight }]}
             placeholder={t('saf.questionPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={inputText}
@@ -135,7 +137,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
             <CharCountRing current={inputText.length} max={200} size={22} />
             <Pressable
               style={[
-                styles.submitButton,
+                styles.submitButton, { backgroundColor: tc.bgElevated, borderColor: tc.borderLight },
                 inputText.trim().length === 0 && styles.submitButtonDisabled,
               ]}
               onPress={handleSubmit}

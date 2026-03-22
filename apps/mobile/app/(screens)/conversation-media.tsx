@@ -22,6 +22,7 @@ import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Message } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -61,6 +62,7 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
   onVideoPress: () => void;
 }) {
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.96 });
+  const tc = useThemeColors();
   const { t } = useTranslation();
 
   return (
@@ -240,7 +242,7 @@ export default function ConversationMediaScreen() {
   const renderLinkItem = ({ item, index }: { item: LinkItem; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <Pressable
-        style={styles.linkItem}
+        style={[styles.linkItem, { backgroundColor: tc.bgCard }]}
         onPress={() => handleOpenLink(item.url)}
 
         accessibilityLabel={`${t('conversationMedia.accessibility.openLink')} ${item.url}`}
@@ -268,7 +270,7 @@ export default function ConversationMediaScreen() {
   const renderDocItem = ({ item, index }: { item: DocItem; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <Pressable
-        style={styles.docItem}
+        style={[styles.docItem, { backgroundColor: tc.bgCard }]}
         onPress={() => handleOpenLink(item.url)}
 
         accessibilityLabel={`${t('conversationMedia.accessibility.openDocument')} ${item.fileName}`}
@@ -321,7 +323,7 @@ export default function ConversationMediaScreen() {
 
   if (isLoading && !messagesPages) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <Skeleton.ProfileHeader />
       </SafeAreaView>
     );
@@ -329,7 +331,7 @@ export default function ConversationMediaScreen() {
 
   if (isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <EmptyState
           icon="slash"
           title={t('conversationMedia.error.loadMedia')}
@@ -343,7 +345,7 @@ export default function ConversationMediaScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('conversationMedia.title')}
           leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -355,7 +357,7 @@ export default function ConversationMediaScreen() {
           activeKey={activeTab}
           onTabChange={(key: string) => setActiveTab(key as TabKey)}
           variant="underline"
-          style={styles.tabSelector}
+          style={[styles.tabSelector, { borderBottomColor: tc.border }]}
         />
 
         {/* Content */}

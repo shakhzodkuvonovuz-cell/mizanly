@@ -15,6 +15,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
 const MADHABS = [
@@ -36,6 +37,7 @@ export default function FatwaQAScreen() {
   const [question, setQuestion] = useState('');
   const [askMadhab, setAskMadhab] = useState('any');
   const [madhabSheetOpen, setMadhabSheetOpen] = useState(false);
+  const tc = useThemeColors();
 
   const questionsQuery = useInfiniteQuery<{ data?: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>({
     queryKey: ['fatwa-questions', selectedMadhab],
@@ -68,7 +70,7 @@ export default function FatwaQAScreen() {
     const isAnswered = item.status === 'answered';
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-        <View style={styles.questionCard}>
+        <View style={[styles.questionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.questionHeader}>
             <Avatar uri={asker?.avatarUrl as string | null} name={asker?.displayName as string || ''} size="sm" />
             <View style={{ flex: 1 }}>
@@ -100,7 +102,7 @@ export default function FatwaQAScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('community.fatwaQA')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -112,7 +114,7 @@ export default function FatwaQAScreen() {
             <Pressable
               accessibilityRole="button"
               key={tab}
-              style={[styles.tab, activeTab === tab && styles.tabActive]}
+              style={[styles.tab, { backgroundColor: tc.bgCard, borderColor: tc.border }, activeTab === tab && styles.tabActive]}
               onPress={() => { setActiveTab(tab); haptic.light(); }}
             >
               <Icon name={tab === 'browse' ? 'search' : 'pencil'} size="sm" color={activeTab === tab ? colors.emerald : colors.text.secondary} />
@@ -131,7 +133,7 @@ export default function FatwaQAScreen() {
                 <Pressable
                   accessibilityRole="button"
                   key={m.id}
-                  style={[styles.filterChip, selectedMadhab === m.id && styles.filterChipActive]}
+                  style={[styles.filterChip, { backgroundColor: tc.bgCard, borderColor: tc.border }, selectedMadhab === m.id && styles.filterChipActive]}
                   onPress={() => { setSelectedMadhab(m.id); haptic.light(); }}
                 >
                   <Text style={[styles.filterChipText, selectedMadhab === m.id && styles.filterChipTextActive]}>
@@ -166,7 +168,7 @@ export default function FatwaQAScreen() {
             <Text style={styles.askLabel}>Your Question</Text>
             <View style={styles.inputWrap}>
               <TextInput
-                style={styles.questionInput}
+                style={[styles.questionInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                 value={question}
                 onChangeText={(t) => setQuestion(t.slice(0, 2000))}
                 placeholder={t('community.questionPlaceholder')}
@@ -180,7 +182,7 @@ export default function FatwaQAScreen() {
             </View>
 
             <Text style={[styles.askLabel, { marginTop: spacing.xl }]}>Preferred Madhab</Text>
-            <Pressable style={styles.madhabSelector} onPress={() => setMadhabSheetOpen(true)}>
+            <Pressable style={[styles.madhabSelector, { backgroundColor: tc.bgCard, borderColor: tc.border }]} onPress={() => setMadhabSheetOpen(true)}>
               <Text style={styles.madhabSelectorText}>
                 {MADHABS.find(m => m.id === askMadhab)?.label || 'Any Madhab'}
               </Text>

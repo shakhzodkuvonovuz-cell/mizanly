@@ -12,9 +12,12 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function QRScannerScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -153,8 +156,8 @@ export default function QRScannerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   centered: {
     flex: 1,
     alignItems: 'center',
@@ -199,7 +202,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.dark.bg + 'CC',
+    backgroundColor: tc.bg + 'CC',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -220,6 +223,6 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     alignItems: 'center',
     borderTopWidth: 0.5,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
 });

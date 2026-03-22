@@ -19,6 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { settingsApi } from '@/services/api';
 import { useStore } from '@/store';
@@ -75,6 +76,7 @@ function SettingRow({
   isRTL: boolean;
 }) {
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   const handleToggle = (val: boolean) => {
     haptic.light();
@@ -82,7 +84,7 @@ function SettingRow({
   };
 
   return (
-    <View style={[styles.settingRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+    <View style={[styles.settingRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}>
       <View style={styles.settingIcon}>
         <Icon name={icon} size="sm" color={disabled ? colors.text.tertiary : colors.text.secondary} />
       </View>
@@ -99,9 +101,9 @@ function SettingRow({
         value={value && !disabled}
         onValueChange={handleToggle}
         disabled={disabled}
-        trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+        trackColor={{ false: tc.surface, true: colors.emerald }}
         thumbColor={value && !disabled ? '#FFFFFF' : colors.text.tertiary}
-        ios_backgroundColor={colors.dark.surface}
+        ios_backgroundColor={tc.surface}
       />
     </View>
   );
@@ -143,6 +145,7 @@ export default function MediaSettingsScreen() {
   const [loading, setLoading] = useState(true);
   const [autoPlay, setAutoPlay] = useState<'wifi' | 'always' | 'never'>('wifi');
   const [ambientMode, setAmbientMode] = useState(useStore.getState().ambientModeEnabled);
+  const tc = useThemeColors();
 
   // Load auto-play setting
   useEffect(() => {
@@ -211,7 +214,7 @@ export default function MediaSettingsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('mediaSettings.title')}
           leftAction={{
@@ -234,11 +237,11 @@ export default function MediaSettingsScreen() {
           ) : (
             <>
               {/* Data Saver Toggle */}
-              <Animated.View entering={FadeInDown.duration(300)} style={styles.dataSaverCard}>
+              <Animated.View entering={FadeInDown.duration(300)} style={[styles.dataSaverCard, { borderColor: tc.border }]}>
                 <LinearGradient
                   colors={[
-                    settings.dataSaver ? colors.active.emerald20 : colors.dark.bgCard,
-                    colors.dark.bgCard,
+                    settings.dataSaver ? colors.active.emerald20 : tc.bgCard,
+                    tc.bgCard,
                   ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -255,9 +258,9 @@ export default function MediaSettingsScreen() {
                   <Switch
                     value={settings.dataSaver}
                     onValueChange={handleDataSaverToggle}
-                    trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                    trackColor={{ false: tc.surface, true: colors.emerald }}
                     thumbColor={settings.dataSaver ? '#FFFFFF' : colors.text.tertiary}
-                    ios_backgroundColor={colors.dark.surface}
+                    ios_backgroundColor={tc.surface}
                   />
                 </LinearGradient>
               </Animated.View>
@@ -268,7 +271,7 @@ export default function MediaSettingsScreen() {
                 index={1}
                 isRTL={isRTL}
               />
-              <View style={styles.sectionCard}>
+              <View style={[styles.sectionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 {MEDIA_ITEMS.map((item) => (
                   <SettingRow
                     key={`mobile-${item.key}`}
@@ -288,7 +291,7 @@ export default function MediaSettingsScreen() {
                 index={2}
                 isRTL={isRTL}
               />
-              <View style={styles.sectionCard}>
+              <View style={[styles.sectionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 {MEDIA_ITEMS.map((item) => (
                   <SettingRow
                     key={`wifi-${item.key}`}
@@ -307,7 +310,7 @@ export default function MediaSettingsScreen() {
                 index={3}
                 isRTL={isRTL}
               />
-              <View style={styles.sectionCard}>
+              <View style={[styles.sectionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 {MEDIA_ITEMS.map((item) => (
                   <SettingRow
                     key={`roaming-${item.key}`}
@@ -327,12 +330,12 @@ export default function MediaSettingsScreen() {
                 index={4}
                 isRTL={isRTL}
               />
-              <View style={styles.sectionCard}>
+              <View style={[styles.sectionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 {(['wifi', 'always', 'never'] as const).map((option) => (
                   <Pressable
                     accessibilityRole="button"
                     key={option}
-                    style={[styles.settingRow, { flexDirection: rtlFlexRow(isRTL) }]}
+                    style={[styles.settingRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}
                     onPress={() => {
                       haptic.light();
                       setAutoPlay(option);
@@ -356,7 +359,7 @@ export default function MediaSettingsScreen() {
                     >
                       {t(`autoPlaySettings.${option}`)}
                     </Text>
-                    <View style={[styles.radioOuter, autoPlay === option && styles.radioOuterActive]}>
+                    <View style={[styles.radioOuter, { borderColor: tc.border }, autoPlay === option && styles.radioOuterActive]}>
                       {autoPlay === option && <View style={styles.radioInner} />}
                     </View>
                   </Pressable>

@@ -24,6 +24,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
@@ -93,6 +94,7 @@ function MarketplaceContent() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
+  const tc = useThemeColors();
 
   const CATEGORIES = CATEGORY_KEYS.map((key) => ({
     key,
@@ -144,7 +146,7 @@ function MarketplaceContent() {
         <Pressable
           key={cat.key}
           style={[
-            styles.chip,
+            styles.chip, { backgroundColor: tc.bgCard, borderColor: tc.border },
             selectedCategory === cat.key && styles.chipActive,
           ]}
           onPress={() => handleCategoryPress(cat.key)}
@@ -167,7 +169,7 @@ function MarketplaceContent() {
   const renderProduct = ({ item, index }: { item: Product; index: number }) => (
     <Animated.View
       entering={FadeInUp.delay(index * 50).duration(300)}
-      style={styles.productCard}
+      style={[styles.productCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
     >
       <Pressable
         style={styles.productPressable}
@@ -183,7 +185,7 @@ function MarketplaceContent() {
               contentFit="cover"
             />
           ) : (
-            <View style={styles.productImagePlaceholder}>
+            <View style={[styles.productImagePlaceholder, { backgroundColor: tc.surface }]}>
               <Icon name="image" size="lg" color={colors.text.tertiary} />
             </View>
           )}
@@ -229,7 +231,7 @@ function MarketplaceContent() {
   const renderSkeleton = () => (
     <View style={styles.skeletonGrid}>
       {Array.from({ length: 4 }).map((_, i) => (
-        <View key={`skel-${i}`} style={styles.productCard}>
+        <View key={`skel-${i}`} style={[styles.productCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Skeleton.Rect width="100%" height={COLUMN_WIDTH * 0.9} borderRadius={radius.md} />
           <View style={{ padding: spacing.sm, gap: spacing.xs }}>
             <Skeleton.Text width="80%" />
@@ -245,7 +247,7 @@ function MarketplaceContent() {
     <View>
       {/* Search bar */}
       <View style={styles.searchRow}>
-        <View style={[styles.searchInput, searchActive && styles.searchInputActive]}>
+        <View style={[styles.searchInput, { backgroundColor: tc.bgCard, borderColor: tc.border }, searchActive && styles.searchInputActive]}>
           <Icon name="search" size="sm" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchText}
@@ -271,7 +273,7 @@ function MarketplaceContent() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('marketplace.title', 'Marketplace')}
         leftAction={{

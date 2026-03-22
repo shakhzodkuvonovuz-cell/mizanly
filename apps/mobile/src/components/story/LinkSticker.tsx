@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface LinkStickerProps {
   url: string;
@@ -49,6 +50,7 @@ export function LinkSticker({
 }: LinkStickerProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   const displayUrl = useMemo(() => truncateUrl(url), [url]);
 
@@ -95,7 +97,7 @@ export function LinkSticker({
         ) : null}
 
         {/* See More CTA */}
-        <View style={styles.ctaRow}>
+        <View style={[styles.ctaRow, { borderTopColor: tc.borderLight }]}>
           <Icon name="chevron-right" size="xs" color={colors.emerald} />
           <Text style={styles.ctaText}>
             {t('story.link.seeMore', { defaultValue: 'See More' })}

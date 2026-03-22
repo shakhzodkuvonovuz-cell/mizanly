@@ -6,6 +6,7 @@ import { Icon } from './Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface PremiereCountdownProps {
   scheduledAt: string;
@@ -46,6 +47,7 @@ export function PremiereCountdown({
 }: PremiereCountdownProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const [time, setTime] = useState(getTimeRemaining(scheduledAt));
   const pulseScale = useSharedValue(1);
 
@@ -113,7 +115,7 @@ export function PremiereCountdown({
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
-          style={[styles.reminderBtn, isReminderSet && { borderColor: colors.gold }]}
+          style={[styles.reminderBtn, { borderColor: tc.border }, isReminderSet && { borderColor: colors.gold }]}
           onPress={() => {
             haptic.light();
             isReminderSet ? onRemoveReminder() : onSetReminder();

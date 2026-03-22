@@ -19,6 +19,7 @@ import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { useUser } from '@clerk/clerk-expo';
 import type { Post, Thread, Reel, Video } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -34,6 +35,8 @@ const formatDuration = (seconds: number) => {
 type Tab = 'posts' | 'threads' | 'reels' | 'videos';
 
 function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Pressable
       onPress={onPress}
@@ -63,6 +66,8 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
 }
 
 function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const hasThumbnail = reel.thumbnailUrl != null;
   return (
     <Pressable
@@ -91,6 +96,8 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
 }
 
 function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const hasThumbnail = video.thumbnailUrl != null;
   return (
     <Pressable
@@ -121,6 +128,8 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 }
 
 export default function SavedScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { user } = useUser();
@@ -471,15 +480,15 @@ export default function SavedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   headerSpacer: { height: 100 },
 
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 1 },
-  gridItem: { width: GRID_ITEM, height: GRID_ITEM, backgroundColor: colors.dark.bgElevated, marginBottom: 1 },
+  gridItem: { width: GRID_ITEM, height: GRID_ITEM, backgroundColor: tc.bgElevated, marginBottom: 1 },
   gridImage: { width: '100%', height: '100%' },
-  gridTextPost: { flex: 1, padding: spacing.xs, backgroundColor: colors.dark.bgCard, justifyContent: 'center' },
+  gridTextPost: { flex: 1, padding: spacing.xs, backgroundColor: tc.bgCard, justifyContent: 'center' },
   gridText: { color: colors.text.primary, fontSize: fontSize.xs },
   carouselBadge: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3 },
   playOverlay: {
@@ -487,13 +496,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center',
   },
   placeholder: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     justifyContent: 'center',
     alignItems: 'center',
   },
   videoRow: {
     flexDirection: 'row', paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   videoThumbnail: { width: 120, height: 68, borderRadius: radius.sm },
   videoInfo: { flex: 1, marginLeft: spacing.base, justifyContent: 'center' },
@@ -511,7 +520,7 @@ const styles = StyleSheet.create({
   gridShimmerItem: {
     width: GRID_ITEM,
     height: GRID_ITEM,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -520,12 +529,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   threadShimmerCard: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.sm,
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderColor: tc.borderLight,
   },
   threadShimmerHeader: {
     flexDirection: 'row',
@@ -545,7 +554,7 @@ const styles = StyleSheet.create({
     gap: spacing.base,
     paddingVertical: spacing.sm,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   videoShimmerInfo: {
     flex: 1,

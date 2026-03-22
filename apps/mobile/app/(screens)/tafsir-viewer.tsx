@@ -13,10 +13,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { islamicApi } from '@/services/islamicApi';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { TafsirEntry } from '@/types/islamic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function TafsirViewerScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t, language } = useTranslation();
   const { surah, verse } = useLocalSearchParams<{ surah: string; verse: string }>();
@@ -279,10 +282,10 @@ export default function TafsirViewerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollView: {
     flex: 1,

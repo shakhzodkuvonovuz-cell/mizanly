@@ -12,6 +12,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { StoryGroup } from '@/types';
 
 interface Props {
@@ -25,6 +26,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: Props) {
   const { user, hasUnread } = group;
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const scale = useSharedValue(1);
   const addPulse = useSharedValue(1);
 
@@ -76,10 +78,10 @@ export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: 
         size="lg"
         showStoryRing={hasUnread}
         showRing={!hasUnread && !isOwn}
-        ringColor={hasUnread ? colors.emerald : colors.dark.borderLight}
+        ringColor={hasUnread ? colors.emerald : tc.borderLight}
       />
       {isOwn && (
-        <Animated.View style={[styles.addBtn, pulseStyle]}>
+        <Animated.View style={[styles.addBtn, { borderColor: tc.bg }, pulseStyle]}>
           <Icon name="plus" size={12} color="#FFF" strokeWidth={3} />
         </Animated.View>
       )}

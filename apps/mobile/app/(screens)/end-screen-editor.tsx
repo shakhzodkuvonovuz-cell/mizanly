@@ -19,6 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { videosApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { EndScreen } from '@/types';
 import type { IconName } from '@/components/ui/Icon';
 
@@ -88,6 +89,7 @@ export default function EndScreenEditorScreen() {
   const [initialized, setInitialized] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [positionSheetIndex, setPositionSheetIndex] = useState<number | null>(null);
+  const tc = useThemeColors();
 
   const {
     isLoading,
@@ -159,7 +161,7 @@ export default function EndScreenEditorScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('endScreens.title')}
           leftAction={{
@@ -233,7 +235,7 @@ export default function EndScreenEditorScreen() {
                             key={opt.type}
                             onPress={() => handleUpdateItem(index, 'type', opt.type)}
                             style={[
-                              styles.typeButton,
+                              styles.typeButton, { borderColor: tc.border, backgroundColor: tc.bgCard },
                               item.type === opt.type && styles.typeButtonActive,
                             ]}
                             accessibilityRole="button"
@@ -263,7 +265,7 @@ export default function EndScreenEditorScreen() {
                         <CharCountRing current={item.label.length} max={MAX_LABEL} />
                       </View>
                       <TextInput
-                        style={styles.textInput}
+                        style={[styles.textInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                         value={item.label}
                         onChangeText={(text) => handleUpdateItem(index, 'label', text)}
                         maxLength={MAX_LABEL}
@@ -277,7 +279,7 @@ export default function EndScreenEditorScreen() {
                         <>
                           <Text style={styles.fieldLabel}>{t('endScreens.targetId')}</Text>
                           <TextInput
-                            style={styles.textInput}
+                            style={[styles.textInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                             value={item.targetId}
                             onChangeText={(text) => handleUpdateItem(index, 'targetId', text)}
                             placeholder={t('endScreens.targetIdPlaceholder')}
@@ -292,7 +294,7 @@ export default function EndScreenEditorScreen() {
                         <>
                           <Text style={styles.fieldLabel}>{t('endScreens.url')}</Text>
                           <TextInput
-                            style={styles.textInput}
+                            style={[styles.textInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                             value={item.url}
                             onChangeText={(text) => handleUpdateItem(index, 'url', text)}
                             placeholder="https://..."
@@ -312,7 +314,7 @@ export default function EndScreenEditorScreen() {
                             key={pos.value}
                             onPress={() => handleUpdateItem(index, 'position', pos.value)}
                             style={[
-                              styles.positionCell,
+                              styles.positionCell, { borderColor: tc.border, backgroundColor: tc.bgCard },
                               item.position === pos.value && styles.positionCellActive,
                             ]}
                             accessibilityRole="button"
@@ -343,13 +345,13 @@ export default function EndScreenEditorScreen() {
                               Math.max(5, item.showAtSeconds - 1),
                             )
                           }
-                          style={styles.timingButton}
+                          style={[styles.timingButton, { backgroundColor: tc.surface }]}
                           accessibilityRole="button"
                           accessibilityLabel={t('endScreens.decrease')}
                         >
                           <Text style={styles.timingButtonText}>-</Text>
                         </Pressable>
-                        <View style={styles.timingBar}>
+                        <View style={[styles.timingBar, { backgroundColor: tc.surface }]}>
                           <View
                             style={[
                               styles.timingFill,
@@ -365,7 +367,7 @@ export default function EndScreenEditorScreen() {
                               Math.min(30, item.showAtSeconds + 1),
                             )
                           }
-                          style={styles.timingButton}
+                          style={[styles.timingButton, { backgroundColor: tc.surface }]}
                           accessibilityRole="button"
                           accessibilityLabel={t('endScreens.increase')}
                         >

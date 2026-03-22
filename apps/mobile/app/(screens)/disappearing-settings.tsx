@@ -11,6 +11,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface TimerOption {
   value: number;
@@ -56,6 +57,7 @@ function DisappearingSettingsContent() {
     : 0;
 
   const [selectedDuration, setSelectedDuration] = useState(initialDuration);
+  const tc = useThemeColors();
 
   const mutation = useMutation({
     mutationFn: (duration: number) =>
@@ -87,7 +89,7 @@ function DisappearingSettingsContent() {
   }, [selectedDuration, initialDuration, mutation, router]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('disappearing.title')}
         leftAction={{
@@ -116,7 +118,7 @@ function DisappearingSettingsContent() {
                 <Icon name="clock" size="xl" color={colors.emerald} />
               </View>
             </View>
-            <View style={styles.lockBadge}>
+            <View style={[styles.lockBadge, { borderColor: tc.bg }]}>
               <Icon name="lock" size="xs" color={colors.text.primary} />
             </View>
           </Animated.View>
@@ -137,7 +139,7 @@ function DisappearingSettingsContent() {
           {/* Timer options */}
           <Animated.View
             entering={FadeInUp.delay(300).duration(400)}
-            style={styles.optionsContainer}
+            style={[styles.optionsContainer, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
           >
             {TIMER_OPTIONS.map((option, index) => {
               const isSelected = selectedDuration === option.value;
@@ -157,7 +159,7 @@ function DisappearingSettingsContent() {
                   {/* Radio indicator */}
                   <View
                     style={[
-                      styles.radio,
+                      styles.radio, { borderColor: tc.borderLight },
                       isSelected && styles.radioSelected,
                     ]}
                   >

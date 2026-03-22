@@ -13,6 +13,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
 export default function LocalBoardsScreen() {
@@ -20,6 +21,7 @@ export default function LocalBoardsScreen() {
   const { t, isRTL } = useTranslation();
   const haptic = useHaptic();
   const [search, setSearch] = useState('');
+  const tc = useThemeColors();
 
   const boardsQuery = useInfiniteQuery({
     queryKey: ['local-boards', search],
@@ -38,7 +40,7 @@ export default function LocalBoardsScreen() {
 
   const renderBoard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-      <Pressable accessibilityRole="button" style={styles.boardCard} onPress={() => haptic.light()}>
+      <Pressable accessibilityRole="button" style={[styles.boardCard, { borderColor: tc.border }]} onPress={() => haptic.light()}>
         <LinearGradient
           colors={['rgba(10,123,79,0.08)', 'transparent']}
           style={styles.boardGradient}
@@ -72,13 +74,13 @@ export default function LocalBoardsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('community.localBoards')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
-        <View style={styles.searchWrap}>
+        <View style={[styles.searchWrap, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Icon name="search" size="sm" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}

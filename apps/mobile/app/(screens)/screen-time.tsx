@@ -15,6 +15,7 @@ import { settingsApi } from '@/services/api';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 
 type DailyLog = { date: string; totalSeconds: number; sessions: number };
@@ -69,6 +70,8 @@ function getWeekDays(): string[] {
 }
 
 function BarChart({ daily, isRTL }: { daily: DailyLog[]; isRTL: boolean }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const weekDays = getWeekDays();
   const todayStr = weekDays[weekDays.length - 1];
   const dataMap = new Map(daily.map(d => [d.date, d.totalSeconds]));
@@ -91,7 +94,7 @@ function BarChart({ daily, isRTL }: { daily: DailyLog[]; isRTL: boolean }) {
             </Text>
             <View style={styles.barTrack}>
               <LinearGradient
-                colors={isToday ? [colors.emerald, '#05593A'] : [colors.dark.surface, colors.dark.border]}
+                colors={isToday ? [colors.emerald, '#05593A'] : [tc.surface, tc.border]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={[styles.bar, { height }]}
@@ -106,6 +109,8 @@ function BarChart({ daily, isRTL }: { daily: DailyLog[]; isRTL: boolean }) {
 }
 
 function StatCard({ label, value, icon, isRTL }: { label: string; value: string; icon: React.ReactNode; isRTL: boolean }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <LinearGradient
       colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
@@ -123,6 +128,8 @@ function StatCard({ label, value, icon, isRTL }: { label: string; value: string;
 }
 
 export default function ScreenTimeScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -375,8 +382,8 @@ export default function ScreenTimeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   body: { flex: 1 },
   bodyContent: { paddingBottom: 60, paddingHorizontal: spacing.base },
 
@@ -412,7 +419,7 @@ const styles = StyleSheet.create({
   limitBarTrack: {
     width: '100%',
     height: 6,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -569,7 +576,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     backgroundColor: 'transparent',
   },
   toggleDotActive: {

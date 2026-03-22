@@ -15,6 +15,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -37,6 +38,8 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, expanded, onToggl
   expanded: boolean;
   onToggleExpand: () => void;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
 
   return (
@@ -103,6 +106,8 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, expanded, onToggl
 }
 
 export default function NamesOfAllahScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
@@ -240,8 +245,8 @@ export default function NamesOfAllahScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   listContent: { paddingBottom: spacing['2xl'] },
   progressSection: {
     padding: spacing.base,
@@ -253,7 +258,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 6,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -266,7 +271,7 @@ const styles = StyleSheet.create({
     margin: spacing.base,
     marginTop: 0,
     padding: spacing.lg,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.gold,
@@ -310,10 +315,10 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.base,
     marginBottom: spacing.sm,
     padding: spacing.md,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   nameCardLearned: {
     borderColor: colors.emerald,
@@ -328,7 +333,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -358,7 +363,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 0.5,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
   explanationText: {
     color: colors.text.primary,

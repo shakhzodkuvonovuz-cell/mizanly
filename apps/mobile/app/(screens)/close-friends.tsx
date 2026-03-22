@@ -20,6 +20,7 @@ import { colors, spacing, fontSize, fonts, radius } from '@/theme';
 import { followsApi, circlesApi } from '@/services/api';
 import type { User, PaginatedResponse, Circle, CircleMember } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const CLOSE_FRIENDS_CIRCLE_NAME = 'Close Friends';
@@ -72,9 +73,9 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
               <Switch
                 value={isCloseFriend}
                 onValueChange={(value) => onToggle(user.id, value)}
-                trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                trackColor={{ false: tc.border, true: colors.emerald }}
                 thumbColor={isCloseFriend ? '#fff' : colors.text.secondary}
-                ios_backgroundColor={colors.dark.border}
+                ios_backgroundColor={tc.border}
                 disabled={disabled}
               />
             </View>
@@ -87,6 +88,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
 
 export default function CloseFriendsScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const queryClient = useQueryClient();
   const { user: clerkUser } = useUser();
   const currentUserId = clerkUser?.id;
@@ -217,7 +219,7 @@ export default function CloseFriendsScreen() {
 
   if (followersQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.closeFriends.title')}
           leftAction={{
@@ -239,7 +241,7 @@ export default function CloseFriendsScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.closeFriends.title')}
           leftAction={{
@@ -266,7 +268,7 @@ export default function CloseFriendsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           leftAction={{
             icon: 'arrow-left',

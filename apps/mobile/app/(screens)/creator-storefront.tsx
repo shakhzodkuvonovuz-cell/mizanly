@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';
@@ -51,6 +52,7 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - COLUMN_GAP) / 2;
 
 function CreatorStorefrontContent() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const haptic = useHaptic();
   const insets = useSafeAreaInsets();
@@ -114,12 +116,12 @@ function CreatorStorefrontContent() {
     <Animated.View entering={FadeInUp.delay(100 + index * 50).duration(400)}>
       <Pressable
         onPress={() => handleProductPress(item.id)}
-        style={styles.productCard}
+        style={[styles.productCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
         accessibilityRole="button"
         accessibilityLabel={`${item.name}, ${item.currency}${item.price}`}
       >
         {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} style={styles.productImage} />
+          <Image source={{ uri: item.imageUrl }} style={[styles.productImage, { backgroundColor: tc.surface }]} />
         ) : (
           <View style={[styles.productImage, styles.productImagePlaceholder]}>
             <Icon name="image" size="lg" color={colors.text.tertiary} />
@@ -192,7 +194,7 @@ function CreatorStorefrontContent() {
           </View>
         )}
 
-        <View style={styles.shopStats}>
+        <View style={[styles.shopStats, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.statItem}>
             <Icon name="layers" size="sm" color={colors.emerald} />
             <Text style={styles.statValue}>{products.length}</Text>
@@ -208,7 +210,7 @@ function CreatorStorefrontContent() {
     : t('storefront.shop');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={shopTitle}
         leftAction={{

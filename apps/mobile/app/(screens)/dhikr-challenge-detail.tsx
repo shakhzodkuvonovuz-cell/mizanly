@@ -21,6 +21,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import type { DhikrChallengeDetail } from '@/types/islamic';
@@ -34,6 +35,7 @@ const PHRASE_ARABIC_MAP: Record<string, string> = {
 };
 
 function ProgressRing({ current, target }: { current: number; target: number }) {
+  const tc = useThemeColors();
   const progress = target > 0 ? Math.min(current / target, 1) : 0;
   const percentage = Math.round(progress * 100);
 
@@ -45,7 +47,7 @@ function ProgressRing({ current, target }: { current: number; target: number }) 
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <View style={styles.progressRingInner}>
+        <View style={[styles.progressRingInner, { backgroundColor: tc.bgCard }]}>
           <Text style={styles.progressRingPercent}>{percentage}%</Text>
           <Text style={styles.progressRingLabel}>
             {current.toLocaleString()} / {target.toLocaleString()}
@@ -112,6 +114,7 @@ export default function DhikrChallengeDetailScreen() {
   const [contributeCount, setContributeCount] = useState(0);
   const [showContribute, setShowContribute] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
 
   const { data: challenge, isLoading, refetch } = useQuery({
     queryKey: ['dhikr-challenge', id],
@@ -233,7 +236,7 @@ export default function DhikrChallengeDetailScreen() {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
-                    <View style={styles.contributeCounterInner}>
+                    <View style={[styles.contributeCounterInner, { backgroundColor: tc.bgCard }]}>
                       <Text style={styles.contributeCountText}>{contributeCount}</Text>
                       <Text style={styles.contributeTapHint}>
                         {PHRASE_ARABIC_MAP[detail.phrase] || detail.phrase}
@@ -254,7 +257,7 @@ export default function DhikrChallengeDetailScreen() {
                       setShowContribute(false);
                       setContributeCount(0);
                     }}
-                    style={styles.cancelBtn}
+                    style={[styles.cancelBtn, { backgroundColor: tc.surface }]}
                   >
                     <Icon name="x" size="sm" color={colors.text.tertiary} />
                   </Pressable>
@@ -274,7 +277,7 @@ export default function DhikrChallengeDetailScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={detail?.title ?? t('dhikr.challenges')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

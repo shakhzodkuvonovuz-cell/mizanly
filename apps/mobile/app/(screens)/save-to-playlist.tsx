@@ -15,9 +15,12 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, playlistsApi } from '@/services/api';
 import type { Playlist } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function SaveToPlaylistScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const router = useRouter();
@@ -257,8 +260,8 @@ export default function SaveToPlaylistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   createText: {
     color: colors.emerald,
     fontSize: fontSize.base,

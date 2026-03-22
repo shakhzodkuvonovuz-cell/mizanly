@@ -21,6 +21,7 @@ import { colors, spacing, radius, fontSize } from '@/theme';
 import { communitiesApi } from '@/services/communitiesApi';
 import type { Community } from '@/types/communities';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -42,6 +43,7 @@ function CommunityCard({
   onPress: (community: Community) => void;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const scaleAnim = useSharedValue(1);
 
   const handlePress = () => {
@@ -91,7 +93,7 @@ function CommunityCard({
           <View style={styles.iconContainer}>
             <LinearGradient
               colors={['rgba(10,123,79,0.9)', 'rgba(8,95,39,0.95)']}
-              style={styles.iconBg}
+              style={[styles.iconBg, { borderColor: tc.bg }]}
             >
               <Text style={styles.iconEmoji}>{emoji}</Text>
             </LinearGradient>
@@ -244,7 +246,7 @@ export default function CommunitiesScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.communities.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

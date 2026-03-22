@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { subtitlesApi } from '@/services/api';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { SubtitleTrack } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -53,6 +54,7 @@ function parseCaptionsFromTracks(tracks: SubtitleTrack[]): Caption[] {
 
 export default function CaptionEditorScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
@@ -251,7 +253,7 @@ export default function CaptionEditorScreen() {
   // Loading skeleton
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('captionEditor.title')} showBackButton />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.base }}>
           <Skeleton.Rect width="100%" height={screenHeight * 0.28} borderRadius={radius.lg} />
@@ -268,7 +270,7 @@ export default function CaptionEditorScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('captionEditor.title')} showBackButton />
 
         <ScrollView

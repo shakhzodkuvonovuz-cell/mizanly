@@ -22,6 +22,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi, uploadApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface Thumbnail {
   uri: string;
@@ -49,6 +50,8 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = [0, 15, 30, 45];
 
 export default function ScheduleLiveScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -379,8 +382,8 @@ export default function ScheduleLiveScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   // Body
   body: { flex: 1 },
   bodyContent: { padding: spacing.base, paddingBottom: 80, gap: spacing.lg },
@@ -397,9 +400,9 @@ const styles = StyleSheet.create({
   },
   input: {
     color: colors.text.primary, fontSize: fontSize.base,
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    backgroundColor: tc.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: colors.dark.border,
+    borderWidth: 1, borderColor: tc.border,
   },
   textArea: {
     minHeight: 100, textAlignVertical: 'top',
@@ -411,7 +414,7 @@ const styles = StyleSheet.create({
   // Thumbnail
   thumbnailPreview: {
     width: '100%', aspectRatio: 16 / 9, borderRadius: radius.md,
-    overflow: 'hidden', backgroundColor: colors.dark.bgElevated,
+    overflow: 'hidden', backgroundColor: tc.bgElevated,
     position: 'relative',
   },
   thumbnailImage: { width: '100%', height: '100%' },
@@ -422,7 +425,7 @@ const styles = StyleSheet.create({
   },
   thumbnailPlaceholder: {
     width: '100%', aspectRatio: 16 / 9, borderRadius: radius.md,
-    borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.dark.border,
+    borderWidth: 1.5, borderStyle: 'dashed', borderColor: tc.border,
     alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
   },
   thumbnailIconBg: {
@@ -441,9 +444,9 @@ const styles = StyleSheet.create({
   // Date selector
   dateSelector: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    backgroundColor: tc.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: colors.dark.border,
+    borderWidth: 1, borderColor: tc.border,
   },
   dateIconBg: {
     width: 36,
@@ -465,10 +468,10 @@ const styles = StyleSheet.create({
   },
   pickerRow: { flexDirection: 'row' },
   pickerChip: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.full,
+    backgroundColor: tc.bgElevated, borderRadius: radius.full,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     marginRight: spacing.sm,
-    borderWidth: 1, borderColor: colors.dark.border,
+    borderWidth: 1, borderColor: tc.border,
   },
   pickerChipActive: {
     backgroundColor: colors.active.emerald10, borderColor: colors.emerald,

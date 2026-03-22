@@ -20,6 +20,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { promotionsApi } from '@/services/promotionsApi';
 
 const BUDGET_OPTIONS = [5, 10, 25, 50];
@@ -33,6 +34,7 @@ const DURATION_OPTIONS: { days: number; labelKey: string }[] = [
 
 function BoostPostContent() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { postId } = useLocalSearchParams<{ postId: string }>();
@@ -82,7 +84,7 @@ function BoostPostContent() {
 
   if (!postId) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <EmptyState
           icon="slash"
           title={t('boost.noPost')}
@@ -93,7 +95,7 @@ function BoostPostContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('boost.title')}
         leftAction={{
@@ -112,13 +114,13 @@ function BoostPostContent() {
         showsVerticalScrollIndicator={false}
       >
         {/* Post Preview */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.previewCard}>
+        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.previewCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.previewHeader}>
             <Icon name="image" size="md" color={colors.text.secondary} />
             <Text style={styles.previewLabel}>{t('boost.postPreview')}</Text>
           </View>
           <View style={styles.previewBody}>
-            <View style={styles.previewThumb} />
+            <View style={[styles.previewThumb, { backgroundColor: tc.surface }]} />
             <View style={styles.previewMeta}>
               <Text style={styles.previewId} numberOfLines={1}>
                 {t('boost.postIdLabel')}: {postId.slice(0, 12)}...
@@ -161,7 +163,7 @@ function BoostPostContent() {
           </View>
 
           {isCustom && (
-            <Animated.View entering={FadeIn.duration(300)} style={styles.customInputRow}>
+            <Animated.View entering={FadeIn.duration(300)} style={[styles.customInputRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <Text style={styles.currencySign}>$</Text>
               <TextInput
                 style={styles.customInput}
@@ -201,7 +203,7 @@ function BoostPostContent() {
         </Animated.View>
 
         {/* Estimated Reach */}
-        <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.reachCard}>
+        <Animated.View entering={FadeInUp.delay(400).duration(400)} style={[styles.reachCard, { borderColor: tc.border }]}>
           <LinearGradient
             colors={[colors.active.emerald10, 'transparent']}
             start={{ x: 0, y: 0 }}
@@ -240,12 +242,12 @@ function BoostPostContent() {
         </Animated.View>
 
         {/* Summary */}
-        <Animated.View entering={FadeIn.delay(700).duration(400)} style={styles.summary}>
-          <View style={styles.summaryRow}>
+        <Animated.View entering={FadeIn.delay(700).duration(400)} style={[styles.summary, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+          <View style={[styles.summaryRow, { borderBottomColor: tc.border }]}>
             <Text style={styles.summaryLabel}>{t('boost.budget')}</Text>
             <Text style={styles.summaryValue}>${activeBudget}</Text>
           </View>
-          <View style={styles.summaryRow}>
+          <View style={[styles.summaryRow, { borderBottomColor: tc.border }]}>
             <Text style={styles.summaryLabel}>{t('boost.duration')}</Text>
             <Text style={styles.summaryValue}>
               {selectedDuration} {selectedDuration === 1 ? t('boost.day') : t('boost.days')}

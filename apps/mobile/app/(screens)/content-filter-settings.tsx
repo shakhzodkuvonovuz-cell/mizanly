@@ -19,6 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import type { ContentFilterSetting } from '@/types/islamic';
 
@@ -40,6 +41,7 @@ const LEVELS: LevelOption[] = [
 
 function ContentFilterSettingsContent() {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
@@ -104,7 +106,7 @@ function ContentFilterSettingsContent() {
 
   if (settingsQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('contentFilter.title')}
           leftAction={{
@@ -127,7 +129,7 @@ function ContentFilterSettingsContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('contentFilter.title')}
         leftAction={{
@@ -211,7 +213,7 @@ function ContentFilterSettingsContent() {
             <Switch
               value={currentBlurHaram}
               onValueChange={handleToggleBlurHaram}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              trackColor={{ false: tc.border, true: colors.emerald }}
               thumbColor="#fff"
             />
           </View>
@@ -224,7 +226,7 @@ function ContentFilterSettingsContent() {
             <Switch
               value={currentHideMusic}
               onValueChange={handleToggleHideMusic}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              trackColor={{ false: tc.border, true: colors.emerald }}
               thumbColor="#fff"
             />
           </View>
@@ -239,7 +241,7 @@ function ContentFilterSettingsContent() {
             <Switch
               value={currentHideMixedGender}
               onValueChange={handleToggleHideMixedGender}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              trackColor={{ false: tc.border, true: colors.emerald }}
               thumbColor="#fff"
             />
           </View>

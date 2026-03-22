@@ -25,6 +25,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { Hadith as ApiHadith } from '@/types/islamic';
 import type { PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -126,6 +127,7 @@ export default function HadithScreen() {
   const [currentHadith, setCurrentHadith] = useState<Hadith | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const scaleAnim = useSharedValue(1);
+  const tc = useThemeColors();
 
   const fetchData = useCallback(async () => {
     try {
@@ -211,7 +213,7 @@ export default function HadithScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('islamic.hadith')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -227,7 +229,7 @@ export default function HadithScreen() {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('islamic.hadith')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -247,7 +249,7 @@ export default function HadithScreen() {
 
   if (!currentHadith) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('islamic.hadith')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -267,7 +269,7 @@ export default function HadithScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('islamic.dailyHadith')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

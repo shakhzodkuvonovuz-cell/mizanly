@@ -20,6 +20,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
 async function fetchSavedMessages(cursor?: string) {
@@ -29,6 +30,8 @@ async function fetchSavedMessages(cursor?: string) {
 }
 
 export default function SavedMessagesScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
@@ -232,16 +235,16 @@ export default function SavedMessagesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   infoBar: { marginHorizontal: spacing.base, marginBottom: spacing.sm, borderRadius: radius.md, overflow: 'hidden' },
   infoGradient: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md },
   infoText: { color: colors.text.secondary, fontSize: fontSize.xs, flex: 1, lineHeight: 18 },
-  searchWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginHorizontal: spacing.base, marginBottom: spacing.sm, backgroundColor: colors.dark.bgCard, borderRadius: radius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.dark.border },
+  searchWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginHorizontal: spacing.base, marginBottom: spacing.sm, backgroundColor: tc.bgCard, borderRadius: radius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border },
   searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base, paddingVertical: spacing.sm },
   list: { paddingHorizontal: spacing.base, paddingBottom: spacing.sm },
   skeletons: { gap: spacing.sm },
-  messageCard: { backgroundColor: colors.dark.bgCard, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.dark.border, marginBottom: spacing.sm },
+  messageCard: { backgroundColor: tc.bgCard, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.sm },
   messageCardPinned: { borderColor: colors.gold + '40', backgroundColor: colors.gold + '05' },
   pinBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs },
   pinText: { color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' },
@@ -252,8 +255,8 @@ const styles = StyleSheet.create({
   playOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
   messageText: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22 },
   timeText: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.xs, alignSelf: 'flex-end' },
-  composeBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.dark.border, backgroundColor: colors.dark.bgElevated, gap: spacing.sm },
-  composeInput: { flex: 1, backgroundColor: colors.dark.bgCard, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, color: colors.text.primary, fontSize: fontSize.base, maxHeight: 100, borderWidth: 1, borderColor: colors.dark.border },
+  composeBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: tc.border, backgroundColor: tc.bgElevated, gap: spacing.sm },
+  composeInput: { flex: 1, backgroundColor: tc.bgCard, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, color: colors.text.primary, fontSize: fontSize.base, maxHeight: 100, borderWidth: 1, borderColor: tc.border },
   sendBtn: { borderRadius: radius.full, overflow: 'hidden' },
   sendGradient: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: radius.full },
 });

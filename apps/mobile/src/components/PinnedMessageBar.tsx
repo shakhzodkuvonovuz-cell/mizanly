@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface PinnedMessage {
   id: string;
@@ -27,6 +28,7 @@ export function PinnedMessageBar({
 }: PinnedMessageBarProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const currentMessage = pinnedMessages[currentIndex];
@@ -66,7 +68,7 @@ export function PinnedMessageBar({
     <Animated.View
       entering={FadeInDown.duration(200)}
       exiting={FadeOutUp.duration(150)}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: tc.bgCard, borderBottomColor: tc.border }]}
     >
       <View style={styles.pinIconContainer}>
         <Icon name="map-pin" size="sm" color={colors.emerald} />

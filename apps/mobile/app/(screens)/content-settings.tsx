@@ -17,6 +17,7 @@ import { usersApi, settingsApi } from '@/services/api';
 import type { Settings } from '@/types';
 import { useStore, useSafFeedType, useMajlisFeedType } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type WellbeingSettings = Parameters<typeof settingsApi.updateWellbeing>[0];
@@ -94,6 +95,7 @@ function Row({
 
 function SectionHeader({ title }: { title: string }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const icon = sectionIcons[title] || 'settings';
   return (
     <View style={styles.sectionHeader}>
@@ -188,7 +190,7 @@ export default function ContentSettingsScreen() {
 
   if (settingsQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.base }}>
           <Text style={{ color: colors.error, fontSize: fontSize.base, marginBottom: spacing.md }}>
             {t('settings.loadError')}
@@ -203,7 +205,7 @@ export default function ContentSettingsScreen() {
 
   if (settingsQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <View style={{ flex: 1, padding: spacing.base, gap: spacing.lg }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton.Rect key={i} width="100%" height={48} />
@@ -215,7 +217,7 @@ export default function ContentSettingsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('settings.contentPreferences')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}

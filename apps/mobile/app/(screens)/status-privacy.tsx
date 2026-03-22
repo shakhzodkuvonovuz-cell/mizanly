@@ -9,12 +9,15 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { settingsApi } from '@/services/api';
 
 type LastSeenOption = 'everyone' | 'contacts' | 'nobody';
 type OnlineStatusOption = 'same_as_last_seen' | 'nobody';
 
 function StatusPrivacyContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -206,7 +209,7 @@ function StatusPrivacyContent() {
                 value={readReceipts}
                 onValueChange={handleReadReceiptsChange}
                 disabled={saving}
-                trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                trackColor={{ false: tc.surface, true: colors.emerald }}
                 thumbColor={colors.text.primary}
               />
             </View>
@@ -232,7 +235,7 @@ function StatusPrivacyContent() {
                 value={typingIndicators}
                 onValueChange={handleTypingIndicatorsChange}
                 disabled={saving}
-                trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                trackColor={{ false: tc.surface, true: colors.emerald }}
                 thumbColor={colors.text.primary}
               />
             </View>
@@ -264,6 +267,8 @@ function RadioRow({
   disabled: boolean;
   showDivider: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <>
       <Pressable
@@ -293,10 +298,10 @@ export default function StatusPrivacyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollView: {
     flex: 1,
@@ -326,10 +331,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   card: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     overflow: 'hidden',
   },
   radioRow: {
@@ -356,7 +361,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.borderLight,
+    borderColor: tc.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -371,7 +376,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.dark.border,
+    backgroundColor: tc.border,
     marginHorizontal: spacing.base,
   },
   toggleRow: {

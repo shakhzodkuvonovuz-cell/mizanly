@@ -18,6 +18,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function EditChannelScreen() {
@@ -47,6 +48,7 @@ export default function EditChannelScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const tc = useThemeColors();
 
   const MAX_NAME = 50;
   const MAX_DESC = 150;
@@ -109,7 +111,7 @@ export default function EditChannelScreen() {
 
   if (isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('screens.editChannel.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
@@ -128,7 +130,7 @@ export default function EditChannelScreen() {
 
   if (isLoading || !channel) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('screens.editChannel.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
@@ -145,7 +147,7 @@ export default function EditChannelScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.editChannel.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -168,7 +170,7 @@ export default function EditChannelScreen() {
               </LinearGradient>
               <LinearGradient
                 colors={['rgba(10,123,79,0.6)', 'rgba(10,123,79,0.4)']}
-                style={styles.editIconBadge}
+                style={[styles.editIconBadge, { borderColor: tc.bg }]}
               >
                 <Icon name="camera" size={16} color="#fff" />
               </LinearGradient>
@@ -182,7 +184,7 @@ export default function EditChannelScreen() {
               style={styles.card}
             >
               <Text style={styles.label}>{t('screens.editChannel.channelName')}</Text>
-              <View style={styles.inputWrap}>
+              <View style={[styles.inputWrap, { backgroundColor: tc.surface }]}>
                 <TextInput
                   style={styles.input}
                   placeholder={t('screens.editChannel.namePlaceholder')}
@@ -203,7 +205,7 @@ export default function EditChannelScreen() {
               style={styles.card}
             >
               <Text style={styles.label}>{t('screens.editChannel.descriptionOptional')}</Text>
-              <View style={[styles.inputWrap, styles.textAreaWrap]}>
+              <View style={[styles.inputWrap, { backgroundColor: tc.surface }, styles.textAreaWrap]}>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder={t('screens.editChannel.descriptionPlaceholder')}

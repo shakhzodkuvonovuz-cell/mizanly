@@ -23,6 +23,7 @@ import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import type { ScholarVerification } from '@/types/islamic';
@@ -46,6 +47,8 @@ const MADHABS: { key: Madhab; label: string }[] = [
 ];
 
 function StatusTracker({ status }: { status: string }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const steps = [
     { key: 'pending', label: t('scholar.pending') },
@@ -127,6 +130,8 @@ function StatusTracker({ status }: { status: string }) {
 }
 
 function ScholarVerificationContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -234,7 +239,7 @@ function ScholarVerificationContent() {
       >
         <Animated.View entering={FadeInUp.duration(400)} style={styles.statusCard}>
           <LinearGradient
-            colors={[colors.dark.bgCard, colors.dark.bgSheet]}
+            colors={[tc.bgCard, tc.bgSheet]}
             style={styles.cardGradient}
           >
             <Text style={styles.sectionTitle}>{t('scholar.status')}</Text>
@@ -421,6 +426,8 @@ function ScholarVerificationContent() {
 }
 
 export default function ScholarVerificationScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
 
   return (
@@ -433,10 +440,10 @@ export default function ScholarVerificationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   container: {
     flex: 1,
@@ -458,9 +465,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   textInput: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     borderRadius: radius.md,
     padding: spacing.md,
     color: colors.text.primary,
@@ -468,9 +475,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
   },
   pickerButton: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     borderRadius: radius.md,
     padding: spacing.md,
     flexDirection: 'row',
@@ -488,7 +495,7 @@ const styles = StyleSheet.create({
   documentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     padding: spacing.sm,
     marginBottom: spacing.xs,
@@ -531,7 +538,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   sectionTitle: {
     fontFamily: fonts.bodySemiBold,
@@ -562,7 +569,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emerald,
   },
   statusLinePending: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   statusLineRejected: {
     backgroundColor: colors.error,
@@ -581,7 +588,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
   },
   statusDotPending: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   statusDotRejected: {
     backgroundColor: colors.error,
@@ -597,7 +604,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
   infoLabel: {
     fontFamily: fonts.body,

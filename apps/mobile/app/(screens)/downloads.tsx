@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { downloadsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import type { OfflineDownload } from '@/types';
 import { navigate } from '@/utils/navigation';
@@ -38,6 +39,7 @@ type FilterTab = typeof FILTER_TABS[number];
 
 function StorageBar({ usedBytes, totalBytes }: { usedBytes: number; totalBytes: number }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const pct = totalBytes > 0 ? Math.min((usedBytes / totalBytes) * 100, 100) : 0;
 
   return (
@@ -59,7 +61,7 @@ function StorageBar({ usedBytes, totalBytes }: { usedBytes: number; totalBytes: 
           {t('downloads.storageUsed', { used: formatBytes(usedBytes), total: formatBytes(totalBytes) })}
         </Text>
       </View>
-      <View style={styles.storageBarBg}>
+      <View style={[styles.storageBarBg, { backgroundColor: tc.surface }]}>
         <LinearGradient
           colors={[colors.emerald, colors.gold]}
           start={{ x: 0, y: 0 }}
@@ -98,7 +100,7 @@ function FilterChips({
             accessibilityRole="button"
             key={tab}
             onPress={() => { haptic.light(); onChange(tab); }}
-            style={[styles.chip, isActive && styles.chipActive]}
+            style={[styles.chip, { backgroundColor: tc.surface, borderColor: tc.border }, isActive && styles.chipActive]}
           >
             <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
               {labels[tab]}
@@ -124,6 +126,7 @@ function DownloadItem({
   onAction: (item: OfflineDownload, action: 'pause' | 'resume' | 'retry' | 'delete') => void;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const typeBadgeColors: Record<string, string> = {
     post: colors.emerald,
@@ -175,7 +178,7 @@ function DownloadItem({
 
           {/* Progress bar for active downloads */}
           {(item.status === 'downloading' || item.status === 'paused') && (
-            <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
               <LinearGradient
                 colors={[colors.emerald, '#05593A']}
                 start={{ x: 0, y: 0 }}
@@ -225,6 +228,7 @@ export default function DownloadsScreen() {
   const [filter, setFilter] = useState<FilterTab>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [sheetItem, setSheetItem] = useState<OfflineDownload | null>(null);
+  const tc = useThemeColors();
 
   // Storage stats
   const storageQuery = useInfiniteQuery({
@@ -302,7 +306,7 @@ export default function DownloadsScreen() {
   // Error state
   if (downloadsQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('downloads.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -321,7 +325,7 @@ export default function DownloadsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('downloads.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}

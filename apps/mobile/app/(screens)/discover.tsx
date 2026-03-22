@@ -25,6 +25,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { feedApi, searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const CATEGORY_KEYS = ['all', 'trending', 'food', 'fashion', 'sports', 'tech', 'islamic', 'art'] as const;
@@ -57,6 +58,7 @@ function TrendingHashtagsSkeleton() {
 function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   if (!hashtags.length) return null;
 
@@ -75,7 +77,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         contentContainerStyle={styles.trendingList}
         renderItem={({ item }) => (
           <Pressable
-            style={styles.hashtagChipGold}
+            style={[styles.hashtagChipGold, { backgroundColor: tc.bgCard }]}
             onPress={() => navigate(`/(screens)/search?q=${encodeURIComponent(item.name)}`)}
             accessibilityRole="button"
             accessibilityLabel={`Search for hashtag ${item.name}`}
@@ -108,7 +110,7 @@ function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; 
             <Pressable
               key={cat.key}
               style={[
-                styles.categoryPill,
+                styles.categoryPill, { backgroundColor: tc.bgCard, borderColor: tc.border },
                 isActive && styles.categoryPillActive,
               ]}
               onPress={() => onSelect(cat.key)}
@@ -137,11 +139,12 @@ interface FeaturedItem {
 }
 
 function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => void }) {
+  const tc = useThemeColors();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.97 });
 
   return (
     <AnimatedPressable
-      style={[styles.featuredCard, animatedStyle]}
+      style={[styles.featuredCard, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }, animatedStyle]}
       onPress={onPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
@@ -161,7 +164,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
               {item.creator.avatarUrl ? (
                 <Image accessible={true} accessibilityLabel="Content image" source={{ uri: item.creator.avatarUrl }} style={styles.featuredAvatar} />
               ) : (
-                <View style={styles.featuredAvatarPlaceholder}>
+                <View style={[styles.featuredAvatarPlaceholder, { backgroundColor: tc.bgElevated }]}>
                   <Icon name="user" size={10} color={colors.text.primary} />
                 </View>
               )}
@@ -249,7 +252,7 @@ const ExploreGridItem = memo(function ExploreGridItem({ item }: { item: ExploreI
 
   return (
     <AnimatedPressable
-      style={[styles.gridItem, animatedStyle]}
+      style={[styles.gridItem, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }, animatedStyle]}
       onPress={handlePress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
@@ -259,7 +262,7 @@ const ExploreGridItem = memo(function ExploreGridItem({ item }: { item: ExploreI
       {thumbnailUrl ? (
         <Image accessible={true} accessibilityLabel="Content image" source={{ uri: thumbnailUrl }} style={styles.gridImage} />
       ) : (
-        <View style={[styles.gridImage, styles.placeholder]} />
+        <View style={[styles.gridImage, styles.placeholder, { backgroundColor: tc.surface }]} />
       )}
       {playIconVisible && (
         <View style={styles.playOverlay}>
@@ -291,6 +294,7 @@ export default function DiscoverScreen() {
   const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('all');
+  const tc = useThemeColors();
 
   const CATEGORIES: { key: CategoryKey; label: string; icon: IconName }[] = [
     { key: 'all', label: t('discover.all'), icon: 'star' },
@@ -379,7 +383,7 @@ export default function DiscoverScreen() {
 
   if (hasError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('discover.title')}
           rightActions={[{ icon: 'search', onPress: () => navigate('/(screens)/search'), accessibilityLabel: t('common.search') }]}
@@ -398,7 +402,7 @@ export default function DiscoverScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('discover.title')}
           rightActions={[{ icon: 'search', onPress: () => navigate('/(screens)/search'), accessibilityLabel: t('common.search') }]}
@@ -421,14 +425,14 @@ export default function DiscoverScreen() {
               {/* Quick links */}
               <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.md }}>
                 <Pressable
-                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.dark.border }}
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border }}
                   onPress={() => navigate('/(screens)/hashtag-explore')}
                 >
                   <Icon name="hash" size="sm" color={colors.emerald} />
                   <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('screens.hashtag-explore.title')}</Text>
                 </Pressable>
                 <Pressable
-                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.dark.border }}
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border }}
                   onPress={() => navigate('/(screens)/series-discover')}
                 >
                   <Icon name="layers" size="sm" color={colors.gold} />

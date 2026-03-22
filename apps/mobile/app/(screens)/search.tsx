@@ -23,6 +23,7 @@ import { PostCard } from '@/components/saf/PostCard';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import type { User, TrendingHashtag, Reel, Video, Channel } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlArrow } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -36,6 +37,8 @@ type SearchListItem =
   | { type: 'hashtag'; data: { id: string; name: string; postsCount: number } };
 
 function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   return (
     <Pressable
@@ -63,6 +66,8 @@ function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
 }
 
 function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
@@ -95,6 +100,8 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 }
 
 function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   return (
     <Pressable
@@ -121,6 +128,8 @@ function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => voi
 }
 
 export default function SearchScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
@@ -693,7 +702,7 @@ export default function SearchScreen() {
                       resizeMode="cover"
                     />
                   ) : (
-                    <View style={[styles.exploreImage, { backgroundColor: colors.dark.bgElevated }]}>
+                    <View style={[styles.exploreImage, { backgroundColor: tc.bgElevated }]}>
                       <Icon name="image" size={24} color={colors.text.tertiary} />
                     </View>
                   )}
@@ -751,17 +760,17 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   header: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm, gap: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   backBtn: { width: 36 },
   searchBox: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    backgroundColor: tc.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.sm, gap: spacing.xs,
     borderWidth: 1, borderColor: 'transparent',
   },
@@ -780,7 +789,7 @@ const styles = StyleSheet.create({
   userRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   userInfo: { flex: 1 },
   userNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
@@ -792,7 +801,7 @@ const styles = StyleSheet.create({
   hashtagRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   hashtagIconWrap: {
     width: 40, height: 40, borderRadius: radius.full,
@@ -811,12 +820,12 @@ const styles = StyleSheet.create({
   trendingChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   trendingChip: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   trendingChipText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
   historySection: { paddingHorizontal: spacing.base, paddingTop: spacing['2xl'] },
@@ -827,7 +836,7 @@ const styles = StyleSheet.create({
   historyItem: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   historyText: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
@@ -836,7 +845,7 @@ const styles = StyleSheet.create({
   historyTerm: { color: colors.text.primary, fontSize: fontSize.base },
   historyEmpty: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center', paddingVertical: spacing['2xl'] },
   clearButton: {
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
@@ -855,7 +864,7 @@ const styles = StyleSheet.create({
     flex: 1,
     aspectRatio: 1,
     overflow: 'hidden' as const,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     margin: 1,
   },
   exploreImage: {
@@ -877,13 +886,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   reelThumbnail: {
     width: 80,
     height: 80,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   reelInfo: {
     flex: 1,
@@ -919,13 +928,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   videoThumbnail: {
     width: 80,
     height: 80,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   videoInfo: {
     flex: 1,
@@ -957,7 +966,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   channelInfo: {
     flex: 1,

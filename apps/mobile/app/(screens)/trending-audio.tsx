@@ -16,10 +16,13 @@ import { audioTracksApi } from '@/services/api';
 import type { AudioTrack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
 export default function TrendingAudioScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -175,10 +178,10 @@ export default function TrendingAudioScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg
+    backgroundColor: tc.bg
   },
   listContent: {
     paddingBottom: spacing['2xl'],
@@ -218,7 +221,7 @@ const styles = StyleSheet.create({
   cover: {
     width: '100%',
     height: '100%',
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   placeholderCover: {
     justifyContent: 'center',

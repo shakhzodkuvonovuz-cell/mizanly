@@ -19,6 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { DMNote } from '@/types';
 
 const MAX_LENGTH = 60;
@@ -41,6 +42,7 @@ export default function DMNoteEditorScreen() {
   const [expiryHours, setExpiryHours] = useState(24);
   const [expirySheetVisible, setExpirySheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
 
   const {
     data: existingNote,
@@ -104,7 +106,7 @@ export default function DMNoteEditorScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('dmNotes.title')}
           leftAction={{

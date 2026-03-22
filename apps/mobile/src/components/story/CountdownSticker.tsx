@@ -16,6 +16,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 
 export interface CountdownStickerData {
@@ -34,6 +35,7 @@ interface CountdownStickerProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, style }: CountdownStickerProps) {
+  const tc = useThemeColors();
   const [timeLeft, setTimeLeft] = useState(0);
   const [isReminded, setIsReminded] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
@@ -157,7 +159,7 @@ export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, st
           </View>
 
           <Pressable
-            style={[styles.remindButton, isReminded && styles.remindButtonActive]}
+            style={[styles.remindButton, { backgroundColor: tc.bgElevated, borderColor: tc.borderLight }, isReminded && styles.remindButtonActive]}
             onPress={handleRemindMeToggle}
             accessibilityLabel={isReminded ? 'Turn off reminder' : 'Remind me about this event'}
             accessibilityRole="button"

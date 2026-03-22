@@ -25,6 +25,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { monetizationApi } from '@/services/monetizationApi';
 import { settingsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -44,6 +45,7 @@ function CustomToggle({
   description?: string;
 }) {
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   return (
     <View style={styles.toggleRow}>
@@ -60,7 +62,7 @@ function CustomToggle({
 
       >
         <LinearGradient
-          colors={value ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
+          colors={value ? [colors.emerald, colors.emeraldDark] : [tc.surface, tc.bgCard]}
           style={styles.toggleTrack}
         >
           <View
@@ -95,6 +97,7 @@ export default function EnableTipsScreen() {
 
   const [thankYouMessage, setThankYouMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const tc = useThemeColors();
 
   const fetchData = useCallback(async () => {
     try {
@@ -147,7 +150,7 @@ export default function EnableTipsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.enableTips.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -177,7 +180,7 @@ export default function EnableTipsScreen() {
               </Text>
 
               {/* Main Toggle */}
-              <View style={styles.mainToggleRow}>
+              <View style={[styles.mainToggleRow, { borderTopColor: tc.border }]}>
                 <Text style={styles.mainToggleLabel}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
                 <Pressable
                   accessibilityRole="button"
@@ -188,7 +191,7 @@ export default function EnableTipsScreen() {
           
                 >
                   <LinearGradient
-                    colors={isEnabled ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
+                    colors={isEnabled ? [colors.emerald, colors.emeraldDark] : [tc.surface, tc.bgCard]}
                     style={styles.mainToggleTrack}
                   >
                     <View
@@ -299,14 +302,14 @@ export default function EnableTipsScreen() {
                     label={t('screens.enableTips.toggleLabel.showOnProfile')}
                     description={t('screens.enableTips.toggleDescription.showOnProfile')}
                   />
-                  <View style={styles.toggleDivider} />
+                  <View style={[styles.toggleDivider, { backgroundColor: tc.border }]} />
                   <CustomToggle
                     value={displaySettings.showOnPosts}
                     onValueChange={() => toggleDisplaySetting('showOnPosts')}
                     label={t('screens.enableTips.toggleLabel.showOnPosts')}
                     description={t('screens.enableTips.toggleDescription.showOnPosts')}
                   />
-                  <View style={styles.toggleDivider} />
+                  <View style={[styles.toggleDivider, { backgroundColor: tc.border }]} />
                   <CustomToggle
                     value={displaySettings.showTopSupporters}
                     onValueChange={() => toggleDisplaySetting('showTopSupporters')}

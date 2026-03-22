@@ -22,6 +22,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
@@ -78,6 +79,7 @@ function AchievementCard({
   isRTL: boolean;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const rarityColor = RARITY_COLORS[achievement.rarity];
   const gradientColors = RARITY_GRADIENTS[achievement.rarity];
 
@@ -276,7 +278,7 @@ function AchievementsScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('gamification.achievements.title')}
         leftAction={{

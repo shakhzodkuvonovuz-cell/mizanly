@@ -17,6 +17,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { blocksApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface BlockedUser {
   id: string;
@@ -36,6 +37,7 @@ type BlockedPage = PaginatedResponse<User>;
 
 export default function BlockedScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
@@ -74,7 +76,7 @@ export default function BlockedScreen() {
 
   if (query.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('screens.blocked.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -92,7 +94,7 @@ export default function BlockedScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader
         title={t('screens.blocked.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -101,7 +103,7 @@ export default function BlockedScreen() {
       {query.isLoading ? (
         <View style={styles.skeletonList}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <View key={i} style={styles.skeletonRow}>
+            <View key={i} style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
               <Skeleton.Circle size={46} />
               <View style={{ flex: 1, gap: spacing.sm }}>
                 <Skeleton.Rect width={120} height={14} />
@@ -156,7 +158,7 @@ export default function BlockedScreen() {
           }}
           ListFooterComponent={() =>
             query.isFetchingNextPage ? (
-              <View style={styles.skeletonRow}>
+              <View style={[styles.skeletonRow, { backgroundColor: tc.bgCard }]}>
                 <Skeleton.Circle size={46} />
                 <View style={{ flex: 1, gap: spacing.sm }}>
                   <Skeleton.Rect width={120} height={14} />

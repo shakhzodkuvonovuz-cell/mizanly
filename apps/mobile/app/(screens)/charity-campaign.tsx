@@ -18,11 +18,13 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import type { CharityCampaign } from '@/types/islamic';
 
 function CampaignScreenContent() {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -66,7 +68,7 @@ function CampaignScreenContent() {
 
   if (campaignQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('charity.campaign')}
           showBack
@@ -85,7 +87,7 @@ function CampaignScreenContent() {
 
   if (!campaign) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('charity.campaign')} showBack />
         <View style={styles.emptyContainer}>
           <EmptyState icon="slash" title={t('common.error')} />
@@ -95,7 +97,7 @@ function CampaignScreenContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('charity.campaign')}
         showBack
@@ -115,7 +117,7 @@ function CampaignScreenContent() {
         {campaign.imageUrl ? (
           <Image source={{ uri: campaign.imageUrl }} style={styles.campaignImage} />
         ) : (
-          <View style={styles.imagePlaceholder}>
+          <View style={[styles.imagePlaceholder, { backgroundColor: tc.bgCard }]}>
             <Icon name="heart" size="xl" color={colors.emerald} />
           </View>
         )}
@@ -128,7 +130,7 @@ function CampaignScreenContent() {
 
         {/* Progress section */}
         <View style={styles.progressSection}>
-          <View style={styles.progressBarBg}>
+          <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
             <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
           </View>
           <View style={styles.progressStats}>
@@ -143,7 +145,7 @@ function CampaignScreenContent() {
         </View>
 
         {/* Donor count */}
-        <View style={styles.donorBadge}>
+        <View style={[styles.donorBadge, { backgroundColor: tc.bgCard }]}>
           <Icon name="users" size="sm" color={colors.gold} />
           <Text style={styles.donorText}>
             {t('charity.donors', { count: campaign.donorCount })}

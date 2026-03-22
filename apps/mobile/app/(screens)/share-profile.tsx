@@ -17,8 +17,11 @@ import { usersApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function ShareProfileScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -250,8 +253,8 @@ export default function ShareProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -333,7 +336,7 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },

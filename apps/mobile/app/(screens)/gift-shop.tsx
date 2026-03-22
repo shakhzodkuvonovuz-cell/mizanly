@@ -18,6 +18,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { giftsApi } from '@/services/giftsApi';
 import type { GiftCatalogItem, GiftHistoryItem } from '@/services/giftsApi';
@@ -93,6 +94,7 @@ function GiftShopContent() {
   });
 
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([refetchBalance(), refetchCatalog(), refetchHistory()]);
@@ -136,14 +138,14 @@ function GiftShopContent() {
   const renderBalanceBar = () => {
     if (balanceLoading) {
       return (
-        <View style={styles.balanceBar}>
+        <View style={[styles.balanceBar, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Skeleton.Rect width={140} height={28} borderRadius={radius.md} />
         </View>
       );
     }
 
     return (
-      <Animated.View entering={FadeIn.duration(300)} style={styles.balanceBar}>
+      <Animated.View entering={FadeIn.duration(300)} style={[styles.balanceBar, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
         <View style={styles.balanceItem}>
           <Icon name="bookmark" size="sm" color={colors.gold} />
           <Text style={styles.balanceCount}>
@@ -151,7 +153,7 @@ function GiftShopContent() {
           </Text>
           <Text style={styles.balanceLabel}>{t('giftShop.coins', 'Coins')}</Text>
         </View>
-        <View style={styles.balanceDivider} />
+        <View style={[styles.balanceDivider, { backgroundColor: tc.border }]} />
         <View style={styles.balanceItem}>
           <Icon name="trending-up" size="sm" color={colors.info} />
           <Text style={styles.balanceCount}>
@@ -166,7 +168,7 @@ function GiftShopContent() {
   const renderCoinPackage = ({ item, index }: { item: typeof COIN_PACKAGES[number]; index: number }) => (
     <Animated.View
       entering={FadeInUp.delay(index * 80).duration(300)}
-      style={styles.packageCard}
+      style={[styles.packageCard, { borderColor: tc.border }]}
     >
       <LinearGradient
         colors={['rgba(200, 150, 62, 0.15)', 'rgba(200, 150, 62, 0.05)']}
@@ -191,7 +193,7 @@ function GiftShopContent() {
   const renderGiftItem = ({ item, index }: { item: GiftCatalogItem; index: number }) => (
     <Animated.View
       entering={FadeInUp.delay(index * 60).duration(300)}
-      style={styles.giftCard}
+      style={[styles.giftCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
     >
       <Pressable
         style={styles.giftCardInner}
@@ -214,7 +216,7 @@ function GiftShopContent() {
   const renderHistoryItem = ({ item, index }: { item: GiftHistoryItem; index: number }) => (
     <Animated.View
       entering={FadeInUp.delay(index * 50).duration(250)}
-      style={styles.historyRow}
+      style={[styles.historyRow, { borderBottomColor: tc.border }]}
     >
       <View style={styles.historyIcon}>
         <Icon name={getGiftIcon(item.giftType)} size="md" color={colors.gold} />
@@ -269,7 +271,7 @@ function GiftShopContent() {
       {catalogLoading ? (
         <View style={styles.catalogGrid}>
           {Array.from({ length: 8 }).map((_, i) => (
-            <View key={`skel-${i}`} style={styles.giftCard}>
+            <View key={`skel-${i}`} style={[styles.giftCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <Skeleton.Rect width="100%" height={120} borderRadius={radius.md} />
             </View>
           ))}
@@ -288,7 +290,7 @@ function GiftShopContent() {
       {/* Cash Out */}
       <Text style={styles.sectionTitle}>{t('giftShop.cashOut', 'Cash Out')}</Text>
       <Pressable
-        style={styles.cashoutCard}
+        style={[styles.cashoutCard, { borderColor: tc.border }]}
         onPress={() => {
           haptic.light();
           setCashoutSheet(true);
@@ -322,7 +324,7 @@ function GiftShopContent() {
       return (
         <View style={styles.historyList}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <View key={`hist-skel-${i}`} style={styles.historyRow}>
+            <View key={`hist-skel-${i}`} style={[styles.historyRow, { borderBottomColor: tc.border }]}>
               <Skeleton.Circle size={40} />
               <View style={{ flex: 1, marginLeft: spacing.md }}>
                 <Skeleton.Text width="60%" />
@@ -364,7 +366,7 @@ function GiftShopContent() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('giftShop.title', 'Gift Shop')}
         leftAction={{
@@ -395,7 +397,7 @@ function GiftShopContent() {
           {t('giftShop.selectRecipient', 'Select Recipient')}
         </Text>
         {selectedGift && (
-          <View style={styles.sheetGiftInfo}>
+          <View style={[styles.sheetGiftInfo, { borderBottomColor: tc.border }]}>
             <Icon name={getGiftIcon(selectedGift.type)} size="lg" color={colors.gold} />
             <Text style={styles.sheetGiftName}>{selectedGift.name}</Text>
             <Text style={styles.sheetGiftCost}>

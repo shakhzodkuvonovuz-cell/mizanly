@@ -16,6 +16,7 @@ import { bookmarksApi } from '@/services/api';
 import type { BookmarkCollection } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -23,6 +24,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function BookmarkCollectionsScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
   const { t } = useTranslation();
@@ -56,7 +58,7 @@ export default function BookmarkCollectionsScreen() {
         >
           <View style={styles.coverWrap}>
             {item.thumbnailUrl ? (
-              <Image source={{ uri: item.thumbnailUrl }} style={styles.cover} contentFit="cover" />
+              <Image source={{ uri: item.thumbnailUrl }} style={[styles.cover, { backgroundColor: tc.bgElevated }]} contentFit="cover" />
             ) : (
               <View style={[styles.cover, styles.placeholderCover]}>
                 <LinearGradient
@@ -82,7 +84,7 @@ export default function BookmarkCollectionsScreen() {
 
   if (isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('screens.bookmarkCollections.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
@@ -102,7 +104,7 @@ export default function BookmarkCollectionsScreen() {
   if (isLoading && !collections) {
     const itemWidth = (SCREEN_WIDTH - spacing.base * 2 - spacing.md) / 2;
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.bookmarkCollections.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -125,7 +127,7 @@ export default function BookmarkCollectionsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('screens.bookmarkCollections.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 

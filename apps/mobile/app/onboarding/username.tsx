@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { authApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -33,6 +34,7 @@ const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
 function UsernameScreenContent() {
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [username, setUsername] = useState('');
   const [checking, setChecking] = useState(false);
   const [available, setAvailable] = useState<boolean | null>(null);
@@ -133,17 +135,17 @@ function UsernameScreenContent() {
   const status = statusText();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       <View style={styles.inner}>
         {/* Animated progress bar */}
-        <View style={styles.progressTrack}>
+        <View style={[styles.progressTrack, { backgroundColor: tc.border }]}>
           <Animated.View style={[styles.progressFill, progressStyle]} />
         </View>
 
         <Text style={styles.title}>{t('onboarding.username.title')}</Text>
         <Text style={styles.subtitle}>{t('onboarding.username.subtitle')}</Text>
 
-        <View style={styles.inputWrap}>
+        <View style={[styles.inputWrap, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
           <Text style={styles.at}>@</Text>
           <TextInput
             style={styles.input}
@@ -177,7 +179,7 @@ function UsernameScreenContent() {
         )}
 
         {/* Username preview card */}
-        <Animated.View style={[styles.previewCard, previewFadeStyle]}>
+        <Animated.View style={[styles.previewCard, { backgroundColor: tc.bgCard, borderColor: tc.border }, previewFadeStyle]}>
           <Text style={styles.previewText}>{t('onboarding.username.preview', { username })}</Text>
         </Animated.View>
 

@@ -16,6 +16,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { aiApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { AiCaptionSuggestion } from '@/types';
 
 type TabId = 'captions' | 'hashtags' | 'ideas';
@@ -35,6 +36,7 @@ const TONE_COLORS: Record<string, string> = {
 
 export default function AiAssistantScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
 
@@ -96,7 +98,7 @@ export default function AiAssistantScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('ai.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -126,7 +128,7 @@ export default function AiAssistantScreen() {
 
           {/* Input */}
           {activeTab !== 'ideas' && (
-            <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.inputCard}>
+            <Animated.View entering={FadeInUp.delay(100).duration(300)} style={[styles.inputCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <TextInput
                 style={[styles.input, isRTL && { textAlign: 'right' }]}
                 value={input}
@@ -179,7 +181,7 @@ export default function AiAssistantScreen() {
                 >
                   <Pressable
                     accessibilityRole="button"
-                    style={styles.captionCard}
+                    style={[styles.captionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                     onPress={() => handleCopyCaption(suggestion.caption, i)}
                   >
                     <View style={styles.captionHeader}>

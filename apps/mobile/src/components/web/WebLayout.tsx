@@ -3,6 +3,7 @@ import { View, StyleSheet, Platform, Dimensions } from 'react-native';
 import { WebSidebar, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './WebSidebar';
 import { useResponsive } from '@/hooks/useResponsive';
 import { colors } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface WebLayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ interface WebLayoutProps {
  */
 export function WebLayout({ children, rightPanel }: WebLayoutProps) {
   const { isDesktop, isTablet } = useResponsive();
+  const tc = useThemeColors();
 
   // On native or mobile web, render children directly
   if (Platform.OS !== 'web' || (!isDesktop && !isTablet)) {
@@ -27,7 +29,7 @@ export function WebLayout({ children, rightPanel }: WebLayoutProps) {
   const collapsed = isTablet;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <WebSidebar collapsed={collapsed} />
       <View
         style={[
@@ -41,7 +43,7 @@ export function WebLayout({ children, rightPanel }: WebLayoutProps) {
           {children}
         </View>
         {isDesktop && rightPanel && (
-          <View style={styles.rightPanel}>
+          <View style={[styles.rightPanel, { borderLeftColor: tc.border }]}>
             {rightPanel}
           </View>
         )}

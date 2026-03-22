@@ -31,6 +31,7 @@ import { postsApi } from '@/services/api';
 import type { Comment } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTS } from '@/hooks/useTTS';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart } from '@/utils/rtl';
 
@@ -51,6 +52,8 @@ function CommentRow({
   onReply: (id: string, username: string) => void;
   onDeleted: () => void;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
   const [localLiked, setLocalLiked] = useState((comment as Comment & { isLiked?: boolean }).isLiked ?? false);
@@ -216,6 +219,8 @@ function CommentRow({
 }
 
 export default function PostDetailScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
@@ -444,8 +449,8 @@ export default function PostDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   headerSpacer: { height: 100 },
   loader: { marginTop: 60 },
   listenButton: {
@@ -462,7 +467,7 @@ const styles = StyleSheet.create({
   },
   commentsHeader: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderTopWidth: 0.5, borderTopColor: colors.dark.border,
+    borderTopWidth: 0.5, borderTopColor: tc.border,
   },
   commentsTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   swipeContainer: {
@@ -481,11 +486,11 @@ const styles = StyleSheet.create({
   commentRow: {
     flexDirection: 'row', paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm, gap: spacing.sm,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   commentBody: { flex: 1 },
   commentBubble: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    backgroundColor: tc.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
   commentBubbleOP: {},
@@ -500,14 +505,14 @@ const styles = StyleSheet.create({
   commentActionDestructive: { color: colors.error, fontSize: fontSize.xs, fontWeight: '700' },
   commentLike: { paddingTop: spacing.xs },
   inputWrap: {
-    borderTopWidth: 0.5, borderTopColor: colors.dark.border,
-    backgroundColor: colors.dark.bg,
+    borderTopWidth: 0.5, borderTopColor: tc.border,
+    backgroundColor: tc.bg,
     paddingBottom: Platform.OS === 'ios' ? spacing.base : spacing.sm,
   },
   replyBanner: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: spacing.base, paddingVertical: spacing.xs,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   replyBannerText: { color: colors.text.secondary, fontSize: fontSize.xs },
   replyClose: { color: colors.text.secondary, fontSize: fontSize.sm },

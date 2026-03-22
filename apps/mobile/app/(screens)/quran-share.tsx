@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { islamicApi } from '@/services/islamicApi';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { QuranSurah, QuranVerse } from '@/types/islamic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -22,6 +23,8 @@ const { width: screenWidth } = Dimensions.get('window');
 
 // Decorative pattern for border
 function GeometricPattern() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.patternContainer}>
       {[...Array(8)].map((_, i) => (
@@ -41,6 +44,8 @@ function GeometricPattern() {
 }
 
 export default function QuranShareScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const [selectedSurahNumber, setSelectedSurahNumber] = useState(1);
@@ -419,10 +424,10 @@ export default function QuranShareScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollView: {
     flex: 1,

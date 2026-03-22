@@ -19,6 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { postsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -33,6 +34,7 @@ const CAPTION_MAX = 2000;
 
 function CrossPostContent() {
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -98,7 +100,7 @@ function CrossPostContent() {
 
   if (postQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('crossPost.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -120,7 +122,7 @@ function CrossPostContent() {
 
   if (!post) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('crossPost.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -135,7 +137,7 @@ function CrossPostContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('crossPost.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -154,14 +156,14 @@ function CrossPostContent() {
         {/* Source post preview */}
         <Animated.View entering={FadeInUp.duration(300)}>
           <LinearGradient
-            colors={[colors.dark.bgCard, colors.dark.bgElevated]}
-            style={styles.previewCard}
+            colors={[tc.bgCard, tc.bgElevated]}
+            style={[styles.previewCard, { borderColor: tc.border }]}
           >
             <View style={[styles.previewRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               {post.thumbnailUrl || (post.mediaUrls && post.mediaUrls.length > 0) ? (
                 <Image
                   source={{ uri: post.thumbnailUrl || post.mediaUrls[0] }}
-                  style={styles.previewImage}
+                  style={[styles.previewImage, { backgroundColor: tc.surface }]}
                 />
               ) : null}
               <View style={styles.previewText}>
@@ -226,8 +228,8 @@ function CrossPostContent() {
             <CharCountRing current={captionOverride.length} max={CAPTION_MAX} size={28} />
           </View>
           <LinearGradient
-            colors={[colors.dark.bgCard, colors.dark.bgElevated]}
-            style={styles.captionInputWrap}
+            colors={[tc.bgCard, tc.bgElevated]}
+            style={[styles.captionInputWrap, { borderColor: tc.border }]}
           >
             <TextInput
               style={[styles.captionInput, { textAlign: rtlTextAlign(isRTL) }]}

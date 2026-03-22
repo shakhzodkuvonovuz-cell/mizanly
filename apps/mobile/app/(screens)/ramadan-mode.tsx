@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -67,6 +68,8 @@ function CountdownDisplay({
   iconColor: string;
   isUrgent?: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const pulseAnim = useSharedValue(1);
 
   useEffect(() => {
@@ -113,6 +116,8 @@ function CountdownDisplay({
 }
 
 function ScheduleItem({ prayer, index, t }: { prayer: PrayerTime; index: number; t: (key: string) => string }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(300)} style={styles.scheduleItem}>
       <View style={styles.scheduleIconContainer}>
@@ -150,6 +155,8 @@ function GoalItem({
   onToggle: () => void;
   index: number;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   const { t } = useTranslation();
 
@@ -205,6 +212,8 @@ function GoalItem({
 }
 
 export default function RamadanModeScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useHaptic();
@@ -394,10 +403,10 @@ export default function RamadanModeScreen() {
 
 const DAY_CELL_SIZE = (width - 64 - 50) / 6; // 6 columns with gaps
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollContent: {
     padding: spacing.base,
@@ -441,7 +450,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 8,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -690,6 +699,6 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
 });

@@ -25,6 +25,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { PostMedia } from './PostMedia';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { aiApi } from '@/services/api';
 import { postsApi, feedApi } from '@/services/api';
 import * as Clipboard from 'expo-clipboard';
@@ -41,6 +42,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const [localLiked, setLocalLiked] = useState(post.userReaction === 'LIKE');
   const [localLikes, setLocalLikes] = useState(post.likesCount);
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
@@ -209,7 +211,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   if (dismissed) return null;
 
   return (
-    <Animated.View style={styles.card}>
+    <Animated.View style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
@@ -294,7 +296,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
       {/* Media with double-tap to like */}
       {post.mediaUrls.length > 0 && (
-        <View style={styles.mediaContainer}>
+        <View style={[styles.mediaContainer, { backgroundColor: tc.bg }]}>
           <Pressable
             onPress={handleDoubleTap}
             accessibilityLabel={t('accessibility.doubleTapLike')}

@@ -23,6 +23,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import type { DhikrChallenge } from '@/types/islamic';
@@ -52,6 +53,7 @@ function ChallengeCard({
   onPress: () => void;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const progress = challenge.targetTotal > 0
     ? Math.min(challenge.currentTotal / challenge.targetTotal, 1)
     : 0;
@@ -70,7 +72,7 @@ function ChallengeCard({
         </View>
 
         {/* Progress bar */}
-        <View style={styles.progressBarTrack}>
+        <View style={[styles.progressBarTrack, { backgroundColor: tc.surface }]}>
           <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
         </View>
 
@@ -94,10 +96,11 @@ function ChallengeCard({
 }
 
 function LoadingSkeleton() {
+  const tc = useThemeColors();
   return (
     <View style={styles.skeletonContainer}>
       {[1, 2, 3].map((i) => (
-        <View key={i} style={styles.skeletonCard}>
+        <View key={i} style={[styles.skeletonCard, { backgroundColor: tc.bgCard }]}>
           <Skeleton.Rect width="70%" height={18} borderRadius={radius.sm} />
           <View style={{ height: spacing.sm }} />
           <Skeleton.Rect width="40%" height={14} borderRadius={radius.sm} />
@@ -164,6 +167,7 @@ export default function DhikrChallengesScreen() {
   });
 
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -196,7 +200,7 @@ export default function DhikrChallengesScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('dhikr.challenges')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -252,7 +256,7 @@ export default function DhikrChallengesScreen() {
 
             <Text style={styles.inputLabel}>{t('dhikr.title')}</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newTitle}
               onChangeText={setNewTitle}
               placeholder={t('dhikr.title')}
@@ -265,7 +269,7 @@ export default function DhikrChallengesScreen() {
               accessibilityRole="button"
               onPress={() => setShowPhraseSheet(true)}
 
-              style={styles.pickerButton}
+              style={[styles.pickerButton, { backgroundColor: tc.surface, borderColor: tc.border }]}
             >
               <Text style={styles.pickerText}>{selectedPhraseLabel}</Text>
               <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
@@ -273,7 +277,7 @@ export default function DhikrChallengesScreen() {
 
             <Text style={styles.inputLabel}>{t('dhikr.target')}</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newTarget}
               onChangeText={setNewTarget}
               placeholder="1000"

@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
 import type { FollowRequest } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function RequestRow({
@@ -111,6 +112,7 @@ export default function FollowRequestsScreen() {
   });
 
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
   const onRefresh = async () => {
     setRefreshing(true);
     await requestsQuery.refetch();
@@ -121,7 +123,7 @@ export default function FollowRequestsScreen() {
 
   if (requestsQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.followRequests.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
         <EmptyState
           icon="flag"
@@ -136,7 +138,7 @@ export default function FollowRequestsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('screens.followRequests.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
 
         {requestsQuery.isLoading ? (

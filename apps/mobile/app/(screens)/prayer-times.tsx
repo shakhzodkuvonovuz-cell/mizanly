@@ -17,6 +17,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo, PrayerNotificationSetting } from '@/types/islamic';
 import * as Location from 'expo-location';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { formatHijriDate } from '@/utils/hijri';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -70,6 +71,8 @@ function getCurrentPrayerIndex(prayerList: Prayer[]): number {
 }
 
 function CountdownTimer({ targetTime }: { targetTime: string }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const [remaining, setRemaining] = useState('00:00:00');
 
   useEffect(() => {
@@ -113,6 +116,8 @@ function PrayerCard({
   isNext: boolean;
   index: number;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const pulseAnim = useSharedValue(1);
 
@@ -203,6 +208,8 @@ const ADHAN_STYLES: Array<{ key: string; value: string }> = [
 ];
 
 export default function PrayerTimesScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -563,7 +570,7 @@ export default function PrayerTimesScreen() {
             <Switch
               value={settings?.dndDuringPrayer ?? false}
               onValueChange={(val) => updateMutation.mutate({ dndDuringPrayer: val })}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              trackColor={{ false: tc.border, true: colors.emerald }}
               thumbColor="#fff"
             />
           </View>
@@ -577,7 +584,7 @@ export default function PrayerTimesScreen() {
             <Switch
               value={settings?.adhanEnabled ?? false}
               onValueChange={(val) => updateMutation.mutate({ adhanEnabled: val })}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              trackColor={{ false: tc.border, true: colors.emerald }}
               thumbColor="#fff"
             />
           </View>
@@ -648,10 +655,10 @@ export default function PrayerTimesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollView: {
     flex: 1,

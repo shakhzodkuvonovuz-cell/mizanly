@@ -18,6 +18,7 @@ import { colors, spacing, radius, fontSize } from '@/theme';
 import { islamicApi } from '@/services/islamicApi';
 import type { HajjStep, HajjProgress } from '@/types/islamic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -50,6 +51,7 @@ function HajjCompanionContent() {
   const queryClient = useQueryClient();
   const [showResetSheet, setShowResetSheet] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
+  const tc = useThemeColors();
   const currentYear = new Date().getFullYear();
 
   const guideQuery = useQuery({
@@ -118,7 +120,7 @@ function HajjCompanionContent() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('hajj.title')} showBack />
         <View style={styles.skeletonContainer}>
           <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
@@ -140,7 +142,7 @@ function HajjCompanionContent() {
 
   if (!progress) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('hajj.title')} showBack />
         <ScrollView
           contentContainerStyle={styles.centeredContent}
@@ -187,7 +189,7 @@ function HajjCompanionContent() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader title={t('hajj.title')} showBack />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -216,7 +218,7 @@ function HajjCompanionContent() {
               </Text>
             </View>
             <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
                 <LinearGradient
                   colors={[colors.emerald, colors.gold]}
                   style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
@@ -259,7 +261,7 @@ function HajjCompanionContent() {
                         {
                           backgroundColor: isCompleted
                             ? colors.emerald
-                            : colors.dark.border,
+                            : tc.border,
                         },
                       ]}
                     />
@@ -269,7 +271,7 @@ function HajjCompanionContent() {
                   <PulseCircle active={isCurrent}>
                     <View
                       style={[
-                        styles.stepCircle,
+                        styles.stepCircle, { backgroundColor: tc.surface, borderColor: tc.border },
                         isCompleted && styles.stepCircleCompleted,
                         isCurrent && styles.stepCircleCurrent,
                       ]}

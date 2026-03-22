@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { monetizationApi } from '@/services/monetizationApi';
 import { usersApi } from '@/services/api';
 import type { MembershipTier, MembershipSubscription } from '@/types/monetization';
@@ -64,6 +65,7 @@ function TierCard({
 }) {
   const haptic = useHaptic();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const tierColors = TIER_COLORS[tier.level];
 
   return (
@@ -99,7 +101,7 @@ function TierCard({
            
           >
             <LinearGradient
-              colors={tier.isActive ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
+              colors={tier.isActive ? [colors.emerald, colors.emeraldDark] : [tc.surface, tc.bgCard]}
               style={styles.toggleTrack}
             >
               <View
@@ -164,6 +166,7 @@ export default function MembershipTiersScreen() {
   const [newTierName, setNewTierName] = useState('');
   const [newTierPrice, setNewTierPrice] = useState('');
   const [newTierBenefits, setNewTierBenefits] = useState('');
+  const tc = useThemeColors();
 
   const fetchData = useCallback(async () => {
     try {
@@ -245,7 +248,7 @@ export default function MembershipTiersScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('monetization.membershipTiers')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

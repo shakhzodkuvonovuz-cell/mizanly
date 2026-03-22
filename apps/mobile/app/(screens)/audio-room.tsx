@@ -22,6 +22,7 @@ import { audioRoomsApi } from '@/services/audioRoomsApi';
 import type { AudioRoom, AudioRoomParticipant } from '@/types/audioRooms';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -54,6 +55,7 @@ interface RaisedHand {
 
 export default function AudioRoomScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [room, setRoom] = useState<AudioRoom | null>(null);
   const [participants, setParticipants] = useState<AudioRoomParticipant[]>([]);
@@ -212,7 +214,7 @@ export default function AudioRoomScreen() {
   // Loading skeleton
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('tabs.audioRooms')} onBack={() => router.back()} />
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Skeleton.Rect width="100%" height={200} borderRadius={radius.lg} />
@@ -226,7 +228,7 @@ export default function AudioRoomScreen() {
   // Error state
   if (error) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('tabs.audioRooms')} onBack={() => router.back()} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.base }}>
           <Text style={{ color: colors.error, fontSize: fontSize.md, marginBottom: spacing.md }}>{error}</Text>
@@ -244,7 +246,7 @@ export default function AudioRoomScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('tabs.audioRooms')}
           onBack={() => router.back()}
@@ -343,14 +345,14 @@ export default function AudioRoomScreen() {
                       )}
                       <Avatar uri={speaker.avatar} name={speaker.name} size="xl" />
                       {speaker.isMuted && (
-                        <View style={styles.mutedBadge}>
+                        <View style={[styles.mutedBadge, { borderColor: tc.bg, backgroundColor: tc.surface }]}>
                           <Icon name="volume-x" size="xs" color={colors.error} />
                         </View>
                       )}
                       {speaker.isHost && (
                         <LinearGradient
                           colors={[colors.gold, colors.goldLight]}
-                          style={styles.speakerHostBadge}
+                          style={[styles.speakerHostBadge, { borderColor: tc.bg }]}
                         >
                           <Icon name="star" size="xs" color={colors.text.primary} />
                         </LinearGradient>
@@ -377,7 +379,7 @@ export default function AudioRoomScreen() {
                   <Icon name="users" size="xs" color={colors.emerald} />
                 </LinearGradient>
                 <Text style={styles.sectionTitle}>{t('audioRoom.listeners')}</Text>
-                <View style={styles.countBadge}>
+                <View style={[styles.countBadge, { backgroundColor: tc.surface }]}>
                   <Text style={styles.countText}>{listenerData.length}</Text>
                 </View>
               </View>
@@ -416,7 +418,7 @@ export default function AudioRoomScreen() {
                 </LinearGradient>
                 <Text style={styles.sectionTitle}>{t('audioRoom.raisedHands')}</Text>
                 <View style={[styles.countBadge, { backgroundColor: colors.gold }]}>
-                  <Text style={[styles.countText, { color: colors.dark.bg }]}>{raisedHandData.length}</Text>
+                  <Text style={[styles.countText, { color: tc.bg }]}>{raisedHandData.length}</Text>
                 </View>
               </View>
 
@@ -454,7 +456,7 @@ export default function AudioRoomScreen() {
         </ScrollView>
 
         {/* Room Controls */}
-        <View style={styles.controlsContainer}>
+        <View style={[styles.controlsContainer, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
           <Text style={styles.statusText}>
             You are a {isSpeaker ? 'speaker' : 'listener'}
           </Text>
@@ -489,7 +491,7 @@ export default function AudioRoomScreen() {
                 colors={isHandRaised ? [colors.gold, colors.goldLight] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.controlButtonInner}
               >
-                <Icon name="edit" size="md" color={isHandRaised ? colors.dark.bg : colors.text.primary} />
+                <Icon name="edit" size="md" color={isHandRaised ? tc.bg : colors.text.primary} />
               </LinearGradient>
             </Pressable>
 

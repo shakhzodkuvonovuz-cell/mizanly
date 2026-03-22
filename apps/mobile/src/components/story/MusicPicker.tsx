@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { audioTracksApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { AudioTrack } from '@/types';
@@ -64,6 +65,7 @@ function LoadingState() {
 
 export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [genre, setGenre] = useState('all');
@@ -220,7 +222,7 @@ export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
               contentFit="cover"
             />
           ) : (
-            <View style={styles.coverPlaceholder}>
+            <View style={[styles.coverPlaceholder, { backgroundColor: tc.surface, borderColor: tc.border }]}>
               <Icon name="music" size="sm" color={colors.text.tertiary} />
             </View>
           )}
@@ -288,7 +290,7 @@ export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
     <BottomSheet visible={visible} onClose={handleClose} snapPoint={0.85}>
       <View style={styles.container}>
         {/* Search bar */}
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
           <Icon name="search" size="sm" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}

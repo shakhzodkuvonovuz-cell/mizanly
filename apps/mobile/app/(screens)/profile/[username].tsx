@@ -29,6 +29,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
 import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
@@ -43,6 +44,8 @@ type Tab = 'posts' | 'threads' | 'reels' | 'liked';
 
 
 const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -91,6 +94,8 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
 });
 
 function StatItem({ num, label, onPress }: { num: number; label: string; onPress?: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.92 });
   return (
     <Animated.View style={onPress ? animatedStyle : undefined}>
@@ -145,6 +150,8 @@ function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
 }
 
 export default function ProfileScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
   const { user: clerkUser } = useUser();
@@ -397,7 +404,7 @@ export default function ProfileScreen() {
           </View>
         ) : (
           <LinearGradient
-            colors={[colors.emeraldDark, colors.dark.bgCard, colors.dark.bg]}
+            colors={[colors.emeraldDark, tc.bgCard, tc.bg]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.cover}
@@ -423,7 +430,7 @@ export default function ProfileScreen() {
             <Pressable
               onPress={() => router.push('/(screens)/archive')}
               style={{
-                backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+                backgroundColor: tc.bgElevated, borderRadius: radius.md,
                 paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
                 ...rtlMargin(isRTL, spacing.sm, 0),
               }}
@@ -859,8 +866,8 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
@@ -869,13 +876,13 @@ const styles = StyleSheet.create({
   headerUsername: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   headerActions: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
   cover: { width: '100%', height: COVER_HEIGHT },
-  coverPlaceholder: { width: '100%', height: COVER_HEIGHT, backgroundColor: colors.dark.bgElevated },
+  coverPlaceholder: { width: '100%', height: COVER_HEIGHT, backgroundColor: tc.bgElevated },
   avatarRing: {
     borderWidth: 2.5,
     borderColor: colors.emerald,
     borderRadius: radius.full,
     padding: 2,
-    shadowColor: colors.dark.bg,
+    shadowColor: tc.bg,
     shadowOpacity: 0.3,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -885,14 +892,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, marginTop: -40,
   },
   editBtn: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    backgroundColor: tc.bgElevated, borderRadius: radius.md,
     paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
   },
   editBtnText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
   actionBtns: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   msgBtn: {
     width: 36, height: 36, borderRadius: radius.md,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     alignItems: 'center', justifyContent: 'center',
   },
   nameSection: { paddingHorizontal: spacing.base, marginTop: spacing.md },
@@ -912,9 +919,9 @@ const styles = StyleSheet.create({
   highlightItem: { alignItems: 'center', width: 72 },
   highlightCircle: {
     width: 64, height: 64, borderRadius: radius.full,
-    borderWidth: 1, borderColor: colors.dark.border,
+    borderWidth: 1, borderColor: tc.border,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     overflow: 'hidden',
   },
   highlightImg: { width: '100%', height: '100%' },
@@ -931,7 +938,7 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     flexDirection: 'row',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     marginHorizontal: spacing.base,
     paddingVertical: spacing.md,
@@ -939,13 +946,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     gap: spacing.xl,
     borderWidth: 0.5,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     justifyContent: 'center',
   },
   stat: { gap: 2 },
   statNum: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   statLabel: { color: colors.text.tertiary, fontSize: fontSize.xs },
-  statDivider: { width: 1, height: 24, backgroundColor: colors.dark.border, alignSelf: 'center' },
+  statDivider: { width: 1, height: 24, backgroundColor: tc.border, alignSelf: 'center' },
   pinnedSection: { marginTop: spacing.xl },
   sectionTitle: {
     color: colors.text.primary, fontSize: fontSize.sm,
@@ -955,7 +962,7 @@ const styles = StyleSheet.create({
   pinnedScroll: { paddingLeft: spacing.base },
   pinnedItem: {
     width: 140, height: 180, borderRadius: radius.md,
-    backgroundColor: colors.dark.bgElevated, marginRight: spacing.sm,
+    backgroundColor: tc.bgElevated, marginRight: spacing.sm,
     overflow: 'hidden',
   },
   pinnedContent: { flex: 1 },
@@ -972,7 +979,7 @@ const styles = StyleSheet.create({
   gridItem: { width: GRID_ITEM, height: GRID_ITEM, marginBottom: 2 },
   gridImage: { width: '100%', height: '100%' },
   gridTextPost: {
-    flex: 1, backgroundColor: colors.dark.bgElevated,
+    flex: 1, backgroundColor: tc.bgElevated,
     padding: spacing.sm, alignItems: 'center', justifyContent: 'center',
   },
   gridTextContent: { color: colors.text.primary, fontSize: 10, textAlign: 'center' },
@@ -989,7 +996,7 @@ const styles = StyleSheet.create({
   reelStatText: { color: '#fff', fontSize: 10, fontWeight: '600' },
   threadRow: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   threadContent: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 20 },
   threadMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },

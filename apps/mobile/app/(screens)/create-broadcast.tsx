@@ -19,6 +19,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 // Slugify helper
@@ -31,6 +32,7 @@ const slugify = (text: string): string => {
 
 export default function CreateBroadcastScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
@@ -105,7 +107,7 @@ export default function CreateBroadcastScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('createBroadcast.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -123,7 +125,7 @@ export default function CreateBroadcastScreen() {
             >
               <Pressable accessibilityRole="button" onPress={pickAvatar}>
                 {avatarUri ? (
-                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+                  <Image source={{ uri: avatarUri }} style={[styles.avatarImage, { backgroundColor: tc.bgElevated }]} contentFit="cover" />
                 ) : (
                   <LinearGradient
                     colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -155,7 +157,7 @@ export default function CreateBroadcastScreen() {
                 <CharCountRing current={nameCount} max={50} size={24} />
               </View>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderBottomColor: tc.border }]}
                 value={name}
                 onChangeText={setName}
                 placeholder={t('createBroadcast.placeholder.name')}
@@ -183,7 +185,7 @@ export default function CreateBroadcastScreen() {
                 <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.url')}</Text>
                 <CharCountRing current={slugCount} max={30} size={24} />
               </View>
-              <View style={styles.slugContainer}>
+              <View style={[styles.slugContainer, { borderBottomColor: tc.border }]}>
                 <Text style={styles.slugPrefix}>mizanly.app/c/</Text>
                 <TextInput
                   style={[styles.input, styles.slugInput]}

@@ -20,6 +20,7 @@ import { audioTracksApi } from '@/services/api';
 import type { AudioTrack, Reel } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
@@ -29,6 +30,8 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_ITEM_WIDTH = Math.floor((SCREEN_WIDTH - GRID_GAP * 2) / GRID_COLUMNS);
 
 export default function SoundScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -273,10 +276,10 @@ export default function SoundScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   headerSection: {
     alignItems: 'center',
@@ -297,7 +300,7 @@ const styles = StyleSheet.create({
     width: COVER_SIZE,
     height: COVER_SIZE,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.1)',
   },
@@ -365,7 +368,7 @@ const styles = StyleSheet.create({
     aspectRatio: 0.75,
     borderRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
   },
   thumbnail: {
     width: '100%',

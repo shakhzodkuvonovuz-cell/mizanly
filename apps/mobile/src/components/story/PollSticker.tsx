@@ -13,6 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 
 export interface PollOption {
@@ -48,6 +49,7 @@ function PollOptionRow({
   percentage: number;
   onPress: () => void;
 }) {
+  const tc = useThemeColors();
   const fillWidth = useSharedValue(0);
 
   useEffect(() => {
@@ -68,7 +70,7 @@ function PollOptionRow({
       accessibilityLabel={`Option: ${option.text}`}
       accessibilityRole="button"
     >
-      <View style={styles.optionBackground}>
+      <View style={[styles.optionBackground, { backgroundColor: tc.bgElevated }]}>
         <Animated.View style={[styles.optionFill, barStyle]} />
         <Text style={styles.optionText} numberOfLines={2}>
           {option.text}
@@ -84,6 +86,7 @@ function PollOptionRow({
 }
 
 export function PollSticker({ data, onResponse, isCreator = false, style }: PollStickerProps) {
+  const tc = useThemeColors();
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [localOptions, setLocalOptions] = useState<PollOption[]>(data.options);
@@ -137,7 +140,7 @@ export function PollSticker({ data, onResponse, isCreator = false, style }: Poll
           />
         ))}
       </View>
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: tc.borderLight }]}>
         <Text style={styles.voteCount}>
           {data.totalVotes + (hasVoted && !isCreator ? 1 : 0)} votes
         </Text>

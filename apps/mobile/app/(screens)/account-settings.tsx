@@ -19,6 +19,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function Row({
@@ -35,6 +36,7 @@ function Row({
   destructive?: boolean;
 }) {
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const handlePress = onPress ? () => {
     haptic.selection();
     onPress();
@@ -180,7 +182,7 @@ export default function AccountSettingsScreen() {
 
   if (userQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('accountSettings.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -196,7 +198,7 @@ export default function AccountSettingsScreen() {
 
   if (userQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('accountSettings.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -216,7 +218,7 @@ export default function AccountSettingsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('accountSettings.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}

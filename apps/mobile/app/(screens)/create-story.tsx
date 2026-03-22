@@ -26,6 +26,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { EidFrame } from '@/components/islamic/EidFrame';
@@ -82,6 +83,7 @@ interface Sticker {
 
 export default function CreateStoryScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { eidFrame: eidFrameParam } = useLocalSearchParams<{ eidFrame?: string }>();
@@ -323,14 +325,14 @@ export default function CreateStoryScreen() {
   // ── Render sticker on canvas ──
   const renderSticker = (sticker: Sticker) => {
     const stickerStyles: Record<StickerType, ViewStyle> = {
-      poll: { backgroundColor: colors.dark.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
+      poll: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
       question: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
-      countdown: { backgroundColor: colors.dark.bgCard, borderRadius: radius.md, padding: spacing.md, minWidth: 160 },
-      quiz: { backgroundColor: colors.dark.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
+      countdown: { backgroundColor: tc.bgCard, borderRadius: radius.md, padding: spacing.md, minWidth: 160 },
+      quiz: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
       location: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
       mention: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
       hashtag: { backgroundColor: 'rgba(200,150,62,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-      slider: { backgroundColor: colors.dark.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
+      slider: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
     };
 
     return (
@@ -354,7 +356,7 @@ export default function CreateStoryScreen() {
             </Text>
             {(sticker.data.options as string[]).map((opt, i) => (
               <View key={i} style={{
-                backgroundColor: colors.dark.surface, borderRadius: radius.sm,
+                backgroundColor: tc.surface, borderRadius: radius.sm,
                 paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
                 marginBottom: spacing.xs,
               }}>
@@ -396,7 +398,7 @@ export default function CreateStoryScreen() {
             </Text>
             {(sticker.data.options as string[]).map((opt, i) => (
               <View key={i} style={{
-                backgroundColor: i === sticker.data.correctIndex ? colors.emerald : colors.dark.surface,
+                backgroundColor: i === sticker.data.correctIndex ? colors.emerald : tc.surface,
                 borderRadius: radius.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
                 marginBottom: spacing.xs,
               }}>
@@ -439,9 +441,9 @@ export default function CreateStoryScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: tc.bg }}>
       {/* ── Header ── */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: 'rgba(13, 17, 23, 0.92)', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: 'rgba(13, 17, 23, 0.92)', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tc.border }}>
         <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel={t('common.close')} accessibilityRole="button">
           <Icon name="x" size="md" color={colors.text.primary} />
         </Pressable>
@@ -633,7 +635,7 @@ export default function CreateStoryScreen() {
         <Animated.View entering={FadeIn} style={{
           flexDirection: 'row' as const,
           alignItems: 'center' as const,
-          backgroundColor: colors.dark.bgCard,
+          backgroundColor: tc.bgCard,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.sm,
           borderRadius: radius.md,
@@ -756,7 +758,7 @@ export default function CreateStoryScreen() {
               maxLength={200}
               style={{
                 color: colors.text.primary, fontSize: fontSize.base,
-                backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
+                backgroundColor: tc.bgElevated, borderRadius: radius.sm,
                 padding: spacing.md, minHeight: 60, marginBottom: spacing.md,
               }}
             />
@@ -764,7 +766,7 @@ export default function CreateStoryScreen() {
               <CharCountRing current={text.length} max={200} size={24} />
               <Pressable onPress={() => setTextBgEnabled(!textBgEnabled)} style={{
                 flexDirection: 'row', alignItems: 'center',
-                backgroundColor: textBgEnabled ? colors.active.emerald10 : colors.dark.surface,
+                backgroundColor: textBgEnabled ? colors.active.emerald10 : tc.surface,
                 paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,
               }} accessibilityLabel={t('accessibility.toggleTextBg')} accessibilityRole="button">
                 <Text style={{ color: textBgEnabled ? colors.emerald : colors.text.secondary, fontSize: fontSize.xs }}>
@@ -778,7 +780,7 @@ export default function CreateStoryScreen() {
                 <Pressable key={c} onPress={() => setTextColor(c)} style={{
                   width: 28, height: 28, borderRadius: radius.full,
                   backgroundColor: c, borderWidth: c === textColor ? 2 : 1,
-                  borderColor: c === textColor ? colors.emerald : colors.dark.border,
+                  borderColor: c === textColor ? colors.emerald : tc.border,
                 }} />
               ))}
             </View>
@@ -787,7 +789,7 @@ export default function CreateStoryScreen() {
               {FONTS.map((f, i) => (
                 <Pressable key={f.id} onPress={() => setFontIndex(i)} style={{
                   paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-                  backgroundColor: i === fontIndex ? colors.emerald : colors.dark.surface,
+                  backgroundColor: i === fontIndex ? colors.emerald : tc.surface,
                   borderRadius: radius.full, marginRight: spacing.sm,
                 }}>
                   <Text style={{
@@ -854,7 +856,7 @@ export default function CreateStoryScreen() {
                   setActiveStickerEditor(item.type);
                 }
               }} style={{
-                backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+                backgroundColor: tc.bgElevated, borderRadius: radius.md,
                 padding: spacing.md, alignItems: 'center', width: (SCREEN_W - spacing.base * 2 - spacing.sm * 2) / 3 - 1,
               }}>
                 <Icon name={item.icon} size="md" color={colors.emerald} />
@@ -883,7 +885,7 @@ export default function CreateStoryScreen() {
               </Pressable>
             )}
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitPoll} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
@@ -899,7 +901,7 @@ export default function CreateStoryScreen() {
             <TextInput value={questionPrompt} onChangeText={setQuestionPrompt} placeholder={t('stories.yourQuestion')}
               placeholderTextColor={colors.text.tertiary} maxLength={100} style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitQuestion} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
@@ -917,7 +919,7 @@ export default function CreateStoryScreen() {
             <TextInput value={countdownDate} onChangeText={setCountdownDate} placeholder={t('stories.endDate')}
               placeholderTextColor={colors.text.tertiary} style={[editorInput, { marginTop: spacing.sm }]} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitCountdown} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
@@ -936,8 +938,8 @@ export default function CreateStoryScreen() {
               <Pressable key={i} onPress={() => setQuizCorrectIndex(i)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}>
                 <View style={{
                   width: 20, height: 20, borderRadius: radius.full,
-                  backgroundColor: i === quizCorrectIndex ? colors.emerald : colors.dark.surface,
-                  borderWidth: 1, borderColor: colors.dark.border, marginRight: spacing.sm,
+                  backgroundColor: i === quizCorrectIndex ? colors.emerald : tc.surface,
+                  borderWidth: 1, borderColor: tc.border, marginRight: spacing.sm,
                   justifyContent: 'center', alignItems: 'center',
                 }}>
                   {i === quizCorrectIndex && <Icon name="check" size={12} color="#fff" />}
@@ -952,7 +954,7 @@ export default function CreateStoryScreen() {
               {t('stories.tapToMarkCorrect')}
             </Text>
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitQuiz} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
@@ -968,7 +970,7 @@ export default function CreateStoryScreen() {
             <TextInput value={mentionUsername} onChangeText={setMentionUsername} placeholder="@username"
               placeholderTextColor={colors.text.tertiary} autoCapitalize="none" style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitMention} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
@@ -984,7 +986,7 @@ export default function CreateStoryScreen() {
             <TextInput value={hashtagText} onChangeText={setHashtagText} placeholder="#hashtag"
               placeholderTextColor={colors.text.tertiary} autoCapitalize="none" style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitHashtag} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
@@ -1010,7 +1012,7 @@ export default function CreateStoryScreen() {
                 style={[editorInput, { flex: 1 }]} />
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitSlider} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
@@ -1027,7 +1029,7 @@ export default function CreateStoryScreen() {
             onPress={() => setCloseFriendsOnly(!closeFriendsOnly)}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-              backgroundColor: closeFriendsOnly ? colors.active.emerald10 : colors.dark.bgElevated,
+              backgroundColor: closeFriendsOnly ? colors.active.emerald10 : tc.bgElevated,
               borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md,
             }}
           >
@@ -1039,8 +1041,8 @@ export default function CreateStoryScreen() {
             </View>
             <View style={{
               width: 20, height: 20, borderRadius: radius.full,
-              backgroundColor: closeFriendsOnly ? colors.emerald : colors.dark.surface,
-              borderWidth: 1, borderColor: colors.dark.border,
+              backgroundColor: closeFriendsOnly ? colors.emerald : tc.surface,
+              borderWidth: 1, borderColor: tc.border,
               justifyContent: 'center', alignItems: 'center',
             }}>
               {closeFriendsOnly && <Icon name="check" size={12} color="#fff" />}
@@ -1051,7 +1053,7 @@ export default function CreateStoryScreen() {
             onPress={() => setSubscribersOnly(!subscribersOnly)}
             style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-              backgroundColor: subscribersOnly ? 'rgba(200,150,62,0.1)' : colors.dark.bgElevated,
+              backgroundColor: subscribersOnly ? 'rgba(200,150,62,0.1)' : tc.bgElevated,
               borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md,
             }}
           >
@@ -1063,8 +1065,8 @@ export default function CreateStoryScreen() {
             </View>
             <View style={{
               width: 20, height: 20, borderRadius: radius.full,
-              backgroundColor: subscribersOnly ? colors.gold : colors.dark.surface,
-              borderWidth: 1, borderColor: colors.dark.border,
+              backgroundColor: subscribersOnly ? colors.gold : tc.surface,
+              borderWidth: 1, borderColor: tc.border,
               justifyContent: 'center', alignItems: 'center',
             }}>
               {subscribersOnly && <Icon name="check" size={12} color="#fff" />}
@@ -1128,7 +1130,7 @@ export default function CreateStoryScreen() {
 // ── Shared styles ──
 const toolBtnStyle: ViewStyle = {
   flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+  backgroundColor: tc.bgElevated, borderRadius: radius.md,
   paddingVertical: spacing.md, paddingHorizontal: spacing.base,
   marginBottom: spacing.md,
 };
@@ -1139,7 +1141,7 @@ const editorTitle: TextStyle = {
 
 const editorInput: TextStyle = {
   color: colors.text.primary, fontSize: fontSize.sm,
-  backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
+  backgroundColor: tc.bgElevated, borderRadius: radius.sm,
   paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
 };
 

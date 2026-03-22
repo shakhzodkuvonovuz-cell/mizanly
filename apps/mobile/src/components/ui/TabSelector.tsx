@@ -7,6 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface Tab {
   key: string;
@@ -23,6 +24,7 @@ interface TabSelectorProps {
 
 export function TabSelector({ tabs, activeKey, onTabChange, variant = 'underline', style }: TabSelectorProps) {
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const activeIndex = tabs.findIndex((t) => t.key === activeKey);
   const tabWidth = useSharedValue(0);
   const indicatorLeft = useSharedValue(0);
@@ -57,7 +59,7 @@ export function TabSelector({ tabs, activeKey, onTabChange, variant = 'underline
   if (variant === 'pill') {
     return (
       <View style={[styles.pillContainer, style]}>
-        <View style={styles.pillTrack}>
+        <View style={[styles.pillTrack, { backgroundColor: tc.bgElevated }]}>
           <Animated.View style={[styles.pillIndicator, indicatorStyle]} />
           {tabs.map((tab, i) => (
             <Pressable
@@ -84,7 +86,7 @@ export function TabSelector({ tabs, activeKey, onTabChange, variant = 'underline
   }
 
   return (
-    <View style={[styles.underlineContainer, style]}>
+    <View style={[styles.underlineContainer, { borderBottomColor: tc.border }, style]}>
       {tabs.map((tab, i) => (
         <Pressable
           key={tab.key}
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 3,
     bottom: 3,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: colors.dark.surface, // overridden inline with tc.surface
     borderRadius: radius.full,
     borderWidth: 0.5,
     borderColor: colors.glass.border,

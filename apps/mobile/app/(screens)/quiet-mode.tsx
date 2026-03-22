@@ -15,6 +15,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 
@@ -34,6 +35,8 @@ function buildTimeOptions(): string[] {
 const TIME_OPTIONS = buildTimeOptions();
 
 export default function QuietModeScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -180,7 +183,7 @@ export default function QuietModeScreen() {
               <Switch
                 value={isActive}
                 onValueChange={handleToggleActive}
-                trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                trackColor={{ false: tc.border, true: colors.emerald }}
                 thumbColor="#fff"
               />
             </View>
@@ -211,7 +214,7 @@ export default function QuietModeScreen() {
               <Switch
                 value={isScheduled}
                 onValueChange={handleToggleSchedule}
-                trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                trackColor={{ false: tc.border, true: colors.emerald }}
                 thumbColor="#fff"
               />
             </View>
@@ -329,10 +332,10 @@ export default function QuietModeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   body: {
     flex: 1,

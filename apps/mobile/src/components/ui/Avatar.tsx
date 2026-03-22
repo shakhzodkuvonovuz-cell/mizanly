@@ -8,6 +8,7 @@ import Animated, {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, avatar as avatarSizes, animation, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { imagePresets } from '@/utils/image';
 import { BLURHASH_AVATAR } from '@/utils/blurhash';
 
@@ -41,6 +42,7 @@ export const Avatar = memo(function Avatar({
   accessibilityLabel,
   blurhash,
 }: AvatarProps) {
+  const tc = useThemeColors();
   const dim = avatarSizes[size];
   const textSize = dim * 0.4;
   // Use CDN-optimized image sized to the avatar dimension
@@ -81,7 +83,7 @@ export const Avatar = memo(function Avatar({
             },
           ]}
         >
-          <View style={[styles.ringInner, { borderRadius: radius.full }]}>
+          <View style={[styles.ringInner, { borderRadius: radius.full, backgroundColor: tc.bg }]}>
             <View
               style={[
                 styles.inner,

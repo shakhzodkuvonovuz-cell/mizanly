@@ -14,6 +14,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { reelsApi, api } from '@/services/api';
 import type { Reel, Comment } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -34,6 +35,7 @@ interface CommentsSheetProps {
 export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const queryClient = useQueryClient();
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
   const [newComment, setNewComment] = useState('');
@@ -184,11 +186,11 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
     <BottomSheet visible={visible} onClose={onClose} snapPoint={0.85}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={[styles.container, { backgroundColor: tc.bgSheet }]}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {/* Header with comment count */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Text style={styles.headerTitle}>Comments · {reel.commentsCount}</Text>
           <Pressable onPress={onClose} hitSlop={8}>
             <Icon name="x" size="sm" color={colors.text.primary} />
@@ -225,10 +227,10 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
         )}
 
         {/* Input */}
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { borderTopColor: tc.border, backgroundColor: tc.bgSheet }]}>
           <TextInput
             ref={inputRef}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: tc.surface }]}
             placeholder={t('saf.addComment')}
             placeholderTextColor={colors.text.tertiary}
             value={newComment}

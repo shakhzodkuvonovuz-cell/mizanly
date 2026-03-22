@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 // Local type for watch history items (matches Step 4's WatchHistoryItem)
@@ -44,6 +45,8 @@ const formatViews = (n: number) => {
 };
 
 function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: () => void; index: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
@@ -106,6 +109,8 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
 }
 
 export default function WatchHistoryScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -232,8 +237,8 @@ export default function WatchHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   headerSpacer: { height: 100 },
   clearText: {
     color: colors.error,

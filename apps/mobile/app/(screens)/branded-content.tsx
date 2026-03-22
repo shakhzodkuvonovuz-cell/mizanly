@@ -19,10 +19,12 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { promotionsApi } from '@/services/promotionsApi';
 
 function BrandedContentContent() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { postId } = useLocalSearchParams<{ postId: string }>();
@@ -54,7 +56,7 @@ function BrandedContentContent() {
 
   if (!postId) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <EmptyState
           icon="slash"
           title={t('branded.noPost')}
@@ -65,7 +67,7 @@ function BrandedContentContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('branded.title')}
         leftAction={{
@@ -84,7 +86,7 @@ function BrandedContentContent() {
         showsVerticalScrollIndicator={false}
       >
         {/* Toggle */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.toggleCard}>
+        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.toggleCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.toggleRow}>
             <View style={styles.toggleInfo}>
               <Text style={styles.toggleLabel}>{t('branded.paidPartnership')}</Text>
@@ -93,7 +95,7 @@ function BrandedContentContent() {
             <Switch
               value={isPaidPartnership}
               onValueChange={setIsPaidPartnership}
-              trackColor={{ false: colors.dark.surface, true: colors.active.emerald20 }}
+              trackColor={{ false: tc.surface, true: colors.active.emerald20 }}
               thumbColor={isPaidPartnership ? colors.emerald : colors.text.tertiary}
               accessibilityLabel={t('branded.togglePartnership')}
             />
@@ -102,10 +104,10 @@ function BrandedContentContent() {
 
         {/* Partner Name Input */}
         {isPaidPartnership && (
-          <Animated.View entering={FadeIn.duration(300)} style={styles.inputCard}>
+          <Animated.View entering={FadeIn.duration(300)} style={[styles.inputCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <Text style={styles.inputLabel}>{t('branded.partnerName')}</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
               value={partnerName}
               onChangeText={setPartnerName}
               placeholder={t('branded.partnerPlaceholder')}
@@ -117,11 +119,11 @@ function BrandedContentContent() {
         )}
 
         {/* Preview Card */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.previewCard}>
+        <Animated.View entering={FadeInUp.delay(200).duration(400)} style={[styles.previewCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Text style={styles.sectionTitle}>{t('branded.preview')}</Text>
           <View style={styles.previewPost}>
             <View style={styles.previewHeader}>
-              <View style={styles.previewAvatar} />
+              <View style={[styles.previewAvatar, { backgroundColor: tc.surface }]} />
               <View style={styles.previewNameCol}>
                 <Text style={styles.previewName}>{t('branded.yourName')}</Text>
                 {isPaidPartnership && partnerName.trim() ? (
@@ -141,7 +143,7 @@ function BrandedContentContent() {
                 ) : null}
               </View>
             </View>
-            <View style={styles.previewImagePlaceholder}>
+            <View style={[styles.previewImagePlaceholder, { backgroundColor: tc.surface }]}>
               <Icon name="image" size="xl" color={colors.text.tertiary} />
             </View>
           </View>

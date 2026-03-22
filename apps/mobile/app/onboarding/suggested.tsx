@@ -8,6 +8,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { authApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
@@ -17,6 +18,7 @@ function SuggestedScreenContent() {
   const router = useRouter();
   const { user } = useUser();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [following, setFollowing] = useState<Set<string>>(new Set());
   const [finishing, setFinishing] = useState(false);
 
@@ -51,10 +53,10 @@ function SuggestedScreenContent() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       <View style={styles.progress}>
         {[1, 2, 3, 4].map((i) => (
-          <View key={i} style={[styles.dot, styles.dotActive]} />
+          <View key={i} style={[styles.dot, { backgroundColor: tc.border }, styles.dotActive]} />
         ))}
       </View>
 
@@ -92,7 +94,7 @@ function SuggestedScreenContent() {
                   {item.bio ? <Text style={styles.bio} numberOfLines={1}>{item.bio}</Text> : null}
                 </View>
                 <Pressable accessibilityRole="button" accessibilityRole="button"
-                  style={[styles.followBtn, isFollowing && styles.followingBtn]}
+                  style={[styles.followBtn, isFollowing && [styles.followingBtn, { borderColor: tc.border }]]}
                   onPress={() => handleFollow(item.id)}
                 >
                   <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>

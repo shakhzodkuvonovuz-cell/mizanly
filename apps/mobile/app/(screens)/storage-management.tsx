@@ -21,6 +21,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 const MAX_STORAGE_BYTES = 500 * 1024 * 1024; // 500 MB limit for progress bar
@@ -97,6 +98,8 @@ function StorageCategoryRow({
   index: number;
   isRTL: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const haptic = useHaptic();
   const { t } = useTranslation();
 
@@ -144,6 +147,8 @@ function StorageCategoryRow({
 }
 
 function StorageLoadingSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.skeletonContainer}>
       <Skeleton.Rect width="100%" height={140} borderRadius={radius.lg} />
@@ -164,6 +169,8 @@ function StorageLoadingSkeleton() {
 }
 
 export default function StorageManagementScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -387,10 +394,10 @@ export default function StorageManagementScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollView: {
     flex: 1,
@@ -403,7 +410,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     marginBottom: spacing.xl,
   },
   summaryGradient: {
@@ -438,7 +445,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     flex: 1,
     height: 8,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -462,10 +469,10 @@ const styles = StyleSheet.create({
   },
   // Categories Card
   categoriesCard: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     overflow: 'hidden',
     marginBottom: spacing.xl,
   },
@@ -474,7 +481,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.base,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
   },
   categoryIcon: {
     width: 40,

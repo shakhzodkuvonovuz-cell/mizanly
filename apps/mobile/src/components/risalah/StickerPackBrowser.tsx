@@ -16,6 +16,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { stickersApi } from '@/services/api';
 import type { StickerPack as ApiStickerPack, StickerItem } from '@/types';
 
@@ -50,6 +51,7 @@ interface StickerPackBrowserProps {
 
 
 export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
+  const tc = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
   const [packs, setPacks] = useState<LocalStickerPack[]>([]);
   const [featuredPacks, setFeaturedPacks] = useState<LocalStickerPack[]>([]);
@@ -279,10 +281,10 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: tc.bg }]}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Pressable
             onPress={onClose}
             accessibilityLabel={t('common.close')}
@@ -297,7 +299,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
 
         {/* Search */}
         <View style={styles.searchContainer}>
-          <View style={styles.searchInput}>
+          <View style={[styles.searchInput, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
             <Icon name="search" size="sm" color={colors.text.tertiary} />
             <TextInput
               style={styles.searchTextInput}

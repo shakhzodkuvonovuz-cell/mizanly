@@ -30,6 +30,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import { navigate } from '@/utils/navigation';
@@ -123,6 +124,7 @@ export default function DhikrCounterScreen() {
   const counterScale = useSharedValue(1);
   const progressWidth = useSharedValue(0);
   const shimmerOpacity = useSharedValue(0);
+  const tc = useThemeColors();
 
   // Fetch stats from API
   const { data: statsData, refetch: refetchStats } = useQuery({
@@ -245,7 +247,7 @@ export default function DhikrCounterScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.dhikrCounter.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -303,7 +305,7 @@ export default function DhikrCounterScreen() {
                   end={{ x: 1, y: 1 }}
                 >
                   {/* Inner Circle */}
-                  <View style={styles.counterInnerCircle}>
+                  <View style={[styles.counterInnerCircle, { backgroundColor: tc.bgCard }]}>
                     {/* Count Number */}
                     <Text style={styles.countNumber}>{count}</Text>
 
@@ -357,7 +359,7 @@ export default function DhikrCounterScreen() {
 
               {/* Progress Bar */}
               <View style={styles.progressBarContainer}>
-                <View style={styles.progressBarTrack}>
+                <View style={[styles.progressBarTrack, { backgroundColor: tc.surface }]}>
                   <Animated.View
                     style={[
                       styles.progressBarFill,

@@ -21,6 +21,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/t
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CAMERA_H = SCREEN_H * 0.55;
@@ -54,6 +55,7 @@ function DisposableCameraScreen() {
 
   // ── Animated capture button ──
   const captureScale = useSharedValue(1);
+  const tc = useThemeColors();
   const captureAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: captureScale.value }],
   }));
@@ -201,7 +203,7 @@ function DisposableCameraScreen() {
   // ── Permission denied ──
   if (permission && !permission.granted) {
     return (
-      <View style={styles.screen}>
+      <View style={[styles.screen, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('disposable.title')}
           leftAction={{
@@ -226,7 +228,7 @@ function DisposableCameraScreen() {
   // ── Loading permissions ──
   if (!permission) {
     return (
-      <View style={styles.screen}>
+      <View style={[styles.screen, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('disposable.title')}
           leftAction={{
@@ -246,7 +248,7 @@ function DisposableCameraScreen() {
   // ── Post-capture view ──
   if (isCaptured) {
     return (
-      <View style={styles.screen}>
+      <View style={[styles.screen, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('disposable.title')}
           leftAction={{
@@ -275,7 +277,7 @@ function DisposableCameraScreen() {
         >
           <View style={styles.photoPair}>
             {backPhoto && (
-              <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.capturedPhotoWrapper}>
+              <Animated.View entering={FadeInUp.delay(100).duration(300)} style={[styles.capturedPhotoWrapper, { backgroundColor: tc.bgCard }]}>
                 <Image
                   source={{ uri: backPhoto }}
                   style={styles.capturedPhoto}
@@ -290,7 +292,7 @@ function DisposableCameraScreen() {
               </Animated.View>
             )}
             {frontPhoto && (
-              <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.capturedPhotoWrapper}>
+              <Animated.View entering={FadeInUp.delay(200).duration(300)} style={[styles.capturedPhotoWrapper, { backgroundColor: tc.bgCard }]}>
                 <Image
                   source={{ uri: frontPhoto }}
                   style={styles.capturedPhoto}
@@ -306,7 +308,7 @@ function DisposableCameraScreen() {
             )}
           </View>
 
-          <Animated.View entering={FadeInUp.delay(300).duration(300)} style={styles.noEditBanner}>
+          <Animated.View entering={FadeInUp.delay(300).duration(300)} style={[styles.noEditBanner, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <Icon name="lock" size="sm" color={colors.text.secondary} />
             <Text style={styles.noEditText}>
               {t('disposable.noEditing')}
@@ -328,7 +330,7 @@ function DisposableCameraScreen() {
 
   // ── Camera view ──
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('disposable.title')}
         borderless
@@ -340,7 +342,7 @@ function DisposableCameraScreen() {
         rightActions={[
           {
             icon: (
-              <View style={[styles.timerBadge, timeLeft <= 30 && styles.timerBadgeUrgent]}>
+              <View style={[styles.timerBadge, { backgroundColor: tc.bgCard, borderColor: tc.border }, timeLeft <= 30 && styles.timerBadgeUrgent]}>
                 <Icon name="clock" size={14} color={timerColor} />
                 <Text style={[styles.timerText, { color: timerColor }]}>
                   {formatTime(timeLeft)}
@@ -353,7 +355,7 @@ function DisposableCameraScreen() {
         ]}
       />
 
-      <View style={styles.cameraContainer}>
+      <View style={[styles.cameraContainer, { backgroundColor: tc.bgCard }]}>
         {/* Main camera */}
         <CameraView
           ref={mainCameraRef}

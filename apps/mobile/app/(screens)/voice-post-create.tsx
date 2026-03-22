@@ -11,10 +11,13 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const MAX_DURATION = 120; // 2 minutes max
 
 export default function VoicePostCreateScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useHaptic();
@@ -119,7 +122,7 @@ export default function VoicePostCreateScreen() {
                     height,
                     backgroundColor: isRecording ? colors.emerald
                       : recordingUri ? colors.emerald + '80'
-                      : colors.dark.surface,
+                      : tc.surface,
                   }]}
                 />
               );
@@ -168,8 +171,8 @@ export default function VoicePostCreateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.base },
   timerSection: { alignItems: 'center', marginBottom: spacing['2xl'] },
   timer: { fontSize: 64, fontWeight: '700', color: colors.text.primary, fontVariant: ['tabular-nums'] },

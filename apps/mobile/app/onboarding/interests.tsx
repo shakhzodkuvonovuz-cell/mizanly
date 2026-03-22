@@ -8,6 +8,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { authApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -45,6 +46,7 @@ function InterestsScreenContent() {
   const [loading, setLoading] = useState(false);
   const haptic = useHaptic();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const toggle = (id: string) => {
     haptic.selection();
@@ -78,10 +80,10 @@ function InterestsScreenContent() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       <View style={styles.progress}>
         {[1, 2].map((i) => (
-          <View key={i} style={[styles.dot, i <= 2 && styles.dotActive]} />
+          <View key={i} style={[styles.dot, { backgroundColor: tc.border }, i <= 2 && styles.dotActive]} />
         ))}
       </View>
 
@@ -97,7 +99,7 @@ function InterestsScreenContent() {
             <Pressable
               accessibilityRole="button"
               key={item.id}
-              style={[styles.chip, on && styles.chipOn]}
+              style={[styles.chip, { borderColor: tc.border, backgroundColor: tc.bgElevated }, on && styles.chipOn]}
               onPress={() => toggle(item.id)}
             >
               <Icon name={item.icon} size="sm" color={on ? colors.emerald : colors.text.secondary} />
@@ -107,7 +109,7 @@ function InterestsScreenContent() {
         })}
 
         {/* Madhab selector (74.8) */}
-        <View style={styles.madhabSection}>
+        <View style={[styles.madhabSection, { borderTopColor: tc.border }]}>
           <Text style={styles.madhabTitle}>{t('onboarding.madhab.title')}</Text>
           <Text style={styles.madhabSubtitle}>{t('onboarding.madhab.subtitle')}</Text>
           <View style={styles.madhabRow}>
@@ -115,7 +117,7 @@ function InterestsScreenContent() {
               <Pressable
                 key={m.id}
                 accessibilityRole="button"
-                style={[styles.chip, selectedMadhab === m.id && styles.chipOn]}
+                style={[styles.chip, { borderColor: tc.border, backgroundColor: tc.bgElevated }, selectedMadhab === m.id && styles.chipOn]}
                 onPress={() => { haptic.selection(); setSelectedMadhab(m.id); }}
               >
                 <Text style={[styles.chipLabel, selectedMadhab === m.id && styles.chipLabelOn]}>{t(m.label)}</Text>

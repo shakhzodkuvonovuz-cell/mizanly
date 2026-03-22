@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { api } from '@/services/api';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
@@ -40,6 +41,7 @@ interface HalalRestaurant {
 
 function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; onPress: () => void }) {
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
 
   const priceLabel = restaurant.priceRange
     ? '$'.repeat(restaurant.priceRange)
@@ -47,7 +49,7 @@ function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; 
 
   return (
     <Pressable
-      style={styles.card}
+      style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
       onPress={onPress}
       accessibilityLabel={restaurant.name}
       accessibilityRole="button"
@@ -108,6 +110,7 @@ export default function HalalFinderScreen() {
   const haptic = useHaptic();
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const tc = useThemeColors();
 
   // Request location
   const locationQuery = useQuery({
@@ -164,7 +167,7 @@ export default function HalalFinderScreen() {
               setSelectedCuisine(selectedCuisine === item ? null : item);
             }}
             style={[
-              styles.chip,
+              styles.chip, { backgroundColor: tc.bgElevated, borderColor: tc.border },
               selectedCuisine === item && styles.chipActive,
             ]}
             accessibilityLabel={item}
@@ -196,7 +199,7 @@ export default function HalalFinderScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('halal.finder')}
           leftAction={{

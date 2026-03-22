@@ -22,6 +22,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import type { QuranReadingPlan } from '@/types/islamic';
 
@@ -50,6 +51,8 @@ function PlanCard({
   onSelect: (type: string) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Pressable onPress={() => onSelect(option.type)}>
       <LinearGradient
@@ -82,6 +85,8 @@ function ProgressRing({
   size: number;
   strokeWidth: number;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const progress = Math.min(current / total, 1);
   const percent = Math.round(progress * 100);
   const circumference = (size - strokeWidth) * Math.PI;
@@ -126,6 +131,8 @@ function ProgressRing({
 }
 
 function HeatMapRow({ days }: { days: number[] }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.heatMapRow}>
       {days.map((value, index) => (
@@ -136,7 +143,7 @@ function HeatMapRow({ days }: { days: number[] }) {
             {
               backgroundColor:
                 value === 0
-                  ? colors.dark.surface
+                  ? tc.surface
                   : value === 1
                     ? 'rgba(10,123,79,0.4)'
                     : colors.emerald,
@@ -149,6 +156,8 @@ function HeatMapRow({ days }: { days: number[] }) {
 }
 
 function HistoryItem({ plan, t }: { plan: QuranReadingPlan; t: (key: string, params?: Record<string, string | number>) => string }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const startDate = new Date(plan.startDate).toLocaleDateString();
   const endDate = new Date(plan.endDate).toLocaleDateString();
 
@@ -169,6 +178,8 @@ function HistoryItem({ plan, t }: { plan: QuranReadingPlan; t: (key: string, par
 }
 
 function LoadingSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.skeletonContainer}>
       <Skeleton.Rect width={width - spacing.base * 2} height={200} borderRadius={radius.lg} />
@@ -181,6 +192,8 @@ function LoadingSkeleton() {
 }
 
 function QuranReadingPlanContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const haptic = useHaptic();
   const { t } = useTranslation();
@@ -514,10 +527,10 @@ export default function QuranReadingPlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   listContent: {
     paddingTop: 100,
@@ -572,14 +585,14 @@ const styles = StyleSheet.create({
   },
   ringBg: {
     position: 'absolute',
-    borderColor: colors.dark.surface,
+    borderColor: tc.surface,
   },
   ringProgress: {
     position: 'absolute',
   },
   ringCenter: {
     position: 'absolute',
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },

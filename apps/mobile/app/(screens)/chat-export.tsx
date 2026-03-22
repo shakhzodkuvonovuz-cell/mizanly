@@ -10,6 +10,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { chatExportApi } from '@/services/chatExportApi';
 import type { ChatExportStats } from '@/services/chatExportApi';
 
@@ -17,6 +18,7 @@ type ExportFormat = 'text' | 'json';
 
 function ChatExportContent() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { t } = useTranslation();
 
@@ -90,7 +92,7 @@ function ChatExportContent() {
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('chatExport.title', 'Export Chat')}
         leftAction={{
@@ -107,7 +109,7 @@ function ChatExportContent() {
       >
         {/* Stats Card */}
         {loading ? (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <Skeleton.Rect width="60%" height={16} borderRadius={radius.sm} />
             <View style={{ height: spacing.md }} />
             <Skeleton.Rect width="40%" height={14} borderRadius={radius.sm} />
@@ -115,7 +117,7 @@ function ChatExportContent() {
             <Skeleton.Rect width="50%" height={14} borderRadius={radius.sm} />
           </View>
         ) : stats ? (
-          <Animated.View entering={FadeIn.duration(400)} style={styles.card}>
+          <Animated.View entering={FadeIn.duration(400)} style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <View style={styles.statsHeader}>
               <LinearGradient
                 colors={[colors.emerald, colors.emeraldDark]}
@@ -141,7 +143,7 @@ function ChatExportContent() {
               </View>
             </View>
 
-            <View style={styles.statsDivider} />
+            <View style={[styles.statsDivider, { backgroundColor: tc.border }]} />
 
             <View style={styles.statsGrid}>
               {stats.isGroup && (
@@ -204,7 +206,7 @@ function ChatExportContent() {
           <Text style={styles.sectionTitle}>
             {t('chatExport.options', 'Options')}
           </Text>
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <View style={styles.toggleRow}>
               <View style={styles.toggleTextContainer}>
                 <Text style={styles.toggleLabel}>
@@ -217,7 +219,7 @@ function ChatExportContent() {
               <Switch
                 value={includeMedia}
                 onValueChange={setIncludeMedia}
-                trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                trackColor={{ false: tc.surface, true: colors.emerald }}
                 thumbColor={colors.text.primary}
               />
             </View>

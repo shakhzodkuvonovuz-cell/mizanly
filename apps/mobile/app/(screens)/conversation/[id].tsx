@@ -35,6 +35,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { messagesApi, uploadApi, aiApi } from '@/services/api';
@@ -187,11 +188,12 @@ function buildMessageList(messages: Message[], t: (key: string) => string): List
 }
 
 function DateSeparator({ label }: { label: string }) {
+  const tc = useThemeColors();
   return (
     <View style={styles.dateSep}>
-      <View style={styles.dateSepLine} />
+      <View style={[styles.dateSepLine, { backgroundColor: tc.border }]} />
       <Text style={styles.dateSepText}>{label}</Text>
-      <View style={styles.dateSepLine} />
+      <View style={[styles.dateSepLine, { backgroundColor: tc.border }]} />
     </View>
   );
 }
@@ -255,6 +257,7 @@ function GifPicker({ visible, onClose, onSelect }: {
   const [results, setResults] = useState<TenorGifResult[]>([]);
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const apiKey = process.env.EXPO_PUBLIC_TENOR_API_KEY;
 
@@ -295,9 +298,9 @@ function GifPicker({ visible, onClose, onSelect }: {
       snapPoint={400}
     >
       <View style={styles.gifPicker}>
-        <View style={styles.gifSearchRow}>
+        <View style={[styles.gifSearchRow, { borderBottomColor: tc.border }]}>
           <TextInput
-            style={styles.gifSearchInput}
+            style={[styles.gifSearchInput, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
             placeholder={t('gif.searchPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             accessibilityLabel={t('gif.search')}
@@ -323,7 +326,7 @@ function GifPicker({ visible, onClose, onSelect }: {
             contentContainerStyle={styles.gifGrid}
             renderItem={({ item }) => (
               <Pressable
-                style={styles.gifItem}
+                style={[styles.gifItem, { backgroundColor: tc.bgElevated }]}
                 onPress={() => onSelect(item.media_formats.gif.url)}
               >
                 <Image
@@ -483,7 +486,7 @@ const MessageBubble = memo(function MessageBubble({
           </View>
         )}
         {message.replyTo && (
-          <View style={[styles.replyPreview, rtlBorderStart(isRTL, 3, colors.emerald)]}>
+          <View style={[styles.replyPreview, { backgroundColor: tc.bgElevated }, rtlBorderStart(isRTL, 3, colors.emerald)]}>
             <Text style={[styles.replyPreviewUser, !isOwn && styles.replyPreviewUserOther]}>
               {message.replyTo.sender.username}
             </Text>
@@ -558,7 +561,7 @@ const MessageBubble = memo(function MessageBubble({
         )}
         {/* Inline translation — Instagram 2026 */}
         {translatedText && (
-          <View style={{ marginTop: spacing.xs, paddingTop: spacing.xs, borderTopWidth: 0.5, borderTopColor: isOwn ? 'rgba(255,255,255,0.15)' : colors.dark.border }}>
+          <View style={{ marginTop: spacing.xs, paddingTop: spacing.xs, borderTopWidth: 0.5, borderTopColor: isOwn ? 'rgba(255,255,255,0.15)' : tc.border }}>
             <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn, { fontStyle: 'italic' }]}>{translatedText}</Text>
             <Pressable onPress={() => setTranslatedText(null)} hitSlop={8}>
               <Text style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : colors.text.tertiary, fontSize: 10 }}>{t('ai.showOriginal')}</Text>
@@ -632,7 +635,7 @@ const MessageBubble = memo(function MessageBubble({
             ).map(([emoji, { count, hasOwn }]) => (
               <Pressable
                 key={emoji}
-                style={[styles.reactionChip, hasOwn && styles.reactionChipOwn]}
+                style={[styles.reactionChip, { backgroundColor: tc.surface }, hasOwn && styles.reactionChipOwn]}
                 disabled={isReacting}
                 onPress={() => {
                   if (isReacting) return;
@@ -675,8 +678,9 @@ function conversationAvatar(convo: Conversation, myId?: string): string | undefi
 }
 
 function PendingMessageRow({ pending }: { pending: PendingMessage }) {
+  const tc = useThemeColors();
   return (
-    <View style={styles.pendingRow}>
+    <View style={[styles.pendingRow, { backgroundColor: tc.bgCard }]}>
       <Text style={styles.pendingText}>{pending.content}</Text>
       <Skeleton.Circle size={16} />
     </View>
@@ -946,6 +950,7 @@ export default function ConversationScreen() {
   }, [id, queryClient]);
 
   const [isSending, setIsSending] = useState(false);
+  const tc = useThemeColors();
   const [undoPending, setUndoPending] = useState<{
     id: string;
     content: string;
@@ -1276,7 +1281,7 @@ export default function ConversationScreen() {
     return (
       <Swipeable
         renderRightActions={() => (
-          <View style={styles.swipeAction}>
+          <View style={[styles.swipeAction, { backgroundColor: tc.bgElevated }]}>
             <Icon name="message-circle" size="sm" color={colors.emerald} />
           </View>
         )}
@@ -1304,7 +1309,7 @@ export default function ConversationScreen() {
 
   if (convoQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('common.chat')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
@@ -1324,15 +1329,15 @@ export default function ConversationScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       {/* Header */}
       {searchMode ? (
-        <SafeAreaView edges={['top']} style={{ backgroundColor: colors.dark.bg }}>
-          <View style={styles.searchHeader}>
+        <SafeAreaView edges={['top']} style={{ backgroundColor: tc.bg }}>
+          <View style={[styles.searchHeader, { borderBottomColor: tc.border }]}>
             <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} hitSlop={8} style={styles.backBtn}>
               <Icon name="arrow-left" size="md" color={colors.text.primary} />
             </Pressable>
-            <View style={styles.searchInputWrap}>
+            <View style={[styles.searchInputWrap, { backgroundColor: tc.bgCard }]}>
               <Icon name="search" size="sm" color={colors.text.secondary} />
               <TextInput
                 style={styles.searchInput}
@@ -1428,9 +1433,9 @@ export default function ConversationScreen() {
                 }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
-                  backgroundColor: colors.dark.bgElevated,
+                  backgroundColor: tc.bgElevated,
                   paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-                  borderBottomWidth: 1, borderBottomColor: colors.dark.border,
+                  borderBottomWidth: 1, borderBottomColor: tc.border,
                 }}
               >
                 <Icon name="map-pin" size="xs" color={colors.emerald} />
@@ -1485,7 +1490,7 @@ export default function ConversationScreen() {
           <Animated.View
             entering={FadeIn}
             exiting={FadeOut}
-            style={styles.undoSendBar}
+            style={[styles.undoSendBar, { backgroundColor: tc.bgCard }]}
           >
             <Text style={styles.undoSendText}>
               {t('undoSend.sending')}
@@ -1499,9 +1504,9 @@ export default function ConversationScreen() {
         )}
 
         {/* Input area */}
-        <View style={styles.inputWrap}>
+        <View style={[styles.inputWrap, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
           {replyTo && (
-            <View style={styles.replyBanner}>
+            <View style={[styles.replyBanner, { backgroundColor: tc.bgElevated }]}>
               <View style={styles.replyBannerContent}>
                 <Text style={styles.replyBannerUser}>@{replyTo.username}</Text>
                 <Text style={styles.replyBannerText} numberOfLines={1}>
@@ -1514,7 +1519,7 @@ export default function ConversationScreen() {
             </View>
           )}
           {editingMsg && (
-            <View style={styles.replyBanner}>
+            <View style={[styles.replyBanner, { backgroundColor: tc.bgElevated }]}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>Editing message</Text>
                 <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs }} numberOfLines={1}>
@@ -1530,7 +1535,7 @@ export default function ConversationScreen() {
           {(sendAsSpoiler || sendAsViewOnce) && (
             <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, paddingVertical: spacing.xs, gap: spacing.sm }}>
               {sendAsSpoiler && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.dark.surface, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2, gap: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tc.surface, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2, gap: 4 }}>
                   <Icon name="eye-off" size={12} color={colors.emerald} />
                   <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.spoiler')}</Text>
                   <Pressable onPress={() => setSendAsSpoiler(false)} hitSlop={8}>
@@ -1539,7 +1544,7 @@ export default function ConversationScreen() {
                 </View>
               )}
               {sendAsViewOnce && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.dark.surface, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2, gap: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: tc.surface, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2, gap: 4 }}>
                   <Icon name="clock" size={12} color={colors.gold} />
                   <Text style={{ color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.viewOnce')}</Text>
                   <Pressable onPress={() => setSendAsViewOnce(false)} hitSlop={8}>
@@ -1603,7 +1608,7 @@ export default function ConversationScreen() {
             </Pressable>
             <TextInput
               ref={inputRef}
-              style={styles.input}
+              style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
               placeholder={t('risalah.typeMessage')}
               placeholderTextColor={colors.text.tertiary}
               accessibilityLabel={t('accessibility.messageInput')}
@@ -1657,7 +1662,7 @@ export default function ConversationScreen() {
                     />
                   </Pressable>
                   {isRecording && (
-                    <View style={[styles.slideCancelIndicator, { transform: [{ translateX: slideOffset }] }]}>
+                    <View style={[styles.slideCancelIndicator, { backgroundColor: tc.bgElevated }, { transform: [{ translateX: slideOffset }] }]}>
                       <Icon name="x" size="sm" color={colors.text.secondary} />
                     </View>
                   )}
@@ -1667,7 +1672,7 @@ export default function ConversationScreen() {
           </View>
           {/* Recording overlay */}
           {isRecording && (
-            <View style={styles.recordingOverlay}>
+            <View style={[styles.recordingOverlay, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
               <View style={styles.recordingIndicator}>
                 <View style={styles.recordingDot} />
                 <Text style={styles.recordingTimer}>{formatRecordingTime(recordingTime)}</Text>
@@ -1688,11 +1693,11 @@ export default function ConversationScreen() {
         blurBackdrop={true}
       >
         {/* Quick Reaction Bar */}
-        <View style={styles.quickReactions}>
+        <View style={[styles.quickReactions, { borderBottomColor: tc.border }]}>
           {QUICK_REACTION_EMOJIS.map((emoji) => (
             <Pressable
               key={emoji}
-              style={styles.quickReactionBtn}
+              style={[styles.quickReactionBtn, { backgroundColor: tc.surface }]}
               onPress={() => {
                 if (contextMenuMsg) {
                   messagesApi.reactToMessage(id, contextMenuMsg.id, emoji)
@@ -1894,7 +1899,7 @@ export default function ConversationScreen() {
               <Pressable
                 accessibilityRole="button"
                 key={emoji}
-                style={styles.reactionButton}
+                style={[styles.reactionButton, { backgroundColor: tc.bgElevated }]}
                 onPress={() => {
                   if (contextMenuMsg) {
                     messagesApi.reactToMessage(id, contextMenuMsg.id, emoji)

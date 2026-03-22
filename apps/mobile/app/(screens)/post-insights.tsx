@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { creatorApi } from '@/services/creatorApi';
 import { postsApi } from '@/services/api';
 import type { Post } from '@/types';
@@ -53,6 +54,8 @@ interface InsightsData {
 }
 
 function PostInsightsContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -363,10 +366,10 @@ export default function PostInsightsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   skeletonContainer: {
     padding: spacing.base,
@@ -381,7 +384,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   postPreview: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
     borderColor: colors.glass.border,
@@ -398,7 +401,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   postPlaceholder: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -453,7 +456,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   card: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 0.5,
     borderColor: colors.glass.border,
@@ -477,7 +480,7 @@ const styles = StyleSheet.create({
   },
   reachItem: {
     flex: 1,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.sm,
     padding: spacing.md,
     gap: spacing.xs,
@@ -518,7 +521,7 @@ const styles = StyleSheet.create({
   discoveryBarTrack: {
     flex: 1,
     height: 6,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },

@@ -20,6 +20,7 @@ import { aiApi, usersApi } from '@/services/api';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { AiAvatar } from '@/types';
 
 const STYLES: { id: string; label: string; icon: IconName; color: string }[] = [
@@ -31,6 +32,7 @@ const STYLES: { id: string; label: string; icon: IconName; color: string }[] = [
 
 export default function AiAvatarScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
@@ -54,7 +56,7 @@ export default function AiAvatarScreen() {
   const avatars = (avatarsQuery.data as AiAvatar[] | undefined) || [];
 
   const renderAvatar = ({ item, index }: { item: AiAvatar; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 60).duration(300)} style={styles.avatarCard}>
+    <Animated.View entering={FadeInUp.delay(index * 60).duration(300)} style={[styles.avatarCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
       <Image source={{ uri: item.avatarUrl }} style={styles.avatarImage} contentFit="cover" />
       <View style={styles.avatarInfo}>
         <View style={[styles.styleBadge, { backgroundColor: (STYLES.find(s => s.id === item.style)?.color || colors.emerald) + '20' }]}>
@@ -71,7 +73,7 @@ export default function AiAvatarScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('ai.avatar.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

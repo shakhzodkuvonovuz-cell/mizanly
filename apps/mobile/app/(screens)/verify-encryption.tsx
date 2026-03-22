@@ -17,6 +17,7 @@ import { encryptionService } from '@/services/encryption';
 import { encryptionApi } from '@/services/encryptionApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { navigate } from '@/utils/navigation';
 
 const VERIFIED_KEY_PREFIX = 'verified_';
@@ -55,6 +56,8 @@ function computeSafetyNumber(fpA: string, fpB: string, userIdA: string, userIdB:
 }
 
 function VerifyEncryptionContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -475,10 +478,10 @@ export default function VerifyEncryptionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   safeArea: {
     flex: 1,

@@ -13,6 +13,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -28,8 +29,9 @@ interface FastingLog {
 }
 
 function StatCard({ label, value, color }: { label: string; value: string | number; color?: string }) {
+  const tc = useThemeColors();
   return (
-    <View style={styles.statCard}>
+    <View style={[styles.statCard, { backgroundColor: tc.bgCard }]}>
       <Text style={[styles.statValue, color ? { color } : undefined]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
@@ -43,10 +45,11 @@ function CalendarDay({ day, isFasting, isMissed, isToday, isFuture }: {
   isToday: boolean;
   isFuture: boolean;
 }) {
+  const tc = useThemeColors();
   const bg = isFasting ? colors.emerald
     : isMissed ? colors.error
     : isFuture ? 'transparent'
-    : colors.dark.surface;
+    : tc.surface;
 
   return (
     <View style={[
@@ -73,6 +76,7 @@ export default function FastingTrackerScreen() {
   const [currentMonth, setCurrentMonth] = useState(
     `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`,
   );
+  const tc = useThemeColors();
 
   const statsQuery = useQuery({
     queryKey: ['fasting-stats'],
@@ -160,7 +164,7 @@ export default function FastingTrackerScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('fasting.tracker')}
           leftAction={{
@@ -182,7 +186,7 @@ export default function FastingTrackerScreen() {
         >
           {/* Today's Prompt */}
           {!todayLog && (
-            <Animated.View entering={FadeInUp.duration(300)} style={styles.todayCard}>
+            <Animated.View entering={FadeInUp.duration(300)} style={[styles.todayCard, { backgroundColor: tc.bgCard }]}>
               <Text style={[styles.todayTitle, { textAlign: rtlTextAlign(isRTL) }]}>
                 {t('fasting.areYouFasting')}
               </Text>
@@ -198,7 +202,7 @@ export default function FastingTrackerScreen() {
                   <Text style={styles.todayBtnText}>{t('fasting.yesFasting')}</Text>
                 </Pressable>
                 <Pressable
-                  style={[styles.todayBtn, styles.todayBtnNo]}
+                  style={[styles.todayBtn, styles.todayBtnNo, { backgroundColor: tc.surface }]}
                   onPress={() => handleLogToday(false)}
                   disabled={logMutation.isPending}
                   accessibilityLabel={t('fasting.notFasting')}
@@ -212,7 +216,7 @@ export default function FastingTrackerScreen() {
           )}
 
           {todayLog && (
-            <View style={[styles.todayCard, { borderColor: todayLog.isFasting ? colors.emerald : colors.dark.border }]}>
+            <View style={[styles.todayCard, { borderColor: todayLog.isFasting ? colors.emerald : tc.border }]}>
               <Text style={styles.todayStatusText}>
                 {todayLog.isFasting ? t('fasting.yesFasting') : t('fasting.notFasting')}
               </Text>
@@ -235,7 +239,7 @@ export default function FastingTrackerScreen() {
           ) : null}
 
           {/* Calendar */}
-          <View style={styles.calendarSection}>
+          <View style={[styles.calendarSection, { backgroundColor: tc.bgCard }]}>
             <View style={[styles.calHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Pressable onPress={() => navigateMonth(-1)} hitSlop={12} accessibilityLabel="Previous month" accessibilityRole="button">
                 <Icon name="chevron-left" size="md" color={colors.text.secondary} />
@@ -262,7 +266,7 @@ export default function FastingTrackerScreen() {
           </View>
 
           {/* Sunnah Fasts Info */}
-          <View style={styles.sunnahSection}>
+          <View style={[styles.sunnahSection, { backgroundColor: tc.bgCard }]}>
             <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>
               {t('fasting.sunnahFasts')}
             </Text>

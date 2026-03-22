@@ -25,6 +25,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
@@ -86,6 +87,7 @@ function ThreadPart({
   inputRef,
 }: ThreadPartProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   return (
     <Animated.View entering={FadeInUp.delay(index * 100)} style={styles.part}>
       <View style={styles.partLeft}>
@@ -443,9 +445,9 @@ export default function CreateThreadScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Pressable onPress={handleBack} hitSlop={8}>
             <Icon name="x" size="md" color={colors.text.primary} />
           </Pressable>
@@ -460,10 +462,10 @@ export default function CreateThreadScreen() {
         </View>
 
         {/* Visibility bar */}
-        <View style={styles.visBar}>
+        <View style={[styles.visBar, { borderBottomColor: tc.border }]}>
           <Pressable
             accessibilityRole="button"
-            style={styles.visPill}
+            style={[styles.visPill, { backgroundColor: tc.bgElevated }]}
             onPress={() => setShowVisibility((v) => !v)}
           >
 
@@ -480,7 +482,7 @@ export default function CreateThreadScreen() {
         </View>
 
         {showVisibility && (
-          <View style={styles.visMenu}>
+          <View style={[styles.visMenu, { backgroundColor: tc.bgSheet, borderColor: tc.border }]}>
             {VISIBILITY_KEYS.map((opt) => (
               <Pressable
                 accessibilityRole="button"
@@ -587,7 +589,7 @@ export default function CreateThreadScreen() {
                     </Pressable>
                   </View>
                   <TextInput
-                    style={styles.pollQuestion}
+                    style={[styles.pollQuestion, { borderBottomColor: tc.border }]}
                     placeholder={t('compose.askQuestion')}
                     placeholderTextColor={colors.text.tertiary}
                     value={poll.question}
@@ -597,7 +599,7 @@ export default function CreateThreadScreen() {
                   {poll.options.map((opt, oi) => (
                     <View key={oi} style={styles.pollOptionRow}>
                       <TextInput
-                        style={styles.pollOptionInput}
+                        style={[styles.pollOptionInput, { borderColor: tc.border }]}
                         placeholder={`Option ${oi + 1}`}
                         placeholderTextColor={colors.text.tertiary}
                         value={opt}

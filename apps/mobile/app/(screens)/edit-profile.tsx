@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -69,6 +70,7 @@ export default function EditProfileScreen() {
   const [newLinkTitle, setNewLinkTitle] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [showAddLink, setShowAddLink] = useState(false);
+  const tc = useThemeColors();
 
   const addLinkMutation = useMutation({
     mutationFn: () => profileLinksApi.create({ title: newLinkTitle.trim(), url: newLinkUrl.trim() }),
@@ -171,7 +173,7 @@ export default function EditProfileScreen() {
 
   if (meQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('profile.editProfile')}
           leftAction={{ icon: 'x', onPress: () => router.back() }}
@@ -185,7 +187,7 @@ export default function EditProfileScreen() {
 
   if (meQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('profile.editProfile')}
           leftAction={{ icon: 'x', onPress: () => router.back() }}
@@ -210,7 +212,7 @@ export default function EditProfileScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('profile.editProfile')}
           leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: t('common.cancel') }}
@@ -274,7 +276,7 @@ export default function EditProfileScreen() {
                 <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
                 <LinearGradient
                   colors={['rgba(10,123,79,0.9)', 'rgba(8,95,39,0.95)']}
-                  style={styles.avatarEdit}
+                  style={[styles.avatarEdit, { borderColor: tc.bg }]}
                 >
                   <Icon name="camera" size="sm" color="#fff" />
                 </LinearGradient>
@@ -498,7 +500,7 @@ export default function EditProfileScreen() {
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  style={[styles.toggleTrack, isPrivate && styles.toggleTrackActive]}
+                  style={[styles.toggleTrack, { backgroundColor: tc.border }, isPrivate && styles.toggleTrackActive]}
                   onPress={() => setIsPrivate(!isPrivate)}
                 >
                   <View style={[styles.toggleThumb, isPrivate && styles.toggleThumbActive]}>

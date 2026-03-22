@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export type Occasion = 'eid-fitr' | 'eid-adha' | 'ramadan' | 'mawlid' | 'isra-miraj' | 'hijri-new-year';
 
@@ -20,6 +21,7 @@ const OCCASION_CONFIG: Record<Occasion, { greeting: string; greetingAr: string; 
 };
 
 export function EidFrame({ occasion, children }: EidFrameProps) {
+  const tc = useThemeColors();
   const config = OCCASION_CONFIG[occasion];
 
   return (
@@ -38,7 +40,7 @@ export function EidFrame({ occasion, children }: EidFrameProps) {
       </LinearGradient>
 
       {/* Content area */}
-      <View style={styles.content}>{children}</View>
+      <View style={[styles.content, { backgroundColor: tc.bg }]}>{children}</View>
 
       {/* Bottom border */}
       <LinearGradient colors={[config.colors[1], config.colors[0]]} style={styles.bottomBorder}>

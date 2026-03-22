@@ -19,6 +19,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -77,14 +78,15 @@ const PATTERNS: ThemeOption[] = [
 
 const PHOTOS: ThemeOption[] = [
   { id: 'upload', name: 'Upload Photo', icon: 'image' },
-  { id: 'nature1', name: 'Nature 1', color: colors.dark.surface },
-  { id: 'nature2', name: 'Nature 2', color: colors.dark.surface },
-  { id: 'abstract1', name: 'Abstract 1', color: colors.dark.surface },
-  { id: 'abstract2', name: 'Abstract 2', color: colors.dark.surface },
+  { id: 'nature1', name: 'Nature 1', color: tc.surface },
+  { id: 'nature2', name: 'Nature 2', color: tc.surface },
+  { id: 'abstract1', name: 'Abstract 1', color: tc.surface },
+  { id: 'abstract2', name: 'Abstract 2', color: tc.surface },
 ];
 
 export default function ChatThemePickerScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('solid');
   const [selectedTheme, setSelectedTheme] = useState<string>('default');
@@ -101,7 +103,7 @@ export default function ChatThemePickerScreen() {
     return (
       SOLID_COLORS.find(t => t.id === selectedTheme) ||
       GRADIENTS.find(t => t.id === selectedTheme) ||
-      { id: 'default', name: 'Default', color: colors.dark.bg }
+      { id: 'default', name: 'Default', color: tc.bg }
     );
   };
 
@@ -247,7 +249,7 @@ export default function ChatThemePickerScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <GlassHeader title={t('chatThemePicker.title')} onBack={() => router.back()} />
 
       <ScrollView
@@ -258,7 +260,7 @@ export default function ChatThemePickerScreen() {
         <View style={styles.previewContainer}>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={[styles.previewCard, { backgroundColor: currentTheme.color || colors.dark.bg }]}
+            style={[styles.previewCard, { backgroundColor: currentTheme.color || tc.bg }]}
           >
             {currentTheme.gradient && (
               <LinearGradient
@@ -323,7 +325,7 @@ export default function ChatThemePickerScreen() {
                         <Text style={[styles.tabText, styles.tabTextActive]}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
                       </LinearGradient>
                     ) : (
-                      <View style={styles.tabInner}>
+                      <View style={[styles.tabInner, { backgroundColor: tc.surface }]}>
                         <Text style={styles.tabText}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
                       </View>
                     )}
@@ -402,7 +404,7 @@ export default function ChatThemePickerScreen() {
               <Text style={styles.sliderLabel}>{t('chatThemePicker.wallpaperOpacity')}</Text>
               <Text style={styles.sliderValue}>{opacity}%</Text>
             </View>
-            <View style={styles.sliderTrack}>
+            <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
               <View style={[styles.sliderFill, { width: `${opacity}%` }]} />
             </View>
 
@@ -410,7 +412,7 @@ export default function ChatThemePickerScreen() {
               <Text style={styles.sliderLabel}>{t('chatThemePicker.messageBlur')}</Text>
               <Text style={styles.sliderValue}>{blur}%</Text>
             </View>
-            <View style={styles.sliderTrack}>
+            <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
               <View style={[styles.sliderFill, { width: `${blur}%` }]} />
             </View>
           </LinearGradient>
@@ -421,7 +423,7 @@ export default function ChatThemePickerScreen() {
       </ScrollView>
 
       {/* Bottom Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <Pressable>
           <Text style={styles.resetText}>{t('chatThemePicker.resetToDefault')}</Text>
         </Pressable>

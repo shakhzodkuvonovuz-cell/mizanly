@@ -23,6 +23,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -109,6 +110,8 @@ function SharedContentPreview({
   sharedUrl?: string;
   t: (key: string) => string;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   if (sharedImage) {
     return (
       <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.previewCard}>
@@ -185,6 +188,8 @@ function SpaceCard({
   index: number;
   t: (key: string) => string;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Animated.View
       entering={FadeInUp.delay(200 + index * 80).duration(350)}
@@ -194,7 +199,7 @@ function SpaceCard({
         onPress={onPress}
         style={[
           styles.spaceCard,
-          { borderColor: selected ? space.accentColor : colors.dark.border },
+          { borderColor: selected ? space.accentColor : tc.border },
           selected && { borderWidth: 2 },
         ]}
         accessibilityRole="radio"
@@ -226,6 +231,8 @@ function SpaceCard({
 // ---------------------------------------------------------------------------
 
 function ShareReceiveContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useHaptic();
@@ -402,10 +409,10 @@ export default function ShareReceiveScreen() {
 // Styles
 // ---------------------------------------------------------------------------
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scroll: {
     flex: 1,
@@ -430,10 +437,10 @@ const styles = StyleSheet.create({
 
   // Preview card
   previewCard: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     overflow: 'hidden',
   },
   previewImage: {
@@ -444,7 +451,7 @@ const styles = StyleSheet.create({
   videoPlaceholder: {
     width: '100%',
     height: 200,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: radius.lg,
@@ -513,10 +520,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   spaceCard: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     padding: spacing.base,
     alignItems: 'center',
     minHeight: 110,
@@ -555,10 +562,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   captionInput: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     padding: spacing.base,
     minHeight: 100,
     fontFamily: fonts.body,

@@ -12,6 +12,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const MAX_TIME = 300; // 5 minutes
@@ -19,6 +20,8 @@ const MAX_TIME = 300; // 5 minutes
 type State = 'idle' | 'recording' | 'recorded' | 'playing';
 
 export default function VoiceRecorderScreen() {
+  const tc = useThemeColors();
+  const s = createS(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -240,8 +243,8 @@ export default function VoiceRecorderScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createS = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   content: {
     flex: 1,
     alignItems: 'center',
@@ -302,6 +305,6 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
 });

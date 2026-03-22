@@ -23,6 +23,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, hashtagsApi, followsApi } from '@/services/api';
 import type { User, Post, Thread, Reel } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Hashtag = { id: string; name: string; postsCount: number };
@@ -39,6 +40,8 @@ type SearchTab = typeof SEARCH_TABS[number]['key'];
 
 
 function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: () => void; index: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <Pressable
@@ -67,6 +70,8 @@ function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: ()
 }
 
 function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => void; index: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Animated.View entering={FadeInUp.delay(index * 30).duration(400)} style={styles.reelGridItem}>
       <Pressable
@@ -97,6 +102,8 @@ function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => voi
 }
 
 export default function SearchResultsScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -610,8 +617,8 @@ export default function SearchResultsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   headerSpacer: { height: 100 },
   searchBoxWrap: {
     paddingHorizontal: spacing.base,
@@ -625,7 +632,7 @@ const styles = StyleSheet.create({
   },
   searchBox: {
     width: '100%', flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    backgroundColor: tc.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.sm, gap: spacing.sm,
     borderWidth: 1, borderColor: 'transparent',
   },
@@ -642,7 +649,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   tabSelector: {
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -683,7 +690,7 @@ const styles = StyleSheet.create({
     margin: 1,
     borderRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   reelGridThumbnail: {
     width: '100%',

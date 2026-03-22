@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { islamicApi } from '@/services/islamicApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
@@ -53,10 +54,11 @@ function DuaCard({ dua, language, onBookmark, onShare }: {
   onShare: () => void;
 }) {
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
   const translation = dua.translation[language] || dua.translation.en || '';
 
   return (
-    <Animated.View entering={FadeInUp.duration(300)} style={styles.duaCard}>
+    <Animated.View entering={FadeInUp.duration(300)} style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
       {/* Arabic text */}
       <Text style={styles.arabicText}>{dua.arabicText}</Text>
 
@@ -74,7 +76,7 @@ function DuaCard({ dua, language, onBookmark, onShare }: {
       </Text>
 
       {/* Actions */}
-      <View style={[styles.duaActions, { flexDirection: rtlFlexRow(isRTL) }]}>
+      <View style={[styles.duaActions, { borderTopColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable
           onPress={onBookmark}
           style={styles.actionBtn}
@@ -107,6 +109,7 @@ export default function DuaCollectionScreen() {
   const { t, isRTL, locale } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showBookmarked, setShowBookmarked] = useState(false);
+  const tc = useThemeColors();
 
   const categoriesQuery = useQuery({
     queryKey: ['dua-categories'],
@@ -163,7 +166,7 @@ export default function DuaCollectionScreen() {
     <View>
       {/* Daily Dua Card */}
       {dailyDuaQuery.data && (
-        <View style={styles.dailyCard}>
+        <View style={[styles.dailyCard, { backgroundColor: tc.bgCard }]}>
           <Text style={styles.dailyLabel}>{t('duas.duaOfTheDay')}</Text>
           <Text style={styles.dailyArabic}>{dailyDuaQuery.data.arabicText}</Text>
           <Text style={styles.dailyTransliteration}>{dailyDuaQuery.data.transliteration}</Text>
@@ -176,7 +179,7 @@ export default function DuaCollectionScreen() {
       {/* Tabs: Categories / Bookmarked */}
       <View style={[styles.tabRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable
-          style={[styles.tab, !showBookmarked && styles.tabActive]}
+          style={[styles.tab, { backgroundColor: tc.bgElevated }, !showBookmarked && styles.tabActive]}
           onPress={() => { setShowBookmarked(false); haptic.selection(); }}
           accessibilityRole="tab"
         >
@@ -185,7 +188,7 @@ export default function DuaCollectionScreen() {
           </Text>
         </Pressable>
         <Pressable
-          style={[styles.tab, showBookmarked && styles.tabActive]}
+          style={[styles.tab, { backgroundColor: tc.bgElevated }, showBookmarked && styles.tabActive]}
           onPress={() => { setShowBookmarked(true); haptic.selection(); }}
           accessibilityRole="tab"
         >
@@ -206,7 +209,7 @@ export default function DuaCollectionScreen() {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => { setSelectedCategory(item); haptic.selection(); }}
-              style={[styles.chip, selectedCategory === item && styles.chipActive]}
+              style={[styles.chip, { backgroundColor: tc.bgElevated, borderColor: tc.border }, selectedCategory === item && styles.chipActive]}
               accessibilityRole="button"
             >
               {item && CATEGORY_ICONS[item] && (
@@ -238,7 +241,7 @@ export default function DuaCollectionScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('duas.title')}
           leftAction={{

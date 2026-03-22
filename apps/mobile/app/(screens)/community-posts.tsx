@@ -26,6 +26,7 @@ import { getDateFnsLocale } from '@/utils/localeFormat';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const POST_MAX_LENGTH = 5000;
@@ -38,6 +39,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   index: number;
 }) {
   const router = useRouter();
+  const tc = useThemeColors();
   const [liked, setLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likesCount);
 
@@ -111,7 +113,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
         </View>
       )}
 
-      <View style={styles.postActions}>
+      <View style={[styles.postActions, { borderTopColor: tc.borderLight }]}>
         <Pressable style={styles.postAction} onPress={handleLike}>
           <Icon
             name={liked ? 'heart-filled' : 'heart'}
@@ -261,7 +263,7 @@ export default function CommunityPostsScreen() {
 
   if (postsQuery.isError || channelQuery.isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('communityPosts.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -280,7 +282,7 @@ export default function CommunityPostsScreen() {
 
   if (channelQuery.isLoading || postsQuery.isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('communityPosts.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -297,7 +299,7 @@ export default function CommunityPostsScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader
             title={t('communityPosts.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -340,7 +342,7 @@ export default function CommunityPostsScreen() {
                 <View style={styles.composeContainer}>
                   <TextInput
                     ref={composeInputRef}
-                    style={styles.composeInput}
+                    style={[styles.composeInput, { backgroundColor: tc.bgElevated }]}
                     placeholder={t('communityPosts.placeholder')}
                     placeholderTextColor={colors.text.tertiary}
                     value={composeText}

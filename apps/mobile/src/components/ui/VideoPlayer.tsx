@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { usePiP } from '@/hooks/usePiP';
 import { useAmbientColor } from '@/hooks/useAmbientColor';
@@ -68,6 +69,7 @@ export const VideoPlayer = memo(function VideoPlayer({
   const [looping, setLooping] = useState(isLooping ?? false);
 
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const { dominantColor, secondaryColor } = useAmbientColor(enableAmbient ? thumbnailUrl : null);
   const { isPiPSupported, enterPiP } = usePiP({
     isPlaying,
@@ -211,7 +213,7 @@ export const VideoPlayer = memo(function VideoPlayer({
       {/* Ambient gradient background — extracts dominant color from thumbnail */}
       {enableAmbient && dominantColor && (
         <LinearGradient
-          colors={[dominantColor, secondaryColor || 'transparent', colors.dark.bg]}
+          colors={[dominantColor, secondaryColor || 'transparent', tc.bg]}
           locations={[0, 0.4, 1]}
           style={styles.ambientGradient}
         />

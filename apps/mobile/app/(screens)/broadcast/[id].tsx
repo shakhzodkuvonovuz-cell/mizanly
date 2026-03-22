@@ -26,11 +26,14 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType, BroadcastMessage } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: boolean; isMuted?: boolean };
 
 export default function BroadcastChannelScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const router = useRouter();
@@ -353,10 +356,10 @@ export default function BroadcastChannelScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   channelHeader: {
     alignItems: 'center',
@@ -396,7 +399,7 @@ const styles = StyleSheet.create({
   muteBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
@@ -464,12 +467,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.base,
     borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
-    backgroundColor: colors.dark.bgCard,
+    borderTopColor: tc.border,
+    backgroundColor: tc.bgCard,
   },
   composeInput: {
     flex: 1,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
     color: colors.text.primary,
     fontSize: fontSize.base,
     paddingHorizontal: spacing.md,
@@ -486,6 +489,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
 });

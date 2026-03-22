@@ -23,6 +23,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { api } from '@/services/api';
 
@@ -65,6 +66,7 @@ const INSTANT_FEE_PERCENT = 2;
 
 function CashoutContent() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const haptic = useHaptic();
 
@@ -143,7 +145,7 @@ function CashoutContent() {
 
   if (success) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('cashout.title', 'Cash Out')}
           leftAction={{
@@ -171,7 +173,7 @@ function CashoutContent() {
               ? t('cashout.successInstant', 'Your funds will arrive shortly')
               : t('cashout.successStandard', 'Your funds will arrive in 3-5 business days')}
           </Animated.Text>
-          <Animated.View entering={FadeInUp.delay(500).duration(400)} style={styles.successAmountCard}>
+          <Animated.View entering={FadeInUp.delay(500).duration(400)} style={[styles.successAmountCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <Text style={styles.successAmountLabel}>
               {t('cashout.amountSent', 'Amount')}
             </Text>
@@ -193,7 +195,7 @@ function CashoutContent() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('cashout.title', 'Cash Out')}
           leftAction={{
@@ -218,7 +220,7 @@ function CashoutContent() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('cashout.title', 'Cash Out')}
         leftAction={{
@@ -237,10 +239,10 @@ function CashoutContent() {
         {/* Balance Card */}
         <Animated.View entering={FadeIn.duration(400)}>
           <LinearGradient
-            colors={[colors.dark.bgCard, colors.dark.bgElevated]}
+            colors={[tc.bgCard, tc.bgElevated]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.balanceCard}
+            style={[styles.balanceCard, { borderColor: tc.border }]}
           >
             <Text style={styles.balanceLabel}>
               {t('cashout.availableBalance', 'Available Balance')}
@@ -261,7 +263,7 @@ function CashoutContent() {
         </Animated.View>
 
         {/* Amount Input */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.inputCard}>
+        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.inputCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <Text style={styles.inputLabel}>
             {t('cashout.amountLabel', 'Diamonds to cash out')}
           </Text>
@@ -377,7 +379,7 @@ function CashoutContent() {
                   pressed && { opacity: 0.8 },
                 ]}
               >
-                <View style={styles.methodIconWrap}>
+                <View style={[styles.methodIconWrap, { backgroundColor: tc.surface }]}>
                   <Icon
                     name={method.type === 'bank' ? 'layers' : 'globe'}
                     size="sm"
@@ -400,7 +402,7 @@ function CashoutContent() {
       </ScrollView>
 
       {/* Confirm Button */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <GradientButton
           label={
             netAmount > 0

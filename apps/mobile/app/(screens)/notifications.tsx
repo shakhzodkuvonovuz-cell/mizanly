@@ -26,6 +26,7 @@ import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlMargin, rtlBorderStart, rtlAbsoluteStart } from '@/utils/rtl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -143,6 +144,8 @@ function aggregateLikes(items: Notification[]): AggregatedNotification[] {
 }
 
 function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDone: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const [done, setDone] = useState<'accepted' | 'declined' | null>(null);
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
@@ -187,6 +190,8 @@ function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDon
 }
 
 function NotificationRow({ notification, index }: { notification: AggregatedNotification; index: number }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
@@ -310,6 +315,8 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
 type NotifFilter = 'all' | 'mentions' | 'verified';
 
 export default function NotificationsScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
@@ -452,8 +459,8 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
 
   skeletonList: { padding: spacing.base, gap: spacing.lg },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -465,12 +472,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xs,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
 
   row: {
     borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    borderBottomColor: tc.border,
     position: 'relative',
   },
   rowInner: {
@@ -503,7 +510,7 @@ const styles = StyleSheet.create({
   stackedAvatar: {
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.bg,
+    borderColor: tc.bg,
   },
   iconOverlay: {
     position: 'absolute',
@@ -515,7 +522,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.dark.bg,
+    borderColor: tc.bg,
   },
   rowContent: { flex: 1 },
   rowText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 20 },

@@ -24,6 +24,7 @@ import type { ThreadReply } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTS } from '@/hooks/useTTS';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 
@@ -40,6 +41,8 @@ function ReplyRow({
   onReply: (id: string, username: string) => void;
   onDeleted: () => void;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const timeAgo = formatDistanceToNowStrict(new Date(reply.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
   const hasReplies = (reply._count?.replies ?? 0) > 0;
@@ -152,6 +155,8 @@ function ReplyRow({
 }
 
 export default function ThreadDetailScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
@@ -385,8 +390,8 @@ export default function ThreadDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   loader: { marginTop: 60 },
   listenButton: {
     flexDirection: 'row',
@@ -402,13 +407,13 @@ const styles = StyleSheet.create({
   },
   repliesHeader: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderTopWidth: 0.5, borderTopColor: colors.dark.border,
+    borderTopWidth: 0.5, borderTopColor: tc.border,
   },
   repliesTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   replyRow: {
     flexDirection: 'row', paddingHorizontal: spacing.base,
     paddingTop: spacing.md, paddingBottom: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   replyLeft: { alignItems: 'center', paddingTop: 2 },
   replyLine: {
@@ -431,14 +436,14 @@ const styles = StyleSheet.create({
   replyAction: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   replyActionCount: { color: colors.text.secondary, fontSize: fontSize.sm },
   inputWrap: {
-    borderTopWidth: 0.5, borderTopColor: colors.dark.border,
-    backgroundColor: colors.dark.bg,
+    borderTopWidth: 0.5, borderTopColor: tc.border,
+    backgroundColor: tc.bg,
     paddingBottom: Platform.OS === 'ios' ? spacing.base : spacing.sm,
   },
   replyBanner: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: spacing.base, paddingVertical: spacing.xs,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   replyBannerText: { color: colors.text.secondary, fontSize: fontSize.xs },
   replyClose: { color: colors.text.secondary, fontSize: fontSize.sm },
@@ -449,7 +454,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
     maxHeight: 100, paddingVertical: 8, paddingHorizontal: spacing.base,
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.full,
+    backgroundColor: tc.bgElevated, borderRadius: radius.full,
   },
   sendBtn: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
   sendBtnDisabled: { color: colors.text.tertiary },

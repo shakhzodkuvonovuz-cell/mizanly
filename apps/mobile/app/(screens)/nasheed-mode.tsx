@@ -9,6 +9,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRouter } from 'expo-router';
 
 const SAMPLE_NASHEEDS = [
@@ -19,6 +20,8 @@ const SAMPLE_NASHEEDS = [
 ];
 
 export default function NasheedModeScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -80,7 +83,7 @@ export default function NasheedModeScreen() {
             <Switch
               value={nasheedMode}
               onValueChange={handleToggle}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              trackColor={{ false: tc.border, true: colors.emerald }}
               thumbColor="#fff"
             />
           </LinearGradient>
@@ -120,10 +123,10 @@ export default function NasheedModeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   body: {
     flex: 1,

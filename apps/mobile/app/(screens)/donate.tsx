@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import type { CharityCampaign, CharityDonation } from '@/types/islamic';
 
@@ -48,6 +49,7 @@ function DonateScreenContent() {
   const [isCustom, setIsCustom] = useState(false);
   const [currency, setCurrency] = useState<Currency>('usd');
   const [showSuccess, setShowSuccess] = useState(false);
+  const tc = useThemeColors();
 
   const campaignQuery = useQuery({
     queryKey: ['charity-campaign', params.campaignId],
@@ -109,7 +111,7 @@ function DonateScreenContent() {
 
   if (showSuccess) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('charity.title')} showBack />
         <View style={styles.successContainer}>
           <View style={styles.successIcon}>
@@ -130,7 +132,7 @@ function DonateScreenContent() {
   }
 
   const renderDonationItem = ({ item }: { item: CharityDonation }) => (
-    <View style={styles.donationItem}>
+    <View style={[styles.donationItem, { backgroundColor: tc.bgCard }]}>
       <View style={styles.donationLeft}>
         <Icon name="heart" size="sm" color={colors.emerald} />
         <View style={styles.donationInfo}>
@@ -152,7 +154,7 @@ function DonateScreenContent() {
     <View>
       {/* Campaign card */}
       {params.campaignId && (
-        <View style={styles.campaignCard}>
+        <View style={[styles.campaignCard, { backgroundColor: tc.bgCard }]}>
           {campaignQuery.isLoading ? (
             <Skeleton.Rect width="100%" height={80} borderRadius={radius.md} />
           ) : campaign ? (
@@ -161,7 +163,7 @@ function DonateScreenContent() {
               {campaign.description && (
                 <Text style={styles.campaignDescription}>{campaign.description}</Text>
               )}
-              <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
                 <View
                   style={[
                     styles.progressBarFill,
@@ -188,7 +190,7 @@ function DonateScreenContent() {
             accessibilityRole="button"
             key={amt}
             style={[
-              styles.amountChip,
+              styles.amountChip, { backgroundColor: tc.bgCard, borderColor: tc.border },
               !isCustom && selectedAmount === amt && styles.amountChipActive,
             ]}
             onPress={() => handlePresetPress(amt)}
@@ -207,7 +209,7 @@ function DonateScreenContent() {
       </View>
 
       {/* Custom amount */}
-      <View style={[styles.customInputRow, isCustom && styles.customInputRowActive]}>
+      <View style={[styles.customInputRow, { backgroundColor: tc.bgCard, borderColor: tc.border }, isCustom && styles.customInputRowActive]}>
         <Text style={styles.currencySymbol}>{CURRENCY_SYMBOLS[currency]}</Text>
         <TextInput
           style={styles.customInput}
@@ -226,7 +228,7 @@ function DonateScreenContent() {
           <Pressable
             accessibilityRole="button"
             key={cur}
-            style={[styles.currencyPill, currency === cur && styles.currencyPillActive]}
+            style={[styles.currencyPill, { backgroundColor: tc.bgCard, borderColor: tc.border }, currency === cur && styles.currencyPillActive]}
             onPress={() => setCurrency(cur)}
            
           >
@@ -254,7 +256,7 @@ function DonateScreenContent() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader title={t('charity.title')} showBack />
       {donationsQuery.isLoading && donations.length === 0 ? (
         <View style={styles.skeletonContainer}>

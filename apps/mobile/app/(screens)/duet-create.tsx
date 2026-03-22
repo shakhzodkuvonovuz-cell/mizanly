@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -37,6 +38,7 @@ export default function DuetCreateScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tc = useThemeColors();
 
   useEffect(() => {
     (async () => {
@@ -112,7 +114,7 @@ export default function DuetCreateScreen() {
   if (!permission?.granted) {
     return (
       <ScreenErrorBoundary>
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader title={t('duet.createDuet')} onBack={() => router.back()} />
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <EmptyState
@@ -130,7 +132,7 @@ export default function DuetCreateScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('duet.createDuet')} showBackButton />
 
         <ScrollView
@@ -146,7 +148,7 @@ export default function DuetCreateScreen() {
               >
                 <View style={styles.creatorRow}>
                   <View style={styles.avatarContainer}>
-                    <View style={styles.avatarPlaceholder}>
+                    <View style={[styles.avatarPlaceholder, { backgroundColor: tc.surface }]}>
                       <Icon name="user" size="md" color={colors.text.tertiary} />
                     </View>
                   </View>
@@ -193,7 +195,7 @@ export default function DuetCreateScreen() {
                           <Text style={styles.panelLabel}>Original</Text>
                         </LinearGradient>
                       </View>
-                      <View style={styles.videoPanel}>
+                      <View style={[styles.videoPanel, { backgroundColor: tc.bgCard }]}>
                         <View style={styles.videoPanelInner}>
                           <Icon name="play" size="xl" color={colors.text.tertiary} />
                         </View>
@@ -216,7 +218,7 @@ export default function DuetCreateScreen() {
                       </View>
                       <CameraView
                         ref={cameraRef}
-                        style={[styles.videoPanel, styles.yourVideoPanel]}
+                        style={[styles.videoPanel, { backgroundColor: tc.bgCard }, styles.yourVideoPanel]}
                         facing={facing}
                         mode="video"
                       />
@@ -236,7 +238,7 @@ export default function DuetCreateScreen() {
                           <Text style={styles.panelLabel}>Original</Text>
                         </LinearGradient>
                       </View>
-                      <View style={styles.videoPanelTopBottom}>
+                      <View style={[styles.videoPanelTopBottom, { backgroundColor: tc.bgCard }]}>
                         <Icon name="play" size="lg" color={colors.text.tertiary} />
                       </View>
                     </View>
@@ -252,7 +254,7 @@ export default function DuetCreateScreen() {
                       </View>
                       <CameraView
                         ref={cameraRef}
-                        style={[styles.videoPanelTopBottom, styles.yourVideoPanel]}
+                        style={[styles.videoPanelTopBottom, { backgroundColor: tc.bgCard }, styles.yourVideoPanel]}
                         facing={facing}
                         mode="video"
                       />
@@ -271,7 +273,7 @@ export default function DuetCreateScreen() {
                           <Text style={styles.panelLabel}>Original</Text>
                         </LinearGradient>
                       </View>
-                      <View style={styles.videoPanelReact}>
+                      <View style={[styles.videoPanelReact, { backgroundColor: tc.bgCard }]}>
                         <Icon name="play" size="lg" color={colors.text.tertiary} />
                       </View>
                     </View>
@@ -375,7 +377,7 @@ export default function DuetCreateScreen() {
                     ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
                     : ['rgba(255,255,255,0.95)', 'rgba(240,240,240,1)']
                   }
-                  style={styles.recordButtonOuter}
+                  style={[styles.recordButtonOuter, { borderColor: tc.bg }]}
                 >
                   {isRecording ? (
                     <View style={styles.recordingInnerSquare} />
@@ -428,7 +430,7 @@ export default function DuetCreateScreen() {
                   </View>
                   <Text style={styles.audioTitle}>Audio Settings</Text>
                   <Pressable accessibilityRole="button"
-                    style={[styles.muteButton, isMuted && styles.muteButtonActive]}
+                    style={[styles.muteButton, { backgroundColor: tc.surface }, isMuted && styles.muteButtonActive]}
                     onPress={() => setIsMuted(!isMuted)}
                   >
                     <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="xs" color={isMuted ? colors.error : colors.text.secondary} />
@@ -443,15 +445,15 @@ export default function DuetCreateScreen() {
                     <Text style={styles.volumeLabel}>Original Audio</Text>
                     <Text style={styles.volumeValue}>{originalVolume}%</Text>
                   </View>
-                  <View style={styles.sliderTrack}>
-                    <View style={[styles.sliderFill, { width: `${originalVolume}%`, backgroundColor: isMuted ? colors.dark.surface : colors.emerald }]} />
+                  <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
+                    <View style={[styles.sliderFill, { width: `${originalVolume}%`, backgroundColor: isMuted ? tc.surface : colors.emerald }]} />
                   </View>
 
                   <View style={[styles.volumeRow, styles.volumeRowSecond]}>
                     <Text style={styles.volumeLabel}>Your Audio</Text>
                     <Text style={styles.volumeValue}>{yourVolume}%</Text>
                   </View>
-                  <View style={styles.sliderTrack}>
+                  <View style={[styles.sliderTrack, { backgroundColor: tc.surface }]}>
                     <View style={[styles.sliderFill, { width: `${yourVolume}%` }]} />
                   </View>
                 </View>

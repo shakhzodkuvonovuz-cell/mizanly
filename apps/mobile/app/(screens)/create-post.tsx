@@ -27,6 +27,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -50,6 +51,7 @@ const VISIBILITY_KEYS: { value: Visibility; labelKey: string; iconName: VisIconN
 
 export default function CreatePostScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -233,9 +235,9 @@ export default function CreatePostScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: tc.border }]}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
             <Icon name="x" size="md" color={colors.text.primary} />
           </Pressable>
@@ -272,7 +274,7 @@ export default function CreatePostScreen() {
               <Text style={styles.userName}>{user?.fullName ?? user?.username}</Text>
               {/* Visibility picker */}
               <Pressable
-                style={styles.visibilityPill}
+                style={[styles.visibilityPill, { backgroundColor: tc.bgElevated }]}
                 onPress={() => setShowVisibility((v) => !v)}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
@@ -285,7 +287,7 @@ export default function CreatePostScreen() {
           </View>
 
           {showVisibility && (
-            <View style={styles.visibilityMenu}>
+            <View style={[styles.visibilityMenu, { backgroundColor: tc.bgSheet, borderColor: tc.border }]}>
               {VISIBILITY_KEYS.map((opt) => (
                 <Pressable
                   key={opt.value}
@@ -536,11 +538,11 @@ export default function CreatePostScreen() {
 
         {/* Premium gradient toolbar */}
         <LinearGradient
-          colors={['transparent', 'rgba(13,17,23,0.95)', colors.dark.bg]}
+          colors={['transparent', 'rgba(13,17,23,0.95)', tc.bg]}
           locations={[0, 0.3, 1]}
           style={styles.toolbarGradient}
         >
-          <View style={styles.toolbar}>
+          <View style={[styles.toolbar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
             <Pressable onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
@@ -548,7 +550,7 @@ export default function CreatePostScreen() {
               >
                 <Icon name="image" size="md" color={media.length > 0 ? colors.emerald : colors.text.secondary} />
                 {media.length > 0 && (
-                  <View style={styles.mediaBadge}>
+                  <View style={[styles.mediaBadge, { borderColor: tc.bg }]}>
                     <Text style={styles.mediaBadgeText}>{media.length}</Text>
                   </View>
                 )}

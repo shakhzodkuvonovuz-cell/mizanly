@@ -17,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 
 export interface SliderStickerData {
@@ -41,6 +42,7 @@ const SLIDER_HEIGHT = 40;
 const THUMB_SIZE = 48;
 
 export function SliderSticker({ data, onResponse, isCreator = false, style }: SliderStickerProps) {
+  const tc = useThemeColors();
   const min = data.minValue ?? 0;
   const max = data.maxValue ?? 100;
   const initialAverage = data.averageValue ?? (min + max) / 2;
@@ -128,7 +130,7 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
 
       <View style={styles.sliderContainer}>
         {/* Track background */}
-        <View style={styles.track}>
+        <View style={[styles.track, { backgroundColor: tc.bgElevated }]}>
           <Animated.View style={[styles.fill, fillWidthStyle]}>
             <LinearGradient
               colors={[colors.emerald, colors.gold]}
@@ -152,7 +154,7 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
           style={[styles.thumb, thumbStyle, sliderStyle]}
           {...panResponder.panHandlers}
         >
-          <View style={styles.thumbInner}>
+          <View style={[styles.thumbInner, { backgroundColor: tc.bgElevated }]}>
             <Text style={styles.thumbEmoji}>{data.emoji}</Text>
           </View>
         </Animated.View>
@@ -167,7 +169,7 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
       </View>
 
       {/* Footer with stats */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: tc.borderLight }]}>
         <Text style={styles.minMax}>
           {min} – {max}
         </Text>

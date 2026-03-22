@@ -13,6 +13,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface AddYoursStickerProps {
   chainId: string;
@@ -48,6 +49,7 @@ export function AddYoursSticker({
 }: AddYoursStickerProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   const handleAddYours = useCallback(() => {
     haptic.light();
@@ -95,7 +97,7 @@ export function AddYoursSticker({
       </View>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: tc.borderLight }]}>
         {isCreator && onViewResponses ? (
           <Pressable
             style={styles.viewResponsesRow}

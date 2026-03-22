@@ -4,6 +4,7 @@ import Animated, { FadeIn, FadeOut, Layout } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface AlgorithmCardProps {
   reasons: string[];
@@ -13,6 +14,7 @@ interface AlgorithmCardProps {
 
 export const AlgorithmCard = memo(function AlgorithmCard({ reasons, onDismiss, onNotInterested }: AlgorithmCardProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpanded = useCallback(() => {
@@ -26,7 +28,7 @@ export const AlgorithmCard = memo(function AlgorithmCard({ reasons, onDismiss, o
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(150)}
       layout={Layout.springify()}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: tc.bgCard }]}
     >
       <View style={styles.header}>
         <View style={styles.reasonRow}>
@@ -51,7 +53,7 @@ export const AlgorithmCard = memo(function AlgorithmCard({ reasons, onDismiss, o
         </Animated.View>
       ) : null}
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: tc.border }]}>
         <Pressable onPress={toggleExpanded} hitSlop={6} accessibilityRole="button">
           <Text style={styles.whyText}>
             {expanded
@@ -116,7 +118,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.dark.border,
+    borderTopColor: colors.dark.border, // overridden inline with tc.border
   },
   whyText: {
     fontFamily: fonts.bodyMedium,

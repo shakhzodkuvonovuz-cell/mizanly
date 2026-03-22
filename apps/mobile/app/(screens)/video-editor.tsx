@@ -13,6 +13,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -38,6 +39,8 @@ const FONT_OPTIONS = ['Default', 'Bold', 'Handwritten'];
 const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', '#58A6FF'];
 
 export default function VideoEditorScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const params = useLocalSearchParams<{ videoUri?: string }>();
   const { t } = useTranslation();
@@ -724,10 +727,10 @@ export default function VideoEditorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   previewContainer: {
     marginHorizontal: spacing.base,
@@ -830,7 +833,7 @@ const styles = StyleSheet.create({
   },
   waveformContainer: {
     height: 60,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     position: 'relative',
     overflow: 'hidden',
@@ -964,7 +967,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   timeInput: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     padding: spacing.sm,
     fontSize: fontSize.base,
@@ -1179,7 +1182,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1200,7 +1203,7 @@ const styles = StyleSheet.create({
   },
   sliderTrack: {
     height: 6,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     marginTop: spacing.xs,
     position: 'relative',

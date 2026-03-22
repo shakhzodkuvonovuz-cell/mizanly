@@ -16,6 +16,7 @@ import { storiesApi } from '@/services/api';
 import type { Story } from '@/types';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const GRID_COLUMNS = 3;
@@ -24,6 +25,7 @@ const ITEM_SIZE = `${100 / GRID_COLUMNS}%` as const;
 
 export default function ArchiveScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const user = useStore((s) => s.user);

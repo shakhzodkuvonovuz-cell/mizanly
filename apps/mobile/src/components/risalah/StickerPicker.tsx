@@ -18,6 +18,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { stickersApi } from '@/services/api';
 import type { StickerItem, StickerPack } from '@/types';
 
@@ -33,6 +34,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ITEM_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - GRID_SPACING * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
 
 export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPickerProps) {
+  const tc = useThemeColors();
   const [activeTab, setActiveTab] = useState<'recent' | 'myPacks'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
   const [ownedPacks, setOwnedPacks] = useState<StickerPack[]>([]);
@@ -174,7 +176,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
         <Text style={styles.title}>Stickers</Text>
 
         {/* Search bar */}
-        <View style={styles.searchContainer}>
+        <View style={[styles.searchContainer, { backgroundColor: tc.bgElevated }]}>
           <Icon name="search" size="sm" color={colors.text.secondary} />
           <TextInput
             style={styles.searchInput}

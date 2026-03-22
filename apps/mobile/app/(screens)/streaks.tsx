@@ -19,6 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import type { IconName } from '@/components/ui/Icon';
 
@@ -56,6 +57,8 @@ function StreakCard({
   index: number;
   isRTL: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const meta = STREAK_META[streak.type] ?? { icon: 'trending-up' as IconName, color: colors.emerald };
   const translationKey = `gamification.streaks.${streak.type}` as const;
@@ -123,6 +126,8 @@ function StreakCard({
 }
 
 function HeatmapCalendar({ days, isRTL }: { days: StreakDay[]; isRTL: boolean }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const last30 = days.slice(-30);
   const cellSize = Math.floor((screenWidth - spacing.base * 2 - spacing.xs * 6) / 7) - 2;
 
@@ -146,7 +151,7 @@ function HeatmapCalendar({ days, isRTL }: { days: StreakDay[]; isRTL: boolean })
                   height: cellSize,
                   backgroundColor: day.active
                     ? colors.emerald
-                    : colors.dark.surface,
+                    : tc.surface,
                 },
               ]}
               accessibilityLabel={`${day.date}: ${day.active ? 'Active' : 'Inactive'}`}
@@ -155,7 +160,7 @@ function HeatmapCalendar({ days, isRTL }: { days: StreakDay[]; isRTL: boolean })
         </View>
         <View style={[styles.heatmapLegend, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Text style={styles.legendText}>Inactive</Text>
-          <View style={[styles.legendCell, { backgroundColor: colors.dark.surface }]} />
+          <View style={[styles.legendCell, { backgroundColor: tc.surface }]} />
           <View style={[styles.legendCell, { backgroundColor: colors.emerald, opacity: 0.4 }]} />
           <View style={[styles.legendCell, { backgroundColor: colors.emerald }]} />
           <Text style={styles.legendText}>Active</Text>
@@ -172,6 +177,8 @@ function MilestoneBadges({
   streaks: Streak[];
   isRTL: boolean;
 }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const maxStreak = Math.max(...streaks.map((s) => s.longestDays), 0);
 
   return (
@@ -223,6 +230,8 @@ function MilestoneBadges({
 }
 
 function LoadingSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.skeletonContainer}>
       {Array.from({ length: 3 }).map((_, i) => (
@@ -244,6 +253,8 @@ function LoadingSkeleton() {
 }
 
 function StreaksScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
 
@@ -325,10 +336,10 @@ export default function StreaksScreenWrapper() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scroll: {
     flex: 1,
@@ -411,7 +422,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.base,
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderColor: tc.borderLight,
     gap: spacing.md,
   },
   sectionTitle: {
@@ -448,7 +459,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.base,
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderColor: tc.borderLight,
     gap: spacing.md,
   },
   milestonesRow: {
@@ -466,7 +477,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderColor: tc.borderLight,
   },
   milestoneBadgeAchieved: {
     borderColor: colors.gold,
@@ -488,7 +499,7 @@ const styles = StyleSheet.create({
   skeletonCard: {
     padding: spacing.base,
     borderRadius: radius.lg,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
   },
   skeletonRow: {
     flexDirection: 'row',

@@ -21,6 +21,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, videosApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -42,6 +43,7 @@ interface PickedVideo {
 
 export default function CreateVideoScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -310,7 +312,7 @@ export default function CreateVideoScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('createVideo.title')}
           leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: t('common.close') }}
@@ -319,7 +321,7 @@ export default function CreateVideoScreen() {
 
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 52 }}>
           {/* Video picker */}
-          <Pressable style={styles.videoPicker} onPress={pickVideo}>
+          <Pressable style={[styles.videoPicker, { backgroundColor: tc.surface }]} onPress={pickVideo}>
             {video ? (
               <>
                 <Video
@@ -347,7 +349,7 @@ export default function CreateVideoScreen() {
           {/* Thumbnail picker */}
           <View style={styles.thumbnailSection}>
             <Text style={styles.sectionLabel}>{t('createVideo.thumbnailOptional')}</Text>
-            <Pressable style={styles.thumbnailPicker} onPress={pickThumbnail}>
+            <Pressable style={[styles.thumbnailPicker, { backgroundColor: tc.surface }]} onPress={pickThumbnail}>
               {thumbnailUri ? (
                 <Image source={{ uri: thumbnailUri }} style={styles.thumbnail} />
               ) : (
@@ -405,14 +407,14 @@ export default function CreateVideoScreen() {
           {video && (
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
               <Pressable
-                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.dark.border }}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: tc.border }}
                 onPress={() => navigate('/(screens)/caption-editor', { videoUri: video.uri })}
               >
                 <Icon name="edit" size="sm" color={colors.emerald} />
                 <Text style={{ color: colors.text.primary, fontSize: fontSize.sm }}>{t('ai.captions.title')}</Text>
               </Pressable>
               <Pressable
-                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.dark.border }}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: tc.border }}
                 onPress={() => navigate('/(screens)/video-editor', { uri: video.uri })}
               >
                 <Icon name="video" size="sm" color={colors.gold} />
@@ -425,7 +427,7 @@ export default function CreateVideoScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>{t('createVideo.titleField')}</Text>
             <TextInput
-              style={styles.titleInput}
+              style={[styles.titleInput, { backgroundColor: tc.surface }]}
               placeholder={t('createVideo.titlePlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={title}
@@ -441,7 +443,7 @@ export default function CreateVideoScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>{t('createVideo.descriptionField')}</Text>
             <TextInput
-              style={styles.descriptionInput}
+              style={[styles.descriptionInput, { backgroundColor: tc.surface }]}
               placeholder={t('createVideo.descriptionPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={description}
@@ -457,7 +459,7 @@ export default function CreateVideoScreen() {
             <Text style={styles.fieldLabel}>{t('createVideo.categoryField')}</Text>
             <Pressable
               accessibilityRole="button"
-              style={styles.pickerButton}
+              style={[styles.pickerButton, { backgroundColor: tc.surface }]}
               onPress={() => setShowCategorySheet(true)}
             >
               <Text style={styles.pickerText}>{selectedCategory.replace('_', ' ').toLowerCase()}</Text>
@@ -470,7 +472,7 @@ export default function CreateVideoScreen() {
             <Text style={styles.fieldLabel}>{t('createVideo.tagsField')}</Text>
             <View style={styles.tagInputRow}>
               <TextInput
-                style={styles.tagInput}
+                style={[styles.tagInput, { backgroundColor: tc.surface }]}
                 placeholder={t('createVideo.tagPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 value={tagInput}
@@ -484,7 +486,7 @@ export default function CreateVideoScreen() {
             {tags.length > 0 && (
               <View style={styles.tagsContainer}>
                 {tags.map(tag => (
-                  <View key={tag} style={styles.tagChip}>
+                  <View key={tag} style={[styles.tagChip, { backgroundColor: tc.bgElevated }]}>
                     <Text style={styles.tagText}>#{tag}</Text>
                     <Pressable onPress={() => removeTag(tag)} hitSlop={8}>
                       <Icon name="x" size={10} color={colors.text.secondary} />
@@ -501,7 +503,7 @@ export default function CreateVideoScreen() {
               <Text style={styles.fieldLabel}>{t('createVideo.channelField')}</Text>
               <Pressable
                 accessibilityRole="button"
-                style={styles.pickerButton}
+                style={[styles.pickerButton, { backgroundColor: tc.surface }]}
                 onPress={() => setShowChannelSheet(true)}
               >
                 <Text style={styles.pickerText}>{selectedChannel?.name || t('createVideo.selectChannel')}</Text>
@@ -515,7 +517,7 @@ export default function CreateVideoScreen() {
             <Text style={styles.fieldLabel}>{t('createVideo.visibilityField')}</Text>
             <Pressable
               accessibilityRole="button"
-              style={styles.pickerButton}
+              style={[styles.pickerButton, { backgroundColor: tc.surface }]}
               onPress={() => setShowVisibilitySheet(true)}
             >
               <Text style={styles.pickerText}>
@@ -527,7 +529,7 @@ export default function CreateVideoScreen() {
 
           {/* Normalize audio toggle */}
           <View style={styles.field}>
-            <View style={styles.toggleRow}>
+            <View style={[styles.toggleRow, { borderBottomColor: tc.border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.toggleLabel}>{t('createVideo.normalizeAudio')}</Text>
                 <Text style={styles.toggleSubtitle}>{t('createVideo.normalizeAudioDesc')}</Text>
@@ -545,8 +547,8 @@ export default function CreateVideoScreen() {
 
         {/* Upload progress */}
         {uploading && (
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
+          <View style={[styles.progressContainer, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
+            <View style={[styles.progressBar, { backgroundColor: tc.border }]}>
               <View style={[styles.progressFill, { width: `${uploadProgress * 100}%` }]} />
             </View>
             <Text style={styles.progressText}>{t('createVideo.uploading')} {Math.round(uploadProgress * 100)}%</Text>
@@ -555,7 +557,7 @@ export default function CreateVideoScreen() {
 
         {/* Category bottom sheet */}
         <BottomSheet visible={showCategorySheet} onClose={() => setShowCategorySheet(false)}>
-          <View style={styles.sheetHeader}>
+          <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
             <Text style={styles.sheetTitle}>{t('createVideo.selectCategory')}</Text>
           </View>
           {CATEGORIES.map(cat => (
@@ -572,7 +574,7 @@ export default function CreateVideoScreen() {
 
         {/* Channel bottom sheet */}
         <BottomSheet visible={showChannelSheet} onClose={() => setShowChannelSheet(false)}>
-          <View style={styles.sheetHeader}>
+          <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
             <Text style={styles.sheetTitle}>{t('createVideo.selectChannel')}</Text>
           </View>
           {channels.map(channel => (
@@ -589,7 +591,7 @@ export default function CreateVideoScreen() {
 
         {/* Visibility bottom sheet */}
         <BottomSheet visible={showVisibilitySheet} onClose={() => setShowVisibilitySheet(false)}>
-          <View style={styles.sheetHeader}>
+          <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
             <Text style={styles.sheetTitle}>{t('createVideo.visibility')}</Text>
           </View>
           <BottomSheetItem

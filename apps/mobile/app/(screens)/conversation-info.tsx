@@ -23,6 +23,7 @@ import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Conversation, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -42,6 +43,7 @@ function conversationAvatar(convo: Conversation, myId?: string): string | undefi
 
 export default function ConversationInfoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const tc = useThemeColors();
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -188,7 +190,7 @@ export default function ConversationInfoScreen() {
 
   if (convoQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <Skeleton.ProfileHeader />
       </SafeAreaView>
     );
@@ -196,7 +198,7 @@ export default function ConversationInfoScreen() {
 
   if (convoQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('conversation.chatInfo')}
           leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
@@ -235,7 +237,7 @@ export default function ConversationInfoScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
         <GlassHeader
           title={t('conversation.chatInfo')}
@@ -327,7 +329,7 @@ export default function ConversationInfoScreen() {
                 {convo.members.map((m, index) => (
                   <Animated.View key={m.user.id} entering={FadeInUp.delay(index * 80).duration(400)}>
                     <Pressable
-                      style={styles.memberRow}
+                      style={[styles.memberRow, { borderBottomColor: tc.border }]}
                       onPress={() => router.push(`/(screens)/profile/${m.user.username}`)}
                       onLongPress={() => handleMemberLongPress(m.user.id, m.user.username)}
                       delayLongPress={500}
@@ -350,7 +352,7 @@ export default function ConversationInfoScreen() {
                             </LinearGradient>
                           )}
                           {(m as { tag?: string | null }).tag && (
-                            <View style={{ backgroundColor: colors.dark.surface, borderRadius: radius.full, paddingHorizontal: spacing.xs, paddingVertical: 1 }}>
+                            <View style={{ backgroundColor: tc.surface, borderRadius: radius.full, paddingHorizontal: spacing.xs, paddingVertical: 1 }}>
                               <Text style={{ color: colors.text.secondary, fontSize: 10, fontWeight: '500' }}>{(m as { tag?: string | null }).tag}</Text>
                             </View>
                           )}
@@ -392,7 +394,7 @@ export default function ConversationInfoScreen() {
                   value={convo.isMuted ?? false}
                   onValueChange={handleToggleMute}
                   disabled={muteMutation.isPending}
-                  trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                  trackColor={{ false: tc.surface, true: colors.emerald }}
                   thumbColor={colors.text.primary}
                 />
               </View>
@@ -405,7 +407,7 @@ export default function ConversationInfoScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.optionsCardGlass}
             >
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/starred-messages?conversationId=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/starred-messages?conversationId=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="bookmark" size="xs" color={colors.gold} />
@@ -413,7 +415,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('screens.starred-messages.title')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/pinned-messages?conversationId=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/pinned-messages?conversationId=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
                     <Icon name="map-pin" size="xs" color={colors.emerald} />
@@ -421,7 +423,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('screens.pinned-messages.title')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/conversation-media?id=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/conversation-media?id=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="image" size="xs" color={colors.gold} />
@@ -429,7 +431,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('risalah.media')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/chat-export?conversationId=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/chat-export?conversationId=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
                     <Icon name="share" size="xs" color={colors.emerald} />
@@ -437,7 +439,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('settings.export')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/disappearing-settings?conversationId=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/disappearing-settings?conversationId=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="clock" size="xs" color={colors.gold} />
@@ -445,7 +447,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('risalah.disappearingMessages')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/chat-wallpaper?conversationId=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/chat-wallpaper?conversationId=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
                     <Icon name="image" size="xs" color={colors.emerald} />
@@ -453,7 +455,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('settings.appearance')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/chat-theme-picker?conversationId=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/chat-theme-picker?conversationId=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="eye" size="xs" color={colors.gold} />
@@ -461,7 +463,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('settings.theme')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/chat-lock?conversationId=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/chat-lock?conversationId=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
                     <Icon name="lock" size="xs" color={colors.emerald} />
@@ -469,7 +471,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('biometric.settingsLabel')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => navigate(`/(screens)/verify-encryption?conversationId=${convo?.id}`)}>
+              <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/verify-encryption?conversationId=${convo?.id}`)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="check-circle" size="xs" color={colors.gold} />
@@ -487,7 +489,7 @@ export default function ConversationInfoScreen() {
               style={styles.optionsCardGlass}
             >
               {isGroup && !isCreator && (
-                <Pressable style={styles.actionRow} onPress={handleLeave}>
+                <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={handleLeave}>
                   {leaveGroupMutation.isPending
                     ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                         <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
@@ -507,7 +509,7 @@ export default function ConversationInfoScreen() {
               {!isGroup && (
                 <Pressable
                   accessibilityRole="button"
-                  style={styles.actionRow}
+                  style={[styles.actionRow, { borderBottomColor: tc.border }]}
                   onPress={() => {
                     const other = convo?.members.find((m) => m.user.id !== user?.id);
                     if (!other) return;
@@ -599,7 +601,7 @@ export default function ConversationInfoScreen() {
                 <Text style={styles.chipsLabel}>{t('groups.selected', { count: selectedNewMembers.length })}</Text>
                 <View style={styles.chips}>
                   {selectedNewMembers.map(member => (
-                    <View key={member.id} style={styles.chip}>
+                    <View key={member.id} style={[styles.chip, { backgroundColor: tc.bgCard }]}>
                       <Avatar uri={member.avatarUrl} name={member.displayName} size="sm" />
                       <Text style={styles.chipText} numberOfLines={1}>
                         {member.displayName}
@@ -620,7 +622,7 @@ export default function ConversationInfoScreen() {
             )}
 
             {/* Search input */}
-            <View style={styles.searchWrap}>
+            <View style={[styles.searchWrap, { backgroundColor: tc.bgCard }]}>
               <Icon name="search" size="sm" color={colors.text.secondary} />
               <TextInput
                 style={styles.searchInput}
@@ -655,7 +657,7 @@ export default function ConversationInfoScreen() {
                 renderItem={({ item }) => (
                   <Pressable
                     accessibilityRole="button"
-                    style={styles.userRow}
+                    style={[styles.userRow, { borderBottomColor: tc.border }]}
                     onPress={() => setSelectedNewMembers(prev => [...prev, item])}
                     disabled={addMembersMutation.isPending}
                    

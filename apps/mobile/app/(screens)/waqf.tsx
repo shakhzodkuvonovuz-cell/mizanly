@@ -13,9 +13,12 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
 export default function WaqfScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useHaptic();
@@ -127,21 +130,21 @@ export default function WaqfScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   infoCard: { marginHorizontal: spacing.base, marginBottom: spacing.md, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.gold + '20' },
   infoGradient: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, padding: spacing.base, borderRadius: radius.lg },
   infoText: { color: colors.text.secondary, fontSize: fontSize.sm, flex: 1, lineHeight: 20 },
   list: { paddingHorizontal: spacing.base, paddingBottom: spacing['2xl'] },
   skeletons: { gap: spacing.md },
-  fundCard: { backgroundColor: colors.dark.bgCard, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: colors.dark.border, marginBottom: spacing.md },
+  fundCard: { backgroundColor: tc.bgCard, borderRadius: radius.lg, padding: spacing.base, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.md },
   fundHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
   fundIconWrap: { width: 44, height: 44, borderRadius: radius.full, backgroundColor: colors.gold + '15', justifyContent: 'center', alignItems: 'center' },
   fundTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600' },
   creatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
   creatorName: { color: colors.text.secondary, fontSize: fontSize.xs },
   fundDesc: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.md, lineHeight: 20 },
-  progressTrack: { height: 6, backgroundColor: colors.dark.surface, borderRadius: 3, marginBottom: spacing.sm, overflow: 'hidden' },
+  progressTrack: { height: 6, backgroundColor: tc.surface, borderRadius: 3, marginBottom: spacing.sm, overflow: 'hidden' },
   progressFill: { height: 6, borderRadius: 3 },
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs, marginBottom: spacing.md },
   raisedAmount: { color: colors.gold, fontSize: fontSize.md, fontWeight: '700' },

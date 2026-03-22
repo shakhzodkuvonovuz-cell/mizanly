@@ -11,6 +11,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius, iconSize } from '@/theme';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type ThemeOption = 'dark' | 'light' | 'system';
@@ -24,6 +25,8 @@ interface ThemeRadioProps {
 }
 
 function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioProps) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Pressable
       onPress={onPress}
@@ -59,6 +62,8 @@ function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioP
 }
 
 function ColorSwatch({ bg, border, text }: { bg: string; border: string; text: string }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.swatchOuter}>
       <LinearGradient
@@ -74,6 +79,8 @@ function ColorSwatch({ bg, border, text }: { bg: string; border: string; text: s
 }
 
 function ThemeSettingsSkeleton() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <View style={styles.skeletonContainer}>
       {/* Preview card skeleton */}
@@ -89,6 +96,8 @@ function ThemeSettingsSkeleton() {
 }
 
 export default function ThemeSettingsScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { theme, setTheme } = useStore();
@@ -229,10 +238,10 @@ export default function ThemeSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   body: {
     flex: 1,

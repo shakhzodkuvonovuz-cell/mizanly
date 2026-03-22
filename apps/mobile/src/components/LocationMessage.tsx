@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface LocationMessageProps {
   latitude: number;
@@ -25,6 +26,7 @@ export function LocationMessage({
 }: LocationMessageProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   const mapsUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
 
@@ -48,8 +50,8 @@ export function LocationMessage({
     }
   }, [mapsUrl, haptic, t]);
 
-  const bgColor = isOutgoing ? colors.active.emerald10 : colors.dark.bgCard;
-  const borderColor = isOutgoing ? colors.emerald : colors.dark.border;
+  const bgColor = isOutgoing ? colors.active.emerald10 : tc.bgCard;
+  const borderColor = isOutgoing ? colors.emerald : tc.border;
 
   return (
     <Animated.View entering={FadeIn.duration(200)}>
@@ -63,7 +65,7 @@ export function LocationMessage({
         accessibilityLabel={t('location.openInMaps', 'Open location in maps')}
       >
         {/* Map Placeholder */}
-        <View style={styles.mapPlaceholder}>
+        <View style={[styles.mapPlaceholder, { backgroundColor: tc.surface }]}>
           <Icon name="map-pin" size="xl" color={colors.emerald} />
         </View>
 

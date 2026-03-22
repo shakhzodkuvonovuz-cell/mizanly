@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, animation, fonts } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -25,6 +26,7 @@ function SignUpScreenContent() {
   const router = useRouter();
   const { t } = useTranslation();
 
+  const tc = useThemeColors();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
@@ -116,7 +118,7 @@ function SignUpScreenContent() {
 
   if (pendingVerification) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <KeyboardAvoidingView
           style={styles.inner}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -143,6 +145,7 @@ function SignUpScreenContent() {
                   key={i}
                   style={[
                     styles.digitBox,
+                    { backgroundColor: tc.bgElevated, borderColor: tc.border },
                     i === code.length && styles.digitBoxActive,
                   ]}
                 >
@@ -191,7 +194,7 @@ function SignUpScreenContent() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       <KeyboardAvoidingView
         style={styles.inner}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -218,7 +221,7 @@ function SignUpScreenContent() {
 
           <View style={styles.form}>
             {/* Email input with icon */}
-            <View style={[styles.inputRow, emailFocused && styles.inputRowFocused]}>
+            <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }, emailFocused && styles.inputRowFocused]}>
               <Icon
                 name="mail"
                 size="sm"
@@ -239,7 +242,7 @@ function SignUpScreenContent() {
             </View>
 
             {/* Password input with icon + show/hide */}
-            <View style={[styles.inputRow, passwordFocused && styles.inputRowFocused]}>
+            <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }, passwordFocused && styles.inputRowFocused]}>
               <Icon
                 name="lock"
                 size="sm"
@@ -272,6 +275,7 @@ function SignUpScreenContent() {
                   key={i}
                   style={[
                     styles.strengthBar,
+                    { backgroundColor: tc.border },
                     i <= strength && {
                       backgroundColor:
                         strength <= 1
@@ -301,17 +305,17 @@ function SignUpScreenContent() {
 
             {/* Divider */}
             <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
+              <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
               <Text style={styles.dividerText}>{t('auth.or')}</Text>
-              <View style={styles.dividerLine} />
+              <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
             </View>
 
             {/* Social auth */}
             <View style={styles.socialRow}>
-              <Pressable style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}>
+              <Pressable style={({ pressed }) => [styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border }, pressed && styles.socialBtnPressed]}>
                 <Text style={styles.socialText}>{t('auth.google')}</Text>
               </Pressable>
-              <Pressable style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}>
+              <Pressable style={({ pressed }) => [styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border }, pressed && styles.socialBtnPressed]}>
                 <Text style={styles.socialText}>{t('auth.apple')}</Text>
               </Pressable>
             </View>

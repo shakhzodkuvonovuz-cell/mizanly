@@ -25,6 +25,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { reelsApi, uploadApi } from '@/services/api';
 import type { Reel } from '@/types';
 
@@ -43,6 +44,8 @@ function formatTime(seconds: number): string {
 }
 
 export default function ReelRemixScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const params = useLocalSearchParams<{ originalReelId: string }>();
   const insets = useSafeAreaInsets();
@@ -699,10 +702,10 @@ const CAMERA_HEIGHT = SCREEN_H * 0.45;
 const PIP_WIDTH = SCREEN_W * 0.3;
 const PIP_HEIGHT = PIP_WIDTH * (16 / 9);
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollView: {
     flex: 1,
@@ -725,7 +728,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
   },
   cameraView: {
     width: '100%',
@@ -755,7 +758,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   pipPlaceholder: {
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -951,7 +954,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: colors.dark.bg,
+    borderColor: tc.bg,
   },
   recordCircleInner: {
     width: 56,
@@ -1005,7 +1008,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: radius.lg,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   previewPip: {
     position: 'absolute',
@@ -1082,7 +1085,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -22,6 +22,7 @@ import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize as fontSizes, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -212,6 +213,7 @@ function AnimatedPreview({ text, animationType, style }: AnimatedPreviewProps) {
 
 export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   const [text, setText] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<TextEffect['style']>('classic');
@@ -423,7 +425,7 @@ export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
                   key={preset.id}
                   onPress={() => setSelectedStyle(preset.id)}
                   style={[
-                    styles.presetChip,
+                    styles.presetChip, { backgroundColor: tc.surface, borderColor: tc.border },
                     isSelected && styles.presetChipSelected,
                   ]}
                 >
@@ -458,7 +460,7 @@ export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
                     styles.colorSwatch,
                     { backgroundColor: clr },
                     isSelected && styles.colorSwatchSelected,
-                    clr === '#000000' && styles.colorSwatchDark,
+                    clr === '#000000' && [styles.colorSwatchDark, { borderColor: tc.border }],
                   ]}
                 >
                   {isSelected && (
@@ -477,7 +479,7 @@ export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
           <View style={styles.toolbar}>
             {/* BG toggle */}
             <Pressable onPress={handleToggleBg} style={styles.toolBtn}>
-              <View style={[styles.toolBtnInner, bgColor ? styles.toolBtnActive : undefined]}>
+              <View style={[styles.toolBtnInner, { backgroundColor: tc.surface }, bgColor ? styles.toolBtnActive : undefined]}>
                 <Text style={[styles.toolBtnLabel, bgColor ? styles.toolBtnLabelActive : undefined]}>
                   {t('story.textEffects.bg')}
                 </Text>
@@ -486,21 +488,21 @@ export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
 
             {/* Alignment */}
             <Pressable onPress={handleCycleAlignment} style={styles.toolBtn}>
-              <View style={styles.toolBtnInner}>
+              <View style={[styles.toolBtnInner, { backgroundColor: tc.surface }]}>
                 <Icon name={getAlignmentIcon(textAlignment)} size="sm" color={colors.text.primary} />
               </View>
             </Pressable>
 
             {/* Font size */}
             <Pressable onPress={handleCycleSize} style={styles.toolBtn}>
-              <View style={styles.toolBtnInner}>
+              <View style={[styles.toolBtnInner, { backgroundColor: tc.surface }]}>
                 <Text style={styles.toolSizeLabel}>{getSizeLabel(textSize)}</Text>
               </View>
             </Pressable>
 
             {/* Animation */}
             <Pressable onPress={() => setAnimSheetVisible(true)} style={styles.toolBtn}>
-              <View style={[styles.toolBtnInner, animation !== 'none' ? styles.toolBtnActive : undefined]}>
+              <View style={[styles.toolBtnInner, { backgroundColor: tc.surface }, animation !== 'none' ? styles.toolBtnActive : undefined]}>
                 <Icon name="play" size="sm" color={animation !== 'none' ? colors.emerald : colors.text.primary} />
               </View>
             </Pressable>

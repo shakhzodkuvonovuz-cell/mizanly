@@ -14,6 +14,7 @@ import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { usersApi } from '@/services/api';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -61,6 +62,7 @@ function mapUserToAccount(user: User, sessionId: string, isActive: boolean): Acc
 
 export default function AccountSwitcherScreen() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const [autoSwitchOnNotification, setAutoSwitchOnNotification] = useState(false);
   const [switching, setSwitching] = useState(false);
@@ -159,7 +161,7 @@ export default function AccountSwitcherScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader title={t('screens.accountSwitcher.title')} showBackButton />
 
         <ScrollView
@@ -241,7 +243,7 @@ export default function AccountSwitcherScreen() {
           {!isLoading && <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>{t('screens.accountSwitcher.otherAccounts')}</Text>
-              <Text style={styles.sectionCount}>{otherAccounts.length}</Text>
+              <Text style={[styles.sectionCount, { backgroundColor: tc.surface }]}>{otherAccounts.length}</Text>
             </View>
 
             <View style={styles.accountsList}>
@@ -387,7 +389,7 @@ export default function AccountSwitcherScreen() {
                   <Switch
                     value={autoSwitchOnNotification}
                     onValueChange={setAutoSwitchOnNotification}
-                    trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                    trackColor={{ false: tc.surface, true: colors.emerald }}
                     thumbColor="#FFF"
                   />
                 </View>

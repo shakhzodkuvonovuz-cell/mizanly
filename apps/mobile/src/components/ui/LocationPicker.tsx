@@ -9,6 +9,7 @@ import { Icon } from './Icon';
 import { BottomSheet, BottomSheetItem } from './BottomSheet';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface LocationResult {
   id: string;
@@ -40,6 +41,7 @@ const POPULAR_LOCATIONS: LocationResult[] = [
 
 export function LocationPicker({ visible, onClose, onSelect }: LocationPickerProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LocationResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -113,7 +115,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
         <Text style={styles.title}>Add Location</Text>
 
         <View style={styles.searchRow}>
-          <View style={styles.searchInput}>
+          <View style={[styles.searchInput, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
             <Icon name="search" size="sm" color={colors.text.tertiary} />
             <TextInput
               style={styles.input}
@@ -133,7 +135,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
 
         <Pressable
           accessibilityRole="button"
-          style={styles.currentLocation}
+          style={[styles.currentLocation, { borderBottomColor: tc.border }]}
           onPress={handleCurrentLocation}
         >
           <View style={styles.currentLocationIcon}>

@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -32,6 +33,8 @@ const TRANSITIONS: { id: TransitionType; name: string; icon: IconName }[] = [
 ];
 
 export default function StitchCreateScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
@@ -468,10 +471,10 @@ export default function StitchCreateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   originalCard: {
     marginHorizontal: spacing.base,
@@ -492,7 +495,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -559,7 +562,7 @@ const styles = StyleSheet.create({
   },
   progressBarTrack: {
     height: 8,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -659,7 +662,7 @@ const styles = StyleSheet.create({
   },
   cameraPreview: {
     height: 160,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.md,
     borderWidth: 2,
     borderColor: colors.emerald,
@@ -703,7 +706,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: colors.dark.bg,
+    borderColor: tc.bg,
   },
   recordButtonInnerSmall: {
     width: 44,

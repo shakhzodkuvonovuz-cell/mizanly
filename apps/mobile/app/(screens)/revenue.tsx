@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';
 
@@ -74,6 +75,8 @@ function formatDate(iso: string): string {
 }
 
 function RevenueContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -357,10 +360,10 @@ export default function RevenueScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   loadingContainer: {
     paddingTop: 100,
@@ -414,10 +417,10 @@ const styles = StyleSheet.create({
   },
   breakdownCard: {
     flex: 1,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     padding: spacing.md,
     alignItems: 'center',
   },
@@ -444,10 +447,10 @@ const styles = StyleSheet.create({
 
   // Split
   splitCard: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     padding: spacing.base,
     marginTop: spacing.base,
   },
@@ -537,8 +540,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['2xl'],
     paddingTop: spacing.base,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
 });

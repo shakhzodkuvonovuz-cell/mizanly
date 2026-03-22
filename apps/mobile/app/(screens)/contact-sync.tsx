@@ -19,6 +19,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type ContactUser = {
@@ -42,6 +43,7 @@ function ContactRow({
   index: number;
 }) {
   const router = useRouter();
+  const tc = useThemeColors();
   const { t } = useTranslation();
 
   return (
@@ -66,7 +68,7 @@ function ContactRow({
 
         <View style={styles.actionCol}>
           {user.isFollowing ? (
-            <Pressable accessibilityRole="button" onPress={onToggleFollow} disabled={followLoading} style={styles.followingBtn}>
+            <Pressable accessibilityRole="button" onPress={onToggleFollow} disabled={followLoading} style={[styles.followingBtn, { borderColor: tc.border }]}>
               <Text style={styles.followingText}>{t('contactSync.following')}</Text>
             </Pressable>
           ) : (
@@ -187,7 +189,7 @@ export default function ContactSyncScreen() {
   if (permissionDenied) {
     return (
       <ScreenErrorBoundary>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <GlassHeader
             title={t('contactSync.title')}
             leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -207,7 +209,7 @@ export default function ContactSyncScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('contactSync.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}

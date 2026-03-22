@@ -23,6 +23,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { volunteerApi } from '@/services/api';
 
@@ -73,6 +74,8 @@ function getCategoryIcon(category: string): IconName {
 }
 
 function VolunteerBoardContent() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
@@ -334,10 +337,10 @@ export default function VolunteerBoardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   content: {
     flex: 1,
@@ -356,9 +359,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   chipActive: {
     backgroundColor: colors.active.emerald10,
@@ -374,12 +377,12 @@ const styles = StyleSheet.create({
   },
   // Opportunity card
   opportunityCard: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     padding: spacing.base,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     gap: spacing.md,
   },
   cardHeader: {
@@ -457,7 +460,7 @@ const styles = StyleSheet.create({
   },
   progressBarBg: {
     height: 6,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },

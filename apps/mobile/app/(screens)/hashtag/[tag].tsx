@@ -21,6 +21,7 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type HashtagPostsPage = {
@@ -33,6 +34,8 @@ const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 2) / 3;
 
 function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   return (
     <Pressable
       accessibilityRole="button"
@@ -60,6 +63,8 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
 }
 
 export default function HashtagScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const { tag } = useLocalSearchParams<{ tag: string }>();
   const router = useRouter();
@@ -218,15 +223,15 @@ export default function HashtagScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: tc.bg },
   headerSpacer: { height: 100 },
   headerInfo: { alignItems: 'center' },
   tagName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   postCount: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
   followBar: {
     alignItems: 'center', paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
 
   // Header Card Styles
@@ -269,11 +274,11 @@ const styles = StyleSheet.create({
   gridRow: { gap: 1 },
   gridItem: {
     width: GRID_ITEM, height: GRID_ITEM,
-    backgroundColor: colors.dark.bgElevated, position: 'relative',
+    backgroundColor: tc.bgElevated, position: 'relative',
   },
   gridImage: { width: '100%', height: '100%' },
   gridTextPost: {
-    flex: 1, padding: spacing.sm, backgroundColor: colors.dark.bgElevated,
+    flex: 1, padding: spacing.sm, backgroundColor: tc.bgElevated,
     justifyContent: 'center',
   },
   gridText: { color: colors.text.primary, fontSize: fontSize.xs },

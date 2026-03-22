@@ -15,6 +15,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -39,6 +40,8 @@ const TONE_OPTIONS: ToneOption[] = [
 ];
 
 function NotificationTonesScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const params = useLocalSearchParams<{
     conversationId: string;
@@ -263,10 +266,10 @@ export default function NotificationTonesScreenWrapper() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   list: {
     flex: 1,
@@ -311,7 +314,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.base,
     borderRadius: radius.md,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: tc.bgElevated,
   },
   toneRowSelected: {
     backgroundColor: colors.active.emerald10,
@@ -324,7 +327,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: radius.full,
     borderWidth: 2,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -389,6 +392,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     backgroundColor: 'rgba(13, 17, 23, 0.95)',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.dark.border,
+    borderTopColor: tc.border,
   },
 });

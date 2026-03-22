@@ -18,6 +18,7 @@ import { reportsApi } from '@/services/api';
 import type { Report, ReportStatus } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function MyReportsScreen() {
@@ -26,6 +27,7 @@ export default function MyReportsScreen() {
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
 
   const {
     data,
@@ -107,7 +109,7 @@ export default function MyReportsScreen() {
 
   if (isError) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('screens.my-reports.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
@@ -126,7 +128,7 @@ export default function MyReportsScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('screens.my-reports.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
@@ -143,7 +145,7 @@ export default function MyReportsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader 
           title={t('screens.my-reports.title')} 
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 

@@ -19,6 +19,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type LiveType = 'VIDEO' | 'AUDIO';
@@ -50,6 +51,7 @@ export default function GoLiveScreen() {
 
   // Schedule date time handling
   const [tempDate, setTempDate] = useState(new Date());
+  const tc = useThemeColors();
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -121,7 +123,7 @@ export default function GoLiveScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('live.goLive')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
@@ -140,7 +142,7 @@ export default function GoLiveScreen() {
             >
               <Text style={styles.inputLabel}>{t('common.title')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
                 placeholder={t('minbar.streamTitlePlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 accessibilityLabel={t('accessibility.streamTitle')}
@@ -163,7 +165,7 @@ export default function GoLiveScreen() {
             >
               <Text style={styles.inputLabel}>{t('common.descriptionOptional')}</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }, styles.textArea]}
                 placeholder={t('minbar.streamDescPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 accessibilityLabel={t('accessibility.streamDesc')}
@@ -188,7 +190,7 @@ export default function GoLiveScreen() {
               <Text style={styles.inputLabel}>{t('live.streamType')}</Text>
               <Pressable
                 accessibilityRole="button"
-                style={styles.typeSelector}
+                style={[styles.typeSelector, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
                 onPress={() => setShowLiveTypePicker(true)}
               >
                 <LinearGradient
@@ -219,16 +221,16 @@ export default function GoLiveScreen() {
                 <Switch
                   value={isScheduled}
                   onValueChange={handleScheduleToggle}
-                  trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                  trackColor={{ false: tc.border, true: colors.emerald }}
                   thumbColor={colors.text.primary}
-                  ios_backgroundColor={colors.dark.border}
+                  ios_backgroundColor={tc.border}
                 />
               </View>
 
               {isScheduled && scheduleDate && (
                 <Pressable
                   accessibilityRole="button"
-                  style={styles.scheduleDisplay}
+                  style={[styles.scheduleDisplay, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
                   onPress={() => setShowDatePicker(true)}
                 >
                   <LinearGradient
@@ -259,7 +261,7 @@ export default function GoLiveScreen() {
               disabled={!canGoLive}
             />
             <Pressable
-              style={[styles.rehearseButton, !canGoLive && { opacity: 0.4 }]}
+              style={[styles.rehearseButton, { borderColor: tc.border, backgroundColor: tc.bgElevated }, !canGoLive && { opacity: 0.4 }]}
               onPress={handleRehearsal}
               disabled={!canGoLive}
               accessibilityLabel={t('live.rehearse')}

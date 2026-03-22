@@ -13,6 +13,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { CreatorStat } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
@@ -65,6 +66,7 @@ function SummaryCard({ title, value, change, icon, index }: { title: string; val
 
 function BarChart({ stats }: { stats: CreatorStat[] }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   if (!stats.length) return null;
 
   // Aggregate views per day (sum across spaces)
@@ -172,7 +174,7 @@ export default function AnalyticsScreen() {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('analytics.creatorAnalytics')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
@@ -192,7 +194,7 @@ export default function AnalyticsScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('analytics.creatorAnalytics')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}

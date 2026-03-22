@@ -28,6 +28,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation, tabBar, glass } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { navigate } from '@/utils/navigation';
 
 const PROGRESS_BAR_HEIGHT = 3;
@@ -40,6 +41,7 @@ export function MiniPlayer() {
   const { t } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const videoRef = useRef<Video>(null);
 
   // Store selectors
@@ -183,7 +185,7 @@ export function MiniPlayer() {
     <Animated.View
       entering={FadeInDown.duration(animation.timing.normal)}
       exiting={SlideOutDown.duration(animation.timing.fast)}
-      style={[styles.container, containerAnimatedStyle]}
+      style={[styles.container, { backgroundColor: tc.bgElevated, borderTopColor: tc.border }, containerAnimatedStyle]}
     >
       <GestureDetector gesture={composedGesture}>
         <Animated.View style={styles.inner}>
@@ -205,7 +207,7 @@ export function MiniPlayer() {
           <View style={styles.borderOverlay} />
 
           {/* Progress bar track */}
-          <View style={styles.progressTrack}>
+          <View style={[styles.progressTrack, { backgroundColor: tc.surface }]}>
             <Animated.View style={[styles.progressFillWrap, progressBarStyle]}>
               <LinearGradient
                 colors={[colors.emerald, colors.emeraldLight]}
@@ -219,7 +221,7 @@ export function MiniPlayer() {
           {/* Content row */}
           <View style={styles.contentRow}>
             {/* Thumbnail */}
-            <View style={styles.thumbnailContainer}>
+            <View style={[styles.thumbnailContainer, { backgroundColor: tc.surface }]}>
               {miniPlayerVideo.thumbnailUri ? (
                 <Image
                   source={{ uri: miniPlayerVideo.thumbnailUri }}

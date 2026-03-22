@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -37,6 +38,7 @@ export const VideoTransitions = memo(function VideoTransitions({
 }: VideoTransitionsProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   return (
     <View style={styles.container}>
@@ -55,7 +57,7 @@ export const VideoTransitions = memo(function VideoTransitions({
               accessibilityRole="button"
               accessibilityLabel={t(transition.labelKey)}
             >
-              <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
+              <View style={[styles.iconWrap, { backgroundColor: tc.surface }, isActive && styles.iconWrapActive]}>
                 <Icon
                   name={transition.icon}
                   size="sm"

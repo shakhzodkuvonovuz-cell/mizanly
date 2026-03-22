@@ -9,10 +9,12 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useChatLock } from '@/hooks/useChatLock';
 
 function ChatLockContent() {
   const router = useRouter();
+  const tc = useThemeColors();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { t } = useTranslation();
   const { isLocked, lockConversation, unlockConversation, isBiometricAvailable } = useChatLock();
@@ -83,7 +85,7 @@ function ChatLockContent() {
   }, [conversationId, unlockConversation, t]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tc.bg }]}>
       <GlassHeader
         title={t('chatLock.title', 'Chat Lock')}
         leftAction={{
@@ -101,7 +103,7 @@ function ChatLockContent() {
         {/* Lock Icon */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.iconContainer}>
           <LinearGradient
-            colors={locked ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
+            colors={locked ? [colors.emerald, colors.emeraldDark] : [tc.surface, tc.bgCard]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconCircle}
@@ -111,7 +113,7 @@ function ChatLockContent() {
         </Animated.View>
 
         {/* Toggle Row */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.card}>
+        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextContainer}>
               <Text style={styles.toggleLabel}>
@@ -128,7 +130,7 @@ function ChatLockContent() {
               value={locked}
               onValueChange={handleToggle}
               disabled={loading || toggling || !biometricAvailable}
-              trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+              trackColor={{ false: tc.surface, true: colors.emerald }}
               thumbColor={colors.text.primary}
             />
           </View>
@@ -136,7 +138,7 @@ function ChatLockContent() {
 
         {/* Notification Preview Info */}
         {locked && (
-          <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.card}>
+          <Animated.View entering={FadeInUp.delay(200).duration(400)} style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <View style={styles.infoRow}>
               <View style={styles.infoIconWrapper}>
                 <Icon name="bell" size={20} color={colors.emerald} />
@@ -152,7 +154,7 @@ function ChatLockContent() {
         )}
 
         {/* Biometric Method Info */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.card}>
+        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.infoRow}>
             <View style={styles.infoIconWrapper}>
               <Icon

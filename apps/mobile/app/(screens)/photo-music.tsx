@@ -27,6 +27,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { AudioTrack } from '@/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -36,6 +37,8 @@ const MAX_CAPTION = 500;
 const DURATION_OPTIONS = [2, 3, 5, 7];
 
 function PhotoMusicScreen() {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
   const haptic = useHaptic();
@@ -514,10 +517,10 @@ export default function PhotoMusicScreenWrapper() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: tc.bg,
   },
   scrollContent: {
     flex: 1,
@@ -536,7 +539,7 @@ const styles = StyleSheet.create({
     height: IMAGE_SIZE * 1.2,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
   },
   image: {
     width: '100%',
@@ -568,7 +571,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    backgroundColor: tc.surface,
   },
   dotActive: {
     backgroundColor: colors.emerald,
@@ -584,7 +587,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.base,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     alignSelf: 'center',
     gap: spacing.xs,
@@ -599,10 +602,10 @@ const styles = StyleSheet.create({
     height: IMAGE_SIZE * 0.8,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     borderStyle: 'dashed',
     marginBottom: spacing.lg,
   },
@@ -622,11 +625,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     padding: spacing.base,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   musicBarLeft: {
     flexDirection: 'row',
@@ -648,10 +651,10 @@ const styles = StyleSheet.create({
   durationPill: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
   },
   durationPillActive: {
     backgroundColor: colors.active.emerald20,
@@ -668,10 +671,10 @@ const styles = StyleSheet.create({
   },
   // ── Caption ──
   captionContainer: {
-    backgroundColor: colors.dark.bgCard,
+    backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: tc.border,
     padding: spacing.base,
   },
   captionInput: {

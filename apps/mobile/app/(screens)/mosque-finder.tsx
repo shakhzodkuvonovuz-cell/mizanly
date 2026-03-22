@@ -24,6 +24,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { Mosque as ApiMosque, PrayerTimes } from '@/types/islamic';
 import * as Location from 'expo-location';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
@@ -189,6 +190,7 @@ export default function MosqueFinderScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [mosques, setMosques] = useState<Mosque[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const tc = useThemeColors();
 
   const fetchData = useCallback(async () => {
     try {
@@ -245,7 +247,7 @@ export default function MosqueFinderScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('islamic.mosqueFinder')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -261,7 +263,7 @@ export default function MosqueFinderScreen() {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('islamic.mosqueFinder')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -281,7 +283,7 @@ export default function MosqueFinderScreen() {
 
   if (mosques.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('islamic.mosqueFinder')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -301,7 +303,7 @@ export default function MosqueFinderScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('islamic.nearbyMosques')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
