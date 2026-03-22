@@ -259,7 +259,7 @@ function ChatWallpaperScreen() {
               <Icon name="check" size="sm" color={colors.text.primary} />
             )}
           </View>
-          <Text style={styles.colorName}>{color.name}</Text>
+          <Text style={[styles.colorName, { color: tc.text.secondary }]}>{color.name}</Text>
         </Pressable>
       ))}
     </Animated.View>
@@ -292,7 +292,7 @@ function ChatWallpaperScreen() {
                 <Icon name="check" size="md" color={colors.text.primary} />
               )}
             </LinearGradient>
-            <Text style={styles.gradientName}>{pair.name}</Text>
+            <Text style={[styles.gradientName, { color: tc.text.secondary }]}>{pair.name}</Text>
           </Pressable>
         );
       })}
@@ -401,7 +401,7 @@ function ChatWallpaperScreen() {
           <View style={styles.previewContainer}>
             {renderPreview()}
             <View style={styles.previewOverlay}>
-              <Text style={styles.previewLabel}>{t('chatWallpaper.preview')}</Text>
+              <Text style={[styles.previewLabel, { color: tc.text.primary }]}>{t('chatWallpaper.preview')}</Text>
             </View>
           </View>
         </Animated.View>
@@ -442,7 +442,7 @@ function ChatWallpaperScreen() {
           accessibilityLabel={t('chatWallpaper.useDefault')}
         >
           <Icon name="slash" size="sm" color={colors.text.secondary} />
-          <Text style={styles.defaultText}>{t('chatWallpaper.useDefault')}</Text>
+          <Text style={[styles.defaultText, { color: tc.text.secondary }]}>{t('chatWallpaper.useDefault')}</Text>
         </Pressable>
 
         {/* Save Button */}

@@ -135,7 +135,7 @@ export default function CreateBroadcastScreen() {
                   </LinearGradient>
                 )}
               </Pressable>
-              <Text style={styles.avatarHint}>{t('createBroadcast.avatarHint')}</Text>
+              <Text style={[styles.avatarHint, { color: tc.text.tertiary }]}>{t('createBroadcast.avatarHint')}</Text>
             </LinearGradient>
           </Animated.View>
 
@@ -152,7 +152,7 @@ export default function CreateBroadcastScreen() {
                 >
                   <Icon name="edit" size="xs" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.name')}</Text>
+                <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('createBroadcast.sectionLabel.name')}</Text>
                 <CharCountRing current={nameCount} max={50} size={24} />
               </View>
               <TextInput
@@ -181,11 +181,11 @@ export default function CreateBroadcastScreen() {
                 >
                   <Icon name="link" size="xs" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.url')}</Text>
+                <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('createBroadcast.sectionLabel.url')}</Text>
                 <CharCountRing current={slugCount} max={30} size={24} />
               </View>
               <View style={[styles.slugContainer, { borderBottomColor: tc.border }]}>
-                <Text style={styles.slugPrefix}>mizanly.app/c/</Text>
+                <Text style={[styles.slugPrefix, { color: tc.text.secondary }]}>mizanly.app/c/</Text>
                 <TextInput
                   style={[styles.input, styles.slugInput]}
                   value={slug}
@@ -198,7 +198,7 @@ export default function CreateBroadcastScreen() {
                   accessibilityLabel={t('createBroadcast.accessibility.url')}
                 />
               </View>
-              <Text style={styles.hint}>{t('createBroadcast.hint.url')}</Text>
+              <Text style={[styles.hint, { color: tc.text.tertiary }]}>{t('createBroadcast.hint.url')}</Text>
             </LinearGradient>
           </Animated.View>
 
@@ -215,7 +215,7 @@ export default function CreateBroadcastScreen() {
                 >
                   <Icon name="edit" size="xs" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.description')}</Text>
+                <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('createBroadcast.sectionLabel.description')}</Text>
                 <CharCountRing current={descCount} max={200} size={24} />
               </View>
               <TextInput
@@ -244,7 +244,7 @@ export default function CreateBroadcastScreen() {
               >
                 <Icon name="info" size="xs" color={colors.gold} />
               </LinearGradient>
-              <Text style={styles.noteText}>
+              <Text style={[styles.noteText, { color: tc.text.secondary }]}>
                 {t('createBroadcast.note')}
               </Text>
             </LinearGradient>

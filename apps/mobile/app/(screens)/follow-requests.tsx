@@ -50,10 +50,10 @@ function RequestRow({
 
         <View style={styles.info}>
           <Pressable accessibilityRole="button" onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
-            <Text style={styles.name}>{follower.displayName}</Text>
-            <Text style={styles.username}>@{follower.username}</Text>
+            <Text style={[styles.name, { color: tc.text.primary }]}>{follower.displayName}</Text>
+            <Text style={[styles.username, { color: tc.text.secondary }]}>@{follower.username}</Text>
             {follower.bio ? (
-              <Text style={styles.bio} numberOfLines={1}>{follower.bio}</Text>
+              <Text style={[styles.bio, { color: tc.text.secondary }]} numberOfLines={1}>{follower.bio}</Text>
             ) : null}
           </Pressable>
         </View>

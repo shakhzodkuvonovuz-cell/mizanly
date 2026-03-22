@@ -257,10 +257,10 @@ export default function ConversationMediaScreen() {
           <Icon name="link" size="sm" color={colors.emerald} />
         </LinearGradient>
         <View style={styles.linkContent}>
-          <Text style={styles.linkUrl} numberOfLines={1}>
+          <Text style={[styles.linkUrl, { color: tc.text.primary }]} numberOfLines={1}>
             {item.url}
           </Text>
-          <Text style={styles.linkDate}>
+          <Text style={[styles.linkDate, { color: tc.text.tertiary }]}>
             {new Date(item.createdAt).toLocaleDateString()}
           </Text>
         </View>
@@ -285,15 +285,15 @@ export default function ConversationMediaScreen() {
           <Icon name="paperclip" size="sm" color={colors.emerald} />
         </LinearGradient>
         <View style={styles.docContent}>
-          <Text style={styles.docName} numberOfLines={1}>
+          <Text style={[styles.docName, { color: tc.text.primary }]} numberOfLines={1}>
             {item.fileName}
           </Text>
           {item.fileSize && (
-            <Text style={styles.docSize}>
+            <Text style={[styles.docSize, { color: tc.text.secondary }]}>
               {t('conversationMedia.fileSizeKB', { size: (item.fileSize / 1024).toFixed(1) })}
             </Text>
           )}
-          <Text style={styles.docDate}>
+          <Text style={[styles.docDate, { color: tc.text.tertiary }]}>
             {new Date(item.createdAt).toLocaleDateString()}
           </Text>
         </View>

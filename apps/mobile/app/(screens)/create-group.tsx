@@ -135,10 +135,10 @@ export default function CreateGroupScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           {/* Group name */}
           <View style={styles.section}>
-            <Text style={styles.label}>{t('groups.groupName')}</Text>
+            <Text style={[styles.label, { color: tc.text.secondary }]}>{t('groups.groupName')}</Text>
             <View style={styles.nameRow}>
               <TextInput
-                style={styles.nameInput}
+                style={[styles.nameInput, { color: tc.text.primary }]}
                 value={groupName}
                 onChangeText={setGroupName}
                 placeholder={t('groups.enterGroupName')}
@@ -156,7 +156,7 @@ export default function CreateGroupScreen() {
 
           {/* Avatar picker */}
           <View style={styles.section}>
-            <Text style={styles.label}>{t('groups.groupAvatarOptional')}</Text>
+            <Text style={[styles.label, { color: tc.text.secondary }]}>{t('groups.groupAvatarOptional')}</Text>
             <Pressable style={styles.avatarPicker} onPress={pickAvatar} accessibilityLabel={t('groups.chooseGroupAvatar')} accessibilityRole="button">
               {avatarUri ? (
                 <Avatar uri={avatarUri} name={groupName || t('common.group')} size="2xl" />
@@ -185,14 +185,14 @@ export default function CreateGroupScreen() {
           {/* Selected members chips */}
           {selectedMembers.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.label}>
+              <Text style={[styles.label, { color: tc.text.secondary }]}>
                 {t('groups.members', { count: selectedMembers.length })}
               </Text>
               <View style={styles.chips}>
                 {selectedMembers.map(member => (
                   <View key={member.id} style={[styles.chip, { backgroundColor: tc.bgCard }]}>
                     <Avatar uri={member.avatarUrl} name={member.displayName} size="sm" />
-                    <Text style={styles.chipText} numberOfLines={1}>
+                    <Text style={[styles.chipText, { color: tc.text.primary }]} numberOfLines={1}>
                       {member.displayName}
                     </Text>
                     <Pressable
@@ -212,11 +212,11 @@ export default function CreateGroupScreen() {
 
           {/* Member search */}
           <View style={styles.section}>
-            <Text style={styles.label}>{t('groups.addMembers')}</Text>
+            <Text style={[styles.label, { color: tc.text.secondary }]}>{t('groups.addMembers')}</Text>
             <View style={[styles.searchWrap, { backgroundColor: tc.bgCard }]}>
               <Icon name="search" size="sm" color={colors.text.secondary} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: tc.text.primary }]}
                 value={query}
                 onChangeText={handleQueryChange}
                 placeholder={t('common.searchPeople')}
@@ -256,10 +256,10 @@ export default function CreateGroupScreen() {
                     <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
                     <View style={styles.userInfo}>
                       <View style={styles.userNameRow}>
-                        <Text style={styles.name}>{item.displayName}</Text>
+                        <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
                         {item.isVerified && <VerifiedBadge size={13} />}
                       </View>
-                      <Text style={styles.handle}>@{item.username}</Text>
+                      <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
                     </View>
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
@@ -282,7 +282,7 @@ export default function CreateGroupScreen() {
           </View>
 
           {/* Minimum requirement note */}
-          <Text style={styles.note}>
+          <Text style={[styles.note, { color: tc.text.tertiary }]}>
             {t('groups.minMembersRequired', { count: MIN_MEMBERS })}
           </Text>
 

@@ -253,7 +253,7 @@ function DonateScreenContent() {
           <TextInput
             style={styles.customInput}
             placeholder={t('charity.custom')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             keyboardType="decimal-pad"
             value={customAmount}
             onChangeText={setCustomAmount}

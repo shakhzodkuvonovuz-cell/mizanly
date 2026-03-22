@@ -300,7 +300,7 @@ export default function CallScreen() {
                 style={styles.videoPreviewGradient}
               >
                 <Icon name="video" size="lg" color={colors.text.tertiary} />
-                <Text style={styles.videoPreviewText}>{t('calls.videoPreview')}</Text>
+                <Text style={[styles.videoPreviewText, { color: tc.text.tertiary }]}>{t('calls.videoPreview')}</Text>
               </LinearGradient>
             </Animated.View>
           )}
@@ -327,7 +327,7 @@ export default function CallScreen() {
                       <Icon name="x" size="xl" color={colors.text.primary} />
                     )}
                   </LinearGradient>
-                  <Text style={styles.controlLabel}>{t('calls.decline')}</Text>
+                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.decline')}</Text>
                 </Pressable>
 
                 {/* Answer Button */}
@@ -348,7 +348,7 @@ export default function CallScreen() {
                       <Icon name="phone" size="xl" color={colors.text.primary} />
                     )}
                   </LinearGradient>
-                  <Text style={styles.controlLabel}>{t('calls.answer')}</Text>
+                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.answer')}</Text>
                 </Pressable>
               </>
             ) : (
@@ -366,7 +366,7 @@ export default function CallScreen() {
                   >
                     <Icon name={isMuted ? 'volume-x' : 'mic'} size="lg" color={colors.text.primary} />
                   </LinearGradient>
-                  <Text style={styles.controlLabel}>{isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
+                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
                 </Pressable>
 
                 {/* Speaker Button */}
@@ -382,7 +382,7 @@ export default function CallScreen() {
                   >
                     <Icon name="volume-x" size="lg" color={colors.text.primary} />
                   </LinearGradient>
-                  <Text style={styles.controlLabel}>{isSpeaker ? t('calls.speakerOff') : t('calls.speaker')}</Text>
+                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{isSpeaker ? t('calls.speakerOff') : t('calls.speaker')}</Text>
                 </Pressable>
 
                 {/* Flip Camera Button */}
@@ -399,7 +399,7 @@ export default function CallScreen() {
                     >
                       <Icon name="repeat" size="lg" color={colors.text.primary} />
                     </LinearGradient>
-                    <Text style={styles.controlLabel}>{t('calls.flip')}</Text>
+                    <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.flip')}</Text>
                   </Pressable>
                 )}
 
@@ -421,7 +421,7 @@ export default function CallScreen() {
                       <Icon name="phone" size="xl" color={colors.text.primary} />
                     )}
                   </LinearGradient>
-                  <Text style={styles.controlLabel}>{t('calls.end')}</Text>
+                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.end')}</Text>
                 </Pressable>
               </>
             )}

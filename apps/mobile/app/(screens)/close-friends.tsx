@@ -56,7 +56,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
                 </LinearGradient>
               )}
             </View>
-            <Text style={styles.handle}>@{user.username}</Text>
+            <Text style={[styles.handle, { color: tc.text.secondary }]}>@{user.username}</Text>
           </View>
           {!isMe && (
             <View style={styles.actions}>
@@ -285,7 +285,7 @@ export default function CloseFriendsScreen() {
           }}
           titleComponent={
             <View style={styles.headerTitleRow}>
-              <Text style={styles.headerTitle}>{t('screens.closeFriends.title')}</Text>
+              <Text style={[styles.headerTitle, { color: tc.text.primary }]}>{t('screens.closeFriends.title')}</Text>
               <Badge count={memberIds.length} color={colors.emerald} size="sm" />
             </View>
           }
@@ -299,7 +299,7 @@ export default function CloseFriendsScreen() {
           >
             <Icon name="search" size="sm" color={colors.text.secondary} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: tc.text.primary }]}
               placeholder={t('screens.closeFriends.searchPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={searchQuery}
@@ -322,7 +322,7 @@ export default function CloseFriendsScreen() {
         >
           <View style={styles.statItem}>
             <Icon name="users" size="xs" color={colors.emerald} />
-            <Text style={styles.statsText}>
+            <Text style={[styles.statsText, { color: tc.text.secondary }]}>
               {t('screens.closeFriends.statsShown', { shown: closeFriendsInList.length, total: filteredFollowers.length })}
             </Text>
           </View>

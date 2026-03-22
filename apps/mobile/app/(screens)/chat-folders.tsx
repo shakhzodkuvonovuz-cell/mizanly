@@ -132,8 +132,8 @@ export default function ChatFoldersScreen() {
             <Icon name={iconName} size="md" color={color} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.folderName}>{item.name as string}</Text>
-            <Text style={styles.folderMeta}>
+            <Text style={[styles.folderName, { color: tc.text.primary }]}>{item.name as string}</Text>
+            <Text style={[styles.folderMeta, { color: tc.text.tertiary }]}>
               {t('risalah.chatCount', { count: convCount })}
               {Boolean(item.includeGroups) && ` · ${t('risalah.groups')}`}
               {Boolean(item.includeChannels) && ` · ${t('risalah.channels')}`}
@@ -158,7 +158,7 @@ export default function ChatFoldersScreen() {
         <Animated.View entering={FadeIn.duration(300)} style={styles.infoCard}>
           <LinearGradient colors={[colors.emerald + '10', 'transparent']} style={styles.infoGradient}>
             <Icon name="layers" size="sm" color={colors.emerald} />
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: tc.text.secondary }]}>
               {t('risalah.chatFoldersDescription')}
             </Text>
           </LinearGradient>
@@ -166,7 +166,7 @@ export default function ChatFoldersScreen() {
 
         {/* Predefined filters */}
         <View style={styles.predefinedSection}>
-          <Text style={styles.sectionLabel}>{t('risalah.quickFilters')}</Text>
+          <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('risalah.quickFilters')}</Text>
           <View style={styles.predefinedGrid}>
             {PREDEFINED_FILTERS.map((pf) => (
               <Pressable
@@ -181,7 +181,7 @@ export default function ChatFoldersScreen() {
                 <View style={[styles.predefinedIconWrap, { backgroundColor: pf.color + '15' }]}>
                   <Icon name={pf.icon} size="sm" color={pf.color} />
                 </View>
-                <Text style={styles.predefinedLabel}>{t(pf.labelKey)}</Text>
+                <Text style={[styles.predefinedLabel, { color: tc.text.primary }]}>{t(pf.labelKey)}</Text>
               </Pressable>
             ))}
           </View>
@@ -189,13 +189,13 @@ export default function ChatFoldersScreen() {
 
         {/* Custom folders label */}
         <View style={styles.predefinedSection}>
-          <Text style={styles.sectionLabel}>{t('risalah.customFolders')}</Text>
+          <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('risalah.customFolders')}</Text>
         </View>
 
         {/* Create form */}
         {createMode && (
           <Animated.View entering={FadeIn.duration(200)} style={[styles.createCard, { backgroundColor: tc.bgCard }]}>
-            <Text style={styles.createTitle}>{editingFolder ? t('risalah.editFolder') : t('risalah.newFolder')}</Text>
+            <Text style={[styles.createTitle, { color: tc.text.primary }]}>{editingFolder ? t('risalah.editFolder') : t('risalah.newFolder')}</Text>
             <TextInput
               style={[styles.createInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newName}
@@ -206,7 +206,7 @@ export default function ChatFoldersScreen() {
               autoFocus
             />
 
-            <Text style={styles.iconLabel}>{t('risalah.icon')}</Text>
+            <Text style={[styles.iconLabel, { color: tc.text.secondary }]}>{t('risalah.icon')}</Text>
             <View style={styles.iconGrid}>
               {FOLDER_ICONS.map((icon, i) => (
                 <Pressable
@@ -222,7 +222,7 @@ export default function ChatFoldersScreen() {
 
             <View style={styles.createActions}>
               <Pressable onPress={() => { setCreateMode(false); setEditingFolder(null); setNewName(''); }} style={[styles.cancelBtn, { backgroundColor: tc.surface }]}>
-                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+                <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"

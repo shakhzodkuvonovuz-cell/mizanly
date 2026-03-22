@@ -149,11 +149,11 @@ export default function DMNoteEditorScreen() {
                 >
                   <View style={styles.inputHeader}>
                     <Icon name="edit" size="sm" color={colors.emerald} />
-                    <Text style={styles.inputLabel}>{t('dmNotes.placeholder')}</Text>
+                    <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('dmNotes.placeholder')}</Text>
                     <CharCountRing current={content.length} max={MAX_LENGTH} />
                   </View>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, { color: tc.text.primary }]}
                     value={content}
                     onChangeText={setContent}
                     maxLength={MAX_LENGTH}
@@ -171,7 +171,7 @@ export default function DMNoteEditorScreen() {
                 >
                   <View style={styles.expiryRow}>
                     <Icon name="clock" size="sm" color={colors.gold} />
-                    <Text style={styles.expiryLabel}>{t('dmNotes.expiry')}</Text>
+                    <Text style={[styles.expiryLabel, { color: tc.text.primary }]}>{t('dmNotes.expiry')}</Text>
                     <View style={{ flex: 1 }} />
                     <GradientButton
                       label={selectedExpiryLabel}
@@ -190,12 +190,12 @@ export default function DMNoteEditorScreen() {
                       colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.08)']}
                       style={styles.previewCard}
                     >
-                      <Text style={styles.previewTitle}>{t('dmNotes.preview')}</Text>
+                      <Text style={[styles.previewTitle, { color: tc.text.secondary }]}>{t('dmNotes.preview')}</Text>
                       <LinearGradient
                         colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                         style={styles.previewBubble}
                       >
-                        <Text style={styles.previewText}>{content.trim()}</Text>
+                        <Text style={[styles.previewText, { color: tc.text.primary }]}>{content.trim()}</Text>
                       </LinearGradient>
                     </LinearGradient>
                   </Animated.View>
@@ -232,7 +232,7 @@ export default function DMNoteEditorScreen() {
                     style={styles.currentNoteCard}
                   >
                     <Icon name="check-circle" size="sm" color={colors.text.secondary} />
-                    <Text style={styles.currentNoteText}>
+                    <Text style={[styles.currentNoteText, { color: tc.text.secondary }]}>
                       {t('dmNotes.currentNote')}
                     </Text>
                   </LinearGradient>

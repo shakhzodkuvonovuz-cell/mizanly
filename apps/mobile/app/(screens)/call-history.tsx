@@ -114,8 +114,8 @@ export default function CallHistoryScreen() {
                   />
                 </LinearGradient>
                 <Text style={[styles.statusText, isMissed && styles.missedText]}>{statusText}</Text>
-                <Text style={styles.dot}>•</Text>
-                <Text style={styles.time} numberOfLines={1}>
+                <Text style={[styles.dot, { color: tc.text.tertiary }]}>•</Text>
+                <Text style={[styles.time, { color: tc.text.secondary }]} numberOfLines={1}>
                   {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                 </Text>
               </View>

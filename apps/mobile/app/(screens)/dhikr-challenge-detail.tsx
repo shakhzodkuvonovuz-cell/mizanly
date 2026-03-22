@@ -185,13 +185,13 @@ export default function DhikrChallengeDetailScreen() {
             </Text>
             <View style={styles.metaRow}>
               <View style={styles.metaItem}>
-                <Icon name="users" size="xs" color={colors.text.tertiary} />
+                <Icon name="users" size="xs" color={tc.text.tertiary} />
                 <Text style={styles.metaText}>
                   {t('dhikr.participants', { count: formatCount(detail.participantCount) })}
                 </Text>
               </View>
               <View style={styles.metaItem}>
-                <Icon name="bar-chart-2" size="xs" color={colors.text.tertiary} />
+                <Icon name="bar-chart-2" size="xs" color={tc.text.tertiary} />
                 <Text style={styles.metaText}>
                   {t('dhikr.progress', {
                     current: detail.currentTotal.toLocaleString(),
@@ -263,7 +263,7 @@ export default function DhikrChallengeDetailScreen() {
                     }}
                     style={[styles.cancelBtn, { backgroundColor: tc.surface }]}
                   >
-                    <Icon name="x" size="sm" color={colors.text.tertiary} />
+                    <Icon name="x" size="sm" color={tc.text.tertiary} />
                   </Pressable>
                 </View>
               </View>

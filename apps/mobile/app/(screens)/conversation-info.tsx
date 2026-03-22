@@ -265,7 +265,7 @@ export default function ConversationInfoScreen() {
                 )}
               </Pressable>
               <View style={styles.nameRow}>
-                <Text style={styles.heroName}>{name}</Text>
+                <Text style={[styles.heroName, { color: tc.text.primary }]}>{name}</Text>
                 {isGroup && isCreator && (
                   <Pressable onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel={t('accessibility.editGroupName')}>
                     <Icon name="edit" size={16} color={colors.text.secondary} />
@@ -273,10 +273,10 @@ export default function ConversationInfoScreen() {
                 )}
               </View>
               {isGroup && (
-                <Text style={styles.heroSub}>{t('conversation.members', { count: convo.members.length })}</Text>
+                <Text style={[styles.heroSub, { color: tc.text.secondary }]}>{t('conversation.members', { count: convo.members.length })}</Text>
               )}
               {!isGroup && otherMember && (
-                <Text style={styles.heroSub}>@{otherMember.user.username}</Text>
+                <Text style={[styles.heroSub, { color: tc.text.secondary }]}>@{otherMember.user.username}</Text>
               )}
               {isGroup && isCreator && (
                 <View style={styles.adminActions}>
@@ -307,7 +307,7 @@ export default function ConversationInfoScreen() {
                 >
                   <Icon name="user" size="md" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.quickActionLabel}>{t('common.profile')}</Text>
+                <Text style={[styles.quickActionLabel, { color: tc.text.secondary }]}>{t('common.profile')}</Text>
               </Pressable>
             </Animated.View>
           )}
@@ -326,7 +326,7 @@ export default function ConversationInfoScreen() {
                   >
                     <Icon name="users" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.sectionTitle}>{t('conversation.membersTitle')}</Text>
+                  <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>{t('conversation.membersTitle')}</Text>
                 </View>
                 {convo.members.map((m, index) => (
                   <Animated.View key={m.user.id} entering={FadeInUp.delay(index * 80).duration(400)}>
@@ -343,14 +343,14 @@ export default function ConversationInfoScreen() {
                       <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />
                       <View style={styles.memberInfo}>
                         <View style={styles.memberNameRow}>
-                          <Text style={styles.memberName}>{m.user.displayName}</Text>
+                          <Text style={[styles.memberName, { color: tc.text.primary }]}>{m.user.displayName}</Text>
                           {m.user.isVerified && <VerifiedBadge size={13} />}
                           {m.user.id === convo.createdById && (
                             <LinearGradient
                               colors={[colors.emerald, colors.gold]}
                               style={styles.creatorBadgeGradient}
                             >
-                              <Text style={styles.creatorBadgeText}>{t('conversation.creator')}</Text>
+                              <Text style={[styles.creatorBadgeText, { color: tc.text.primary }]}>{t('conversation.creator')}</Text>
                             </LinearGradient>
                           )}
                           {(m as { tag?: string | null }).tag && (
@@ -359,10 +359,10 @@ export default function ConversationInfoScreen() {
                             </View>
                           )}
                         </View>
-                        <Text style={styles.memberHandle}>@{m.user.username}</Text>
+                        <Text style={[styles.memberHandle, { color: tc.text.secondary }]}>@{m.user.username}</Text>
                       </View>
                       {m.user.id === user?.id && (
-                        <Text style={styles.youLabel}>{t('common.you')}</Text>
+                        <Text style={[styles.youLabel, { color: tc.text.tertiary }]}>{t('common.you')}</Text>
                       )}
                     </Pressable>
                   </Animated.View>
@@ -386,10 +386,10 @@ export default function ConversationInfoScreen() {
                     <Icon name="volume-x" size="xs" color={colors.emerald} />
                   </LinearGradient>
                   <View style={styles.muteTextWrap}>
-                    <Text style={styles.muteLabel}>
+                    <Text style={[styles.muteLabel, { color: tc.text.primary }]}>
                       {convo.isMuted ? t('muteConversation.unmute') : t('muteConversation.mute')}
                     </Text>
-                    <Text style={styles.muteHint}>{t('muteConversation.hint')}</Text>
+                    <Text style={[styles.muteHint, { color: tc.text.tertiary }]}>{t('muteConversation.hint')}</Text>
                   </View>
                 </View>
                 <Switch
@@ -551,10 +551,10 @@ export default function ConversationInfoScreen() {
           }}
         >
           <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>{t('conversation.editGroupName')}</Text>
+            <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>{t('conversation.editGroupName')}</Text>
             <View style={styles.nameInputRow}>
               <TextInput
-                style={styles.nameInput}
+                style={[styles.nameInput, { color: tc.text.primary }]}
                 value={newGroupName}
                 onChangeText={setNewGroupName}
                 placeholder={t('groups.enterNewGroupName')}
@@ -577,7 +577,7 @@ export default function ConversationInfoScreen() {
               {updateGroupMutation.isPending ? (
                 <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
               ) : (
-                <Text style={styles.sheetButtonText}>{t('common.save')}</Text>
+                <Text style={[styles.sheetButtonText, { color: tc.text.primary }]}>{t('common.save')}</Text>
               )}
             </Pressable>
           </View>
@@ -595,17 +595,17 @@ export default function ConversationInfoScreen() {
           snapPoint={0.85}
         >
           <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>{t('groups.addMembers')}</Text>
+            <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>{t('groups.addMembers')}</Text>
 
             {/* Selected members chips */}
             {selectedNewMembers.length > 0 && (
               <View style={styles.chipsContainer}>
-                <Text style={styles.chipsLabel}>{t('groups.selected', { count: selectedNewMembers.length })}</Text>
+                <Text style={[styles.chipsLabel, { color: tc.text.secondary }]}>{t('groups.selected', { count: selectedNewMembers.length })}</Text>
                 <View style={styles.chips}>
                   {selectedNewMembers.map(member => (
                     <View key={member.id} style={[styles.chip, { backgroundColor: tc.bgCard }]}>
                       <Avatar uri={member.avatarUrl} name={member.displayName} size="sm" />
-                      <Text style={styles.chipText} numberOfLines={1}>
+                      <Text style={[styles.chipText, { color: tc.text.primary }]} numberOfLines={1}>
                         {member.displayName}
                       </Text>
                       <Pressable
@@ -627,7 +627,7 @@ export default function ConversationInfoScreen() {
             <View style={[styles.searchWrap, { backgroundColor: tc.bgCard }]}>
               <Icon name="search" size="sm" color={colors.text.secondary} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: tc.text.primary }]}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder={t('common.searchPeople')}
@@ -667,10 +667,10 @@ export default function ConversationInfoScreen() {
                     <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
                     <View style={styles.userInfo}>
                       <View style={styles.nameRow}>
-                        <Text style={styles.name}>{item.displayName}</Text>
+                        <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
                         {item.isVerified && <VerifiedBadge size={13} />}
                       </View>
-                      <Text style={styles.handle}>@{item.username}</Text>
+                      <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
                     </View>
                     <Icon name="plus" size="sm" color={colors.emerald} />
                   </Pressable>
@@ -678,11 +678,11 @@ export default function ConversationInfoScreen() {
                 ListEmptyComponent={() =>
                   debouncedSearchQuery.trim().length >= 2 ? (
                     <View style={styles.empty}>
-                      <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedSearchQuery })}</Text>
+                      <Text style={[styles.emptyText, { color: tc.text.secondary }]}>{t('messages.noUsersFound', { query: debouncedSearchQuery })}</Text>
                     </View>
                   ) : (
                     <View style={styles.hint}>
-                      <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
+                      <Text style={[styles.hintText, { color: tc.text.tertiary }]}>{t('messages.searchByNameOrUsername')}</Text>
                     </View>
                   )
                 }
@@ -699,7 +699,7 @@ export default function ConversationInfoScreen() {
               {addMembersMutation.isPending ? (
                 <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
               ) : (
-                <Text style={styles.sheetButtonText}>
+                <Text style={[styles.sheetButtonText, { color: tc.text.primary }]}>
                   {t('common.add')} {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length})` : ''}
                 </Text>
               )}

@@ -220,7 +220,7 @@ export default function MorningBriefingScreen() {
         <GlassHeader
           title={t('dailyBriefing.title')}
           leftAction={{
-            icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />,
+            icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />,
             onPress: () => router.back(),
             accessibilityLabel: t('common.goBack'),
           }}
@@ -460,7 +460,7 @@ export default function MorningBriefingScreen() {
                         value={reflectionText}
                         onChangeText={setReflectionText}
                         placeholder={t('dailyBriefing.gratefulPrompt')}
-                        placeholderTextColor={colors.text.tertiary}
+                        placeholderTextColor={tc.text.tertiary}
                         multiline
                         numberOfLines={3}
                         accessibilityLabel={t('dailyBriefing.dailyReflection')}

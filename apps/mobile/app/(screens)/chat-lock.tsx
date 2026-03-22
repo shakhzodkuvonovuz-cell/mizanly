@@ -116,10 +116,10 @@ function ChatLockContent() {
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.toggleRow}>
             <View style={styles.toggleTextContainer}>
-              <Text style={styles.toggleLabel}>
+              <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>
                 {t('chatLock.lockThisChat', 'Lock this chat')}
               </Text>
-              <Text style={styles.toggleDescription}>
+              <Text style={[styles.toggleDescription, { color: tc.text.secondary }]}>
                 {t(
                   'chatLock.lockDescription',
                   'Locked chats require Face ID or fingerprint to open',
@@ -143,7 +143,7 @@ function ChatLockContent() {
               <View style={styles.infoIconWrapper}>
                 <Icon name="bell" size={20} color={colors.emerald} />
               </View>
-              <Text style={styles.infoText}>
+              <Text style={[styles.infoText, { color: tc.text.secondary }]}>
                 {t(
                   'chatLock.notificationPreview',
                   'Message previews will not appear in notifications for this chat',
@@ -163,7 +163,7 @@ function ChatLockContent() {
                 color={biometricAvailable ? colors.emerald : colors.text.tertiary}
               />
             </View>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: tc.text.secondary }]}>
               {biometricAvailable
                 ? t(
                     'chatLock.biometricAvailable',
@@ -199,13 +199,13 @@ function ChatLockContent() {
 
         {/* Explanation Section */}
         <Animated.View entering={FadeInUp.delay(500).duration(400)} style={styles.explanationContainer}>
-          <Text style={styles.explanationTitle}>
+          <Text style={[styles.explanationTitle, { color: tc.text.primary }]}>
             {t('chatLock.howItWorks', 'How it works')}
           </Text>
 
           <View style={styles.explanationItem}>
             <View style={styles.bulletDot} />
-            <Text style={styles.explanationText}>
+            <Text style={[styles.explanationText, { color: tc.text.secondary }]}>
               {t(
                 'chatLock.explanation1',
                 'When chat lock is enabled, you will need to use Face ID or fingerprint to view this conversation.',
@@ -215,7 +215,7 @@ function ChatLockContent() {
 
           <View style={styles.explanationItem}>
             <View style={styles.bulletDot} />
-            <Text style={styles.explanationText}>
+            <Text style={[styles.explanationText, { color: tc.text.secondary }]}>
               {t(
                 'chatLock.explanation2',
                 'The chat will appear in your chat list but its contents will be hidden until you authenticate.',
@@ -225,7 +225,7 @@ function ChatLockContent() {
 
           <View style={styles.explanationItem}>
             <View style={styles.bulletDot} />
-            <Text style={styles.explanationText}>
+            <Text style={[styles.explanationText, { color: tc.text.secondary }]}>
               {t(
                 'chatLock.explanation3',
                 'Notification previews will be hidden for locked chats to protect your privacy.',
@@ -235,7 +235,7 @@ function ChatLockContent() {
 
           <View style={styles.explanationItem}>
             <View style={styles.bulletDot} />
-            <Text style={styles.explanationText}>
+            <Text style={[styles.explanationText, { color: tc.text.secondary }]}>
               {t(
                 'chatLock.explanation4',
                 'You can remove the lock at any time by authenticating again.',

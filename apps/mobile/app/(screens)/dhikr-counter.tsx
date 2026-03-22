@@ -419,7 +419,7 @@ export default function DhikrCounterScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                 style={styles.resetButtonGradient}
               >
-                <Icon name="circle" size="xs" color={colors.text.tertiary} />
+                <Icon name="circle" size="xs" color={tc.text.tertiary} />
               </LinearGradient>
             </Pressable>
           </Animated.View>

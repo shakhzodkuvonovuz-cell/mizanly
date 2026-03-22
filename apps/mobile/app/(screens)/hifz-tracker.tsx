@@ -143,7 +143,7 @@ const STATUS_COLORS: Record<string, string> = {
   memorized: colors.emerald,
   in_progress: colors.gold,
   needs_review: colors.extended.orange,
-  not_started: colors.dark.surface,
+  not_started: tc.surface,
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -186,7 +186,7 @@ const SurahRow = React.memo(function SurahRow({ surah, progress, onPress }: {
           {surah.ayahs} ayahs · {t(STATUS_LABELS[progress.status])}
         </Text>
       </View>
-      <Icon name="chevron-right" size={16} color={colors.text.tertiary} />
+      <Icon name="chevron-right" size={16} color={tc.text.tertiary} />
     </Pressable>
   );
 });

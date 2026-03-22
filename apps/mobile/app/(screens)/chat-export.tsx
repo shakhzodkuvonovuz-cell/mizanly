@@ -145,10 +145,10 @@ function ChatExportContent() {
                 />
               </LinearGradient>
               <View style={styles.statsHeaderText}>
-                <Text style={styles.statsName} numberOfLines={1}>
+                <Text style={[styles.statsName, { color: tc.text.primary }]} numberOfLines={1}>
                   {stats.name}
                 </Text>
-                <Text style={styles.statsSubtitle}>
+                <Text style={[styles.statsSubtitle, { color: tc.text.secondary }]}>
                   {stats.isGroup
                     ? t('chatExport.groupChat', 'Group chat')
                     : t('chatExport.directChat', 'Direct chat')}
@@ -182,7 +182,7 @@ function ChatExportContent() {
 
         {/* Format Selector */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>
             {t('chatExport.exportFormat', 'Export Format')}
           </Text>
           <View style={styles.formatOptions}>
@@ -203,7 +203,7 @@ function ChatExportContent() {
                     <Text style={[styles.formatLabel, selected && styles.formatLabelSelected]}>
                       {option.label}
                     </Text>
-                    <Text style={styles.formatDescription}>
+                    <Text style={[styles.formatDescription, { color: tc.text.secondary }]}>
                       {option.description}
                     </Text>
                   </View>
@@ -216,16 +216,16 @@ function ChatExportContent() {
 
         {/* Options */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>
             {t('chatExport.options', 'Options')}
           </Text>
           <View style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
             <View style={styles.toggleRow}>
               <View style={styles.toggleTextContainer}>
-                <Text style={styles.toggleLabel}>
+                <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>
                   {t('chatExport.includeMedia', 'Include media links')}
                 </Text>
-                <Text style={styles.toggleDescription}>
+                <Text style={[styles.toggleDescription, { color: tc.text.secondary }]}>
                   {t('chatExport.includeMediaDesc', 'Add links to shared photos and videos')}
                 </Text>
               </View>
@@ -257,7 +257,7 @@ function ChatExportContent() {
         {/* Info Footer */}
         <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.infoFooter}>
           <Icon name="lock" size={16} color={colors.text.tertiary} />
-          <Text style={styles.infoFooterText}>
+          <Text style={[styles.infoFooterText, { color: tc.text.tertiary }]}>
             {t(
               'chatExport.privacyNote',
               'Export only includes messages you have access to. Media files are referenced as links.',
@@ -275,8 +275,8 @@ function StatItem({ icon, label, value }: { icon: 'users' | 'message-circle' | '
       <View style={styles.statIconWrapper}>
         <Icon name={icon} size={16} color={colors.emerald} />
       </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color: tc.text.primary }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{label}</Text>
     </View>
   );
 }

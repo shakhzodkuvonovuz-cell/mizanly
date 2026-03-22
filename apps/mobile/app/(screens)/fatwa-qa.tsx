@@ -112,7 +112,7 @@ export default function FatwaQAScreen() {
               style={[styles.tab, { backgroundColor: tc.bgCard, borderColor: tc.border }, activeTab === tab && styles.tabActive]}
               onPress={() => { setActiveTab(tab); haptic.tick(); }}
             >
-              <Icon name={tab === 'browse' ? 'search' : 'pencil'} size="sm" color={activeTab === tab ? colors.emerald : colors.text.secondary} />
+              <Icon name={tab === 'browse' ? 'search' : 'pencil'} size="sm" color={activeTab === tab ? colors.emerald : tc.text.secondary} />
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                 {tab === 'browse' ? t('community.browse') : t('community.ask')}
               </Text>
@@ -167,7 +167,7 @@ export default function FatwaQAScreen() {
                 value={question}
                 onChangeText={(text) => setQuestion(text.slice(0, 2000))}
                 placeholder={t('community.questionPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 multiline
                 maxLength={2000}
               />
@@ -181,7 +181,7 @@ export default function FatwaQAScreen() {
               <Text style={styles.madhabSelectorText}>
                 {t(`community.madhab.${askMadhab}`)}
               </Text>
-              <Icon name="chevron-down" size="sm" color={colors.text.secondary} />
+              <Icon name="chevron-down" size="sm" color={tc.text.secondary} />
             </Pressable>
 
             <Pressable
@@ -203,7 +203,7 @@ export default function FatwaQAScreen() {
             <BottomSheetItem
               key={id}
               label={t(`community.madhab.${id}`)}
-              icon={<Icon name={askMadhab === id ? 'check-circle' : 'globe'} size="sm" color={askMadhab === id ? colors.emerald : colors.text.secondary} />}
+              icon={<Icon name={askMadhab === id ? 'check-circle' : 'globe'} size="sm" color={askMadhab === id ? colors.emerald : tc.text.secondary} />}
               onPress={() => { setAskMadhab(id); setMadhabSheetOpen(false); haptic.tick(); }}
             />
           ))}

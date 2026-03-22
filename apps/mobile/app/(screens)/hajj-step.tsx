@@ -220,7 +220,7 @@ function HajjStepContent() {
                 <Icon
                   name={expandedDua === duaIndex ? 'chevron-down' : 'chevron-right'}
                   size="xs"
-                  color={colors.text.tertiary}
+                  color={tc.text.tertiary}
                 />
               </View>
             </Pressable>

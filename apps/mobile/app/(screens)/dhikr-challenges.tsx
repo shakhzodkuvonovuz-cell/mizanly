@@ -85,7 +85,7 @@ function ChallengeCard({
             })}
           </Text>
           <View style={styles.participantBadge}>
-            <Icon name="users" size="xs" color={colors.text.tertiary} />
+            <Icon name="users" size="xs" color={tc.text.tertiary} />
             <Text style={styles.participantText}>
               {t('dhikr.participants', { count: formatCount(challenge.participantCount) })}
             </Text>
@@ -248,7 +248,7 @@ export default function DhikrChallengesScreen() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Icon name="plus" size="md" color={colors.text.primary} />
+            <Icon name="plus" size="md" color={tc.text.primary} />
           </LinearGradient>
         </Pressable>
 
@@ -263,7 +263,7 @@ export default function DhikrChallengesScreen() {
               value={newTitle}
               onChangeText={setNewTitle}
               placeholder={t('dhikr.title')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               maxLength={100}
             />
 
@@ -275,7 +275,7 @@ export default function DhikrChallengesScreen() {
               style={[styles.pickerButton, { backgroundColor: tc.surface, borderColor: tc.border }]}
             >
               <Text style={styles.pickerText}>{selectedPhraseLabel}</Text>
-              <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
+              <Icon name="chevron-down" size="xs" color={tc.text.tertiary} />
             </Pressable>
 
             <Text style={styles.inputLabel}>{t('dhikr.target')}</Text>
@@ -284,7 +284,7 @@ export default function DhikrChallengesScreen() {
               value={newTarget}
               onChangeText={setNewTarget}
               placeholder="1000"
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               keyboardType="numeric"
             />
 
@@ -303,7 +303,7 @@ export default function DhikrChallengesScreen() {
             <BottomSheetItem
               key={opt.value}
               label={opt.label}
-              icon={<Icon name={newPhrase === opt.value ? 'check-circle' : 'circle'} size="sm" color={newPhrase === opt.value ? colors.emerald : colors.text.tertiary} />}
+              icon={<Icon name={newPhrase === opt.value ? 'check-circle' : 'circle'} size="sm" color={newPhrase === opt.value ? colors.emerald : tc.text.tertiary} />}
               onPress={() => {
                 setNewPhrase(opt.value);
                 setShowPhraseSheet(false);

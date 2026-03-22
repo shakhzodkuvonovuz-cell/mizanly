@@ -195,7 +195,7 @@ function DateSeparator({ label }: { label: string }) {
   return (
     <View style={styles.dateSep}>
       <View style={[styles.dateSepLine, { backgroundColor: tc.border }]} />
-      <Text style={styles.dateSepText}>{label}</Text>
+      <Text style={[styles.dateSepText, { color: tc.text.tertiary }]}>{label}</Text>
       <View style={[styles.dateSepLine, { backgroundColor: tc.border }]} />
     </View>
   );
@@ -424,7 +424,7 @@ const MessageBubble = memo(function MessageBubble({
       <View style={styles.systemMessageWrap}>
         <View style={styles.systemMessageBubble}>
           <Icon name={isSecurityMsg ? 'lock' : 'bell'} size="xs" color={colors.text.tertiary} />
-          <Text style={styles.systemMessageText}>
+          <Text style={[styles.systemMessageText, { color: tc.text.tertiary }]}>
             {message.content}
           </Text>
         </View>
@@ -436,7 +436,7 @@ const MessageBubble = memo(function MessageBubble({
     return (
       <View style={[styles.bubbleWrap, isOwn && styles.bubbleWrapOwn, !isGroupEnd && styles.bubbleWrapGrouped]}>
         {!isOwn && <View style={{ width: AVATAR_SIZE }} />}
-        <Text style={styles.deletedMsg}>{t('messages.deleted')}</Text>
+        <Text style={[styles.deletedMsg, { color: tc.text.tertiary }]}>{t('messages.deleted')}</Text>
       </View>
     );
   }
@@ -495,7 +495,7 @@ const MessageBubble = memo(function MessageBubble({
         {message.isForwarded && (
           <View style={[styles.forwardedLabel, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Icon name="share" size={10} color={colors.text.tertiary} />
-            <Text style={styles.forwardedText}>{t('messages.forwarded')}</Text>
+            <Text style={[styles.forwardedText, { color: tc.text.tertiary }]}>{t('messages.forwarded')}</Text>
           </View>
         )}
         {message.replyTo && (
@@ -608,7 +608,7 @@ const MessageBubble = memo(function MessageBubble({
             <View style={styles.receiptRow}>
               <ReadReceiptIcon status={getMessageStatus(message, readByMembers, deliveredMessages)} />
               {readByMembers.length > 0 && readByMembers[0]?.lastReadAt && (
-                <Text style={styles.readTime}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
+                <Text style={[styles.readTime, { color: tc.text.tertiary }]}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
               )}
             </View>
           )}
@@ -623,7 +623,7 @@ const MessageBubble = memo(function MessageBubble({
                 />
               ))}
               {readByMembers.length > 3 && (
-                <Text style={styles.readReceiptMore}>+{readByMembers.length - 3}</Text>
+                <Text style={[styles.readReceiptMore, { color: tc.text.tertiary }]}>+{readByMembers.length - 3}</Text>
               )}
             </View>
           )}
@@ -668,7 +668,7 @@ const MessageBubble = memo(function MessageBubble({
                 accessibilityLabel={`${emoji} ${count}`}
               >
                 <Text style={styles.reactionEmoji}>{emoji}</Text>
-                {count > 1 && <Text style={styles.reactionCount}>{count}</Text>}
+                {count > 1 && <Text style={[styles.reactionCount, { color: tc.text.secondary }]}>{count}</Text>}
               </Pressable>
             ))}
           </View>
@@ -694,7 +694,7 @@ function PendingMessageRow({ pending }: { pending: PendingMessage }) {
   const tc = useThemeColors();
   return (
     <View style={[styles.pendingRow, { backgroundColor: tc.bgCard }]}>
-      <Text style={styles.pendingText}>{pending.content}</Text>
+      <Text style={[styles.pendingText, { color: tc.text.secondary }]}>{pending.content}</Text>
       <Skeleton.Circle size={16} />
     </View>
   );
@@ -1387,7 +1387,7 @@ export default function ConversationScreen() {
             <View style={[styles.searchInputWrap, { backgroundColor: tc.bgCard }]}>
               <Icon name="search" size="sm" color={colors.text.secondary} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: tc.text.primary }]}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder={t('messages.searchPlaceholder')}
@@ -1419,7 +1419,7 @@ export default function ConversationScreen() {
             <Pressable style={styles.headerCenter} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
               <Avatar uri={avatarUri} name={name} size="sm" showOnline />
               <View>
-                <Text style={styles.headerName} numberOfLines={1}>{name}</Text>
+                <Text style={[styles.headerName, { color: tc.text.primary }]} numberOfLines={1}>{name}</Text>
                 {otherTyping && (
                   <View style={styles.typingRow}>
                     <Text style={styles.typingText}>{t('messages.typing')}</Text>
@@ -1528,8 +1528,8 @@ export default function ConversationScreen() {
             ListEmptyComponent={() => (
               <View style={styles.emptyWrap}>
                 <Avatar uri={avatarUri} name={name} size="2xl" />
-                <Text style={styles.emptyName}>{name}</Text>
-                <Text style={styles.emptyHint}>{t('risalah.startConversation')}</Text>
+                <Text style={[styles.emptyName, { color: tc.text.primary }]}>{name}</Text>
+                <Text style={[styles.emptyHint, { color: tc.text.secondary }]}>{t('risalah.startConversation')}</Text>
               </View>
             )}
             contentContainerStyle={styles.messageList}
@@ -1559,7 +1559,7 @@ export default function ConversationScreen() {
             exiting={FadeOut}
             style={[styles.undoSendBar, { backgroundColor: tc.bgCard }]}
           >
-            <Text style={styles.undoSendText}>
+            <Text style={[styles.undoSendText, { color: tc.text.secondary }]}>
               {t('undoSend.sending')}
             </Text>
             <Pressable onPress={handleUndoSend} hitSlop={8}>
@@ -1576,7 +1576,7 @@ export default function ConversationScreen() {
             <View style={[styles.replyBanner, { backgroundColor: tc.bgElevated }]}>
               <View style={styles.replyBannerContent}>
                 <Text style={styles.replyBannerUser}>@{replyTo.username}</Text>
-                <Text style={styles.replyBannerText} numberOfLines={1}>
+                <Text style={[styles.replyBannerText, { color: tc.text.secondary }]} numberOfLines={1}>
                   {replyTo.content ?? t('common.media')}
                 </Text>
               </View>
@@ -1742,9 +1742,9 @@ export default function ConversationScreen() {
             <View style={[styles.recordingOverlay, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
               <View style={styles.recordingIndicator}>
                 <View style={styles.recordingDot} />
-                <Text style={styles.recordingTimer}>{formatRecordingTime(recordingTime)}</Text>
+                <Text style={[styles.recordingTimer, { color: tc.text.primary }]}>{formatRecordingTime(recordingTime)}</Text>
               </View>
-              <Text style={styles.slideCancelHint}>{t('risalah.slideToCancel')}</Text>
+              <Text style={[styles.slideCancelHint, { color: tc.text.secondary }]}>{t('risalah.slideToCancel')}</Text>
             </View>
           )}
         </View>
@@ -1960,7 +1960,7 @@ export default function ConversationScreen() {
         snapPoint={180}
       >
         <View style={styles.reactionPicker}>
-          <Text style={styles.reactionPickerTitle}>{t('risalah.reactWith')}</Text>
+          <Text style={[styles.reactionPickerTitle, { color: tc.text.secondary }]}>{t('risalah.reactWith')}</Text>
           <View style={styles.reactionGrid}>
             {['❤️', '👍', '😂', '😮', '😢', '🤲'].map((emoji) => (
               <Pressable

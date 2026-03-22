@@ -88,7 +88,7 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
           accessibilityLabel={t('common.listen', { defaultValue: 'Listen' })}
           accessibilityRole="button"
         >
-          <Icon name="play" size={18} color={colors.text.secondary} />
+          <Icon name="play" size={18} color={tc.text.secondary} />
           <Text style={styles.actionText}>{t('common.listen', { defaultValue: 'Listen' })}</Text>
         </Pressable>
         <Pressable
@@ -98,7 +98,7 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
           accessibilityLabel={t('duas.bookmark')}
           accessibilityRole="button"
         >
-          <Icon name="bookmark" size={18} color={colors.text.secondary} />
+          <Icon name="bookmark" size={18} color={tc.text.secondary} />
           <Text style={styles.actionText}>{t('duas.bookmark')}</Text>
         </Pressable>
         <Pressable
@@ -108,7 +108,7 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
           accessibilityLabel={t('duas.shareDua')}
           accessibilityRole="button"
         >
-          <Icon name="share" size={18} color={colors.text.secondary} />
+          <Icon name="share" size={18} color={tc.text.secondary} />
           <Text style={styles.actionText}>{t('duas.shareDua')}</Text>
         </Pressable>
       </View>
@@ -243,7 +243,7 @@ export default function DuaCollectionScreen() {
                 <Icon
                   name={CATEGORY_ICONS[item]}
                   size={14}
-                  color={selectedCategory === item ? '#fff' : colors.text.secondary}
+                  color={selectedCategory === item ? '#fff' : tc.text.secondary}
                 />
               )}
               <Text style={[styles.chipText, selectedCategory === item && styles.chipTextActive]}>

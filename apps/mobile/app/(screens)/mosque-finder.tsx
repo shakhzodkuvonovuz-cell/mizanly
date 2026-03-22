@@ -118,7 +118,7 @@ function FacilityBadge({ facility }: { facility: string }) {
   const { t } = useTranslation();
   return (
     <View style={styles.facilityBadge}>
-      <Icon name={FACILITY_ICONS[facility]} size="xs" color={colors.text.tertiary} />
+      <Icon name={FACILITY_ICONS[facility]} size="xs" color={tc.text.tertiary} />
       <Text style={styles.facilityText}>{t(`islamic.facilities.${facility}`) || facility}</Text>
     </View>
   );
@@ -199,7 +199,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.directionsGradient}
           >
-            <Icon name="map-pin" size="xs" color={colors.text.primary} />
+            <Icon name="map-pin" size="xs" color={tc.text.primary} />
             <Text style={styles.directionsText}>{t('islamic.directions')}</Text>
           </LinearGradient>
         </Pressable>
@@ -353,17 +353,17 @@ export default function MosqueFinderScreen() {
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                   style={styles.searchContainer}
                 >
-                  <Icon name="search" size="sm" color={colors.text.tertiary} />
+                  <Icon name="search" size="sm" color={tc.text.tertiary} />
                   <TextInput
                     style={styles.searchInput}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder={t('islamic.searchMosquesPlaceholder')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                   />
                   {searchQuery.length > 0 && (
                     <Pressable accessibilityRole="button" accessibilityLabel={t('common.clear')} onPress={() => setSearchQuery('')}>
-                      <Icon name="x" size="sm" color={colors.text.secondary} />
+                      <Icon name="x" size="sm" color={tc.text.secondary} />
                     </Pressable>
                   )}
                 </LinearGradient>
@@ -418,7 +418,7 @@ export default function MosqueFinderScreen() {
                       colors={[colors.emerald, colors.goldLight]}
                       style={styles.arrowCircle}
                     >
-                      <Icon name="arrow-left" size="md" color={colors.text.primary} style={styles.arrowIcon} />
+                      <Icon name="arrow-left" size="md" color={tc.text.primary} style={styles.arrowIcon} />
                     </LinearGradient>
                   </View>
                 </LinearGradient>

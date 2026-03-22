@@ -63,7 +63,7 @@ function CalendarDay({ day, isFasting, isMissed, isToday, isFuture }: {
     ]}>
       <Text style={[
         styles.calDayText,
-        isFuture && { color: colors.text.tertiary },
+        isFuture && { color: tc.text.tertiary },
       ]}>
         {day > 0 ? day : ''}
       </Text>
@@ -208,7 +208,7 @@ export default function FastingTrackerScreen() {
                   accessibilityLabel={t('fasting.notFasting')}
                   accessibilityRole="button"
                 >
-                  <Icon name="x" size={18} color={colors.text.primary} />
+                  <Icon name="x" size={18} color={tc.text.primary} />
                   <Text style={styles.todayBtnTextNo}>{t('fasting.notFasting')}</Text>
                 </Pressable>
               </View>
@@ -234,7 +234,7 @@ export default function FastingTrackerScreen() {
             <View style={styles.statsRow}>
               <StatCard label={t('fasting.streak')} value={stats.currentStreak} color={colors.emerald} />
               <StatCard label={t('fasting.totalThisYear')} value={stats.totalFastsThisYear} />
-              <StatCard label={t('fasting.makeupNeeded')} value={stats.makeupNeeded} color={stats.makeupNeeded > 0 ? colors.error : colors.text.secondary} />
+              <StatCard label={t('fasting.makeupNeeded')} value={stats.makeupNeeded} color={stats.makeupNeeded > 0 ? colors.error : tc.text.secondary} />
             </View>
           ) : null}
 
@@ -242,11 +242,11 @@ export default function FastingTrackerScreen() {
           <View style={[styles.calendarSection, { backgroundColor: tc.bgCard }]}>
             <View style={[styles.calHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Pressable onPress={() => navigateMonth(-1)} hitSlop={12} accessibilityLabel="Previous month" accessibilityRole="button">
-                <Icon name="chevron-left" size="md" color={colors.text.secondary} />
+                <Icon name="chevron-left" size="md" color={tc.text.secondary} />
               </Pressable>
               <Text style={styles.calMonthLabel}>{monthLabel}</Text>
               <Pressable onPress={() => navigateMonth(1)} hitSlop={12} accessibilityLabel="Next month" accessibilityRole="button">
-                <Icon name="chevron-right" size="md" color={colors.text.secondary} />
+                <Icon name="chevron-right" size="md" color={tc.text.secondary} />
               </Pressable>
             </View>
 

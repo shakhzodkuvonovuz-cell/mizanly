@@ -61,17 +61,17 @@ function ContactRow({
         <View style={styles.info}>
           <Pressable accessibilityRole="button" onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
             <View style={styles.nameRow}>
-              <Text style={styles.name} numberOfLines={1}>{user.displayName}</Text>
+              <Text style={[styles.name, { color: tc.text.primary }]} numberOfLines={1}>{user.displayName}</Text>
               {user.isVerified && <VerifiedBadge size={13} />}
             </View>
-            <Text style={styles.username}>@{user.username}</Text>
+            <Text style={[styles.username, { color: tc.text.secondary }]}>@{user.username}</Text>
           </Pressable>
         </View>
 
         <View style={styles.actionCol}>
           {user.isFollowing ? (
             <Pressable accessibilityRole="button" onPress={onToggleFollow} disabled={followLoading} style={[styles.followingBtn, { borderColor: tc.border }]}>
-              <Text style={styles.followingText}>{t('contactSync.following')}</Text>
+              <Text style={[styles.followingText, { color: tc.text.secondary }]}>{t('contactSync.following')}</Text>
             </Pressable>
           ) : (
             <GradientButton
@@ -239,7 +239,7 @@ export default function ContactSyncScreen() {
 
         {loading && !refreshing ? (
           <View style={[styles.skeletonList, { paddingTop: insets.top + 52 }]}>
-            <Text style={styles.scanningText}>{t('contactSync.scanning')}</Text>
+            <Text style={[styles.scanningText, { color: tc.text.secondary }]}>{t('contactSync.scanning')}</Text>
             {Array.from({ length: 6 }).map((_, i) => (
               <View key={i} style={styles.skeletonRow}>
                 <Skeleton.Circle size={48} />
@@ -262,7 +262,7 @@ export default function ContactSyncScreen() {
             }
             ListHeaderComponent={
               hasLoaded && contacts.length > 0 ? (
-                <Text style={styles.foundText}>
+                <Text style={[styles.foundText, { color: tc.text.secondary }]}>
                   {t('contactSync.found', { count: contacts.length })}
                 </Text>
               ) : null

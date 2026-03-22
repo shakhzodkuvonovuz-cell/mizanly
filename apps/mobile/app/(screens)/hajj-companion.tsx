@@ -301,7 +301,7 @@ function HajjCompanionContent() {
                   <Icon
                     name="chevron-right"
                     size="sm"
-                    color={colors.text.tertiary}
+                    color={tc.text.tertiary}
                   />
                 </Pressable>
               </Animated.View>
@@ -343,7 +343,7 @@ function HajjCompanionContent() {
         />
         <BottomSheetItem
           label={t('common.cancel')}
-          icon={<Icon name="x" size="sm" color={colors.text.secondary} />}
+          icon={<Icon name="x" size="sm" color={tc.text.secondary} />}
           onPress={() => setShowResetSheet(false)}
         />
       </BottomSheet>

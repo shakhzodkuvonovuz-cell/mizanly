@@ -75,7 +75,7 @@ function ActionButton({
         <Icon
           name={icon}
           size="sm"
-          color={isActive ? colors.text.primary : colors.text.secondary}
+          color={isActive ? tc.text.primary : tc.text.secondary}
         />
       </LinearGradient>
       <Text style={styles.actionLabel}>{label}</Text>
