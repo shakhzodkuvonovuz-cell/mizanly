@@ -199,7 +199,7 @@ export default function CameraScreen() {
             {/* Camera Flip */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Flip camera"
+              accessibilityLabel={t('accessibility.flipCamera')}
               style={styles.controlPill}
               onPress={() => setIsFrontCamera(!isFrontCamera)}
             >

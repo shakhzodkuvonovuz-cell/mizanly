@@ -168,7 +168,7 @@ export default function TwoFactorVerifyScreen() {
             maxLength={6}
             editable={!loading}
           />
-          <Pressable accessibilityRole="button" accessibilityLabel="Clear backup code" onPress={() => setBackupCode('')}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.clearBackupCode')} onPress={() => setBackupCode('')}>
             <Icon name="x" size="sm" color={tc.text.tertiary} />
           </Pressable>
         </LinearGradient>

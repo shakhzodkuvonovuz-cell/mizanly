@@ -351,7 +351,7 @@ export default function IslamicCalendarScreen() {
             >
               {/* Month Header */}
               <View style={styles.monthHeader}>
-                <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={handlePrevMonth} style={styles.monthNavButton}>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.previousMonth')} onPress={handlePrevMonth} style={styles.monthNavButton}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.monthNavGradient}
@@ -365,7 +365,7 @@ export default function IslamicCalendarScreen() {
                   <Text style={[styles.monthTitle, { color: tc.text.secondary }]}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
                 </View>
 
-                <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={handleNextMonth} style={styles.monthNavButton}>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.nextMonth')} onPress={handleNextMonth} style={styles.monthNavButton}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.monthNavGradient}

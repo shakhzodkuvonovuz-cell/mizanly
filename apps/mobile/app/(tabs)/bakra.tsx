@@ -673,8 +673,10 @@ export default function BakraScreen() {
   const handleFollow = useCallback((userId: string) => {
     followsApi.follow(userId).then(() => {
       queryClient.invalidateQueries({ queryKey: ['reels-feed', bakraFeedType] });
-    }).catch(() => {});
-  }, [queryClient, bakraFeedType]);
+    }).catch(() => {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    });
+  }, [queryClient, bakraFeedType, t]);
 
   const handleNavigate = useCallback((path: string) => {
     navigate(path);

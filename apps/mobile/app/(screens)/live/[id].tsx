@@ -245,14 +245,18 @@ export default function LiveViewerScreen() {
   const handleInviteSpeaker = (participantId: string) => {
     Alert.alert(t('screens.live.inviteToSpeak'), t('screens.live.inviteToSpeakDesc'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('screens.live.invite'), onPress: () => liveApi.inviteSpeaker(id, participantId).catch(() => {}) },
+      { text: t('screens.live.invite'), onPress: () => liveApi.inviteSpeaker(id, participantId).catch(() => {
+        showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+      }) },
     ]);
   };
 
   const handleRemoveParticipant = (participantId: string) => {
     Alert.alert(t('screens.live.removeParticipant'), t('screens.live.removeParticipantConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.remove'), style: 'destructive', onPress: () => liveApi.removeParticipant(id, participantId).catch(() => {}) },
+      { text: t('common.remove'), style: 'destructive', onPress: () => liveApi.removeParticipant(id, participantId).catch(() => {
+        showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+      }) },
     ]);
   };
 

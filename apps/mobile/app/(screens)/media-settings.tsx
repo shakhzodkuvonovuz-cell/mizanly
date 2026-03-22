@@ -152,7 +152,7 @@ export default function MediaSettingsScreen() {
   useEffect(() => {
     settingsApi.getAutoPlay().then(res => {
       if (res?.autoPlaySetting) setAutoPlay(res.autoPlaySetting as 'wifi' | 'always' | 'never');
-    }).catch(() => {});
+    }).catch(__DEV__ ? (err) => console.warn('Failed to load auto-play setting:', err) : () => {});
   }, []);
 
   const loadSettings = useCallback(async () => {
@@ -340,7 +340,7 @@ export default function MediaSettingsScreen() {
                     onPress={() => {
                       haptic.tick();
                       setAutoPlay(option);
-                      settingsApi.updateAutoPlay(option).catch(() => {});
+                      settingsApi.updateAutoPlay(option).catch(__DEV__ ? (err) => console.warn('Failed to save auto-play setting:', err) : () => {});
                       useStore.getState().setAutoPlaySetting(option);
                     }}
                   >

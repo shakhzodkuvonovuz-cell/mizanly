@@ -125,11 +125,11 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
             {formatCount(likeCount)}
           </Text>
         </Pressable>
-        <Pressable style={styles.postAction} accessibilityRole="button" accessibilityLabel="Comments">
+        <Pressable style={styles.postAction} accessibilityRole="button" accessibilityLabel={t('common.comments')}>
           <Icon name="message-circle" size="sm" color={tc.text.secondary} />
           <Text style={[styles.postActionCount, { color: tc.text.secondary }]}>{formatCount(post.commentsCount)}</Text>
         </Pressable>
-        <Pressable style={styles.postAction} accessibilityRole="button" accessibilityLabel="Share">
+        <Pressable style={styles.postAction} accessibilityRole="button" accessibilityLabel={t('common.share')}>
           <Icon name="share" size="sm" color={tc.text.secondary} />
         </Pressable>
       </View>

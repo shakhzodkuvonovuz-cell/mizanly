@@ -241,11 +241,11 @@ export default function FastingTrackerScreen() {
           {/* Calendar */}
           <View style={[styles.calendarSection, { backgroundColor: tc.bgCard }]}>
             <View style={[styles.calHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
-              <Pressable onPress={() => navigateMonth(-1)} hitSlop={12} accessibilityLabel="Previous month" accessibilityRole="button">
+              <Pressable onPress={() => navigateMonth(-1)} hitSlop={12} accessibilityLabel={t('accessibility.previousMonth')} accessibilityRole="button">
                 <Icon name="chevron-left" size="md" color={tc.text.secondary} />
               </Pressable>
               <Text style={[styles.calMonthLabel, { color: tc.text.primary }]}>{monthLabel}</Text>
-              <Pressable onPress={() => navigateMonth(1)} hitSlop={12} accessibilityLabel="Next month" accessibilityRole="button">
+              <Pressable onPress={() => navigateMonth(1)} hitSlop={12} accessibilityLabel={t('accessibility.nextMonth')} accessibilityRole="button">
                 <Icon name="chevron-right" size="md" color={tc.text.secondary} />
               </Pressable>
             </View>

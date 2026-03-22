@@ -414,7 +414,7 @@ export default function DhikrCounterScreen() {
             </Pressable>
 
             {/* Reset Button */}
-            <Pressable onPress={handleReset} style={styles.resetButton} accessibilityRole="button" accessibilityLabel="Reset counter">
+            <Pressable onPress={handleReset} style={styles.resetButton} accessibilityRole="button" accessibilityLabel={t('accessibility.resetCounter')}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                 style={styles.resetButtonGradient}

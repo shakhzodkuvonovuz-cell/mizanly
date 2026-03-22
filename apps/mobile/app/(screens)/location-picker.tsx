@@ -180,7 +180,7 @@ function LocationPickerContent() {
               {searching ? (
                 <Skeleton.Circle size={20} />
               ) : searchQuery.length > 0 ? (
-                <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setSearchQuery('')} hitSlop={8}>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.clearSearch')} onPress={() => setSearchQuery('')} hitSlop={8}>
                   <Icon name="x" size="xs" color={tc.text.tertiary} />
                 </Pressable>
               ) : null}

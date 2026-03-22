@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { api, searchApi } from '@/services/api';
@@ -203,7 +204,9 @@ export default function MentorshipScreen() {
                 haptic.save();
                 // Send mentorship request via API
                 if (selectedMentorId) {
-                  api.post('/mentorship/request', { mentorId: selectedMentorId, topic: topic.id }).catch(() => {});
+                  api.post('/mentorship/request', { mentorId: selectedMentorId, topic: topic.id })
+                    .then(() => showToast({ message: t('common.requestSent'), variant: 'success' }))
+                    .catch(() => showToast({ message: t('common.somethingWentWrong'), variant: 'error' }));
                 }
               }}
             />

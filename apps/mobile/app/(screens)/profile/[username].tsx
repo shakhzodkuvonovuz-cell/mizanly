@@ -364,8 +364,9 @@ export default function ProfileScreen() {
     setShowMenu(false);
     const sendReport = (reason: string) => {
       if (!profile) return;
-      usersApi.report(profile.id, reason).catch(() => {});
-      showToast({ message: t('profile.reportSentMessage'), variant: 'success' });
+      usersApi.report(profile.id, reason)
+        .then(() => showToast({ message: t('profile.reportSentMessage'), variant: 'success' }))
+        .catch(() => showToast({ message: t('common.somethingWentWrong'), variant: 'error' }));
     };
     Alert.alert(t('profile.reportAccountTitle'), t('profile.reportAccountMessage'), [
       { text: t('profile.reportSpam'), onPress: () => sendReport('spam') },

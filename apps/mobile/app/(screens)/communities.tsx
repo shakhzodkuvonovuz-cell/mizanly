@@ -158,7 +158,7 @@ function FAB({ onPress }: { onPress: () => void }) {
 
   return (
     <Animated.View style={[styles.fab, animatedStyle]}>
-      <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel="Create community">
+      <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel={t('accessibility.createCommunity')}>
         <LinearGradient
           colors={[colors.emerald, colors.gold]}
           style={styles.fabGradient}

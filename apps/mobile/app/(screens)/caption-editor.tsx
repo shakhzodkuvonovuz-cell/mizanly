@@ -370,7 +370,7 @@ export default function CaptionEditorScreen() {
                 <View style={styles.playbackControls}>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Rewind 5 seconds"
+                    accessibilityLabel={t('accessibility.rewind5Seconds')}
                     style={styles.controlCircle}
                     onPress={() => { haptic.tick(); setCurrentTime(Math.max(0, currentTime - 5)); }}
                   >
@@ -398,7 +398,7 @@ export default function CaptionEditorScreen() {
 
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Forward 5 seconds"
+                    accessibilityLabel={t('accessibility.forward5Seconds')}
                     style={styles.controlCircle}
                     onPress={() => { haptic.tick(); setCurrentTime(Math.min(90, currentTime + 5)); }}
                   >

@@ -30,7 +30,7 @@ function SimpleSlider({ value, onValueChange, fillColor = colors.emerald, trackC
   return (
     <Pressable
       accessibilityRole="adjustable"
-      accessibilityLabel="Volume slider"
+      accessibilityLabel={t('accessibility.volumeSlider')}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(value * 100) }}
       onLayout={(e) => { trackWidth.current = e.nativeEvent.layout.width; }}
       onPress={(e) => {
@@ -444,7 +444,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.controlsContainer}>
               {/* Flip Camera */}
-              <Pressable accessibilityRole="button" accessibilityLabel="Flip camera" style={styles.controlButton} onPress={() => { haptic.tick(); setFacing(f => f === 'front' ? 'back' : 'front'); }}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.flipCamera')} style={styles.controlButton} onPress={() => { haptic.tick(); setFacing(f => f === 'front' ? 'back' : 'front'); }}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlButtonGradient}

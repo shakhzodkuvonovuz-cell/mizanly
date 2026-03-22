@@ -201,7 +201,7 @@ export default function CreateEventScreen() {
               <>
                 <ProgressiveImage uri={coverUri} width="100%" height={200} contentFit="cover" />
                 <View style={styles.coverOverlay}>
-                  <Pressable accessibilityRole="button" accessibilityLabel="Change cover photo" style={[styles.changeButton, { backgroundColor: tc.surface }]} onPress={pickCoverPhoto}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.changeCoverPhoto')} style={[styles.changeButton, { backgroundColor: tc.surface }]} onPress={pickCoverPhoto}>
                     <Text style={styles.changeText}>{t('common.change')}</Text>
                   </Pressable>
                 </View>
