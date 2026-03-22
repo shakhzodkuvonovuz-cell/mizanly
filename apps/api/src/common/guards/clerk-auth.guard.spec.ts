@@ -8,7 +8,7 @@ jest.mock('@clerk/backend', () => ({
   verifyToken: jest.fn(),
 }));
 
-const mockVerifyToken = verifyToken as jest.MockedFunction<typeof verifyToken>;
+const mockVerifyToken = verifyToken;
 
 describe('ClerkAuthGuard', () => {
   let guard: ClerkAuthGuard;

@@ -171,9 +171,9 @@ export class PostsService {
     // Following feed — with zero-follow fallback to trending
     const [follows, blocksOut, blocksIn, mutes] = await Promise.all([
       this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true }, take: 50 }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 5000 }),
-      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 5000 }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 5000 }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 1000 }),
+      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 1000 }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 1000 }),
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
@@ -339,10 +339,10 @@ export class PostsService {
       take: 50,
     }),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 5000,
+      take: 1000,
     }),
       this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 5000,
+      take: 1000,
     }),
     ]);
     const followIds = followingResult.map(f => f.followingId);
@@ -387,10 +387,10 @@ export class PostsService {
       take: 50,
     }),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 5000,
+      take: 1000,
     }),
       this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 5000,
+      take: 1000,
     }),
     ]);
     const excludedIds = [
