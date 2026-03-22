@@ -64,7 +64,7 @@ function getCurrentPrayerIndex(prayerList: Prayer[]): number {
   return 0; // Default to first prayer if before Fajr
 }
 
-function CountdownTimer({ targetTime }: { targetTime: string }) {
+function CountdownTimer({ targetTime, nextPrayerName }: { targetTime: string; nextPrayerName: string }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const [remaining, setRemaining] = useState('00:00:00');
@@ -95,7 +95,10 @@ function CountdownTimer({ targetTime }: { targetTime: string }) {
   }, [targetTime]);
 
   return (
-    <Text style={styles.countdownText}>{remaining}</Text>
+    <View style={styles.countdownTimerWrap}>
+      <Text style={styles.countdownTimerLabel}>Next: {nextPrayerName} in</Text>
+      <Text style={styles.countdownTimerText}>{remaining}</Text>
+    </View>
   );
 }
 
@@ -196,6 +199,25 @@ function PrayerCard({
       </LinearGradient>
     </Animated.View>
   );
+}
+
+function getSkyGradient(currentPrayerIndex: number): readonly [string, string, string] {
+  switch (currentPrayerIndex) {
+    case 0: // Fajr — pre-dawn deep blue
+      return ['#0a0e27', '#1a1a4e', '#2d1b69'] as const;
+    case 1: // Sunrise — warm orange-blue transition
+      return ['#1a1a4e', '#c84b31', '#ffa41b'] as const;
+    case 2: // Dhuhr — bright sky blue
+      return ['#1a3c5e', '#2980b9', '#6dd5fa'] as const;
+    case 3: // Asr — warm afternoon
+      return ['#2980b9', '#c0965c', '#f0a830'] as const;
+    case 4: // Maghrib — sunset gold-purple
+      return ['#2d1b69', '#c84b31', '#f0a830'] as const;
+    case 5: // Isha — deep night
+      return ['#0a0e27', '#0d1117', '#1a1a4e'] as const;
+    default:
+      return ['#0d1117', '#0d1117', '#1a1a4e'] as const;
+  }
 }
 
 const REMINDER_OPTIONS = [0, 5, 10, 15, 30];
@@ -375,10 +397,24 @@ export default function PrayerTimesScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
+        {/* Time-of-day sky gradient background */}
+        <LinearGradient
+          colors={getSkyGradient(currentPrayerIndex)}
+          style={StyleSheet.absoluteFill}
+        />
+
         <GlassHeader
           title={t('islamic.prayerTimes')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           rightAction={{ icon: 'settings', onPress: () => setShowNotifSettings(true) }}
+        />
+
+        {/* Emerald glow behind prayer cards */}
+        <LinearGradient
+          colors={['rgba(10,123,79,0.08)', 'transparent']}
+          style={styles.prayerGlow}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
         />
 
         <ScrollView
@@ -430,8 +466,10 @@ export default function PrayerTimesScreen() {
                 </View>
 
                 <View style={styles.countdownContainer}>
-                  <Text style={styles.countdownLabel}>{t('islamic.timeRemainingUntil')} {prayerList[nextPrayerIndex]?.name || ''}</Text>
-                  <CountdownTimer targetTime={prayerList[nextPrayerIndex]?.time || '00:00'} />
+                  <CountdownTimer
+                    targetTime={prayerList[nextPrayerIndex]?.time || '00:00'}
+                    nextPrayerName={prayerList[nextPrayerIndex]?.name || ''}
+                  />
                 </View>
               </View>
 
@@ -674,7 +712,7 @@ export default function PrayerTimesScreen() {
 const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: tc.bg,
+    backgroundColor: 'transparent',
   },
   scrollView: {
     flex: 1,
@@ -683,6 +721,16 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingTop: 100,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['3xl'],
+  },
+
+  // Emerald glow overlay behind prayer cards
+  prayerGlow: {
+    position: 'absolute',
+    top: 200,
+    left: 0,
+    right: 0,
+    height: 200,
+    zIndex: 0,
   },
 
   // Location
@@ -760,16 +808,26 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.lg,
     alignItems: 'center',
   },
-  countdownLabel: {
-    color: 'rgba(255,255,255,0.7)',
+  // countdownLabel removed — now inside CountdownTimer component
+  countdownTimerWrap: {
+    alignItems: 'center',
+  },
+  countdownTimerLabel: {
+    color: 'rgba(255,255,255,0.6)',
     fontSize: fontSize.xs,
+    fontWeight: '500',
+    letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
-  countdownText: {
-    color: '#fff',
-    fontSize: fontSize.xl,
-    fontWeight: '700',
-    fontFamily: fonts.mono,
+  countdownTimerText: {
+    fontSize: fontSizeExt.jumbo,
+    fontFamily: fonts.bodyBold,
+    color: colors.emerald,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 2,
+    textShadowColor: 'rgba(10,123,79,0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   decorationPattern: {
     position: 'absolute',
