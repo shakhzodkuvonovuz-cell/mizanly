@@ -11,7 +11,8 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { uploadApi, postsApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 const MAX_DURATION = 120; // 2 minutes max
@@ -21,7 +22,7 @@ export default function VoicePostCreateScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const recordingRef = useRef<Audio.Recording | null>(null);
 
@@ -70,7 +71,7 @@ export default function VoicePostCreateScreen() {
       setDuration(0);
       setRecordingUri(null);
       setWaveformBars(Array(30).fill(0.15));
-      haptic.light();
+      haptic.tick();
 
       pulseScale.value = withRepeat(withTiming(1.15, { duration: 800 }), -1, true);
 
@@ -124,7 +125,12 @@ export default function VoicePostCreateScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voice-posts'] });
       haptic.success();
+      showToast({ message: t('voicePost.posted', 'Voice post published!'), variant: 'success' });
       router.back();
+    },
+    onError: () => {
+      haptic.error();
+      showToast({ message: t('voicePost.postError', 'Failed to publish voice post'), variant: 'error' });
     },
   });
 
@@ -179,7 +185,7 @@ export default function VoicePostCreateScreen() {
                 colors={isRecording ? ['#F85149', '#E11D48'] : [colors.emerald, '#0D9B63']}
                 style={styles.recordGradient}
               >
-                <Icon name={isRecording ? 'square' : 'mic'} size="xl" color="#FFF" />
+                <Icon name={isRecording ? 'x' : 'mic'} size="xl" color="#FFF" />
               </LinearGradient>
             </Pressable>
             <Text style={styles.recordHint}>

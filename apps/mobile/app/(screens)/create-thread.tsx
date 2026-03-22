@@ -20,6 +20,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
@@ -165,7 +166,7 @@ function ThreadPart({
                     style={styles.mediaCardGradient}
                   >
                     <Image source={{ uri: item.uri }} style={styles.thumbImgEnhanced} contentFit="cover" />
-                    <Pressable style={styles.removeThumb} onPress={() => onRemoveMedia(mi)} hitSlop={4}>
+                    <Pressable style={styles.removeThumb} onPress={() => onRemoveMedia(mi)} hitSlop={4} accessibilityRole="button" accessibilityLabel={t('compose.removeMedia')}>
                       <LinearGradient
                         colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
                         style={styles.removeThumbGradient}
@@ -181,7 +182,7 @@ function ThreadPart({
 
           {/* Premium gradient toolbar */}
           <View style={styles.partToolbar}>
-            <Pressable onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8}>
+            <Pressable onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('compose.addMedia')}>
               <LinearGradient
                 colors={part.media.length >= 4 ? ['rgba(110,119,129,0.2)', 'rgba(110,119,129,0.1)'] : ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
                 style={[styles.toolbarBtnGradient, part.media.length >= 4 && styles.toolbarBtnDisabled]}
@@ -418,6 +419,7 @@ export default function CreateThreadScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['majlis-feed'] });
       AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
+      showToast({ message: t('compose.threadPosted'), variant: 'success' });
       router.back();
     },
     onError: (err: Error) => {
@@ -447,7 +449,7 @@ export default function CreateThreadScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
-          <Pressable onPress={handleBack} hitSlop={8}>
+          <Pressable onPress={handleBack} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.close')}>
             <Icon name="x" size="md" color={colors.text.primary} />
           </Pressable>
           <Text style={styles.headerTitle}>{t('majlis.newThread')}</Text>
@@ -641,7 +643,7 @@ export default function CreateThreadScreen() {
 
           {/* Premium Add thread part */}
           {parts.length < 10 && (
-            <Pressable style={styles.addPartBtn} onPress={addPart}>
+            <Pressable style={styles.addPartBtn} onPress={addPart} accessibilityRole="button" accessibilityLabel={t('compose.addToThread')}>
               <LinearGradient
                 colors={[colors.active.emerald20, 'transparent']}
                 start={{ x: 0, y: 0 }}

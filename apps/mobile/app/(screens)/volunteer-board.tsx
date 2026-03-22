@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   ScrollView,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,7 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { volunteerApi } from '@/services/api';
@@ -79,7 +79,7 @@ function VolunteerBoardContent() {
   const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
@@ -118,12 +118,12 @@ function VolunteerBoardContent() {
   };
 
   const handleCategoryPress = (key: CategoryKey) => {
-    haptic.light();
+    haptic.tick();
     setSelectedCategory(key);
   };
 
   const handleSignUp = (opportunity: VolunteerOpportunity) => {
-    haptic.medium();
+    haptic.follow();
     signUpMutation.mutate(opportunity.id);
   };
 
@@ -320,10 +320,9 @@ function VolunteerBoardContent() {
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={opportunitiesQuery.isFetching && !opportunitiesQuery.isLoading}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
           />

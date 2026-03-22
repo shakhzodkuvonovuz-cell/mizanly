@@ -6,7 +6,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { RefreshControl } from 'react-native-gesture-handler';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useUser } from '@clerk/clerk-expo';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -115,7 +115,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
       )}
 
       <View style={[styles.postActions, { borderTopColor: tc.borderLight }]}>
-        <Pressable style={styles.postAction} onPress={handleLike}>
+        <Pressable style={styles.postAction} onPress={handleLike} accessibilityRole="button" accessibilityLabel={liked ? 'Unlike' : 'Like'}>
           <Icon
             name={liked ? 'heart-filled' : 'heart'}
             size="sm"
@@ -125,11 +125,11 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
             {formatCount(likeCount)}
           </Text>
         </Pressable>
-        <Pressable style={styles.postAction}>
+        <Pressable style={styles.postAction} accessibilityRole="button" accessibilityLabel="Comments">
           <Icon name="message-circle" size="sm" color={colors.text.secondary} />
           <Text style={styles.postActionCount}>{formatCount(post.commentsCount)}</Text>
         </Pressable>
-        <Pressable style={styles.postAction}>
+        <Pressable style={styles.postAction} accessibilityRole="button" accessibilityLabel="Share">
           <Icon name="share" size="sm" color={colors.text.secondary} />
         </Pressable>
       </View>
@@ -186,6 +186,7 @@ export default function CommunityPostsScreen() {
       setComposeText('');
       setSelectedMediaList([]);
       setShowCreateSheet(false);
+      showToast({ message: t('communityPosts.postCreated'), variant: 'success' });
     },
     onError: (error) => {
       Alert.alert(t('common.error'), t('communityPosts.createError'));
@@ -247,6 +248,7 @@ export default function CommunityPostsScreen() {
     mutationFn: (postId: string) => channelPostsApi.delete(handle, postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channel-posts', handle] });
+      showToast({ message: t('communityPosts.postDeleted'), variant: 'success' });
     },
     onError: (error) => {
       Alert.alert(t('common.error'), t('communityPosts.deleteError'));
@@ -261,8 +263,9 @@ export default function CommunityPostsScreen() {
 
   const handleCopyText = useCallback(async (content: string) => {
     await Clipboard.setStringAsync(content);
+    showToast({ message: t('common.copiedToClipboard'), variant: 'success' });
     setSelectedPost(null);
-  }, []);
+  }, [t]);
 
   const handleLongPress = useCallback((post: ChannelPost) => {
     setSelectedPost(post);
@@ -404,10 +407,9 @@ export default function CommunityPostsScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
             ListEmptyComponent={

@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -305,10 +305,9 @@ function LeaderboardScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={isRefetching}
                 onRefresh={refetch}
-                tintColor={colors.emerald}
               />
             }
           />

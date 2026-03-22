@@ -2,8 +2,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { formatCompactNumber } from '@/utils/localeFormat';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  FlatList, TextInput, RefreshControl,
+  FlatList, TextInput,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -66,7 +67,7 @@ function CommunityCard({
 
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(500)} style={animatedStyle}>
-      <Pressable onPress={handlePress}>
+      <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel={community.name}>
         <LinearGradient
           colors={colors.gradient.cardDark}
           style={styles.communityCard}
@@ -157,7 +158,7 @@ function FAB({ onPress }: { onPress: () => void }) {
 
   return (
     <Animated.View style={[styles.fab, animatedStyle]}>
-      <Pressable onPress={handlePress}>
+      <Pressable onPress={handlePress} accessibilityRole="button" accessibilityLabel="Create community">
         <LinearGradient
           colors={[colors.emerald, colors.gold]}
           style={styles.fabGradient}
@@ -268,7 +269,7 @@ export default function CommunitiesScreen() {
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')}>
+              <Pressable onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel={t('common.clear')}>
                 <Icon name="x" size="sm" color={colors.text.tertiary} />
               </Pressable>
             )}
@@ -361,7 +362,7 @@ export default function CommunitiesScreen() {
               onAction={activeTab === 'joined' ? () => setActiveTab('discover') : undefined}
             />
           )}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           showsVerticalScrollIndicator={false}
         />
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  FlatList, RefreshControl, Image,
+  FlatList, Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,7 +17,8 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { PostCard } from '@/components/saf/PostCard';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { formatCount } from '@/utils/formatCount';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, hashtagsApi, followsApi } from '@/services/api';
@@ -150,7 +151,7 @@ export default function SearchResultsScreen() {
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const params = useLocalSearchParams<{ query: string }>();
   const initialQuery = params.query || '';
   const [query, setQuery] = useState(initialQuery);
@@ -422,10 +423,9 @@ export default function SearchResultsScreen() {
                     )}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={
-                      <RefreshControl
+                      <BrandedRefreshControl
                         refreshing={isRefreshing.people}
                         onRefresh={handleRefresh}
-                        tintColor={colors.emerald}
                       />
                     }
                   />
@@ -459,10 +459,9 @@ export default function SearchResultsScreen() {
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={
-                      <RefreshControl
+                      <BrandedRefreshControl
                         refreshing={isRefreshing.posts}
                         onRefresh={handleRefresh}
-                        tintColor={colors.emerald}
                       />
                     }
                   />
@@ -496,10 +495,9 @@ export default function SearchResultsScreen() {
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={
-                      <RefreshControl
+                      <BrandedRefreshControl
                         refreshing={isRefreshing.threads}
                         onRefresh={handleRefresh}
-                        tintColor={colors.emerald}
                       />
                     }
                   />
@@ -548,10 +546,9 @@ export default function SearchResultsScreen() {
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={
-                      <RefreshControl
+                      <BrandedRefreshControl
                         refreshing={isRefreshing.reels}
                         onRefresh={handleRefresh}
-                        tintColor={colors.emerald}
                       />
                     }
                   />
@@ -597,10 +594,9 @@ export default function SearchResultsScreen() {
                     onEndReachedThreshold={0.5}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={
-                      <RefreshControl
+                      <BrandedRefreshControl
                         refreshing={isRefreshing.hashtags}
                         onRefresh={handleRefresh}
-                        tintColor={colors.emerald}
                       />
                     }
                   />

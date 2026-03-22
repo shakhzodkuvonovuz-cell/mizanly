@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Alert, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,8 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { majlisListsApi } from '@/services/api';
 import type { MajlisList } from '@/types';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -25,7 +26,7 @@ export default function MajlisListsScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -71,7 +72,7 @@ export default function MajlisListsScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    haptic.light();
+    haptic.navigate();
     await refetch();
     setRefreshing(false);
   }, [refetch, haptic]);
@@ -196,7 +197,7 @@ export default function MajlisListsScreen() {
           contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
           removeClippedSubviews={true}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={
             <View style={styles.emptyWrap}>

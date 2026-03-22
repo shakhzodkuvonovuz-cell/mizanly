@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
+  KeyboardAvoidingView, Platform, FlatList, Alert, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
-import { Image } from 'expo-image';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { RichText } from '@/components/ui/RichText';
@@ -22,7 +23,7 @@ import { threadsApi } from '@/services/api';
 import type { ThreadReply } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTS } from '@/hooks/useTTS';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
@@ -117,10 +118,12 @@ function ReplyRow({
         </View>
         <RichText text={reply.content} />
         {reply.mediaUrls.length > 0 && (
-          <Image
-            source={{ uri: reply.mediaUrls[0] }}
-            style={styles.replyMedia}
-            contentFit="cover"
+          <ProgressiveImage
+            uri={reply.mediaUrls[0]}
+            width="100%"
+            height={160}
+            borderRadius={radius.md}
+            style={{ marginTop: spacing.sm }}
           />
         )}
         <View style={[styles.replyActions, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -186,7 +189,7 @@ export default function ThreadDetailScreen() {
   const [replySort, setReplySort] = useState<'top' | 'latest'>('top');
   const { t, isRTL } = useTranslation();
   const tts = useTTS();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const threadQuery = useQuery({
     queryKey: ['thread', id],
@@ -286,7 +289,7 @@ export default function ThreadDetailScreen() {
 
   const handleListen = useCallback(() => {
     if (!threadQuery.data) return;
-    haptic.light();
+    haptic.navigate();
     const content = threadQuery.data.content;
     if (content && content.length > 50) {
       const title = threadQuery.data.user?.displayName
@@ -320,7 +323,7 @@ export default function ThreadDetailScreen() {
           </Text>
           <View style={[styles.sortRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Pressable
-              onPress={() => { setReplySort('top'); haptic.light(); }}
+              onPress={() => { setReplySort('top'); haptic.tick(); }}
               style={[styles.sortButton, replySort === 'top' && styles.sortButtonActive]}
               accessibilityLabel={t('common.top')}
               accessibilityRole="button"
@@ -330,7 +333,7 @@ export default function ThreadDetailScreen() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => { setReplySort('latest'); haptic.light(); }}
+              onPress={() => { setReplySort('latest'); haptic.tick(); }}
               style={[styles.sortButton, replySort === 'latest' && styles.sortButtonActive]}
               accessibilityLabel={t('common.latest')}
               accessibilityRole="button"
@@ -393,10 +396,9 @@ export default function ThreadDetailScreen() {
           onEndReachedThreshold={0.4}
           ListHeaderComponent={listHeader}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={threadQuery.isRefetching || repliesQuery.isRefetching}
               onRefresh={handleRefresh}
-              tintColor={colors.emerald}
             />
           }
           renderItem={({ item }) => (

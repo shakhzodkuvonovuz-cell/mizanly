@@ -591,7 +591,7 @@ export const playlistsApi = {
 
 // ── Threads (Majlis) ──
 export const threadsApi = {
-  getFeed: (type: 'foryou' | 'following' | 'trending' = 'foryou', cursor?: string) =>
+  getFeed: (type: 'foryou' | 'following' | 'trending' | 'video' = 'foryou', cursor?: string) =>
     api.get<PaginatedResponse<Thread>>(`/threads/feed${qs({ type, cursor })}`),
   getTrending: (cursor?: string, limit?: number) =>
     api.get<PaginatedResponse<Thread>>(`/threads/trending${qs({ cursor, limit })}`),

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -13,14 +13,15 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
 export default function LocalBoardsScreen() {
   const router = useRouter();
   const { t, isRTL } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const tc = useThemeColors();
@@ -53,7 +54,7 @@ export default function LocalBoardsScreen() {
 
   const renderBoard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-      <Pressable accessibilityRole="button" style={[styles.boardCard, { borderColor: tc.border }]} onPress={() => { haptic.light(); router.push(`/(screens)/local-board/${item.id}` as never); }}>
+      <Pressable accessibilityRole="button" style={[styles.boardCard, { borderColor: tc.border }]} onPress={() => { haptic.navigate(); router.push(`/(screens)/local-board/${item.id}` as never); }}>
         <LinearGradient
           colors={['rgba(10,123,79,0.08)', 'transparent']}
           style={styles.boardGradient}
@@ -110,10 +111,9 @@ export default function LocalBoardsScreen() {
           keyExtractor={(item) => item.id as string}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={boardsQuery.isRefetching}
               onRefresh={() => boardsQuery.refetch()}
-              tintColor={colors.emerald}
             />
           }
           onEndReached={() => boardsQuery.hasNextPage && boardsQuery.fetchNextPage()}

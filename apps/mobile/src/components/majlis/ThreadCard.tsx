@@ -19,7 +19,8 @@ import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, animation, radius, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { threadsApi } from '@/services/api';
@@ -97,7 +98,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const [localLiked, setLocalLiked] = useState(thread.userReaction === 'LIKE');
   const [localLikes, setLocalLikes] = useState(thread.likesCount);
@@ -224,9 +225,9 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
 
   const handleCopyLink = async () => {
     setShowMenu(false);
-    haptic.light();
+    haptic.tick();
     await Clipboard.setStringAsync(`https://mizanly.app/thread/${thread.id}`);
-    // Optionally show a toast? Not needed.
+    showToast({ message: t('common.copiedToClipboard'), variant: 'success' });
   };
 
   const timeAgo = useMemo(() => formatDistanceToNowStrict(new Date(thread.createdAt), { addSuffix: true, locale: getDateFnsLocale() }), [thread.createdAt]);
@@ -244,7 +245,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
       {thread.repostOf && (
         <View style={styles.repostHeader}>
           <Icon name="repeat" size="xs" color={colors.text.tertiary} />
-          <Text style={styles.repostHeaderText}>Reposted</Text>
+          <Text style={styles.repostHeaderText}>{t('majlis.reposted')}</Text>
         </View>
       )}
 
@@ -290,7 +291,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
             <Text style={styles.time}>{timeAgo}</Text>
             <Pressable
               hitSlop={8}
-              onPress={() => { haptic.light(); setShowMenu(true); }}
+              onPress={() => { haptic.tick(); setShowMenu(true); }}
               accessibilityLabel={t('accessibility.moreOptions')}
               accessibilityRole="button"
               accessibilityHint="Open thread options menu"
@@ -347,7 +348,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
                     style={styles.pollOptionBtn}
                     onPress={() => {
                       if (viewerId) {
-                        haptic.medium();
+                        haptic.tick();
                         votePollMutation.mutate(opt.id);
                       }
                     }}
@@ -442,7 +443,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
           onPress={handleCopyLink}
         />
         <BottomSheetItem
-          label={localBookmarked ? 'Unbookmark' : 'Bookmark'}
+          label={localBookmarked ? t('common.unbookmark') : t('common.bookmark')}
           icon={<Icon name={localBookmarked ? 'bookmark-filled' : 'bookmark'} size="sm" color={colors.text.primary} />}
           onPress={() => { setShowMenu(false); bookmarkMutation.mutate(); }}
         />

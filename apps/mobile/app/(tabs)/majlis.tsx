@@ -27,7 +27,7 @@ import { Icon } from '@/components/ui/Icon';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -82,7 +82,7 @@ export default function MajlisScreen() {
   const { t, isRTL } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
@@ -144,9 +144,7 @@ export default function MajlisScreen() {
   const feedQuery = useInfiniteQuery({
     queryKey: ['majlis-feed', feedType],
     queryFn: ({ pageParam }) => {
-      // Video tab: use the same feed endpoint but pass 'video' type hint
-      const type = feedType === 'video' ? 'foryou' : feedType;
-      return threadsApi.getFeed(type as 'foryou' | 'following' | 'trending' | 'video', pageParam as string | undefined);
+      return threadsApi.getFeed(feedType as 'foryou' | 'following' | 'trending' | 'video', pageParam as string | undefined);
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
@@ -161,8 +159,7 @@ export default function MajlisScreen() {
   const newPostsCheck = useQuery({
     queryKey: ['majlis-new-posts-check', feedType],
     queryFn: async () => {
-      const type = feedType === 'video' ? 'foryou' : feedType;
-      const res = await threadsApi.getFeed(type as 'foryou' | 'following' | 'trending' | 'video', undefined);
+      const res = await threadsApi.getFeed(feedType as 'foryou' | 'following' | 'trending' | 'video', undefined);
       return res?.data?.[0]?.id ?? null;
     },
     refetchInterval: hasScrolledDown ? 30_000 : false,
@@ -170,7 +167,7 @@ export default function MajlisScreen() {
   });
 
   const allThreads: Thread[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
-  // Video tab: filter to threads with video media only
+  // Video tab: client-side safety filter (API should already return video-only when type='video')
   const threads = feedType === 'video'
     ? allThreads.filter((t) => t.mediaTypes?.some((mt: string) => mt.startsWith('video')))
     : allThreads;
@@ -198,7 +195,7 @@ export default function MajlisScreen() {
     feedQuery.refetch();
     setNewPostsAvailable(false);
     setHasScrolledDown(false);
-    haptic.light();
+    haptic.navigate();
   }, [feedQuery, haptic]);
 
   const listEmpty = useMemo(() => (
@@ -278,7 +275,7 @@ export default function MajlisScreen() {
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/audio-room'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/audio-room'); }}
             accessibilityLabel={t('tabs.audioRooms')}
             accessibilityRole="button"
           >
@@ -286,7 +283,7 @@ export default function MajlisScreen() {
           </Pressable>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/majlis-lists'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/majlis-lists'); }}
             accessibilityLabel={t('screens.majlis-lists.title')}
             accessibilityRole="button"
           >
@@ -294,7 +291,7 @@ export default function MajlisScreen() {
           </Pressable>
           <Pressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}
             accessibilityLabel={t('common.search')}
             accessibilityRole="button"
             accessibilityHint={t('accessibility.searchHint')}
@@ -331,7 +328,7 @@ export default function MajlisScreen() {
               key={hashtag.name}
               style={[styles.hashtagChip, { backgroundColor: tc.surface, borderColor: tc.border }]}
               onPress={() => {
-                haptic.light();
+                haptic.navigate();
                 router.push(`/(screens)/hashtag/${hashtag.name}`);
               }}
               accessibilityLabel={t('accessibility.hashtag', { name: hashtag.name })}
@@ -387,7 +384,7 @@ export default function MajlisScreen() {
       <AnimatedPressable
         style={[styles.fab, fabStyle, isRTL ? { left: spacing.lg, right: undefined } : undefined]}
         onPress={() => {
-          haptic.medium();
+          haptic.send();
           fabScale.value = withSequence(
             withSpring(0.85, animation.spring.bouncy),
             withSpring(1, animation.spring.bouncy),

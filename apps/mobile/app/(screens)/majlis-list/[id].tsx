@@ -1,5 +1,6 @@
 import { useCallback, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { FlashList } from '@shopify/flash-list';
@@ -110,7 +111,7 @@ export default function MajlisListDetailScreen() {
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           estimatedItemSize={200}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       </View>
     </ScreenErrorBoundary>

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Alert, RefreshControl, Image,
-  Pressable,
+  FlatList, Alert, Image,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -303,7 +303,7 @@ export default function CollabRequestsScreen() {
             }}
             onEndReachedThreshold={0.4}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             renderItem={renderItem}
             ListFooterComponent={() =>

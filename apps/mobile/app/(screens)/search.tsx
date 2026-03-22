@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  FlatList, RefreshControl, Image,
+  FlatList, Image,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -15,7 +16,7 @@ import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, postsApi, feedApi } from '@/services/api';
@@ -131,7 +132,7 @@ export default function SearchScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
 
   const SEARCH_TABS = [
@@ -358,10 +359,9 @@ export default function SearchScreen() {
                       onEndReachedThreshold={0.5}
                       contentContainerStyle={{ paddingBottom: 40 }}
                       refreshControl={
-                        <RefreshControl
+                        <BrandedRefreshControl
                           refreshing={postsQuery.isRefetching}
                           onRefresh={() => postsQuery.refetch()}
-                          tintColor={colors.emerald}
                         />
                       }
                     />
@@ -398,10 +398,9 @@ export default function SearchScreen() {
                       onEndReachedThreshold={0.5}
                       contentContainerStyle={{ paddingBottom: 40 }}
                       refreshControl={
-                        <RefreshControl
+                        <BrandedRefreshControl
                           refreshing={threadsQuery.isRefetching}
                           onRefresh={() => threadsQuery.refetch()}
-                          tintColor={colors.emerald}
                         />
                       }
                     />
@@ -424,7 +423,7 @@ export default function SearchScreen() {
                         <Pressable
                           style={styles.reelRow}
                           onPress={() => {
-                          haptic.light();
+                          haptic.navigate();
                           router.push(`/(screens)/reel/${item.id}`);
                         }}
                         >
@@ -439,11 +438,11 @@ export default function SearchScreen() {
                             </Text>
                             <View style={styles.reelStats}>
                               <Icon name="heart" size={14} color={colors.text.secondary} />
-                              <Text style={styles.reelStat}>{item.likesCount}</Text>
+                              <Text style={styles.reelStat}>{formatCount(item.likesCount)}</Text>
                               <Icon name="message-circle" size={14} color={colors.text.secondary} />
-                              <Text style={styles.reelStat}>{item.commentsCount}</Text>
+                              <Text style={styles.reelStat}>{formatCount(item.commentsCount)}</Text>
                               <Icon name="eye" size={14} color={colors.text.secondary} />
-                              <Text style={styles.reelStat}>{item.viewsCount}</Text>
+                              <Text style={styles.reelStat}>{formatCount(item.viewsCount)}</Text>
                             </View>
                             <View style={styles.reelUser}>
                               <Avatar
@@ -472,10 +471,9 @@ export default function SearchScreen() {
                       onEndReachedThreshold={0.5}
                       contentContainerStyle={{ paddingBottom: 40 }}
                       refreshControl={
-                        <RefreshControl
+                        <BrandedRefreshControl
                           refreshing={reelsQuery.isRefetching}
                           onRefresh={() => reelsQuery.refetch()}
-                          tintColor={colors.emerald}
                         />
                       }
                     />
@@ -515,10 +513,9 @@ export default function SearchScreen() {
                       onEndReachedThreshold={0.5}
                       contentContainerStyle={{ paddingBottom: 40 }}
                       refreshControl={
-                        <RefreshControl
+                        <BrandedRefreshControl
                           refreshing={videosQuery.isRefetching}
                           onRefresh={() => videosQuery.refetch()}
-                          tintColor={colors.emerald}
                         />
                       }
                     />
@@ -558,10 +555,9 @@ export default function SearchScreen() {
                       onEndReachedThreshold={0.5}
                       contentContainerStyle={{ paddingBottom: 40 }}
                       refreshControl={
-                        <RefreshControl
+                        <BrandedRefreshControl
                           refreshing={channelsQuery.isRefetching}
                           onRefresh={() => channelsQuery.refetch()}
-                          tintColor={colors.emerald}
                         />
                       }
                     />
@@ -585,7 +581,7 @@ export default function SearchScreen() {
                     <UserRow
                       user={item.data}
                       onPress={() => {
-                        haptic.light();
+                        haptic.navigate();
                         router.push(`/(screens)/profile/${item.data.username}`);
                       }}
                     />
@@ -595,7 +591,7 @@ export default function SearchScreen() {
                     <Pressable
                       style={[styles.hashtagRow, { flexDirection: rtlFlexRow(isRTL) }]}
                       onPress={() => {
-                        haptic.light();
+                        haptic.navigate();
                         router.push(`/(screens)/hashtag/${item.data.name}`);
                       }}
                       accessibilityRole="button"
@@ -717,10 +713,9 @@ export default function SearchScreen() {
               onEndReachedThreshold={0.5}
               contentContainerStyle={styles.exploreGrid}
               refreshControl={
-                <RefreshControl
+                <BrandedRefreshControl
                   refreshing={exploreQuery.isRefetching}
                   onRefresh={() => exploreQuery.refetch()}
-                  tintColor={colors.emerald}
                 />
               }
             />
@@ -736,7 +731,7 @@ export default function SearchScreen() {
                     key={i}
                     style={[styles.trendingItem, { flexDirection: rtlFlexRow(isRTL) }]}
                     onPress={() => {
-                      haptic.light();
+                      haptic.navigate();
                       if (item.name) router.push(`/(screens)/hashtag/${item.name}`);
                     }}
                   >
