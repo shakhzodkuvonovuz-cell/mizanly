@@ -1,14 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  Dimensions, Alert, ScrollView, RefreshControl,
+  Dimensions, Alert, ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Video, ResizeMode } from 'expo-av';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -21,8 +20,10 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { Autocomplete } from '@/components/ui/Autocomplete';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { reelsApi, uploadApi } from '@/services/api';
@@ -48,7 +49,7 @@ export default function ReelRemixScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ originalReelId: string }>();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -110,7 +111,7 @@ export default function ReelRemixScreen() {
 
   const startRecording = useCallback(async () => {
     if (!cameraRef.current) return;
-    haptic.light();
+    haptic.navigate();
     setIsRecording(true);
     setRecordTime(0);
     try {
@@ -141,17 +142,17 @@ export default function ReelRemixScreen() {
   }, [isRecording, startRecording, stopRecording]);
 
   const toggleCamera = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     setFacing((prev) => (prev === 'front' ? 'back' : 'front'));
   }, [haptic]);
 
   const toggleFlash = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     setFlashOn((prev) => !prev);
   }, [haptic]);
 
   const handleLayoutChange = useCallback((mode: LayoutMode) => {
-    haptic.selection();
+    haptic.tick();
     setLayout(mode);
   }, [haptic]);
 
@@ -290,7 +291,7 @@ export default function ReelRemixScreen() {
             contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />
+              <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
             {/* Combined preview */}
@@ -313,11 +314,28 @@ export default function ReelRemixScreen() {
                     {/* Original reel PiP */}
                     {originalReel && (
                       <View style={styles.previewPip}>
-                        <Image
-                          source={{ uri: originalReel.thumbnailUrl }}
-                          style={styles.previewPipImage}
-                          contentFit="cover"
-                        />
+                        {originalReel.hlsUrl || originalReel.videoUrl ? (
+                          <Video
+                            source={{ uri: originalReel.hlsUrl || originalReel.videoUrl }}
+                            style={styles.previewPipImage}
+                            resizeMode={ResizeMode.COVER}
+                            shouldPlay={true}
+                            isLooping={true}
+                            isMuted={false}
+                            useNativeControls={false}
+                          />
+                        ) : originalReel.thumbnailUrl ? (
+                          <ProgressiveImage
+                            uri={originalReel.thumbnailUrl}
+                            width="100%"
+                            height={140}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <View style={[styles.previewPipImage, styles.pipPlaceholder]}>
+                            <Icon name="play" size="md" color={colors.text.tertiary} />
+                          </View>
+                        )}
                         <View style={styles.previewPipLabel}>
                           <Text style={styles.previewPipLabelText}>{t('remix.original')}</Text>
                         </View>
@@ -446,7 +464,7 @@ export default function ReelRemixScreen() {
           contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
           {/* Camera + Original reel split view */}
@@ -468,11 +486,15 @@ export default function ReelRemixScreen() {
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.pipGradient}
                   >
-                    {originalReel.thumbnailUrl ? (
-                      <Image
-                        source={{ uri: originalReel.thumbnailUrl }}
+                    {originalReel.hlsUrl || originalReel.videoUrl ? (
+                      <Video
+                        source={{ uri: originalReel.hlsUrl || originalReel.videoUrl }}
                         style={styles.pipImage}
-                        contentFit="cover"
+                        resizeMode={ResizeMode.COVER}
+                        shouldPlay={true}
+                        isLooping={true}
+                        isMuted={false}
+                        useNativeControls={false}
                       />
                     ) : (
                       <View style={[styles.pipImage, styles.pipPlaceholder]}>
@@ -490,11 +512,15 @@ export default function ReelRemixScreen() {
                 <View style={styles.sideSplitOverlay}>
                   <View style={styles.sideSplitDivider} />
                   <View style={styles.sideSplitRight}>
-                    {originalReel && originalReel.thumbnailUrl ? (
-                      <Image
-                        source={{ uri: originalReel.thumbnailUrl }}
+                    {originalReel && (originalReel.hlsUrl || originalReel.videoUrl) ? (
+                      <Video
+                        source={{ uri: originalReel.hlsUrl || originalReel.videoUrl }}
                         style={styles.sideSplitImage}
-                        contentFit="cover"
+                        resizeMode={ResizeMode.COVER}
+                        shouldPlay={true}
+                        isLooping={true}
+                        isMuted={false}
+                        useNativeControls={false}
                       />
                     ) : (
                       <View style={[styles.sideSplitImage, styles.pipPlaceholder]}>
@@ -510,11 +536,15 @@ export default function ReelRemixScreen() {
 
               {layout === 'full' && originalReel && (
                 <Animated.View entering={FadeIn.duration(300)} style={styles.fullOverlay}>
-                  {originalReel.thumbnailUrl ? (
-                    <Image
-                      source={{ uri: originalReel.thumbnailUrl }}
+                  {originalReel.hlsUrl || originalReel.videoUrl ? (
+                    <Video
+                      source={{ uri: originalReel.hlsUrl || originalReel.videoUrl }}
                       style={styles.fullOverlayImage}
-                      contentFit="cover"
+                      resizeMode={ResizeMode.COVER}
+                      shouldPlay={true}
+                      isLooping={true}
+                      isMuted={false}
+                      useNativeControls={false}
                     />
                   ) : null}
                   <View style={styles.fullOverlayLabel}>
