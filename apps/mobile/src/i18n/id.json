@@ -334,7 +334,8 @@
     "brandedContent": "Branded Content",
     "deletePostTitle": "Hapus postingan?",
     "reportPostTitle": "Laporkan postingan",
-    "couldNotShareAsStory": "Tidak dapat dibagikan sebagai cerita. Silakan coba lagi."
+    "couldNotShareAsStory": "Tidak dapat dibagikan sebagai cerita. Silakan coba lagi.",
+    "viewAllComments": "Lihat semua {{count}} komentar"
   },
   "islamic": {
     "prayerTimes": "Waktu Shalat",
@@ -1337,7 +1338,8 @@
     "toggleTextBg": "Toggle text background",
     "streamTitle": "Live stream title",
     "streamDesc": "Live stream description",
-    "questionInput": "Question input"
+    "questionInput": "Question input",
+    "messages": "Messages"
   },
   "compose": {
     "whatsOnYourMind": "What's on your mind?",

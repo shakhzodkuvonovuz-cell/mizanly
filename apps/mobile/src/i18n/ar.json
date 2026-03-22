@@ -412,7 +412,8 @@
     "brandedContent": "محتوى ممول",
     "deletePostTitle": "حذف المنشور؟",
     "reportPostTitle": "الإبلاغ عن المنشور",
-    "couldNotShareAsStory": "تعذرت المشاركة كقصة. يرجى المحاولة مرة أخرى."
+    "couldNotShareAsStory": "تعذرت المشاركة كقصة. يرجى المحاولة مرة أخرى.",
+    "viewAllComments": "عرض جميع التعليقات ({{count}})"
   },
   "bakra": {
     "forYou": "لك",
@@ -1270,7 +1271,8 @@
     "toggleTextBg": "تبديل خلفية النص",
     "streamTitle": "عنوان البث المباشر",
     "streamDesc": "وصف البث المباشر",
-    "questionInput": "حقل إدخال السؤال"
+    "questionInput": "حقل إدخال السؤال",
+    "messages": "الرسائل"
   },
   "screens": {
     "followers": {

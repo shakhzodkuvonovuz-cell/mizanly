@@ -334,7 +334,8 @@
     "brandedContent": "Branded Content",
     "deletePostTitle": "پوسٹ حذف کریں؟",
     "reportPostTitle": "پوسٹ کی رپورٹ کریں",
-    "couldNotShareAsStory": "کہانی کے طور پر شیئر نہیں ہو سکا۔ دوبارہ کوشش کریں۔"
+    "couldNotShareAsStory": "کہانی کے طور پر شیئر نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+    "viewAllComments": "تمام {{count}} تبصرے دیکھیں"
   },
   "bakra": {
     "duet": "ڈوئٹ",
@@ -1337,7 +1338,8 @@
     "toggleTextBg": "Toggle text background",
     "streamTitle": "Live stream title",
     "streamDesc": "Live stream description",
-    "questionInput": "Question input"
+    "questionInput": "Question input",
+    "messages": "Messages"
   },
   "compose": {
     "whatsOnYourMind": "What's on your mind?",

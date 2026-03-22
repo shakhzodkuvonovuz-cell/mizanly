@@ -334,7 +334,8 @@
     "brandedContent": "Branded Content",
     "deletePostTitle": "Supprimer la publication ?",
     "reportPostTitle": "Signaler la publication",
-    "couldNotShareAsStory": "Impossible de partager en story. Veuillez réessayer."
+    "couldNotShareAsStory": "Impossible de partager en story. Veuillez réessayer.",
+    "viewAllComments": "Voir les {{count}} commentaires"
   },
   "islamic": {
     "prayerTimes": "Horaires de prière",
@@ -1337,7 +1338,8 @@
     "toggleTextBg": "Toggle text background",
     "streamTitle": "Live stream title",
     "streamDesc": "Live stream description",
-    "questionInput": "Question input"
+    "questionInput": "Question input",
+    "messages": "Messages"
   },
   "compose": {
     "whatsOnYourMind": "What's on your mind?",

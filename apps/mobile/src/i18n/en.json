@@ -412,7 +412,8 @@
     "brandedContent": "Branded Content",
     "deletePostTitle": "Delete post?",
     "reportPostTitle": "Report post",
-    "couldNotShareAsStory": "Could not share as story. Please try again."
+    "couldNotShareAsStory": "Could not share as story. Please try again.",
+    "viewAllComments": "View all {{count}} comments"
   },
   "bakra": {
     "forYou": "For You",
@@ -1336,7 +1337,8 @@
     "toggleTextBg": "Toggle text background",
     "streamTitle": "Live stream title",
     "streamDesc": "Live stream description",
-    "questionInput": "Question input"
+    "questionInput": "Question input",
+    "messages": "Messages"
   },
   "compose": {
     "whatsOnYourMind": "What's on your mind?",

@@ -412,7 +412,8 @@
     "brandedContent": "Markalı İçerik",
     "deletePostTitle": "Gönderi silinsin mi?",
     "reportPostTitle": "Gönderiyi bildir",
-    "couldNotShareAsStory": "Hikaye olarak paylaşılamadı. Lütfen tekrar deneyin."
+    "couldNotShareAsStory": "Hikaye olarak paylaşılamadı. Lütfen tekrar deneyin.",
+    "viewAllComments": "Tüm {{count}} yorumu görüntüle"
   },
   "bakra": {
     "forYou": "Senin İçin",
@@ -1336,7 +1337,8 @@
     "toggleTextBg": "Metin arka planını değiştir",
     "streamTitle": "Canlı yayın başlığı",
     "streamDesc": "Canlı yayın açıklaması",
-    "questionInput": "Soru girişi"
+    "questionInput": "Soru girişi",
+    "messages": "Mesajlar"
   },
   "compose": {
     "whatsOnYourMind": "Aklınızda ne var?",

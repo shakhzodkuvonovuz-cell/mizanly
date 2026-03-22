@@ -30,7 +30,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -58,7 +58,7 @@ function SuggestedUserCard({
   onDismiss: (userId: string) => void;
 }) {
   const { t, isRTL } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   if (users.length === 0) return null;
@@ -74,7 +74,7 @@ function SuggestedUserCard({
           user={user}
           isRTL={isRTL}
           onFollow={() => {
-            haptic.light();
+            haptic.follow();
             onFollow(user.id);
           }}
           onDismiss={() => onDismiss(user.id)}
@@ -100,7 +100,7 @@ function SuggestedUserRow({
 }) {
   const [followed, setFollowed] = useState(false);
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   if (followed) return null;
 
@@ -112,7 +112,7 @@ function SuggestedUserRow({
       <Pressable
         style={[suggestedStyles.userInfo, { flexDirection: rtlFlexRow(isRTL) }]}
         onPress={() => {
-          haptic.light();
+          haptic.navigate();
           router.push(`/(screens)/profile/${user.username}`);
         }}
         accessibilityLabel={`${user.displayName ?? user.username} profile`}
@@ -193,7 +193,7 @@ export default function SafScreen() {
   const { t, isRTL } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const queryClient = useQueryClient();
   const feedType = useStore((s) => s.safFeedType);
@@ -201,6 +201,7 @@ export default function SafScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
+  const unreadMessages = useStore((s) => s.unreadMessages);
   const [bannerDismissed, setBannerDismissed] = useState(true);
   const [dismissedUserIds, setDismissedUserIds] = useState<Set<string>>(new Set());
 
@@ -228,6 +229,7 @@ export default function SafScreen() {
   // which would reset scroll position when returning from sub-screens
 
   const searchPress = useAnimatedPress();
+  const dmPress = useAnimatedPress();
   const bellPress = useAnimatedPress();
   const cameraPress = useAnimatedPress();
   const profilePress = useAnimatedPress();
@@ -341,8 +343,22 @@ export default function SafScreen() {
         />
       );
     }
-    return <PostCard post={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />;
-  }, [user?.id, user?.username, followMutation]);
+    return (
+      <Animated.View entering={FadeIn.duration(300)}>
+        <PostCard post={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+        {item.commentsCount > 0 && (
+          <Pressable
+            onPress={() => router.push(`/(screens)/post/${item.id}`)}
+            style={styles.commentPreview}
+          >
+            <Text style={[styles.commentPreviewText, { color: tc.text.secondary }]}>
+              {t('saf.viewAllComments', { count: formatCount(item.commentsCount) })}
+            </Text>
+          </Pressable>
+        )}
+      </Animated.View>
+    );
+  }, [user?.id, user?.username, followMutation, router, tc.text.secondary, t]);
 
   const storyGroups: StoryGroup[] = (storiesQuery.data) ?? [];
 
@@ -455,7 +471,7 @@ export default function SafScreen() {
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <AnimatedPressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/create-story'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/create-story'); }}
             onPressIn={cameraPress.onPressIn}
             onPressOut={cameraPress.onPressOut}
             style={cameraPress.animatedStyle}
@@ -467,7 +483,7 @@ export default function SafScreen() {
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}
             onPressIn={searchPress.onPressIn}
             onPressOut={searchPress.onPressOut}
             style={searchPress.animatedStyle}
@@ -479,8 +495,28 @@ export default function SafScreen() {
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
+            onPress={() => { haptic.navigate(); router.push('/(tabs)/risalah'); }}
+            onPressIn={dmPress.onPressIn}
+            onPressOut={dmPress.onPressOut}
+            style={dmPress.animatedStyle}
+            accessibilityLabel={t('accessibility.messages')}
+            accessibilityRole="button"
+          >
+            <View>
+              <Icon name="send" size="sm" color={colors.text.primary} />
+              {unreadMessages > 0 && (
+                <Badge
+                  count={unreadMessages}
+                  size="sm"
+                  style={[styles.notifBadge, rtlAbsoluteEnd(isRTL, -8)]}
+                />
+              )}
+            </View>
+          </AnimatedPressable>
+          <AnimatedPressable
+            hitSlop={8}
             onPress={() => {
-              haptic.light();
+              haptic.navigate();
               router.push('/(screens)/notifications');
               setUnreadNotifications(0);
             }}
@@ -505,7 +541,7 @@ export default function SafScreen() {
           <AnimatedPressable
             hitSlop={8}
             onPress={() => {
-              haptic.light();
+              haptic.navigate();
               if (user?.username) {
                 router.push(`/(screens)/profile/${user.username}`);
               } else {
@@ -574,6 +610,14 @@ const styles = StyleSheet.create({
     top: -6,
   },
   footer: { paddingVertical: spacing.sm },
+  commentPreview: {
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.sm,
+  },
+  commentPreviewText: {
+    fontSize: fontSize.sm,
+    fontFamily: fonts.body,
+  },
   // TODO: colors.dark.border overridden by inline style with tc.border from useThemeColors()
   storySeparator: {
     height: 0.5,
