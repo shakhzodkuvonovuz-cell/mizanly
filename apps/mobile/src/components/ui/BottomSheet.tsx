@@ -152,6 +152,7 @@ export const BottomSheetItem = memo(function BottomSheetItem({ label, icon, onPr
   disabled?: boolean;
 }) {
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.98 });
 
   const handlePress = () => {
@@ -177,7 +178,7 @@ export const BottomSheetItem = memo(function BottomSheetItem({ label, icon, onPr
       <Animated.Text
         style={[
           styles.menuItemText,
-          destructive && styles.menuItemDestructive,
+          { color: destructive ? colors.error : tc.text.primary },
         ]}
       >
         {label}

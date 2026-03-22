@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import i18next from 'i18next';
-import { View, StyleSheet } from 'react-native';
+import { Appearance, View, StyleSheet } from 'react-native';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing } from '@/theme';
 
@@ -39,8 +39,11 @@ export class ScreenErrorBoundary extends Component<ScreenErrorBoundaryProps, Scr
       return this.props.fallback;
     }
 
+    const isDark = Appearance.getColorScheme() !== 'light';
+    const bgColor = isDark ? colors.dark.bg : colors.light.bg;
+
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: bgColor }]}>
         <EmptyState
           icon="slash"
           title={i18next.t('common.error')}
@@ -56,7 +59,6 @@ export class ScreenErrorBoundary extends Component<ScreenErrorBoundaryProps, Scr
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
     justifyContent: 'center',
     paddingBottom: spacing['3xl'],
   },

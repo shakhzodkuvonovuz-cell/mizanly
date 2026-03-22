@@ -91,6 +91,7 @@ export const Avatar = memo(function Avatar({
                   width: innerDim,
                   height: innerDim,
                   borderRadius: radius.full,
+                  backgroundColor: tc.surface,
                 },
               ]}
             >
@@ -103,7 +104,7 @@ export const Avatar = memo(function Avatar({
                   transition={300}
                 />
               ) : (
-                <Text style={[styles.fallback, { fontSize: textSize }]}>
+                <Text style={[styles.fallback, { fontSize: textSize, color: tc.text.primary }]}>
                   {name?.[0]?.toUpperCase() ?? '?'}
                 </Text>
               )}
@@ -129,6 +130,7 @@ export const Avatar = memo(function Avatar({
                 width: showRing ? innerDim : dim,
                 height: showRing ? innerDim : dim,
                 borderRadius: radius.full,
+                backgroundColor: tc.surface,
               },
             ]}
           >
@@ -146,7 +148,7 @@ export const Avatar = memo(function Avatar({
                 contentFit="cover"
               />
             ) : (
-              <Text style={[styles.fallback, { fontSize: textSize }]}>
+              <Text style={[styles.fallback, { fontSize: textSize, color: tc.text.primary }]}>
                 {name?.[0]?.toUpperCase() ?? '?'}
               </Text>
             )}
@@ -163,6 +165,7 @@ export const Avatar = memo(function Avatar({
               height: onlineDotSize,
               borderRadius: radius.full,
               borderWidth: Math.max(2, onlineDotSize * 0.2),
+              borderColor: tc.bg,
               bottom: showRing ? 0 : -1,
               right: showRing ? 0 : -1,
             },

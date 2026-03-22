@@ -1,7 +1,7 @@
 // Mizanly Design System
 // Brand colors, typography, spacing, shadows, animations, glassmorphism
 
-import { Platform } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 
 export const colors = {
   // Brand
@@ -287,10 +287,13 @@ export const elevation = {
  * For hooks: use useThemeColors() from store which reads the current theme.
  */
 export function getThemeColors(theme: 'dark' | 'light' | 'system') {
-  const effectiveTheme = theme === 'system' ? 'dark' : theme; // Default to dark
-  const surface = effectiveTheme === 'dark' ? colors.dark : colors.light;
-  const text = effectiveTheme === 'dark' ? colors.text : colors.textLight;
-  return { ...surface, text };
+  const effectiveTheme = theme === 'system'
+    ? (Appearance.getColorScheme() ?? 'dark')
+    : theme;
+  const isDark = effectiveTheme === 'dark';
+  const surface = isDark ? colors.dark : colors.light;
+  const text = isDark ? colors.text : colors.textLight;
+  return { ...surface, text, isDark };
 }
 
 // Tab bar config
