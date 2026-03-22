@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
@@ -483,6 +483,7 @@ export default function BakraScreen() {
   const router = useRouter();
   const haptic = useHaptic();
   const tc = useThemeColors();
+  const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [bakraFeedType, setBakraFeedType] = useState<'foryou' | 'following'>('foryou');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -745,41 +746,42 @@ export default function BakraScreen() {
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
-        {/* Feed type tabs — Following | For You */}
-        <View style={styles.feedTypeContainer}>
-          <Pressable
-            onPress={() => { setBakraFeedType('following'); haptic.light(); }}
-            style={styles.feedTypeTab}
-            accessibilityLabel={t('bakra.following')}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: bakraFeedType === 'following' }}
-          >
-            <Text style={[
-              styles.feedTypeText,
-              bakraFeedType === 'following' && styles.feedTypeTextActive,
-            ]}>
-              {t('bakra.following')}
-            </Text>
-            {bakraFeedType === 'following' && <View style={styles.feedTypeIndicator} />}
-          </Pressable>
-          <Pressable
-            onPress={() => { setBakraFeedType('foryou'); haptic.light(); }}
-            style={styles.feedTypeTab}
-            accessibilityLabel={t('bakra.forYou')}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: bakraFeedType === 'foryou' }}
-          >
-            <Text style={[
-              styles.feedTypeText,
-              bakraFeedType === 'foryou' && styles.feedTypeTextActive,
-            ]}>
-              {t('bakra.forYou')}
-            </Text>
-            {bakraFeedType === 'foryou' && <View style={styles.feedTypeIndicator} />}
-          </Pressable>
-        </View>
+      {/* Feed type tabs — Following | For You — absolute overlay on video */}
+      <View style={[styles.feedTypeTabs, { top: insets.top + spacing.sm }]}>
+        <Pressable
+          onPress={() => { setBakraFeedType('following'); haptic.light(); }}
+          style={styles.feedTypeTab}
+          accessibilityLabel={t('bakra.following')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: bakraFeedType === 'following' }}
+        >
+          <Text style={[
+            styles.feedTypeText,
+            bakraFeedType === 'following' && styles.feedTypeTextActive,
+          ]}>
+            {t('bakra.following')}
+          </Text>
+          {bakraFeedType === 'following' && <View style={styles.feedTypeBar} />}
+        </Pressable>
+        <Pressable
+          onPress={() => { setBakraFeedType('foryou'); haptic.light(); }}
+          style={styles.feedTypeTab}
+          accessibilityLabel={t('bakra.forYou')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: bakraFeedType === 'foryou' }}
+        >
+          <Text style={[
+            styles.feedTypeText,
+            bakraFeedType === 'foryou' && styles.feedTypeTextActive,
+          ]}>
+            {t('bakra.forYou')}
+          </Text>
+          {bakraFeedType === 'foryou' && <View style={styles.feedTypeBar} />}
+        </Pressable>
+      </View>
+
+      {/* Header icons — absolute overlay on video */}
+      <View style={[styles.header, { top: insets.top + spacing.sm, flexDirection: rtlFlexRow(isRTL) }]}>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Pressable
             hitSlop={8}
@@ -809,7 +811,7 @@ export default function BakraScreen() {
       </View>
 
       {/* Side panel shortcuts — TikTok 2026 */}
-      <View style={styles.shortcutRow}>
+      <View style={[styles.shortcutRow, { top: insets.top + spacing.sm + 36 }]}>
         <Pressable
           style={styles.shortcutPill}
           onPress={() => { haptic.light(); navigate('/(screens)/go-live'); }}
@@ -865,23 +867,15 @@ export default function BakraScreen() {
 const styles = StyleSheet.create({
   // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
+  feedTypeTabs: {
     position: 'absolute',
-    top: 0,
+    top: 50,
     left: 0,
     right: 0,
-    zIndex: 10,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  feedTypeContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xl,
+    zIndex: 20,
   },
   feedTypeTab: {
     alignItems: 'center',
@@ -892,14 +886,21 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
   },
   feedTypeTextActive: {
-    color: '#FFFFFF',
+    color: '#fff',
   },
-  feedTypeIndicator: {
+  feedTypeBar: {
     width: 24,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     marginTop: 4,
+  },
+  header: {
+    position: 'absolute',
+    top: 50,
+    right: 0,
+    paddingHorizontal: spacing.base,
+    zIndex: 20,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   videoContainer: {
@@ -1039,7 +1040,7 @@ const styles = StyleSheet.create({
   },
   shortcutRow: {
     position: 'absolute',
-    top: 50,
+    top: 86,
     left: spacing.base,
     zIndex: 10,
     flexDirection: 'row',
