@@ -3113,5 +3113,27 @@
       "openDocument": "فتح المستند"
     },
     "fileSizeKB": "{{size}} كيلوبايت"
+  },
+  "statusPrivacy": {
+    "title": "الخصوصية",
+    "loadError": "فشل في تحميل إعدادات الخصوصية",
+    "errorTitle": "خطأ",
+    "errorSave": "فشل في حفظ إعدادات الخصوصية",
+    "lastSeen": "آخر ظهور",
+    "onlineStatus": "حالة الاتصال",
+    "readReceipts": "إيصالات القراءة",
+    "typingIndicators": "مؤشرات الكتابة",
+    "everyone": "الجميع",
+    "myContacts": "جهات اتصالي",
+    "nobody": "لا أحد",
+    "sameAsLastSeen": "نفس آخر ظهور",
+    "showReadReceipts": "إظهار إيصالات القراءة",
+    "readReceiptsDesc": "سيرى الآخرون علامات الصح الزرقاء عندما تقرأ رسائلهم",
+    "showTyping": "إظهار عند الكتابة",
+    "typingDesc": "سيرى الآخرون عندما تكتب رسالة",
+    "applyNote": "تطبق التغييرات على التفاعلات المستقبلية"
+  },
+  "contentSettings": {
+    "saveError": "فشل في حفظ الإعداد"
   }
 }

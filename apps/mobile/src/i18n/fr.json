@@ -3108,5 +3108,27 @@
       "openDocument": "Ouvrir le document"
     },
     "fileSizeKB": "{{size}} Ko"
+  },
+  "statusPrivacy": {
+    "title": "Privacy",
+    "loadError": "Failed to load privacy settings",
+    "errorTitle": "Error",
+    "errorSave": "Failed to save privacy settings",
+    "lastSeen": "Last Seen",
+    "onlineStatus": "Online Status",
+    "readReceipts": "Read Receipts",
+    "typingIndicators": "Typing Indicators",
+    "everyone": "Everyone",
+    "myContacts": "My Contacts",
+    "nobody": "Nobody",
+    "sameAsLastSeen": "Same as Last Seen",
+    "showReadReceipts": "Show read receipts",
+    "readReceiptsDesc": "Others will see blue double checks when you read their messages",
+    "showTyping": "Show when typing",
+    "typingDesc": "Others will see when you are typing a message",
+    "applyNote": "Changes apply to future interactions"
+  },
+  "contentSettings": {
+    "saveError": "Failed to save setting"
   }
 }

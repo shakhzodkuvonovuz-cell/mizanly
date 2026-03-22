@@ -1644,6 +1644,8 @@
     "muted": {
       "title": "Muted Accounts",
       "unmute": "Unmute",
+      "unmuteConfirmTitle": "Unmute",
+      "unmuteConfirmMessage": "Are you sure you want to unmute this account?",
       "emptyTitle": "No muted accounts",
       "emptySubtitle": "Accounts you mute will appear here",
       "errorTitle": "Could not load muted accounts",
@@ -3121,5 +3123,27 @@
   },
   "chatLock": {
     "removeLockMessage": "Are you sure you want to remove the chat lock?"
+  },
+  "statusPrivacy": {
+    "title": "Privacy",
+    "loadError": "Failed to load privacy settings",
+    "errorTitle": "Error",
+    "errorSave": "Failed to save privacy settings",
+    "lastSeen": "Last Seen",
+    "onlineStatus": "Online Status",
+    "readReceipts": "Read Receipts",
+    "typingIndicators": "Typing Indicators",
+    "everyone": "Everyone",
+    "myContacts": "My Contacts",
+    "nobody": "Nobody",
+    "sameAsLastSeen": "Same as Last Seen",
+    "showReadReceipts": "Show read receipts",
+    "readReceiptsDesc": "Others will see blue double checks when you read their messages",
+    "showTyping": "Show when typing",
+    "typingDesc": "Others will see when you are typing a message",
+    "applyNote": "Changes apply to future interactions"
+  },
+  "contentSettings": {
+    "saveError": "Failed to save setting"
   }
 }
