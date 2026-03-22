@@ -148,7 +148,7 @@ function CashoutContent() {
               end={{ x: 1, y: 1 }}
               style={styles.successGradient}
             >
-              <Icon name="check" size="xl" color="#FFFFFF" />
+              <Icon name="check" size="xl" color={tc.text.primary} />
             </LinearGradient>
           </Animated.View>
           <Animated.Text entering={FadeInUp.delay(300).duration(400)} style={styles.successTitle}>

@@ -229,6 +229,7 @@ function ChallengesScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useContextualHaptic();
+  const tc = useThemeColors();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<ChallengeTab>('discover');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -441,7 +442,7 @@ function ChallengesScreen() {
           colors={[colors.emeraldLight, colors.emerald]}
           style={styles.fabGradient}
         >
-          <Icon name="circle-plus" size="lg" color="#FFFFFF" />
+          <Icon name="circle-plus" size="lg" color={tc.text.primary} />
         </LinearGradient>
       </Pressable>
     </View>

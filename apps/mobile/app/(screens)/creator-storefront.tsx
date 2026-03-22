@@ -269,7 +269,7 @@ function CreatorStorefrontContent() {
               end={{ x: 1, y: 1 }}
               style={styles.fabGradient}
             >
-              <Icon name="plus" size="lg" color="#FFFFFF" />
+              <Icon name="plus" size="lg" color={tc.text.primary} />
             </LinearGradient>
           </Pressable>
         </Animated.View>

@@ -602,7 +602,7 @@ export default function CreateThreadScreen() {
                       end={{ x: 1, y: 1 }}
                       style={styles.pollIconContainer}
                     >
-                      <Icon name="bar-chart-2" size="sm" color="#0D1117" />
+                      <Icon name="bar-chart-2" size="sm" color={tc.bg} />
                     </LinearGradient>
                     <Text style={styles.pollFormTitle}>{t('compose.poll')}</Text>
                     <Pressable onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>

@@ -51,7 +51,6 @@ function Row({
   icon?: IconName;
 }) {
   const tc = useThemeColors();
-  const tc = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
@@ -84,7 +83,7 @@ function Row({
           >
             <View style={[styles.toggleThumb, value && styles.toggleThumbActive]}>
               <LinearGradient
-                colors={value ? [colors.emerald, colors.emerald] : ['#fff', '#f0f0f0']}
+                colors={value ? [colors.emerald, colors.emerald] : [tc.bgCard, tc.border]}
                 style={styles.toggleThumbGradient}
               />
             </View>

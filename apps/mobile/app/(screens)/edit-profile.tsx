@@ -457,7 +457,7 @@ export default function EditProfileScreen() {
                 >
                   <View style={[styles.toggleThumb, isPrivate && styles.toggleThumbActive]}>
                     <LinearGradient
-                      colors={isPrivate ? [colors.emerald, colors.emerald] : ['#fff', '#f0f0f0']}
+                      colors={isPrivate ? [colors.emerald, colors.emerald] : [tc.bgCard, tc.border]}
                       style={styles.toggleThumbGradient}
                     />
                   </View>

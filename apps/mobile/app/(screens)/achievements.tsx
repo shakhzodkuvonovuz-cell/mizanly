@@ -110,7 +110,7 @@ function AchievementCard({
           </LinearGradient>
           {achievement.isUnlocked && (
             <View style={[styles.checkBadge, { backgroundColor: rarityColor }]}>
-              <Icon name="check" size={10} color="#FFFFFF" />
+              <Icon name="check" size={10} color={tc.text.primary} />
             </View>
           )}
         </View>
