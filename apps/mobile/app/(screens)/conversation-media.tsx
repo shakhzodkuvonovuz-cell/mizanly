@@ -8,8 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
-import { BLURHASH_POST } from '@/utils/blurhash';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -76,15 +75,11 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
       accessibilityLabel={item.type === 'image' ? t('conversationMedia.accessibility.viewImage') : t('conversationMedia.accessibility.playVideo')}
       accessibilityRole="button"
     >
-      <Image
-        source={{ uri: item.url }}
-        placeholder={{ blurhash: BLURHASH_POST }}
-        style={styles.mediaThumbnail}
-        contentFit="cover"
-        transition={300}
-        recyclingKey={item.url}
+      <ProgressiveImage
+        uri={item.url}
+        width="100%"
+        height={200}
         accessibilityLabel={item.type === 'image' ? t('conversationMedia.accessibility.imageShared') : t('conversationMedia.accessibility.videoThumbnail')}
-        accessibilityRole="image"
       />
       {item.type === 'video' && (
         <View style={styles.videoOverlay}>

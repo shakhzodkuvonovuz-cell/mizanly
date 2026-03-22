@@ -10,8 +10,8 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -239,7 +239,7 @@ export default function EditProfileScreen() {
           <Pressable onPress={pickCover}>
             {currentCover ? (
               <Animated.View entering={FadeIn.duration(400)}>
-                <Image source={{ uri: currentCover }} style={styles.cover} contentFit="cover" />
+                <ProgressiveImage uri={currentCover} width="100%" height={160} />
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
                   style={styles.coverGradient}

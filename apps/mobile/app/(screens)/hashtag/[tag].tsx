@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -43,10 +43,10 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
       style={({ pressed }) => [styles.gridItem, pressed && { opacity: 0.85 }]}
     >
       {post.mediaUrls.length > 0 ? (
-        <Image
-          source={{ uri: post.thumbnailUrl ?? post.mediaUrls[0] }}
-          style={styles.gridImage}
-          contentFit="cover"
+        <ProgressiveImage
+          uri={post.thumbnailUrl ?? post.mediaUrls[0]}
+          width={GRID_ITEM}
+          height={GRID_ITEM}
         />
       ) : (
         <View style={styles.gridTextPost}>

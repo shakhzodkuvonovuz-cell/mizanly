@@ -6,11 +6,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Image } from 'expo-image';
 import Animated, {
   FadeIn, FadeInUp, FadeOut,
   useSharedValue, useAnimatedStyle, withTiming, withSpring,
 } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -280,10 +280,10 @@ function DisposableCameraScreen() {
           <View style={styles.photoPair}>
             {backPhoto && (
               <Animated.View entering={FadeInUp.delay(100).duration(300)} style={[styles.capturedPhotoWrapper, { backgroundColor: tc.bgCard }]}>
-                <Image
-                  source={{ uri: backPhoto }}
-                  style={styles.capturedPhoto}
-                  contentFit="cover"
+                <ProgressiveImage
+                  uri={backPhoto}
+                  width="100%"
+                  height={300}
                   transition={200}
                 />
                 <View style={styles.photoLabel}>
@@ -295,10 +295,10 @@ function DisposableCameraScreen() {
             )}
             {frontPhoto && (
               <Animated.View entering={FadeInUp.delay(200).duration(300)} style={[styles.capturedPhotoWrapper, { backgroundColor: tc.bgCard }]}>
-                <Image
-                  source={{ uri: frontPhoto }}
-                  style={styles.capturedPhoto}
-                  contentFit="cover"
+                <ProgressiveImage
+                  uri={frontPhoto}
+                  width="100%"
+                  height={300}
                   transition={200}
                 />
                 <View style={styles.photoLabel}>

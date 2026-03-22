@@ -8,8 +8,8 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -114,11 +114,11 @@ function SharedContentPreview({
   if (sharedImage) {
     return (
       <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.previewCard}>
-        <Image
-          source={{ uri: sharedImage }}
-          style={styles.previewImage}
-          contentFit="cover"
-          transition={300}
+        <ProgressiveImage
+          uri={sharedImage}
+          width="100%"
+          height={220}
+          borderRadius={radius.lg}
         />
       </Animated.View>
     );

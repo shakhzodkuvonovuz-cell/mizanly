@@ -7,8 +7,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Audio } from 'expo-av';
 import Animated, {
   FadeIn, FadeInUp, FadeOut,
@@ -260,11 +260,11 @@ function PhotoMusicScreen() {
   // ── Render image item ──
   const renderImageItem = useCallback(({ item, index }: { item: { uri: string }; index: number }) => (
     <Animated.View entering={FadeIn.duration(200)} style={styles.imageContainer}>
-      <Image
-        source={{ uri: item.uri }}
-        style={styles.image}
-        contentFit="cover"
-        transition={200}
+      <ProgressiveImage
+        uri={item.uri}
+        width={IMAGE_SIZE}
+        height={IMAGE_SIZE * 1.2}
+        borderRadius={radius.lg}
       />
       {!isPreviewPlaying && (
         <Pressable

@@ -3,7 +3,6 @@ import {
   View, Text, StyleSheet, Pressable, ScrollView,
   RefreshControl, FlatList, Dimensions, Alert, Share,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';

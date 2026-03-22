@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo, useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken, Alert } from 'react-native';
-import { Image } from 'expo-image';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -274,7 +273,7 @@ const ReelItem = memo(function ReelItem({
           >
             <Animated.View style={[styles.audioDiscInner, spinStyle]}>
               {item.audioCoverUrl ? (
-                <Image source={{ uri: item.audioCoverUrl }} style={styles.audioDiscImage} />
+                <ProgressiveImage uri={item.audioCoverUrl} width={40} height={40} borderRadius={20} />
               ) : (
                 <Icon name="music" size={18} color="#fff" />
               )}

@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -204,7 +205,7 @@ export default function ImageEditorScreen() {
           <Animated.View style={[styles.imageWrapper, animatedImageStyle]}>
             {imageUri ? (
               <View style={styles.imagePlaceholder}>
-                <Image source={{ uri: imageUri }} style={styles.preview} contentFit="contain" />
+                <ProgressiveImage uri={imageUri} width="100%" height={Math.round(screenWidth * 5 / 4)} contentFit="contain" />
                 <View style={[styles.filterOverlayLayer, getFilterStyle(selectedFilter)]} />
               </View>
             ) : (

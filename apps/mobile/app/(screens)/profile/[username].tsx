@@ -9,7 +9,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, {
@@ -680,10 +679,10 @@ export default function ProfileScreen() {
               >
                 <View style={styles.pinnedContent}>
                   {thread.mediaUrls.length > 0 ? (
-                    <Image
-                      source={{ uri: thread.mediaUrls[0] }}
-                      style={styles.pinnedImage}
-                      contentFit="cover"
+                    <ProgressiveImage
+                      uri={thread.mediaUrls[0]}
+                      width={140}
+                      height={180}
                     />
                   ) : (
                     <View style={styles.pinnedText}>

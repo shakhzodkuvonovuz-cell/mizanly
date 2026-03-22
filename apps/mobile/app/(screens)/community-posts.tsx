@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useUser } from '@clerk/clerk-expo';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -105,11 +105,11 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
 
       {post.mediaUrls.length > 0 && (
         <View style={styles.postMedia}>
-          <Image
-            source={{ uri: post.mediaUrls[0] }}
-            style={styles.postImage}
-            contentFit="cover"
-            transition={200}
+          <ProgressiveImage
+            uri={post.mediaUrls[0]}
+            width="100%"
+            height={250}
+            borderRadius={radius.sm}
           />
         </View>
       )}

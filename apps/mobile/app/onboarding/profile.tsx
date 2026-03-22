@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { Image } from 'expo-image';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,6 +11,7 @@ import Animated, {
   withTiming,
   withSequence,
 } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
@@ -107,10 +107,11 @@ function OnboardingProfileScreenContent() {
 
       {/* Avatar (read-only from Clerk, changeable later in settings) */}
       {user?.imageUrl ? (
-        <Image
-          source={{ uri: user.imageUrl }}
-          style={styles.avatar}
-          contentFit="cover"
+        <ProgressiveImage
+          uri={user.imageUrl}
+          width={96}
+          height={96}
+          borderRadius={radius.full}
         />
       ) : (
         <Animated.View style={[styles.avatarPlaceholderWrap, pulseStyle]}>

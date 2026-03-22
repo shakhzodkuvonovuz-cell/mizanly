@@ -20,7 +20,7 @@ import { Audio } from 'expo-av';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -339,10 +339,11 @@ function GifPicker({ visible, onClose, onSelect }: {
                 accessibilityRole="button"
                 accessibilityLabel={t('gif.selectGif')}
               >
-                <Image
-                  source={{ uri: item.media_formats.gif.url }}
-                  style={styles.gifImage}
-                  contentFit="cover"
+                <ProgressiveImage
+                  uri={item.media_formats.gif.url}
+                  width="100%"
+                  height={150}
+                  blurhash={null}
                 />
               </Pressable>
             )}

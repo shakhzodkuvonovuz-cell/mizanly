@@ -15,8 +15,8 @@ import Animated, {
 import type { SharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { Video, ResizeMode } from 'expo-av';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/ui/Avatar';
@@ -44,7 +44,7 @@ type Sticker = {
   scale: number;
 };
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const STORY_DURATION = 5000; // ms per story slide for images
 const QUICK_REACTIONS = ['\u2764\uFE0F', '\uD83D\uDD25', '\uD83D\uDC4F', '\uD83D\uDE02', '\uD83D\uDE0D', '\uD83D\uDE22'];
 
@@ -391,10 +391,11 @@ const StoryGroupPage = memo(function StoryGroupPage({
           }}
         />
       ) : story ? (
-        <Image
-          source={{ uri: story.mediaUrl }}
+        <ProgressiveImage
+          uri={story.mediaUrl}
+          width={SCREEN_W}
+          height={SCREEN_H}
           style={styles.media}
-          contentFit="cover"
         />
       ) : null}
 

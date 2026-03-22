@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ScrollView, use
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -306,7 +306,7 @@ function StickerBrowserScreenInner() {
               <View style={styles.grid}>
                 {selectedPack.stickers?.map((sticker) => (
                   <View key={sticker.id} style={styles.gridItem}>
-                    <Image source={{ uri: sticker.imageUrl }} style={styles.gridImage} contentFit="contain" />
+                    <ProgressiveImage uri={sticker.imageUrl} width="100%" height={80} contentFit="contain" blurhash={null} />
                   </View>
                 ))}
               </View>

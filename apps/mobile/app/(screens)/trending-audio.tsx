@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 
@@ -103,7 +103,7 @@ export default function TrendingAudioScreen() {
 
         <View style={styles.coverWrap}>
           {item.coverUrl ? (
-            <Image source={{ uri: item.coverUrl }} style={styles.cover} contentFit="cover" />
+            <ProgressiveImage uri={item.coverUrl} width={50} height={50} borderRadius={radius.sm} />
           ) : (
             <LinearGradient
               colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}

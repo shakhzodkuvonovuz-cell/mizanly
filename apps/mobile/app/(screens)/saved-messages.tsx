@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut, SlideOutRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -118,7 +118,7 @@ export default function SavedMessagesScreen() {
 
           {hasMedia && (
             <View style={styles.mediaPreview}>
-              <Image source={{ uri: item.mediaUrl as string }} style={styles.mediaImage} contentFit="cover" />
+              <ProgressiveImage uri={item.mediaUrl as string} width="100%" height={160} borderRadius={radius.md} />
               {(item.mediaType as string)?.startsWith('video') && (
                 <View style={styles.playOverlay}>
                   <Icon name="play" size="md" color="#FFF" />

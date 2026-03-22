@@ -6,8 +6,8 @@ import {
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
@@ -79,7 +79,7 @@ export default function AiAvatarScreen() {
 
   const renderAvatar = ({ item, index }: { item: AiAvatar; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)} style={[styles.avatarCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-      <Image source={{ uri: item.avatarUrl }} style={styles.avatarImage} contentFit="cover" />
+      <ProgressiveImage uri={item.avatarUrl} width="100%" height={200} />
       <View style={styles.avatarInfo}>
         <View style={[styles.styleBadge, { backgroundColor: (STYLES.find(s => s.id === item.style)?.color || colors.emerald) + '20' }]}>
           <Text style={[styles.styleBadgeText, { color: STYLES.find(s => s.id === item.style)?.color || colors.emerald }]}>

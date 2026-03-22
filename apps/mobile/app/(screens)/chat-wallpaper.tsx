@@ -3,8 +3,8 @@ import {
   View, Text, StyleSheet, Pressable, ScrollView, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   FadeIn, FadeInUp,
@@ -215,7 +215,7 @@ function ChatWallpaperScreen() {
       );
     }
     if (customImage) {
-      return <Image source={{ uri: customImage }} style={styles.previewInner} contentFit="cover" />;
+      return <ProgressiveImage uri={customImage} width="100%" height={200} borderRadius={radius.lg} />;
     }
     if (currentWallpaper) {
       const [type, value] = currentWallpaper.split(':');
@@ -335,7 +335,7 @@ function ChatWallpaperScreen() {
     <Animated.View entering={FadeIn.duration(200)} style={styles.customSection}>
       {customImage ? (
         <View style={[styles.customPreviewWrap, { borderColor: tc.border }]}>
-          <Image source={{ uri: customImage }} style={styles.customPreview} contentFit="cover" />
+          <ProgressiveImage uri={customImage} width="100%" height={160} />
           <Pressable
             style={styles.customRemove}
             onPress={() => setCustomImage(null)}

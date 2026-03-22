@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
-import { Image } from 'expo-image';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useScrollToTop } from '@react-navigation/native';

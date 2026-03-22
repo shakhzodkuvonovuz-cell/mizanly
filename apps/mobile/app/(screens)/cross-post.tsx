@@ -3,8 +3,8 @@ import {
   View, Text, StyleSheet, ScrollView, RefreshControl, Pressable,
   TextInput, Alert,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -161,9 +161,11 @@ function CrossPostContent() {
           >
             <View style={[styles.previewRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               {post.thumbnailUrl || (post.mediaUrls && post.mediaUrls.length > 0) ? (
-                <Image
-                  source={{ uri: post.thumbnailUrl || post.mediaUrls[0] }}
-                  style={[styles.previewImage, { backgroundColor: tc.surface }]}
+                <ProgressiveImage
+                  uri={post.thumbnailUrl || post.mediaUrls[0]}
+                  width={72}
+                  height={72}
+                  borderRadius={radius.md}
                 />
               ) : null}
               <View style={styles.previewText}>
