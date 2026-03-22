@@ -16,7 +16,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -24,7 +24,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 export default function EditChannelScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
@@ -112,7 +112,7 @@ export default function EditChannelScreen() {
 
       if (!result.canceled && result.assets[0]) {
         setAvatarUrl(result.assets[0].uri);
-        haptic.light();
+        haptic.tick();
       }
     } catch (e) {
       Alert.alert(t('common.error'), t('screens.editChannel.failedToPickImage'));

@@ -18,7 +18,7 @@ import { searchApi } from '@/services/api';
 import type { Post } from '@/types';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -81,7 +81,7 @@ export default function HashtagScreen() {
   const totalCount = (postsQuery.data?.pages[0] as HashtagPostsPage)?.hashtag?.postsCount ?? posts.length;
 
   const [followedHashtags, setFollowedHashtags] = useState<string[]>([]);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const isFollowing = followedHashtags.includes(tag);
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function HashtagScreen() {
   }, []);
 
   const toggleFollow = useCallback(() => {
-    haptic.medium();
+    haptic.follow();
     const newFollowed = isFollowing
       ? followedHashtags.filter(t => t !== tag)
       : [...followedHashtags, tag];

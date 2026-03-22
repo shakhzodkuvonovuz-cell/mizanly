@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'dissolve' | 'wipe';
@@ -37,7 +37,7 @@ export const VideoTransitions = memo(function VideoTransitions({
   onSelect,
 }: VideoTransitionsProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   return (
@@ -51,7 +51,7 @@ export const VideoTransitions = memo(function VideoTransitions({
               key={transition.type}
               style={[styles.item, isActive && styles.itemActive]}
               onPress={() => {
-                haptic.selection();
+                haptic.tick();
                 onSelect(transition.type);
               }}
               accessibilityRole="button"

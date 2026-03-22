@@ -20,7 +20,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { postsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 const SPACES = [
@@ -38,7 +38,7 @@ function CrossPostContent() {
   const { postId } = useLocalSearchParams<{ postId: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedSpaces, setSelectedSpaces] = useState<Set<string>>(new Set());
   const [captionOverride, setCaptionOverride] = useState('');
@@ -73,7 +73,7 @@ function CrossPostContent() {
   }, [postQuery]);
 
   const toggleSpace = (key: string) => {
-    haptic.light();
+    haptic.tick();
     setSelectedSpaces(prev => {
       const next = new Set(prev);
       if (next.has(key)) {
@@ -90,7 +90,7 @@ function CrossPostContent() {
       Alert.alert(t('crossPost.noSpaces'));
       return;
     }
-    haptic.medium();
+    haptic.send();
     crossPostMutation.mutate();
   };
 

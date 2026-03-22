@@ -26,7 +26,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { navigate } from '@/utils/navigation';
@@ -201,7 +201,7 @@ function ProductDetailScreen() {
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [selectedInstallment, setSelectedInstallment] = useState(1);
 
@@ -278,7 +278,7 @@ function ProductDetailScreen() {
         rightActions={[
           {
             icon: 'share',
-            onPress: () => haptic.light(),
+            onPress: () => haptic.navigate(),
             accessibilityLabel: t('common.share'),
           },
         ]}
@@ -394,7 +394,7 @@ function ProductDetailScreen() {
                 <Pressable
                   key={opt}
                   onPress={() => {
-                    haptic.light();
+                    haptic.tick();
                     setSelectedInstallment(opt);
                   }}
                   accessibilityRole="radio"

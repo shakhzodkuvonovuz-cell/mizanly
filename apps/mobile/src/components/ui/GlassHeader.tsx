@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, fonts, fontSize, spacing, radius, fontSizeExt } from '@/theme';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
@@ -42,12 +42,12 @@ export interface GlassHeaderProps {
 }
 
 function HeaderButton({ icon, onPress, accessibilityLabel, badge }: HeaderAction) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.88 });
 
   const handlePress = () => {
-    haptic.light();
+    haptic.navigate();
     onPress();
   };
 

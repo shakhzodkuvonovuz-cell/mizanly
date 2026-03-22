@@ -7,7 +7,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { authApi, usersApi } from '@/services/api';
@@ -44,12 +44,12 @@ function InterestsScreenContent() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedMadhab, setSelectedMadhab] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const tc = useThemeColors();
 
   const toggle = (id: string) => {
-    haptic.selection();
+    haptic.tick();
     setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -83,7 +83,7 @@ function InterestsScreenContent() {
   };
 
   const handleSkip = async () => {
-    haptic.light();
+    haptic.navigate();
     await markOnboardingComplete();
     router.replace('/(tabs)/saf');
   };
@@ -127,7 +127,7 @@ function InterestsScreenContent() {
                 key={m.id}
                 accessibilityRole="button"
                 style={[styles.chip, { borderColor: tc.border, backgroundColor: tc.bgElevated }, selectedMadhab === m.id && styles.chipOn]}
-                onPress={() => { haptic.selection(); setSelectedMadhab(m.id); }}
+                onPress={() => { haptic.tick(); setSelectedMadhab(m.id); }}
               >
                 <Text style={[styles.chipLabel, selectedMadhab === m.id && styles.chipLabelOn]}>{t(m.label)}</Text>
               </Pressable>

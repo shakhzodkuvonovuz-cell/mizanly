@@ -9,7 +9,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -21,7 +21,7 @@ export default function QrCodeScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function QrCodeScreen() {
 
   const handleShare = async () => {
     try {
-      haptic.light();
+      haptic.navigate();
       await Share.share({
         message: t('screens.qr-code.shareMessage', { url: qrValue }),
         title: t('screens.qr-code.shareTitle'),

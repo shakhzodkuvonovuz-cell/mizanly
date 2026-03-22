@@ -7,7 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { animation, colors, spacing, fontSize } from '@/theme';
 
@@ -19,7 +19,7 @@ interface ActionButtonProps {
   onPress: () => void;
   disabled?: boolean;
   activeColor?: string;
-  hapticType?: 'light' | 'medium';
+  hapticType?: 'like' | 'tick' | 'save' | 'navigate' | 'send' | 'delete' | 'follow';
   accessibilityLabel?: string;
   accessibilityHint?: string;
 }
@@ -34,12 +34,12 @@ export const ActionButton = memo(function ActionButton({
   onPress,
   disabled,
   activeColor = colors.like,
-  hapticType = 'medium',
+  hapticType = 'like',
   accessibilityLabel,
   accessibilityHint,
 }: ActionButtonProps) {
   const scale = useSharedValue(1);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const handlePress = useCallback(() => {
     if (disabled) return;

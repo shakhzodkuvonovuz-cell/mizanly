@@ -15,7 +15,7 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack } from '@/types';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -28,7 +28,7 @@ export default function TrendingAudioScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -79,7 +79,7 @@ export default function TrendingAudioScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    haptic.light();
+    haptic.tick();
     await refetch();
     setRefreshing(false);
   }, [refetch, haptic]);
@@ -115,7 +115,7 @@ export default function TrendingAudioScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => {
-              haptic.light();
+              haptic.tick();
               playAudio(item.id, item.audioUrl);
             }}
             hitSlop={8}
@@ -141,7 +141,7 @@ export default function TrendingAudioScreen() {
           accessibilityRole="button"
           style={styles.useButton}
           onPress={() => {
-            haptic.light();
+            haptic.navigate();
             navigate('/(screens)/create-reel', { audioId: item.id });
           }}
         >

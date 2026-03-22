@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { StoryGroup } from '@/types';
@@ -25,7 +25,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: Props) {
   const { user, hasUnread } = group;
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const scale = useSharedValue(1);
   const addPulse = useSharedValue(1);
@@ -58,7 +58,7 @@ export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: 
   };
 
   const handlePress = () => {
-    haptic.light();
+    haptic.navigate();
     onPress();
   };
 

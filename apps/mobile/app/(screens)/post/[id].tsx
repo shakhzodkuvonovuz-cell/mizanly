@@ -23,7 +23,7 @@ import { RichText } from '@/components/ui/RichText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PostCard } from '@/components/saf/PostCard';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi } from '@/services/api';
@@ -53,7 +53,7 @@ function CommentRow({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const [localLiked, setLocalLiked] = useState((comment as Comment & { isLiked?: boolean }).isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
@@ -94,7 +94,7 @@ function CommentRow({
 
   const handleSwipeLike = () => {
     if (!viewerId || localLiked) return;
-    haptic.medium();
+    haptic.like();
     likeMutation.mutate();
   };
 
@@ -196,7 +196,7 @@ function CommentRow({
       </View>
       {!editing && (
         <Pressable
-          onPress={() => { viewerId && likeMutation.mutate(); haptic.medium(); }}
+          onPress={() => { viewerId && likeMutation.mutate(); haptic.like(); }}
           disabled={!viewerId}
           hitSlop={8}
           style={styles.commentLike}
@@ -231,7 +231,7 @@ export default function PostDetailScreen() {
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
   const { t, isRTL } = useTranslation();
   const tts = useTTS();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const postQuery = useQuery({
     queryKey: ['post', id],
@@ -346,7 +346,7 @@ export default function PostDetailScreen() {
           </Text>
           <View style={[styles.sortRow, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Pressable
-              onPress={() => { setCommentSort('top'); haptic.light(); }}
+              onPress={() => { setCommentSort('top'); haptic.tick(); }}
               style={[styles.sortButton, commentSort === 'top' && styles.sortButtonActive]}
               accessibilityLabel={t('common.top')}
               accessibilityRole="button"
@@ -356,7 +356,7 @@ export default function PostDetailScreen() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => { setCommentSort('latest'); haptic.light(); }}
+              onPress={() => { setCommentSort('latest'); haptic.tick(); }}
               style={[styles.sortButton, commentSort === 'latest' && styles.sortButtonActive]}
               accessibilityLabel={t('common.latest')}
               accessibilityRole="button"

@@ -25,7 +25,7 @@ import { BlurView } from 'expo-blur';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation, tabBar, glass } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -40,7 +40,7 @@ const DISMISS_X_THRESHOLD = 150;
 export function MiniPlayer() {
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const videoRef = useRef<Video>(null);
 
@@ -92,7 +92,7 @@ export function MiniPlayer() {
   );
 
   const handlePlayPause = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     if (miniPlayerPlaying) {
       videoRef.current?.pauseAsync();
       setMiniPlayerPlaying(false);
@@ -103,14 +103,14 @@ export function MiniPlayer() {
   }, [haptic, miniPlayerPlaying, setMiniPlayerPlaying]);
 
   const handleClose = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     videoRef.current?.stopAsync().catch(() => {});
     closeMiniPlayer();
   }, [haptic, closeMiniPlayer]);
 
   const handleTapExpand = useCallback(() => {
     if (!miniPlayerVideo) return;
-    haptic.light();
+    haptic.navigate();
     const videoId = miniPlayerVideo.id;
     // Close mini player first, then navigate
     closeMiniPlayer();

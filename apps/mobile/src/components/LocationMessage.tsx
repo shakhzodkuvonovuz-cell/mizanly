@@ -3,7 +3,7 @@ import { View, Text, Pressable, Linking, StyleSheet, Alert } from 'react-native'
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -25,13 +25,13 @@ export function LocationMessage({
   isOutgoing,
 }: LocationMessageProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   const mapsUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
 
   const handleOpenMaps = useCallback(async () => {
-    haptic.light();
+    haptic.navigate();
     try {
       const supported = await Linking.canOpenURL(mapsUrl);
       if (supported) {

@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { postsApi, threadsApi, reelsApi } from '@/services/api';
 
@@ -24,7 +24,7 @@ export default function SchedulePostScreen() {
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const params = useLocalSearchParams<{ space?: string; content?: string; mediaUrls?: string }>();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -98,7 +98,7 @@ export default function SchedulePostScreen() {
   // TODO [cross-scope]: Backend create DTOs may not validate scheduledAt field — verify in posts/threads/reels DTOs
   const handleSchedule = async () => {
     setIsScheduling(true);
-    haptic.medium();
+    haptic.send();
 
     try {
       // Build the scheduled timestamp

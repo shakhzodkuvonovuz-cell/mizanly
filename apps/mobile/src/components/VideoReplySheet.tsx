@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface VideoReplySheetProps {
@@ -44,7 +44,7 @@ export function VideoReplySheet({
   onPosted,
 }: VideoReplySheetProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -59,18 +59,18 @@ export function VideoReplySheet({
   const [isPosting, setIsPosting] = useState(false);
 
   const toggleFacing = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     setFacing((prev) => (prev === 'front' ? 'back' : 'front'));
   }, [haptic]);
 
   const toggleFlash = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     setFlashEnabled((prev) => !prev);
   }, [haptic]);
 
   const startRecording = useCallback(async () => {
     if (!cameraRef.current) return;
-    haptic.light();
+    haptic.send();
     setIsRecording(true);
     setElapsed(0);
 
@@ -107,14 +107,14 @@ export function VideoReplySheet({
   }, []);
 
   const handleRetake = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     setRecordedUri(null);
     setElapsed(0);
   }, [haptic]);
 
   const handlePost = useCallback(async () => {
     if (!recordedUri) return;
-    haptic.light();
+    haptic.send();
     setIsPosting(true);
 
     try {

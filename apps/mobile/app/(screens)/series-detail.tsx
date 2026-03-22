@@ -27,7 +27,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
@@ -71,7 +71,7 @@ function SeriesDetailContent() {
   const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -106,7 +106,7 @@ function SeriesDetailContent() {
   const series = seriesQuery.data;
 
   const handleFollowToggle = () => {
-    haptic.medium();
+    haptic.follow();
     if (series?.isFollowing) {
       unfollowMutation.mutate();
     } else {
@@ -115,7 +115,7 @@ function SeriesDetailContent() {
   };
 
   const handleEpisodePress = (episode: Episode) => {
-    haptic.light();
+    haptic.navigate();
     if (episode.videoId) {
       navigate(`/(screens)/video/${episode.videoId}`);
     } else if (episode.reelId) {
@@ -126,7 +126,7 @@ function SeriesDetailContent() {
   };
 
   const handleAddEpisode = () => {
-    haptic.light();
+    haptic.navigate();
     setAddEpisodeSheet(true);
   };
 
@@ -315,7 +315,7 @@ function SeriesDetailContent() {
           {
             icon: 'share',
             onPress: async () => {
-              haptic.light();
+              haptic.navigate();
               try {
                 await Share.share({
                   message: `${series.title} - ${t('series.detail', 'Series')} on Mizanly`,

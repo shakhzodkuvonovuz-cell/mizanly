@@ -12,7 +12,7 @@ import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface LinkStickerProps {
@@ -49,13 +49,13 @@ export function LinkSticker({
   style,
 }: LinkStickerProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   const displayUrl = useMemo(() => truncateUrl(url), [url]);
 
   const handlePress = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     onPress();
   }, [haptic, onPress]);
 

@@ -24,7 +24,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { videosApi, channelsApi } from '@/services/api';
@@ -175,7 +175,7 @@ export default function VideoDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const videoRef = useRef<Video>(null);
@@ -443,7 +443,7 @@ export default function VideoDetailScreen() {
 
   const handleLike = () => {
     if (likeMutation.isPending || removeReactionMutation.isPending) return;
-    haptic.light();
+    haptic.like();
     if (video?.isLiked) {
       removeReactionMutation.mutate();
     } else {
@@ -452,7 +452,7 @@ export default function VideoDetailScreen() {
   };
 
   const handleDislike = () => {
-    haptic.light();
+    haptic.like();
     if (video?.isDisliked) {
       removeReactionMutation.mutate();
     } else {
@@ -461,17 +461,17 @@ export default function VideoDetailScreen() {
   };
 
   const handleBookmark = () => {
-    haptic.light();
+    haptic.save();
     bookmarkMutation.mutate();
   };
 
   const handleSubscribe = () => {
-    haptic.light();
+    haptic.follow();
     subscribeMutation.mutate();
   };
 
   const handleShare = useCallback(async () => {
-    haptic.light();
+    haptic.navigate();
     if (!video) return;
     try {
       await Share.share({
@@ -484,7 +484,7 @@ export default function VideoDetailScreen() {
   }, [video]);
 
   const handleReport = () => {
-    haptic.light();
+    haptic.delete();
     router.push(`/(screens)/report?type=video&id=${id}`);
   };
 

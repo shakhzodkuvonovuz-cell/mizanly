@@ -26,7 +26,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { AudioTrack } from '@/types';
 
@@ -41,7 +41,7 @@ function PhotoMusicScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const flatListRef = useRef<FlatList>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
 
@@ -96,7 +96,7 @@ function PhotoMusicScreen() {
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      haptic.light();
+      haptic.tick();
       const newImages = result.assets.map((asset) => ({ uri: asset.uri }));
       setImages((prev) => [...prev, ...newImages]);
     }
@@ -104,7 +104,7 @@ function PhotoMusicScreen() {
 
   // ── Remove image ──
   const removeImage = useCallback((index: number) => {
-    haptic.light();
+    haptic.delete();
     setImages((prev) => prev.filter((_, i) => i !== index));
     if (previewIndex >= images.length - 1 && previewIndex > 0) {
       setPreviewIndex(previewIndex - 1);
@@ -115,7 +115,7 @@ function PhotoMusicScreen() {
   const handleSelectTrack = useCallback((track: AudioTrack) => {
     setSelectedTrack(track);
     setShowMusicPicker(false);
-    haptic.light();
+    haptic.tick();
   }, [haptic]);
 
   const removeTrack = useCallback(() => {
@@ -124,7 +124,7 @@ function PhotoMusicScreen() {
       soundRef.current.unloadAsync();
       soundRef.current = null;
     }
-    haptic.light();
+    haptic.delete();
   }, [haptic]);
 
   // ── Preview mode ──
@@ -306,7 +306,7 @@ function PhotoMusicScreen() {
         style={[styles.durationPill, isSelected && styles.durationPillActive]}
         onPress={() => {
           setPhotoDuration(duration);
-          haptic.light();
+          haptic.tick();
         }}
         accessibilityRole="button"
         accessibilityLabel={t('photoMusic.secondsPerPhoto', { seconds: duration })}

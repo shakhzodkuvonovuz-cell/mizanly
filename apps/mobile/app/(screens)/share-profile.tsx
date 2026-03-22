@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -24,7 +24,7 @@ export default function ShareProfileScreen() {
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [copied, setCopied] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
@@ -42,7 +42,7 @@ export default function ShareProfileScreen() {
 
   const handleCopyLink = async () => {
     if (!profileUrl) return;
-    haptic.light();
+    haptic.save();
     await Clipboard.setStringAsync(profileUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -50,7 +50,7 @@ export default function ShareProfileScreen() {
 
   const handleShare = async () => {
     if (!profileUrl) return;
-    haptic.light();
+    haptic.navigate();
     try {
       await Share.share({
         url: profileUrl,
@@ -63,7 +63,7 @@ export default function ShareProfileScreen() {
   };
 
   const handleScanQR = () => {
-    haptic.light();
+    haptic.navigate();
     router.push('/(screens)/qr-scanner');
   };
 

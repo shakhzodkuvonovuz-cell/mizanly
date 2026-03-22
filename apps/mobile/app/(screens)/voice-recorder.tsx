@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { uploadApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -25,7 +25,7 @@ export default function VoiceRecorderScreen() {
   const s = createS(tc);
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const [state, setState] = useState<State>('idle');
   const [time, setTime] = useState(0);
@@ -62,7 +62,7 @@ export default function VoiceRecorderScreen() {
     setState('recording');
     setTime(0);
     setLevels([]);
-    haptic.medium();
+    haptic.send();
     const timeRef = { value: 0 };
     timer.current = setInterval(() => {
       timeRef.value += 1;
@@ -96,7 +96,7 @@ export default function VoiceRecorderScreen() {
     }
     setUri(u);
     setState('recorded');
-    haptic.light();
+    haptic.tick();
   }, [haptic, t]);
 
   // Keep stopRef in sync with the latest stop callback

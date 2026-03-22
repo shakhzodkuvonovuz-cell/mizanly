@@ -14,7 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { aiApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { AiCaptionSuggestion } from '@/types';
@@ -37,7 +37,7 @@ const TONE_COLORS: Record<string, string> = {
 export default function AiAssistantScreen() {
   const router = useRouter();
   const tc = useThemeColors();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<TabId>('captions');
@@ -71,7 +71,7 @@ export default function AiAssistantScreen() {
 
   const handleGenerate = useCallback(() => {
     if (!input.trim() && activeTab !== 'ideas') return;
-    haptic.light();
+    haptic.send();
 
     if (activeTab === 'captions') {
       captionMutation.mutate();
@@ -111,7 +111,7 @@ export default function AiAssistantScreen() {
               <Pressable
                 accessibilityRole="button"
                 key={tab.id}
-                onPress={() => { setActiveTab(tab.id); haptic.light(); }}
+                onPress={() => { setActiveTab(tab.id); haptic.tick(); }}
                 style={[styles.tab, activeTab === tab.id && styles.tabActive]}
               >
                 <Icon
@@ -219,7 +219,7 @@ export default function AiAssistantScreen() {
                     <Pressable
                       accessibilityRole="button"
                       style={styles.hashtagChip}
-                      onPress={() => { Clipboard.setString(`#${tag}`); haptic.light(); }}
+                      onPress={() => { Clipboard.setString(`#${tag}`); haptic.save(); }}
                     >
                       <Text style={styles.hashtagText}>#{tag}</Text>
                     </Pressable>

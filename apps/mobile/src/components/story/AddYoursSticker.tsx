@@ -12,7 +12,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface AddYoursStickerProps {
@@ -48,17 +48,17 @@ export function AddYoursSticker({
   style,
 }: AddYoursStickerProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   const handleAddYours = useCallback(() => {
-    haptic.light();
+    haptic.send();
     onAddYours();
   }, [haptic, onAddYours]);
 
   const handleViewResponses = useCallback(() => {
     if (onViewResponses) {
-      haptic.light();
+      haptic.navigate();
       onViewResponses();
     }
   }, [haptic, onViewResponses]);

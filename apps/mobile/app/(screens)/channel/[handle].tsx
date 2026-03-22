@@ -21,7 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
@@ -49,7 +49,7 @@ type Tab = 'videos' | 'playlists' | 'about';
 
 function VideoCard({ video }: { video: Video }) {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const tc = useThemeColors();
   const durationMinutes = Math.floor(video.duration / 60);
@@ -57,12 +57,12 @@ function VideoCard({ video }: { video: Video }) {
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
 
   const handlePress = () => {
-    haptic.light();
+    haptic.navigate();
     router.push(`/(screens)/video/${video.id}`);
   };
 
   const handleChannelPress = () => {
-    haptic.light();
+    haptic.navigate();
     router.push(`/(screens)/channel/${video.channel.handle}`);
   };
 
@@ -146,10 +146,10 @@ function VideoCard({ video }: { video: Video }) {
 
   function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const handlePress = () => {
-    haptic.light();
+    haptic.navigate();
     router.push(`/(screens)/playlist/${playlist.id}`);
   };
 
@@ -174,7 +174,7 @@ export default function ChannelScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
   const { user } = useUser();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const CHANNEL_TABS = useMemo(() => [
     { key: 'videos', label: t('minbar.videos') },
@@ -255,28 +255,28 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
   };
 
   const handleSubscribe = () => {
-    haptic.light();
+    haptic.follow();
     subscribeMutation.mutate();
   };
 
   const handleShare = () => {
-    haptic.light();
+    haptic.navigate();
     setShowShareSheet(true);
   };
 
   const handleReport = () => {
-    haptic.light();
+    haptic.delete();
     router.push(`/(screens)/report?type=channel&id=${channel?.id}`);
   };
 
   const handleCopyLink = async () => {
-    haptic.light();
+    haptic.save();
     await Clipboard.setStringAsync(`mizanly://channel/${channel?.handle ?? handle}`);
     Alert.alert(t('common.copied'), t('common.linkCopied'));
   };
 
   const handleNativeShare = async () => {
-    haptic.light();
+    haptic.navigate();
     await Share.share({
       message: `Check out ${channel?.name ?? handle} on Mizanly`,
       url: `mizanly://channel/${channel?.handle ?? handle}`,
@@ -722,7 +722,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                   style={[styles.trailerPickerItem, isCurrentTrailer && styles.trailerPickerItemActive]}
                  
                   onPress={() => {
-                    haptic.light();
+                    haptic.tick();
                     setTrailerMutation.mutate(item.id);
                   }}
                   disabled={setTrailerMutation.isPending}

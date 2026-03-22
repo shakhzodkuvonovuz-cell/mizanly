@@ -24,7 +24,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { gamificationApi } from '@/services/api';
@@ -63,7 +63,7 @@ function SeriesDiscoverContent() {
   const styles = createStyles(tc);
   const { t } = useTranslation();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
@@ -118,17 +118,17 @@ function SeriesDiscoverContent() {
   };
 
   const handleCategoryPress = (key: CategoryKey) => {
-    haptic.light();
+    haptic.tick();
     setSelectedCategory(key);
   };
 
   const handleSeriesPress = (series: SeriesItem) => {
-    haptic.light();
+    haptic.navigate();
     navigate('/(screens)/series-detail', { id: series.id });
   };
 
   const handleFollowToggle = (series: SeriesItem) => {
-    haptic.medium();
+    haptic.follow();
     if (series.isFollowing) {
       unfollowMutation.mutate(series.id);
     } else {

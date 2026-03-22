@@ -17,7 +17,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { usePiP } from '@/hooks/usePiP';
 import { useAmbientColor } from '@/hooks/useAmbientColor';
 
@@ -70,7 +70,7 @@ export const VideoPlayer = memo(function VideoPlayer({
   const [qualitySheetVisible, setQualitySheetVisible] = useState(false);
   const [looping, setLooping] = useState(isLooping ?? false);
 
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const { dominantColor, secondaryColor } = useAmbientColor(enableAmbient ? thumbnailUrl : null);
   const { isPiPSupported, enterPiP } = usePiP({
@@ -149,7 +149,7 @@ export const VideoPlayer = memo(function VideoPlayer({
 
   const togglePlayPause = useCallback(async () => {
     if (!videoRef.current) return;
-    haptic.light();
+    haptic.tick();
     if (isPlaying) {
       await videoRef.current.pauseAsync();
     } else {
@@ -160,7 +160,7 @@ export const VideoPlayer = memo(function VideoPlayer({
 
   const skipForward = useCallback(async () => {
     if (!videoRef.current || !status?.isLoaded) return;
-    haptic.light();
+    haptic.tick();
     const currentPosition = status.positionMillis;
     const newPosition = currentPosition + 10000; // 10 seconds forward
     await videoRef.current.setPositionAsync(Math.min(newPosition, status.durationMillis ?? 0));
@@ -169,7 +169,7 @@ export const VideoPlayer = memo(function VideoPlayer({
 
   const skipBackward = useCallback(async () => {
     if (!videoRef.current || !status?.isLoaded) return;
-    haptic.light();
+    haptic.tick();
     const currentPosition = status.positionMillis;
     const newPosition = currentPosition - 10000; // 10 seconds backward
     await videoRef.current.setPositionAsync(Math.max(newPosition, 0));
@@ -213,7 +213,7 @@ export const VideoPlayer = memo(function VideoPlayer({
 
   const toggleMute = useCallback(async () => {
     if (!videoRef.current) return;
-    haptic.light();
+    haptic.tick();
     const newMuted = !isMuted;
     setIsMuted(newMuted);
     await videoRef.current.setVolumeAsync(newMuted ? 0 : volume);
@@ -230,7 +230,7 @@ export const VideoPlayer = memo(function VideoPlayer({
 
   const toggleFullscreen = useCallback(async () => {
     if (!videoRef.current) return;
-    haptic.light();
+    haptic.tick();
     // presentFullscreenPlayer exists on Video at runtime but isn't in Expo AV types
     const ref = videoRef.current;
     if ('presentFullscreenPlayer' in ref) {
@@ -318,7 +318,7 @@ export const VideoPlayer = memo(function VideoPlayer({
           >
             {/* Top controls row */}
             <View style={styles.topControls}>
-              <Pressable onPress={() => { haptic.light(); setLooping(!looping); }} style={styles.iconButton}>
+              <Pressable onPress={() => { haptic.tick(); setLooping(!looping); }} style={styles.iconButton}>
                 <Icon name="repeat" size="md" color={looping ? colors.emerald : colors.text.primary} />
               </Pressable>
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -328,7 +328,7 @@ export const VideoPlayer = memo(function VideoPlayer({
                   </Pressable>
                 )}
                 {enablePiP && isPiPSupported && (
-                  <Pressable onPress={() => { enterPiP(); haptic.light(); }} style={styles.iconButton}
+                  <Pressable onPress={() => { enterPiP(); haptic.tick(); }} style={styles.iconButton}
                     accessibilityLabel={t('minbar.pictureInPicture')} accessibilityRole="button">
                     <Icon name="layers" size="md" color={colors.text.primary} />
                   </Pressable>

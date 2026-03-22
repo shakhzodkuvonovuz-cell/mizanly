@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -27,7 +27,7 @@ export function PinnedMessageBar({
   onViewAll,
 }: PinnedMessageBarProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -40,20 +40,20 @@ export function PinnedMessageBar({
       }
       return;
     }
-    haptic.light();
+    haptic.tick();
     const nextIndex = (currentIndex + 1) % pinnedMessages.length;
     setCurrentIndex(nextIndex);
   }, [currentIndex, pinnedMessages.length, currentMessage, onTapPin, haptic]);
 
   const handleTapMessage = useCallback(() => {
     if (currentMessage) {
-      haptic.light();
+      haptic.navigate();
       onTapPin(currentMessage.id);
     }
   }, [currentMessage, onTapPin, haptic]);
 
   const handleViewAll = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     onViewAll();
   }, [onViewAll, haptic]);
 

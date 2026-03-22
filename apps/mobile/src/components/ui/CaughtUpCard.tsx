@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { animation, colors, fontSize, radius, spacing } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
@@ -25,7 +25,7 @@ const CONFETTI_PARTICLES = Array.from({ length: 12 }, (_, i) => ({
 
 export const CaughtUpCard = memo(function CaughtUpCard() {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const reducedMotion = useReducedMotion();
   const checkScale = useSharedValue(reducedMotion ? 1 : 0);
   const ringScale = useSharedValue(reducedMotion ? 1.4 : 0.8);

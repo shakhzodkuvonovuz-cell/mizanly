@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 
 const GIFT_ICONS: Record<string, string> = {
@@ -39,7 +39,7 @@ interface GiftOverlayProps {
 
 export function GiftOverlay({ giftType, senderName, coinValue, visible, onDone }: GiftOverlayProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const scale = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -51,7 +51,7 @@ export function GiftOverlay({ giftType, senderName, coinValue, visible, onDone }
 
   useEffect(() => {
     if (visible) {
-      haptic.medium();
+      haptic.like();
 
       // Reset values
       scale.value = 0;

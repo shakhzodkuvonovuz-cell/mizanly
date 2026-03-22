@@ -19,7 +19,7 @@ import { Video, ResizeMode } from 'expo-av';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -44,7 +44,7 @@ export function ViewOnceMedia({
   onViewed,
 }: ViewOnceMediaProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [hasBeenViewed, setHasBeenViewed] = useState(isViewed);
 
@@ -57,7 +57,7 @@ export function ViewOnceMedia({
 
   const handleTapToView = useCallback(() => {
     if (isSender || hasBeenViewed) return;
-    haptic.medium();
+    haptic.longPress();
     setIsViewerOpen(true);
   }, [isSender, hasBeenViewed, haptic]);
 
@@ -144,7 +144,7 @@ function FullScreenViewer({
   onClose,
 }: FullScreenViewerProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const videoRef = useRef<Video>(null);
 
   // Countdown for photo
@@ -184,7 +184,7 @@ function FullScreenViewer({
   const handleVideoStatusUpdate = useCallback(
     (status: { isLoaded: boolean; didJustFinish?: boolean }) => {
       if (status.isLoaded && status.didJustFinish) {
-        haptic.light();
+        haptic.navigate();
         onClose();
       }
     },
@@ -194,7 +194,7 @@ function FullScreenViewer({
   const handleTapToClose = useCallback(() => {
     if (mediaType === 'IMAGE') {
       if (timerRef.current) clearInterval(timerRef.current);
-      haptic.light();
+      haptic.navigate();
       onClose();
     }
   }, [mediaType, onClose, haptic]);
@@ -243,7 +243,7 @@ function FullScreenViewer({
           <Pressable
             onPress={() => {
               if (timerRef.current) clearInterval(timerRef.current);
-              haptic.light();
+              haptic.navigate();
               onClose();
             }}
             style={styles.closeButton}

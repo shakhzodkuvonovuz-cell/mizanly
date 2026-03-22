@@ -13,7 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { hashtagsApi } from '@/services/api';
 import type { HashtagInfo } from '@/types';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -22,7 +22,7 @@ import { navigate } from '@/utils/navigation';
 export default function HashtagExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   
   const [refreshing, setRefreshing] = useState(false);
@@ -51,7 +51,7 @@ export default function HashtagExploreScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    haptic.light();
+    haptic.tick();
     if (debouncedQuery.length === 0) {
       await refetchTrending();
     }

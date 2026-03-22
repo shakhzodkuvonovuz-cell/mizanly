@@ -12,7 +12,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Icon } from '@/components/ui/Icon';
 import { colors, animation, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface DoubleTapHeartProps {
@@ -31,7 +31,7 @@ export const DoubleTapHeart = memo(function DoubleTapHeart({
   onDoubleTap,
   disabled,
 }: DoubleTapHeartProps) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const reducedMotion = useReducedMotion();
   const heartScale = useSharedValue(0);
   const heartOpacity = useSharedValue(0);
@@ -40,7 +40,7 @@ export const DoubleTapHeart = memo(function DoubleTapHeart({
   const particle2 = useSharedValue(0);
 
   const triggerAnimation = useCallback(() => {
-    haptic.medium();
+    haptic.like();
     onDoubleTap();
 
     // Skip visual animation if reduced motion is enabled — like action still fires

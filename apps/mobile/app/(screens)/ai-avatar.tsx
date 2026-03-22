@@ -18,7 +18,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { aiApi, usersApi } from '@/services/api';
 import { useStore } from '@/store';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { AiAvatar } from '@/types';
@@ -33,7 +33,7 @@ const STYLES: { id: string; label: string; icon: IconName; color: string }[] = [
 export default function AiAvatarScreen() {
   const router = useRouter();
   const tc = useThemeColors();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
   const user = useStore(s => s.user);
@@ -118,7 +118,7 @@ export default function AiAvatarScreen() {
                 <Pressable
                   accessibilityRole="button"
                   key={style.id}
-                  onPress={() => { setSelectedStyle(style.id); haptic.light(); }}
+                  onPress={() => { setSelectedStyle(style.id); haptic.tick(); }}
                   style={[styles.styleCard, selectedStyle === style.id && { borderColor: style.color }]}
                 >
                   <View style={[styles.styleIconWrap, { backgroundColor: style.color + '20' }]}>

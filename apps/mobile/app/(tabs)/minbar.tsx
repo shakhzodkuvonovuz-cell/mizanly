@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { formatCount } from '@/utils/formatCount';
@@ -175,7 +175,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
 export default function MinbarScreen() {
   const { user } = useUser();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
   const [selectedCategory, setSelectedCategory] = useState<VideoCategory | 'all'>('all');
@@ -236,22 +236,22 @@ export default function MinbarScreen() {
   }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
   const handleVideoPress = useCallback((video: Video) => {
-    haptic.light();
+    haptic.navigate();
     router.push(`/(screens)/video/${video.id}`);
   }, [haptic, router]);
 
   const handleChannelPress = useCallback((handle: string) => {
-    haptic.light();
+    haptic.navigate();
     router.push(`/(screens)/channel/${handle}`);
   }, [haptic, router]);
 
   const handleMorePress = useCallback((video: Video) => {
-    haptic.light();
+    haptic.tick();
     setSelectedVideoId(video.id);
   }, [haptic]);
 
   const handleSaveToWatchLater = async (videoId: string) => {
-    haptic.light();
+    haptic.save();
     setSelectedVideoId(null);
     try {
       await usersApi.addWatchLater(videoId);
@@ -272,7 +272,7 @@ export default function MinbarScreen() {
   const keyExtractor = useCallback((item: Video) => item.id, []);
 
   const handleCategoryPress = useCallback((key: VideoCategory | 'all') => {
-    haptic.light();
+    haptic.tick();
     setSelectedCategory(key);
   }, [haptic]);
 
@@ -400,7 +400,7 @@ export default function MinbarScreen() {
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <AnimatedPressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}
             onPressIn={searchPress.onPressIn}
             onPressOut={searchPress.onPressOut}
             style={searchPress.animatedStyle}
@@ -412,7 +412,7 @@ export default function MinbarScreen() {
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
-            onPress={() => { haptic.light(); router.push('/(screens)/watch-history'); }}
+            onPress={() => { haptic.navigate(); router.push('/(screens)/watch-history'); }}
             onPressIn={watchLaterPress.onPressIn}
             onPressOut={watchLaterPress.onPressOut}
             style={watchLaterPress.animatedStyle}
@@ -425,7 +425,7 @@ export default function MinbarScreen() {
           <AnimatedPressable
             hitSlop={8}
             onPress={() => {
-              haptic.light();
+              haptic.navigate();
               router.push('/(screens)/notifications');
               setUnreadNotifications(0);
             }}

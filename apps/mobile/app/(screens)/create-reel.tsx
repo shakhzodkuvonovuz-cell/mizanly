@@ -23,7 +23,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -51,7 +51,7 @@ export default function CreateReelScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
 
   const [caption, setCaption] = useState('');
@@ -182,7 +182,7 @@ export default function CreateReelScreen() {
   };
 
   const pickVideo = useCallback(async () => {
-    haptic.light();
+    haptic.navigate();
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['videos'],
       allowsEditing: true,
@@ -343,7 +343,7 @@ export default function CreateReelScreen() {
   };
 
   const handleToolbarPress = (type: AutocompleteType) => {
-    haptic.light();
+    haptic.tick();
     setShowAutocomplete(type);
   };
 

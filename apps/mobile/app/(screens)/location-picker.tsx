@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, fonts, fontSize, spacing, radius, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface LocationData {
@@ -28,7 +28,7 @@ function LocationPickerContent() {
   const router = useRouter();
   const params = useLocalSearchParams<{ conversationId: string }>();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [address, setAddress] = useState('');
@@ -123,7 +123,7 @@ function LocationPickerContent() {
       );
       return;
     }
-    haptic.light();
+    haptic.tick();
     const coords = { latitude: lat, longitude: lng };
     setLocation(coords);
     const addr = await reverseGeocode(lat, lng);

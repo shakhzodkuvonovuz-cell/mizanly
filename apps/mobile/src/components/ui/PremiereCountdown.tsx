@@ -4,7 +4,7 @@ import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withTim
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from './Icon';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -46,7 +46,7 @@ export function PremiereCountdown({
   onRemoveReminder,
 }: PremiereCountdownProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const [time, setTime] = useState(getTimeRemaining(scheduledAt));
   const pulseScale = useSharedValue(1);
@@ -117,7 +117,7 @@ export function PremiereCountdown({
           accessibilityRole="button"
           style={[styles.reminderBtn, { borderColor: tc.border }, isReminderSet && { borderColor: colors.gold }]}
           onPress={() => {
-            haptic.light();
+            haptic.tick();
             isReminderSet ? onRemoveReminder() : onSetReminder();
           }}
         >

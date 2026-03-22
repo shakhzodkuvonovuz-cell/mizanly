@@ -15,7 +15,7 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -25,7 +25,7 @@ export default function ManageBroadcastScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ channelId: string }>();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'subscribers' | 'admins'>('subscribers');

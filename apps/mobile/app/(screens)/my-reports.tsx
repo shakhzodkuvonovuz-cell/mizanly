@@ -16,7 +16,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { reportsApi } from '@/services/api';
 import type { Report, ReportStatus } from '@/types';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -25,7 +25,7 @@ export default function MyReportsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const tc = useThemeColors();
 
@@ -46,7 +46,7 @@ export default function MyReportsScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    haptic.light();
+    haptic.tick();
     await refetch();
     setRefreshing(false);
   }, [refetch, haptic]);

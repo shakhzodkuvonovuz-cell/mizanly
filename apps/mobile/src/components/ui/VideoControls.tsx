@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius, animation, glass } from '@/theme';
 
 export type VideoQuality = '360p' | '480p' | '720p' | '1080p' | '4K';
@@ -59,7 +59,7 @@ export function VideoControls({
   onMinimize,
 }: VideoControlsProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { width: screenWidth } = useWindowDimensions();
 
   const [showControls, setShowControls] = useState(true);
@@ -97,20 +97,20 @@ export function VideoControls({
   };
 
   const handlePlayPause = () => {
-    haptic.light();
+    haptic.tick();
     onPlayPause();
     resetHideTimeout();
   };
 
   const handleSkipForward = () => {
-    haptic.light();
+    haptic.tick();
     const newTime = Math.min(currentTime + 10, duration);
     onSeek(newTime);
     resetHideTimeout();
   };
 
   const handleSkipBackward = () => {
-    haptic.light();
+    haptic.tick();
     const newTime = Math.max(currentTime - 10, 0);
     onSeek(newTime);
     resetHideTimeout();
@@ -123,14 +123,14 @@ export function VideoControls({
   };
 
   const handleQualitySelect = (q: VideoQuality) => {
-    haptic.selection();
+    haptic.tick();
     onQualityChange(q);
     setQualitySheetVisible(false);
     resetHideTimeout();
   };
 
   const handleSpeedSelect = (s: PlaybackSpeed) => {
-    haptic.selection();
+    haptic.tick();
     onSpeedChange(s);
     setSpeedSheetVisible(false);
     resetHideTimeout();
@@ -142,7 +142,7 @@ export function VideoControls({
   };
 
   const handleVolumeButtonPress = () => {
-    haptic.light();
+    haptic.tick();
     const newVolume = volume === 0 ? 1 : 0;
     onVolumeChange(newVolume);
     resetHideTimeout();

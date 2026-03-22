@@ -6,7 +6,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { Icon } from './Icon';
 import { GradientButton } from './GradientButton';
 import { BottomSheet } from './BottomSheet';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -24,7 +24,7 @@ interface AuthGateProps {
 export function AuthGate({ children, onAuthenticated }: AuthGateProps) {
   const { isSignedIn } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const router = useRouter();
 
@@ -33,7 +33,7 @@ export function AuthGate({ children, onAuthenticated }: AuthGateProps) {
       onAuthenticated?.();
       return;
     }
-    haptic.medium();
+    haptic.longPress();
     setShowAuth(true);
   }, [isSignedIn, onAuthenticated, haptic]);
 
@@ -90,7 +90,7 @@ export function AuthGate({ children, onAuthenticated }: AuthGateProps) {
 export function useAuthGate() {
   const { isSignedIn } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const router = useRouter();
   const { t, isRTL } = useTranslation();
 
@@ -99,7 +99,7 @@ export function useAuthGate() {
       action();
       return;
     }
-    haptic.medium();
+    haptic.longPress();
     setShowAuth(true);
   }, [isSignedIn, haptic]);
 

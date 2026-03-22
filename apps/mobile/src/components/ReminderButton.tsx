@@ -7,7 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { colors, radius, animation } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { promotionsApi } from '@/services/promotionsApi';
 
@@ -20,7 +20,7 @@ interface ReminderButtonProps {
 }
 
 export function ReminderButton({ postId, hasReminder, onToggle }: ReminderButtonProps) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const scale = useSharedValue(1);
 
@@ -54,14 +54,14 @@ export function ReminderButton({ postId, hasReminder, onToggle }: ReminderButton
     try {
       await promotionsApi.removeReminder(postId);
       onToggle(false);
-      haptic.light();
+      haptic.delete();
     } catch {
       Alert.alert(t('common.error'), t('reminder.removeError'));
     }
   }, [postId, onToggle, haptic, t]);
 
   const handlePress = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     if (hasReminder) {
       Alert.alert(
         t('reminder.removeTitle'),

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinkPreview } from '@/components/ui/LinkPreview';
 import { colors, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 interface Props {
   text: string;
@@ -14,7 +14,7 @@ interface Props {
 
 export const RichText = memo(function RichText({ text, style, numberOfLines, onPostPress }: Props) {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const segments: { type: 'text' | 'hashtag' | 'mention' | 'url' | 'phone' | 'email'; value: string }[] = [];
   const TOKEN_RE = /(https?:\/\/[^\s]+|#[\w\u0600-\u06FF]+|@[\w.]+|\+?\d{1,4}[-.\s]?\(?\d{1,3}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
@@ -56,7 +56,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
             <Text
               key={i}
               style={styles.url}
-              onPress={(e) => { e.stopPropagation?.(); haptic.light(); Linking.openURL(seg.value); }}
+              onPress={(e) => { e.stopPropagation?.(); haptic.navigate(); Linking.openURL(seg.value); }}
             >
               {seg.value}
             </Text>
@@ -69,7 +69,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
               style={styles.hashtag}
               onPress={(e) => {
                 e.stopPropagation?.();
-                haptic.light();
+                haptic.navigate();
                 router.push(`/(screens)/hashtag/${seg.value}`);
               }}
             >
@@ -84,7 +84,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
               style={styles.mention}
               onPress={(e) => {
                 e.stopPropagation?.();
-                haptic.light();
+                haptic.navigate();
                 router.push(`/(screens)/profile/${seg.value}`);
               }}
             >
@@ -97,7 +97,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
             <Text
               key={i}
               style={styles.phone}
-              onPress={(e) => { e.stopPropagation?.(); haptic.light(); Linking.openURL(`tel:${seg.value}`); }}
+              onPress={(e) => { e.stopPropagation?.(); haptic.navigate(); Linking.openURL(`tel:${seg.value}`); }}
             >
               {seg.value}
             </Text>
@@ -108,7 +108,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
             <Text
               key={i}
               style={styles.email}
-              onPress={(e) => { e.stopPropagation?.(); haptic.light(); Linking.openURL(`mailto:${seg.value}`); }}
+              onPress={(e) => { e.stopPropagation?.(); haptic.navigate(); Linking.openURL(`mailto:${seg.value}`); }}
             >
               {seg.value}
             </Text>

@@ -14,7 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { WebLayout } from '@/components/web/WebLayout';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useWebKeyboardShortcuts } from '@/hooks/useWebKeyboardShortcuts';
 import { colors, tabBar, spacing, fontSize, animation, radius, shadow, fontSizeExt } from '@/theme';
@@ -71,7 +71,7 @@ function CreateButton() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -79,7 +79,7 @@ function CreateButton() {
   }));
 
   const handlePress = () => {
-    haptic.medium();
+    haptic.longPress();
     scale.value = withSequence(
       withSpring(0.85, animation.spring.bouncy),
       withSpring(1, animation.spring.bouncy),
@@ -88,7 +88,7 @@ function CreateButton() {
   };
 
   const navigate = (path: string) => {
-    haptic.light();
+    haptic.navigate();
     setOpen(false);
     navTo(path);
   };
@@ -152,7 +152,7 @@ function CreateButton() {
 
 export default function TabLayout() {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const unreadNotifications = useStore(s => s.unreadNotifications);
   const unreadMessages = useStore(s => s.unreadMessages);
   const { isDesktop, isTablet } = useResponsive();
@@ -187,7 +187,7 @@ export default function TabLayout() {
       >
         <Tabs.Screen
           name="saf"
-          listeners={{ tabPress: () => haptic.light() }}
+          listeners={{ tabPress: () => haptic.tick() }}
           options={{
             title: t('tabs.saf'),
             tabBarAccessibilityLabel: t('tabs.accessibility.homeFeed'),
@@ -196,7 +196,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="bakra"
-          listeners={{ tabPress: () => haptic.light() }}
+          listeners={{ tabPress: () => haptic.tick() }}
           options={{
             title: t('tabs.bakra'),
             tabBarAccessibilityLabel: t('tabs.accessibility.shortVideos'),
@@ -205,7 +205,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="minbar"
-          listeners={{ tabPress: () => haptic.light() }}
+          listeners={{ tabPress: () => haptic.tick() }}
           options={{
             title: t('tabs.minbar'),
             tabBarAccessibilityLabel: t('tabs.accessibility.videos'),
@@ -221,7 +221,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="majlis"
-          listeners={{ tabPress: () => haptic.light() }}
+          listeners={{ tabPress: () => haptic.tick() }}
           options={{
             title: t('tabs.majlis'),
             tabBarAccessibilityLabel: t('tabs.accessibility.threads'),
@@ -230,7 +230,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="risalah"
-          listeners={{ tabPress: () => haptic.light() }}
+          listeners={{ tabPress: () => haptic.tick() }}
           options={{
             title: t('tabs.risalah'),
             tabBarAccessibilityLabel: t('tabs.accessibility.messages'),

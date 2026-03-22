@@ -14,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, radius, spacing, animation } from '@/theme';
@@ -34,7 +34,7 @@ interface BottomSheetProps {
 
 export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdrop, scrollable = false }: BottomSheetProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { height: SCREEN_HEIGHT } = useWindowDimensions();
@@ -88,7 +88,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
 
   const close = useCallback(() => {
     if (!mountedRef.current) return;
-    haptic.light();
+    haptic.navigate();
     backdropOpacity.value = withTiming(0, { duration: 200 });
     translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250 }, (finished) => {
       if (finished) {
@@ -204,12 +204,12 @@ export const BottomSheetItem = memo(function BottomSheetItem({ label, icon, onPr
   destructive?: boolean;
   disabled?: boolean;
 }) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.98 });
 
   const handlePress = () => {
-    haptic.selection();
+    haptic.tick();
     onPress();
   };
 

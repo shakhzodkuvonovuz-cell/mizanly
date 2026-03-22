@@ -21,7 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 // ---------------------------------------------------------------------------
@@ -234,7 +234,7 @@ function ShareReceiveContent() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const { sharedText, sharedImage, sharedVideo, sharedUrl } = useLocalSearchParams<{
     sharedText?: string;
@@ -252,7 +252,7 @@ function ShareReceiveContent() {
 
   const handleSpaceSelect = useCallback(
     (key: SpaceKey) => {
-      haptic.selection();
+      haptic.tick();
       setSelectedSpace(key);
     },
     [haptic],

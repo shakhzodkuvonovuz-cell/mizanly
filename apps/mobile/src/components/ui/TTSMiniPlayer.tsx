@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeInDown, SlideOutDown } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTTS } from '@/hooks/useTTS';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius, animation, tabBar } from '@/theme';
@@ -13,7 +13,7 @@ const MINI_PLAYER_HEIGHT = 56;
 
 export function TTSMiniPlayer() {
   const { t, isRTL } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const {
     isActive,
@@ -27,7 +27,7 @@ export function TTSMiniPlayer() {
   } = useTTS();
 
   const handlePlayPause = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     if (isPlaying) {
       pause();
     } else {
@@ -36,12 +36,12 @@ export function TTSMiniPlayer() {
   }, [haptic, isPlaying, pause, restart]);
 
   const handleStop = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     stop();
   }, [haptic, stop]);
 
   const handleSpeed = useCallback(() => {
-    haptic.selection();
+    haptic.tick();
     cycleSpeed();
   }, [haptic, cycleSpeed]);
 

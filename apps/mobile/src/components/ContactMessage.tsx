@@ -4,7 +4,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -26,12 +26,12 @@ export function ContactMessage({
   isOutgoing,
 }: ContactMessageProps) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
 
   const handleCallPhone = useCallback(async () => {
     if (!phone) return;
-    haptic.light();
+    haptic.navigate();
     const url = `tel:${phone}`;
     try {
       const supported = await Linking.canOpenURL(url);
@@ -48,7 +48,7 @@ export function ContactMessage({
 
   const handleSendEmail = useCallback(async () => {
     if (!email) return;
-    haptic.light();
+    haptic.navigate();
     const url = `mailto:${email}`;
     try {
       const supported = await Linking.canOpenURL(url);
