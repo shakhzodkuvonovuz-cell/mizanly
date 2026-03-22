@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput, ScrollView,
-  Alert, Platform, Image as RNImage,
+  Platform, Image as RNImage,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -150,7 +150,6 @@ export default function ScheduleLiveScreen() {
     onError: (err: Error) => {
       setUploading(false);
       showToast({ message: err.message || t('common.somethingWentWrong'), variant: 'error' });
-      Alert.alert(t('screens.schedule-live.errorTitle'), err.message || t('screens.schedule-live.errorSchedule'));
     },
   });
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -102,7 +102,7 @@ export default function SchedulePostScreen() {
       const scheduledAt = new Date(currentYear, currentMonth, selectedDate, hour24, selectedMinute);
 
       if (scheduledAt <= new Date()) {
-        Alert.alert(t('common.error'), t('screens.schedule-post.mustBeFuture'));
+        showToast({ message: t('screens.schedule-post.mustBeFuture'), variant: 'error' });
         setIsScheduling(false);
         return;
       }

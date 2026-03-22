@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  TextInput, FlatList, Alert,
+  TextInput, FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import { searchApi, messagesApi, followsApi } from '@/services/api';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 export default function NewConversationScreen() {
   const tc = useThemeColors();
@@ -62,7 +63,7 @@ export default function NewConversationScreen() {
     onSuccess: (convo) => {
       router.replace(`/(screens)/conversation/${convo.id}`);
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message || t('messages.couldNotStartConversation')),
+    onError: (err: Error) => showToast(err.message || t('messages.couldNotStartConversation'), 'error'),
   });
 
   return (

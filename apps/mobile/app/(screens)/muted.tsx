@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet,
   FlatList, Alert, RefreshControl,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -58,7 +59,7 @@ export default function MutedScreen() {
   const unmuteMutation = useMutation({
     mutationFn: (userId: string) => mutesApi.unmute(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['muted'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast(err.message, 'error'),
   });
 
   if (query.isError) {

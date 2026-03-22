@@ -24,6 +24,7 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { reelsApi, uploadApi } from '@/services/api';
@@ -121,7 +122,7 @@ export default function ReelRemixScreen() {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : t('common.somethingWentWrong');
-      Alert.alert(t('remix.recordError'), message);
+      showToast({ message: `${t('remix.recordError')}: ${message}`, variant: 'error' });
     }
     setIsRecording(false);
   }, [haptic, t]);
@@ -230,17 +231,17 @@ export default function ReelRemixScreen() {
     },
     onError: (error: Error) => {
       haptic.error();
-      Alert.alert(t('remix.postFailed'), error.message || t('common.somethingWentWrong'));
+      showToast({ message: error.message || t('common.somethingWentWrong'), variant: 'error' });
     },
   });
 
   const handlePostRemix = useCallback(() => {
     if (!recordedUri) {
-      Alert.alert(t('remix.noRecording'), t('remix.recordFirst'));
+      showToast({ message: t('remix.recordFirst'), variant: 'error' });
       return;
     }
     if (caption.length > MAX_CAPTION) {
-      Alert.alert(t('remix.captionTooLong'), t('remix.maxCharacters'));
+      showToast({ message: t('remix.maxCharacters'), variant: 'error' });
       return;
     }
     uploadMutation.mutate();

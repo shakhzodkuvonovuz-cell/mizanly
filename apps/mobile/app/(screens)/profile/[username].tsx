@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -313,7 +314,7 @@ export default function ProfileScreen() {
     },
     onSuccess: () => {
       setShowMenu(false);
-      Alert.alert(t('profile.blockedTitle'), t('profile.blockedMessage', { username }));
+      showToast({ message: t('profile.blockedMessage', { username }), variant: 'success' });
       router.back();
     },
   });
@@ -325,7 +326,7 @@ export default function ProfileScreen() {
     },
     onSuccess: () => {
       setShowMenu(false);
-      Alert.alert(t('profile.mutedTitle'), t('profile.mutedMessage', { username }));
+      showToast({ message: t('profile.mutedMessage', { username }), variant: 'success' });
     },
   });
 
@@ -344,7 +345,7 @@ export default function ProfileScreen() {
     const sendReport = (reason: string) => {
       if (!profile) return;
       usersApi.report(profile.id, reason).catch(() => {});
-      Alert.alert(t('profile.reportSentTitle'), t('profile.reportSentMessage'));
+      showToast({ message: t('profile.reportSentMessage'), variant: 'success' });
     };
     Alert.alert(t('profile.reportAccountTitle'), t('profile.reportAccountMessage'), [
       { text: t('profile.reportSpam'), onPress: () => sendReport('spam') },
@@ -541,7 +542,7 @@ export default function ProfileScreen() {
             style={[styles.websiteRow, { flexDirection: rtlFlexRow(isRTL) }]}
             onPress={() => {
               const url = (profile.website ?? '').startsWith('http') ? profile.website ?? '' : `https://${profile.website ?? ''}`;
-              Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.couldNotOpenLink')));
+              Linking.openURL(url).catch(() => showToast({ message: t('common.couldNotOpenLink'), variant: 'error' }));
             }}
             accessibilityLabel={`Visit website: ${profile.website}`}
             accessibilityRole="link"
@@ -569,7 +570,7 @@ export default function ProfileScreen() {
                 style={[styles.profileLinkRow, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => {
                   const url = link.url.startsWith('http') ? link.url : `https://${link.url}`;
-                  Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.couldNotOpenLink')));
+                  Linking.openURL(url).catch(() => showToast({ message: t('common.couldNotOpenLink'), variant: 'error' }));
                 }}
                 accessibilityLabel={t('profile.openLink', { title: link.title })}
                 accessibilityRole="link"

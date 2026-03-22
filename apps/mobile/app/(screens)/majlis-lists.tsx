@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Alert, Switch } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -54,7 +55,7 @@ export default function MajlisListsScreen() {
     },
     onError: () => {
       haptic.error();
-      Alert.alert(t('common.error'), t('screens.majlis-lists.errorCreate'));
+      showToast(t('screens.majlis-lists.errorCreate'), 'error');
     },
   });
 
@@ -66,7 +67,7 @@ export default function MajlisListsScreen() {
     },
     onError: () => {
       haptic.error();
-      Alert.alert(t('common.error'), t('screens.majlis-lists.errorDelete'));
+      showToast(t('screens.majlis-lists.errorDelete'), 'error');
     },
   });
 
@@ -79,7 +80,7 @@ export default function MajlisListsScreen() {
 
   const handleCreate = () => {
     if (!newName.trim()) {
-      Alert.alert(t('screens.majlis-lists.requiredTitle'), t('screens.majlis-lists.requiredName'));
+      showToast(t('screens.majlis-lists.requiredName'), 'error');
       return;
     }
     createMutation.mutate({ name: newName.trim(), description: newDesc.trim() || undefined, isPublic });

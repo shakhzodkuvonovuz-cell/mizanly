@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Pressable,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +21,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -175,10 +175,7 @@ function ScholarVerificationContent() {
     // const result = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/*'] });
     // Then upload via presigned R2 URL and use real URL.
     // For now, alert user that document upload requires the file picker dependency.
-    Alert.alert(
-      t('scholar.addDocument'),
-      t('scholar.documentUploadPlaceholder'),
-    );
+    showToast({ message: t('scholar.documentUploadPlaceholder'), variant: 'info' });
     haptic.tick();
   }, [haptic, t]);
 
@@ -189,11 +186,11 @@ function ScholarVerificationContent() {
 
   const handleSubmit = useCallback(async () => {
     if (!institution.trim()) {
-      Alert.alert(t('common.error'), t('scholar.institution'));
+      showToast({ message: t('scholar.institution'), variant: 'error' });
       return;
     }
     if (documentUrls.length === 0) {
-      Alert.alert(t('common.error'), t('scholar.documents'));
+      showToast({ message: t('scholar.documents'), variant: 'error' });
       return;
     }
 
@@ -208,7 +205,7 @@ function ScholarVerificationContent() {
       setVerification(res ?? null);
       haptic.success();
     } catch {
-      Alert.alert(t('common.error'), t('scholar.alreadyApplied'));
+      showToast({ message: t('scholar.alreadyApplied'), variant: 'error' });
     } finally {
       setSubmitting(false);
     }

@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Pressable,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -25,6 +24,7 @@ import { gamificationApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 interface ProfileCustomization {
@@ -197,11 +197,11 @@ function ProfileCustomizationScreen() {
     onSuccess: () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['profile-customization'] });
-      Alert.alert(t('common.success'), t('gamification.profileCustomization.saved'));
+      showToast(t('gamification.profileCustomization.saved'), 'success');
     },
     onError: () => {
       haptic.error();
-      Alert.alert(t('common.error'), t('gamification.profileCustomization.saveError'));
+      showToast(t('gamification.profileCustomization.saveError'), 'error');
     },
   });
 

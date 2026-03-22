@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -39,7 +40,7 @@ export default function QrCodeScreen() {
         title: t('screens.qr-code.shareTitle'),
       });
     } catch (err) {
-      Alert.alert(t('common.error'), t('screens.qr-code.errorTitle'));
+      showToast({ message: t('screens.qr-code.errorTitle'), variant: 'error' });
     }
   };
 

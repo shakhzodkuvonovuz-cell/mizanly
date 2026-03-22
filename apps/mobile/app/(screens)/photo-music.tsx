@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, Dimensions,
-  ScrollView, Alert, TextInput, RefreshControl,
+  ScrollView, TextInput, RefreshControl,
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -28,6 +28,7 @@ import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 import type { AudioTrack } from '@/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -75,16 +76,13 @@ function PhotoMusicScreen() {
   const pickImages = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        t('photoMusic.permissionRequired'),
-        t('photoMusic.permissionMessage'),
-      );
+      showToast(t('photoMusic.permissionMessage'), 'error');
       return;
     }
 
     const remaining = MAX_IMAGES - images.length;
     if (remaining <= 0) {
-      Alert.alert(t('photoMusic.maxPhotos'), t('photoMusic.maxPhotosMessage'));
+      showToast(t('photoMusic.maxPhotosMessage'), 'info');
       return;
     }
 
@@ -243,7 +241,7 @@ function PhotoMusicScreen() {
     },
     onError: () => {
       setIsPosting(false);
-      Alert.alert(t('photoMusic.postError'), t('photoMusic.postErrorMessage'));
+      showToast(t('photoMusic.postErrorMessage'), 'error');
     },
   });
 

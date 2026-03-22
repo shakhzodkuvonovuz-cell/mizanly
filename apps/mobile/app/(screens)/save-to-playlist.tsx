@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, Alert,
+  View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, playlistsApi } from '@/services/api';
+import { showToast } from '@/components/ui/Toast';
 import type { Playlist } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -116,7 +117,7 @@ export default function SaveToPlaylistScreen() {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       const message = err?.response?.data?.message || err.message || 'Unknown error';
-      Alert.alert(t('common.error'), `${t('screens.save-to-playlist.updateError')}: ${message}`);
+      showToast({ message: `${t('screens.save-to-playlist.updateError')}: ${message}`, variant: 'error' });
     } finally {
       setLoadingPlaylistIds(prev => {
         const next = new Set(prev);

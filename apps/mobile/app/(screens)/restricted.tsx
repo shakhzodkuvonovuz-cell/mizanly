@@ -20,6 +20,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { restrictsApi } from '@/services/api';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -56,7 +57,7 @@ export default function RestrictedScreen() {
   const unrestrictMutation = useMutation({
     mutationFn: (userId: string) => restrictsApi.unrestrict(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['restricted'] }),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message || t('common.error'), variant: 'error' }),
   });
 
   const [refreshing, setRefreshing] = useState(false);

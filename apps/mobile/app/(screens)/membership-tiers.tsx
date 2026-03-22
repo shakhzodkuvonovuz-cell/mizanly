@@ -8,7 +8,6 @@ import {
   Pressable,
   TextInput,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +26,7 @@ import { usersApi } from '@/services/api';
 import type { MembershipTier, MembershipSubscription } from '@/types/monetization';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -201,18 +201,18 @@ export default function MembershipTiersScreen() {
       fetchData();
       haptic.success();
     } catch (err) {
-      Alert.alert(t('common.error'), t('monetization.errors.failedToToggleTier'));
+      showToast(t('monetization.errors.failedToToggleTier'), 'error');
     }
   }, [fetchData, haptic]);
 
   const handleCreateTier = useCallback(async () => {
     if (!currentUser) {
-      Alert.alert(t('common.error'), t('monetization.errors.userNotLoaded'));
+      showToast(t('monetization.errors.userNotLoaded'), 'error');
       return;
     }
     const price = parseFloat(newTierPrice);
     if (!newTierName.trim() || isNaN(price) || price <= 0) {
-      Alert.alert(t('common.error'), t('monetization.errors.enterValidNameAndPrice'));
+      showToast(t('monetization.errors.enterValidNameAndPrice'), 'error');
       return;
     }
     const benefits = newTierBenefits.split('\n').filter(b => b.trim());
@@ -234,7 +234,7 @@ export default function MembershipTiersScreen() {
       fetchData();
       haptic.success();
     } catch (err) {
-      Alert.alert(t('common.error'), t('monetization.errors.failedToCreateTier'));
+      showToast(t('monetization.errors.failedToCreateTier'), 'error');
       setIsCreating(true); // Reopen form on error
     }
   }, [currentUser, newTierName, newTierPrice, newTierBenefits, fetchData, haptic]);

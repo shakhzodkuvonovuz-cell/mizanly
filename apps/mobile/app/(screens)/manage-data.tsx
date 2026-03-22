@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -108,10 +109,10 @@ export default function ManageDataScreen() {
   const clearWatchHistoryMutation = useMutation({
     mutationFn: () => usersApi.clearWatchHistory(),
     onSuccess: () => {
-      Alert.alert(t('settings.cleared'), t('settings.watchHistoryClearedSuccess'));
+      showToast(t('settings.watchHistoryClearedSuccess'), 'success');
     },
     onError: (err: Error) => {
-      Alert.alert(t('common.error'), err.message);
+      showToast(err.message, 'error');
     },
   });
 
@@ -120,7 +121,7 @@ export default function ManageDataScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast(err.message, 'error'),
   });
 
   const handleRequestDownload = () => {
@@ -134,9 +135,9 @@ export default function ManageDataScreen() {
           onPress: async () => {
             try {
               await accountApi.requestDataExport();
-              Alert.alert(t('settings.requestSent'), t('settings.requestSentMessage'));
+              showToast(t('settings.requestSentMessage'), 'success');
             } catch {
-              Alert.alert(t('common.error'), t('settings.requestDataExportFailed'));
+              showToast(t('settings.requestDataExportFailed'), 'error');
             }
           },
         },
@@ -155,7 +156,7 @@ export default function ManageDataScreen() {
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.removeItem('search-history');
-            Alert.alert(t('settings.cleared'), t('settings.searchHistoryCleared'));
+            showToast(t('settings.searchHistoryCleared'), 'success');
           },
         },
       ],

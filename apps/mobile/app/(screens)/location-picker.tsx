@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, Pressable, Alert,
+  View, Text, TextInput, StyleSheet, Pressable,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -17,6 +17,7 @@ import { colors, fonts, fontSize, spacing, radius, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { showToast } from '@/components/ui/Toast';
 
 interface LocationData {
   latitude: number;
@@ -76,10 +77,7 @@ function LocationPickerContent() {
       setAddress(addr);
       haptic.success();
     } catch {
-      Alert.alert(
-        t('location.errorTitle', 'Location Error'),
-        t('location.errorMessage', 'Could not get your current location. Please try again or enter coordinates manually.'),
-      );
+      showToast(t('location.errorMessage', 'Could not get your current location. Please try again or enter coordinates manually.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -98,16 +96,10 @@ function LocationPickerContent() {
         setAddress(addr || searchQuery.trim());
         haptic.success();
       } else {
-        Alert.alert(
-          t('location.notFound', 'Not Found'),
-          t('location.notFoundMessage', 'No results found for this address. Try a different search.'),
-        );
+        showToast(t('location.notFoundMessage', 'No results found for this address. Try a different search.'), 'info');
       }
     } catch {
-      Alert.alert(
-        t('location.searchError', 'Search Error'),
-        t('location.searchErrorMessage', 'Could not search for this address. Please check your connection.'),
-      );
+      showToast(t('location.searchErrorMessage', 'Could not search for this address. Please check your connection.'), 'error');
     } finally {
       setSearching(false);
     }
@@ -117,10 +109,7 @@ function LocationPickerContent() {
     const lat = parseFloat(manualLat);
     const lng = parseFloat(manualLng);
     if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      Alert.alert(
-        t('location.invalidCoords', 'Invalid Coordinates'),
-        t('location.invalidCoordsMessage', 'Please enter valid latitude (-90 to 90) and longitude (-180 to 180).'),
-      );
+      showToast(t('location.invalidCoordsMessage', 'Please enter valid latitude (-90 to 90) and longitude (-180 to 180).'), 'error');
       return;
     }
     haptic.tick();

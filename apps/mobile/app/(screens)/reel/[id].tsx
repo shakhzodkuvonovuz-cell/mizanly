@@ -84,7 +84,7 @@ function CommentRow({
   const deleteMutation = useMutation({
     mutationFn: () => reelsApi.deleteComment(reelId, comment.id),
     onSuccess: onDeleted,
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message || t('common.error'), variant: 'error' }),
   });
 
   const handleDelete = () => {
@@ -168,12 +168,7 @@ export default function ReelDetailScreen() {
       overlayOpacity.value = withTiming(next ? 0 : 1, { duration: 300 });
       if (!clearModeToastShown.current) {
         clearModeToastShown.current = true;
-        Alert.alert(
-          '',
-          next ? t('clearMode.hide') : t('clearMode.show'),
-          [{ text: 'OK' }],
-          { cancelable: true }
-        );
+        showToast({ message: next ? t('clearMode.hide') : t('clearMode.show'), variant: 'info' });
       }
       return next;
     });

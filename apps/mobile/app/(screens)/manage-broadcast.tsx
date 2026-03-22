@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Alert } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -54,7 +55,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.promoteToAdmin(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      Alert.alert(t('screens.manage-broadcast.successTitle'), t('screens.manage-broadcast.promotedSuccess'));
+      showToast(t('screens.manage-broadcast.promotedSuccess'), 'success');
     },
     onError: () => haptic.error(),
   });
@@ -63,7 +64,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.demoteFromAdmin(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      Alert.alert(t('screens.manage-broadcast.successTitle'), t('screens.manage-broadcast.demotedSuccess'));
+      showToast(t('screens.manage-broadcast.demotedSuccess'), 'success');
     },
     onError: () => haptic.error(),
   });
@@ -72,7 +73,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.removeSubscriber(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      Alert.alert(t('screens.manage-broadcast.successTitle'), t('screens.manage-broadcast.removedSuccess'));
+      showToast(t('screens.manage-broadcast.removedSuccess'), 'success');
     },
     onError: () => haptic.error(),
   });

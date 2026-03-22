@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
 } from 'react-native';
+import { showToast } from '@/components/ui/Toast';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -113,13 +114,13 @@ function CommentRow({
   const deleteMutation = useMutation({
     mutationFn: () => postsApi.deleteComment(postId, comment.id),
     onSuccess: onDeleted,
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast(err.message, 'error'),
   });
 
   const editMutation = useMutation({
     mutationFn: (content: string) => postsApi.editComment(postId, comment.id, content),
     onSuccess: () => setEditing(false),
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast(err.message, 'error'),
   });
 
   const handleDelete = () => {
@@ -266,7 +267,7 @@ export default function PostDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['post-comments', id] });
       queryClient.invalidateQueries({ queryKey: ['post', id] });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast(err.message, 'error'),
   });
 
   const handleReply = useCallback((commentId: string, username: string) => {
