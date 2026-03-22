@@ -228,7 +228,7 @@ export default function ContentSettingsScreen() {
           <Animated.View entering={FadeInUp.duration(400)}>
             <SectionHeader title="feedPreferences" />
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Pressable
@@ -299,7 +299,7 @@ export default function ContentSettingsScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <SectionHeader title="contentFilters" />
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Row
@@ -324,7 +324,7 @@ export default function ContentSettingsScreen() {
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <SectionHeader title="blockedKeywords" />
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Row
@@ -340,7 +340,7 @@ export default function ContentSettingsScreen() {
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
             <SectionHeader title="digitalWellbeing" />
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Pressable
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   // Glassmorphism cards
   card: {
     borderRadius: radius.lg,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     overflow: 'hidden',
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleTrackActive: {
-    backgroundColor: 'rgba(10,123,79,0.3)',
+    backgroundColor: colors.active.emerald30,
   },
   toggleThumb: {
     width: 24, height: 24, borderRadius: radius.full,
@@ -506,5 +506,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   valueText: { color: colors.text.primary, fontSize: fontSize.sm },
-  divider: { height: 0.5, backgroundColor: 'rgba(255,255,255,0.06)', marginVertical: spacing.xs },
+  divider: { height: 0.5, backgroundColor: colors.active.white6, marginVertical: spacing.xs },
 });

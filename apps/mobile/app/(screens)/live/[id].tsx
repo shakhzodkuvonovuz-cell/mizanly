@@ -31,7 +31,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { liveApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -320,7 +320,7 @@ export default function LiveViewerScreen() {
             )}
             {isSpeaker && (
               <LinearGradient
-                colors={[colors.emerald, '#05593A']}
+                colors={[colors.emerald, colors.extended.greenDark]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.speakerBadge}
@@ -705,7 +705,7 @@ export default function LiveViewerScreen() {
               disabled={!chatMessage.trim()}
             >
               <LinearGradient
-                colors={chatMessage.trim() ? [colors.emerald, '#05593A'] : [tc.surface, tc.surface]}
+                colors={chatMessage.trim() ? [colors.emerald, colors.extended.greenDark] : [tc.surface, tc.surface]}
                 style={styles.sendButtonGradient}
               >
                 <Icon name="send" size={14} color={chatMessage.trim() ? '#fff' : colors.text.tertiary} />
@@ -994,7 +994,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     bottom: 120,
   },
   floatingReactionEmoji: {
-    fontSize: 32,
+    fontSize: fontSizeExt.display,
   },
 
   // Enhanced host styles
@@ -1116,7 +1116,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   welcomeText: {
     color: colors.emerald,
@@ -1139,7 +1139,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: 'rgba(45,53,72,0.5)',
   },
   chatBubbleGold: {
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
   },
   chatUsername: {
     color: colors.gold,
@@ -1158,7 +1158,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     left: 0,
     right: 0,
     height: 40,
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
     borderRadius: radius.lg,
   },
 

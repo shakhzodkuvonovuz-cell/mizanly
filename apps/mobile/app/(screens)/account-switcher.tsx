@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Avatar } from '@/components/ui/Avatar';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { usersApi } from '@/services/api';
@@ -254,7 +254,7 @@ export default function AccountSwitcherScreen() {
                   style={styles.accountCard}
                 >
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    colors={colors.gradient.cardDark}
                     style={styles.accountGradient}
                   >
                     {/* Avatar and Info */}
@@ -341,7 +341,7 @@ export default function AccountSwitcherScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.managementCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.managementGradient}
               >
                 {/* Header */}
@@ -401,7 +401,7 @@ export default function AccountSwitcherScreen() {
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
             <View style={styles.securityCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.securityGradient}
               >
                 <View style={styles.securityIconContainer}>
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   heroGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
   },
   onlineRing: {
     position: 'absolute',
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   accountGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   accountRow: {
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(200,150,62,0.2)',
+    borderColor: colors.active.gold20,
   },
   accountInfo: {
     flex: 1,
@@ -619,7 +619,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   accountTypeBadgeText: {
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: colors.text.secondary,
   },
   lastActive: {
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
   managementGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   managementHeader: {
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: colors.active.white6,
   },
   managementRowLeft: {
     flexDirection: 'row',
@@ -767,7 +767,7 @@ const styles = StyleSheet.create({
   securityGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
     flexDirection: 'row',
     gap: spacing.sm,

@@ -199,7 +199,7 @@ export default function MorningBriefingScreen() {
               {briefing.prayerTimes && (
                 <Animated.View entering={FadeInUp.delay(200).duration(400)}>
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    colors={colors.gradient.cardDark}
                     style={styles.card}
                   >
                     <View style={styles.cardHeader}>
@@ -241,7 +241,7 @@ export default function MorningBriefingScreen() {
               {/* Dua of the Day */}
               <Animated.View entering={FadeInUp.delay(400).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.card}
                 >
                   <View style={styles.cardHeader}>
@@ -293,7 +293,7 @@ export default function MorningBriefingScreen() {
                   accessibilityRole="button"
                 >
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    colors={colors.gradient.cardDark}
                     style={styles.card}
                   >
                     <View style={styles.cardHeader}>
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.2)',
+    borderColor: colors.active.emerald20,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(10,123,79,0.15)',
+    backgroundColor: colors.active.emerald15,
     borderWidth: 3,
     borderColor: colors.emerald,
     alignItems: 'center',
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   dhikrButtonComplete: {
-    backgroundColor: 'rgba(10,123,79,0.3)',
+    backgroundColor: colors.active.emerald30,
     borderColor: colors.gold,
   },
   dhikrCount: {
@@ -564,12 +564,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   completeBadge: {
-    backgroundColor: 'rgba(10,123,79,0.2)',
+    backgroundColor: colors.active.emerald20,
     borderRadius: radius.full,
     padding: 4,
   },
   tapBadge: {
-    backgroundColor: 'rgba(200,150,62,0.15)',
+    backgroundColor: colors.active.gold15,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,

@@ -80,7 +80,7 @@ export default function StarredMessagesScreen() {
   const renderMessage = ({ item, index }: { item: Message; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.messageCard}
       >
         <Pressable
@@ -197,7 +197,7 @@ export default function StarredMessagesScreen() {
         {conversation && (
           <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.conversationHeader}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.conversationHeaderGradient}
             >
               <Text style={styles.conversationName}>
@@ -263,7 +263,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderLeftColor: colors.gold,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   messageInner: {
     flexDirection: 'row',
@@ -335,7 +335,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   conversationName: {
     fontSize: fontSize.sm,

@@ -13,7 +13,7 @@ import type { IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { reportsApi } from '@/services/api';
 import type { Report, ReportStatus } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -78,7 +78,7 @@ export default function MyReportsScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.card}
         >
           <View style={styles.headerRow}>
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     gap: spacing.xs,
     marginBottom: spacing.sm,
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     fontWeight: '700',
     textTransform: 'uppercase',
   },

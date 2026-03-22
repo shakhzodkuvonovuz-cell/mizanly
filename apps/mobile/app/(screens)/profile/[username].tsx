@@ -30,7 +30,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
 import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -982,18 +982,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1, backgroundColor: tc.bgElevated,
     padding: spacing.sm, alignItems: 'center', justifyContent: 'center',
   },
-  gridTextContent: { color: colors.text.primary, fontSize: 10, textAlign: 'center' },
+  gridTextContent: { color: colors.text.primary, fontSize: fontSizeExt.tiny, textAlign: 'center' },
   carouselBadge: { position: 'absolute', top: 8, right: 8 },
   reelOverlay: {
     position: 'absolute', bottom: 8, left: 8,
     flexDirection: 'row', alignItems: 'center', gap: 4,
   },
-  reelDuration: { color: '#fff', fontSize: 10, fontWeight: '600' },
+  reelDuration: { color: '#fff', fontSize: fontSizeExt.tiny, fontWeight: '600' },
   reelStats: {
     position: 'absolute', bottom: 8, right: 8,
     flexDirection: 'row', alignItems: 'center', gap: 4,
   },
-  reelStatText: { color: '#fff', fontSize: 10, fontWeight: '600' },
+  reelStatText: { color: '#fff', fontSize: fontSizeExt.tiny, fontWeight: '600' },
   threadRow: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderBottomWidth: 0.5, borderBottomColor: tc.border,

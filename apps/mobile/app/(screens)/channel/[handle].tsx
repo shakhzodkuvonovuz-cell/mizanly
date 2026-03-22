@@ -22,7 +22,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { channelsApi, videosApi, playlistsApi } from '@/services/api';
 import type { Video, Playlist } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -1150,7 +1150,7 @@ const styles = StyleSheet.create({
   },
   featuredBadgeText: {
     color: '#0D1117',
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -1279,7 +1279,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   trailerPickerItemActive: {
-    backgroundColor: 'rgba(10,123,79,0.10)',
+    backgroundColor: colors.active.emerald10,
   },
   trailerPickerThumbWrap: {
     width: 100,

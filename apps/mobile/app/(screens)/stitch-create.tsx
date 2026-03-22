@@ -11,7 +11,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -155,7 +155,7 @@ export default function StitchCreateScreen() {
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
             <View style={styles.originalCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.originalGradient}
               >
                 {/* Creator Info */}
@@ -194,7 +194,7 @@ export default function StitchCreateScreen() {
                       <LinearGradient
                         colors={selectedDuration === duration
                           ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                          : colors.gradient.cardDark
                         }
                         style={styles.durationButtonGradient}
                       >
@@ -227,7 +227,7 @@ export default function StitchCreateScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <View style={styles.transitionCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.transitionGradient}
               >
                 <Text style={styles.transitionTitle}>Transition</Text>
@@ -248,7 +248,7 @@ export default function StitchCreateScreen() {
                         <LinearGradient
                           colors={selectedTransition === transition.id
                             ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                            : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                            : colors.gradient.cardDark
                           }
                           style={styles.transitionButtonGradient}
                         >
@@ -276,7 +276,7 @@ export default function StitchCreateScreen() {
           <Animated.View entering={FadeInUp.delay(150).duration(400)}>
             <View style={styles.yourClipCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.yourClipGradient}
               >
                 {/* Header */}
@@ -374,7 +374,7 @@ export default function StitchCreateScreen() {
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <View style={styles.previewCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.previewCardGradient}
               >
                 <Text style={styles.previewCardTitle}>Preview</Text>
@@ -483,7 +483,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   originalGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   creatorRow: {
@@ -499,7 +499,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
   },
   creatorInfo: {
     flex: 1,
@@ -587,7 +587,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   transitionGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   transitionTitle: {
@@ -626,7 +626,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   yourClipGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   yourClipHeader: {
@@ -757,7 +757,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewCardGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   previewCardTitle: {
@@ -795,7 +795,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sequenceDurationText: {
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: colors.text.primary,
     fontFamily: fonts.mono,
   },
@@ -815,7 +815,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
   },
   transitionName: {
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: colors.gold,
   },
   totalDurationContainer: {
@@ -824,7 +824,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: colors.active.white6,
     marginBottom: spacing.md,
   },
   totalDurationLabel: {

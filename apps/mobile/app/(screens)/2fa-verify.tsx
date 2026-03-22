@@ -128,7 +128,7 @@ export default function TwoFactorVerifyScreen() {
                 ? error
                   ? ['rgba(248,81,73,0.4)', 'rgba(248,81,73,0.2)']
                   : [colors.emerald, colors.gold]
-                : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                : colors.gradient.cardDark
               }
               style={styles.otpDigitBox}
             >
@@ -159,7 +159,7 @@ export default function TwoFactorVerifyScreen() {
             ? error
               ? ['rgba(248,81,73,0.4)', 'rgba(248,81,73,0.2)']
               : [colors.emerald, colors.gold]
-            : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+            : colors.gradient.cardDark
           }
           style={styles.backupInputBox}
         >
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.2)',
+    borderColor: colors.active.emerald20,
   },
   helpTextContainer: {
     flex: 1,

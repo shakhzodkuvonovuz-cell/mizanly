@@ -163,7 +163,7 @@ function HistoryItem({ plan, t }: { plan: QuranReadingPlan; t: (key: string, par
 
   return (
     <LinearGradient
-      colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+      colors={colors.gradient.cardDark}
       style={styles.historyItem}
     >
       <View style={styles.historyRow}>
@@ -416,7 +416,7 @@ function QuranReadingPlanContent() {
             {/* Juz + Page Display */}
             <Animated.View entering={FadeInUp.delay(150).duration(400)} style={styles.statsRow}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.statCard}
               >
                 <Icon name="layers" size="sm" color={colors.emerald} />
@@ -425,7 +425,7 @@ function QuranReadingPlanContent() {
                 </Text>
               </LinearGradient>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.statCard}
               >
                 <Icon name="layers" size="sm" color={colors.gold} />
@@ -470,7 +470,7 @@ function QuranReadingPlanContent() {
             {/* Heat Map */}
             <Animated.View entering={FadeInUp.delay(300).duration(400)}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.heatMapCard}
               >
                 <HeatMapRow days={heatMapDays} />
@@ -552,7 +552,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   planCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -618,7 +618,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flex: 1,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -662,7 +662,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   heatMapCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
@@ -681,7 +681,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   historyItem: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },

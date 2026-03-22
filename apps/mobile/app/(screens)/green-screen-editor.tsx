@@ -25,9 +25,9 @@ const SOLID_COLORS = [
   { name: 'White', color: '#FFFFFF' },
   { name: 'Emerald', color: '#0A7B4F' },
   { name: 'Gold', color: '#C8963E' },
-  { name: 'Blue', color: '#58A6FF' },
+  { name: 'Blue', color: colors.extended.blue },
   { name: 'Red', color: '#F85149' },
-  { name: 'Purple', color: '#A371F7' },
+  { name: 'Purple', color: colors.extended.purple },
   { name: 'Pink', color: '#F778BA' },
   { name: 'Orange', color: '#F0883E' },
   { name: 'Yellow', color: '#D4A94F' },
@@ -37,13 +37,13 @@ const SOLID_COLORS = [
 
 const GRADIENT_BACKGROUNDS = [
   { name: 'Sunset', colors: ['#F0883E', '#F85149'] as [string, string] },
-  { name: 'Ocean', colors: ['#58A6FF', '#0A7B4F'] as [string, string] },
+  { name: 'Ocean', colors: [colors.extended.blue, colors.emerald] as [string, string] },
   { name: 'Forest', colors: ['#0A7B4F', '#066B42'] as [string, string] },
   { name: 'Midnight', colors: ['#0D1117', '#21283B'] as [string, string] },
   { name: 'Rose', colors: ['#F778BA', '#F85149'] as [string, string] },
   { name: 'Arctic', colors: ['#39D0D8', '#FFFFFF'] as [string, string] },
   { name: 'Desert', colors: ['#C8963E', '#F0883E'] as [string, string] },
-  { name: 'Aurora', colors: ['#0A7B4F', '#A371F7'] as [string, string] },
+  { name: 'Aurora', colors: [colors.emerald, colors.extended.purple] as [string, string] },
 ];
 
 const IMAGE_BACKGROUNDS = [
@@ -263,7 +263,7 @@ export default function GreenScreenEditorScreen() {
           <View style={styles.customContainer}>
             <Pressable style={styles.uploadButton}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={[styles.uploadButtonGradient, styles.uploadButtonDashed]}
               >
                 <View style={styles.uploadIconContainer}>
@@ -279,7 +279,7 @@ export default function GreenScreenEditorScreen() {
 
             <Pressable style={styles.uploadButton}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={[styles.uploadButtonGradient, styles.uploadButtonDashed]}
               >
                 <View style={styles.uploadIconContainer}>
@@ -429,7 +429,7 @@ export default function GreenScreenEditorScreen() {
                   <LinearGradient
                     colors={selectedCategory === category.id
                       ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                      : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                      : colors.gradient.cardDark
                     }
                     style={styles.categoryButtonGradient}
                   >
@@ -449,7 +449,7 @@ export default function GreenScreenEditorScreen() {
           <Animated.View entering={FadeInUp.delay(150).duration(400)}>
             <View style={styles.gridContainer}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.gridGradient}
               >
                 <Text style={styles.gridTitle}>
@@ -464,7 +464,7 @@ export default function GreenScreenEditorScreen() {
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <View style={styles.sliderCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.sliderGradient}
               >
                 {/* Header */}
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     height: screenHeight * 0.38,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
   gridGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   gridTitle: {
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   imageName: {
     fontSize: fontSize.sm,
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   playOverlay: {
     width: 32,
@@ -813,7 +813,7 @@ const styles = StyleSheet.create({
   sliderGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   sliderHeader: {

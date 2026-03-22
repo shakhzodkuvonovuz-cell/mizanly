@@ -225,7 +225,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   row: {
     flexDirection: 'row',
@@ -235,7 +235,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.bgCard,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(200,150,62,0.15)',
+    borderColor: colors.active.gold15,
     marginBottom: spacing.sm,
   },
   info: { flex: 1 },

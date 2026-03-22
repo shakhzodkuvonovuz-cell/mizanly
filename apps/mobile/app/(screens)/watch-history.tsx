@@ -58,7 +58,7 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
       >
         {/* Thumbnail with progress bar */}
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.thumbnailContainer}
         >
           {item.thumbnailUrl ? (
@@ -255,7 +255,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     overflow: 'hidden',
     aspectRatio: 16 / 9,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   thumbnail: {
     width: '100%',

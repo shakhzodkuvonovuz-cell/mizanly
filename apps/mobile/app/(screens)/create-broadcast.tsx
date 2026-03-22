@@ -120,7 +120,7 @@ export default function CreateBroadcastScreen() {
           {/* Avatar picker — Glassmorphism Card */}
           <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.avatarSection}
             >
               <Pressable accessibilityRole="button" onPress={pickAvatar}>
@@ -143,7 +143,7 @@ export default function CreateBroadcastScreen() {
           {/* Name — Glassmorphism Card */}
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.fieldCard}
             >
               <View style={styles.sectionHeader}>
@@ -172,7 +172,7 @@ export default function CreateBroadcastScreen() {
           {/* Slug — Glassmorphism Card */}
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.fieldCard}
             >
               <View style={styles.sectionHeader}>
@@ -206,7 +206,7 @@ export default function CreateBroadcastScreen() {
           {/* Description — Glassmorphism Card */}
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.fieldCard}
             >
               <View style={styles.sectionHeader}>
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   avatarImage: {
     width: 120,
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     borderWidth: 2,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
     borderStyle: 'dashed',
   },
   avatarPlaceholderText: {
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(200,150,62,0.2)',
+    borderColor: colors.active.gold20,
   },
   noteIconBg: {
     width: 28, height: 28, borderRadius: radius.sm,

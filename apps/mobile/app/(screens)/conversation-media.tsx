@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   linkIcon: {
     width: 40,
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   docIcon: {
     width: 40,

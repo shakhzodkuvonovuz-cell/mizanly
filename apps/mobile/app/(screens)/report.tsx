@@ -120,7 +120,7 @@ export default function ReportScreen() {
                   accessibilityState={{ selected: selectedReason === reason.value }}
                 >
                   <LinearGradient
-                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : colors.gradient.cardDark}
                     style={styles.reasonGradient}
                   >
                     <LinearGradient
@@ -154,7 +154,7 @@ export default function ReportScreen() {
           {/* Additional details */}
           <Animated.View entering={FadeInUp.delay(500).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.detailsCard}
             >
               <Text style={styles.detailsLabel}>{t('screens.report.additionalDetails')}</Text>
@@ -230,11 +230,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   reasonItem: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     overflow: 'hidden',
   },
   reasonItemSelected: {
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   reasonGradient: {
     flexDirection: 'row',
@@ -273,7 +273,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   detailsCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.xl,
   },

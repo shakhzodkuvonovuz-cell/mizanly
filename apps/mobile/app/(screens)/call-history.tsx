@@ -88,7 +88,7 @@ export default function CallHistoryScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.row}
         >
           <Pressable
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     marginHorizontal: spacing.base,
     marginVertical: spacing.xs,
   },

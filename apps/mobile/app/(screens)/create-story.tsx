@@ -23,7 +23,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -56,7 +56,7 @@ const FONTS = [
 // ── Text colors ──
 const TEXT_COLORS = [
   '#FFFFFF', '#0A7B4F', '#C8963E', '#000000',
-  '#F85149', '#58A6FF', '#D2A8FF', '#FFA657',
+  '#F85149', colors.extended.blue, '#D2A8FF', '#FFA657',
 ];
 
 // ── Background gradient presets (for text-only stories) ──
@@ -826,7 +826,7 @@ export default function CreateStoryScreen() {
                 </View>
                 <Text style={{
                   color: i === filterIndex ? colors.emerald : colors.text.secondary,
-                  fontSize: 10,
+                  fontSize: fontSizeExt.tiny,
                   marginTop: 4,
                 }}>
                   {f.label}

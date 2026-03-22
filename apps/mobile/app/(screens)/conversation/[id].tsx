@@ -37,7 +37,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useStore } from '@/store';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
 import { messagesApi, uploadApi, aiApi } from '@/services/api';
 import { encryptionService } from '@/services/encryption';
 import type { Message, Conversation, ConversationMember } from '@/types';
@@ -564,7 +564,7 @@ const MessageBubble = memo(function MessageBubble({
           <View style={{ marginTop: spacing.xs, paddingTop: spacing.xs, borderTopWidth: 0.5, borderTopColor: isOwn ? 'rgba(255,255,255,0.15)' : tc.border }}>
             <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn, { fontStyle: 'italic' }]}>{translatedText}</Text>
             <Pressable onPress={() => setTranslatedText(null)} hitSlop={8}>
-              <Text style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : colors.text.tertiary, fontSize: 10 }}>{t('ai.showOriginal')}</Text>
+              <Text style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : colors.text.tertiary, fontSize: fontSizeExt.tiny }}>{t('ai.showOriginal')}</Text>
             </Pressable>
           </View>
         )}
@@ -581,7 +581,7 @@ const MessageBubble = memo(function MessageBubble({
             hitSlop={8}
             style={{ marginTop: 2 }}
           >
-            <Text style={{ color: colors.text.tertiary, fontSize: 10 }}>
+            <Text style={{ color: colors.text.tertiary, fontSize: fontSizeExt.tiny }}>
               {isTranslating ? t('ai.translating') : t('ai.translate')}
             </Text>
           </Pressable>
@@ -617,7 +617,7 @@ const MessageBubble = memo(function MessageBubble({
           {message.expiresAt && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
               <Icon name="clock" size={10} color={colors.text.tertiary} />
-              <Text style={{ color: colors.text.tertiary, fontSize: 10, marginLeft: 2 }}>
+              <Text style={{ color: colors.text.tertiary, fontSize: fontSizeExt.tiny, marginLeft: 2 }}>
                 {formatDistanceToNowStrict(new Date(message.expiresAt), { addSuffix: false, locale: getDateFnsLocale() })}
               </Text>
             </View>
@@ -2054,9 +2054,9 @@ const styles = StyleSheet.create({
   bubbleText: { color: colors.text.inverse, fontSize: fontSize.base, lineHeight: 22 },
   bubbleTextOwn: { color: '#fff' },
   bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2, justifyContent: 'flex-end' },
-  editedLabel: { color: 'rgba(0,0,0,0.4)', fontSize: 10 },
+  editedLabel: { color: 'rgba(0,0,0,0.4)', fontSize: fontSizeExt.tiny },
   editedLabelOwn: { color: 'rgba(255,255,255,0.6)' },
-  bubbleTime: { color: 'rgba(0,0,0,0.4)', fontSize: 10 },
+  bubbleTime: { color: 'rgba(0,0,0,0.4)', fontSize: fontSizeExt.tiny },
   bubbleTimeOwn: { color: 'rgba(255,255,255,0.6)' },
   reactions: {
     flexDirection: 'row',
@@ -2154,7 +2154,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgElevated,
   },
   reactionEmojiBig: {
-    fontSize: 28,
+    fontSize: fontSizeExt.heading,
   },
   gifPicker: {
     flex: 1,
@@ -2320,7 +2320,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
-    backgroundColor: 'rgba(10, 123, 79, 0.1)',
+    backgroundColor: colors.active.emerald10,
     gap: spacing.xs,
   },
   encryptionBannerText: {

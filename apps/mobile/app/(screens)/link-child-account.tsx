@@ -195,7 +195,7 @@ export default function LinkChildAccountScreen() {
           <View style={[styles.confirmContainer, { paddingTop: insets.top + 80 }]}>
             <Animated.View entering={FadeInDown.duration(400)}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={[styles.confirmCard, { borderColor: tc.border }]}
               >
                 <Avatar

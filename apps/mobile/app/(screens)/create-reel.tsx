@@ -275,7 +275,7 @@ export default function CreateReelScreen() {
             <View style={styles.countdownOverlay}>
               <Animated.View style={[styles.countdownContainer, countdownStyle]}>
                 <LinearGradient
-                  colors={[colors.emerald, '#05593A']}
+                  colors={[colors.emerald, colors.extended.greenDark]}
                   style={styles.countdownCircle}
                 >
                   <Text style={styles.countdownText}>{countdown}</Text>
@@ -399,7 +399,7 @@ export default function CreateReelScreen() {
               <Text style={styles.sectionLabel}>{t('createReel.caption')}</Text>
             </View>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.captionCard}
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
     borderStyle: 'dashed',
     marginBottom: spacing.lg,
   },
@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radius.lg,
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,

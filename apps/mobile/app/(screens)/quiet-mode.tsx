@@ -157,7 +157,7 @@ export default function QuietModeScreen() {
           <LinearGradient
             colors={isActive
               ? ['rgba(10,123,79,0.25)', 'rgba(10,123,79,0.1)']
-              : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+              : colors.gradient.cardDark
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -191,7 +191,7 @@ export default function QuietModeScreen() {
 
           {/* Schedule Section */}
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -255,7 +255,7 @@ export default function QuietModeScreen() {
 
           {/* Auto-reply Section */}
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -354,7 +354,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   heroCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.2)',
+    borderColor: colors.active.emerald20,
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
@@ -363,7 +363,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     width: 64,
     height: 64,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
@@ -487,7 +487,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   infoCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(200,150,62,0.15)',
+    borderColor: colors.active.gold15,
     padding: spacing.base,
     gap: spacing.sm,
   },

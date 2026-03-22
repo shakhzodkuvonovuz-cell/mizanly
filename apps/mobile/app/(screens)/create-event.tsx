@@ -204,7 +204,7 @@ export default function CreateEventScreen() {
         {/* Title Card */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -233,7 +233,7 @@ export default function CreateEventScreen() {
         {/* Description Card */}
         <Animated.View entering={FadeInUp.delay(150).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -265,7 +265,7 @@ export default function CreateEventScreen() {
         {/* Date & Time Card */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -311,7 +311,7 @@ export default function CreateEventScreen() {
         {/* Location Card */}
         <Animated.View entering={FadeInUp.delay(250).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -347,7 +347,7 @@ export default function CreateEventScreen() {
         {/* Event Type Selector */}
         <Animated.View entering={FadeInUp.delay(300).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -396,7 +396,7 @@ export default function CreateEventScreen() {
         {/* Privacy Selector */}
         <Animated.View entering={FadeInUp.delay(350).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -446,7 +446,7 @@ export default function CreateEventScreen() {
         {/* Community Selector */}
         <Animated.View entering={FadeInUp.delay(400).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -519,7 +519,7 @@ export default function CreateEventScreen() {
         {/* Reminders Card */}
         <Animated.View entering={FadeInUp.delay(450).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
   formCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
     marginBottom: spacing.md,
   },
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.dark.border,
   },
   communityRowSelected: {
-    backgroundColor: 'rgba(10,123,79,0.05)',
+    backgroundColor: colors.active.emerald5,
     borderRadius: radius.sm,
   },
   communityInfo: {

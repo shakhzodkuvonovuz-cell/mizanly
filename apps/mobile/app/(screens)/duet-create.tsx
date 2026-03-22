@@ -143,7 +143,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
             <View style={styles.originalInfoCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.originalInfoGradient}
               >
                 <View style={styles.creatorRow}>
@@ -180,7 +180,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <View style={styles.previewContainer}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.previewGradient}
               >
                 {layoutMode === 'side-by-side' && (
@@ -309,7 +309,7 @@ export default function DuetCreateScreen() {
                     <LinearGradient
                       colors={layoutMode === layout.id
                         ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        : colors.gradient.cardDark
                       }
                       style={styles.layoutButtonGradient}
                     >
@@ -337,7 +337,7 @@ export default function DuetCreateScreen() {
               <LinearGradient
                 colors={isTimeRunningOut
                   ? ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']
-                  : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                  : colors.gradient.cardDark
                 }
                 style={styles.timerGradient}
               >
@@ -416,7 +416,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
             <View style={styles.audioCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.audioGradient}
               >
                 <View style={styles.audioHeader}>
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   originalInfoGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   creatorRow: {
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
   },
   creatorInfo: {
     flex: 1,
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
   previewGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
   },
   sideBySideLayout: {
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
   timerGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
     alignItems: 'center',
   },
@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
   audioGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   audioHeader: {

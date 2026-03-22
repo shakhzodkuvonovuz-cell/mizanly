@@ -118,7 +118,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.mosqueCard}
       >
         {/* Header Row */}
@@ -377,7 +377,7 @@ export default function MosqueFinderScreen() {
               {/* Qibla Direction Card */}
               <Animated.View entering={FadeInUp.delay(filteredMosques.length * 80 + 200).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.qiblaCard}
                 >
                   <LinearGradient
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.md,
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   mosqueCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginTop: spacing.lg,
   },

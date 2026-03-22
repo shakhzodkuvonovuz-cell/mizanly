@@ -49,7 +49,7 @@ function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange
   return (
     <Pressable onPress={handlePress}>
       <LinearGradient
-        colors={value ? [colors.emerald, '#05593A'] : [tc.border, tc.surface]}
+        colors={value ? [colors.emerald, colors.extended.greenDark] : [tc.border, tc.surface]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.toggleTrack}
@@ -296,7 +296,7 @@ export default function SettingsScreen() {
           {/* Content Section */}
           <SectionHeader title={t('settings.sections.content')} icon="layers" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -342,7 +342,7 @@ export default function SettingsScreen() {
           {/* Appearance Section */}
           <SectionHeader title={t('settings.appearance')} icon="eye" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -366,7 +366,7 @@ export default function SettingsScreen() {
           {/* Profile Section */}
           <SectionHeader title={t('settings.sections.profile')} icon="user" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -383,7 +383,7 @@ export default function SettingsScreen() {
           {/* Privacy Section */}
           <SectionHeader title={t('settings.privacy')} icon="lock" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -428,7 +428,7 @@ export default function SettingsScreen() {
           {/* Notifications Section */}
           <SectionHeader title={t('settings.notifications')} icon="bell" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -479,7 +479,7 @@ export default function SettingsScreen() {
           {/* Wellbeing Section */}
           <SectionHeader title={t('settings.sections.wellbeing')} icon="smile" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -530,7 +530,7 @@ export default function SettingsScreen() {
           {/* Islamic Section */}
           <SectionHeader title={t('islamic.prayerTimes')} icon="globe" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -666,7 +666,7 @@ export default function SettingsScreen() {
           {/* Accessibility Section */}
           <SectionHeader title={t('settings.accessibility')} icon="volume-x" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -684,7 +684,7 @@ export default function SettingsScreen() {
           {/* Blocked & Muted Section */}
           <SectionHeader title={t('settings.sections.blockedMuted')} icon="slash" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -724,7 +724,7 @@ export default function SettingsScreen() {
           {/* Circles Section */}
           <SectionHeader title={t('settings.sections.closeFriends')} icon="users" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -741,7 +741,7 @@ export default function SettingsScreen() {
           {/* AI Section */}
           <SectionHeader title={t('settings.sections.ai')} icon="loader" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -762,7 +762,7 @@ export default function SettingsScreen() {
           {/* Creator Section */}
           <SectionHeader title={t('settings.sections.creator')} icon="bar-chart-2" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -820,7 +820,7 @@ export default function SettingsScreen() {
           {/* Community Section */}
           <SectionHeader title={t('settings.sections.community')} icon="users" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -890,7 +890,7 @@ export default function SettingsScreen() {
           {/* Gamification Section */}
           <SectionHeader title={t('gamification.settingsSection')} icon="trending-up" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -936,7 +936,7 @@ export default function SettingsScreen() {
           {/* Account Section */}
           <SectionHeader title={t('settings.account')} icon="user" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -1028,7 +1028,7 @@ export default function SettingsScreen() {
           {/* About Section */}
           <SectionHeader title={t('settings.about')} icon="info" />
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}

@@ -226,7 +226,7 @@ export default function AudioLibraryScreen() {
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.searchBar}
           >
             <Icon name="search" size="sm" color={colors.text.tertiary} />
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: 'rgba(45,53,72,0.4)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   categoryPillActive: {
     backgroundColor: colors.emerald,
@@ -449,10 +449,10 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   audioCardActive: {
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   playButton: {
     width: 44,

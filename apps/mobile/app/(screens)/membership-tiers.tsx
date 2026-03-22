@@ -18,7 +18,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -71,7 +71,7 @@ function TierCard({
   return (
     <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.tierCard}
       >
         {/* Header */}
@@ -323,7 +323,7 @@ export default function MembershipTiersScreen() {
                 ) : (
                   <Animated.View entering={FadeInUp.duration(400)}>
                     <LinearGradient
-                      colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                      colors={colors.gradient.cardDark}
                       style={styles.createFormCard}
                     >
                       <Text style={styles.createFormTitle}>{t('monetization.createNewTier')}</Text>
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   tierCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   createButton: {
     borderRadius: radius.lg,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     borderStyle: 'dashed',
     padding: spacing.lg,
     alignItems: 'center',
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
   createFormCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
   formInputContainer: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   revenueCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginTop: spacing.lg,
   },
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
   },
   revenueAmount: {
     fontFamily: fonts.heading,
-    fontSize: 32,
+    fontSize: fontSizeExt.display,
     color: colors.gold,
     marginBottom: spacing.md,
   },

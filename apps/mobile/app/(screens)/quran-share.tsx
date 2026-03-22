@@ -194,7 +194,7 @@ export default function QuranShareScreen() {
               onPress={() => setShowSurahPicker(true)}
             >
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.surahSelectorGradient}
               >
                 <LinearGradient
@@ -360,7 +360,7 @@ export default function QuranShareScreen() {
               onPress={handleCopyText}
             >
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.copyButtonGradient}
               >
                 <Icon name="link" size="sm" color={colors.text.secondary} />
@@ -450,7 +450,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   surahIconBg: {
     width: 44,
@@ -515,7 +515,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   verseNumberText: {
     color: colors.text.primary,
@@ -638,7 +638,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.base,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
   },
   tafsirButtonText: {
     color: colors.gold,
@@ -680,7 +680,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   copyButtonText: {
     color: colors.text.secondary,
@@ -695,7 +695,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.sm,
     padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: colors.active.white6,
   },
   surahSearchPlaceholder: {
     color: colors.text.tertiary,
@@ -714,6 +714,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     textAlign: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: colors.active.white6,
   },
 });

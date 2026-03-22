@@ -18,7 +18,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
 const FOLDER_ICONS: IconName[] = ['users', 'heart', 'globe', 'layers', 'bell', 'bookmark', 'flag', 'lock'];
-const FOLDER_COLORS = [colors.emerald, colors.gold, '#58A6FF', '#9333EA', '#F85149', '#EC4899', '#F59E0B', '#10B981'];
+const FOLDER_COLORS = [colors.emerald, colors.gold, colors.extended.blue, '#9333EA', '#F85149', '#EC4899', colors.extended.orange, '#10B981'];
 
 export default function ChatFoldersScreen() {
   const router = useRouter();

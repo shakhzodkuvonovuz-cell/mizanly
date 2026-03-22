@@ -73,7 +73,7 @@ export default function PlaylistDetailScreen() {
         accessibilityRole="button"
       >
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.videoRow}
         >
           <View style={styles.thumbWrap}>
@@ -125,7 +125,7 @@ export default function PlaylistDetailScreen() {
     <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.playlistHeader}>
       {playlist?.thumbnailUrl ? (
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.thumbContainer}
         >
           <Image source={{ uri: playlist.thumbnailUrl }} style={styles.playlistThumb} contentFit="cover" />
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   playlistThumb: { width: '100%', height: 200, borderRadius: radius.md },
   playlistTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   thumbWrap: { width: 160, height: 90, borderRadius: radius.md, overflow: 'hidden' },
   thumb: { width: '100%', height: '100%' },

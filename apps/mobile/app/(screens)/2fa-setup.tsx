@@ -233,7 +233,7 @@ export default function TwoFactorSetupScreen() {
                 onPress={() => setShowAppPicker(true)}
               >
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.appPickerCard}
                 >
                   <View style={styles.appPickerLeft}>
@@ -361,7 +361,7 @@ export default function TwoFactorSetupScreen() {
                       entering={FadeInUp.delay(idx * 80).duration(300)}
                     >
                       <LinearGradient
-                        colors={digit ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                        colors={digit ? [colors.emerald, colors.gold] : colors.gradient.cardDark}
                         style={styles.otpDigitBox}
                       >
                         <TextInput
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   infoIconContainer: {
     marginBottom: spacing.md,
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   qrPlaceholder: {
     width: 200,
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   secretText: {
     color: colors.text.primary,
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     flex: 1,
     minWidth: '47%',
     justifyContent: 'center',

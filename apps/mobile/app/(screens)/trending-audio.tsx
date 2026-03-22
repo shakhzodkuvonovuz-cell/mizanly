@@ -57,7 +57,7 @@ export default function TrendingAudioScreen() {
   const renderItem = ({ item, index }: { item: AudioTrack; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.row}
       >
         <Text style={[styles.rank, index < 3 && styles.rankGold]}>{index + 1}</Text>
@@ -198,7 +198,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     gap: spacing.md,
   },
   rank: {

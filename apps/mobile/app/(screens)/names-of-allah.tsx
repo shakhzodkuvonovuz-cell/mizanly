@@ -12,7 +12,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -286,7 +286,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   dailyArabic: {
     color: colors.text.primary,
-    fontSize: 32,
+    fontSize: fontSizeExt.display,
     fontFamily: fonts.arabic,
     textAlign: 'center',
     marginBottom: spacing.sm,

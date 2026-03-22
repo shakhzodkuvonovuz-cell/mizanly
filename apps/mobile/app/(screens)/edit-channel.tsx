@@ -180,7 +180,7 @@ export default function EditChannelScreen() {
 
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Text style={styles.label}>{t('screens.editChannel.channelName')}</Text>
@@ -201,7 +201,7 @@ export default function EditChannelScreen() {
 
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Text style={styles.label}>{t('screens.editChannel.descriptionOptional')}</Text>
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
   },
   label: {

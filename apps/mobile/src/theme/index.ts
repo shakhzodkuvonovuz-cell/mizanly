@@ -78,13 +78,62 @@ export const colors = {
 
   // Active states with opacity
   active: {
+    emerald5: 'rgba(10, 123, 79, 0.05)',
     emerald10: 'rgba(10, 123, 79, 0.1)',
+    emerald15: 'rgba(10, 123, 79, 0.15)',
     emerald20: 'rgba(10, 123, 79, 0.2)',
-    error10: 'rgba(248, 81, 73, 0.1)',
+    emerald30: 'rgba(10, 123, 79, 0.3)',
+    emerald40: 'rgba(10, 123, 79, 0.4)',
+    emerald50: 'rgba(10, 123, 79, 0.5)',
     gold10: 'rgba(200, 150, 62, 0.1)',
+    gold15: 'rgba(200, 150, 62, 0.15)',
+    gold20: 'rgba(200, 150, 62, 0.2)',
+    gold30: 'rgba(200, 150, 62, 0.3)',
+    gold50: 'rgba(200, 150, 62, 0.5)',
+    error10: 'rgba(248, 81, 73, 0.1)',
     white5: 'rgba(255, 255, 255, 0.05)',
+    white6: 'rgba(255, 255, 255, 0.06)',
     white10: 'rgba(255, 255, 255, 0.1)',
   },
+
+  // Extended palette (non-brand colors for badges, tiers, categories)
+  extended: {
+    blue: '#58A6FF',
+    purple: '#A371F7',
+    purpleLight: '#D2A8FF',
+    violet: '#7C3AED',
+    orange: '#F59E0B',
+    orangeDark: '#F0883E',
+    orangeLight: '#FFA657',
+    greenBright: '#3FB950',
+    greenDark: '#05593A',
+    goldDark: '#A67C00',
+    red: '#FF7B72',
+    white: '#FFFFFF',
+    black: '#000000',
+  },
+
+  // Gradient presets (for LinearGradient components)
+  gradient: {
+    cardDark: ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)'] as readonly [string, string],
+    cardMedium: ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)'] as readonly [string, string],
+    cardHeavy: ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.4)'] as readonly [string, string],
+    emerald: ['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)'] as readonly [string, string],
+  },
+} as const;
+
+// Extended fontSize tokens for sizes not in the base scale
+export const fontSizeExt = {
+  micro: 9,   // dot indicators, badges
+  tiny: 10,   // timestamps, metadata
+  caption: 12, // captions, helper text
+  body: 14,   // secondary body text
+  subtitle: 16, // subtitles
+  title: 18,  // small titles
+  heading: 28, // section headings
+  display: 32, // large display text
+  hero: 36,   // hero text
+  jumbo: 48,  // countdown, big numbers
 } as const;
 
 export const fonts = {

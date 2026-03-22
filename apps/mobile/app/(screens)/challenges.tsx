@@ -21,7 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts, shadow, fontSizeExt } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -322,7 +322,7 @@ function ChallengesScreen() {
               colors={
                 activeTab === tab.key
                   ? [colors.emeraldLight, colors.emerald]
-                  : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                  : colors.gradient.cardDark
               }
               style={styles.tabChip}
             >
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
   },
   categoryBadgeText: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: colors.emerald,
     textTransform: 'capitalize',
   },

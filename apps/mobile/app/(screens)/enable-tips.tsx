@@ -212,7 +212,7 @@ export default function EnableTipsScreen() {
               {/* Minimum Tip Amount Card */}
               <Animated.View entering={FadeInUp.delay(100).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.configCard}
                 >
                   <View style={styles.configHeader}>
@@ -283,7 +283,7 @@ export default function EnableTipsScreen() {
               {/* Display Settings Card */}
               <Animated.View entering={FadeInUp.delay(200).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.configCard}
                 >
                   <View style={styles.configHeader}>
@@ -322,7 +322,7 @@ export default function EnableTipsScreen() {
               {/* Thank You Message Card */}
               <Animated.View entering={FadeInUp.delay(300).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.configCard}
                 >
                   <View style={styles.configHeader}>
@@ -360,7 +360,7 @@ export default function EnableTipsScreen() {
               {/* Payment Method Card */}
               <Animated.View entering={FadeInUp.delay(400).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.configCard}
                 >
                   <View style={styles.configHeader}>
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   heroCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.lg,
     alignItems: 'center',
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
   configCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   messageInputContainer: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     minHeight: 80,
   },

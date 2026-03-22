@@ -45,7 +45,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.card}
       >
         <Pressable accessibilityRole="button" onPress={onPress}>
@@ -211,7 +211,7 @@ export default function StickerBrowserScreen() {
       
         <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.searchInputWrap}
           >
             <LinearGradient
@@ -328,7 +328,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.sm,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   searchIconBg: {
     width: 32, height: 32, borderRadius: radius.sm,
@@ -385,7 +385,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     gap: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   coverWrap: {
     width: 60,

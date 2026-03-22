@@ -109,7 +109,7 @@ export default function BlockedKeywordsScreen() {
           {/* Add new keyword row */}
           <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.addRow}
             >
               <LinearGradient
@@ -165,7 +165,7 @@ export default function BlockedKeywordsScreen() {
               renderItem={({ item, index }) => (
                 <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    colors={colors.gradient.cardDark}
                     style={styles.keywordRow}
                   >
                     <LinearGradient
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
     borderRadius: radius.lg,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
   },
   inputWrap: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.base,
     marginBottom: spacing.xs,
     borderRadius: radius.md,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
   },
   keywordIconBg: {
     width: 28, height: 28, borderRadius: radius.sm,

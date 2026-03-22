@@ -154,7 +154,7 @@ export default function BroadcastChannelsScreen() {
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <Pressable accessibilityRole="button" onPress={() => handleChannelPress(item)}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.channelCard}
         >
           <LinearGradient
@@ -180,7 +180,7 @@ export default function BroadcastChannelsScreen() {
             handleSubscribe(item);
           }}>
             <LinearGradient
-              colors={item.isSubscribed ? ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)'] : ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+              colors={item.isSubscribed ? colors.gradient.cardDark : ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
               style={styles.subscribeBtn}
             >
               <Text style={[styles.subscribeText, item.isSubscribed && { color: colors.text.secondary }]}>
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     gap: spacing.md,
   },
   avatarBg: {

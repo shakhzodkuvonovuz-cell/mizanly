@@ -27,7 +27,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -63,7 +63,7 @@ function PhraseButton({
         colors={
           isSelected
             ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.15)']
-            : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+            : colors.gradient.cardDark
         }
         style={[
           styles.phraseButton,
@@ -94,7 +94,7 @@ function StatCard({
   return (
     <Animated.View entering={FadeInUp.delay(delay).duration(400)} style={styles.statCardWrapper}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.statCard}
       >
         <LinearGradient
@@ -347,7 +347,7 @@ export default function DhikrCounterScreen() {
           {/* Progress Card */}
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.progressCard}
             >
               <View style={styles.progressHeader}>
@@ -381,7 +381,7 @@ export default function DhikrCounterScreen() {
             <View style={styles.actionRow}>
               <Pressable onPress={handleShareProgress} style={styles.actionButtonWrapper}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.actionButton}
                 >
                   <Icon name="share" size="sm" color={colors.emerald} />
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     alignItems: 'center',
     minWidth: 100,
   },
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   },
   countNumber: {
     fontFamily: fonts.heading,
-    fontSize: 48,
+    fontSize: fontSizeExt.jumbo,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
@@ -555,13 +555,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   progressCard: {
     marginHorizontal: spacing.base,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   actionButtonText: {
     fontFamily: fonts.bodySemiBold,
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
   statCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     alignItems: 'center',
   },

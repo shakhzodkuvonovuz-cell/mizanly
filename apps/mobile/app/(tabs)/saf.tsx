@@ -626,7 +626,7 @@ const bannerStyles = StyleSheet.create({
   container: {
     marginHorizontal: spacing.base,
     marginVertical: spacing.sm,
-    backgroundColor: 'rgba(10,123,79,0.10)',
+    backgroundColor: colors.active.emerald10,
     borderRadius: radius.md,
     padding: spacing.base,
   },

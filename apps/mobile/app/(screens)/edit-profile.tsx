@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     overflow: 'hidden',
   },
   formCardReadOnly: {
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     overflow: 'hidden',
     minHeight: 140,
   },
@@ -718,14 +718,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     overflow: 'hidden',
   },
   formCardLinks: {
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     overflow: 'hidden',
   },
 
@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleTrackActive: {
-    backgroundColor: 'rgba(10,123,79,0.3)',
+    backgroundColor: colors.active.emerald30,
   },
   toggleThumb: {
     width: 24, height: 24, borderRadius: radius.full,
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
   // Profile links with glassmorphism
   linksSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   linksCountBadge: {
-    backgroundColor: 'rgba(10,123,79,0.2)',
+    backgroundColor: colors.active.emerald20,
     paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
     borderRadius: radius.sm,
   },
@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
   addLinkBtnGradient: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
     paddingVertical: spacing.sm,
-    borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(10,123,79,0.4)',
+    borderWidth: 1, borderStyle: 'dashed', borderColor: colors.active.emerald40,
     borderRadius: radius.sm,
   },
   addLinkBtnText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },

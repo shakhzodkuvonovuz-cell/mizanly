@@ -35,7 +35,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <Pressable accessibilityRole="button" onPress={onPress}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.row}
         >
           <LinearGradient
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     marginBottom: spacing.sm,
   },
   iconBg: {

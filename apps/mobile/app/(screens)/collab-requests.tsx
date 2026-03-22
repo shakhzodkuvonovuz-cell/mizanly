@@ -127,7 +127,7 @@ export default function CollabRequestsScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.row}
         >
           <Avatar uri={post.user.avatarUrl} name={post.user.displayName} size="md" />
@@ -190,7 +190,7 @@ export default function CollabRequestsScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.row}
         >
           {thumbnail ? (
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     marginBottom: spacing.sm,
   },
   info: { flex: 1, gap: spacing.sm },

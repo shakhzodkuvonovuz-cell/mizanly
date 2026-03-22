@@ -183,7 +183,7 @@ export default function SoundScreen() {
           ListHeaderComponent={
             <Animated.View entering={FadeInUp.delay(0).duration(400)}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.headerSection}
               >
                 {/* Cover art */}
@@ -287,7 +287,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing['2xl'],
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     marginHorizontal: spacing.base,
     marginBottom: spacing.lg,
     marginTop: spacing.md,

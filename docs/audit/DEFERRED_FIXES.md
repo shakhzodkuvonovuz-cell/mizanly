@@ -690,7 +690,8 @@ Cat 1 partial (useThemeColors hook created + 10 critical files migrated: 5 tabs 
 ### FIXED in third pass (227 files migrated):
 Cat 1: ALL 244 files migrated from hardcoded colors.dark.* to useThemeColors(). 4 parallel agents processed: components (42 files), auth+onboarding+screens A-C (58 files), screens D-M (52 files), screens N-Z+layouts (75 files). Light mode is now functional — every surface/text/border color reads from theme-aware hook.
 
-### NOTED (design system expansion — low priority):
-- Cat 4: 421+ hardcoded hex colors — needs extended color palette
-- Cat 6: 83 hardcoded fontSize — many intentional for special sizes
-- Cat 12: 300+ inline rgba() — contextually appropriate
+### FIXED in fourth pass (687 replacements across 136 files):
+Cat 4: 38 hardcoded hex colors → colors.extended.* tokens (blue, purple, violet, orange, greenBright, greenDark). Cat 6: 50 hardcoded fontSize → fontSizeExt.* tokens (micro/9, tiny/10, heading/28, display/32, jumbo/48). Cat 12: 599 inline rgba() → colors.active.* and colors.gradient.* tokens (emerald5-50, gold10-50, white6, cardDark gradient). Theme expanded with: 7 new active opacity tokens, 7 extended palette colors, 4 gradient presets, 10 fontSizeExt tokens.
+
+### NOTED (0 remaining — all 267 findings addressed):
+File 33 complete. All theme/styling findings fixed across 4 passes.

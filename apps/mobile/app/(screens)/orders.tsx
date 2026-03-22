@@ -49,7 +49,7 @@ const STATUS_CONFIG: Record<OrderStatus, { color: string; bgColor: string; label
   pending: { color: colors.gold, bgColor: colors.active.gold10, label: 'Pending' },
   paid: { color: colors.info, bgColor: 'rgba(88, 166, 255, 0.1)', label: 'Paid' },
   shipped: { color: colors.emerald, bgColor: colors.active.emerald10, label: 'Shipped' },
-  delivered: { color: '#3FB950', bgColor: 'rgba(63, 185, 80, 0.1)', label: 'Delivered' },
+  delivered: { color: colors.extended.greenBright, bgColor: 'rgba(63, 185, 80, 0.1)', label: 'Delivered' },
   cancelled: { color: colors.error, bgColor: colors.active.error10, label: 'Cancelled' },
 };
 

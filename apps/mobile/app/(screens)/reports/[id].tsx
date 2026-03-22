@@ -162,7 +162,7 @@ export default function ReportScreen() {
                   onPress={() => setSelectedReason(reason.value)}
                 >
                   <LinearGradient
-                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : colors.gradient.cardDark}
                     style={styles.reasonGradient}
                   >
                     <LinearGradient
@@ -188,7 +188,7 @@ export default function ReportScreen() {
           {/* Additional details */}
           <Animated.View entering={FadeInUp.delay(600).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.detailsCard}
             >
               <Text style={styles.detailsLabel}>{t('screens.reports-detail.additionalDetails')}</Text>
@@ -259,11 +259,11 @@ const styles = StyleSheet.create({
   reasonItem: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     overflow: 'hidden',
   },
   reasonItemSelected: {
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   reasonGradient: {
     flexDirection: 'row',
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   detailsCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.xl,
   },

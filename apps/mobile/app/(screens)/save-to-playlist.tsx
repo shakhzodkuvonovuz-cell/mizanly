@@ -138,7 +138,7 @@ export default function SaveToPlaylistScreen() {
           disabled={isLoading || inclusionLoading}
         >
           <LinearGradient
-            colors={isInPlaylist ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={isInPlaylist ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)'] : colors.gradient.cardDark}
             style={styles.rowGradient}
           >
             <View style={styles.rowLeft}>
@@ -288,7 +288,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   rowLeft: {
     flexDirection: 'row',

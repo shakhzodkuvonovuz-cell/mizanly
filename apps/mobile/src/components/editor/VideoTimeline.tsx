@@ -7,7 +7,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   speedBadgeText: {
     color: colors.gold,
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     fontWeight: '700',
   },
   playhead: {

@@ -13,7 +13,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { downloadsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -44,7 +44,7 @@ function StorageBar({ usedBytes, totalBytes }: { usedBytes: number; totalBytes: 
 
   return (
     <LinearGradient
-      colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+      colors={colors.gradient.cardDark}
       style={styles.storageCard}
     >
       <View style={styles.storageHeader}>
@@ -180,7 +180,7 @@ function DownloadItem({
           {(item.status === 'downloading' || item.status === 'paused') && (
             <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
               <LinearGradient
-                colors={[colors.emerald, '#05593A']}
+                colors={[colors.emerald, colors.extended.greenDark]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.progressBarFill, { width: `${Math.max(item.progress * 100, 2)}%` }]}
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     borderColor: colors.dark.border,
   },
   chipActive: {
-    backgroundColor: 'rgba(10,123,79,0.15)',
+    backgroundColor: colors.active.emerald15,
     borderColor: colors.emerald,
   },
   chipText: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   typeBadge: {
     position: 'absolute',
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   },
   typeBadgeText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     fontWeight: '700',
     letterSpacing: 0.5,
   },

@@ -19,7 +19,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -121,7 +121,7 @@ function InputCard({
   return (
     <Animated.View entering={FadeInUp.delay(delay).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={[
           styles.inputCard,
           isFocused && styles.inputCardFocused,
@@ -529,7 +529,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
@@ -607,12 +607,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   inputCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
   inputCardFocused: {
-    borderColor: 'rgba(10,123,79,0.5)',
+    borderColor: colors.active.emerald50,
     shadowColor: colors.emerald,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
@@ -665,7 +665,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginTop: spacing.sm,
     marginBottom: spacing.lg,
@@ -759,7 +759,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   resultCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -817,7 +817,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.text.tertiary,
   },
   zakatDueContainer: {
-    backgroundColor: 'rgba(10,123,79,0.15)',
+    backgroundColor: colors.active.emerald15,
     borderRadius: radius.md,
     padding: spacing.lg,
     alignItems: 'center',
@@ -830,13 +830,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   zakatDueValue: {
     fontFamily: fonts.heading,
-    fontSize: 32,
+    fontSize: fontSizeExt.display,
     color: colors.emerald,
   },
   belowNisabContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(200,150,62,0.1)',
+    backgroundColor: colors.active.gold10,
     borderRadius: radius.md,
     padding: spacing.lg,
     gap: spacing.md,
@@ -853,7 +853,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.lg,
     gap: spacing.sm,

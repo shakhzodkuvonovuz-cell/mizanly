@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { settingsApi } from '@/services/api';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -94,7 +94,7 @@ function BarChart({ daily, isRTL }: { daily: DailyLog[]; isRTL: boolean }) {
             </Text>
             <View style={styles.barTrack}>
               <LinearGradient
-                colors={isToday ? [colors.emerald, '#05593A'] : [tc.surface, tc.border]}
+                colors={isToday ? [colors.emerald, colors.extended.greenDark] : [tc.surface, tc.border]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
                 style={[styles.bar, { height }]}
@@ -113,7 +113,7 @@ function StatCard({ label, value, icon, isRTL }: { label: string; value: string;
   const styles = createStyles(tc);
   return (
     <LinearGradient
-      colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+      colors={colors.gradient.cardDark}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.statCard}
@@ -237,7 +237,7 @@ export default function ScreenTimeScreen() {
                     colors={
                       todaySeconds >= currentLimit * 60
                         ? [colors.error, '#C53030']
-                        : [colors.emerald, '#05593A']
+                        : [colors.emerald, colors.extended.greenDark]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -259,7 +259,7 @@ export default function ScreenTimeScreen() {
             {t('screenTime.thisWeek')}
           </Text>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.chartCard}
@@ -295,7 +295,7 @@ export default function ScreenTimeScreen() {
             }}
           >
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.settingRow}
@@ -331,7 +331,7 @@ export default function ScreenTimeScreen() {
             }}
           >
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.settingRow}
@@ -391,7 +391,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   todayCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.2)',
+    borderColor: colors.active.emerald20,
     padding: spacing.xl,
     marginBottom: spacing.lg,
     alignItems: 'center',
@@ -406,7 +406,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   todayTime: {
     color: colors.emerald,
-    fontSize: 48,
+    fontSize: fontSizeExt.jumbo,
     fontWeight: '700',
     letterSpacing: -1,
   },
@@ -468,7 +468,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   barValue: {
     color: colors.text.tertiary,
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     marginBottom: spacing.xs,
     height: 14,
   },

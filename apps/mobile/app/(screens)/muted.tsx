@@ -119,7 +119,7 @@ export default function MutedScreen() {
             return (
                 <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    colors={colors.gradient.cardDark}
                     style={styles.row}
                   >
                     <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
 
   row: {
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     marginBottom: spacing.sm,
   },
   info: { flex: 1 },

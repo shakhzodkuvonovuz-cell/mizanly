@@ -283,7 +283,7 @@ export default function SendTipScreen() {
           {/* Creator Info Card */}
           <Animated.View entering={FadeInUp.duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.creatorCard}
             >
               {/* Avatar */}
@@ -350,7 +350,7 @@ export default function SendTipScreen() {
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <Text style={styles.sectionLabel}>{t('monetization.addMessageOptional')}</Text>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.messageCard}
             >
               <View style={styles.messageHeader}>
@@ -497,7 +497,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
@@ -563,7 +563,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   amountGradient: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     paddingVertical: spacing.md,
     alignItems: 'center',
     position: 'relative',
@@ -598,7 +598,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -618,7 +618,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   messageCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
@@ -651,7 +651,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   summaryCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },

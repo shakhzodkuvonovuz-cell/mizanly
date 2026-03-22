@@ -385,7 +385,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(200,150,62,0.2)',
+    backgroundColor: colors.active.gold20,
     alignSelf: 'flex-start',
   },
   completeBadgeText: {

@@ -158,7 +158,7 @@ export default function AppealModerationScreen() {
         {/* Content Preview Card */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.sectionMargin}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.contentCard}
           >
             <Text style={styles.contentHeader}>{t('appealModeration.contentHeader')}</Text>
@@ -184,7 +184,7 @@ export default function AppealModerationScreen() {
         {/* Appeal Form */}
         <Animated.View entering={FadeInUp.delay(150).duration(400)} style={styles.sectionMargin}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.formCard}
           >
             <View style={styles.formHeader}>
@@ -234,7 +234,7 @@ export default function AppealModerationScreen() {
             {/* Details Input */}
             <View style={styles.detailsContainer}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.detailsCard}
               >
                 <TextInput
@@ -259,7 +259,7 @@ export default function AppealModerationScreen() {
         {/* Evidence Section */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.sectionMargin}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.evidenceCard}
           >
             <View style={styles.formHeader}>
@@ -297,7 +297,7 @@ export default function AppealModerationScreen() {
         {/* Appeal History */}
         <Animated.View entering={FadeInUp.delay(250).duration(400)} style={styles.sectionMargin}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.historyCard}
           >
             <View style={styles.formHeader}>
@@ -382,7 +382,7 @@ export default function AppealModerationScreen() {
         {/* Important Notes */}
         <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.sectionMargin}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.notesCard}
           >
             <View style={styles.formHeader}>
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   contentCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   contentHeader: {
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   formCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   formHeader: {
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
   detailsCard: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.sm,
   },
   detailsInput: {
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
   evidenceCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   evidenceLabel: {
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   historyCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   historyEntry: {
@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
   notesCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   noteItem: {

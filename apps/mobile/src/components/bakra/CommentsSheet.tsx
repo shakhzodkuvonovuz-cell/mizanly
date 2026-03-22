@@ -13,7 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { reelsApi, api } from '@/services/api';
 import type { Reel, Comment } from '@/types';
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   creatorBadgeText: {
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     color: colors.emerald,
     fontWeight: '700',
   },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   pinnedText: {
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: colors.gold,
     fontWeight: '600',
   },

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet , Pressable } from 'react-native';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from './Icon';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -33,7 +33,7 @@ function getTimeRemaining(scheduledAt: string) {
 const THEME_COLORS: Record<string, [string, string]> = {
   emerald: [colors.emerald, '#0D9B63'],
   gold: [colors.gold, '#D4A94F'],
-  cosmic: ['#7C3AED', '#4F46E5'],
+  cosmic: [colors.extended.violet, '#4F46E5'],
 };
 
 export function PremiereCountdown({
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   timeSep: {
-    fontSize: 28,
+    fontSize: fontSizeExt.heading,
     fontWeight: '600',
     marginBottom: spacing.md,
   },

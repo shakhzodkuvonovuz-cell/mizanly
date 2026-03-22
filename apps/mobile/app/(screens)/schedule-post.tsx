@@ -159,7 +159,7 @@ export default function SchedulePostScreen() {
         <Animated.View entering={FadeInUp.delay(50).duration(400)}>
           <View style={styles.previewCard}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.previewGradient}
             >
               {/* User Info */}
@@ -211,7 +211,7 @@ export default function SchedulePostScreen() {
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
           <View style={styles.dateCard}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.dateGradient}
             >
               {/* Header */}
@@ -294,7 +294,7 @@ export default function SchedulePostScreen() {
                     <LinearGradient
                       colors={selectedDate === quick.day
                         ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        : colors.gradient.cardDark
                       }
                       style={styles.quickDateGradient}
                     >
@@ -316,7 +316,7 @@ export default function SchedulePostScreen() {
         <Animated.View entering={FadeInUp.delay(150).duration(400)}>
           <View style={styles.timeCard}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.timeGradient}
             >
               {/* Header */}
@@ -344,7 +344,7 @@ export default function SchedulePostScreen() {
                     <LinearGradient
                       colors={selectedHour === hour
                         ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        : colors.gradient.cardDark
                       }
                       style={styles.timeOptionGradient}
                     >
@@ -371,7 +371,7 @@ export default function SchedulePostScreen() {
                     <LinearGradient
                       colors={selectedMinute === minute
                         ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        : colors.gradient.cardDark
                       }
                       style={styles.timeOptionGradient}
                     >
@@ -397,7 +397,7 @@ export default function SchedulePostScreen() {
                     <LinearGradient
                       colors={selectedAmPm === ampm
                         ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        : colors.gradient.cardDark
                       }
                       style={styles.ampmGradient}
                     >
@@ -430,7 +430,7 @@ export default function SchedulePostScreen() {
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
           <View style={styles.timezoneCard}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.timezoneGradient}
             >
               <View style={styles.timezoneRow}>
@@ -517,7 +517,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   userRow: {
@@ -599,7 +599,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   dateGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   dateHeader: {
@@ -714,7 +714,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timeGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   timeHeader: {
@@ -819,7 +819,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timezoneGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   timezoneRow: {
@@ -845,7 +845,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   summaryGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
     position: 'relative',
     overflow: 'hidden',
   },

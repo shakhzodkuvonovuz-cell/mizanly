@@ -65,7 +65,7 @@ export default function HashtagExploreScreen() {
   const renderItem = ({ item, index }: { item: HashtagInfo; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.row}
       >
         <Pressable
@@ -120,7 +120,7 @@ export default function HashtagExploreScreen() {
       
         <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.searchInputWrap}
           >
             <LinearGradient
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   searchIconBg: {
     width: 32, height: 32, borderRadius: radius.sm,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   rowInner: {
     flexDirection: 'row',

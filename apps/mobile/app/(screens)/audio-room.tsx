@@ -261,7 +261,7 @@ export default function AudioRoomScreen() {
           {/* Room Info Hero */}
           <Animated.View entering={FadeInUp.duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.roomCard}
             >
               <Text style={styles.roomTitle}>
@@ -311,7 +311,7 @@ export default function AudioRoomScreen() {
           {/* Speakers Section */}
           <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.sectionContainer}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.sectionCard}
             >
               <View style={styles.sectionHeader}>
@@ -368,7 +368,7 @@ export default function AudioRoomScreen() {
           {/* Listeners Section */}
           <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.sectionContainer}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.sectionCard}
             >
               <View style={styles.sectionHeader}>
@@ -406,7 +406,7 @@ export default function AudioRoomScreen() {
           {/* Raised Hands Section */}
           <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.sectionContainer}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.sectionCard}
             >
               <View style={styles.sectionHeader}>
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   roomCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
   },
   roomTitle: {
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   sectionCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   sectionHeader: {

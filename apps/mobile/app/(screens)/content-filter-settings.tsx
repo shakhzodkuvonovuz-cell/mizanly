@@ -161,7 +161,7 @@ function ContentFilterSettingsContent() {
                 colors={
                   isSelected
                     ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']
-                    : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                    : colors.gradient.cardDark
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -202,7 +202,7 @@ function ContentFilterSettingsContent() {
         </Text>
 
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.toggleCard}

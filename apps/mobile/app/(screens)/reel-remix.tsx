@@ -298,7 +298,7 @@ export default function ReelRemixScreen() {
             <Animated.View entering={FadeInUp.duration(400)}>
               <View style={styles.previewCard}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.previewGradient}
                 >
                   <View style={styles.combinedPreview}>
@@ -342,7 +342,7 @@ export default function ReelRemixScreen() {
                   <Text style={styles.sectionLabel}>{t('remix.caption')}</Text>
                 </View>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.captionCard}
@@ -551,7 +551,7 @@ export default function ReelRemixScreen() {
                   <LinearGradient
                     colors={layout === opt.key
                       ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                      : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                      : colors.gradient.cardDark
                     }
                     style={styles.layoutBtnGradient}
                   >
@@ -576,7 +576,7 @@ export default function ReelRemixScreen() {
           <Animated.View entering={FadeInUp.delay(150).duration(400)}>
             <View style={styles.originalInfoCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.originalInfoGradient}
               >
                 {isLoadingReel ? (
@@ -676,7 +676,7 @@ export default function ReelRemixScreen() {
                 <LinearGradient
                   colors={isTimeRunningOut
                     ? ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']
-                    : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                    : colors.gradient.cardDark
                   }
                   style={styles.timerGradient}
                 >
@@ -881,7 +881,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   layoutBtnText: {
     fontSize: fontSize.xs,
@@ -899,7 +899,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   originalInfoGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   originalInfoRow: {
@@ -975,7 +975,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timerGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.md,
     alignItems: 'center',
   },
@@ -996,7 +996,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     overflow: 'hidden',
   },
   combinedPreview: {

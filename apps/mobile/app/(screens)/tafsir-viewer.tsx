@@ -211,7 +211,7 @@ export default function TafsirViewerScreen() {
               entering={FadeInUp.delay(200 + index * 80).duration(500)}
             >
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.tafsirCard}
               >
                 {/* Source Header */}
@@ -355,7 +355,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   filterButtonText: {
     color: colors.emerald,
@@ -369,7 +369,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.base,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   tafsirCardHeader: {
     flexDirection: 'row',
@@ -434,6 +434,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     textAlign: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: colors.active.white6,
   },
 });

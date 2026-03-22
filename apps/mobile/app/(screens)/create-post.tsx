@@ -23,7 +23,7 @@ import { Autocomplete } from '@/components/ui/Autocomplete';
 import { LocationPicker } from '@/components/ui/LocationPicker';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -908,7 +908,7 @@ const styles = StyleSheet.create({
   },
   mediaBadgeText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     fontWeight: '700',
   },
   charCountContainer: {

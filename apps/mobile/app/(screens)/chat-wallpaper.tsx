@@ -49,7 +49,7 @@ const SOLID_COLORS: SolidColor[] = [
   { name: 'Surface', value: tc.surface },
   { name: 'Red', value: '#DC2626' },
   { name: 'Blue', value: '#2563EB' },
-  { name: 'Purple', value: '#7C3AED' },
+  { name: 'Purple', value: colors.extended.violet },
   { name: 'Orange', value: '#EA580C' },
   { name: 'Green', value: '#16A34A' },
   { name: 'Teal', value: '#0D9488' },
@@ -60,7 +60,7 @@ const SOLID_COLORS: SolidColor[] = [
 const GRADIENT_PAIRS: GradientPair[] = [
   { name: 'Emerald Night', colors: [colors.emerald, tc.bg] },
   { name: 'Golden Dusk', colors: [colors.gold, tc.bg] },
-  { name: 'Purple Night', colors: ['#7C3AED', tc.bg] },
+  { name: 'Purple Night', colors: [colors.extended.violet, tc.bg] },
   { name: 'Ocean Deep', colors: ['#2563EB', tc.bg] },
   { name: 'Emerald Gold', colors: [colors.emerald, colors.gold] },
   { name: 'Sunset', colors: ['#EA580C', '#DC2626'] },

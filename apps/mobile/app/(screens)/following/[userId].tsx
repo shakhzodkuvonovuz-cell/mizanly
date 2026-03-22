@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
 
   row: {
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

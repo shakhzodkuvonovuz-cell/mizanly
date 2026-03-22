@@ -17,7 +17,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { parentalApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -309,7 +309,7 @@ function ChildCard({
   return (
     <Animated.View entering={FadeInDown.delay(100)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.childCard}
       >
         <Pressable
@@ -764,7 +764,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderWidth: 1, borderColor: tc.border, alignItems: 'center',
   },
   ageRatingChipActive: {
-    borderColor: colors.emerald, backgroundColor: 'rgba(10,123,79,0.15)',
+    borderColor: colors.emerald, backgroundColor: colors.active.emerald15,
   },
   ageRatingText: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600' },
   ageRatingTextActive: { color: colors.emerald },
@@ -798,7 +798,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.sm, overflow: 'hidden', justifyContent: 'flex-end',
   },
   barFill: { width: '100%', borderRadius: radius.sm },
-  barLabel: { color: colors.text.tertiary, fontSize: 10, marginTop: 4 },
+  barLabel: { color: colors.text.tertiary, fontSize: fontSizeExt.tiny, marginTop: 4 },
 
   // Manage actions
   manageActions: { gap: spacing.sm, marginTop: spacing.md },

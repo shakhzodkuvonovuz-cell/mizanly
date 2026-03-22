@@ -564,7 +564,7 @@ export default function CreateThreadScreen() {
               {/* Premium Poll form — only on first part */}
               {index === 0 && poll && (
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.pollForm}
@@ -846,7 +846,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
     borderRadius: radius.lg,
     padding: spacing.md,
     overflow: 'hidden',

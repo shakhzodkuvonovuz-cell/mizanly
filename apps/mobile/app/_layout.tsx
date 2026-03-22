@@ -27,7 +27,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { TTSMiniPlayer } from '@/components/ui/TTSMiniPlayer';
 import { useStore } from '@/store';
-import { colors } from '@/theme';
+import { colors, fontSizeExt } from '@/theme';
 import { useIslamicTheme, useIsEidToday } from '@/hooks/useIslamicTheme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { initSentry, setSentryUser } from '@/config/sentry';
@@ -117,8 +117,8 @@ function EidCelebrationOverlay() {
       alignItems: 'center',
       zIndex: 10000,
     }}>
-      <Text style={{ fontSize: 48 }}>🎉</Text>
-      <Text style={{ color: colors.gold, fontSize: 28, fontWeight: '700', marginTop: 16 }}>
+      <Text style={{ fontSize: fontSizeExt.jumbo }}>🎉</Text>
+      <Text style={{ color: colors.gold, fontSize: fontSizeExt.heading, fontWeight: '700', marginTop: 16 }}>
         {t('themes.eidMubarak')}
       </Text>
       <Text style={{ color: colors.text.secondary, fontSize: 16, marginTop: 8 }}>

@@ -368,7 +368,7 @@ function ProductDetailScreen() {
               accessibilityLabel={`View ${data.seller.displayName}'s profile`}
             >
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={[styles.sellerCard, { flexDirection: rtlFlexRow(isRTL) }]}
               >
                 <Avatar uri={data.seller.avatarUrl} name={data.seller.displayName} size="md" />
@@ -405,7 +405,7 @@ function ProductDetailScreen() {
                     colors={
                       selectedInstallment === opt
                         ? [colors.emeraldLight, colors.emerald]
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        : colors.gradient.cardDark
                     }
                     style={[
                       styles.installmentOption,

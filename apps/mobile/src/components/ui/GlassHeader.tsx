@@ -12,7 +12,7 @@ import Animated from 'react-native-reanimated';
 import { WebSafeBlurView } from '@/components/ui/WebSafeBlurView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, fonts, fontSize, spacing, radius } from '@/theme';
+import { colors, fonts, fontSize, spacing, radius, fontSizeExt } from '@/theme';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: '#FFFFFF',
     textAlign: 'center',
   },

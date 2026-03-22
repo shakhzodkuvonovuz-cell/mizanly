@@ -254,7 +254,7 @@ export default function ManageDataScreen() {
         >
           <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               {/* Download Your Data */}
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     overflow: 'hidden',
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 0.5,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.active.white6,
     marginLeft: spacing.md,
   },
   footerNote: {

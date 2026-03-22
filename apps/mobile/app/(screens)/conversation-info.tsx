@@ -18,7 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -248,7 +248,7 @@ export default function ConversationInfoScreen() {
           {/* Avatar + name — Glassmorphism Card */}
           <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.heroCard}
             >
               <Pressable onPress={isGroup && isCreator ? pickAvatar : undefined} style={{ position: 'relative' }}>
@@ -314,7 +314,7 @@ export default function ConversationInfoScreen() {
           {isGroup && (
             <Animated.View entering={FadeInUp.delay(160).duration(400)}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={[styles.section, styles.optionsCardGlass]}
               >
                 <View style={styles.sectionHeader}>
@@ -353,7 +353,7 @@ export default function ConversationInfoScreen() {
                           )}
                           {(m as { tag?: string | null }).tag && (
                             <View style={{ backgroundColor: tc.surface, borderRadius: radius.full, paddingHorizontal: spacing.xs, paddingVertical: 1 }}>
-                              <Text style={{ color: colors.text.secondary, fontSize: 10, fontWeight: '500' }}>{(m as { tag?: string | null }).tag}</Text>
+                              <Text style={{ color: colors.text.secondary, fontSize: fontSizeExt.tiny, fontWeight: '500' }}>{(m as { tag?: string | null }).tag}</Text>
                             </View>
                           )}
                         </View>
@@ -372,7 +372,7 @@ export default function ConversationInfoScreen() {
           {/* Mute toggle */}
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.optionsCardGlass}
             >
               <View style={styles.muteRow}>
@@ -404,7 +404,7 @@ export default function ConversationInfoScreen() {
           {/* Chat Options */}
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.optionsCardGlass}
             >
               <Pressable style={[styles.actionRow, { borderBottomColor: tc.border }]} onPress={() => navigate(`/(screens)/starred-messages?conversationId=${convo?.id}`)}>
@@ -485,7 +485,7 @@ export default function ConversationInfoScreen() {
           {/* Actions */}
           <Animated.View entering={FadeInUp.delay(280).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.optionsCardGlass}
             >
               {isGroup && !isCreator && (
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
   optionsCardGlass: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     overflow: 'hidden' as const,
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
   heroCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.xl,
     marginHorizontal: spacing.base,
     marginTop: spacing.md,

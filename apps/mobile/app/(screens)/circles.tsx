@@ -204,7 +204,7 @@ export default function CirclesScreen() {
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.circleCard}
                 >
                   <View style={styles.circleIcon}>
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   circleIcon: {
     width: 48,
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     width: 48, height: 48, borderRadius: radius.full,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   emojiGradient: {
     width: 48, height: 48,
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary, fontSize: fontSize.base,
     marginBottom: spacing.lg, marginHorizontal: spacing.base,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   createBtnWrapper: {
     borderRadius: radius.full,

@@ -29,7 +29,7 @@ const FILTERS: { id: FilterType; name: string; color: string }[] = [
   { id: 'cool', name: 'Cool', color: 'rgba(60,120,255,0.2)' },
   { id: 'vivid', name: 'Vivid', color: 'rgba(255,60,120,0.15)' },
   { id: 'noir', name: 'Noir', color: 'rgba(0,0,0,0.4)' },
-  { id: 'emerald', name: 'Emerald', color: 'rgba(10,123,79,0.2)' },
+  { id: 'emerald', name: 'Emerald', color: colors.active.emerald20 },
   { id: 'gold', name: 'Gold', color: 'rgba(200,150,62,0.25)' },
   { id: 'fade', name: 'Fade', color: 'rgba(200,180,160,0.3)' },
   { id: 'sharp', name: 'Sharp', color: 'rgba(255,255,255,0.1)' },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   tabActive: {
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
   },
   tabIconBg: {
     width: 44,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     maxHeight: 200,
   },
   tabContent: {
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   aspectButtonActive: {
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
     borderRadius: radius.md,
   },
   aspectPreview: {
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterItemActive: {
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
     borderRadius: radius.md,
     padding: spacing.xs,
   },

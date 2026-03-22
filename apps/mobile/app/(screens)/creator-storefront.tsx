@@ -20,7 +20,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts, shadow, fontSizeExt } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   },
   halalText: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: colors.emerald,
   },
   outOfStockOverlay: {
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   },
   buyBadgeText: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: colors.emerald,
   },
   fab: {

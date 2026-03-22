@@ -141,7 +141,7 @@ export default function DMNoteEditorScreen() {
               <Animated.View entering={FadeInUp.duration(400)}>
                 {/* Input area */}
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.inputCard}
                 >
                   <View style={styles.inputHeader}>
@@ -163,7 +163,7 @@ export default function DMNoteEditorScreen() {
 
                 {/* Expiry picker trigger */}
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={styles.expiryCard}
                 >
                   <View style={styles.expiryRow}>
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   inputHeader: {
     flexDirection: 'row',
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   expiryRow: {
     flexDirection: 'row',
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.2)',
+    borderColor: colors.active.emerald20,
   },
   previewTitle: {
     color: colors.text.secondary,
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   currentNoteText: {
     color: colors.text.secondary,

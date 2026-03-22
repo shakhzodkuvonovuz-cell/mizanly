@@ -20,7 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, type TapGesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
 import { useStore } from '@/store';
 import { reelsApi, feedApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
@@ -271,7 +271,7 @@ const ReelItem = memo(function ReelItem({
                     </View>
                   ) : (
                     <LinearGradient
-                      colors={[colors.emerald, '#05593A']}
+                      colors={[colors.emerald, colors.extended.greenDark]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={styles.followIconContainer}
@@ -900,7 +900,7 @@ const styles = StyleSheet.create({
   },
   actionCountDuetStitch: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     marginTop: 2,
     fontWeight: '600',
     textShadowColor: 'rgba(0,0,0,0.5)',
@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
   },
   trendingBadgeText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     fontWeight: '700',
     marginLeft: 2,
   },

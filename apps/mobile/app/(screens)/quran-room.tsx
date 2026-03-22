@@ -18,7 +18,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fontSizeExt } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -397,7 +397,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   arabicVerse: {
     color: colors.gold,
-    fontSize: 28,
+    fontSize: fontSizeExt.heading,
     lineHeight: 48,
     textAlign: 'center',
     fontWeight: '500',

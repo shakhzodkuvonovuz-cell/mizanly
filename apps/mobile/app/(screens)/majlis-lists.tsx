@@ -99,7 +99,7 @@ export default function MajlisListsScreen() {
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <Pressable onPress={() => navigate(`/(screens)/majlis-list/${item.id}`)}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.card}
         >
           <LinearGradient
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     gap: spacing.md,
   },
   iconBg: {

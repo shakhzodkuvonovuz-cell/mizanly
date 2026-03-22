@@ -55,7 +55,7 @@ export default function NasheedModeScreen() {
         >
           {/* Explanation card */}
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -74,7 +74,7 @@ export default function NasheedModeScreen() {
 
           {/* Toggle row */}
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.toggleCard}
@@ -91,7 +91,7 @@ export default function NasheedModeScreen() {
           {/* Sample nasheeds */}
           <Text style={styles.sectionHeader}>{t('nasheed.sampleTitle')}</Text>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}

@@ -16,7 +16,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 const THEMES = [
   { id: 'emerald', label: 'premiere.themeEmerald', colors: [colors.emerald, '#0D9B63'] },
   { id: 'gold', label: 'premiere.themeGold', colors: [colors.gold, '#D4A94F'] },
-  { id: 'cosmic', label: 'premiere.themeCosmic', colors: ['#7C3AED', '#4F46E5'] },
+  { id: 'cosmic', label: 'premiere.themeCosmic', colors: [colors.extended.violet, '#4F46E5'] },
 ];
 
 export default function VideoPremiereScreen() {

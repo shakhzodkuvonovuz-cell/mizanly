@@ -19,7 +19,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts, fontSizeExt } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -48,8 +48,8 @@ interface Achievement {
 
 const RARITY_COLORS: Record<AchievementRarity, string> = {
   common: colors.text.secondary,
-  rare: '#58A6FF',
-  epic: '#A371F7',
+  rare: colors.extended.blue,
+  epic: colors.extended.purple,
   legendary: colors.gold,
 };
 
@@ -250,7 +250,7 @@ function AchievementsScreen() {
               colors={
                 selectedCategory === cat.key
                   ? [colors.emeraldLight, colors.emerald]
-                  : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                  : colors.gradient.cardDark
               }
               style={styles.chip}
             >
@@ -446,11 +446,11 @@ const styles = StyleSheet.create({
   },
   rarityText: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
   },
   unlockDate: {
     fontFamily: fonts.body,
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: colors.text.tertiary,
   },
   // Skeleton

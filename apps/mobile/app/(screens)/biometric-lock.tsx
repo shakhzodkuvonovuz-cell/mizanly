@@ -191,7 +191,7 @@ export default function BiometricLockScreen() {
 
           {/* Toggle Card */}
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.card}
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   infoCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.2)',
+    borderColor: colors.active.emerald20,
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,

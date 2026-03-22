@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 
 import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo, PrayerNotificationSetting } from '@/types/islamic';
@@ -376,7 +376,7 @@ export default function PrayerTimesScreen() {
           {/* Location Header */}
           <Animated.View entering={FadeInUp.duration(500)} style={styles.locationContainer}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.locationCard}
             >
               <View style={styles.locationRow}>
@@ -680,7 +680,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   locationRow: {
     flexDirection: 'row',
@@ -778,7 +778,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   qiblaHeader: {
     flexDirection: 'row',
@@ -808,7 +808,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   compassDirection: {
     position: 'absolute',
@@ -893,7 +893,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   prayerCardNext: {
     borderWidth: 1,
-    borderColor: 'rgba(200,150,62,0.3)',
+    borderColor: colors.active.gold30,
   },
   prayerCardGradient: {
     flexDirection: 'row',
@@ -954,11 +954,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   currentBadgeText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     fontWeight: '700',
   },
   nextBadge: {
-    backgroundColor: 'rgba(200,150,62,0.2)',
+    backgroundColor: colors.active.gold20,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: 4,
@@ -966,7 +966,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   nextBadgeText: {
     color: colors.gold,
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     fontWeight: '700',
   },
 
@@ -980,13 +980,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   methodIconBg: {
     width: 44,
     height: 44,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(200,150,62,0.2)',
+    backgroundColor: colors.active.gold20,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
@@ -1036,7 +1036,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: colors.active.white6,
   },
   settingsRowText: {
     flex: 1,

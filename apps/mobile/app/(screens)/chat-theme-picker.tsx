@@ -259,7 +259,7 @@ export default function ChatThemePickerScreen() {
         {/* Current Theme Preview */}
         <View style={styles.previewContainer}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={[styles.previewCard, { backgroundColor: currentTheme.color || tc.bg }]}
           >
             {currentTheme.gradient && (
@@ -387,7 +387,7 @@ export default function ChatThemePickerScreen() {
         {/* Opacity/Blur Controls */}
         <Animated.View entering={FadeInUp.delay(300).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.controlsCard}
           >
             <View style={styles.controlsHeader}>
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   previewCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     minHeight: 160,
     overflow: 'hidden',
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     maxWidth: '75%',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   sentMessage: {
     borderRadius: radius.md,
@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
   controlsCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
     marginHorizontal: spacing.base,
     marginTop: spacing.lg,

@@ -12,7 +12,7 @@ import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
 import { aiApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     borderColor: colors.gold + '30',
   },
   timeTitle: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500', marginTop: spacing.md },
-  timeValue: { color: colors.gold, fontSize: 48, fontWeight: '700', fontVariant: ['tabular-nums'], marginVertical: spacing.sm },
+  timeValue: { color: colors.gold, fontSize: fontSizeExt.jumbo, fontWeight: '700', fontVariant: ['tabular-nums'], marginVertical: spacing.sm },
   timeReason: { color: colors.text.tertiary, fontSize: fontSize.sm, textAlign: 'center' },
   emptyWrap: { marginTop: spacing['2xl'] },
 });

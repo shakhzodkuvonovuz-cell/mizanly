@@ -229,7 +229,7 @@ export default function AccountSettingsScreen() {
           <SectionHeader title={t('accountSettings.sections.accountInfo')} index={0} />
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Row
@@ -253,7 +253,7 @@ export default function AccountSettingsScreen() {
           <SectionHeader title={t('accountSettings.sections.dataPrivacy')} index={1} />
           <Animated.View entering={FadeInUp.delay(150).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Row
@@ -274,7 +274,7 @@ export default function AccountSettingsScreen() {
           <SectionHeader title={t('accountSettings.sections.accountActions')} index={2} />
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.card}
             >
               <Row
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: radius.lg,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     overflow: 'hidden', marginHorizontal: spacing.base, marginBottom: spacing.md,
   },
 
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
   rowValue: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
   destructive: { color: colors.error },
-  divider: { height: 0.5, backgroundColor: 'rgba(255,255,255,0.06)', marginLeft: spacing.md },
+  divider: { height: 0.5, backgroundColor: colors.active.white6, marginLeft: spacing.md },
 
   versionCard: {
     marginHorizontal: spacing.base,

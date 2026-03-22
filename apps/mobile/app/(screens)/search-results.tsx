@@ -50,7 +50,7 @@ function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: ()
         accessibilityLabel={`View hashtag ${hashtag.name}`}
       >
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.hashtagRow}
         >
           <LinearGradient
@@ -273,7 +273,7 @@ export default function SearchResultsScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.userRow}
         >
           <Pressable
@@ -325,7 +325,7 @@ export default function SearchResultsScreen() {
         {/* Search Box - Glassmorphism */}
         <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.searchBoxWrap}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.searchBoxOuter}
           >
             <View style={[styles.searchBox, isFocused && styles.searchBoxFocused]}>
@@ -628,7 +628,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   searchBox: {
     width: '100%', flexDirection: 'row', alignItems: 'center',
@@ -661,7 +661,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
     borderRadius: radius.md,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     marginHorizontal: spacing.base,
     marginVertical: spacing.xs,
   },
@@ -674,7 +674,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
     borderRadius: radius.md,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     marginHorizontal: spacing.base,
     marginVertical: spacing.xs,
   },

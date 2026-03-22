@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fontSizeExt } from '@/theme';
 import { communitiesApi } from '@/services/communitiesApi';
 import type { Community } from '@/types/communities';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -68,7 +68,7 @@ function CommunityCard({
     <Animated.View entering={FadeInUp.delay(index * 80).duration(500)} style={animatedStyle}>
       <Pressable onPress={handlePress}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.communityCard}
         >
           {/* Banner */}
@@ -255,7 +255,7 @@ export default function CommunitiesScreen() {
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.searchBar}
           >
             <Icon name="search" size="sm" color={colors.text.tertiary} />
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tabActive: {
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
   },
   tabGradient: {
     flexDirection: 'row',
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: 'rgba(45,53,72,0.4)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   categoryPillActive: {
     backgroundColor: colors.emerald,
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   banner: {
     height: 80,
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     borderColor: colors.dark.bg,
   },
   iconEmoji: {
-    fontSize: 28,
+    fontSize: fontSizeExt.heading,
   },
   cardContent: {
     padding: spacing.md,
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
   },
   categoryBadge: {
-    backgroundColor: 'rgba(10,123,79,0.1)',
+    backgroundColor: colors.active.emerald10,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.sm,

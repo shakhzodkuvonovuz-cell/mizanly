@@ -115,7 +115,7 @@ export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPrevi
     >
       <Animated.View entering={FadeInUp.duration(400)} style={styles.container}>
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}

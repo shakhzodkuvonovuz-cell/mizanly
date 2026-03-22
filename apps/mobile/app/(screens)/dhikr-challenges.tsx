@@ -61,7 +61,7 @@ function ChallengeCard({
   return (
     <Pressable onPress={onPress}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.challengeCard}
       >
         <View style={styles.challengeHeader}>
@@ -333,12 +333,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   challengeCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },

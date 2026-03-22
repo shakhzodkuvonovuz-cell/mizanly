@@ -286,7 +286,7 @@ export default function CloseFriendsScreen() {
         {/* Search Bar with Glassmorphism */}
         <View style={[styles.searchContainer, { marginTop: headerHeight + spacing.md }]}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.searchGradient}
           >
             <Icon name="search" size="sm" color={colors.text.secondary} />
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   searchInput: {
     flex: 1,
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.2)',
+    borderColor: colors.active.emerald20,
   },
   statItem: {
     flexDirection: 'row',
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 20,
-    backgroundColor: 'rgba(10,123,79,0.3)',
+    backgroundColor: colors.active.emerald30,
   },
   statsText: {
     color: colors.text.secondary,
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   nameActive: {
     color: colors.emerald,

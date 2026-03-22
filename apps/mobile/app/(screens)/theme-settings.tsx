@@ -208,7 +208,7 @@ export default function ThemeSettingsScreen() {
             </View>
             <Animated.View entering={FadeInUp.delay(100).duration(500)}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.card}
               >
                 {options.map((opt, index) => (
@@ -336,7 +336,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.sm,
   },
   // Radio buttons with premium styling
@@ -350,7 +350,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   radioActive: {
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   radioIconBg: {
     width: 40,
@@ -387,7 +387,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   divider: {
     height: 0.5,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.active.white6,
     marginHorizontal: spacing.md,
   },
   note: {

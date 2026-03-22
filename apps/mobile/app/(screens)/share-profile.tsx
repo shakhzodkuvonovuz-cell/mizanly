@@ -78,7 +78,7 @@ export default function ShareProfileScreen() {
         <View style={styles.skeletonWrap}>
           {/* Glassmorphism QR skeleton */}
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.qrCardSkeleton}
           >
             <Skeleton.Rect width={180} height={180} borderRadius={radius.md} />
@@ -262,7 +262,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: colors.active.white6,
   },
   headerSpacer: {
     height: 100,
@@ -294,7 +294,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     justifyContent: 'center',
     position: 'relative',
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   qrInner: {
     width: 220,

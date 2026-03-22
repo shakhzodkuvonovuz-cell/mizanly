@@ -78,7 +78,7 @@ export default function ChannelPlaylistsScreen() {
         accessibilityRole="button"
       >
         <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          colors={colors.gradient.cardDark}
           style={styles.cardGradient}
         >
           {/* Thumbnail */}
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     gap: spacing.md,
   },
   thumbnail: {

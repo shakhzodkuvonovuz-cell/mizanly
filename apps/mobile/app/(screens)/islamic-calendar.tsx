@@ -9,7 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fontSizeExt } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -334,7 +334,7 @@ export default function IslamicCalendarScreen() {
           {/* Calendar Card */}
           <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.calendarContainer}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.calendarCard}
             >
               {/* Month Header */}
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   monthHeader: {
     flexDirection: 'row',
@@ -646,11 +646,11 @@ const styles = StyleSheet.create({
   },
   dayEvent: {
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   dayEid: {
     borderWidth: 1,
-    borderColor: 'rgba(200,150,62,0.5)',
+    borderColor: colors.active.gold50,
   },
   dayText: {
     color: colors.text.primary,
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: colors.active.white6,
   },
   legendItem: {
     flexDirection: 'row',
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   eventCardEid: {
     borderLeftWidth: 3,
@@ -773,17 +773,17 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   eventBadge: {
-    backgroundColor: 'rgba(10,123,79,0.2)',
+    backgroundColor: colors.active.emerald20,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: radius.sm,
   },
   eventBadgeEid: {
-    backgroundColor: 'rgba(200,150,62,0.2)',
+    backgroundColor: colors.active.gold20,
   },
   eventBadgeText: {
     color: colors.emerald,
-    fontSize: 9,
+    fontSize: fontSizeExt.micro,
     fontWeight: '700',
   },
   eventBadgeTextEid: {
@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   quickLinkText: {
     color: colors.text.primary,

@@ -40,13 +40,13 @@ interface ProfileCustomization {
 const ACCENT_COLORS = [
   colors.emerald,
   '#0D9B63',
-  '#58A6FF',
-  '#A371F7',
+  colors.extended.blue,
+  colors.extended.purple,
   colors.gold,
   '#F85149',
   '#FF7B72',
   '#D29922',
-  '#3FB950',
+  colors.extended.greenBright,
   '#F778BA',
   '#79C0FF',
   '#D2A8FF',
@@ -278,7 +278,7 @@ function ProfileCustomizationScreen() {
                     colors={
                       layoutStyle === layout.key
                         ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        : colors.gradient.cardDark
                     }
                     style={[
                       styles.layoutCard,
@@ -322,7 +322,7 @@ function ProfileCustomizationScreen() {
                     colors={
                       bioFont === font.key
                         ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        : colors.gradient.cardDark
                     }
                     style={[
                       styles.fontCard,
@@ -349,7 +349,7 @@ function ProfileCustomizationScreen() {
             <SectionLabel text={t('gamification.profileCustomization.showBadges')} delay={300} />
             <Animated.View entering={FadeInUp.delay(350).duration(400)}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.togglesCard}
               >
                 <ToggleRow
@@ -385,7 +385,7 @@ function ProfileCustomizationScreen() {
                 accessibilityLabel={t('gamification.profileCustomization.uploadBackground')}
               >
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  colors={colors.gradient.cardDark}
                   style={[styles.uploadInner, { flexDirection: rtlFlexRow(isRTL) }]}
                 >
                   <Icon name="image" size="md" color={colors.text.secondary} />

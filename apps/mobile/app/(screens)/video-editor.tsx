@@ -27,7 +27,7 @@ const SPEED_OPTIONS: SpeedOption[] = [0.25, 0.5, 1, 1.5, 2, 3];
 const FILTERS: { id: FilterName; name: string; color: string }[] = [
   { id: 'original', name: 'Original', color: '#FFFFFF' },
   { id: 'warm', name: 'Warm', color: '#D4A94F' },
-  { id: 'cool', name: 'Cool', color: '#58A6FF' },
+  { id: 'cool', name: 'Cool', color: colors.extended.blue },
   { id: 'bw', name: 'B&W', color: '#8B949E' },
   { id: 'vintage', name: 'Vintage', color: '#C8963E' },
   { id: 'vivid', name: 'Vivid', color: '#0A7B4F' },
@@ -36,7 +36,7 @@ const FILTERS: { id: FilterName; name: string; color: string }[] = [
 ];
 
 const FONT_OPTIONS = ['Default', 'Bold', 'Handwritten'];
-const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', '#58A6FF'];
+const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', colors.extended.blue];
 
 export default function VideoEditorScreen() {
   const tc = useThemeColors();
@@ -284,7 +284,7 @@ export default function VideoEditorScreen() {
                   <LinearGradient
                     colors={playbackSpeed === speed
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                      : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                      : colors.gradient.cardDark
                     }
                     style={styles.speedButtonGradient}
                   >
@@ -316,7 +316,7 @@ export default function VideoEditorScreen() {
                     onPress={() => setSelectedFilter(filter.id)}
                   >
                     <LinearGradient
-                      colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                      colors={colors.gradient.cardDark}
                       style={[
                         styles.filterButtonGradient,
                         selectedFilter === filter.id && styles.filterButtonGradientActive
@@ -357,7 +357,7 @@ export default function VideoEditorScreen() {
                   <LinearGradient
                     colors={selectedFont === font
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                      : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                      : colors.gradient.cardDark
                     }
                     style={styles.fontButtonGradient}
                   >
@@ -406,7 +406,7 @@ export default function VideoEditorScreen() {
 
             <View style={styles.currentTrackCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.currentTrackGradient}
               >
                 <View style={styles.trackInfo}>
@@ -548,7 +548,7 @@ export default function VideoEditorScreen() {
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
           <View style={styles.timelineContainer}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.timelineGradient}
             >
               {/* Time Labels */}
@@ -625,7 +625,7 @@ export default function VideoEditorScreen() {
                 <LinearGradient
                   colors={selectedTool === tool.id
                     ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                    : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                    : colors.gradient.cardDark
                   }
                   style={styles.toolTabGradient}
                 >
@@ -650,7 +650,7 @@ export default function VideoEditorScreen() {
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
           <View style={styles.toolPanelContainer}>
             <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              colors={colors.gradient.cardDark}
               style={styles.toolPanelGradient}
             >
               {renderToolPanel()}
@@ -672,7 +672,7 @@ export default function VideoEditorScreen() {
                   <LinearGradient
                     colors={selectedQuality === quality
                       ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                      : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                      : colors.gradient.cardDark
                     }
                     style={styles.qualityButtonGradient}
                   >
@@ -742,7 +742,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     height: screenHeight * 0.42,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -813,7 +813,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timelineGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   timeLabels: {
@@ -938,7 +938,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   toolPanelGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   toolPanel: {

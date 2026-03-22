@@ -209,7 +209,7 @@ export default function EndScreenEditorScreen() {
                     entering={FadeInUp.delay(index * 80).duration(300)}
                   >
                     <LinearGradient
-                      colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                      colors={colors.gradient.cardDark}
                       style={styles.itemCard}
                     >
                       {/* Header row with delete */}
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.2)',
+    borderColor: colors.active.emerald20,
   },
   infoText: {
     flex: 1,
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     gap: spacing.sm,
   },
   itemHeader: {

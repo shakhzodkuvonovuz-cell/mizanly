@@ -17,7 +17,7 @@ import { WebLayout } from '@/components/web/WebLayout';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useWebKeyboardShortcuts } from '@/hooks/useWebKeyboardShortcuts';
-import { colors, tabBar, spacing, fontSize, animation, radius, glass, shadow } from '@/theme';
+import { colors, tabBar, spacing, fontSize, animation, radius, glass, shadow, fontSizeExt } from '@/theme';
 import { useStore } from '@/store';
 import { navigate as navTo } from '@/utils/navigation';
 import { useState } from 'react';
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: glass.ultra.overlayColor,
     borderTopWidth: 0, // Handled by tabBar
   },
-  tabLabel: { fontSize: 10, fontWeight: '600', marginTop: -2 },
+  tabLabel: { fontSize: fontSizeExt.tiny, fontWeight: '600', marginTop: -2 },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',

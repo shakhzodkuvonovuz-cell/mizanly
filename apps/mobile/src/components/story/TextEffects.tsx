@@ -77,8 +77,8 @@ const STYLE_PRESETS: StylePreset[] = [
 
 const TEXT_COLORS = [
   '#FFFFFF', '#000000', '#0A7B4F', '#C8963E',
-  '#F85149', '#58A6FF', '#D2A8FF', '#FFA657',
-  '#3FB950', '#F0883E', '#FF7B72', '#79C0FF',
+  '#F85149', colors.extended.blue, '#D2A8FF', '#FFA657',
+  colors.extended.greenBright, '#F0883E', '#FF7B72', '#79C0FF',
 ] as const;
 
 const SIZE_STEPS = [20, 32, 48] as const;

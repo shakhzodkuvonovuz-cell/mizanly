@@ -22,7 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts, shadow, fontSizeExt } from '@/theme';
 import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -242,7 +242,7 @@ function LeaderboardScreen() {
               colors={
                 activeTab === tab.key
                   ? [colors.emeraldLight, colors.emerald]
-                  : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                  : colors.gradient.cardDark
               }
               style={styles.tabChip}
             >
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   },
   medalText: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 10,
+    fontSize: fontSizeExt.tiny,
     color: '#000',
   },
   podiumName: {

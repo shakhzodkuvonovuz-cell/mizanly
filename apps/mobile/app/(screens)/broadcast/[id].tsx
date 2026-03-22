@@ -176,7 +176,7 @@ export default function BroadcastChannelScreen() {
   const renderMessageItem = useCallback(({ item, index }: { item: BroadcastMessage; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.messageCard}
       >
         <Pressable
@@ -254,7 +254,7 @@ export default function BroadcastChannelScreen() {
           {channel && (
             <Animated.View entering={FadeInUp.delay(0).duration(400)}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={[styles.channelHeader, { paddingTop: insets.top + 52 + spacing.xl }]}
               >
                 <Avatar uri={channel.avatarUrl} name={channel.name} size="xl" />
@@ -367,7 +367,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingBottom: spacing.xl,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
   },
@@ -419,7 +419,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.sm,
     padding: spacing.base,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   messageInner: {
     flexDirection: 'row',

@@ -34,7 +34,7 @@ const FONT_OPTIONS: FontOption[] = ['Default', 'Bold', 'Handwritten'];
 const SIZE_OPTIONS: SizeOption[] = ['S', 'M', 'L'];
 const POSITION_OPTIONS: PositionOption[] = ['Top', 'Center', 'Bottom'];
 const BACKGROUND_OPTIONS: BackgroundOption[] = ['None', 'Dark Bar', 'Outline'];
-const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', '#58A6FF'];
+const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', colors.extended.blue];
 
 /**
  * Parse an SRT-style subtitle track into individual Caption segments.
@@ -187,7 +187,7 @@ export default function CaptionEditorScreen() {
         <LinearGradient
           colors={active
             ? ['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']
-            : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+            : colors.gradient.cardDark
           }
           style={[
             styles.captionCard,
@@ -430,7 +430,7 @@ export default function CaptionEditorScreen() {
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <View style={styles.styleCard}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                colors={colors.gradient.cardDark}
                 style={styles.styleGradient}
               >
                 {/* Header */}
@@ -459,7 +459,7 @@ export default function CaptionEditorScreen() {
                       <LinearGradient
                         colors={selectedFont === font
                           ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                          : colors.gradient.cardDark
                         }
                         style={styles.selectorButtonGradient}
                       >
@@ -487,7 +487,7 @@ export default function CaptionEditorScreen() {
                       <LinearGradient
                         colors={selectedSize === size
                           ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                          : colors.gradient.cardDark
                         }
                         style={styles.selectorButtonGradient}
                       >
@@ -515,7 +515,7 @@ export default function CaptionEditorScreen() {
                       <LinearGradient
                         colors={selectedPosition === position
                           ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                          : colors.gradient.cardDark
                         }
                         style={styles.selectorButtonGradient}
                       >
@@ -543,7 +543,7 @@ export default function CaptionEditorScreen() {
                       <LinearGradient
                         colors={selectedBackground === bg
                           ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                          : colors.gradient.cardDark
                         }
                         style={styles.selectorButtonGradient}
                       >
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
     height: screenHeight * 0.28,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
   captionCard: {
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   captionCardActive: {
@@ -803,7 +803,7 @@ const styles = StyleSheet.create({
   styleGradient: {
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
     padding: spacing.base,
   },
   styleHeader: {

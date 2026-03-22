@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   },
   contributeCountText: {
     fontFamily: fonts.heading,
-    fontSize: 28,
+    fontSize: fontSizeExt.heading,
     color: colors.text.primary,
   },
   contributeTapHint: {

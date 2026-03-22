@@ -42,8 +42,8 @@ const STREAK_META: Record<string, { icon: IconName; color: string }> = {
   posting: { icon: 'edit', color: colors.emerald },
   engagement: { icon: 'heart', color: '#F85149' },
   quran: { icon: 'globe', color: colors.gold },
-  dhikr: { icon: 'repeat', color: '#A371F7' },
-  learning: { icon: 'trending-up', color: '#58A6FF' },
+  dhikr: { icon: 'repeat', color: colors.extended.purple },
+  learning: { icon: 'trending-up', color: colors.extended.blue },
 };
 
 const MILESTONES = [7, 30, 100];
@@ -134,7 +134,7 @@ function HeatmapCalendar({ days, isRTL }: { days: StreakDay[]; isRTL: boolean })
   return (
     <Animated.View entering={FadeInUp.delay(500).duration(500)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.heatmapCard}
       >
         <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>
@@ -184,7 +184,7 @@ function MilestoneBadges({
   return (
     <Animated.View entering={FadeInUp.delay(600).duration(500)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.milestonesCard}
       >
         <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>

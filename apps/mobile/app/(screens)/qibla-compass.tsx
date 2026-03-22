@@ -416,7 +416,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(10,123,79,0.3)',
+    borderColor: colors.active.emerald30,
   },
   cardinalLabel: {
     position: 'absolute',
@@ -507,7 +507,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingVertical: spacing.md,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: 'rgba(10,123,79,0.4)',
+    borderColor: colors.active.emerald40,
   },
   alignedText: {
     color: colors.emerald,

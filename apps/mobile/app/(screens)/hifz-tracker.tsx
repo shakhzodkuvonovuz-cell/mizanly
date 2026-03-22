@@ -140,7 +140,7 @@ const SURAHS = [
 const STATUS_COLORS: Record<string, string> = {
   memorized: colors.emerald,
   in_progress: colors.gold,
-  needs_review: '#F59E0B',
+  needs_review: colors.extended.orange,
   not_started: tc.surface,
 };
 
@@ -247,8 +247,8 @@ export default function HifzTrackerScreen() {
             <Text style={[styles.statValue, { color: colors.gold }]}>{stats.inProgress}</Text>
             <Text style={styles.statLabel}>{t('hifz.inProgress')}</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: '#F59E0B' }]}>
-            <Text style={[styles.statValue, { color: '#F59E0B' }]}>{stats.needsReview}</Text>
+          <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.extended.orange }]}>
+            <Text style={[styles.statValue, { color: colors.extended.orange }]}>{stats.needsReview}</Text>
             <Text style={styles.statLabel}>{t('hifz.needsReview')}</Text>
           </View>
         </View>
@@ -354,7 +354,7 @@ export default function HifzTrackerScreen() {
           />
           <BottomSheetItem
             label={t('hifz.needsReview')}
-            icon={<View style={[styles.sheetDot, { backgroundColor: '#F59E0B' }]} />}
+            icon={<View style={[styles.sheetDot, { backgroundColor: colors.extended.orange }]} />}
             onPress={() => updateMutation.mutate({ surahNum: statusSheet.surahNum, status: 'needs_review' })}
           />
         </BottomSheet>
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#F59E0B',
+    borderColor: colors.extended.orange,
   },
   sectionTitle: {
     color: colors.text.primary,

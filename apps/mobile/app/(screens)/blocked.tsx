@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
 
   row: {

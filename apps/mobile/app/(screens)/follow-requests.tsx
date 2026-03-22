@@ -40,7 +40,7 @@ function RequestRow({
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <LinearGradient
-        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        colors={colors.gradient.cardDark}
         style={styles.row}
       >
         <Pressable accessibilityRole="button" onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
     borderRadius: radius.md,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1, borderColor: colors.active.white6,
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },

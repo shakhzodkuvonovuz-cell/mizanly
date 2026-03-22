@@ -72,7 +72,7 @@ export default function NewConversationScreen() {
         {/* Search box — Glassmorphism wrapper */}
         <Animated.View entering={FadeInUp.delay(0).duration(400)}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.searchWrap}
           >
             <LinearGradient
@@ -196,7 +196,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   searchIconBg: {
     width: 36, height: 36, borderRadius: radius.sm,
@@ -218,7 +218,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: tc.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   userInfo: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

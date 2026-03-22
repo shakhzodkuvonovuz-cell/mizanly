@@ -146,7 +146,7 @@ export default function HashtagScreen() {
         {/* Header Card - Glassmorphism */}
         <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.headerCard}>
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            colors={colors.gradient.cardDark}
             style={styles.headerCardGradient}
           >
             <LinearGradient
@@ -245,7 +245,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.active.white6,
   },
   hashtagIconBg: {
     width: 48,
