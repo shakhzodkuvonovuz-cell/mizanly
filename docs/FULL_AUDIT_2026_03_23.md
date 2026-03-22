@@ -528,17 +528,20 @@
 
 ## DIMENSION 23: WEBSOCKET (Mobile)
 
-**Score: 2/10**
+**Score: 10/10**
 
-### CRITICAL
-- [ ] **WS-C1** socket.io-client NOT integrated on mobile — chat is polling-only with 5-30s latency instead of real-time. Backend has full Socket.io gateway (800+ lines, 13 events, rate limiting, Clerk JWT auth), but mobile never connects.
+### ~~CRITICAL~~ — FALSE FINDING (verified 2026-03-23)
+- [x] ~~**WS-C1**~~ **FALSE FINDING** — socket.io-client IS fully integrated across 4 screens:
+  - `risalah.tsx` — real-time conversation list updates
+  - `conversation/[id].tsx` — full real-time messaging (send, receive, typing, delivery receipts)
+  - `call/[id].tsx` — WebRTC signaling (initiate, answer, reject, end, ICE candidates)
+  - `quran-room.tsx` — real-time Quran study (verse sync, reciter changes, participants)
+- [x] Connects to `/chat` namespace with Clerk JWT auth token
+- [x] Uses `transports: ['websocket']` (no polling fallback)
+- [x] SOCKET_URL correctly strips `/api/v1` from API URL and appends `/chat`
+- [x] Events match backend: join_conversation, send_message, typing, read, call_*, quran_*
 
-### Impact
-- [ ] Live chat: 5-30s message latency (should be <100ms)
-- [ ] Calls: polling for connection state (battery drain)
-- [ ] Quran rooms: no real-time participant sync
-- [ ] Notifications: only via push, not socket events
-- [ ] Typing indicators: non-functional
+The explore agent only searched `/src/` directory and missed `/app/` where screens live.
 
 ---
 
