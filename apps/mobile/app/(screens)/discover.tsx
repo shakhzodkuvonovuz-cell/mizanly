@@ -40,6 +40,21 @@ const ITEM_WIDTH = (screenWidth - spacing.base * 2 - GRID_GAP * 2) / 3;
 const FEATURED_WIDTH = screenWidth * 0.75;
 const FEATURED_HEIGHT = FEATURED_WIDTH * (9 / 16);
 
+// Instagram Explore-like masonry pattern: feature items at alternating positions
+// Row pattern (3 cols): indices 0,6,7,12,13,18,19... get taller height
+const FEATURE_HEIGHT = 280;
+const STANDARD_HEIGHT = 180;
+
+function isFeatureIndex(index: number): boolean {
+  if (index === 0) return true;
+  // After index 0, feature items appear in pairs at the start of every other row-group
+  // Pattern repeats every 6: indices 6,7, 12,13, 18,19, 24,25...
+  if (index < 6) return false;
+  const offset = index - 6;
+  const cycle = offset % 6;
+  return cycle === 0 || cycle === 1;
+}
+
 function TrendingHashtagsSkeleton() {
   const { t } = useTranslation();
   const chips = Array.from({ length: 5 }, (_, i) => i);
@@ -222,7 +237,6 @@ type ExploreItem = Post | Reel | Thread | Video;
 const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { item: ExploreItem; isFeature?: boolean }) {
   const { t } = useTranslation();
   const tc = useThemeColors();
-  const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.96 });
 
   // Determine type
   const isReel = 'videoUrl' in item && item.videoUrl;
@@ -251,14 +265,18 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
     }
   };
 
+  const itemHeight = isFeature ? FEATURE_HEIGHT : STANDARD_HEIGHT;
+
   return (
-    <AnimatedPressable
-      style={[styles.gridItem, isFeature && styles.gridItemFeature, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }, animatedStyle]}
+    <Pressable
       onPress={handlePress}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
       accessibilityRole="button"
       accessibilityLabel={t('accessibility.viewPost')}
+      style={({ pressed }) => [
+        styles.gridItem,
+        { height: itemHeight, backgroundColor: tc.bgCard, borderColor: tc.borderLight },
+        pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
+      ]}
     >
       {thumbnailUrl ? (
         <Image accessible={true} accessibilityLabel={t('accessibility.contentImage')} source={{ uri: thumbnailUrl }} style={styles.gridImage} />
@@ -266,11 +284,11 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
         <View style={[styles.gridImage, styles.placeholder, { backgroundColor: tc.surface }]} />
       )}
       {playIconVisible && (
-        <View style={styles.playOverlay}>
-          <Icon name="play" size="sm" color={colors.text.primary} />
+        <View style={styles.videoIndicator}>
+          <Icon name="play" size={16} color="#fff" />
         </View>
       )}
-    </AnimatedPressable>
+    </Pressable>
   );
 });
 
@@ -421,7 +439,7 @@ export default function DiscoverScreen() {
           columnWrapperStyle={styles.gridRow}
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
-              <ExploreGridItem item={item} isFeature={index % 7 === 0} />
+              <ExploreGridItem item={item} isFeature={isFeatureIndex(index)} />
             </Animated.View>
           )}
           ListHeaderComponent={
@@ -683,15 +701,12 @@ const styles = StyleSheet.create({
   },
   gridItem: {
     width: ITEM_WIDTH,
-    height: ITEM_WIDTH,
+    height: STANDARD_HEIGHT,
     borderRadius: radius.md,
     overflow: 'hidden',
     backgroundColor: colors.dark.bgCard,
     borderWidth: 0.5,
     borderColor: colors.dark.borderLight,
-  },
-  gridItemFeature: {
-    height: ITEM_WIDTH * 1.35,
   },
   gridImage: {
     width: '100%',
@@ -701,13 +716,15 @@ const styles = StyleSheet.create({
   placeholder: {
     backgroundColor: colors.dark.surface,
   },
-  playOverlay: {
+  videoIndicator: {
     position: 'absolute',
     bottom: spacing.xs,
     right: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: radius.full,
     padding: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   grid: {
     flexDirection: 'row',
