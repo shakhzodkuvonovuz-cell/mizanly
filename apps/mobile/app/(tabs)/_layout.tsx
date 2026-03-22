@@ -17,7 +17,7 @@ import { WebLayout } from '@/components/web/WebLayout';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useWebKeyboardShortcuts } from '@/hooks/useWebKeyboardShortcuts';
-import { colors, tabBar, spacing, fontSize, animation, radius, glass, shadow, fontSizeExt } from '@/theme';
+import { colors, tabBar, spacing, fontSize, animation, radius, shadow, fontSizeExt } from '@/theme';
 import { useStore } from '@/store';
 import { navigate as navTo } from '@/utils/navigation';
 import { useState } from 'react';
@@ -175,7 +175,7 @@ export default function TabLayout() {
             isWebWide ? null : (
               Platform.OS === 'ios' ? (
                 <BlurView
-                  intensity={glass.ultra.blurIntensity}
+                  intensity={80}
                   tint="dark"
                   style={[StyleSheet.absoluteFill, styles.tabBarBg]}
                 />
@@ -245,8 +245,8 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    borderTopWidth: glass.ultra.borderWidth,
-    borderTopColor: glass.ultra.borderColor,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.08)',
     height: tabBar.height,
     paddingTop: 8,
     backgroundColor: 'transparent',
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 0, // Handled by tabBar
   },
   tabBarBgAndroid: {
-    backgroundColor: glass.ultra.overlayColor,
+    backgroundColor: 'rgba(13, 17, 23, 0.92)',
     borderTopWidth: 0, // Handled by tabBar
   },
   tabLabel: { fontSize: fontSizeExt.tiny, fontWeight: '600', marginTop: -2 },

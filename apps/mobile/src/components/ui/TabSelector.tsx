@@ -1,12 +1,12 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface Tab {
@@ -22,16 +22,24 @@ interface TabSelectorProps {
   style?: object;
 }
 
+/** Spring config for the indicator slide — damping 20 for smooth deceleration, stiffness 200 for snappy arrival */
+const INDICATOR_SPRING = { damping: 20, stiffness: 200 };
+
 export function TabSelector({ tabs, activeKey, onTabChange, variant = 'underline', style }: TabSelectorProps) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const activeIndex = tabs.findIndex((t) => t.key === activeKey);
-  const tabWidth = useSharedValue(0);
   const indicatorLeft = useSharedValue(0);
+  const tabWidth = useSharedValue(0);
+
+  // Track every tab's layout so we can animate to any tab on press
+  const tabLayouts = useRef<{ x: number; width: number }[]>([]);
 
   const handleTabLayout = useCallback(
     (index: number) => (e: LayoutChangeEvent) => {
       const { x, width } = e.nativeEvent.layout;
+      tabLayouts.current[index] = { x, width };
+      // Seed the indicator on the currently active tab
       if (index === activeIndex) {
         indicatorLeft.value = x;
         tabWidth.value = width;
@@ -42,19 +50,22 @@ export function TabSelector({ tabs, activeKey, onTabChange, variant = 'underline
 
   const handlePress = useCallback(
     (key: string, index: number) => {
-      haptic.selection();
+      haptic.tick();
+      // Animate indicator to the pressed tab's measured position
+      const layout = tabLayouts.current[index];
+      if (layout) {
+        indicatorLeft.value = withSpring(layout.x, INDICATOR_SPRING);
+        tabWidth.value = withSpring(layout.width, INDICATOR_SPRING);
+      }
       onTabChange(key);
     },
-    [haptic, onTabChange],
+    [haptic, onTabChange, indicatorLeft, tabWidth],
   );
 
-  // Update indicator position when active index changes
-  const indicatorStyle = useAnimatedStyle(() => {
-    return {
-      left: withSpring(indicatorLeft.value, animation.spring.snappy),
-      width: withSpring(tabWidth.value, animation.spring.snappy),
-    };
-  });
+  const indicatorStyle = useAnimatedStyle(() => ({
+    left: indicatorLeft.value,
+    width: tabWidth.value,
+  }));
 
   if (variant === 'pill') {
     return (

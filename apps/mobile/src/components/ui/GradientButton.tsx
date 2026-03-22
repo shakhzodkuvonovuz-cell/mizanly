@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   Pressable,
   Text,
@@ -9,10 +9,13 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fontSize, fonts, spacing, radius, animation } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { colors, fontSize, fonts, spacing, radius } from '@/theme';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { IconName } from '@/components/ui/Icon';
@@ -73,27 +76,50 @@ export function GradientButton({
   size = 'md',
   style: containerStyle,
 }: GradientButtonProps) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const scale = useSharedValue(1);
+  const glowOpacity = useSharedValue(0.3);
   const config = sizeConfig[size];
   const isDisabled = disabled || loading;
 
   const onPressIn = useCallback(() => {
-    scale.value = withSpring(0.96, animation.spring.snappy);
+    // Faster, deeper scale for satisfying press feel
+    scale.value = withSpring(0.94, { damping: 15, stiffness: 400 });
   }, [scale]);
 
   const onPressOut = useCallback(() => {
-    scale.value = withSpring(1, animation.spring.snappy);
+    // Spring back with slight overshoot (bouncy)
+    scale.value = withSpring(1, { damping: 12, stiffness: 300 });
   }, [scale]);
 
   const handlePress = useCallback(() => {
     if (isDisabled) return;
-    haptic.light();
+    haptic.navigate();
     onPress();
   }, [isDisabled, haptic, onPress]);
 
+  // Pulse the emerald glow shadow while loading
+  useEffect(() => {
+    if (loading) {
+      glowOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.6, { duration: 800 }),
+          withTiming(0.3, { duration: 800 }),
+        ),
+        -1,
+        true,
+      );
+    } else {
+      glowOpacity.value = withTiming(0.3, { duration: 200 });
+    }
+  }, [loading, glowOpacity]);
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+  }));
+
+  const shadowAnimatedStyle = useAnimatedStyle(() => ({
+    shadowOpacity: glowOpacity.value,
   }));
 
   const textColor =
@@ -146,22 +172,29 @@ export function GradientButton({
         accessibilityLabel={label}
         accessibilityState={{ disabled: isDisabled, busy: loading }}
       >
-        <LinearGradient
-          colors={[colors.emeraldLight, colors.emerald]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <Animated.View
           style={[
-            styles.primaryContainer,
-            {
-              height: config.height,
-              paddingHorizontal: config.paddingHorizontal,
-              borderRadius: config.height / 2,
-            },
             styles.primaryShadow,
+            { borderRadius: config.height / 2 },
+            shadowAnimatedStyle,
           ]}
         >
-          {renderContent()}
-        </LinearGradient>
+          <LinearGradient
+            colors={[colors.emeraldLight, colors.emerald]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.primaryContainer,
+              {
+                height: config.height,
+                paddingHorizontal: config.paddingHorizontal,
+                borderRadius: config.height / 2,
+              },
+            ]}
+          >
+            {renderContent()}
+          </LinearGradient>
+        </Animated.View>
       </AnimatedPressable>
     );
   }
