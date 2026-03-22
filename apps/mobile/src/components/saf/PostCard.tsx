@@ -20,7 +20,8 @@ import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { useHaptic } from '@/hooks/useHaptic';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PostMedia } from './PostMedia';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
@@ -41,7 +42,7 @@ interface Props {
 export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFrequentCreator }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const [localLiked, setLocalLiked] = useState(post.userReaction === 'LIKE');
   const [localLikes, setLocalLikes] = useState(post.likesCount);
@@ -114,11 +115,11 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     mutationFn: () => postsApi.getShareLink(post.id),
     onSuccess: (data) => {
       Clipboard.setStringAsync(data.url);
-      haptic.light();
+      haptic.save();
     },
     onError: () => {
       Clipboard.setStringAsync(`mizanly://post/${post.id}`);
-      haptic.light();
+      haptic.save();
     },
   });
 
@@ -185,21 +186,27 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     reactMutation.mutate();
   }, [localLiked, triggerHeartAnimation, reactMutation]);
 
-  // Double-tap to like handler
-  const lastTap = useSharedValue(0);
-  const handleDoubleTap = useCallback(() => {
-    const now = Date.now();
-    if (now - lastTap.value < 300) {
-      // Double tap detected
-      if (!localLiked && !reactInFlight.current) {
-        reactInFlight.current = true;
-        reactMutation.mutate();
-        triggerHeartAnimation();
-      }
-      haptic.medium();
+  // Double-tap to like handler (Instagram-style: only likes, never unlikes)
+  const handleDoubleTapLike = useCallback(() => {
+    if (!localLiked && !reactInFlight.current) {
+      reactInFlight.current = true;
+      reactMutation.mutate();
+      triggerHeartAnimation();
+      haptic.like();
+    } else if (localLiked) {
+      // Already liked — just show heart animation without API call (Instagram behavior)
+      triggerHeartAnimation();
+      haptic.like();
     }
-    lastTap.value = now;
-  }, [localLiked, reactMutation, haptic, lastTap, triggerHeartAnimation]);
+  }, [localLiked, reactMutation, triggerHeartAnimation, haptic]);
+
+  // Gesture: double-tap on image area to like
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd(() => {
+      'worklet';
+      runOnJS(handleDoubleTapLike)();
+    });
 
   const overlayHeartStyle = useAnimatedStyle(() => ({
     transform: [{ scale: overlayHeartScale.value }],
@@ -247,8 +254,8 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
         <Pressable
           style={styles.moreBtn}
           hitSlop={8}
-          onPress={() => { haptic.light(); setShowMenu(true); }}
-          accessibilityLabel={t('accessibility.moreOptions')}
+          onPress={() => { haptic.navigate(); setShowMenu(true); }}
+          accessibilityLabel={tr('accessibility.moreOptions')}
           accessibilityRole="button"
           accessibilityHint="Open post options menu"
         >
@@ -297,28 +304,30 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       {/* Media with double-tap to like */}
       {post.mediaUrls.length > 0 && (
         <View style={[styles.mediaContainer, { backgroundColor: tc.bg }]}>
-          <Pressable
-            onPress={handleDoubleTap}
-            accessibilityLabel={t('accessibility.doubleTapLike')}
-            accessibilityRole="button"
-            accessibilityHint="Double tap to like this post"
-          >
-            <PostMedia
-              mediaUrls={post.mediaUrls}
-              mediaTypes={post.mediaTypes}
-              thumbnailUrl={post.thumbnailUrl}
-              aspectRatio={post.mediaWidth && post.mediaHeight ? post.mediaWidth / post.mediaHeight : undefined}
-              blurred={post.isSensitive && !revealed}
-            />
-            {/* Overlay heart for double-tap */}
-            <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">
-              <View style={styles.heartGlow}>
-                <Icon name="heart-filled" size={100} color={colors.like} fill={colors.like} strokeWidth={0} />
-              </View>
+          <GestureDetector gesture={doubleTapGesture}>
+            <Animated.View
+              accessible
+              accessibilityLabel={tr('accessibility.doubleTapLike')}
+              accessibilityRole="image"
+              accessibilityHint="Double tap to like this post"
+            >
+              <PostMedia
+                mediaUrls={post.mediaUrls}
+                mediaTypes={post.mediaTypes}
+                thumbnailUrl={post.thumbnailUrl}
+                aspectRatio={post.mediaWidth && post.mediaHeight ? post.mediaWidth / post.mediaHeight : undefined}
+                blurred={post.isSensitive && !revealed}
+              />
+              {/* Overlay heart for double-tap */}
+              <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">
+                <View style={styles.heartGlow}>
+                  <Icon name="heart-filled" size={100} color={colors.like} fill={colors.like} strokeWidth={0} />
+                </View>
+              </Animated.View>
+              {/* Floating hearts effect */}
+              <FloatingHearts trigger={heartTrigger} />
             </Animated.View>
-            {/* Floating hearts effect */}
-            <FloatingHearts trigger={heartTrigger} />
-          </Pressable>
+          </GestureDetector>
           {post.isSensitive && !revealed && (
             <View style={styles.sensitiveOverlay}>
               <Icon name="eye-off" size="lg" color={colors.text.secondary} />
@@ -327,7 +336,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
               <Pressable
                 style={styles.sensitiveRevealBtn}
                 onPress={() => setRevealed(true)}
-                accessibilityLabel={t('accessibility.showSensitive')}
+                accessibilityLabel={tr('accessibility.showSensitive')}
                 accessibilityRole="button"
               >
                 <Text style={styles.sensitiveRevealText}>View</Text>
@@ -356,7 +365,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           count={post.commentsCount > 0 ? post.commentsCount : undefined}
           onPress={() => router.push(`/(screens)/post/${post.id}`)}
           hapticType="light"
-          accessibilityLabel={t('accessibility.commentOnPost')}
+          accessibilityLabel={tr('accessibility.commentOnPost')}
           accessibilityHint="View or add comments"
         />
 
@@ -365,7 +374,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           count={post.sharesCount > 0 ? post.sharesCount : undefined}
           onPress={handleShare}
           hapticType="light"
-          accessibilityLabel={t('accessibility.sharePost')}
+          accessibilityLabel={tr('accessibility.sharePost')}
           accessibilityHint="Share this post with others"
         />
 
@@ -388,37 +397,37 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
         {isOwn ? (
           <>
             <BottomSheetItem
-              label={t('common.copyLink')}
+              label={tr('common.copyLink')}
               icon={<Icon name="link" size="sm" color={colors.text.primary} />}
               onPress={handleCopyLink}
             />
             <BottomSheetItem
-              label={t('common.shareAsStory')}
+              label={tr('common.shareAsStory')}
               icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
               onPress={() => shareAsStoryMutation.mutate()}
             />
             <BottomSheetItem
-              label={t('common.notInterested')}
+              label={tr('common.notInterested')}
               icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
               onPress={() => dismissMutation.mutate()}
             />
             <BottomSheetItem
-              label={t('saf.crossPost')}
+              label={tr('saf.crossPost')}
               icon={<Icon name="repeat" size="sm" color={colors.text.primary} />}
               onPress={() => { setShowMenu(false); navigate(`/(screens)/cross-post?postId=${post.id}`); }}
             />
             <BottomSheetItem
-              label={t('saf.boostPost')}
+              label={tr('saf.boostPost')}
               icon={<Icon name="trending-up" size="sm" color={colors.gold} />}
               onPress={() => { setShowMenu(false); navigate(`/(screens)/boost-post?postId=${post.id}`); }}
             />
             <BottomSheetItem
-              label={t('saf.postInsights')}
+              label={tr('saf.postInsights')}
               icon={<Icon name="bar-chart-2" size="sm" color={colors.text.primary} />}
               onPress={() => { setShowMenu(false); navigate(`/(screens)/post-insights?postId=${post.id}`); }}
             />
             <BottomSheetItem
-              label={t('common.delete')}
+              label={tr('common.delete')}
               icon={<Icon name="trash" size="sm" color={colors.error} />}
               onPress={handleDelete}
               destructive
@@ -427,27 +436,27 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
         ) : (
           <>
             <BottomSheetItem
-              label={t('common.notInterested')}
+              label={tr('common.notInterested')}
               icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
               onPress={() => dismissMutation.mutate()}
             />
             <BottomSheetItem
-              label={t('common.copyLink')}
+              label={tr('common.copyLink')}
               icon={<Icon name="link" size="sm" color={colors.text.primary} />}
               onPress={handleCopyLink}
             />
             <BottomSheetItem
-              label={t('common.shareAsStory')}
+              label={tr('common.shareAsStory')}
               icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
               onPress={() => shareAsStoryMutation.mutate()}
             />
             <BottomSheetItem
-              label={t('saf.whyShowing')}
+              label={tr('saf.whyShowing')}
               icon={<Icon name="help-circle" size="sm" color={colors.text.primary} />}
               onPress={() => { setShowMenu(false); navigate(`/(screens)/why-showing?postId=${post.id}`); }}
             />
             <BottomSheetItem
-              label={t('common.report')}
+              label={tr('common.report')}
               icon={<Icon name="flag" size="sm" color={colors.error} />}
               onPress={handleReport}
               destructive
