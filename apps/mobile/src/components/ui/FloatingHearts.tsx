@@ -15,9 +15,11 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 interface HeartParticle {
   id: number;
   x: number;
+  driftX: number;
   rotation: number;
   size: number;
   targetY: number;
+  delay: number;
 }
 
 interface FloatingHeartsProps {
@@ -36,28 +38,45 @@ function Heart({
   onComplete: (id: number) => void;
 }) {
   const scale = useSharedValue(0.3);
+  const translateX = useSharedValue(particle.x);
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
   const rotate = useSharedValue(0);
 
   useEffect(() => {
-    scale.value = withTiming(1, {
-      duration: 200,
-      easing: Easing.back(2),
-    });
+    const d = particle.delay;
 
-    rotate.value = withTiming(particle.rotation, {
-      duration: 900,
-      easing: Easing.out(Easing.cubic),
-    });
+    scale.value = withDelay(
+      d,
+      withTiming(1, { duration: 200, easing: Easing.back(2) }),
+    );
 
-    translateY.value = withTiming(particle.targetY, {
-      duration: 900,
-      easing: Easing.out(Easing.cubic),
-    });
+    rotate.value = withDelay(
+      d,
+      withTiming(particle.rotation, {
+        duration: 900,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+
+    translateY.value = withDelay(
+      d,
+      withTiming(particle.targetY, {
+        duration: 900,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+
+    translateX.value = withDelay(
+      d,
+      withTiming(particle.x + particle.driftX, {
+        duration: 900,
+        easing: Easing.inOut(Easing.quad),
+      }),
+    );
 
     opacity.value = withDelay(
-      100,
+      d + 100,
       withTiming(0, { duration: 800, easing: Easing.in(Easing.quad) }, (finished) => {
         if (finished) {
           runOnJS(onComplete)(particle.id);
@@ -68,7 +87,7 @@ function Heart({
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: particle.x },
+      { translateX: translateX.value },
       { translateY: translateY.value },
       { scale: scale.value },
       { rotate: `${rotate.value}deg` },
@@ -106,10 +125,12 @@ export function FloatingHearts({ trigger, color, count = 8 }: FloatingHeartsProp
       for (let i = 0; i < count; i++) {
         newParticles.push({
           id: nextIdRef.current++,
-          x: Math.random() * 40 - 20,
+          x: Math.random() * 120 - 60,
+          driftX: Math.random() * 60 - 30,
           rotation: Math.random() * 90 - 30,
-          size: Math.round(Math.random() * 14 + 18),
-          targetY: -(Math.random() * 100 + 200),
+          size: Math.round(Math.random() * 18 + 14),
+          targetY: -(Math.random() * 200 + 150),
+          delay: i * 30,
         });
       }
       setParticles((prev) => [...prev, ...newParticles]);
