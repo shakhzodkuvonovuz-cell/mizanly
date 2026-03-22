@@ -31,7 +31,7 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 **Mobile:** React Native Expo SDK 52, 209 screens, 70 components, 23 hooks, 32 API services.
 **i18n:** 8 languages (en, ar, tr, ur, bn, fr, id, ms), 3,173+ keys each, 103 accessibility keys.
 **Real-time:** Socket.io on 4 screens (chat, calls, Quran rooms, conversation list) with Clerk JWT auth, reconnection, token refresh.
-**All credentials configured** (33/35 — only Meilisearch missing, falls back to Prisma LIKE queries).
+**All credentials configured** (33/35 — only Meilisearch missing). **NOTE:** R2 uploads, Cloudflare Stream, Sentry, Resend email, and Stripe payments are SET but never tested with real data. Verify each works before launch.
 **Database synced** — `prisma db push` confirmed in sync. Production uses `prisma migrate deploy`.
 **CI/CD:** GitHub Actions with lint, typecheck, test, build (4 jobs, all use `--legacy-peer-deps`).
 
@@ -44,6 +44,16 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 - `docs/PRIORITY_FIXES_CHECKLIST.md` — Crossable fix list
 - `docs/audit/agents/` — 72 raw audit files (~4,300 findings)
 - `docs/audit/DEFERRED_FIXES.md` — Master tracker of deferred items
+- `docs/audit/COMPREHENSIVE_AUDIT_2026.md` — 60-dimension audit with line numbers
+- `docs/audit/PRIORITY_FIXES.md` — P0/P1 items sorted by severity
+- `docs/audit/HONEST_SCORES.md` — Per-dimension scores with evidence
+- `docs/audit/MARKET_ANALYSIS.md` — Market sizing, competitor landscape
+- `docs/audit/ALGORITHM_DEEP_AUDIT.md` — Feed algorithm improvements
+- `docs/audit/TEST_QUALITY_AUDIT.md` — Test suite quality analysis
+- `docs/audit/DEEP_AUDIT_INDEX_2026_MARCH21.md` — Index of all 72 agent files
+- `docs/audit/SESSION_CONTINUATION_PROMPT.md` — Context for continuing audit work
+- `docs/audit/UI_UX_DEEP_AUDIT_2026.md` — UI/UX audit findings
+- `docs/COMPETITOR_DEEP_AUDIT_2026.md` — 15-dimension competitor scoring
 - `docs/features/DATA_IMPORT_ARCHITECTURE.md` — Data import spec (not built)
 - `docs/features/EXIT_STORY_SPEC.md` — Exit story spec (not built)
 - `docs/ralph-instructions.md` — Autonomous execution behavioral rules
@@ -55,15 +65,21 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 - **WebRTC 1:1 calls:** `react-native-webrtc` installed but not wired. Need ~500-800 lines: `RTCPeerConnection` + `getUserMedia()` + ICE candidate exchange via existing Socket.io signaling (`call_initiate`/`call_answer`/`call_signal` already on backend). TURN credentials set (Metered.ca). Estimated 2-3 days.
 - **App icon + splash screen:** Currently 69-byte placeholder PNGs. Need proper 1024x1024 icon + splash.
 - **Apple Developer Program:** $99/yr enrollment required.
+- **Apple IAP package:** No in-app purchase package installed (`expo-iap` or `react-native-iap`). Required if monetization features go through App Store.
 
 ## REMAINING TECHNICAL DEBT
 
-**Installed but NOT wired (packages exist, zero usage in screens):**
+**Installed but NOT wired (packages exist, zero or partial usage in screens):**
 - react-native-shared-element — installed but no `<SharedElement>` in any screen
 - react-native-maps — installed but MosqueFinder doesn't use `<MapView>`
 - Lottie animations — no .json animation files exist, no LottieView used anywhere
 - Social auth Google/Apple — sign-in/sign-up screens have disabled OAuth buttons ("disabled until OAuth configured"). Needs Clerk dashboard setup.
 - Payments on mobile — only send-tip.tsx uses paymentsApi. donate.tsx, gift-shop.tsx, waqf.tsx still have TODO stubs for Stripe integration.
+- Green screen ML segmentation — needs TFLite model, no ML inference code exists
+- 43 inline renderItems in utility screens (negligible perf impact, not React.memo wrapped)
+
+**Test expansion incomplete:**
+- Ralph test batch 3 was planned (~1,050 new tests for edge cases, auth matrix, error recovery, concurrency, abuse vectors) but never executed. Spec exists at `docs/archive/ralph-test-batch3.md`.
 
 **Cannot fix via code (need external services/humans):**
 - 5 languages (ur, bn, fr, id, ms) at 14-15% translated — needs human translator
@@ -171,6 +187,18 @@ animation.spring: bouncy(D10 S400) / snappy(D12 S300) / responsive(D15 S150) / g
 // send, pencil, edit, trash, x, plus, circle-plus, more-horizontal, settings, lock,
 // globe, eye, eye-off, flag, volume-x, link, clock, map-pin, smile, paperclip,
 // check, check-check, layers, slash, log-out, bar-chart-2, loader
+```
+
+### Key Hooks
+```tsx
+useContextualHaptic()   // 10 semantic haptics: like, follow, save, navigate, tick, delete, error, longPress, send, success
+useThemeColors()        // Returns tc.bg, tc.text.primary, tc.emerald, etc. — USE THIS for all JSX colors
+useStaggeredEntrance(index)  // Stagger fade+slide for list items (40ms between items)
+useScrollLinkedHeader()      // Elastic header collapse + blur on scroll
+useAnimatedIcon()            // Icon animations: bounce, shake, pulse, spin
+useTranslation()             // Returns { t } for i18n — t('key')
+useNetworkStatus()           // Online/offline detection
+useReducedMotion()           // Accessibility: motion preferences
 ```
 
 ### Key Components
