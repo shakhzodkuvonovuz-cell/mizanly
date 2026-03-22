@@ -148,6 +148,11 @@ interface AppState {
   setTTSSpeed: (speed: number) => void;
   stopTTS: () => void;
 
+  // Toast (transient UI state — not persisted)
+  toasts: Array<{ id: string; message: string; variant: 'success' | 'error' | 'warning' | 'info'; duration?: number; action?: { label: string; onPress: () => void } }>;
+  addToast: (toast: { id: string; message: string; variant?: string; duration?: number; action?: { label: string; onPress: () => void } }) => void;
+  dismissToast: (id: string) => void;
+
   logout: () => void;
 }
 
@@ -316,6 +321,15 @@ export const useStore = create<AppState>()(
       setTTSSpeed: (ttsSpeed) => set({ ttsSpeed }),
       stopTTS: () => set({ ttsText: null, ttsTitle: null, ttsPlaying: false }),
 
+      // Toast (not persisted — transient UI state)
+      toasts: [],
+      addToast: (toast) => set((s) => ({
+        toasts: [...s.toasts.slice(-1), { ...toast, variant: (toast.variant ?? 'info') as 'success' | 'error' | 'warning' | 'info' }],
+      })),
+      dismissToast: (id) => set((s) => ({
+        toasts: s.toasts.filter(t => t.id !== id),
+      })),
+
       // Auth actions
       logout: () => set({
         user: null,
@@ -349,6 +363,7 @@ export const useStore = create<AppState>()(
         screenTimeSessionStart: null,
         pipVideoId: null,
         isPiPActive: false,
+        toasts: [],
       }),
     }),
     {

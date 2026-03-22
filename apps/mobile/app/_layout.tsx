@@ -26,6 +26,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { TTSMiniPlayer } from '@/components/ui/TTSMiniPlayer';
+import { ToastContainer } from '@/components/ui/Toast';
 import { useStore } from '@/store';
 import { colors, fontSizeExt } from '@/theme';
 import { useIslamicTheme, useIsEidToday } from '@/hooks/useIslamicTheme';
@@ -397,6 +398,7 @@ export default function RootLayout() {
               </Stack>
               <MiniPlayer />
               <TTSMiniPlayer />
+              <ToastContainer />
             </QueryClientProvider>
           </ClerkLoaded>
         </ClerkProvider>
