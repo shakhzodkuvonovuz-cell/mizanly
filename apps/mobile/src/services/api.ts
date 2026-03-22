@@ -272,7 +272,7 @@ export const qs = (params: Record<string, string | number | undefined>) => {
 
 // ── Auth ──
 export const authApi = {
-  register: (data: { clerkId: string; username: string; displayName: string; avatarUrl?: string }) =>
+  register: (data: { username: string; displayName: string; bio?: string; avatarUrl?: string }) =>
     api.post<User>('/auth/register', data),
   me: () => api.get<User>('/auth/me'),
   checkUsername: (username: string) =>

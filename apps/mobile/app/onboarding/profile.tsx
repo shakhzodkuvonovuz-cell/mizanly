@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import Animated, {
@@ -20,7 +21,7 @@ import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-const STEP = 2; // Step 2 of 4 in onboarding
+const STEP = 2; // Step 2 of 2 in onboarding (if profile screen is re-enabled)
 
 function OnboardingProfileScreenContent() {
   const router = useRouter();
@@ -38,7 +39,7 @@ function OnboardingProfileScreenContent() {
   // Animated progress bar (step 2 = 50%)
   const progressWidth = useSharedValue(0);
   useEffect(() => {
-    progressWidth.value = withSpring(50, animation.spring.responsive);
+    progressWidth.value = withSpring(100, animation.spring.responsive);
   }, []);
 
   const progressStyle = useAnimatedStyle(() => ({
@@ -95,7 +96,7 @@ function OnboardingProfileScreenContent() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: tc.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       {/* Animated progress bar */}
       <View style={[styles.progressTrack, { backgroundColor: tc.border }]}>
         <Animated.View style={[styles.progressFill, progressStyle]} />
@@ -114,8 +115,7 @@ function OnboardingProfileScreenContent() {
       ) : (
         <Animated.View style={[styles.avatarPlaceholderWrap, pulseStyle]}>
           <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: tc.bgElevated }]}>
-            <Icon name="camera" size="lg" color={colors.text.tertiary} />
-            <Text style={styles.avatarHintInner}>{t('onboarding.profile.addPhoto')}</Text>
+            <Icon name="user" size="lg" color={colors.text.tertiary} />
           </View>
         </Animated.View>
       )}
@@ -135,7 +135,7 @@ function OnboardingProfileScreenContent() {
           <TextInput
             style={styles.inputInner}
             value={displayName}
-            onChangeText={(t) => { setDisplayName(t); setError(''); }}
+            onChangeText={(text) => { setDisplayName(text); setError(''); }}
             placeholder={t('onboarding.profile.namePlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             maxLength={50}
@@ -183,7 +183,7 @@ function OnboardingProfileScreenContent() {
           variant="ghost"
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -199,7 +199,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1, backgroundColor: colors.dark.bg,
     alignItems: 'center', paddingHorizontal: spacing.xl,
-    paddingTop: 60,
   },
   progressTrack: {
     height: 4,
@@ -254,8 +253,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     backgroundColor: colors.dark.bgElevated,
     borderRadius: radius.lg,
-    color: colors.text.primary,
-    fontSize: fontSize.base,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderWidth: 1,

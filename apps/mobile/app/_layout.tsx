@@ -219,11 +219,11 @@ function AuthGuard() {
       if (inOnboarding) router.replace('/(auth)/sign-in');
       // If user is already in auth screens or tabs, let them stay
     } else {
-      // Signed in but no username set → onboarding
-      const hasUsername = !!(user?.unsafeMetadata?.onboardingComplete);
-      if (!hasUsername && !inOnboarding) {
+      // Signed in but onboarding not completed → redirect to onboarding
+      const onboardingDone = !!(user?.unsafeMetadata?.onboardingComplete);
+      if (!onboardingDone && !inOnboarding) {
         router.replace('/onboarding/username');
-      } else if (hasUsername && (inAuthGroup || inOnboarding)) {
+      } else if (onboardingDone && (inAuthGroup || inOnboarding)) {
         router.replace('/(tabs)/saf');
       }
     }

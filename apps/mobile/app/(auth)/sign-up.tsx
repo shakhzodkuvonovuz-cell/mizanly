@@ -67,16 +67,19 @@ function SignUpScreenContent() {
     transform: [{ scale: envelopeScale.value }],
   }));
 
-  // Password strength
+  // Password strength — checks length, uppercase, numbers, special chars
   const strength = password.length === 0
     ? 0
     : password.length < 6
       ? 1
       : password.length < 8
         ? 2
-        : /[A-Z]/.test(password) && /[0-9]/.test(password)
+        : (/[A-Z]/.test(password) && /[0-9]/.test(password) && /[^a-zA-Z0-9]/.test(password))
           ? 4
-          : 3;
+          : (/[A-Z]/.test(password) && /[0-9]/.test(password))
+            ? 3
+            : 2;
+  const strengthLabel = strength === 0 ? '' : strength <= 1 ? t('auth.passwordWeak') : strength <= 2 ? t('auth.passwordFair') : strength <= 3 ? t('auth.passwordGood') : t('auth.passwordStrong');
 
   const handleSignUp = async () => {
     if (!isLoaded) return;
@@ -123,6 +126,17 @@ function SignUpScreenContent() {
           style={styles.inner}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
+          {/* Back button to return to signup form */}
+          <Pressable
+            onPress={() => { setPendingVerification(false); setError(''); setCode(''); }}
+            style={styles.verifyBackBtn}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.goBack')}
+          >
+            <Icon name="arrow-left" size="md" color={colors.text.secondary} />
+          </Pressable>
+
           {/* Animated envelope icon */}
           <Animated.View style={[styles.verifyIconWrap, envelopeAnimStyle]}>
             <Icon name="mail" size="xl" color={colors.emerald} />
@@ -157,7 +171,7 @@ function SignUpScreenContent() {
               ref={hiddenInputRef}
               style={{ position: 'absolute', opacity: 0 }}
               value={code}
-              onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
+              onChangeText={(val) => setCode(val.replace(/[^0-9]/g, '').slice(0, 6))}
               keyboardType="number-pad"
               maxLength={6}
               autoFocus
@@ -180,7 +194,10 @@ function SignUpScreenContent() {
               onPress={async () => {
                 try {
                   await signUp?.prepareEmailAddressVerification({ strategy: 'email_code' });
-                } catch {}
+                  setError('');
+                } catch {
+                  setError(t('auth.resendFailed'));
+                }
               }}
               style={styles.resendBtn}
               hitSlop={8}
@@ -288,6 +305,9 @@ function SignUpScreenContent() {
                 />
               ))}
             </View>
+            {strengthLabel ? (
+              <Text style={[styles.strengthLabel, { color: strength <= 1 ? colors.error : strength <= 2 ? colors.warning : colors.emerald }]}>{strengthLabel}</Text>
+            ) : null}
 
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
@@ -310,13 +330,15 @@ function SignUpScreenContent() {
               <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
             </View>
 
-            {/* Social auth */}
+            {/* Social auth — coming soon */}
             <View style={styles.socialRow}>
-              <Pressable style={({ pressed }) => [styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border }, pressed && styles.socialBtnPressed]}>
+              <Pressable style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]} disabled>
                 <Text style={styles.socialText}>{t('auth.google')}</Text>
+                <Text style={styles.comingSoonText}>{t('common.comingSoon')}</Text>
               </Pressable>
-              <Pressable style={({ pressed }) => [styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border }, pressed && styles.socialBtnPressed]}>
+              <Pressable style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]} disabled>
                 <Text style={styles.socialText}>{t('auth.apple')}</Text>
+                <Text style={styles.comingSoonText}>{t('common.comingSoon')}</Text>
               </Pressable>
             </View>
           </View>
@@ -385,14 +407,18 @@ const styles = StyleSheet.create({
   },
   strengthRow: {
     flexDirection: 'row',
-    gap: 4,
+    gap: spacing.xs,
     marginTop: spacing.xs,
   },
   strengthBar: {
     flex: 1,
     height: 3,
-    borderRadius: 1.5,
+    borderRadius: 2,
     backgroundColor: colors.dark.border,
+  },
+  strengthLabel: {
+    fontSize: fontSize.xs,
+    marginTop: 2,
   },
   error: { color: colors.error, fontSize: fontSize.sm, textAlign: 'center' },
   terms: { color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center', lineHeight: 18 },
@@ -423,6 +449,8 @@ const styles = StyleSheet.create({
   },
   socialBtnPressed: { opacity: 0.7, transform: [{ scale: 0.97 }] },
   socialText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
+  comingSoonText: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  verifyBackBtn: { alignSelf: 'flex-start', padding: spacing.sm, marginBottom: spacing.md },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing['2xl'] },
   footerText: { color: colors.text.secondary, fontSize: fontSize.sm },
   footerLink: { color: colors.gold, fontSize: fontSize.sm, fontWeight: '600' },

@@ -1,12 +1,11 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -27,17 +26,29 @@ function SuggestedScreenContent() {
     queryFn: () => authApi.suggestedUsers(),
   });
 
-  const handleFollow = async (userId: string) => {
+  const handleFollow = useCallback(async (userId: string) => {
+    const wasFollowing = following.has(userId);
+    // Optimistic update
+    setFollowing((prev) => {
+      const n = new Set(prev);
+      wasFollowing ? n.delete(userId) : n.add(userId);
+      return n;
+    });
     try {
-      if (following.has(userId)) {
+      if (wasFollowing) {
         await followsApi.unfollow(userId);
-        setFollowing((prev) => { const n = new Set(prev); n.delete(userId); return n; });
       } else {
         await followsApi.follow(userId);
-        setFollowing((prev) => new Set([...prev, userId]));
       }
-    } catch {}
-  };
+    } catch {
+      // Rollback on error
+      setFollowing((prev) => {
+        const n = new Set(prev);
+        wasFollowing ? n.add(userId) : n.delete(userId);
+        return n;
+      });
+    }
+  }, [following]);
 
   const handleFinish = async () => {
     setFinishing(true);
@@ -55,7 +66,7 @@ function SuggestedScreenContent() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       <View style={styles.progress}>
-        {[1, 2, 3, 4].map((i) => (
+        {[1, 2].map((i) => (
           <View key={i} style={[styles.dot, { backgroundColor: tc.border }, styles.dotActive]} />
         ))}
       </View>
@@ -79,10 +90,16 @@ function SuggestedScreenContent() {
         </View>
       ) : (
         <FlatList
-            removeClippedSubviews={true}
           data={suggested || []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={() => {}}
+              tintColor={colors.emerald}
+            />
+          }
           renderItem={({ item }: { item: User }) => {
             const isFollowing = following.has(item.id);
             return (
@@ -93,7 +110,8 @@ function SuggestedScreenContent() {
                   <Text style={styles.handle}>@{item.username}</Text>
                   {item.bio ? <Text style={styles.bio} numberOfLines={1}>{item.bio}</Text> : null}
                 </View>
-                <Pressable accessibilityRole="button" accessibilityRole="button"
+                <Pressable
+                  accessibilityRole="button"
                   style={[styles.followBtn, isFollowing && [styles.followingBtn, { borderColor: tc.border }]]}
                   onPress={() => handleFollow(item.id)}
                 >
@@ -108,12 +126,13 @@ function SuggestedScreenContent() {
       )}
 
       <View style={styles.footer}>
-        <Pressable accessibilityRole="button" accessibilityRole="button"
+        <Pressable
+          accessibilityRole="button"
           style={styles.btn}
           onPress={handleFinish}
           disabled={finishing}
         >
-          {finishing ? <Skeleton.Rect width={24} height={24} borderRadius={radius.full} /> : <Text style={styles.btnText}>{t('onboarding.suggested.getStarted')}</Text>}
+          {finishing ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnText}>{t('onboarding.suggested.getStarted')}</Text>}
         </Pressable>
         <Pressable accessibilityRole="button" onPress={handleFinish}>
           <Text style={styles.skip}>{t('onboarding.suggested.skipForNow')}</Text>

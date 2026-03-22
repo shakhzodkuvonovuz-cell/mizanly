@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable,
-  KeyboardAvoidingView, Platform, Keyboard, AccessibilityInfo,
+  KeyboardAvoidingView, Platform, Keyboard, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo';
@@ -38,6 +38,8 @@ function SignInScreenContent() {
   const [error, setError] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [needs2FA, setNeeds2FA] = useState(false);
+  const [twoFACode, setTwoFACode] = useState('');
 
   // Animated logo entrance
   const logoScale = useSharedValue(0.85);
@@ -63,16 +65,68 @@ function SignInScreenContent() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
       } else if (result.status === 'needs_second_factor') {
-        navigate('/(screens)/2fa-verify');
+        setNeeds2FA(true);
       }
     } catch (err: unknown) {
-      if (__DEV__) console.error('Sign in error:', JSON.stringify(err, null, 2));
-      const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
-      setError(e.errors?.[0]?.longMessage || e.errors?.[0]?.message || e.message || 'Sign in failed');
+      if (__DEV__) console.warn('Sign in failed:', (err as Error).message);
+      const e = err as { errors?: Array<{ message?: string }>; message?: string };
+      setError(e.errors?.[0]?.message || e.message || t('auth.signInFailed'));
     } finally {
       setLoading(false);
     }
   };
+
+  const handle2FAVerify = async () => {
+    if (!isLoaded || twoFACode.length < 6) return;
+    setLoading(true);
+    setError('');
+    try {
+      const result = await signIn.attemptSecondFactor({ strategy: 'totp', code: twoFACode });
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
+      }
+    } catch (err: unknown) {
+      const e = err as { errors?: Array<{ message?: string }>; message?: string };
+      setError(e.errors?.[0]?.message || t('auth.invalidCode'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (needs2FA) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
+        <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
+          <KeyboardAvoidingView style={styles.inner} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <Pressable onPress={() => { setNeeds2FA(false); setTwoFACode(''); setError(''); }} style={{ alignSelf: 'flex-start', padding: spacing.sm }} accessibilityRole="button">
+              <Icon name="arrow-left" size="md" color={colors.text.secondary} />
+            </Pressable>
+            <View style={styles.logoSection}>
+              <Icon name="lock" size="xl" color={colors.emerald} />
+              <Text style={[styles.tagline, { marginTop: spacing.md }]}>{t('auth.twoFactorRequired')}</Text>
+            </View>
+            <View style={styles.form}>
+              <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
+                <Icon name="lock" size="sm" color={colors.text.tertiary} />
+                <TextInput
+                  style={styles.inputInner}
+                  placeholder={t('auth.verificationCode')}
+                  placeholderTextColor={colors.text.tertiary}
+                  value={twoFACode}
+                  onChangeText={(v) => setTwoFACode(v.replace(/[^0-9]/g, '').slice(0, 6))}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                />
+              </View>
+              {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
+              <GradientButton label={t('auth.verify')} onPress={handle2FAVerify} loading={loading} disabled={twoFACode.length < 6} fullWidth />
+            </View>
+          </KeyboardAvoidingView>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
@@ -85,7 +139,7 @@ function SignInScreenContent() {
         <View style={styles.bgGlow}>
           <LinearGradient
             colors={[colors.active.emerald20, 'transparent']}
-            style={{ width: 250, height: 250, borderRadius: radius.full }}
+            style={{ width: Dimensions.get('window').width * 0.6, height: Dimensions.get('window').width * 0.6, borderRadius: radius.full }}
             start={{ x: 0.5, y: 0.5 }}
             end={{ x: 1, y: 1 }}
           />
@@ -162,6 +216,7 @@ function SignInScreenContent() {
             onPress={() => navigate('/(auth)/forgot-password')}
             style={styles.forgotBtn}
             hitSlop={8}
+            accessibilityRole="link"
           >
             <Text style={styles.forgotText}>{t('auth.forgotPassword') || 'Forgot password?'}</Text>
           </Pressable>
@@ -181,23 +236,25 @@ function SignInScreenContent() {
             <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
           </View>
 
-          {/* Social auth */}
+          {/* Social auth — coming soon */}
           <View style={styles.socialRow}>
             <Pressable
-              style={({ pressed }) => [styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border }, pressed && styles.socialBtnPressed]}
-              onPress={() => haptic.light()}
-              accessibilityLabel={t('auth.signInWith') + " Google"}
+              style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]}
+              disabled
+              accessibilityLabel={t('auth.signInWith') + " Google — " + t('common.comingSoon')}
               accessibilityRole="button"
             >
               <Text style={styles.socialText}>{t('auth.google')}</Text>
+              <Text style={styles.comingSoonText}>{t('common.comingSoon')}</Text>
             </Pressable>
             <Pressable
-              style={({ pressed }) => [styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border }, pressed && styles.socialBtnPressed]}
-              onPress={() => haptic.light()}
-              accessibilityLabel={t('auth.signInWith') + " Apple"}
+              style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]}
+              disabled
+              accessibilityLabel={t('auth.signInWith') + " Apple — " + t('common.comingSoon')}
               accessibilityRole="button"
             >
               <Text style={styles.socialText}>{t('auth.apple')}</Text>
+              <Text style={styles.comingSoonText}>{t('common.comingSoon')}</Text>
             </Pressable>
           </View>
         </View>
@@ -297,6 +354,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.97 }],
   },
   socialText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
+  comingSoonText: { color: colors.text.tertiary, fontSize: fontSize.xs },
   forgotBtn: { alignSelf: 'flex-end', marginTop: -spacing.xs },
   forgotText: { color: colors.text.secondary, fontSize: fontSize.sm },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing['2xl'] },

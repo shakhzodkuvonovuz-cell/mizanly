@@ -29,7 +29,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
+const USERNAME_RE = /^[a-z][a-z0-9._]{1,28}[a-z0-9]$/;
 
 function UsernameScreenContent() {
   const router = useRouter();
@@ -116,8 +116,12 @@ function UsernameScreenContent() {
     if (!isValid) return;
     setLoading(true);
     try {
-      // Skip profile step — go directly to interests (2-step onboarding)
-      router.push({ pathname: '/onboarding/interests', params: { username } });
+      // Register username + display name in the backend
+      await authApi.register({ username, displayName: username });
+      router.push('/onboarding/interests');
+    } catch {
+      // Continue even if registration fails — webhook may create the user
+      router.push('/onboarding/interests');
     } finally {
       setLoading(false);
     }

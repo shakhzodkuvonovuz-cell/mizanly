@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable,
-  KeyboardAvoidingView, Platform, Keyboard, Alert,
+  KeyboardAvoidingView, Platform, Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo';
@@ -82,7 +82,8 @@ export default function ForgotPasswordScreen() {
       const result = await signIn.resetPassword({ password: newPassword });
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-        Alert.alert(t('common.success'), t('auth.passwordResetSuccess'));
+        // AuthGuard will detect the session and navigate to tabs
+        router.replace('/(tabs)/saf');
       }
     } catch (err: unknown) {
       const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-import { useRouter, useLocalSearchParams } from 'expo-router';
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -9,7 +10,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { authApi } from '@/services/api';
+import { authApi, usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -39,7 +40,6 @@ const MADHABS: { id: string; label: string }[] = [
 
 function InterestsScreenContent() {
   const router = useRouter();
-  const { username } = useLocalSearchParams<{ username: string }>();
   const { user } = useUser();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedMadhab, setSelectedMadhab] = useState<string | null>(null);
@@ -57,25 +57,34 @@ function InterestsScreenContent() {
     });
   };
 
+  const markOnboardingComplete = async () => {
+    try {
+      await user?.update({ unsafeMetadata: { ...user.unsafeMetadata, onboardingComplete: true } });
+    } catch {
+      // Non-critical — AuthGuard will redirect if needed
+    }
+  };
+
   const handleContinue = async () => {
     if (selected.size < 3) return;
     setLoading(true);
     try {
       await authApi.setInterests(Array.from(selected));
       if (selectedMadhab && selectedMadhab !== 'none') {
-        await authApi.updateProfile({ madhab: selectedMadhab }).catch(() => {});
+        await usersApi.updateMe({ madhab: selectedMadhab }).catch(() => {});
       }
     } catch {
       // continue anyway
     } finally {
+      await markOnboardingComplete();
       setLoading(false);
-      // 2-step onboarding: go directly to app (skip suggested)
       router.replace('/(tabs)/saf');
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
     haptic.light();
+    await markOnboardingComplete();
     router.replace('/(tabs)/saf');
   };
 
@@ -83,7 +92,7 @@ function InterestsScreenContent() {
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
       <View style={styles.progress}>
         {[1, 2].map((i) => (
-          <View key={i} style={[styles.dot, { backgroundColor: tc.border }, i <= 2 && styles.dotActive]} />
+          <View key={i} style={[styles.dot, { backgroundColor: tc.border }, i <= 1 && styles.dotActive, i === 2 && { backgroundColor: colors.active.emerald50 }]} />
         ))}
       </View>
 

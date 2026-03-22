@@ -85,6 +85,26 @@ describe('AuthController', () => {
 
       expect(result).toEqual({ available: false });
     });
+
+    it('should throw BadRequestException for too short username', () => {
+      expect(() => controller.checkUsername('ab')).toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for too long username', () => {
+      expect(() => controller.checkUsername('a'.repeat(31))).toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for invalid characters', () => {
+      expect(() => controller.checkUsername('user@name')).toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for empty username', () => {
+      expect(() => controller.checkUsername('')).toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for undefined username', () => {
+      expect(() => controller.checkUsername(undefined as any)).toThrow(BadRequestException);
+    });
   });
 
   describe('setInterests', () => {

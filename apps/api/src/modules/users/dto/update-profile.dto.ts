@@ -51,4 +51,10 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   isPrivate?: boolean;
+
+  @ApiProperty({ required: false, maxLength: 20 })
+  @IsOptional()
+  @IsString()
+  @IsIn(['hanafi', 'maliki', 'shafii', 'hanbali'])
+  madhab?: string;
 }
