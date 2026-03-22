@@ -22,13 +22,11 @@ export class TelegramFeaturesService {
   // ── Saved Messages ──────────────────────────────────────
 
   async getSavedMessages(userId: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = { userId };
-    if (cursor) where.id = { lt: cursor };
-
     const messages = await this.prisma.savedMessage.findMany({
-      where,
+      where: { userId },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = messages.length > limit;

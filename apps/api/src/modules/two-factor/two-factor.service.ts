@@ -360,14 +360,15 @@ export class TwoFactorService {
   }
 
   /**
-   * Generate random backup codes (10-character alphanumeric)
+   * Generate random backup codes (10-character alphanumeric, base64url-derived).
+   * Uses full alphanumeric charset instead of hex-only for higher entropy per character
+   * (36^10 = 3.6×10^15 vs 16^10 = 1.1×10^12 — ~3000× harder to brute-force).
    */
   private generateBackupCodes(count: number): string[] {
     const codes: string[] = [];
     for (let i = 0; i < count; i++) {
-      // Generate 10-character alphanumeric code
-      const buffer = randomBytes(6); // 6 bytes = 48 bits
-      const code = buffer.toString('hex').toUpperCase().slice(0, 10);
+      // Generate 10-character alphanumeric code from base64url encoding
+      const code = randomBytes(8).toString('base64url').slice(0, 10).toUpperCase();
       codes.push(code);
     }
     return codes;

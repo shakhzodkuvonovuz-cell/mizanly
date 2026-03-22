@@ -53,6 +53,13 @@ export class UploadService {
 
     if (!accountId || !accessKeyId || !secretAccessKey) {
       this.logger.warn('R2 credentials not configured — file uploads will fail. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY');
+    } else {
+      // Log which naming convention was resolved so operators know which env vars are active
+      const usedR2 = !!this.config.get('R2_ACCOUNT_ID');
+      const usedCF = !!this.config.get('CLOUDFLARE_ACCOUNT_ID');
+      this.logger.log(
+        `R2 credentials loaded using ${usedR2 ? 'R2_*' : usedCF ? 'CLOUDFLARE_*' : 'unknown'} naming convention`,
+      );
     }
 
     this.s3 = new S3Client({

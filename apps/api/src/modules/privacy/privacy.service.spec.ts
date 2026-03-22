@@ -37,7 +37,7 @@ describe('PrivacyService', () => {
             threadReply: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
             userSettings: { findUnique: jest.fn().mockResolvedValue(null), deleteMany: jest.fn() },
             searchHistory: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
-            conversationKeyEnvelope: { deleteMany: jest.fn() },
+            conversationKeyEnvelope: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             userStreak: { deleteMany: jest.fn() },
             $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<void>) => fn({
               user: { update: jest.fn() },

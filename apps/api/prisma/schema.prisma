@@ -975,7 +975,7 @@ model VideoReaction {
 
   @@id([userId, videoId])
   @@index([videoId])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@id already has userId as leading column
   @@map("video_reactions")
 }
 
@@ -1081,7 +1081,7 @@ model CommentReaction {
 
   @@id([userId, commentId])
   @@index([commentId])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@id already has userId as leading column
   @@map("comment_reactions")
 }
 
@@ -1300,7 +1300,7 @@ model LiveParticipant {
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, userId])
-  @@index([sessionId])
+  // @@index([sessionId]) — redundant: @@id already has sessionId as leading column
   @@index([userId])
   @@map("live_participants")
 }
@@ -1847,7 +1847,7 @@ model CallParticipant {
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, userId])
-  @@index([sessionId])
+  // @@index([sessionId]) — redundant: @@id already has sessionId as leading column
   @@index([userId])
   @@map("call_participants")
 }
@@ -1886,7 +1886,7 @@ model UserStickerPack {
   pack    StickerPack @relation(fields: [packId], references: [id], onDelete: Cascade)
 
   @@id([userId, packId])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@id already has userId as leading column
   @@map("user_sticker_packs")
 }
 
@@ -2369,7 +2369,7 @@ model HashtagFollow {
   createdAt DateTime @default(now())
 
   @@id([userId, hashtagId])
-  @@index([userId])
+  // @@index([userId]) — redundant: @@id already has userId as leading column
   @@index([hashtagId])
   @@map("hashtag_follows")
 }

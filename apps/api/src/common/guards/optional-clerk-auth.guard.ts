@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { verifyToken } from '@clerk/backend';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
@@ -11,6 +11,8 @@ import { PrismaService } from '../../config/prisma.service';
  */
 @Injectable()
 export class OptionalClerkAuthGuard implements CanActivate {
+  private readonly logger = new Logger(OptionalClerkAuthGuard.name);
+
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
@@ -41,8 +43,12 @@ export class OptionalClerkAuthGuard implements CanActivate {
       if (user && !user.isBanned && !user.isDeactivated && !user.isDeleted) {
         request.user = user;
       }
-    } catch {
+    } catch (err: unknown) {
       // Invalid token → ignore, treat as unauthenticated
+      // Log warning for expired tokens — helps debug client-side token refresh issues
+      if (err instanceof Error && err.message?.includes('expired')) {
+        this.logger.warn('Expired token on optional route — client should refresh JWT');
+      }
     }
 
     return true;

@@ -407,10 +407,12 @@ export class FollowsService {
   }
 
   async getSuggestions(userId: string, limit = 20) {
+    // Scan up to 200 followings for friends-of-friends suggestions (increased from 50)
+    // to improve recommendation quality by widening the social graph scan radius
     const following = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
-      take: 50,
+      take: 200,
     });
     const followingIds = following.map((f) => f.followingId);
 
@@ -471,6 +473,11 @@ export class FollowsService {
     return { message: 'Follower removed' };
   }
 
+  /**
+   * Check if one user follows another — single findUnique query, no N+1.
+   * The compound @@id on Follow uses [followerId, followingId] so this
+   * is an index-backed PK lookup, O(1) per call.
+   */
   async checkFollowing(followerId: string, followingId: string) {
     const follow = await this.prisma.follow.findUnique({
       where: {

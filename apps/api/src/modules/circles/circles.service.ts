@@ -90,12 +90,23 @@ export class CirclesService {
     if (!circle) throw new NotFoundException('Circle not found');
     if (circle.ownerId !== userId) throw new ForbiddenException('Only the circle owner can manage members');
 
+    // Verify all requested users actually exist before adding
+    const existingUsers = await this.prisma.user.findMany({
+      where: { id: { in: memberIds }, isDeleted: false, isBanned: false },
+      select: { id: true },
+    });
+    const existingIds = new Set(existingUsers.map(u => u.id));
+    const validMemberIds = memberIds.filter(id => existingIds.has(id));
+    if (validMemberIds.length === 0) {
+      throw new BadRequestException('None of the specified users exist');
+    }
+
     // Filter out any users who have a block relationship with the circle owner
     const blocks = await this.prisma.block.findMany({
       where: {
         OR: [
-          { blockerId: userId, blockedId: { in: memberIds } },
-          { blockedId: userId, blockerId: { in: memberIds } },
+          { blockerId: userId, blockedId: { in: validMemberIds } },
+          { blockedId: userId, blockerId: { in: validMemberIds } },
         ],
       },
       select: { blockerId: true, blockedId: true },
@@ -106,7 +117,7 @@ export class CirclesService {
       if (b.blockerId === userId) blockedSet.add(b.blockedId);
       else blockedSet.add(b.blockerId);
     }
-    const safeMemberIds = memberIds.filter((id) => !blockedSet.has(id));
+    const safeMemberIds = validMemberIds.filter((id) => !blockedSet.has(id));
     if (safeMemberIds.length === 0) return { added: 0 };
 
     const result = await this.prisma.circleMember.createMany({

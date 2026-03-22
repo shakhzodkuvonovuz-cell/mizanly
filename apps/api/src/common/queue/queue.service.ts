@@ -34,9 +34,10 @@ export class QueueService implements OnModuleDestroy {
   // ── Notification Jobs ─────────────────────────────────────
 
   async addPushNotificationJob(data: { notificationId: string }): Promise<string> {
-    // FRAGILE: 'custom' backoff type requires the Worker (NotificationProcessor) to define
-    // a backoffStrategy in its settings. If the worker is in a separate process or hasn't
-    // started yet, BullMQ will throw. The strategy is defined in notification.processor.ts.
+    // Backoff strategy: 3 attempts with custom delays (1s, 10s, 60s)
+    // defined in NotificationProcessor.backoffStrategy (notification.processor.ts).
+    // Using 'custom' type because the delays are non-standard exponential.
+    // If switching to separate worker processes, change to 'exponential' with delay: 1000.
     const job = await this.notificationsQueue.add('push-trigger', data, {
       attempts: 3,
       backoff: { type: 'custom' },
@@ -68,9 +69,10 @@ export class QueueService implements OnModuleDestroy {
     payload: Record<string, unknown>;
     webhookId: string;
   }): Promise<string> {
-    // FRAGILE: 'custom' backoff type requires the Worker (WebhookProcessor) to define
-    // a backoffStrategy in its settings. The strategy (1s, 5s, 30s, 5m, 30m) is
-    // defined in webhook.processor.ts. If the worker hasn't started, this will throw.
+    // Backoff strategy: 5 attempts with custom delays (1s, 5s, 30s, 5m, 30m)
+    // defined in WebhookProcessor.backoffStrategy (webhook.processor.ts).
+    // Using 'custom' type for webhook-specific progressive delays.
+    // If switching to separate worker processes, change to 'exponential' with delay: 1000.
     const job = await this.webhooksQueue.add('deliver', data, {
       attempts: 5,
       backoff: { type: 'custom' },

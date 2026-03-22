@@ -10,6 +10,7 @@ import { GamificationService } from '../../modules/gamification/gamification.ser
 import { AiService } from '../../modules/ai/ai.service';
 import { StreamService } from '../../modules/stream/stream.service';
 import { QueueService } from '../queue/queue.service';
+import { ContentSafetyService } from '../../modules/moderation/content-safety.service';
 
 /**
  * Shared mock providers for test modules.
@@ -136,6 +137,20 @@ export const mockFeatureFlagsService = {
   },
 };
 
+export const mockContentSafetyService = {
+  provide: ContentSafetyService,
+  useValue: {
+    moderateText: jest.fn().mockResolvedValue({ safe: true, flags: [] }),
+    moderateImage: jest.fn().mockResolvedValue({ safe: true, confidence: 1, flags: [], action: 'allow' }),
+    checkForwardLimit: jest.fn().mockResolvedValue({ allowed: true, forwardCount: 0, maxForwards: 5 }),
+    incrementForwardCount: jest.fn().mockResolvedValue(undefined),
+    checkKindness: jest.fn().mockResolvedValue({ isAngry: false }),
+    autoRemoveContent: jest.fn().mockResolvedValue(undefined),
+    checkViralThrottle: jest.fn().mockResolvedValue({ throttled: false }),
+    trackShare: jest.fn().mockResolvedValue(undefined),
+  },
+};
+
 export const mockPrismaService = {
   provide: PrismaService,
   useValue: {
@@ -175,4 +190,5 @@ export const globalMockProviders = [
   mockQueueService,
   mockAnalyticsService,
   mockFeatureFlagsService,
+  mockContentSafetyService,
 ];

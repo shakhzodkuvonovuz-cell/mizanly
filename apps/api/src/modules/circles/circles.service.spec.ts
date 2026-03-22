@@ -25,6 +25,13 @@ describe('CirclesService', () => {
         deleteMany: jest.fn(),
         findMany: jest.fn(),
       },
+      user: {
+        findMany: jest.fn().mockImplementation(({ where }) => {
+          // Default: return all requested IDs as existing users
+          const ids = where?.id?.in || [];
+          return Promise.resolve(ids.map((id: string) => ({ id })));
+        }),
+      },
       block: {
         findMany: jest.fn().mockResolvedValue([]),
       },

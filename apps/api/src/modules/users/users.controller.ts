@@ -67,6 +67,12 @@ export class UsersController {
     return this.usersService.deactivate(userId);
   }
 
+  /**
+   * Immediate permanent account deletion — anonymizes profile, soft-deletes content,
+   * removes social graph, and clears encryption keys in a single transaction.
+   * This is the "hard delete" endpoint for users who want instant removal.
+   * See also: POST /me/delete-account for the 30-day grace period variant.
+   */
   @Delete('me')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -219,11 +225,17 @@ export class UsersController {
     return this.usersService.getLikedPosts(userId, cursor);
   }
 
+  /**
+   * Request account deletion with 30-day grace period — sets scheduledDeletionAt
+   * so the user can cancel within 30 days via POST /me/cancel-deletion.
+   * This is the "soft request" endpoint for users who want time to reconsider.
+   * See also: DELETE /me for immediate permanent deletion.
+   */
   @Post('me/delete-account')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @Throttle({ default: { limit: 1, ttl: 86400000 } })
-  @ApiOperation({ summary: 'Request account deletion (1/day)' })
+  @ApiOperation({ summary: 'Request account deletion with 30-day grace (1/day)' })
   requestAccountDeletion(@CurrentUser('id') userId: string) {
     return this.usersService.requestAccountDeletion(userId);
   }

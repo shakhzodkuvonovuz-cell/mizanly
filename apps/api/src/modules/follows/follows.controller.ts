@@ -16,6 +16,7 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Follows')
+// Throttle convention: 60/min (read), 30/min (write), 10/min (sensitive), 5/min (expensive AI/payment)
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('follows')
 @UseGuards(ClerkAuthGuard)

@@ -17,29 +17,29 @@ export class LinkChildDto {
   @IsString()
   childUserId: string;
 
-  @ApiProperty({ description: '4-digit PIN for parental access' })
+  @ApiProperty({ description: '6-digit PIN for parental access' })
   @IsString()
-  @MinLength(4)
-  @MaxLength(4)
-  @Matches(/^\d{4}$/, { message: 'PIN must be exactly 4 digits' })
+  @MinLength(6)
+  @MaxLength(6)
+  @Matches(/^\d{6}$/, { message: 'PIN must be exactly 6 digits' })
   pin: string;
 }
 
 export class UnlinkChildDto {
-  @ApiProperty({ description: '4-digit PIN to verify parent identity' })
+  @ApiProperty({ description: '6-digit PIN to verify parent identity' })
   @IsString()
-  @MinLength(4)
-  @MaxLength(4)
-  @Matches(/^\d{4}$/, { message: 'PIN must be exactly 4 digits' })
+  @MinLength(6)
+  @MaxLength(6)
+  @Matches(/^\d{6}$/, { message: 'PIN must be exactly 6 digits' })
   pin: string;
 }
 
 export class UpdateParentalControlDto {
-  @ApiProperty({ description: '4-digit PIN to verify parent identity (required)' })
+  @ApiProperty({ description: '6-digit PIN to verify parent identity (required)' })
   @IsString()
-  @MinLength(4)
-  @MaxLength(4)
-  @Matches(/^\d{4}$/, { message: 'PIN must be exactly 4 digits' })
+  @MinLength(6)
+  @MaxLength(6)
+  @Matches(/^\d{6}$/, { message: 'PIN must be exactly 6 digits' })
   pin: string;
 
   @ApiProperty({ required: false })
@@ -88,26 +88,26 @@ export class UpdateParentalControlDto {
 }
 
 export class VerifyPinDto {
-  @ApiProperty({ description: '4-digit PIN' })
+  @ApiProperty({ description: '6-digit PIN' })
   @IsString()
-  @MinLength(4)
-  @MaxLength(4)
-  @Matches(/^\d{4}$/, { message: 'PIN must be exactly 4 digits' })
+  @MinLength(6)
+  @MaxLength(6)
+  @Matches(/^\d{6}$/, { message: 'PIN must be exactly 6 digits' })
   pin: string;
 }
 
 export class ChangePinDto {
-  @ApiProperty({ description: 'Current 4-digit PIN' })
+  @ApiProperty({ description: 'Current 6-digit PIN' })
   @IsString()
-  @MinLength(4)
-  @MaxLength(4)
-  @Matches(/^\d{4}$/, { message: 'PIN must be exactly 4 digits' })
+  @MinLength(6)
+  @MaxLength(6)
+  @Matches(/^\d{6}$/, { message: 'PIN must be exactly 6 digits' })
   currentPin: string;
 
-  @ApiProperty({ description: 'New 4-digit PIN' })
+  @ApiProperty({ description: 'New 6-digit PIN' })
   @IsString()
-  @MinLength(4)
-  @MaxLength(4)
-  @Matches(/^\d{4}$/, { message: 'PIN must be exactly 4 digits' })
+  @MinLength(6)
+  @MaxLength(6)
+  @Matches(/^\d{6}$/, { message: 'PIN must be exactly 6 digits' })
   newPin: string;
 }

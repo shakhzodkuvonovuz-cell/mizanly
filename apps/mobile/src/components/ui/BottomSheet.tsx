@@ -22,7 +22,8 @@ interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  snapPoint?: number; // percentage of screen height (0-1), defaults to auto
+  /** Percentage of screen height (0-1). Must be between 0.1 and 1.0. Values outside range are clamped. */
+  snapPoint?: number;
   blurBackdrop?: boolean;
 }
 
@@ -44,7 +45,10 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
     };
   }, []);
 
-  // Clamp snapPoint to 0-1 range (percentage of screen height)
+  // Validate and clamp snapPoint to 0.1-1 range (percentage of screen height)
+  if (__DEV__ && snapPoint !== undefined && (snapPoint < 0 || snapPoint > 1)) {
+    console.warn(`BottomSheet: snapPoint should be 0-1 (got ${snapPoint}), clamping to valid range`);
+  }
   const clampedSnap = snapPoint ? Math.min(Math.max(snapPoint, 0.1), 1) : undefined;
   const maxHeight = clampedSnap ? SCREEN_HEIGHT * clampedSnap : undefined;
 

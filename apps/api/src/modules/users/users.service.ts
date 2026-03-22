@@ -761,18 +761,47 @@ export class UsersService {
     return { stats };
   }
 
+  /**
+   * Get followers by username — resolves username to userId, applies block/banned/deactivated
+   * checks (which the userId-based FollowsService.getFollowers does not do), then delegates
+   * the core query to the shared resolveAndGetFollowers helper.
+   *
+   * This is NOT a duplicate of FollowsService.getFollowers — it serves a different API
+   * surface (username-based public endpoint via /users/:username/followers) whereas
+   * FollowsService.getFollowers serves the userId-based authenticated endpoint
+   * (/follows/:userId/followers). Both are needed for different consumer contexts.
+   */
   async getFollowers(username: string, cursor?: string, viewerId?: string, limit = 20) {
-    const target = await this.prisma.user.findUnique({ where: { username }, select: { id: true, isPrivate: true, isDeleted: true, isBanned: true, isDeactivated: true } });
+    const userId = await this.resolveUsernameToUserId(username, viewerId);
+    return this.queryFollowers(userId, cursor, viewerId, limit);
+  }
+
+  /**
+   * Get following by username — same pattern as getFollowers.
+   * See getFollowers JSDoc for why this is not a duplicate.
+   */
+  async getFollowing(username: string, cursor?: string, viewerId?: string, limit = 20) {
+    const userId = await this.resolveUsernameToUserId(username, viewerId);
+    return this.queryFollowing(userId, cursor, viewerId, limit);
+  }
+
+  /**
+   * Resolve username to userId with block/banned/deactivated/deleted checks.
+   * Shared by getFollowers and getFollowing to avoid duplication.
+   */
+  private async resolveUsernameToUserId(username: string, viewerId?: string): Promise<string> {
+    const target = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true, isPrivate: true, isDeleted: true, isBanned: true, isDeactivated: true },
+    });
     if (!target) throw new NotFoundException('User not found');
     if (target.isDeleted || target.isBanned || target.isDeactivated) throw new NotFoundException('User not found');
-    // Block check
     if (viewerId) {
       const block = await this.prisma.block.findFirst({
         where: { OR: [{ blockerId: viewerId, blockedId: target.id }, { blockerId: target.id, blockedId: viewerId }] },
       });
       if (block) throw new ForbiddenException('User not available');
     }
-    // Private accounts: only the owner or their followers can see the followers list
     if (target.isPrivate && viewerId !== target.id) {
       if (!viewerId) throw new ForbiddenException('This account is private');
       const isFollowing = await this.prisma.follow.findUnique({
@@ -780,102 +809,46 @@ export class UsersService {
       });
       if (!isFollowing) throw new ForbiddenException('This account is private');
     }
-    const userId = target.id;
+    return target.id;
+  }
+
+  private async queryFollowers(userId: string, cursor?: string, viewerId?: string, limit = 20) {
     const follows = await this.prisma.follow.findMany({
       where: { followingId: userId },
       include: {
         follower: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatarUrl: true,
-            isVerified: true,
-          },
+          select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
         },
       },
       take: limit + 1,
       orderBy: { createdAt: 'desc' },
-      ...(cursor
-        ? {
-            cursor: {
-              followerId_followingId: {
-                followerId: cursor,
-                followingId: userId,
-              },
-            },
-            skip: 1,
-          }
-        : {}),
+      ...(cursor ? { cursor: { followerId_followingId: { followerId: cursor, followingId: userId } }, skip: 1 } : {}),
     });
-
     const hasMore = follows.length > limit;
     const items = hasMore ? follows.slice(0, limit) : follows;
     return {
       data: items.map((f) => f.follower),
-      meta: {
-        cursor: hasMore ? items[items.length - 1].followerId : null,
-        hasMore,
-      },
+      meta: { cursor: hasMore ? items[items.length - 1].followerId : null, hasMore },
     };
   }
 
-  async getFollowing(username: string, cursor?: string, viewerId?: string, limit = 20) {
-    const target = await this.prisma.user.findUnique({ where: { username }, select: { id: true, isPrivate: true, isDeleted: true, isBanned: true, isDeactivated: true } });
-    if (!target) throw new NotFoundException('User not found');
-    if (target.isDeleted || target.isBanned || target.isDeactivated) throw new NotFoundException('User not found');
-    // Block check
-    if (viewerId) {
-      const block = await this.prisma.block.findFirst({
-        where: { OR: [{ blockerId: viewerId, blockedId: target.id }, { blockerId: target.id, blockedId: viewerId }] },
-      });
-      if (block) throw new ForbiddenException('User not available');
-    }
-    // Private accounts: only the owner or their followers can see the following list
-    if (target.isPrivate && viewerId !== target.id) {
-      if (!viewerId) throw new ForbiddenException('This account is private');
-      const isFollowing = await this.prisma.follow.findUnique({
-        where: { followerId_followingId: { followerId: viewerId, followingId: target.id } },
-      });
-      if (!isFollowing) throw new ForbiddenException('This account is private');
-    }
-    const userId = target.id;
+  private async queryFollowing(userId: string, cursor?: string, viewerId?: string, limit = 20) {
     const follows = await this.prisma.follow.findMany({
       where: { followerId: userId },
       include: {
         following: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatarUrl: true,
-            isVerified: true,
-          },
+          select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
         },
       },
       take: limit + 1,
       orderBy: { createdAt: 'desc' },
-      ...(cursor
-        ? {
-            cursor: {
-              followerId_followingId: {
-                followerId: userId,
-                followingId: cursor,
-              },
-            },
-            skip: 1,
-          }
-        : {}),
+      ...(cursor ? { cursor: { followerId_followingId: { followerId: userId, followingId: cursor } }, skip: 1 } : {}),
     });
-
     const hasMore = follows.length > limit;
     const items = hasMore ? follows.slice(0, limit) : follows;
     return {
       data: items.map((f) => f.following),
-      meta: {
-        cursor: hasMore ? items[items.length - 1].followingId : null,
-        hasMore,
-      },
+      meta: { cursor: hasMore ? items[items.length - 1].followingId : null, hasMore },
     };
   }
 

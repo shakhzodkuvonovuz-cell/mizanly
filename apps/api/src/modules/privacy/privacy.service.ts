@@ -47,7 +47,7 @@ export class PrivacyService {
       this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true } }),
       this.prisma.story.findMany({ where: { userId }, select: { id: true, mediaUrl: true, mediaType: true, createdAt: true } }),
       this.prisma.reel.findMany({ where: { userId }, select: { id: true, caption: true, videoUrl: true, createdAt: true } }),
-      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, messageType: true, createdAt: true } }),
+      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, messageType: true, conversationId: true, createdAt: true } }),
       this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true, createdAt: true } }),
       this.prisma.comment.findMany({ where: { userId }, select: { id: true, content: true, postId: true, createdAt: true } }),
       this.prisma.postReaction.findMany({ where: { userId }, select: { postId: true, type: true, createdAt: true } }),
@@ -61,6 +61,18 @@ export class PrivacyService {
       this.prisma.searchHistory.findMany({ where: { userId }, select: { query: true, createdAt: true } }),
     ]);
 
+    // Check which conversations have encryption envelopes to accurately mark messages
+    const encryptedConversationIds = new Set<string>();
+    if (messages.length > 0) {
+      const envelopes = await this.prisma.conversationKeyEnvelope.findMany({
+        where: { userId },
+        select: { conversationId: true },
+      });
+      for (const e of envelopes) {
+        encryptedConversationIds.add(e.conversationId);
+      }
+    }
+
     this.logger.log(`Data export requested for user ${userId}`);
 
     return {
@@ -72,7 +84,13 @@ export class PrivacyService {
       stories,
       reels,
       videos,
-      messages: { count: messages.length, data: messages },
+      messages: {
+        count: messages.length,
+        data: messages.map(m => ({
+          ...m,
+          encrypted: encryptedConversationIds.has(m.conversationId),
+        })),
+      },
       comments,
       postReactions,
       bookmarks,

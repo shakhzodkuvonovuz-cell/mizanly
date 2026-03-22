@@ -269,15 +269,23 @@ export class FeedService {
     // Offset-based pagination for score-sorted results
     const page = scored.slice(offset, offset + limit + 1);
     const hasMore = page.length > limit;
-    const data = (hasMore ? page.slice(0, limit) : page).map(
-      ({ _score, ...post }) => post,
-    );
+    const pageItems = hasMore ? page.slice(0, limit) : page;
+
+    // Include score threshold in meta for score-based cursor support:
+    // clients can optionally use minScore as a fallback cursor to skip
+    // items below this engagement rate on subsequent pages.
+    const minScore = pageItems.length > 0
+      ? Math.round(pageItems[pageItems.length - 1]._score * 1000) / 1000
+      : 0;
+
+    const data = pageItems.map(({ _score, ...post }) => post);
 
     return {
       data,
       meta: {
         hasMore,
         cursor: hasMore ? String(offset + limit) : undefined,
+        minScore,
       },
     };
   }

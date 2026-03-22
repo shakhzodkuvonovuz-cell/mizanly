@@ -84,7 +84,10 @@ export class ThumbnailsService {
    * If testing: randomly assign a variant.
    * If winner declared: always serve winner.
    */
-  async serveThumbnail(contentType: ContentType, contentId: string): Promise<string | null> {
+  async serveThumbnail(contentType: ContentType, contentId: string): Promise<{
+    thumbnailUrl: string;
+    variantId: string;
+  } | null> {
     const variants = await this.prisma.thumbnailVariant.findMany({
       where: { contentType, contentId },
       take: 10,
@@ -94,11 +97,22 @@ export class ThumbnailsService {
 
     // If winner declared, always serve winner
     const winner = variants.find(v => v.isWinner);
-    if (winner) return winner.thumbnailUrl;
+    if (winner) {
+      return { thumbnailUrl: winner.thumbnailUrl, variantId: winner.id };
+    }
 
-    // Random assignment for A/B testing
+    // Random assignment for A/B testing — return variantId so the client
+    // can report impressions/clicks back via trackImpression/trackClick
     const idx = Math.floor(Math.random() * variants.length);
-    return variants[idx].thumbnailUrl;
+    const selected = variants[idx];
+
+    // Auto-track impression on serve (fire-and-forget)
+    this.prisma.thumbnailVariant.update({
+      where: { id: selected.id },
+      data: { impressions: { increment: 1 } },
+    }).then(() => this.checkForWinner(contentType, contentId)).catch(() => {});
+
+    return { thumbnailUrl: selected.thumbnailUrl, variantId: selected.id };
   }
 
   /**

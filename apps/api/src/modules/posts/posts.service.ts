@@ -18,6 +18,7 @@ import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, PostType, PostVisibility, ReactionType, ReportReason, ContentSpace } from '@prisma/client';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 import { enrichPostsForUser } from '../../common/utils/enrich';
@@ -67,6 +68,7 @@ export class PostsService {
     @Inject('REDIS') private redis: Redis,
     private gamification: GamificationService,
     private ai: AiService,
+    private contentSafety: ContentSafetyService,
     private queueService: QueueService,
     private analytics: AnalyticsService,
   ) {}
@@ -428,6 +430,17 @@ export class PostsService {
   }
 
   async create(userId: string, dto: CreatePostDto) {
+    // Run content safety check before saving — fails closed (blocks on moderation error)
+    if (dto.content) {
+      const moderationResult = await this.contentSafety.moderateText(dto.content);
+      if (!moderationResult.safe) {
+        this.logger.warn(`Post creation blocked by content safety: flags=${moderationResult.flags.join(',')}, userId=${userId}`);
+        throw new BadRequestException(
+          `Content flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise your post.'}`,
+        );
+      }
+    }
+
     // Parse hashtags (upserts happen inside transaction below)
     const hashtagNames = extractHashtags(dto.content ?? '');
 

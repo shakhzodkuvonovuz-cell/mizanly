@@ -77,7 +77,7 @@ describe('ThumbnailsService', () => {
         { id: '2', thumbnailUrl: 'url2', isWinner: true, impressions: 500 },
       ]);
       const result = await service.serveThumbnail('post', 'post-1');
-      expect(result).toBe('url2');
+      expect(result).toEqual({ thumbnailUrl: 'url2', variantId: '2' });
     });
   });
 
@@ -140,13 +140,16 @@ describe('ThumbnailsService', () => {
   });
 
   describe('serveThumbnail — random assignment', () => {
-    it('should return a URL from one of the variants', async () => {
+    it('should return a URL from one of the variants with variantId', async () => {
       mockPrisma.thumbnailVariant.findMany.mockResolvedValue([
         { id: '1', thumbnailUrl: 'url1', isWinner: false },
         { id: '2', thumbnailUrl: 'url2', isWinner: false },
       ]);
+      mockPrisma.thumbnailVariant.update.mockResolvedValue({ id: '1', impressions: 1, contentType: 'post', contentId: 'post-1', isWinner: false });
       const result = await service.serveThumbnail('post', 'post-1');
-      expect(['url1', 'url2']).toContain(result);
+      expect(result).not.toBeNull();
+      expect(['url1', 'url2']).toContain(result!.thumbnailUrl);
+      expect(['1', '2']).toContain(result!.variantId);
     });
   });
 
