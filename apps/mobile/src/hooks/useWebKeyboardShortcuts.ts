@@ -36,8 +36,8 @@ export function useWebKeyboardShortcuts(): void {
 
       // Esc → go back / close modal
       if (e.key === 'Escape') {
-        e.preventDefault();
         if (router.canGoBack()) {
+          e.preventDefault();
           router.back();
         }
         return;

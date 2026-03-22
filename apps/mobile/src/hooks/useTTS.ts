@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import * as Speech from 'expo-speech';
+import i18next from 'i18next';
 import { useStore } from '@/store';
 
 const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5] as const;
@@ -54,7 +55,7 @@ function detectLanguage(text: string): string {
   if (/[àâçéèêëïîôùûüÿœæ]/i.test(text)) return 'fr-FR';
 
   // Check for Malay/Indonesian (harder to distinguish, use locale fallback)
-  return 'en-US';
+  return LANGUAGE_MAP[i18next.language] || 'en-US';
 }
 
 export function useTTS() {
@@ -118,7 +119,7 @@ export function useTTS() {
     setTTSPlaying(false);
   }, [setTTSPlaying]);
 
-  const resume = useCallback(() => {
+  const restart = useCallback(() => {
     if (!ttsText) return;
     setTTSPlaying(true);
     const language = detectLanguage(ttsText);
@@ -159,7 +160,7 @@ export function useTTS() {
   return {
     speak,
     pause,
-    resume,
+    restart,
     stop,
     cycleSpeed,
     isPlaying: ttsPlaying,

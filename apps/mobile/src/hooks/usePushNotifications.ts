@@ -74,14 +74,14 @@ export function usePushNotifications(isSignedIn: boolean) {
           projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
         });
 
-        const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+        const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
         await devicesApi.register(tokenData.data, platform);
         registered.current = true;
 
         // Listen for token refreshes (e.g. after app reinstall, OS token rotation)
         tokenSubscription.current = Notifications.addPushTokenListener(async (newToken) => {
           try {
-            const newPlatform = Platform.OS === 'ios' ? 'ios' : 'android';
+            const newPlatform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
             await devicesApi.register(newToken.data, newPlatform);
           } catch {
             // Token refresh registration is non-critical
@@ -100,5 +100,12 @@ export function usePushNotifications(isSignedIn: boolean) {
         tokenSubscription.current = null;
       }
     };
+  }, [isSignedIn]);
+
+  // Reset registered ref when user signs out so re-registration happens on next sign-in
+  useEffect(() => {
+    if (!isSignedIn) {
+      registered.current = false;
+    }
   }, [isSignedIn]);
 }

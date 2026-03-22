@@ -663,3 +663,14 @@ F11 (view-once message security: 9 tests — forward blocked, viewed-once enforc
 - F14 Rate limit tests — rate limiting tested at controller level (file 18)
 - F21-F23 Anti-patterns — low priority
 - 2 Record<string, any> — Clerk webhook data
+
+## From Audit 32 (Mobile Hooks) — 52 findings
+### Already fixed in prior files (5):
+F1 (JSON.parse — file 30), F3 (isRTL — file 26), F4 (changeLanguage — file 26)
+
+### FIXED directly (30):
+F2 (biometrics bypass → return false), F5/F6/F9-F12 (deleted 4 dead hooks: useBackgroundUpload, useFpsMonitor, useVideoPreload, usePulseGlow — 238 lines removed), F13/F14 (ambient color LRU at 50), F18/F19 (Islamic theme minute timer), F22 (haptic useCallback), F27 (push platform handles web), F29 (TTS resume→restart), F38 (network null→not offline), F44 (push re-register on sign-in), F46/F47 (TTS LANGUAGE_MAP wired), F50 (Esc preventDefault only when canGoBack)
+
+### NOTED (17 — minor/dead/architectural):
+- F7/F8 usePayment/useReducedMotion — kept for future wiring
+- F16/F17/F24/F25/F26/F28/F30/F33-F52 — P3 items, platform limits, dead hook internals

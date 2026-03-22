@@ -19,7 +19,7 @@ export function TTSMiniPlayer() {
     currentTitle,
     speed,
     pause,
-    resume,
+    restart,
     stop,
     cycleSpeed,
   } = useTTS();
@@ -29,9 +29,9 @@ export function TTSMiniPlayer() {
     if (isPlaying) {
       pause();
     } else {
-      resume();
+      restart();
     }
-  }, [haptic, isPlaying, pause, resume]);
+  }, [haptic, isPlaying, pause, restart]);
 
   const handleStop = useCallback(() => {
     haptic.light();

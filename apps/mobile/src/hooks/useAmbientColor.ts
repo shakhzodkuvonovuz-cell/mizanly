@@ -33,6 +33,12 @@ export function useAmbientColor(imageUri: string | undefined | null) {
       return;
     }
 
+    // LRU eviction: cap cache at 50 entries
+    if (colorCache.size > 50) {
+      const oldest = colorCache.keys().next().value;
+      if (oldest !== undefined) colorCache.delete(oldest);
+    }
+
     // Check cache first
     const cached = colorCache.get(imageUri);
     if (cached) {

@@ -21,10 +21,10 @@ async function saveLockedIds(ids: string[]): Promise<void> {
 /** Authenticate with device biometrics (Face ID / fingerprint) */
 async function authenticate(promptMessage: string): Promise<boolean> {
   const hasHardware = await LocalAuthentication.hasHardwareAsync();
-  if (!hasHardware) return true; // No biometrics hardware = skip auth
+  if (!hasHardware) return false; // No biometrics hardware = deny access (don't bypass lock)
 
   const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-  if (!isEnrolled) return true; // No biometrics enrolled = skip auth
+  if (!isEnrolled) return false; // No biometrics enrolled = deny access (don't bypass lock)
 
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage,
