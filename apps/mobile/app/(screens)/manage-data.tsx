@@ -103,7 +103,7 @@ export default function ManageDataScreen() {
   const { t } = useTranslation();
   const tc = useThemeColors();
 
-  // No async data to load â€” content is rendered immediately
+  // No async data to load — content is rendered immediately
 
   const clearWatchHistoryMutation = useMutation({
     mutationFn: () => usersApi.clearWatchHistory(),
@@ -207,7 +207,7 @@ export default function ManageDataScreen() {
     );
   };
 
-  // No data to refresh on this static screen â€” RefreshControl removed
+  // No data to refresh on this static screen — RefreshControl removed
 
   return (
     <ScreenErrorBoundary>

@@ -155,7 +155,7 @@ export default function AccountSwitcherScreen() {
               await signOut();
               queryClient.clear();
             } catch {
-              // Sign out failure is non-critical â€” Clerk will clear session
+              // Sign out failure is non-critical — Clerk will clear session
             }
           },
         },
@@ -213,7 +213,7 @@ export default function AccountSwitcherScreen() {
 
                       {/* Stats */}
                       <Text style={[styles.heroStats, { color: tc.text.tertiary }]}>
-                        {`${activeAccount.followers} ${t('screens.accountSwitcher.followers')} Â· ${activeAccount.following} ${t('screens.accountSwitcher.following')} Â· ${activeAccount.posts} ${t('screens.accountSwitcher.posts')}`}
+                        {`${activeAccount.followers} ${t('screens.accountSwitcher.followers')} · ${activeAccount.following} ${t('screens.accountSwitcher.following')} · ${activeAccount.posts} ${t('screens.accountSwitcher.posts')}`}
                       </Text>
                     </View>
 

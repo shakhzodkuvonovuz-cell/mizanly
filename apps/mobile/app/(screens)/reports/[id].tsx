@@ -22,7 +22,6 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { reportsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 
@@ -33,7 +32,7 @@ const REASONS = [
   { label: 'Spam', value: 'SPAM' },
   { label: 'Misinformation', value: 'MISINFORMATION' },
   { label: 'Nudity', value: 'NUDITY' },
-  { label: 'Selfâ€‘harm', value: 'SELF_HARM' },
+  { label: 'Self‑harm', value: 'SELF_HARM' },
   { label: 'Terrorism', value: 'TERRORISM' },
   { label: 'Doxxing', value: 'DOXXING' },
   { label: 'Copyright', value: 'COPYRIGHT' },
@@ -64,7 +63,6 @@ interface CreateReportDto {
 
 export default function ReportScreen() {
   const { t, isRTL } = useTranslation();
-  const tc = useThemeColors();
   const tc = useThemeColors();
   const params = useLocalSearchParams<{ contentType: string; id: string }>();
   const router = useRouter();

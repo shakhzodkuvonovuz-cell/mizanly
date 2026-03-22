@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
-// settingsApi not used â€” disappearingMessageTimer is local-only (no backend field)
+// settingsApi not used — disappearingMessageTimer is local-only (no backend field)
 
 type TimerOption = 'off' | '24h' | '7d' | '90d';
 
@@ -62,7 +62,7 @@ function DisappearingDefaultContent() {
     setSaving(true);
     try {
       const timer = TIMER_VALUES.find((v) => v.key === option);
-      // Persisted locally â€” backend schema does not have disappearingMessageTimer field
+      // Persisted locally — backend schema does not have disappearingMessageTimer field
       await AsyncStorage.setItem('disappearing-message-timer', String(timer?.seconds ?? 0));
     } catch {
       setSelected(prev);
