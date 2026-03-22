@@ -178,6 +178,7 @@ export class TelegramFeaturesService {
       const memberships = await this.prisma.conversationMember.findMany({
         where: { userId, conversationId: { in: dto.conversationIds } },
         select: { conversationId: true },
+        take: 50,
       });
       const memberConvIds = new Set(memberships.map(m => m.conversationId));
       const invalidIds = dto.conversationIds.filter(id => !memberConvIds.has(id));
@@ -220,6 +221,7 @@ export class TelegramFeaturesService {
       const memberships = await this.prisma.conversationMember.findMany({
         where: { userId, conversationId: { in: dto.conversationIds } },
         select: { conversationId: true },
+        take: 50,
       });
       const memberConvIds = new Set(memberships.map(m => m.conversationId));
       const invalidIds = dto.conversationIds.filter(id => !memberConvIds.has(id));

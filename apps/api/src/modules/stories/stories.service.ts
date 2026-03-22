@@ -457,6 +457,7 @@ export class StoriesService {
         },
       },
       orderBy: { position: 'asc' },
+      take: 50,
     });
   }
 

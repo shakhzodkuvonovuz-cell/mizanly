@@ -614,6 +614,7 @@ describe('SearchService', () => {
 
       expect(prisma.$queryRaw).toHaveBeenCalled();
       expect(prisma.hashtag.findMany).toHaveBeenCalledWith({
+        take: 50,
         where: { name: { in: ['trending', 'news'] } },
       });
       expect(prisma.thread.findMany).toHaveBeenCalledWith({

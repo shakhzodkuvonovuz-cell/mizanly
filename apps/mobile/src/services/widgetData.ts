@@ -55,7 +55,7 @@ function pushToNative(method: keyof WidgetNativeModule, json: string): void {
     }
     mod[method]?.(json);
   } catch (err) {
-    console.warn('[WidgetData] Failed to push to native widget:', err instanceof Error ? err.message : err);
+    if (__DEV__) console.warn('[WidgetData] Failed to push to native widget:', err instanceof Error ? err.message : err);
   }
 }
 

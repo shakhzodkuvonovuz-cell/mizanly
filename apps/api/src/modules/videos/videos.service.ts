@@ -945,6 +945,7 @@ export class VideosService {
     return this.prisma.videoChapter.findMany({
       where: { videoId },
       orderBy: { timestampSeconds: 'asc' },
+      take: 50,
     });
   }
 

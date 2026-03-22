@@ -1440,6 +1440,7 @@ export class IslamicService {
         date: { gte: startDate, lte: endDate },
       },
       orderBy: { date: 'asc' },
+      take: 50,
     });
   }
 
@@ -1449,6 +1450,7 @@ export class IslamicService {
     const logs = await this.prisma.fastingLog.findMany({
       where: { userId, date: { gte: yearStart } },
       orderBy: { date: 'asc' },
+      take: 400,
     });
 
     const totalFasts = logs.filter((l) => l.isFasting).length;
@@ -1563,6 +1565,7 @@ export class IslamicService {
     const progress = await this.prisma.hifzProgress.findMany({
       where: { userId },
       orderBy: { surahNum: 'asc' },
+      take: 120,
     });
 
     // Build full 114 surah list with default status
@@ -1606,6 +1609,7 @@ export class IslamicService {
   async getHifzStats(userId: string) {
     const progress = await this.prisma.hifzProgress.findMany({
       where: { userId },
+      take: 120,
     });
 
     const memorized = progress.filter((p) => p.status === 'memorized').length;
@@ -1661,12 +1665,14 @@ export class IslamicService {
         userId,
         createdAt: { gte: todayDate },
       },
+      take: 50,
     });
     const dhikrTotal = todayDhikrSessions.reduce((sum, s) => sum + s.count, 0);
 
     // Get daily task completions
     const completions = await this.prisma.dailyTaskCompletion.findMany({
       where: { userId, date: todayDate },
+      take: 50,
     });
     const completedTasks = completions.map((c) => c.taskType);
 
@@ -1723,6 +1729,7 @@ export class IslamicService {
     // Check if all 3 tasks are now complete
     const allCompletions = await this.prisma.dailyTaskCompletion.findMany({
       where: { userId, date: todayDate },
+      take: 50,
     });
 
     const allComplete = allCompletions.length >= 3;
@@ -1741,6 +1748,7 @@ export class IslamicService {
 
     const completions = await this.prisma.dailyTaskCompletion.findMany({
       where: { userId, date: todayDate },
+      take: 50,
     });
 
     return {

@@ -108,7 +108,7 @@ export class FeedService {
     const postIds = interactions.map(i => i.postId);
     // Fetch hashtags for interacted posts
     const posts = postIds.length > 0
-      ? await this.prisma.post.findMany({ where: { id: { in: postIds } }, select: { id: true, hashtags: true } })
+      ? await this.prisma.post.findMany({ where: { id: { in: postIds } }, select: { id: true, hashtags: true }, take: 200 })
       : [];
     const hashtagMap = new Map(posts.map(p => [p.id, p.hashtags]));
     const byHashtag: Record<string, number> = {};

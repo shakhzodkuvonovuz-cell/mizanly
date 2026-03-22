@@ -11,7 +11,7 @@ const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
 
 export function initSentry() {
   if (!SENTRY_DSN) {
-    console.log('[Sentry] No DSN configured, skipping initialization');
+    if (__DEV__) console.log('[Sentry] No DSN configured, skipping initialization');
     return;
   }
 
@@ -38,9 +38,9 @@ export function initSentry() {
         return event;
       },
     });
-    console.log('[Sentry] Initialized successfully');
+    if (__DEV__) console.log('[Sentry] Initialized successfully');
   } catch {
-    console.log('[Sentry] Package not installed, skipping');
+    if (__DEV__) console.log('[Sentry] Package not installed, skipping');
   }
 }
 
@@ -65,6 +65,6 @@ export function captureException(error: unknown, context?: Record<string, unknow
       Sentry.captureException(error);
     }
   } catch {
-    console.error('[Sentry] Failed to capture:', error);
+    if (__DEV__) console.error('[Sentry] Failed to capture:', error);
   }
 }

@@ -22,8 +22,8 @@ export class ScreenErrorBoundary extends Component<ScreenErrorBoundaryProps, Scr
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[ScreenErrorBoundary] Caught error:', error.message);
-    console.error('[ScreenErrorBoundary] Component stack:', info.componentStack);
+    if (__DEV__) console.error('[ScreenErrorBoundary] Caught error:', error.message);
+    if (__DEV__) console.error('[ScreenErrorBoundary] Component stack:', info.componentStack);
   }
 
   handleRetry = () => {

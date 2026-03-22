@@ -101,9 +101,9 @@ export class PostsService {
     if (type === 'foryou') {
       // Get blocked/muted users to exclude (bidirectional for blocks) + dismissed posts
       const [blocksOut, blocksIn, mutes, dismissals] = await Promise.all([
-        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 500 }),
-        this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 500 }),
-        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 500 }),
+        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 5000 }),
+        this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 5000 }),
+        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 5000 }),
         this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'post' }, select: { contentId: true }, take: 200 }),
       ]);
       const dismissedPostIds = dismissals.map(d => d.contentId);
@@ -168,9 +168,9 @@ export class PostsService {
     // Following feed — with zero-follow fallback to trending
     const [follows, blocksOut, blocksIn, mutes] = await Promise.all([
       this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true }, take: 50 }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 50 }),
-      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 50 }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 50 }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 5000 }),
+      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 5000 }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 5000 }),
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
@@ -336,10 +336,10 @@ export class PostsService {
       take: 50,
     }),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
+      take: 5000,
     }),
       this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 50,
+      take: 5000,
     }),
     ]);
     const followIds = followingResult.map(f => f.followingId);
@@ -384,10 +384,10 @@ export class PostsService {
       take: 50,
     }),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
+      take: 5000,
     }),
       this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 50,
+      take: 5000,
     }),
     ]);
     const excludedIds = [
@@ -427,10 +427,12 @@ export class PostsService {
       this.prisma.postReaction.findMany({
         where: { userId, postId: { in: postIds } },
         select: { postId: true, reaction: true },
+        take: 50,
       }),
       this.prisma.savedPost.findMany({
         where: { userId, postId: { in: postIds } },
         select: { postId: true },
+        take: 50,
       }),
     ]);
     const reactionMap = new Map(reactions.map((r) => [r.postId, r.reaction]));

@@ -35,6 +35,7 @@ class AttachPaymentMethodDto {
 @Controller('payments')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 export class PaymentsController {
   constructor(private paymentsService: PaymentsService) {}
 

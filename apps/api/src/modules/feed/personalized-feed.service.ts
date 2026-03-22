@@ -585,18 +585,21 @@ export class PersonalizedFeedService {
       const items = await this.prisma.post.findMany({
         where: { id: { in: ids } },
         select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        take: 500,
       });
       items.forEach(i => map.set(i.id, i));
     } else if (contentType === EmbeddingContentType.REEL) {
       const items = await this.prisma.reel.findMany({
         where: { id: { in: ids } },
         select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        take: 500,
       });
       items.forEach(i => map.set(i.id, i));
     } else if (contentType === EmbeddingContentType.THREAD) {
       const items = await this.prisma.thread.findMany({
         where: { id: { in: ids } },
         select: { id: true, userId: true, likesCount: true, repliesCount: true, repostsCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        take: 500,
       });
       items.forEach(i => map.set(i.id, {
         likesCount: i.likesCount,
@@ -621,6 +624,7 @@ export class PersonalizedFeedService {
       const posts = await this.prisma.post.findMany({
         where: { id: { in: ids } },
         select: { id: true, content: true, mediaUrls: true, mediaTypes: true, postType: true, likesCount: true, commentsCount: true, createdAt: true, user: { select: USER_SELECT } },
+        take: 50,
       });
       const postMap = new Map(posts.map(p => [p.id, p]));
       return items.map(item => ({ ...item, content: postMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
@@ -629,6 +633,7 @@ export class PersonalizedFeedService {
       const reels = await this.prisma.reel.findMany({
         where: { id: { in: ids } },
         select: { id: true, caption: true, videoUrl: true, thumbnailUrl: true, duration: true, likesCount: true, viewsCount: true, createdAt: true, user: { select: USER_SELECT } },
+        take: 50,
       });
       const reelMap = new Map(reels.map(r => [r.id, r]));
       return items.map(item => ({ ...item, content: reelMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
@@ -637,6 +642,7 @@ export class PersonalizedFeedService {
       const videos = await this.prisma.video.findMany({
         where: { id: { in: ids } },
         select: { id: true, title: true, description: true, thumbnailUrl: true, duration: true, viewsCount: true, likesCount: true, createdAt: true, user: { select: USER_SELECT } },
+        take: 50,
       });
       const videoMap = new Map(videos.map(v => [v.id, v]));
       return items.map(item => ({ ...item, content: videoMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
@@ -645,6 +651,7 @@ export class PersonalizedFeedService {
     const threads = await this.prisma.thread.findMany({
       where: { id: { in: ids } },
       select: { id: true, content: true, mediaUrls: true, likesCount: true, repliesCount: true, createdAt: true, user: { select: USER_SELECT } },
+      take: 50,
     });
     const threadMap = new Map(threads.map(t => [t.id, t]));
     return items.map(item => ({ ...item, content: threadMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
@@ -655,13 +662,13 @@ export class PersonalizedFeedService {
     if (ids.length === 0) return map;
 
     if (contentType === EmbeddingContentType.POST) {
-      const items = await this.prisma.post.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true } });
+      const items = await this.prisma.post.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true }, take: 500 });
       items.forEach(i => map.set(i.id, i.userId));
     } else if (contentType === EmbeddingContentType.REEL) {
-      const items = await this.prisma.reel.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true } });
+      const items = await this.prisma.reel.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true }, take: 500 });
       items.forEach(i => map.set(i.id, i.userId));
     } else if (contentType === EmbeddingContentType.THREAD) {
-      const items = await this.prisma.thread.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true } });
+      const items = await this.prisma.thread.findMany({ where: { id: { in: ids } }, select: { id: true, userId: true }, take: 500 });
       items.forEach(i => map.set(i.id, i.userId));
     }
 

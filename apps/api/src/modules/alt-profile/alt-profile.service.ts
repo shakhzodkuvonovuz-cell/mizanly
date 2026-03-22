@@ -164,6 +164,7 @@ export class AltProfileService {
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+      take: 50,
     });
 
     const userMap = new Map(users.map(u => [u.id, u]));

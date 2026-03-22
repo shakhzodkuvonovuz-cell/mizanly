@@ -409,7 +409,7 @@ export class SearchService {
 
     const topTagNames = topTags.map(t => t.tag);
     const hashtagRecords = topTagNames.length > 0
-      ? await this.prisma.hashtag.findMany({ where: { name: { in: topTagNames } } })
+      ? await this.prisma.hashtag.findMany({ where: { name: { in: topTagNames } }, take: 50 })
       : [];
 
     // Merge recent count from SQL aggregation into hashtag records
@@ -472,6 +472,7 @@ export class SearchService {
     const userInterests = await this.prisma.userInterest.findMany({
       where: { userId },
       select: { category: true },
+      take: 50,
     });
     const interestCategories = userInterests.map(ui => ui.category);
 

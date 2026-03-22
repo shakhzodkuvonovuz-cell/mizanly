@@ -233,6 +233,7 @@ export class BlocksService {
         ],
       },
       select: { blockerId: true, blockedId: true },
+      take: 5000,
     });
     const ids = new Set<string>();
     for (const b of blocks) {

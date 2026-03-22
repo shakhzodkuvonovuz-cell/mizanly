@@ -75,6 +75,7 @@ export class EncryptionService {
     const keys = await this.prisma.encryptionKey.findMany({
       where: { userId: { in: [userIdA, userIdB] } },
       select: { userId: true, keyFingerprint: true },
+      take: 2,
     });
 
     if (keys.length < 2) return null;
@@ -130,6 +131,7 @@ export class EncryptionService {
     const keys = await this.prisma.encryptionKey.findMany({
       where: { userId: { in: userIds } },
       select: { userId: true },
+      take: 50,
     });
 
     const keyUserIds = new Set(keys.map(k => k.userId));

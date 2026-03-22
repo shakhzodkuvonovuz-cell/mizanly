@@ -52,7 +52,7 @@ class EncryptionService {
       await this.registerPublicKey();
       this.initialized = true;
     } catch (err) {
-      console.warn('[Encryption] Initialization failed — E2E encryption unavailable:', err instanceof Error ? err.message : err);
+      if (__DEV__) console.warn('[Encryption] Initialization failed — E2E encryption unavailable:', err instanceof Error ? err.message : err);
       this.initialized = false;
     }
   }
@@ -161,7 +161,7 @@ class EncryptionService {
             }
           }
         } catch (err) {
-          console.warn('[Encryption] Failed to decrypt envelope from sender:', err instanceof Error ? err.message : err);
+          if (__DEV__) console.warn('[Encryption] Failed to decrypt envelope from sender:', err instanceof Error ? err.message : err);
         }
       }
 

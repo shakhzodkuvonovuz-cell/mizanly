@@ -23,6 +23,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Majlis Lists')
 @Controller('majlis-lists')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 export class MajlisListsController {
   constructor(private readonly service: MajlisListsService) {}
 

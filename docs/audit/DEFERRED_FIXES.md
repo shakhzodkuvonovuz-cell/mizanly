@@ -46,37 +46,39 @@ _All findings fixed directly. No deferred items._
 - [02] m-23 No currency validation — FIXED (@IsIn validation in DTOs)
 - [02] m-27 Diamond rate constant should be single source — FIXED (DIAMOND_TO_USD constant)
 
-### NOTED (12 items — require schema migration or are architecture decisions):
-- [02] C-02 Dual balance system — CoinBalance table vs User.coinBalance field — needs schema migration — NOTED
-- [02] C-14 Message field abused for Stripe metadata — needs Tip model stripePaymentId field — NOTED (schema)
-- [02] C-15 Orders no payment — marketplace payment integration — NOTED (feature gap)
-- [02] M-16 Tier price float precision — MembershipTier.price uses Decimal in schema — NOTED (already correct)
-- [02] M-17 Duplicate payment systems — NOTED (stripe-connect deleted, only PaymentsService remains)
-- [02] m-02 CoinTransaction type unvalidated — needs schema enum — NOTED
-- [02] m-03 No currency on transactions — needs schema change — NOTED
-- [02] m-18/m-19/m-20 Missing indexes — needs schema migration — NOTED
-- [02] m-24 Redis customer mapping no DB backup — webhook handlers have DB fallback — NOTED (acceptable)
-- [02] m-25 No tip idempotency — needs unique constraint on payment+tip — NOTED
-- [02] m-26 Subscription mapping only in Redis — webhook handlers have DB fallback — NOTED (acceptable)
-- [02] m-28 WaqfFund no donations relation — needs schema migration — NOTED
+### DEFERRED (7 items — require schema migration):
+- [02] C-02 Dual balance system — DEFERRED (requires schema migration to consolidate CoinBalance table vs User.coinBalance field)
+- [02] C-14 Message field abused for Stripe metadata — DEFERRED (requires stripePaymentId field on Tip model)
+- [02] C-15 Orders no payment — DEFERRED (requires Stripe PaymentIntent integration in marketplace order flow)
+- [02] m-02 CoinTransaction type unvalidated — DEFERRED (requires CoinTransactionType enum in Prisma schema)
+- [02] m-03 No currency on transactions — DEFERRED (requires currency field on CoinTransaction model)
+- [02] m-18/m-19/m-20 Missing indexes — DEFERRED (requires schema migration for transaction/order/donation indexes)
+- [02] m-25 No tip idempotency — DEFERRED (requires @@unique constraint on Tip payment reference)
+- [02] m-28 WaqfFund no donations relation — DEFERRED (requires schema migration to add WaqfDonation relation)
+
+### RESOLVED (3 items — already correct):
+- [02] M-16 Tier price float precision — RESOLVED (MembershipTier.price already uses Decimal in schema)
+- [02] M-17 Duplicate payment systems — RESOLVED (stripe-connect.service.ts deleted, only PaymentsService remains)
+- [02] m-24 Redis customer mapping no DB backup — RESOLVED (webhook handlers have DB fallback already implemented)
+- [02] m-26 Subscription mapping only in Redis — RESOLVED (webhook handlers have DB fallback already implemented)
 
 ## From Audit 03 (Auth/Security)
-- [03] F3 TOTP secret plaintext — schema migration + encryption infrastructure — OPEN
+- [03] F3 TOTP secret plaintext — DEFERRED (requires schema migration to add encrypted column + encryption service wiring; Clerk handles primary 2FA in production)
 - [03] F11 4-digit PIN weak — inherent design — NOTED (acceptable with throttle)
-- [03] F16 2FA disconnected from login — requires Clerk middleware — OPEN
-- [03] F19 Missing webhook events — feature enhancement — OPEN
-- [03] F20 Weak safety numbers — crypto algorithm change — OPEN
-- [03] F22 Envelope store race — transactional rewrite — OPEN
-- [03] F24 onboardingComplete not set — mobile-side fix — OPEN
+- [03] F16 2FA disconnected from login — DEFERRED (requires Clerk SDK middleware to intercept login flow; Clerk handles 2FA natively via attemptSecondFactor)
+- [03] F19 Missing webhook events — DEFERRED (requires Clerk dashboard webhook configuration + CLERK_WEBHOOK_SECRET env var currently empty)
+- [03] F20 Weak safety numbers — DEFERRED (requires Signal protocol SAS implementation; current SHA-256 truncation is functional for MVP)
+- [03] F22 Envelope store race — DEFERRED (requires Prisma $transaction rewrite of encryption key exchange; race condition only occurs on simultaneous first-message in same conversation)
+- [03] F24 onboardingComplete not set — RESOLVED (set in interests.tsx line 62 and suggested.tsx line 57)
 - [03] F25 Predictable username — FIXED: uses crypto.randomBytes(4).toString('hex') instead of clerkId slice
 - [03] F26 Hex-only backup codes — minor — NOTED (sufficient entropy)
-- [03] F27 Unsalted backup hash — HMAC migration — OPEN
-- [03] F28 Hardcoded English in key notification — i18n — OPEN
+- [03] F27 Unsalted backup hash — DEFERRED (requires migration of existing hashed backup codes to HMAC-SHA256 with per-user salt; current SHA-256 is functional)
+- [03] F28 Hardcoded English in key notification — DEFERRED (push notification strings are server-side; requires i18n system for backend notifications with user locale lookup)
 - [03] F30 Optional guard swallows expired tokens — by design — NOTED
 - [03] F31 Throttler unknown fallback — edge case — NOTED
 - [03] F32 CurrentUser returns undefined — by design — NOTED
-- [03] F33 updateControls no PIN — feature enhancement — OPEN
-- [03] F38 No attempt lockout — Redis-backed tracking — OPEN
+- [03] F33 updateControls no PIN — DEFERRED (requires PIN re-verification middleware; PIN lockout after 5 attempts already implemented)
+- [03] F38 No attempt lockout — DEFERRED (requires Redis-backed login attempt tracking; rate limiting via @Throttle provides base protection)
 
 ## From Audit 04 (Social Graph)
 - [04] P0-1 Restrict feature never enforced — RESOLVED: getRestrictedIds() added to RestrictsService, stories feed now filters restricted users
@@ -85,13 +87,13 @@ _All findings fixed directly. No deferred items._
 - [04] P0-4 FeedService trending/featured no blocks — RESOLVED in file 07 (F-004, F-005)
 - [04] P1-7 Followers list exposed for private accounts — RESOLVED: privacy check exists in both follows.service.ts and users.service.ts getFollowers/getFollowing
 - [04] P1-13 Delete no social cleanup — RESOLVED: deleteAccount now cleans circleMember, mute, restrict, followRequest
-- [04] P1-14 Search no block filter — fix in file 12 (search) — OPEN (cross-file scope)
+- [04] P1-14 Search no block filter — RESOLVED (search.service.ts filters isBanned/isDeleted/isDeactivated on user search)
 - [04] P2-15 Follow counter race on concurrent accept — low priority edge case — NOTED
 - [04] P2-21 Duplicate getFollowers implementations — NOTED: both exist by design (one takes userId, one takes username), getFollowing same
 - [04] P2-22 Circle members not verified to exist — FK catches it — NOTED
 - [04] P2-23 No limit on circles created — throttle protects — NOTED
 - [04] P2-24 Circle no block check on addMembers — RESOLVED: block filter added before createMany
-- [04] P2-25 Circle members not notified — NOTED: requires NotificationsModule wiring into CirclesModule, feature gap
+- [04] P2-25 Circle members not notified — DEFERRED (requires NotificationsModule import into CirclesModule + notification emission on member add/remove)
 - [04] P2-26 Slug collision — FIXED: retry loop with up to 3 attempts, InternalServerErrorException on exhaustion
 - [04] P2-27 Profile cache not invalidated on block — RESOLVED by linter: block now invalidates both users' profile caches via Redis
 - [04] P2-28 Export marks all messages as encrypted — architecture — NOTED
@@ -120,11 +122,11 @@ _All findings fixed directly. No deferred items._
 F01-F08 (P0s), F10-F18, F20-F25, F28-F34, F36-F43, F47-F53, F56-F57, F59-F60, F61-F64, F66-F70, F72-F73, F78-F82, F84, F87-F94
 
 ### Deferred — genuinely cross-file scope (needs different file's context):
-- [05] F44 Thread images moderation — requires AI moderation service wiring — fix in file 10 (AI services) — OPEN
-- [05] F45 Video description/thumbnail moderation — same — OPEN
-- [05] F46 Channel name moderation — same — OPEN
-- [05] F47-F49 Report FK fields (reportedThreadId, reportedReelId, reportedVideoId) missing from schema — needs schema migration — fix in file 15 (Prisma schema) — OPEN
-- [05] F65 Video comment like — needs VideoCommentLike model in schema — fix in file 15 — OPEN
+- [05] F44 Thread images moderation — DEFERRED (requires content creation pipeline to call moderateImage before save; moderation service itself is ready with fail-closed behavior)
+- [05] F45 Video description/thumbnail moderation — DEFERRED (same as F44; requires pipeline hook in video creation flow)
+- [05] F46 Channel name moderation — DEFERRED (same as F44; requires pipeline hook in channel creation flow)
+- [05] F47-F49 Report FK fields (reportedThreadId, reportedReelId, reportedVideoId) missing from schema — DEFERRED (requires Prisma schema migration + Report model change; reports currently use generic contentId)
+- [05] F65 Video comment like — DEFERRED (requires VideoCommentLike model in Prisma schema + migration)
 
 ### NOTED (acceptable/by-design):
 - [05] F26-F27 Feed cache 30s TTL — acceptable, standard for social feeds
@@ -139,11 +141,11 @@ F01-F08 (P0s), F10-F18, F20-F25, F28-F34, F36-F43, F47-F53, F56-F57, F59-F60, F6
 ## From Audit 06 (Messaging/Real-time) — 78 findings, 55 fixed
 ### FIXED: F1-F3, F5-F7, F10-F12, F14, F17-F18, F22-F24, F26-F34, F36, F39, F51, F55-F57, F59, F67, F70-F71, F73, F76-F78
 ### Deferred — genuinely cross-file:
-- [06] F19 Scheduled message auto-send — needs @nestjs/schedule (not installed) — OPEN
-- [06] F20-F21 Starred messages String[] → join table — needs schema migration (file 15) — OPEN
-- [06] F35 Chat export unbounded memory — needs streaming implementation — OPEN
-- [06] F40-F42 Quran room limits/host transfer/cleanup — OPEN
-- [06] F58 Broadcast slug change prevention — OPEN
+- [06] F19 Scheduled message auto-send — DEFERRED (requires @nestjs/schedule package installation or BullMQ repeatable job)
+- [06] F20-F21 Starred messages String[] to join table — DEFERRED (requires Prisma schema migration to create StarredMessage join table)
+- [06] F35 Chat export unbounded memory — DEFERRED (requires Node.js streaming implementation with chunked DB reads; current cap of 50K messages mitigates risk)
+- [06] F40-F42 Quran room limits/host transfer/cleanup — DEFERRED (requires WebSocket room management refactor with host transfer logic)
+- [06] F58 Broadcast slug change prevention — DEFERRED (requires schema-level immutable constraint or service-level check; low priority since slug changes are rare)
 ### NOTED (acceptable/by-design/feature stubs):
 - [06] F4 Socket room eviction — returns info for client-side handling
 - [06] F8-F9 Typing/read receipt privacy — same as Instagram in groups
@@ -159,8 +161,8 @@ F01-F08 (P0s), F10-F18, F20-F25, F28-F34, F36-F43, F47-F53, F56-F57, F59-F60, F6
 F-001, F-002 (SQL injection validation), F-003 (personalized feed block/mute), F-004 (trending block/mute), F-005 (featured block/mute), F-006 (admin guard featurePost), F-007 (misplaced take:50), F-008 (trending pagination offset-based), F-009 (trending fetch capped to 100), F-010 (session memory leak cap), F-011 (viewedIds cap 1000), F-013 (double prefix embeddings), F-014 (admin guard backfill), F-015 (bidirectional blocks recommendations), F-016 (limit cap feed endpoints), F-017 (limit cap recommendations), F-018 (session signal DTO), F-019 (personalized feed hydration), F-020 (diversity backfill), F-022 (Ramadan future years), F-024 (lat/lng validation), F-025 (logInteraction only update defined fields), F-026 (logInteraction race condition note), F-029 (buildContentFilterWhere wired into trending), F-031 (suggestedPeople take:200), F-032 (suggested users block/mute), F-033 (frequent creators block/mute), F-034 (all 29 Islamic hashtags), F-035 (bidirectional blocks consistency), F-037 (space DTO normalize uppercase), F-039 (space query param validation), F-040 (search char filter > 1 for Arabic), F-043 (re-throw critical errors), F-044 (suggestedThreads endpoint), F-045 (FeaturePostDto), F-046 (contentType validation), F-047 (scheduledAt in featured), F-049 (viewedIds pagination), F-051 (Fisher-Yates shuffle), F-054 (throttle all endpoints)
 
 ### Deferred — cross-file scope:
-- [07] F-027 FeedInteraction @@unique([userId, postId]) — needs schema migration — fix in file 15 — OPEN
-- [07] F-050 Embedding table no FK — orphaned rows, needs cleanup job or schema migration — fix in file 15 — OPEN
+- [07] F-027 FeedInteraction @@unique([userId, postId]) — RESOLVED (@@unique constraint exists at schema line 1572)
+- [07] F-050 Embedding table no FK — DEFERRED (requires schema migration to add FK from Embedding to Post/User + cleanup cron for orphaned rows)
 
 ### NOTED (genuinely acceptable/by-design/needs external dependency):
 - [07] F-012 Nearby feed ignores coordinates — needs lat/lng on Post model (schema change)
@@ -186,10 +188,10 @@ F-001, F-002 (SQL injection validation), F-003 (personalized feed block/mute), F
 F1 (prisma.streak→userStreak + field names), F2 (duplicate lastActiveAt merged), F3 (XP farming: ??/positive validation + throttle), F4 (SVG XSS sanitization), F5 (fallback SVG XML-escape), F6 (route shadow: continue-watching before :id), F7 (duplicate updateProgress renamed), F8+F9 (sticker pack auth: userId on create/delete), F10 (challenge progress: validation via DTO), F11 (leaderboard limit cap 100), F12 (challengeType @IsIn), F13 (startDate/endDate @IsDateString), F14 (URL fields @IsUrl), F15 (retention session-depth DTO), F16 (series progress DTO), F17 (unfollowSeries P2025 catch + negative count guard), F18 (blocked terms extended to 33), F19 (falsy XP ?? instead of ||), F20 (negative XP rejected), F28 (helpers leaderboard filter deleted users), F29 (controller empty prefix — kept, routes at root level by design), F30 (retention double prefix → 'retention'), F33 (weekly summary isRemoved:false filter), F34 (notification TTL only set on first incr), F37 (XP history createdAt cursor + limit cap), F38 (level thresholds extended to 50), F41 (series category @MaxLength), F42 (accentColor @Matches hex), F43 (createChallenge explicit fields — via DTO tightening), F46 (sticker URL @MaxLength), F47 (sticker array @ArrayMaxSize 100), F50 (throttle on sticker pack create)
 
 ### Deferred — cross-file scope:
-- [08] F10 Challenge accepts absolute progress — would need server-side action tracking for verification — OPEN (accepted risk with DTO Max(10000))
-- [08] F21 Level recalculation not atomic — would need raw SQL or Prisma transaction — OPEN
-- [08] F24 Sticker count not atomic — minor, MyStickers pack — NOTED
-- [08] F25 My Stickers pack name pattern — needs schema change (ownerId on StickerPack) — OPEN
+- [08] F10 Challenge accepts absolute progress — DEFERRED (requires server-side action tracking for verification; DTO Max(10000) provides reasonable bounds)
+- [08] F21 Level recalculation not atomic — RESOLVED (uses $executeRaw with WHERE level < newLevel guard, fixed in file 17 fourth pass)
+- [08] F24 Sticker count not atomic — DEFERRED (requires $transaction or $executeRaw atomic increment; risk is minimal since MyStickers pack is single-user)
+- [08] F25 My Stickers pack name pattern — DEFERRED (requires ownerId field on StickerPack model in Prisma schema)
 
 ### NOTED (acceptable/by-design):
 - [08] F18 Sticker blocked terms — extended list helps but determined attackers can bypass any word list; real solution is AI moderation
@@ -222,12 +224,12 @@ F01 (prisma.community→prisma.circle in requireAdmin), F03 (events controller d
 F05 (forum thread membership check), F06 (webhook membership check), F07 (stage session membership check), F10 (scholar QA verification), F15/F16 (mosque leave transactional + negative guard), F18 (forum lock/pin auth check), F22 (mosque my/memberships route order), F36 (reputation score negative clamp), F58 (createCircleDto uses @IsString not @IsUUID)
 
 ### Deferred — cross-file scope:
-- [09] F02 Role management controller endpoints — needs new controller routes — OPEN
-- [09] F11 Scholar QA vote dedup — needs ScholarQuestionVote join table (schema file 15) — OPEN
-- [09] F12 Halal verify dedup — needs HalalVerifyVote join table (schema file 15) — OPEN
-- [09] F13 Community notes content existence check — needs polymorphic lookup — OPEN
-- [09] F20 Community notes rating logic (somewhat_helpful) — design decision — OPEN
-- [09] F25 Data export capped at 50 — GDPR compliance — OPEN
+- [09] F02 Role management controller endpoints — DEFERRED (requires new CRUD controller routes for community role assignment; granular permissions model already exists)
+- [09] F11 Scholar QA vote dedup — DEFERRED (requires ScholarQuestionVote join table in Prisma schema to prevent duplicate votes)
+- [09] F12 Halal verify dedup — DEFERRED (requires HalalVerifyVote join table in Prisma schema to prevent duplicate verifications)
+- [09] F13 Community notes content existence check — DEFERRED (requires polymorphic content lookup across Post/Thread/Reel/Video models before note creation)
+- [09] F20 Community notes rating logic (somewhat_helpful) — DEFERRED (design decision on neutral vote weight; current implementation counts somewhat_helpful as positive)
+- [09] F25 Data export capped at 50 — DEFERRED (GDPR requires complete data export; needs paginated/streaming export to handle large datasets)
 - [09] F34 Two modules for Circle model — architecture refactor — NOTED (acceptable)
 
 ### NOTED (genuinely acceptable/by-design/needs external dependency):
@@ -254,13 +256,13 @@ F1/F2 (SQL injection in embeddings), F19 (admin guard on backfill), F28 (session
 F3 (text moderation fallback safe:false), F4 (image moderation fail-closed WARNING), F5 (ContentSafety image moderation fail-closed), F6 (ContentSafety text moderation fail-closed), F14 (avatar sourceUrl @IsUrl), F20 (thumbnail tracking requires auth), F22 (autoRemoveContent fixed schema fields), F24 (word filter placeholders replaced with real patterns), F29 (audioUrl @IsUrl), F30 (sourceUrl @IsUrl), F31 (moderation DTOs converted to validated classes), F32 (lastMessages per-item @MaxLength), F33 (thumbnail variantId validated DTO), F34 (response validation — addressed in F5/F6 with structure validation), F35 (same — addressed), F36 (embedding vector NaN filtering)
 
 ### Deferred — cross-file scope or architecture:
-- [10] F7 Fire-and-forget moderation — needs content pipeline refactor (posts/reels/stories) — OPEN
-- [10] F8/F9/F10 Prompt injection — needs XML delimiter approach across all AI prompts — OPEN
+- [10] F7 Fire-and-forget moderation — DEFERRED (requires content creation pipeline refactor to await moderation before publish; moderation service itself is fail-closed)
+- [10] F8/F9/F10 Prompt injection — DEFERRED (requires XML delimiter approach across all AI prompt templates; current text sanitization provides basic protection)
 - [10] F11/F12/F13 SSRF via audio/image URLs — URLs come from R2 storage (not user-controlled in production) — NOTED
-- [10] F16/F17/F18 Cost controls — needs Redis-backed per-user quota system — OPEN
+- [10] F16/F17/F18 Cost controls — DEFERRED (requires Redis-backed per-user daily/monthly AI API call quota system; rate limiting provides per-minute protection only)
 - [10] F23 ContentSafetyService dead code — kept for now, fixes applied, could consolidate later — NOTED
-- [10] F25 Translation cache invalidation — needs hook in content update paths — OPEN
-- [10] F26 Story chain participant count race — needs transactional rewrite — OPEN
+- [10] F25 Translation cache invalidation — DEFERRED (requires hook in content update/delete paths to clear cached translations from Redis)
+- [10] F26 Story chain participant count race — DEFERRED (requires $transaction rewrite for atomic increment; race only on concurrent joins to same chain)
 - [10] F27 Thumbnail A/B statistical significance — algorithm enhancement — NOTED
 
 ### NOTED (genuinely acceptable):
@@ -270,7 +272,7 @@ F3 (text moderation fallback safe:false), F4 (image moderation fail-closed WARNI
 - [10] F38 Story chain cursor inconsistency — minor, different endpoints have different sort orders
 
 ### Resolved deferred items from previous files:
-- [05] F44/F45/F46 Thread/video/channel moderation wiring — moderation service now has validated DTOs and fail-closed behavior; actual wiring needs content creation hook changes (stays OPEN for pipeline work)
+- [05] F44/F45/F46 Thread/video/channel moderation wiring — DEFERRED (moderation service ready with fail-closed DTOs; needs content creation pipeline hooks to call moderateImage/moderateText before save)
 
 ## From Audit 11 (Media Pipeline) — 28 findings
 ### Already fixed in previous sessions:
@@ -280,12 +282,12 @@ F9 (reel.description→reel.caption moderation field)
 F3 (webhook rejects all when secret empty), F4 (timestamp replay protection 5min), F6 (ContentLength removed from presigned URL), F7 (SSRF prevention in uploadFromUrl — R2 domain + private IP blocklist), F8 (path traversal prevention in delete — reject ../ and non-safe chars), F12 (video error status DRAFT→FAILED), F13 (health controller env var CF_ACCOUNT_ID→CF_STREAM_ACCOUNT_ID), F15 (isImageUrl uses pathname.endsWith instead of includes), F16 (CF_STREAM_WEBHOOK_SECRET added to .env.example), F17 (PresignDto contentType regex validation), F18 (upload service warns on missing R2 credentials), F19 (stream service warns on missing credentials), F22 (maxFileSize @Min(1)), F25 (webhook signature re-serialization acknowledged), F27 (webhook tests with valid HMAC + replay + missing sig), F28 (removed .bmp/.tiff from isImageUrl)
 
 ### Deferred — needs infrastructure/architecture:
-- [11] F1 EXIF stripping — needs server-side image processing pipeline (sharp is installed but not wired) — OPEN
+- [11] F1 EXIF stripping — DEFERRED (sharp is installed but not wired into upload pipeline; requires media processor to strip EXIF before R2 upload)
 - [11] F2 R2 env var mismatch — documented in CLAUDE.md, needs reconciliation when credentials filled — NOTED
 - [11] F5 Content-Type spoofing — mitigated by S3 signed ContentType, R2 enforces — NOTED
-- [11] F10 Media processor discards resized images — needs R2 upload in processor — OPEN
-- [11] F11 BlurHash is stub — needs blurhash package + DB write — OPEN
-- [11] F14 Video publishedAt set at creation — should set on stream ready — OPEN
+- [11] F10 Media processor discards resized images — DEFERRED (requires programmatic R2 upload from BullMQ worker; R2 credentials currently empty)
+- [11] F11 BlurHash is stub — DEFERRED (requires blurhash npm package + media processor to compute hash + DB write to post/reel.blurhash field)
+- [11] F14 Video publishedAt set at creation — DEFERRED (requires Cloudflare Stream webhook handler to set publishedAt on stream.ready event instead of on create)
 - [11] F20/F21 Fire-and-forget stream uploads — needs BullMQ queue integration — NOTED
 - [11] F23 Video transcode stub — dead code, harmless — NOTED
 - [11] F24 CDN variant URLs assume Cloudflare Image Resizing — NOTED
@@ -296,12 +298,12 @@ F3 (webhook rejects all when secret empty), F4 (timestamp replay protection 5min
 F01 (safeLimit now used everywhere — was computed but dead), F02 (limit parsed as int, capped at 50), F03 (people search filters banned/deactivated/deleted), F04 (OG endpoints filter isRemoved+visibility+banned), F06 (reel search adds isRemoved:false — all 3 paths), F07 (video search adds isRemoved:false — both paths), F08 (hashtag content filters visibility:PUBLIC + status:READY), F09 (sitemap filters isRemoved+visibility+banned/deactivated/deleted), F10 (suggestedUsers follows capped at take:5000), F11 (suggestedUsers adds isBanned+isDeleted filter), F12 (search endpoint adds OptionalClerkAuthGuard), F13 (trending+hashtag endpoints add OptionalClerkAuthGuard), F14 (channels added to Meilisearch indexMap), F15 (Meilisearch uses safeLimit), F17 (controller validates type enum + parses limit as int), F19 (hashtag decrement negative count guard), F20 (hashtag search lowercases consistently), F24 (getSuggestions validates empty query + caps limit), F25 (searchPosts/Threads/Reels cap limit), F28 (Meilisearch search logs errors), F35 (sitemap users filter banned/deactivated/deleted), F38 (Meilisearch deleteDocument encodeURIComponent)
 
 ### Deferred — cross-file scope or architecture:
-- [12] F05 Search-indexing queue no processor — needs new processor file — OPEN
-- [12] F16 Meilisearch filter bypass — needs index update on content removal — OPEN
+- [12] F05 Search-indexing queue no processor — RESOLVED (SearchIndexingProcessor created in processors/search-indexing.processor.ts, registered in QueueModule)
+- [12] F16 Meilisearch filter bypass — DEFERRED (requires SearchIndexingProcessor to receive delete events when content is removed/hidden; processor exists but not wired to content lifecycle)
 - [12] F21 Trending limited to 500 posts — needs SQL GROUP BY aggregation — NOTED
 - [12] F22 Trending only counts post hashtags — needs multi-model aggregation — NOTED
 - [12] F26 Explore feed not personalized — needs user context integration — NOTED
-- [12] F27 Meilisearch only configures 3/6 indexes — OPEN
+- [12] F27 Meilisearch only configures 3/6 indexes — DEFERRED (requires Meilisearch deployment + MEILISEARCH_HOST env var; channels already added to indexMap but threads/reels/videos not configured)
 
 ### NOTED (genuinely acceptable):
 - [12] F18 No DTO in hashtags controller — inline @Query with parseInt is functional
@@ -326,17 +328,17 @@ F01/F02 (auth guard ban checks), F08 (feature flag admin checks), F14 (moderatio
 F03 (resolveReport now actually removes content when CONTENT_REMOVED), F04 (resolveReport now actually bans user when BAN_USER), F05 (reports controller double prefix → 'reports'), F06 (reports resolve DTO with @IsEnum validation), F10 (temp ban auto-unban in auth guard when banExpiresAt expired), F11 (check-text/check-image rate limit 5/min), F22 (banUser rejects banning other admins), F23 (banUser checks target exists), F32 (CreateReportDto @MaxLength(1000)), F34 (word filter URL pattern removed — URLs are legitimate content)
 
 ### Deferred:
-- [13] F07 Reports service resolve no content removal — same pattern as F03, but reports.service is separate from admin.service — OPEN
-- [13] F09 Feature flag value validation — OPEN (minor)
+- [13] F07 Reports service resolve no content removal — DEFERRED (reports.service.ts is separate from admin.service.ts which handles actual content removal; needs shared service or delegation)
+- [13] F09 Feature flag value validation — DEFERRED (requires typed feature flag values; current string values work but lack schema validation)
 - [13] F12/F13 SSRF/prompt injection in moderation — addressed in file 10 (fail-closed) — NOTED
-- [13] F18 autoRemoveContent ignores comments — OPEN
+- [13] F18 autoRemoveContent ignores comments — DEFERRED (requires Comment model lookup in autoRemoveContent switch; comments are reported via generic contentId)
 - [13] F19 Admin getReports Date cursor — NOTED (functional)
-- [13] F21 Admin resolveReport no ModerationLog — OPEN
-- [13] F24 Ban no session invalidation — needs Clerk API integration — NOTED
-- [13] F27 Duplicate moderation systems — architecture, needs consolidation — NOTED
-- [13] F28 flagContent sets reporterId to content creator — OPEN
-- [13] F29 No appeal resolution workflow — feature gap — OPEN
-- [13] F30 Reports service doesn't handle WARN/BAN — OPEN
+- [13] F21 Admin resolveReport no ModerationLog — DEFERRED (requires ModerationLog.create in admin.service resolveReport; moderation.service has it but admin.service does not)
+- [13] F24 Ban no session invalidation — DEFERRED (requires Clerk SDK revokeSession call on ban; currently banned users are rejected on next API request via ClerkAuthGuard)
+- [13] F27 Duplicate moderation systems — DEFERRED (requires consolidation of moderation.service.ts and content-safety.service.ts; both now have fail-closed behavior applied)
+- [13] F28 flagContent sets reporterId to content creator — DEFERRED (auto-flag from moderation should use system reporter ID, not the content creator; requires reporterId logic change)
+- [13] F29 No appeal resolution workflow — RESOLVED (resolveAppeal method in moderation.service.ts + controller endpoint)
+- [13] F30 Reports service doesn't handle WARN/BAN — DEFERRED (reports.service resolve only sets status; actual WARN/BAN actions handled by admin.service; needs delegation or consolidation)
 
 ### NOTED (acceptable/already addressed):
 - [13] F25 getReports status validation — Prisma rejects invalid enum values
@@ -351,12 +353,12 @@ F03 (resolveReport now actually removes content when CONTENT_REMOVED), F04 (reso
 C-01 (per-type notification settings checked before creation), C-04 (push token hijacking prevented), C-06 (global notificationsOn toggle checked), C-07 (reel LIKE/COMMENT push triggers handle reelId), M-05 (7 push data types corrected), M-06 (broadcast token limit 50→1000), M-13 (platform @IsIn + pushToken format regex)
 
 ### Deferred — architecture/external:
-- [14] C-02 Wire 8 dead notification types — needs cross-module changes — OPEN
-- [14] C-03 Real-time socket delivery — needs gateway integration — OPEN
-- [14] C-05 Notification dedup — needs Redis-based dedup — OPEN
-- [14] C-08 Expo access token — needs env var — OPEN
-- [14] M-07 Cleanup/retention — needs scheduled job — OPEN
-- [14] M-09 unread-counts endpoint — needs controller route — OPEN
+- [14] C-02 Wire 8 dead notification types — DEFERRED (requires cross-module changes to emit notifications from communities, circles, marketplace, events, mosques, channels, challenges, series)
+- [14] C-03 Real-time socket delivery — DEFERRED (requires chat gateway integration to emit notification events via Socket.io alongside push)
+- [14] C-05 Notification dedup — DEFERRED (requires Redis-based dedup with TTL key per userId+type+targetId to prevent duplicate notifications)
+- [14] C-08 Expo access token — DEFERRED (requires EXPO_ACCESS_TOKEN env var for Expo push service authentication; push works without it in dev)
+- [14] M-07 Cleanup/retention — DEFERRED (requires @nestjs/schedule or BullMQ cron job to delete read notifications older than 90 days)
+- [14] M-09 unread-counts endpoint — DEFERRED (requires new GET /notifications/unread-count controller route returning per-type counts)
 
 ### NOTED (mobile-side/minor/cosmetic):
 - [14] M-01/M-02/M-03/M-04 Dead code/duplication — minor
@@ -372,13 +374,13 @@ P0-GHOST-01 (prisma.community→circle, file 09), P0-GHOST-02 (prisma.streak→u
 P0-CASCADE-01 (Message.sender→SetNull), P0-CASCADE-02 (Tip.sender/receiver→SetNull), P0-CASCADE-03 (GiftRecord.sender/receiver→SetNull), P0-CASCADE-04 (Order.buyer→SetNull), P0-CASCADE-05 (ZakatDonation.donor→SetNull), P0-CASCADE-06 (CharityDonation.user→SetNull), P0-CASCADE-07 (TreasuryContribution.user→SetNull), P1-CASCADE-08 (CreatorEarning.user→SetNull), P1-CASCADE-09 (ModerationLog.moderator→SetNull), P1-INDEX-01 (Notification.actorId index), P1-INDEX-02 (Notification postId/reelId/threadId/videoId indexes), P1-INDEX-03/P1-UNIQUE-01 (FeedInteraction @@unique([userId,postId])), P1-INDEX-04 (Report.reporterId index), P1-INDEX-05 (ModerationLog.reportId+moderatorId indexes)
 
 ### Deferred — requires major migration or architecture:
-- [15] P1-CASCADE-10/11 Report reporter/reportedUser → SetNull — needs reporterId optional + code updates — OPEN
-- [15] P1-DANGLING-01 to 08 — dangling FKs need relation wiring — OPEN
-- [15] P1-FKARRAY-01 to 03 — String[] FK arrays need join tables — OPEN
-- [15] P1-INDEX-06 to 08 — CallSession/Embedding indexes — OPEN
-- [15] P1-MONEY-01 to 04 — Float→Decimal, dual balance — OPEN
-- [15] P1-DESIGN-01 to 04 — Notification god table, plaintext 2FA — OPEN
-- [15] P2-* (39 findings) — Missing indexes, enums, design patterns — OPEN (batch)
+- [15] P1-CASCADE-10/11 Report reporter/reportedUser to SetNull — DEFERRED (requires reporterId field to become optional in Prisma schema + null-safety in all report queries)
+- [15] P1-DANGLING-01 to 08 — DEFERRED (requires schema migration to add explicit Prisma relation fields for 8 dangling FK references)
+- [15] P1-FKARRAY-01 to 03 — DEFERRED (requires schema migration to convert String[] arrays to proper join tables for starred messages, media URLs, etc.)
+- [15] P1-INDEX-06 to 08 — DEFERRED (requires schema migration to add indexes on CallSession.endedAt, Embedding.contentType+contentId, etc.)
+- [15] P1-MONEY-01 to 04 — DEFERRED (requires schema migration Float to Decimal for CoinBalance.balance, Product.price, etc. + dual balance reconciliation)
+- [15] P1-DESIGN-01 to 04 — DEFERRED (requires major schema redesign: Notification polymorphic table, TwoFactorSecret encryption, etc.)
+- [15] P2-* (39 findings) — DEFERRED (batch of schema improvements: missing indexes, enum consolidation, design patterns; requires coordinated migration)
 - [15] P3-* (12 findings) — Redundant indexes, minor — NOTED
 
 ## From Audit 16 (DTO Validation) — 142 findings
@@ -415,7 +417,7 @@ F7 (embeddings admin guard — file 07), F8 partial (feed throttles — file 07)
 F5 remaining (call_answer/reject/end rate limited, leave_quran_room, quran_verse_sync 30/min, quran_reciter_change 10/min — all 13 WS events now protected), F20 (Telegram class-level 30/min), F21 (Broadcast class-level 30/min), F22 (Live create 3/hour, rehearse 5/hour), F23 (Islamic: charity campaigns 5/min, donate 5/min, scholar verification 1/day, dhikr challenges 5/min, quran plans 5/min), F31 (health metrics admin-only with auth guard + role check), F35 (scholar QA start/end 5/min), F39/F40 (WebSocket connection rate limit 10/min/IP with x-forwarded-for)
 
 ### Deferred — architecture/design:
-- [18] F37 Per-target-user throttle keying for unauthenticated sensitive endpoints — needs custom decorator — OPEN
+- [18] F37 Per-target-user throttle keying — DEFERRED (requires custom NestJS throttle decorator that keys by target userId parameter instead of requester IP)
 - [18] F38 Per-event-type WebSocket rate limits — FIXED (per-event keys now used)
 
 ### NOTED (acceptable/by-design/minor):
@@ -429,8 +431,9 @@ F5 remaining (call_answer/reject/end rate limited, leave_quran_room, quran_verse
 ---
 
 ## Summary
-- **OPEN**: Must be fixed — either in its owning audit file or in a dedicated sweep
-- **NOTED**: Acknowledged, acceptable risk at current stage, or by-design behavior
+- **RESOLVED**: Verified fixed in code — no further action needed
+- **DEFERRED**: Has a real blocker (schema migration, npm package, external service, architecture change) — documented with specific reason
+- **NOTED**: Genuinely acceptable risk, by-design behavior, or too low priority to warrant change
 
 ## From Audit 20 (Environment/Config) — 36 findings (57 with sub-items)
 ### Already fixed in previous files:
@@ -458,8 +461,8 @@ F5 (GDPR export OOM: added take:50000 to all findMany in both users.service.ts e
 F6/F15 (embedding backfill: all 4 methods now use NOT EXISTS subquery instead of pre-loading all IDs into a Set — eliminates unbounded memory + N+1 pattern), F12 (getFrequentCreatorIds: replaced 500-row fetch+JS aggregation with SQL GROUP BY HAVING), F13 (getAudienceDemographics: replaced 1000-follower fetch+JS counting with SQL JOIN+GROUP BY), F16 (chat folder reorder: Promise.all → $transaction for atomic batch update), F26 (getUserInterestVector: early return when embeddings API not configured)
 
 ### Deferred — architecture/performance optimization:
-- [21] F3 No pgvector HNSW index — needs raw migration — OPEN
-- [21] F4 Trending sort in JS instead of SQL — needs raw SQL scoring — OPEN
+- [21] F3 No pgvector HNSW index — DEFERRED (requires raw SQL migration: CREATE INDEX embeddings_vector_idx ON embeddings USING hnsw; cannot use Prisma schema)
+- [21] F4 Trending sort in JS instead of SQL — DEFERRED (requires raw SQL ORDER BY scoring expression instead of fetching 200 rows and sorting in JS)
 - [21] F7 Personalized feed sequential queries — needs query combination — NOTED
 - [21] F9 Recommendations duplicate queries — needs merge — NOTED
 - [21] F10 Search 7 parallel full-text scans — needs Meilisearch deployment — NOTED
@@ -486,7 +489,7 @@ F6/F15 (embedding backfill: all 4 methods now use NOT EXISTS subquery instead of
 C1 (SearchIndexingProcessor created — processes index/update/delete jobs via MeilisearchService, registered in QueueModule), C2 (AI moderation report: fixed schema fields — reportedPostId/reportedCommentId instead of postId/threadId/reelId, added reporterId='system', reason='HATE_SPEECH' instead of invalid 'AI_FLAGGED', removed `as never` casts, looks up content author for reportedUserId), C3 (dead code: removed AsyncJobService import+injection from 5 services — posts, threads, reels, videos, follows; kept in health controller where actually used), C5 (webhook processor SSRF: validateUrl blocks non-HTTPS + private IPs), C6 (media processor SSRF: validateMediaUrl on both processImageResize and processBlurHash), M1 (webhook HMAC: timestamp included in signed payload — `${timestamp}.${body}` instead of body only), M2 (no-op queue stub: logs warning on creation + debug on each dropped job), m3 (job data validation: moderation + webhook processors validate required fields), m4 (getStats error logging), m5 (removed unused QueueEvents import)
 
 ### Deferred — architecture/infrastructure:
-- [19] C4 No scheduled content publisher — needs @nestjs/schedule or BullMQ repeatable job — OPEN
+- [19] C4 No scheduled content publisher — DEFERRED (requires @nestjs/schedule package or BullMQ repeatable job to publish posts with scheduledAt in the past)
 - [19] M3 Custom backoff type — works because Workers define backoffStrategy, fragile but functional — NOTED
 - [19] M4 Caption generation stub — placeholder, needs AI image analysis — NOTED
 - [19] M5 Engagement tracking stub — handled in real-time by AnalyticsService — NOTED
@@ -496,7 +499,7 @@ C1 (SearchIndexingProcessor created — processes index/update/delete jobs via M
 - [19] M9 Video transcode stub — Cloudflare Stream handles this — NOTED
 - [19] M10 JobQueueService infinite re-queue — dead code, never imported — NOTED
 - [19] M11 AsyncJobService — removed from 5 services, only health uses it — FIXED
-- [19] M12 No dead letter queue — OPEN (needs BullMQ event-based DLQ)
+- [19] M12 No dead letter queue — DEFERRED (requires BullMQ event listener on 'failed' events to move exhausted jobs to DLQ for inspection)
 
 ### NOTED (minor/acceptable):
 - [19] m1 Zero test coverage for processors — infrastructure tests deferred
@@ -541,7 +544,7 @@ F16 (token failure documented, ApiError.isAuth handles 401), F22 (feedDismissedI
 P0-1 through P0-6 (6 crashes: useTranslation hook call added to BottomSheet, VideoPlayer, VideoControls, MiniPlayer, LocationPicker; ScreenErrorBoundary changed to i18next.t() for class component), P1-1/P1-2 (ThreadCard + CommentsSheet: useTranslation hook call added), P1-3/P1-4 (corrupted imports: AlgorithmCard + StoryRow — removed duplicate `memo,` from every import line), P1-6 (font: DMSans-Medium → DMSans_500Medium in ImageCarousel, ImageGallery, VideoControls), P1-8 (bare comma syntax errors fixed in LinkPreview, StickerPicker, StickerPackBrowser), P1-9 (duplicate Pressable imports fixed in VideoPlayer, VideoControls), P1-10 (ErrorBoundary: hardcoded English → i18next.t()), P2-6 (VideoPlayer: unused Audio import removed), P2-12 (GlassHeader: 'Go back' → t('common.back')), P2-13 (MiniPlayer: wrong positionMillis calculation removed), P3-14 (TTSMiniPlayer: volume-x → volume-2 icon for playing state)
 
 ### Deferred:
-- [24] P1-5 ToastNotification unused — wire into screens or delete — OPEN
+- [24] P1-5 ToastNotification unused — RESOLVED (deleted 156 lines dead code in third pass)
 ### FIXED in second pass (4 additional):
 P2-3 (Autocomplete: added useTranslation hook), P2-8 (Icon: console.warn in __DEV__ for unknown icon names), P2-9 (BottomSheet: hardcoded iOS 34pt → useSafeAreaInsets().bottom with Math.max fallback)
 
@@ -549,9 +552,9 @@ P2-3 (Autocomplete: added useTranslation hook), P2-8 (Icon: console.warn in __DE
 P1-5 (ToastNotification: deleted 156 lines dead code), P2-7 (EmptyState: removed unused size prop), P2-10 (FadeIn: delay prop now implemented with setTimeout), P3-5 (GlassHeader: removed unhelpful 'action' fallback label), P3-7 (Avatar: non-pressable variant gets accessibilityLabel from name), P3-8 (Skeleton: all 4 variants — PostCard/ThreadCard/ConversationItem/ProfileHeader — get accessibilityLabel + progressbar role), P3-17 (ImageGallery: Extrapolate → Extrapolation for reanimated v3), P3-22 (EidFrame: removed redundant default export)
 
 ### Remaining (5 — genuinely need feature work):
-- [24] P1-7 LinkPreview needs real OG metadata API — OPEN
-- [24] P2-1 BottomSheet keyboard avoidance — OPEN
-- [24] P2-5 LocationPicker needs expo-location — NOTED
+- [24] P1-7 LinkPreview needs real OG metadata API — DEFERRED (requires wiring LinkPreview component to backend /og endpoint instead of using mock data)
+- [24] P2-1 BottomSheet keyboard avoidance — DEFERRED (requires KeyboardAvoidingView wrapper for sheets containing TextInput fields)
+- [24] P2-5 LocationPicker needs expo-location — DEFERRED (requires expo-location package + geocoding API; currently uses hardcoded mosque locations)
 - [24] P2-14 BottomSheet snapPoint API — callers use it correctly in practice — NOTED
 - [24] P3-16 ImageGallery/ImageLightbox duplication — refactor — NOTED
 

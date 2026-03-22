@@ -318,6 +318,7 @@ export class LiveService {
       where: { liveId, status: { in: ['INVITED', 'ACCEPTED'] } },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'asc' },
+      take: 50,
     });
   }
 

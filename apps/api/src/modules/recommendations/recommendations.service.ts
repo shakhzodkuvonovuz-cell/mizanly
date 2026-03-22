@@ -287,6 +287,7 @@ export class RecommendationsService {
       const posts = await this.prisma.post.findMany({
         where: { id: { in: contentIds } },
         select: { id: true, likesCount: true, commentsCount: true, sharesCount: true, savesCount: true, viewsCount: true, createdAt: true },
+        take: 500,
       });
       for (const p of posts) {
         const totalEngagement = p.likesCount + p.commentsCount * 2 + p.sharesCount * 3 + p.savesCount * 2;
@@ -297,6 +298,7 @@ export class RecommendationsService {
       const reels = await this.prisma.reel.findMany({
         where: { id: { in: contentIds } },
         select: { id: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, createdAt: true },
+        take: 500,
       });
       for (const r of reels) {
         const totalEngagement = r.likesCount + r.commentsCount * 2 + r.sharesCount * 3;
@@ -307,6 +309,7 @@ export class RecommendationsService {
       const threads = await this.prisma.thread.findMany({
         where: { id: { in: contentIds } },
         select: { id: true, likesCount: true, repliesCount: true, repostsCount: true, viewsCount: true, createdAt: true },
+        take: 500,
       });
       for (const t of threads) {
         const totalEngagement = t.likesCount + t.repliesCount * 2 + t.repostsCount * 3;
@@ -323,13 +326,13 @@ export class RecommendationsService {
     if (contentIds.length === 0) return map;
 
     if (contentType === EmbeddingContentType.POST) {
-      const items = await this.prisma.post.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true } });
+      const items = await this.prisma.post.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
       items.forEach(i => map.set(i.id, i.userId));
     } else if (contentType === EmbeddingContentType.REEL) {
-      const items = await this.prisma.reel.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true } });
+      const items = await this.prisma.reel.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
       items.forEach(i => map.set(i.id, i.userId));
     } else if (contentType === EmbeddingContentType.THREAD) {
-      const items = await this.prisma.thread.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true } });
+      const items = await this.prisma.thread.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
       items.forEach(i => map.set(i.id, i.userId));
     }
 
@@ -421,6 +424,7 @@ export class RecommendationsService {
         const posts = await this.prisma.post.findMany({
           where: { id: { in: rankedIds }, isRemoved: false },
           select: POST_SELECT,
+          take: 50,
         });
         // Re-order to match ranked order
         const postMap = new Map(posts.map(p => [p.id, p]));
@@ -465,6 +469,7 @@ export class RecommendationsService {
         const reels = await this.prisma.reel.findMany({
           where: { id: { in: rankedIds }, isRemoved: false, status: ReelStatus.READY },
           select: REEL_SELECT,
+          take: 50,
         });
         const reelMap = new Map(reels.map(r => [r.id, r]));
         return rankedIds.map(id => reelMap.get(id)).filter(Boolean);
@@ -533,6 +538,7 @@ export class RecommendationsService {
         const threads = await this.prisma.thread.findMany({
           where: { id: { in: rankedIds }, isRemoved: false },
           select: THREAD_SELECT,
+          take: 50,
         });
         const threadMap = new Map(threads.map(t => [t.id, t]));
         return rankedIds.map(id => threadMap.get(id)).filter(Boolean);

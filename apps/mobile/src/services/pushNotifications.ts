@@ -68,7 +68,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     if (__DEV__) console.log('Push token registered:', tokenData.data);
     return tokenData.data;
   } catch (error) {
-    console.error('Error registering for push notifications:', error);
+    if (__DEV__) console.error('Error registering for push notifications:', error);
     return null;
   }
 }
@@ -146,7 +146,7 @@ export async function configurePushChannels(): Promise<void> {
 
     if (__DEV__) console.log('Notification channels configured');
   } catch (error) {
-    console.error('Error configuring notification channels:', error);
+    if (__DEV__) console.error('Error configuring notification channels:', error);
   }
 }
 
@@ -185,7 +185,7 @@ export async function schedulePrayerNotification(
     if (__DEV__) console.log(`Prayer notification scheduled for ${prayerName} at ${trigger}`);
     return notificationId;
   } catch (error) {
-    console.error('Error scheduling prayer notification:', error);
+    if (__DEV__) console.error('Error scheduling prayer notification:', error);
     return null;
   }
 }
@@ -235,7 +235,7 @@ export async function scheduleRamadanNotification(
     if (__DEV__) console.log(`Ramadan ${type} notification scheduled at ${trigger}`);
     return notificationId;
   } catch (error) {
-    console.error('Error scheduling Ramadan notification:', error);
+    if (__DEV__) console.error('Error scheduling Ramadan notification:', error);
     return null;
   }
 }
@@ -248,7 +248,7 @@ export async function cancelScheduledNotification(notificationId: string): Promi
     const Notifications = await import('expo-notifications');
     await Notifications.cancelScheduledNotificationAsync(notificationId);
   } catch (error) {
-    console.error('Error canceling notification:', error);
+    if (__DEV__) console.error('Error canceling notification:', error);
   }
 }
 
@@ -260,7 +260,7 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
     const Notifications = await import('expo-notifications');
     await Notifications.cancelAllScheduledNotificationsAsync();
   } catch (error) {
-    console.error('Error canceling all notifications:', error);
+    if (__DEV__) console.error('Error canceling all notifications:', error);
   }
 }
 
@@ -274,7 +274,7 @@ export async function getAllScheduledNotifications(): Promise<
     const Notifications = await import('expo-notifications');
     return await Notifications.getAllScheduledNotificationsAsync();
   } catch (error) {
-    console.error('Error getting scheduled notifications:', error);
+    if (__DEV__) console.error('Error getting scheduled notifications:', error);
     return [];
   }
 }
@@ -288,6 +288,6 @@ export async function unregisterPushToken(pushToken: string): Promise<void> {
     await devicesApi.unregister(pushToken);
     if (__DEV__) console.log('Push token unregistered');
   } catch (error) {
-    console.error('Error unregistering push token:', error);
+    if (__DEV__) console.error('Error unregistering push token:', error);
   }
 }

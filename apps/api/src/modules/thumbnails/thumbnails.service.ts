@@ -55,6 +55,7 @@ export class ThumbnailsService {
     const variants = await this.prisma.thumbnailVariant.findMany({
       where: { contentType, contentId },
       orderBy: { createdAt: 'asc' },
+      take: 10,
     });
 
     if (variants.length === 0) return null;
@@ -86,6 +87,7 @@ export class ThumbnailsService {
   async serveThumbnail(contentType: ContentType, contentId: string): Promise<string | null> {
     const variants = await this.prisma.thumbnailVariant.findMany({
       where: { contentType, contentId },
+      take: 10,
     });
 
     if (variants.length === 0) return null;
@@ -131,6 +133,7 @@ export class ThumbnailsService {
   private async checkForWinner(contentType: string, contentId: string) {
     const variants = await this.prisma.thumbnailVariant.findMany({
       where: { contentType, contentId },
+      take: 10,
     });
 
     // Already has a winner
