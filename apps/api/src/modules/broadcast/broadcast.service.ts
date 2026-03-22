@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 import { ChannelRole, ChannelType, MessageType } from '@prisma/client';
@@ -41,11 +41,22 @@ export class BroadcastService {
     return channel;
   }
 
-  async update(channelId: string, userId: string, data: { name?: string; description?: string; avatarUrl?: string }) {
+  async update(channelId: string, userId: string, data: { name?: string; slug?: string; description?: string; avatarUrl?: string }) {
     await this.requireRole(channelId, userId, [ChannelRole.OWNER, ChannelRole.ADMIN]);
+
+    // Audit 06 F58: Prevent slug changes after creation — slugs are permanent identifiers
+    if (data.slug !== undefined) {
+      const existing = await this.prisma.broadcastChannel.findUnique({ where: { id: channelId } });
+      if (existing && data.slug !== existing.slug) {
+        throw new BadRequestException('Cannot change broadcast channel slug after creation');
+      }
+    }
+
+    // Strip slug from update payload — it should never be written
+    const { slug: _slug, ...updateData } = data;
     return this.prisma.broadcastChannel.update({
       where: { id: channelId },
-      data,
+      data: updateData,
     });
   }
 

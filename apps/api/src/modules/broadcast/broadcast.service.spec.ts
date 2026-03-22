@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { BroadcastService } from './broadcast.service';
 import { PrismaService } from '../../config/prisma.service';
-import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('BroadcastService', () => {
@@ -166,6 +166,25 @@ describe('BroadcastService', () => {
     it('should throw ForbiddenException for non-owner', async () => {
       prisma.channelMember.findUnique.mockResolvedValue({ role: 'SUBSCRIBER' });
       await expect(service.update('ch1', 'u1', { name: 'X' })).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException when attempting to change slug', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ role: 'OWNER' });
+      prisma.broadcastChannel.findUnique.mockResolvedValue({ id: 'ch1', slug: 'original-slug' });
+      await expect(
+        service.update('ch1', 'owner1', { slug: 'new-slug' } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should strip slug from update payload even if same value', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ role: 'OWNER' });
+      prisma.broadcastChannel.findUnique.mockResolvedValue({ id: 'ch1', slug: 'same-slug' });
+      prisma.broadcastChannel.update.mockResolvedValue({ id: 'ch1', name: 'Updated', slug: 'same-slug' });
+      await service.update('ch1', 'owner1', { name: 'Updated', slug: 'same-slug' } as any);
+      expect(prisma.broadcastChannel.update).toHaveBeenCalledWith({
+        where: { id: 'ch1' },
+        data: { name: 'Updated' },
+      });
     });
   });
 
