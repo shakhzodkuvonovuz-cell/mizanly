@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   Dimensions, TextInput, Platform,
   KeyboardAvoidingView, Alert, FlatList, RefreshControl,
+  ViewToken,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -13,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,7 +25,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { storiesApi, messagesApi } from '@/services/api';
+import { storiesApi } from '@/services/api';
 import { PollSticker, QuizSticker, QuestionSticker, CountdownSticker, SliderSticker } from '@/components/story';
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -43,9 +44,11 @@ type Sticker = {
   scale: number;
 };
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const { width: SCREEN_W } = Dimensions.get('window');
 const STORY_DURATION = 5000; // ms per story slide for images
-const QUICK_REACTIONS = ['❤️', '🔥', '👏', '😂', '😍', '😢'];
+const QUICK_REACTIONS = ['\u2764\uFE0F', '\uD83D\uDD25', '\uD83D\uDC4F', '\uD83D\uDE02', '\uD83D\uDE0D', '\uD83D\uDE22'];
+
+// ─── Progress bar components ──────────────────────────────────────────────────
 
 function ProgressSegment({
   index,
@@ -86,42 +89,53 @@ function ProgressBar({
   );
 }
 
-export default function StoryViewerScreen() {
-  const { groupJson, startIndex: startIndexParam, isOwn } = useLocalSearchParams<{
-    groupJson: string;
-    startIndex?: string;
-    isOwn?: string;
-  }>();
+// ─── Emoji reaction button ────────────────────────────────────────────────────
 
-  // Primary: read story data from Zustand store (set by saf.tsx)
-  // Fallback: read from URL params (used by profile/[username].tsx)
-  const storyViewerData = useStore((s) => s.storyViewerData);
+function EmojiReactionButton({ emoji, onPress, t }: { emoji: string; onPress: () => void; t: (key: string, opts?: Record<string, unknown>) => string }) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  const handlePress = () => {
+    scale.value = withTiming(1.3, { duration: 100 }, () => {
+      scale.value = withTiming(1, { duration: 100 });
+    });
+    onPress();
+  };
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={styles.reactionBtn}
+      accessibilityLabel={t('accessibility.reactWithEmoji', { emoji })}
+      accessibilityRole="button"
+    >
+      <Animated.Text style={[styles.reactionEmoji, animatedStyle]}>
+        {emoji}
+      </Animated.Text>
+    </Pressable>
+  );
+}
 
-  const router = useRouter();
-  const queryClient = useQueryClient();
+// ─── StoryGroupPage — one user's stories ──────────────────────────────────────
 
-  // Resolve group and startIndex from store or URL params
-  let group: StoryGroup | null = null;
-  let resolvedStartIndex = 0;
-  let ownStory = isOwn === 'true';
+interface StoryGroupPageProps {
+  group: StoryGroup;
+  isActive: boolean;
+  isOwnStory: boolean;
+  onComplete: () => void;
+  onGoPrevGroup: () => void;
+  onClose: () => void;
+}
 
-  if (storyViewerData && storyViewerData.groups && storyViewerData.groups.length > 0) {
-    // Store-based: saf.tsx sets the full groups array + startIndex
-    const startIdx = storyViewerData.startIndex ?? 0;
-    group = (storyViewerData.groups[startIdx] as StoryGroup) ?? null;
-    resolvedStartIndex = 0; // Within the selected group, start at first story
-    if (storyViewerData.isOwn) ownStory = true;
-  } else {
-    // Fallback: URL params (profile/[username].tsx passes groupJson)
-    try {
-      group = groupJson ? JSON.parse(groupJson) : null;
-    } catch {
-      group = null;
-    }
-    resolvedStartIndex = Number(startIndexParam ?? 0);
-  }
-
-  const [storyIndex, setStoryIndex] = useState(resolvedStartIndex);
+const StoryGroupPage = memo(function StoryGroupPage({
+  group,
+  isActive,
+  isOwnStory,
+  onComplete,
+  onGoPrevGroup,
+  onClose,
+}: StoryGroupPageProps) {
+  const [storyIndex, setStoryIndex] = useState(0);
   const progressValue = useSharedValue(0);
   const [paused, setPaused] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -129,15 +143,10 @@ export default function StoryViewerScreen() {
   const [showViewers, setShowViewers] = useState(false);
   const [stickerResponses, setStickerResponses] = useState<Record<string, Record<string, unknown>>>({});
   const { t } = useTranslation();
+  const { selection } = useHaptic();
 
-  // Clear store data on unmount to avoid stale data on next open
-  useEffect(() => {
-    return () => {
-      useStore.getState().setStoryViewerData(null);
-    };
-  }, []);
+  const story = group.stories[storyIndex];
 
-  const story = group?.stories[storyIndex];
   const stickers = useMemo(() => {
     if (!story?.stickerData) return [];
     try {
@@ -153,22 +162,59 @@ export default function StoryViewerScreen() {
   const viewersQuery = useQuery({
     queryKey: ['story-viewers', story?.id],
     queryFn: () => storiesApi.getViewers(story?.id ?? ''),
-    enabled: ownStory && showViewers && !!story?.id,
+    enabled: isOwnStory && showViewers && !!story?.id,
   });
 
+  // Reset story index when this page becomes active (returning from a swipe)
+  // Only reset if we're swiping BACK to this group — not on initial mount
+  const hasBeenActive = useRef(false);
+  useEffect(() => {
+    if (isActive && !hasBeenActive.current) {
+      hasBeenActive.current = true;
+    }
+  }, [isActive]);
+
+  // Advance to next story within this group, or signal group complete
   const advance = useCallback(() => {
     cancelAnimation(progressValue);
     progressValue.value = 0;
     setStoryIndex((prev) => {
-      if (prev + 1 < (group?.stories.length ?? 0)) return prev + 1;
-      router.back();
+      if (prev + 1 < group.stories.length) return prev + 1;
+      // Last story in group finished — signal parent to advance to next group
+      onComplete();
       return prev;
     });
-  }, [group?.stories.length, router, progressValue]);
+  }, [group.stories.length, onComplete, progressValue]);
+
+  // Reset progress on story index change
+  useEffect(() => {
+    progressValue.value = 0;
+  }, [storyIndex, progressValue]);
+
+  // Progress animation (for images; videos use their own duration)
+  // Only run when this page is the active/visible one
+  useEffect(() => {
+    if (!isActive || paused || showViewers || story?.mediaType?.startsWith('video')) {
+      cancelAnimation(progressValue);
+      return;
+    }
+    const currentProgress = progressValue.value;
+    const remainingDuration = STORY_DURATION * (1 - currentProgress);
+    progressValue.value = withTiming(1, { duration: Math.max(0, remainingDuration) }, (finished) => {
+      if (finished) runOnJS(advance)();
+    });
+    return () => { cancelAnimation(progressValue); };
+  }, [storyIndex, paused, showViewers, story?.mediaType, advance, progressValue, isActive]);
+
+  // Mark viewed
+  useEffect(() => {
+    if (story?.id && isActive) {
+      storiesApi.markViewed(story.id).catch(() => {});
+    }
+  }, [story?.id, isActive]);
 
   const handleStickerResponse = useCallback((stickerId: string, response: Record<string, unknown>) => {
     setStickerResponses(prev => ({ ...prev, [stickerId]: response }));
-    // Find the sticker type for this response
     const sticker = stickers.find(s => s.id === stickerId);
     if (sticker && story?.id) {
       storiesApi.submitStickerResponse(story.id, sticker.type, response).catch(() => {});
@@ -195,7 +241,7 @@ export default function StoryViewerScreen() {
             key={id}
             data={pollData}
             onResponse={(optionId) => handleStickerResponse(id, { optionId })}
-            isCreator={ownStory}
+            isCreator={isOwnStory}
             style={stickerStyle}
           />
         );
@@ -218,7 +264,7 @@ export default function StoryViewerScreen() {
             key={id}
             data={quizData}
             onResponse={(optionId, isCorrect) => handleStickerResponse(id, { optionId, isCorrect })}
-            isCreator={ownStory}
+            isCreator={isOwnStory}
             style={stickerStyle}
           />
         );
@@ -233,7 +279,7 @@ export default function StoryViewerScreen() {
             key={id}
             data={questionData}
             onResponse={(questionText) => handleStickerResponse(id, { questionText })}
-            isCreator={ownStory}
+            isCreator={isOwnStory}
             style={stickerStyle}
           />
         );
@@ -250,14 +296,14 @@ export default function StoryViewerScreen() {
             key={id}
             data={countdownData}
             onRemindMeToggle={(enabled) => handleStickerResponse(id, { remindMe: enabled })}
-            isCreator={ownStory}
+            isCreator={isOwnStory}
             style={stickerStyle}
           />
         );
       }
       case 'slider': {
         const sliderData = {
-          emoji: String(data.emoji ?? '📊'),
+          emoji: String(data.emoji ?? '\uD83D\uDCCA'),
           question: String(data.question ?? ''),
           minValue: typeof data.minValue === 'number' ? data.minValue : 0,
           maxValue: typeof data.maxValue === 'number' ? data.maxValue : 100,
@@ -269,75 +315,21 @@ export default function StoryViewerScreen() {
             key={id}
             data={sliderData}
             onResponse={(value) => handleStickerResponse(id, { value })}
-            isCreator={ownStory}
+            isCreator={isOwnStory}
             style={stickerStyle}
           />
         );
       }
       default:
-        // location, mention, hashtag - render simple text sticker
         return (
           <View key={id} style={[stickerStyle, { backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: radius.md }]}>
             <Text style={{ color: '#fff', fontSize: fontSize.sm }}>
-              {type === 'location' ? `📍 ${String(data.name ?? '')}` : type === 'mention' ? `@${String(data.username ?? '')}` : `#${String(data.tag ?? '')}`}
+              {type === 'location' ? `\uD83D\uDCCD ${String(data.name ?? '')}` : type === 'mention' ? `@${String(data.username ?? '')}` : `#${String(data.tag ?? '')}`}
             </Text>
           </View>
         );
     }
   };
-
-  // Reset progress on story index change
-  useEffect(() => {
-    progressValue.value = 0;
-  }, [storyIndex, progressValue]);
-
-  // Progress animation (for images; videos use their own duration)
-  useEffect(() => {
-    if (paused || showViewers || story?.mediaType?.startsWith('video')) {
-      cancelAnimation(progressValue);
-      return;
-    }
-    // Resume from current progress value instead of resetting to 0
-    const currentProgress = progressValue.value;
-    const remainingDuration = STORY_DURATION * (1 - currentProgress);
-    progressValue.value = withTiming(1, { duration: Math.max(0, remainingDuration) }, (finished) => {
-      if (finished) runOnJS(advance)();
-    });
-    return () => { cancelAnimation(progressValue); };
-  }, [storyIndex, paused, showViewers, story?.mediaType, advance, progressValue]);
-
-  // Mark viewed
-  useEffect(() => {
-    if (story?.id) {
-      storiesApi.markViewed(story.id).catch(() => {});
-    }
-  }, [story?.id]);
-  const { selection } = useHaptic();
-
-function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () => void }) {
-  const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-  const handlePress = () => {
-    scale.value = withTiming(1.3, { duration: 100 }, () => {
-      scale.value = withTiming(1, { duration: 100 });
-    });
-    onPress();
-  };
-  return (
-    <Pressable 
-      onPress={handlePress} 
-      style={styles.reactionBtn} 
-      accessibilityLabel={t('accessibility.reactWithEmoji', { emoji })}
-      accessibilityRole="button"
-    >
-      <Animated.Text style={[styles.reactionEmoji, animatedStyle]}>
-        {emoji}
-      </Animated.Text>
-    </Pressable>
-  );
-}
 
   const replyMutation = useMutation({
     mutationFn: async () => {
@@ -350,6 +342,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
     },
     onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
+
   const reactionMutation = useMutation({
     mutationFn: async (emoji: string) => {
       if (!story) throw new Error('Story not available');
@@ -358,28 +351,14 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
     onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
-  // Guard: must be after all hooks
-  if (!group || group.stories.length === 0) {
-    return (
-      <View style={styles.container}>
-        <EmptyState
-          icon="flag"
-          title={t('saf.story.unavailable')}
-          subtitle={t('saf.story.unavailableSubtitle')}
-          actionLabel={t('saf.goBack')}
-          onAction={() => router.back()}
-        />
-      </View>
-    );
-  }
-
   const handleTapLeft = () => {
     cancelAnimation(progressValue);
     progressValue.value = 0;
     if (storyIndex > 0) {
       setStoryIndex(storyIndex - 1);
     } else {
-      router.back();
+      // First story in group — go to previous group
+      onGoPrevGroup();
     }
   };
 
@@ -395,234 +374,393 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
     : '';
 
   return (
-    <ScreenErrorBoundary>
-      <View style={styles.container}>
-        {/* Story media */}
-        {story?.mediaType?.startsWith('video') ? (
-          <Video
-            source={{ uri: story.mediaUrl }}
-            style={styles.media}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay={!paused}
-            isLooping={false}
-            onPlaybackStatusUpdate={(status) => {
-              if (status.isLoaded && status.durationMillis) {
-                progressValue.value = status.positionMillis / status.durationMillis;
-                if (status.didJustFinish) advance();
-              }
-            }}
-          />
-        ) : story ? (
-          <Image
-            source={{ uri: story.mediaUrl }}
-            style={styles.media}
-            contentFit="cover"
-          />
-        ) : null}
+    <View style={styles.groupPage}>
+      {/* Story media */}
+      {story?.mediaType?.startsWith('video') ? (
+        <Video
+          source={{ uri: story.mediaUrl }}
+          style={styles.media}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay={isActive && !paused}
+          isLooping={false}
+          onPlaybackStatusUpdate={(status) => {
+            if (status.isLoaded && status.durationMillis) {
+              progressValue.value = status.positionMillis / status.durationMillis;
+              if (status.didJustFinish) advance();
+            }
+          }}
+        />
+      ) : story ? (
+        <Image
+          source={{ uri: story.mediaUrl }}
+          style={styles.media}
+          contentFit="cover"
+        />
+      ) : null}
 
-        {/* Gradient overlay (top) */}
-        <LinearGradient
-          colors={['rgba(0,0,0,0.6)', 'transparent']}
-          style={styles.topOverlay}
-          pointerEvents="box-none"
-        >
-          <SafeAreaView edges={['top']}>
-            <ProgressBar
-              count={group.stories.length}
-              activeIndex={storyIndex}
-              progress={progressValue}
+      {/* Gradient overlay (top) */}
+      <LinearGradient
+        colors={['rgba(0,0,0,0.6)', 'transparent']}
+        style={styles.topOverlay}
+        pointerEvents="box-none"
+      >
+        <SafeAreaView edges={['top']}>
+          <ProgressBar
+            count={group.stories.length}
+            activeIndex={storyIndex}
+            progress={progressValue}
+          />
+          {/* User info */}
+          <View style={styles.userRow}>
+            <Avatar
+              uri={group.user.avatarUrl}
+              name={group.user.displayName}
+              size="sm"
+              showStoryRing={group.stories.length > storyIndex + 1}
+              ringColor={colors.emerald}
             />
-            {/* User info */}
-            <View style={styles.userRow}>
-              <Avatar
-                uri={group.user.avatarUrl}
-                name={group.user.displayName}
-                size="sm"
-                showStoryRing={group.stories.length > storyIndex + 1}
-                ringColor={colors.emerald}
-              />
-              <Text style={styles.userName}>{group.user.displayName}</Text>
-              <Text style={styles.timeAgo}>{timeAgo}</Text>
-              <Pressable
-                onPress={() => router.back()}
-                hitSlop={12}
-                style={styles.closeBtn}
-                accessibilityLabel={t('accessibility.closeStory')}
-                accessibilityRole="button"
-              >
-                <Icon name="x" size="sm" color={colors.text.primary} />
-              </Pressable>
-            </View>
-          </SafeAreaView>
-        </LinearGradient>
-
-        {/* Tap zones */}
-        <View style={styles.tapZones} pointerEvents="box-none">
-          <Pressable
-            style={styles.tapLeft}
-            onPress={handleTapLeft}
-            onPressIn={() => setPaused(true)}
-            onPressOut={() => setPaused(false)}
-            accessibilityLabel={t('accessibility.previousStorySlide')}
-            accessibilityRole="button"
-          />
-          <Pressable
-            style={styles.tapRight}
-            onPress={handleTapRight}
-            onPressIn={() => setPaused(true)}
-            onPressOut={() => setPaused(false)}
-            accessibilityLabel={t('accessibility.nextStorySlide')}
-            accessibilityRole="button"
-          />
-        </View>
-
-        {/* Story stickers */}
-        {stickers.length > 0 && (
-          <View style={styles.stickersContainer} pointerEvents="box-none">
-            {stickers.map(renderSticker)}
-          </View>
-        )}
-
-        {/* Text overlay */}
-        {story?.textOverlay ? (
-          <View style={styles.textOverlay}>
-            <Text style={[styles.overlayText, { color: story.textColor ?? '#fff' }]}>
-              {story.textOverlay}
-            </Text>
-          </View>
-        ) : null}
-
-        {/* Quick reactions */}
-        {!ownStory && (
-          <View style={styles.reactionsRow}>
-            {QUICK_REACTIONS.map(emoji => (
-              <EmojiReactionButton
-                key={emoji}
-                emoji={emoji}
-                onPress={() => handleStoryReaction(emoji)}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* Bottom area: reply bar for others, views tap for own */}
-        {ownStory ? (
-          <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
+            <Text style={styles.userName}>{group.user.displayName}</Text>
+            <Text style={styles.timeAgo}>{timeAgo}</Text>
             <Pressable
-              style={styles.viewsBtn}
-              onPress={() => setShowViewers(true)}
-              accessibilityLabel={t('accessibility.viewViewers', { count: story?.viewsCount })}
+              onPress={onClose}
+              hitSlop={12}
+              style={styles.closeBtn}
+              accessibilityLabel={t('accessibility.closeStory')}
               accessibilityRole="button"
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Icon name="eye" size="sm" color="#fff" />
-                <Text style={styles.viewsBtnText}>{t('saf.views', { count: story?.viewsCount })}</Text>
-              </View>
+              <Icon name="x" size="sm" color={colors.text.primary} />
             </Pressable>
-          </SafeAreaView>
-        ) : (
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.bottomBar}
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+
+      {/* Tap zones */}
+      <View style={styles.tapZones} pointerEvents="box-none">
+        <Pressable
+          style={styles.tapLeft}
+          onPress={handleTapLeft}
+          onPressIn={() => setPaused(true)}
+          onPressOut={() => setPaused(false)}
+          accessibilityLabel={t('accessibility.previousStorySlide')}
+          accessibilityRole="button"
+        />
+        <Pressable
+          style={styles.tapRight}
+          onPress={handleTapRight}
+          onPressIn={() => setPaused(true)}
+          onPressOut={() => setPaused(false)}
+          accessibilityLabel={t('accessibility.nextStorySlide')}
+          accessibilityRole="button"
+        />
+      </View>
+
+      {/* Story stickers */}
+      {stickers.length > 0 && (
+        <View style={styles.stickersContainer} pointerEvents="box-none">
+          {stickers.map(renderSticker)}
+        </View>
+      )}
+
+      {/* Text overlay */}
+      {story?.textOverlay ? (
+        <View style={styles.textOverlay}>
+          <Text style={[styles.overlayText, { color: story.textColor ?? '#fff' }]}>
+            {story.textOverlay}
+          </Text>
+        </View>
+      ) : null}
+
+      {/* Quick reactions */}
+      {!isOwnStory && (
+        <View style={styles.reactionsRow}>
+          {QUICK_REACTIONS.map(emoji => (
+            <EmojiReactionButton
+              key={emoji}
+              emoji={emoji}
+              onPress={() => handleStoryReaction(emoji)}
+              t={t}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Bottom area: reply bar for others, views tap for own */}
+      {isOwnStory ? (
+        <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
+          <Pressable
+            style={styles.viewsBtn}
+            onPress={() => setShowViewers(true)}
+            accessibilityLabel={t('accessibility.viewViewers', { count: story?.viewsCount })}
+            accessibilityRole="button"
           >
-            <SafeAreaView edges={['bottom']}>
-              {showReply ? (
-                <View style={styles.replyRow}>
-                  <TextInput
-                    style={styles.replyInput}
-                    value={replyText}
-                    onChangeText={setReplyText}
-                    placeholder={t('saf.replyToStory')}
-                    placeholderTextColor="rgba(255,255,255,0.5)"
-                    autoFocus
-                    maxLength={200}
-                    onBlur={() => setShowReply(false)}
-                    accessibilityLabel={t('accessibility.storyReplyInput')}
-                  />
-                  <Pressable
-                    onPress={() => replyMutation.mutate()}
-                    disabled={!replyText.trim() || replyMutation.isPending}
-                    hitSlop={8}
-                    style={replyMutation.isPending ? { opacity: 0.5 } : undefined}
-                    accessibilityLabel={t('accessibility.sendReply')}
-                    accessibilityRole="button"
-                  >
-                    <Icon
-                      name="send"
-                      size="sm"
-                      color={replyText.trim() ? colors.emerald : 'rgba(255,255,255,0.5)'}
-                    />
-                  </Pressable>
-                </View>
-              ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="eye" size="sm" color="#fff" />
+              <Text style={styles.viewsBtnText}>{t('saf.views', { count: story?.viewsCount })}</Text>
+            </View>
+          </Pressable>
+        </SafeAreaView>
+      ) : (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.bottomBar}
+        >
+          <SafeAreaView edges={['bottom']}>
+            {showReply ? (
+              <View style={styles.replyRow}>
+                <TextInput
+                  style={styles.replyInput}
+                  value={replyText}
+                  onChangeText={setReplyText}
+                  placeholder={t('saf.replyToStory')}
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  autoFocus
+                  maxLength={200}
+                  onBlur={() => setShowReply(false)}
+                  accessibilityLabel={t('accessibility.storyReplyInput')}
+                />
                 <Pressable
-                  style={styles.replyPlaceholder}
-                  onPress={() => { setShowReply(true); setPaused(true); }}
-                  accessibilityLabel={t('accessibility.tapToReply')}
+                  onPress={() => replyMutation.mutate()}
+                  disabled={!replyText.trim() || replyMutation.isPending}
+                  hitSlop={8}
+                  style={replyMutation.isPending ? { opacity: 0.5 } : undefined}
+                  accessibilityLabel={t('accessibility.sendReply')}
                   accessibilityRole="button"
                 >
-                  <Text style={styles.replyPlaceholderText}>
-                    {t('saf.replyToStory')}
-                  </Text>
+                  <Icon
+                    name="send"
+                    size="sm"
+                    color={replyText.trim() ? colors.emerald : 'rgba(255,255,255,0.5)'}
+                  />
                 </Pressable>
-              )}
-            </SafeAreaView>
-          </KeyboardAvoidingView>
-        )}
+              </View>
+            ) : (
+              <Pressable
+                style={styles.replyPlaceholder}
+                onPress={() => { setShowReply(true); setPaused(true); }}
+                accessibilityLabel={t('accessibility.tapToReply')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.replyPlaceholderText}>
+                  {t('saf.replyToStory')}
+                </Text>
+              </Pressable>
+            )}
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      )}
 
-        {/* Viewers bottom sheet (own stories) */}
-        <BottomSheet visible={showViewers} onClose={() => setShowViewers(false)} snapPoint={0.6}>
-          <Text style={styles.viewersTitle}>
-            {t('saf.view', { count: story?.viewsCount })}
-          </Text>
-          {viewersQuery.isLoading ? (
-            <View style={styles.viewersSkeleton}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <View key={i} style={styles.viewerSkeletonRow}>
-                  <Skeleton.Circle size={32} />
-                  <View style={{ flex: 1, gap: spacing.xs }}>
-                    <Skeleton.Rect width={120} height={13} />
-                    <Skeleton.Rect width={80} height={11} />
-                  </View>
+      {/* Viewers bottom sheet (own stories) */}
+      <BottomSheet visible={showViewers} onClose={() => setShowViewers(false)} snapPoint={0.6}>
+        <Text style={styles.viewersTitle}>
+          {t('saf.view', { count: story?.viewsCount })}
+        </Text>
+        {viewersQuery.isLoading ? (
+          <View style={styles.viewersSkeleton}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i} style={styles.viewerSkeletonRow}>
+                <Skeleton.Circle size={32} />
+                <View style={{ flex: 1, gap: spacing.xs }}>
+                  <Skeleton.Rect width={120} height={13} />
+                  <Skeleton.Rect width={80} height={11} />
                 </View>
-              ))}
-            </View>
-          ) : (
-            <FlatList
-              removeClippedSubviews={true}
-              data={viewersQuery.data?.data ?? []}
-              keyExtractor={(item) => item.id}
-              refreshControl={
-                <RefreshControl
-                  refreshing={viewersQuery.isRefetching}
-                  onRefresh={() => viewersQuery.refetch()}
-                  tintColor={colors.emerald}
-                />
-              }
-              renderItem={({ item }) => (
-                <View style={styles.viewerRow}>
-                  <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
-                  <View style={styles.viewerInfo}>
-                    <Text style={styles.viewerName}>{item.displayName}</Text>
-                    <Text style={styles.viewerUsername}>@{item.username}</Text>
-                  </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            removeClippedSubviews={true}
+            data={viewersQuery.data?.data ?? []}
+            keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl
+                refreshing={viewersQuery.isRefetching}
+                onRefresh={() => viewersQuery.refetch()}
+                tintColor={colors.emerald}
+              />
+            }
+            renderItem={({ item }) => (
+              <View style={styles.viewerRow}>
+                <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
+                <View style={styles.viewerInfo}>
+                  <Text style={styles.viewerName}>{item.displayName}</Text>
+                  <Text style={styles.viewerUsername}>@{item.username}</Text>
                 </View>
-              )}
-              ListEmptyComponent={
-                <Text style={styles.viewersEmpty}>{t('saf.noViewsYet')}</Text>
-              }
-              contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
-            />
-          )}
-        </BottomSheet>
+              </View>
+            )}
+            ListEmptyComponent={
+              <Text style={styles.viewersEmpty}>{t('saf.noViewsYet')}</Text>
+            }
+            contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
+          />
+        )}
+      </BottomSheet>
+    </View>
+  );
+});
+
+// ─── Main screen — horizontal pager across story groups ───────────────────────
+
+export default function StoryViewerScreen() {
+  const { groupJson, startIndex: startIndexParam, isOwn } = useLocalSearchParams<{
+    groupJson: string;
+    startIndex?: string;
+    isOwn?: string;
+  }>();
+
+  const storyViewerData = useStore((s) => s.storyViewerData);
+  const router = useRouter();
+  const { t } = useTranslation();
+
+  // Resolve groups array and initial group index
+  const { groups, initialGroupIndex, ownStory } = useMemo(() => {
+    let resolved: StoryGroup[] = [];
+    let startIdx = 0;
+    let own = isOwn === 'true';
+
+    if (storyViewerData && storyViewerData.groups && storyViewerData.groups.length > 0) {
+      resolved = storyViewerData.groups as StoryGroup[];
+      startIdx = storyViewerData.startIndex ?? 0;
+      if (storyViewerData.isOwn) own = true;
+    } else {
+      try {
+        const parsed = groupJson ? JSON.parse(groupJson) : null;
+        if (parsed) {
+          resolved = [parsed];
+          startIdx = 0;
+        }
+      } catch {
+        resolved = [];
+      }
+    }
+
+    // Filter out groups with no stories
+    const filtered = resolved.filter(g => g.stories.length > 0);
+    // Clamp startIdx in case filtering changed the length
+    const clampedIdx = Math.min(startIdx, Math.max(0, filtered.length - 1));
+
+    return { groups: filtered, initialGroupIndex: clampedIdx, ownStory: own };
+  }, [storyViewerData, groupJson, isOwn]);
+
+  const [currentGroupIndex, setCurrentGroupIndex] = useState(initialGroupIndex);
+  const flatListRef = useRef<FlatList<StoryGroup>>(null);
+
+  // Clear store data on unmount
+  useEffect(() => {
+    return () => {
+      useStore.getState().setStoryViewerData(null);
+    };
+  }, []);
+
+  // We need a ref to track currentGroupIndex for callbacks that
+  // might fire before React commits the state update
+  const currentGroupIndexRef = useRef(initialGroupIndex);
+
+  // Scroll to next group programmatically
+  const goToNextGroup = useCallback(() => {
+    const next = currentGroupIndexRef.current + 1;
+    if (next >= groups.length) {
+      router.back();
+      return;
+    }
+    currentGroupIndexRef.current = next;
+    setCurrentGroupIndex(next);
+    flatListRef.current?.scrollToIndex({ index: next, animated: true });
+  }, [groups.length, router]);
+
+  // Scroll to previous group programmatically
+  const goToPrevGroup = useCallback(() => {
+    const prev = currentGroupIndexRef.current;
+    if (prev <= 0) {
+      router.back();
+      return;
+    }
+    const next = prev - 1;
+    currentGroupIndexRef.current = next;
+    setCurrentGroupIndex(next);
+    flatListRef.current?.scrollToIndex({ index: next, animated: true });
+  }, [router]);
+
+  const handleClose = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  // Track which page is visible after a manual swipe
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems.length > 0 && viewableItems[0].index != null) {
+      currentGroupIndexRef.current = viewableItems[0].index;
+      setCurrentGroupIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+
+  const getItemLayout = useCallback((_: StoryGroup[] | null, index: number) => ({
+    length: SCREEN_W,
+    offset: SCREEN_W * index,
+    index,
+  }), []);
+
+  const renderGroupPage = useCallback(({ item, index }: { item: StoryGroup; index: number }) => (
+    <StoryGroupPage
+      group={item}
+      isActive={index === currentGroupIndex}
+      isOwnStory={ownStory && index === initialGroupIndex}
+      onComplete={goToNextGroup}
+      onGoPrevGroup={goToPrevGroup}
+      onClose={handleClose}
+    />
+  ), [currentGroupIndex, ownStory, initialGroupIndex, goToNextGroup, goToPrevGroup, handleClose]);
+
+  const keyExtractor = useCallback((item: StoryGroup, index: number) =>
+    `${item.user.id}-${index}`, []);
+
+  // Guard: no groups
+  if (groups.length === 0) {
+    return (
+      <ScreenErrorBoundary>
+        <View style={styles.container}>
+          <EmptyState
+            icon="flag"
+            title={t('saf.story.unavailable')}
+            subtitle={t('saf.story.unavailableSubtitle')}
+            actionLabel={t('saf.goBack')}
+            onAction={() => router.back()}
+          />
+        </View>
+      </ScreenErrorBoundary>
+    );
+  }
+
+  return (
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <FlatList
+          ref={flatListRef}
+          data={groups}
+          keyExtractor={keyExtractor}
+          renderItem={renderGroupPage}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          initialScrollIndex={initialGroupIndex}
+          getItemLayout={getItemLayout}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          removeClippedSubviews={Platform.OS === 'android'}
+          maxToRenderPerBatch={3}
+          windowSize={3}
+        />
       </View>
-  
     </ScreenErrorBoundary>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
+  groupPage: { width: SCREEN_W, height: '100%', backgroundColor: '#000' },
   media: { ...StyleSheet.absoluteFillObject },
 
   topOverlay: {
