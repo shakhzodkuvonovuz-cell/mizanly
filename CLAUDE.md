@@ -373,37 +373,56 @@ mizanly/
 - **Search:** Meilisearch | **Cache:** Upstash Redis
 - **npm NOT in shell PATH** — run all npm commands in Windows terminal
 
-## Credential Status (verified 2026-03-21)
+## Credential Status (verified 2026-03-23)
 
-**READ THIS BEFORE ASSUMING ANY FEATURE WORKS.**
+**READ THIS BEFORE ASSUMING ANY FEATURE WORKS. 7 of 32 env vars set. 25 need filling.**
 
-| Service | Env Var(s) | Status | Impact |
-|---------|-----------|--------|--------|
-| Neon PostgreSQL | `DATABASE_URL`, `DIRECT_DATABASE_URL` | **SET** | DB works |
-| Clerk Auth | `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY` | **SET** | Auth works |
-| Clerk Webhooks | `CLERK_WEBHOOK_SECRET` | **EMPTY** | User sync from Clerk dashboard broken |
-| Upstash Redis | `REDIS_URL` | **SET** | Cache + queues work |
-| Stripe Payments | `STRIPE_SECRET_KEY` | **SET (test)** | Test payments work |
-| Stripe Webhooks | `STRIPE_WEBHOOK_SECRET` | **EMPTY** | Payment event processing broken |
-| Anthropic Claude | `ANTHROPIC_API_KEY` | **SET** | Moderation + translation work |
-| Cloudflare R2 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_R2_ACCESS_KEY`, `CLOUDFLARE_R2_SECRET_KEY` | **ALL EMPTY** | ALL file uploads dead (photos, avatars, media) |
-| Cloudflare Stream | `CF_STREAM_ACCOUNT_ID`, `CF_STREAM_API_TOKEN` | **MISSING** | Video hosting dead |
-| Meilisearch | `MEILISEARCH_HOST`, `MEILISEARCH_API_KEY` | **ALL EMPTY** | Search falls back to slow Prisma queries |
-| Sentry | `SENTRY_DSN` | **EMPTY** | No error monitoring |
-| Gemini (embeddings) | `GEMINI_API_KEY` | **NOT IN .env** | Embeddings/recommendations completely dead |
-| OpenAI Whisper | `OPENAI_API_KEY` | **NOT IN .env** | Voice transcription dead |
-| Resend Email | `RESEND_API_KEY` | **NOT IN .env** | No emails send |
-| TURN/STUN Server | `TURN_SERVER_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL` | **NOT IN .env** | Video calls behind NAT fail |
-| Gold/Silver prices | `GOLD_PRICE_PER_GRAM`, `SILVER_PRICE_PER_GRAM` | **NOT IN .env** | Zakat uses hardcoded fallback ($92/g, $1.05/g) |
+### Currently SET (7/32)
+| Service | Env Var(s) | Status |
+|---------|-----------|--------|
+| Neon PostgreSQL | `DATABASE_URL`, `DIRECT_DATABASE_URL` | **SET** — DB works |
+| Clerk Auth | `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY` | **SET** — Auth works |
+| Upstash Redis | `REDIS_URL` | **SET** — Cache + queues work |
+| Stripe Payments | `STRIPE_SECRET_KEY` | **SET (test)** — Test payments work |
+| Anthropic Claude | `ANTHROPIC_API_KEY` | **SET** — Moderation + translation work |
 
-**Summary: 4 of 14 services work. R2 empty = no media uploads. Stream empty = no video. Gemini missing = no recommendations.**
+### Tier 0: MUST SET Before Launch (app won't function)
+| Service | Env Var(s) | How to Get | What Breaks Without It |
+|---------|-----------|------------|----------------------|
+| Cloudflare R2 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | Cloudflare Dashboard → R2 → Create Bucket "mizanly-media" → API Tokens | ALL uploads dead — photos, avatars, voice, stories, reels |
+| Cloudflare Stream | `CF_STREAM_ACCOUNT_ID`, `CF_STREAM_API_TOKEN`, `CF_STREAM_WEBHOOK_SECRET` | Cloudflare Dashboard → Stream → API Tokens | Video uploads, reels, live streaming all dead |
+| Clerk Webhook | `CLERK_WEBHOOK_SECRET` | Clerk Dashboard → Webhooks → Add endpoint → `/auth/webhooks` | New users created in Clerk won't exist in DB |
+| Stripe Webhook | `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Developers → Webhooks → Add endpoint → `/payments/webhook` | Payments taken but features not unlocked |
+| App URL | `APP_URL` | Set to deployed API URL (e.g. `https://api.mizanly.app`) | OG metadata, share links, QR codes show localhost |
+| TOTP Encryption | `TOTP_ENCRYPTION_KEY` or `TWO_FACTOR_ENCRYPTION_KEY` | Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` | 2FA secrets can't be encrypted/decrypted |
+| Apple Developer | N/A — $99/yr | [developer.apple.com](https://developer.apple.com) → Enroll | Cannot submit to App Store |
+| google-services.json | File in `apps/mobile/` | Firebase Console → Project Settings → Add Android app | Android push notifications dead |
 
-**ENV VAR NAME MISMATCH — PARTIALLY RESOLVED:** Upload service now reads BOTH naming conventions with fallback:
-- Code reads `R2_ACCOUNT_ID` first, falls back to `CLOUDFLARE_ACCOUNT_ID`
-- Code reads `R2_ACCESS_KEY_ID` first, falls back to `CLOUDFLARE_R2_ACCESS_KEY`
+### Tier 1: SHOULD SET Before Launch (degraded experience)
+| Service | Env Var(s) | How to Get | What Breaks |
+|---------|-----------|------------|-------------|
+| Meilisearch | `MEILISEARCH_HOST`, `MEILISEARCH_API_KEY` | `docker run -p 7700:7700 getmeili/meilisearch` or Meilisearch Cloud | Search falls back to slow Prisma LIKE queries |
+| Resend (email) | `RESEND_API_KEY` | [resend.com](https://resend.com) → API Keys | No emails — password reset, verification broken |
+| Sentry | `SENTRY_DSN` | [sentry.io](https://sentry.io) → Create Project (React Native + Node) | No crash reporting — flying blind in production |
+| Gold/Silver prices | `GOLD_PRICE_PER_GRAM`, `SILVER_PRICE_PER_GRAM` | Set current prices: `~92` and `~1.05` USD | Zakat calculator uses hardcoded fallback |
+
+### Tier 2: Nice to Have
+| Service | Env Var(s) | What It Enables |
+|---------|-----------|----------------|
+| Gemini API | `GEMINI_API_KEY` | Content embeddings, recommendations, personalized feed |
+| OpenAI Whisper | `OPENAI_API_KEY` | Voice message transcription, video captions |
+| TURN/STUN Server | `TURN_SERVER_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL` | Video calls behind NAT (most mobile users) |
+
+### NPM Packages to Install
+| Package | Command | What It Enables |
+|---------|---------|----------------|
+| react-native-webrtc | `npx expo install react-native-webrtc` | Video/audio calls + live streaming (currently UI facade) |
+| @nestjs/schedule | `npm install @nestjs/schedule` | Scheduled post auto-publisher (posts with scheduledAt never publish without this) |
+
+### ENV VAR NAME MISMATCH — RESOLVED
+- Upload service reads BOTH naming conventions: `R2_ACCOUNT_ID` first, falls back to `CLOUDFLARE_ACCOUNT_ID`
 - Stream service reads `CF_STREAM_ACCOUNT_ID` and `CF_STREAM_API_TOKEN` (set these exact names)
-- `.env.example` now includes `CF_STREAM_WEBHOOK_SECRET` (added in audit file 11)
-- Upload/stream services now log warnings if credentials are missing on startup
+- Upload/stream services log warnings on startup if credentials missing
 
 ---
 
