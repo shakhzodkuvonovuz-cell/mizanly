@@ -8,7 +8,6 @@ import {
   Pressable,
   TextInput,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -142,11 +142,11 @@ export default function SendTipScreen() {
 
   const handleSendTip = useCallback(async () => {
     if (!creator) {
-      Alert.alert(t('common.error'), t('monetization.errors.creatorInfoNotLoaded'));
+      showToast({ message: t('monetization.errors.creatorInfoNotLoaded'), variant: 'error' });
       return;
     }
     if (tipAmount <= 0) {
-      Alert.alert(t('common.error'), t('monetization.errors.selectTipAmount'));
+      showToast({ message: t('monetization.errors.selectTipAmount'), variant: 'error' });
       return;
     }
     haptic.send();
@@ -164,7 +164,7 @@ export default function SendTipScreen() {
       setIsSuccess(true);
       haptic.success();
     } catch (err) {
-      Alert.alert(t('common.error'), t('monetization.errors.failedToSendTip'));
+      showToast({ message: t('monetization.errors.failedToSendTip'), variant: 'error' });
     } finally {
       setIsSending(false);
     }

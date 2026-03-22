@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Platform } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -58,7 +58,7 @@ export default function VideoPremiereScreen() {
     const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(date);
     const isValidTime = /^\d{2}:\d{2}$/.test(time);
     if (!isValidDate || !isValidTime) {
-      Alert.alert(t('common.error'), t('premiere.invalidDateTime'));
+      showToast({ message: t('premiere.invalidDateTime'), variant: 'error' });
       return;
     }
     createMutation.mutate();

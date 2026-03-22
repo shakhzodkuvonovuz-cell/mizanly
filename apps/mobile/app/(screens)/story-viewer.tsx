@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   Dimensions, TextInput, Platform,
-  KeyboardAvoidingView, Alert, FlatList, RefreshControl,
+  KeyboardAvoidingView, FlatList, RefreshControl,
   ViewToken,
 } from 'react-native';
 import Animated, {
@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi } from '@/services/api';
+import { showToast } from '@/components/ui/Toast';
 import { PollSticker, QuizSticker, QuestionSticker, CountdownSticker, SliderSticker } from '@/components/story';
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -340,7 +341,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
       setReplyText('');
       setShowReply(false);
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const reactionMutation = useMutation({
@@ -348,7 +349,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
       if (!story) throw new Error('Story not available');
       await storiesApi.replyToStory(story.id, emoji);
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleTapLeft = () => {

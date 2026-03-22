@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, lineHeight, letterSpacing } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
@@ -206,7 +207,7 @@ export default function SettingsScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const deleteAccountMutation = useMutation({
@@ -214,7 +215,7 @@ export default function SettingsScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleSignOut = () => {

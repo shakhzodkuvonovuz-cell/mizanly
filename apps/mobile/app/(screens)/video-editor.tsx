@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
@@ -246,11 +246,10 @@ export default function VideoEditorScreen() {
           if (returnCode.isValueSuccess()) {
             setExportProgress(100);
             exportProgressAnim.value = withTiming(100, { duration: 200 });
-            Alert.alert(t('videoEditor.exportComplete'), '', [
-              { text: 'OK', onPress: () => router.back() },
-            ]);
+            showToast({ message: t('videoEditor.exportComplete'), variant: 'success' });
+            router.back();
           } else {
-            Alert.alert(t('videoEditor.exportFailed'));
+            showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
           }
           setIsExporting(false);
         },
@@ -268,7 +267,7 @@ export default function VideoEditorScreen() {
       );
       return;
     } catch (error) {
-      Alert.alert(t('videoEditor.exportFailed'));
+      showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
     }
 
     setIsExporting(false);

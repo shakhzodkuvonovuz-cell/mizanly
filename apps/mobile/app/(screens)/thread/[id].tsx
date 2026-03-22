@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, FlatList, Alert, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { showToast } from '@/components/ui/Toast';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -75,7 +76,7 @@ function ReplyRow({
   const deleteMutation = useMutation({
     mutationFn: () => threadsApi.deleteReply(threadId, reply.id),
     onSuccess: onDeleted,
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleDelete = useCallback(() => {
@@ -244,7 +245,7 @@ export default function ThreadDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['thread-replies', id] });
       queryClient.invalidateQueries({ queryKey: ['thread', id] });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleReply = useCallback((replyId: string, username: string) => {

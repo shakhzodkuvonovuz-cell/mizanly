@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +12,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { colors, fonts, spacing, fontSize, radius } from '@/theme';
 import { encryptionService } from '@/services/encryption';
 import { encryptionApi } from '@/services/encryptionApi';
@@ -144,10 +145,7 @@ function VerifyEncryptionContent() {
     async (text: string) => {
       haptic.save();
       await Clipboard.setStringAsync(text);
-      Alert.alert(
-        t('screens.verify-encryption.copied'),
-        t('screens.verify-encryption.copiedMessage')
-      );
+      showToast({ message: t('screens.verify-encryption.copiedMessage'), variant: 'success' });
     },
     [haptic, t]
   );
@@ -163,10 +161,7 @@ function VerifyEncryptionContent() {
       );
       setIsVerified(true);
     } catch {
-      Alert.alert(
-        t('common.error'),
-        t('screens.verify-encryption.verifyError')
-      );
+      showToast({ message: t('screens.verify-encryption.verifyError'), variant: 'error' });
     } finally {
       setVerifying(false);
     }

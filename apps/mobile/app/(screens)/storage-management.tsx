@@ -17,6 +17,7 @@ import type { IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -234,7 +235,7 @@ export default function StorageManagementScreen() {
               }
               setSizes((prev) => ({ ...prev, [category.key]: 0 }));
             } catch {
-              Alert.alert(t('common.error'), t('storage.clearError'));
+              showToast({ message: t('storage.clearError'), variant: 'error' });
             } finally {
               setClearing(null);
             }
@@ -264,7 +265,7 @@ export default function StorageManagementScreen() {
               }
               setSizes({ images: 0, videos: 0, voice: 0, documents: 0, cache: 0 });
             } catch {
-              Alert.alert(t('common.error'), t('storage.clearError'));
+              showToast({ message: t('storage.clearError'), variant: 'error' });
             } finally {
               setClearing(null);
             }

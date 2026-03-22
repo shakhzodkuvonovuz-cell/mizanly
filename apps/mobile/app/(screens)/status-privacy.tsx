@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -8,6 +8,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -67,7 +68,7 @@ function StatusPrivacyContent() {
           }
         }
       } catch {
-        Alert.alert(t('common.error'), t('statusPrivacy.loadError'));
+        showToast({ message: t('statusPrivacy.loadError'), variant: 'error' });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -91,10 +92,7 @@ function StatusPrivacyContent() {
       }
     } catch {
       rollback?.();
-      Alert.alert(
-        t('statusPrivacy.errorTitle', 'Error'),
-        t('statusPrivacy.errorSave', 'Failed to save privacy settings'),
-      );
+      showToast({ message: t('statusPrivacy.errorSave', 'Failed to save privacy settings'), variant: 'error' });
     } finally {
       setSaving(false);
     }

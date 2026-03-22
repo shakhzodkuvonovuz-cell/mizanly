@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, FlatList, Alert, Share,
+  View, Text, StyleSheet, Pressable, ScrollView, FlatList, Share,
   RefreshControl, TextInput, KeyboardAvoidingView, Platform, AppState, Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -34,6 +34,7 @@ import { VideoControls, type VideoQuality, type PlaybackSpeed } from '@/componen
 import { useStore } from '@/store';
 import type { Video as VideoType, VideoComment, VideoChapter } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -211,12 +212,7 @@ export default function VideoDetailScreen() {
       overlayOpacity.value = withTiming(next ? 0 : 1, { duration: 300 });
       if (!clearModeToastShown.current) {
         clearModeToastShown.current = true;
-        Alert.alert(
-          '',
-          next ? t('clearMode.hide') : t('clearMode.show'),
-          [{ text: 'OK' }],
-          { cancelable: true }
-        );
+        showToast({ message: next ? t('clearMode.hide') : t('clearMode.show'), variant: 'info' });
       }
       return next;
     });
@@ -349,7 +345,7 @@ export default function VideoDetailScreen() {
       setReplyToId(undefined);
       queryClient.invalidateQueries({ queryKey: ['video-comments', id] });
     },
-    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
