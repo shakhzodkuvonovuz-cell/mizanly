@@ -10,6 +10,7 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
+import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
@@ -42,19 +43,22 @@ const ITEM_WIDTH = (screenWidth - spacing.base * 2 - GRID_GAP * 2) / 3;
 const FEATURED_WIDTH = screenWidth * 0.75;
 const FEATURED_HEIGHT = FEATURED_WIDTH * (9 / 16);
 
-// Instagram Explore-like masonry pattern: feature items at alternating positions
-// Row pattern (3 cols): indices 0,6,7,12,13,18,19... get taller height
-const FEATURE_HEIGHT = 280;
+// Instagram Explore-like masonry pattern:
+// Every 3rd row (rows 0, 3, 6, 9...) has one featured (taller) item.
+// The featured position rotates: left (col 0), right (col 2), center (col 1), repeat.
+// This creates a visually balanced grid with 1.5x height on featured items.
+const FEATURE_HEIGHT = 270;
 const STANDARD_HEIGHT = 180;
 
 function isFeatureIndex(index: number): boolean {
-  if (index === 0) return true;
-  // After index 0, feature items appear in pairs at the start of every other row-group
-  // Pattern repeats every 6: indices 6,7, 12,13, 18,19, 24,25...
-  if (index < 6) return false;
-  const offset = index - 6;
-  const cycle = offset % 6;
-  return cycle === 0 || cycle === 1;
+  const row = Math.floor(index / 3);
+  const col = index % 3;
+  // Every 3rd row is a "featured row"
+  if (row % 3 !== 0) return false;
+  // Rotate featured column: row 0→col 0, row 3→col 2, row 6→col 1, row 9→col 0...
+  const featureRound = Math.floor(row / 3);
+  const featureCol = [0, 2, 1][featureRound % 3];
+  return col === featureCol;
 }
 
 function TrendingHashtagsSkeleton() {
@@ -253,7 +257,14 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
     isVideo ? (item as Video).thumbnailUrl :
     undefined;
 
-  const playIconVisible = isReel || isVideo;
+  // Resolve video URI for auto-play (prefer HLS for streaming efficiency, fall back to direct URL)
+  const videoUri = isReel
+    ? (item as Reel).hlsUrl || (item as Reel).videoUrl
+    : isVideo
+      ? (item as Video).hlsUrl || (item as Video).videoUrl
+      : undefined;
+
+  const hasPlayableVideo = !!(isReel || isVideo) && !!videoUri;
 
   const handlePress = () => {
     if (isReel) {
@@ -280,14 +291,26 @@ const ExploreGridItem = memo(function ExploreGridItem({ item, isFeature }: { ite
         pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
       ]}
     >
-      {thumbnailUrl ? (
+      {hasPlayableVideo ? (
+        <ExpoVideo
+          source={{ uri: videoUri }}
+          style={[styles.gridImage, { height: itemHeight }]}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay
+          isLooping
+          isMuted
+          useNativeControls={false}
+          posterSource={thumbnailUrl ? { uri: thumbnailUrl } : undefined}
+          usePoster={!!thumbnailUrl}
+        />
+      ) : thumbnailUrl ? (
         <ProgressiveImage uri={thumbnailUrl} width="100%" height={itemHeight} contentFit="cover" accessibilityLabel={t('accessibility.contentImage')} />
       ) : (
         <View style={[styles.gridImage, styles.placeholder, { backgroundColor: tc.surface }]} />
       )}
-      {playIconVisible && (
+      {(isReel || isVideo) && (
         <View style={styles.videoIndicator}>
-          <Icon name="play" size={16} color="#fff" />
+          <Icon name="play" size={14} color="#fff" />
         </View>
       )}
     </Pressable>
