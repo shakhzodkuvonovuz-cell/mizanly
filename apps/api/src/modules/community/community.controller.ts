@@ -3,7 +3,7 @@ import {
   Body, Param, Query, UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -16,6 +16,7 @@ import {
 } from './dto/community.dto';
 
 @ApiTags('Community')
+@ApiBearerAuth()
 @Controller()
 @Throttle({ default: { ttl: 60000, limit: 30 } })
 export class CommunityController {

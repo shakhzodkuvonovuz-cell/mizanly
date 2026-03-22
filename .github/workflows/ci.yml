@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm run lint --workspace=apps/api
       - run: npm run lint --workspace=apps/mobile
@@ -31,7 +31,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npx expo export --platform web
         working-directory: apps/mobile
 
@@ -61,7 +61,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm test --workspace=apps/api -- --passWithNoTests
 
@@ -74,6 +74,6 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm run build --workspace=apps/api

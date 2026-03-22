@@ -15,6 +15,7 @@ import {
 } from './dto/commerce.dto';
 
 @ApiTags('Commerce')
+@ApiBearerAuth()
 @Controller()
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 export class CommerceController {

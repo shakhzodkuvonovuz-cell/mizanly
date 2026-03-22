@@ -3,7 +3,7 @@ import {
   Body, Param, Query, UseGuards, BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -14,6 +14,7 @@ import {
 } from './dto/ai.dto';
 
 @ApiTags('AI')
+@ApiBearerAuth()
 @Controller('ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}

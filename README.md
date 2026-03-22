@@ -38,10 +38,10 @@
 - [Custom Hooks](#custom-hooks)
 - [Service Layer](#service-layer)
 - [Backend Modules](#backend-modules)
-- [Database Schema](#database-schema-187-models)
+- [Database Schema](#database-schema-188-models)
 - [WebSocket Gateway](#websocket-gateway)
 - [Internationalization](#internationalization-i18n)
-- [All Screens](#all-screens-208-total)
+- [All Screens](#all-screens-209-total)
 - [Getting Started](#getting-started)
 - [Development Scripts](#development-scripts)
 - [Local Development with Docker](#local-development-with-docker)
@@ -90,25 +90,26 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 | Source Lines (TS/TSX) | 118,000+ |
 | Test Lines (*.spec.ts) | 55,462 |
 | Total TypeScript | 173,000+ |
-| Mobile Screens | 208 |
+| Mobile Screens | 209 |
 | Backend Modules | 79 |
 | Backend Controllers | 82 |
-| Backend Services | 94 |
-| Prisma Models | 189 |
-| Prisma Schema Lines | 4,084 |
-| Test Suites | 277 |
-| Tests Passing | 4,276 (100%) |
-| UI Components | 39 |
-| Custom Hooks | 27 |
-| API Service Files | 19 |
-| Translation Keys | 2,900+ per language |
+| Backend Services | 86 |
+| Prisma Models | 188 |
+| Prisma Schema Lines | 4,080 |
+| Test Suites | 284 |
+| Tests Passing | 4,429 (100%) |
+| UI Components | 70 |
+| Custom Hooks | 23 |
+| API Service Files | 32 |
+| Translation Keys | 3,173+ per language |
+| Accessibility Keys | 103 |
 | Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
 | REST Endpoints | 850+ |
 | Socket Events | 16 |
 | DTOs | 120+ |
 | Audit Findings Fixed | 4,300+ (across 72 deep audit files) |
 | UI/UX Elevation | 87 commits, 272 files, +12.5K/-5.5K lines |
-| Git Commits | 1,050+ |
+| Git Commits | 930+ |
 | Development Time | 21 days (Mar 3–23, 2026) |
 
 ---
@@ -471,7 +472,7 @@ mizanly/
 ├── apps/
 │   ├── api/                          # NestJS backend (REST + WebSocket)
 │   │   ├── prisma/
-│   │   │   └── schema.prisma         # 188 models, 4,084 lines
+│   │   │   └── schema.prisma         # 188 models, 4,080 lines
 │   │   ├── src/
 │   │   │   ├── config/
 │   │   │   │   └── prisma.service.ts # Prisma client singleton
@@ -566,7 +567,7 @@ mizanly/
 │       │   │   ├── risalah.tsx       # WhatsApp-style conversations
 │       │   │   ├── minbar.tsx        # YouTube-style channels
 │       │   │   └── create.tsx        # Universal create button
-│       │   └── (screens)/            # 208 detail/utility screens
+│       │   └── (screens)/            # 209 detail/utility screens
 │       │       ├── conversation/     # Chat screens (per conversation)
 │       │       ├── post/             # Post detail views
 │       │       ├── profile/          # User profile views
@@ -586,10 +587,10 @@ mizanly/
 │       │       └── playlists/        # Playlist browser
 │       ├── src/
 │       │   ├── components/
-│       │   │   ├── ui/              # 39 reusable UI components (Toast, ProgressiveImage, SocialProof, BrandedRefreshControl, etc.)
+│       │   │   ├── ui/              # 70 reusable UI components (Toast, ProgressiveImage, SocialProof, BrandedRefreshControl, etc.)
 │       │   │   └── islamic/         # Islamic-specific components
-│       │   ├── hooks/               # 27 custom hooks (useContextualHaptic, useStaggeredEntrance, useScrollLinkedHeader, etc.)
-│       │   ├── services/            # 19 API service files
+│       │   ├── hooks/               # 23 custom hooks (useContextualHaptic, useStaggeredEntrance, useScrollLinkedHeader, etc.)
+│       │   ├── services/            # 32 API service files
 │       │   ├── stores/              # Zustand global store
 │       │   ├── theme/               # Design tokens
 │       │   ├── types/               # TypeScript interfaces
@@ -726,7 +727,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 **Design System:** Modern Dark Cinema Mobile style — cinematic easing (`Easing.bezier(0.16, 1, 0.3, 1)`), spring physics on all modals/sheets, glassmorphic tab bar + headers, emerald brand shimmer.
 
-**Universal Patterns Applied to ALL 208 Screens:**
+**Universal Patterns Applied to ALL 209 Screens:**
 - `useContextualHaptic` — 10 semantic haptic patterns (like, follow, save, navigate, tick, delete, error, longPress, send, success)
 - `BrandedRefreshControl` — emerald+gold branded pull-to-refresh on every list
 - `ProgressiveImage` — blurhash placeholder + crossfade on every content image
@@ -752,7 +753,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## UI Component Library
 
-39 reusable UI components in `apps/mobile/src/components/`:
+70 reusable UI components in `apps/mobile/src/components/`:
 
 | Component | File | Description |
 |-----------|------|-------------|
@@ -803,7 +804,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Custom Hooks
 
-27 hooks in `apps/mobile/src/hooks/`:
+23 hooks in `apps/mobile/src/hooks/`:
 
 | Hook | File | Description |
 |------|------|-------------|
@@ -837,7 +838,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Service Layer
 
-19 API service files in `apps/mobile/src/services/`:
+32 API service files in `apps/mobile/src/services/`:
 
 | Service | File | Description |
 |---------|------|-------------|
@@ -948,9 +949,9 @@ All 79 NestJS modules in `apps/api/src/modules/`:
 
 ---
 
-## Database Schema (166 Models)
+## Database Schema (188 Models)
 
-The Prisma schema (`apps/api/prisma/schema.prisma`) contains 188 models across 4,084 lines with 450+ relations. Models are organized by domain:
+The Prisma schema (`apps/api/prisma/schema.prisma`) contains 188 models across 4,080 lines with 450+ relations. Models are organized by domain:
 
 <details>
 <summary>Click to expand all 188 models grouped by domain</summary>
@@ -1040,18 +1041,18 @@ Real-time features are powered by a Socket.io gateway at the `/chat` namespace (
 
 ## Internationalization (i18n)
 
-Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. All language files maintain 100% key parity (2,838 keys each).
+Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. All language files maintain 100% key parity (3,173+ keys each), plus 103 dedicated accessibility keys.
 
 | File | Keys | Description |
 |------|------|-------------|
-| `en.json` | 2,415 | English (primary) |
-| `ar.json` | 2,415 | Arabic (RTL) |
-| `tr.json` | 2,415 | Turkish |
-| `ur.json` | 2,415 | Urdu (RTL) |
-| `bn.json` | 2,415 | Bengali |
-| `fr.json` | 2,415 | French |
-| `id.json` | 2,415 | Indonesian |
-| `ms.json` | 2,415 | Malay |
+| `en.json` | 3,173+ | English (primary) |
+| `ar.json` | 3,173+ | Arabic (RTL) |
+| `tr.json` | 3,173+ | Turkish |
+| `ur.json` | 3,173+ | Urdu (RTL) |
+| `bn.json` | 3,173+ | Bengali |
+| `fr.json` | 3,173+ | French |
+| `id.json` | 3,173+ | Indonesian |
+| `ms.json` | 3,173+ | Malay |
 | `index.ts` | — | i18next config with automatic device locale detection |
 
 **Implementation:**
@@ -1065,7 +1066,7 @@ Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. A
 
 ---
 
-## All Screens (203 Total)
+## All Screens (209 Total)
 
 <details>
 <summary>Click to expand complete screen list</summary>
@@ -1372,8 +1373,8 @@ Each contains dynamic `[id].tsx` or similar routes:
 git clone https://github.com/shakhzodkuvonovuz-cell/mizanly.git
 cd mizanly
 
-# Install all workspace dependencies
-npm install
+# Install all workspace dependencies (--legacy-peer-deps needed for lucide-react-native peer conflict)
+npm install --legacy-peer-deps
 
 # Start local infrastructure (Postgres, Redis, Meilisearch)
 docker compose up -d
@@ -1424,8 +1425,8 @@ npm run start:dev
 ```bash
 cd apps/mobile
 
-# 1. Install dependencies
-npm install
+# 1. Install dependencies (--legacy-peer-deps needed due to lucide-react-native peer conflict)
+npm install --legacy-peer-deps
 
 # 2. Start Expo dev server
 npx expo start
@@ -1436,6 +1437,8 @@ npx expo start
 #   Press 'w' — open in web browser
 #   Scan QR — open on physical device via Expo Go
 ```
+
+> **Note:** If you see a Metro version mismatch warning (e.g., `metro@0.81` vs `metro-resolver@0.82`), this is a known Expo SDK 52 issue with `lucide-react-native`. It does not affect functionality — Metro will still bundle correctly. The warning will be resolved when Expo SDK 53 ships with aligned Metro versions.
 
 ---
 
@@ -1665,7 +1668,7 @@ The codebase has undergone a comprehensive 72-agent deep audit with 4,300+ findi
 | **Database Indexes** | 20+ indexes added (notifications, reports, moderation logs, calls, events) |
 | **Word Filter** | Placeholder patterns replaced with real hate speech/NSFW/harassment detection |
 | **Rate Limiting** | Per-endpoint @Throttle on all 82 controllers (AI moderation: 5/min, feeds: 30/min) |
-| **Tests** | 277 suites, 3,974 tests, 100% pass rate |
+| **Tests** | 284 suites, 4,429 tests, 100% pass rate |
 
 ---
 
@@ -1683,7 +1686,7 @@ Full roadmap with 200+ features across 16 tiers:
 | 13 | Audit & Hardening — P0-P2 bug fixes, screen wiring, i18n cleanup, type safety, security | 53-64 | Complete |
 | 14 | 2026 Competitor Parity — Multi-guest live, group calls, video chapters, demographics, Quran audio, Zakat calculator, webhooks, role permissions, 8 languages | 65-85 | Complete |
 | 15 | Performance — Unbounded query caps, DB indexes, optimistic updates, memo components, Sentry | A1-C, 85 | Complete |
-| 16 | **72-Agent Deep Audit** — SQL injection fixes, fail-closed moderation, cascade delete safety, auth guard hardening, 100+ DTO validations, SSRF prevention, webhook security, notification settings enforcement, appeal workflow, 2FA security, onboarding flow, content detail screens, theme system, RTL, accessibility | Files 01-36 | **In Progress (36/72 files, 1,800+ findings fixed, 3,974 tests)** |
+| 16 | **72-Agent Deep Audit** — SQL injection fixes, fail-closed moderation, cascade delete safety, auth guard hardening, 100+ DTO validations, SSRF prevention, webhook security, notification settings enforcement, appeal workflow, 2FA security, onboarding flow, content detail screens, theme system, RTL, accessibility | Files 01-72 | **Complete (72/72 files, 4,300+ findings fixed, 4,429 tests)** |
 
 ---
 

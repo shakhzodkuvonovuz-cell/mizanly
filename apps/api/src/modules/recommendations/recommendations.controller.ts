@@ -6,6 +6,7 @@ import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Recommendations')
+@ApiBearerAuth()
 @Controller('recommendations')
 export class RecommendationsController {
   constructor(private recommendationsService: RecommendationsService) {}
