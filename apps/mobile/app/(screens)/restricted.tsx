@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   Alert,
-  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,6 +22,7 @@ import { restrictsApi } from '@/services/api';
 import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 interface RestrictedUser {
   id: string;
@@ -142,10 +142,9 @@ export default function RestrictedScreen() {
             }}
             onEndReachedThreshold={0.4}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor={colors.emerald}
               />
             }
             renderItem={({ item, index }) => (

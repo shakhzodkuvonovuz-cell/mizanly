@@ -41,7 +41,7 @@ export class PrivacyService {
     const [
       posts, threads, stories, reels, messages, follows, comments,
       postReactions, videos, bookmarks, blocks, mutes, notifications,
-      threadReplies, userSettings, searchHistory,
+      threadReplies, userSettings, watchHistory,
     ] = await Promise.all([
       this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, postType: true, createdAt: true } }),
       this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true } }),
@@ -50,15 +50,15 @@ export class PrivacyService {
       this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, messageType: true, conversationId: true, createdAt: true } }),
       this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true, createdAt: true } }),
       this.prisma.comment.findMany({ where: { userId }, select: { id: true, content: true, postId: true, createdAt: true } }),
-      this.prisma.postReaction.findMany({ where: { userId }, select: { postId: true, type: true, createdAt: true } }),
+      this.prisma.postReaction.findMany({ where: { userId }, select: { postId: true, reaction: true, createdAt: true } }),
       this.prisma.video.findMany({ where: { userId }, select: { id: true, title: true, videoUrl: true, createdAt: true } }),
-      this.prisma.bookmark.findMany({ where: { userId }, select: { id: true, postId: true, createdAt: true } }),
+      this.prisma.savedPost.findMany({ where: { userId }, select: { postId: true, createdAt: true } }),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true, createdAt: true } }),
-      this.prisma.mute.findMany({ where: { muterId: userId }, select: { mutedId: true, createdAt: true } }),
-      this.prisma.notification.findMany({ where: { userId }, select: { id: true, type: true, isRead: true, createdAt: true }, take: 50000 }),
+      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true, createdAt: true } }),
+      this.prisma.notification.findMany({ where: { userId }, select: { id: true, type: true, isRead: true, createdAt: true }, take: 10000 }),
       this.prisma.threadReply.findMany({ where: { userId }, select: { id: true, content: true, threadId: true, createdAt: true } }),
       this.prisma.userSettings.findUnique({ where: { userId } }),
-      this.prisma.searchHistory.findMany({ where: { userId }, select: { query: true, createdAt: true } }),
+      this.prisma.watchHistory.findMany({ where: { userId }, select: { videoId: true, watchedAt: true } }),
     ]);
 
     // Check which conversations have encryption envelopes to accurately mark messages
@@ -98,7 +98,7 @@ export class PrivacyService {
       mutes: mutes.map(m => m.mutedId),
       following: follows.map(f => ({ userId: f.followingId, followedAt: f.createdAt })),
       notifications: { count: notifications.length, data: notifications },
-      searchHistory,
+      watchHistory,
       exportedAt: new Date().toISOString(),
       // TODO: [LEGAL/GDPR] Add these data categories to export when models are accessible:
       // - Reel reactions, Video reactions
@@ -181,7 +181,7 @@ export class PrivacyService {
       await tx.story.deleteMany({ where: { userId } });
       await tx.threadReply.updateMany({
         where: { userId },
-        data: { isRemoved: true },
+        data: { content: '[deleted]' },
       });
 
       // Delete sensitive personal data
@@ -194,13 +194,13 @@ export class PrivacyService {
       // Remove social graph
       await tx.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } });
       await tx.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } });
-      await tx.mute.deleteMany({ where: { OR: [{ muterId: userId }, { mutedId: userId }] } });
+      await tx.mute.deleteMany({ where: { OR: [{ userId }, { mutedId: userId }] } });
 
       // Delete reactions, bookmarks, and interaction data
-      await tx.bookmark.deleteMany({ where: { userId } });
+      await tx.savedPost.deleteMany({ where: { userId } });
       await tx.postReaction.deleteMany({ where: { userId } });
       await tx.notification.deleteMany({ where: { userId } });
-      await tx.searchHistory.deleteMany({ where: { userId } });
+      await tx.watchHistory.deleteMany({ where: { userId } });
 
       // Delete user settings (contains preference data)
       await tx.userSettings.deleteMany({ where: { userId } });

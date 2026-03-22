@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Dimensions, RefreshControl,
+  FlatList, Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -23,6 +23,7 @@ import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 type HashtagPostsPage = {
   hashtag?: { postsCount: number };
@@ -177,10 +178,9 @@ export default function HashtagScreen() {
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={postsQuery.isRefetching && !postsQuery.isFetchingNextPage}
               onRefresh={() => postsQuery.refetch()}
-              tintColor={colors.emerald}
             />
           }
           renderItem={({ item, index }) => (

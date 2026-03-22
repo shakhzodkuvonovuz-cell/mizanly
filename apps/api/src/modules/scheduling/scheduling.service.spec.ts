@@ -130,15 +130,16 @@ describe('SchedulingService', () => {
       const type = 'post' as const;
       const id = 'post-1';
       const newScheduledAt = new Date(Date.now() + 30 * 60000); // 30 minutes from now
-      const mockPost = { id, userId, scheduledAt: new Date(Date.now() + 60 * 60000) };
+      const mockPost = { userId };
 
       prisma.post.findUnique.mockResolvedValue(mockPost);
-      prisma.post.update.mockResolvedValue({ ...mockPost, scheduledAt: newScheduledAt });
+      prisma.post.update.mockResolvedValue({ id, userId, scheduledAt: newScheduledAt });
 
       const result = await service.updateSchedule(userId, type, id, newScheduledAt);
 
       expect(prisma.post.findUnique).toHaveBeenCalledWith({
         where: { id },
+        select: { userId: true },
       });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id },
@@ -165,7 +166,7 @@ describe('SchedulingService', () => {
       const type = 'post' as const;
       const id = 'post-1';
       const newScheduledAt = new Date(Date.now() + 30 * 60000);
-      const mockPost = { id, userId: 'other-user', scheduledAt: new Date() };
+      const mockPost = { userId: 'other-user' };
 
       prisma.post.findUnique.mockResolvedValue(mockPost);
 
@@ -179,7 +180,7 @@ describe('SchedulingService', () => {
       const type = 'post' as const;
       const id = 'post-1';
       const newScheduledAt = new Date(Date.now() + 10 * 60000); // 10 minutes
-      const mockPost = { id, userId, scheduledAt: new Date() };
+      const mockPost = { userId };
 
       prisma.post.findUnique.mockResolvedValue(mockPost);
 
@@ -191,19 +192,20 @@ describe('SchedulingService', () => {
     it('should update scheduledAt for thread, reel, video types', async () => {
       const userId = 'user-123';
       const newScheduledAt = new Date(Date.now() + 30 * 60000);
-      const mockItem = { id: 'item-1', userId, scheduledAt: new Date() };
+      const mockItem = { userId };
 
       // Test each type
       const types = ['thread', 'reel', 'video'] as const;
       for (const type of types) {
         const model = type;
         prisma[model].findUnique.mockResolvedValue(mockItem);
-        prisma[model].update.mockResolvedValue({ ...mockItem, scheduledAt: newScheduledAt });
+        prisma[model].update.mockResolvedValue({ id: 'item-1', userId, scheduledAt: newScheduledAt });
 
         const result = await service.updateSchedule(userId, type, 'item-1', newScheduledAt);
 
         expect(prisma[model].findUnique).toHaveBeenCalledWith({
           where: { id: 'item-1' },
+          select: { userId: true },
         });
         expect(prisma[model].update).toHaveBeenCalledWith({
           where: { id: 'item-1' },
@@ -222,15 +224,15 @@ describe('SchedulingService', () => {
       const userId = 'user-123';
       const type = 'post' as const;
       const id = 'post-1';
-      const mockPost = { id, userId, scheduledAt: new Date() };
 
-      prisma.post.findUnique.mockResolvedValue(mockPost);
-      prisma.post.update.mockResolvedValue({ ...mockPost, scheduledAt: null });
+      prisma.post.findUnique.mockResolvedValue({ userId });
+      prisma.post.update.mockResolvedValue({ id, userId, scheduledAt: null });
 
       const result = await service.cancelSchedule(userId, type, id);
 
       expect(prisma.post.findUnique).toHaveBeenCalledWith({
         where: { id },
+        select: { userId: true },
       });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id },
@@ -255,9 +257,8 @@ describe('SchedulingService', () => {
       const userId = 'user-123';
       const type = 'post' as const;
       const id = 'post-1';
-      const mockPost = { id, userId: 'other-user' };
 
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.post.findUnique.mockResolvedValue({ userId: 'other-user' });
 
       await expect(service.cancelSchedule(userId, type, id)).rejects.toThrow(
         ForbiddenException,
@@ -270,15 +271,15 @@ describe('SchedulingService', () => {
       const userId = 'user-123';
       const type = 'post' as const;
       const id = 'post-1';
-      const mockPost = { id, userId, scheduledAt: new Date() };
 
-      prisma.post.findUnique.mockResolvedValue(mockPost);
-      prisma.post.update.mockResolvedValue({ ...mockPost, scheduledAt: null });
+      prisma.post.findUnique.mockResolvedValue({ userId });
+      prisma.post.update.mockResolvedValue({ id, userId, scheduledAt: null });
 
       const result = await service.publishNow(userId, type, id);
 
       expect(prisma.post.findUnique).toHaveBeenCalledWith({
         where: { id },
+        select: { userId: true },
       });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id },
@@ -303,9 +304,8 @@ describe('SchedulingService', () => {
       const userId = 'user-123';
       const type = 'post' as const;
       const id = 'post-1';
-      const mockPost = { id, userId: 'other-user' };
 
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.post.findUnique.mockResolvedValue({ userId: 'other-user' });
 
       await expect(service.publishNow(userId, type, id)).rejects.toThrow(
         ForbiddenException,

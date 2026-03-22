@@ -246,7 +246,10 @@ describe('HashtagsService', () => {
   describe('getFollowedHashtags', () => {
     it('should return followed hashtags with pagination', async () => {
       prisma.hashtagFollow.findMany.mockResolvedValue([
-        { hashtagId: 'h1', hashtag: { id: 'h1', name: 'islam', postsCount: 100 } },
+        { hashtagId: 'h1', createdAt: new Date() },
+      ]);
+      prisma.hashtag.findMany.mockResolvedValue([
+        { id: 'h1', name: 'islam', postsCount: 100 },
       ]);
       const result = await service.getFollowedHashtags('user-1');
       expect(result.data).toHaveLength(1);

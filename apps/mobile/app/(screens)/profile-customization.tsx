@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   TextInput,
 } from 'react-native';
@@ -25,6 +24,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 interface ProfileCustomization {
@@ -265,10 +265,9 @@ function ProfileCustomizationScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 56 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={isRefetching}
             onRefresh={handleRefresh}
-            tintColor={colors.emerald}
           />
         }
       >

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Alert, TextInput, RefreshControl,
+  FlatList, Alert, TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { showToast } from '@/components/ui/Toast';
 import { circlesApi } from '@/services/api';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -199,7 +200,7 @@ export default function CirclesScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   Dimensions,
   FlatList,
@@ -31,6 +30,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
 import { formatCount } from '@/utils/formatCount';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -214,10 +214,9 @@ function ProductDetailContent() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={productQuery.isFetching && !productQuery.isLoading}
             onRefresh={handleRefresh}
-            tintColor={colors.emerald}
           />
         }
       >

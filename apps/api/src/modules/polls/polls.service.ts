@@ -159,7 +159,7 @@ export class PollsService {
     // Check if poll has expired
     const poll = await this.prisma.poll.findUnique({ where: { id: pollId } });
     if (!poll) throw new NotFoundException('Poll not found');
-    if (poll.expiresAt && poll.expiresAt < new Date()) {
+    if (poll.endsAt && poll.endsAt < new Date()) {
       throw new BadRequestException('Cannot retract vote from an expired poll');
     }
 

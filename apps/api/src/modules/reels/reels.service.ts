@@ -357,7 +357,7 @@ export class ReelsService {
       data: {
         ...(data.caption !== undefined ? { caption: data.caption } : {}),
         ...(data.hashtags ? { hashtags: data.hashtags } : {}),
-        editedAt: new Date(),
+        updatedAt: new Date(),
       },
       select: REEL_SELECT,
     });
@@ -371,7 +371,7 @@ export class ReelsService {
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     // Check block status
-    if (userId && userId !== reel.user.id) {
+    if (userId && reel.user && userId !== reel.user.id) {
       const blocked = await this.prisma.block.findFirst({
         where: {
           OR: [
@@ -434,7 +434,7 @@ export class ReelsService {
     // Remove from Meilisearch index on deletion
     this.queueService.addSearchIndexJob({
       action: 'delete', indexName: 'reels', documentId: reelId,
-    }).catch(() => {});
+    }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
 
     return { deleted: true };
   }
@@ -465,7 +465,7 @@ export class ReelsService {
         `,
       ]);
       // Notify reel owner (skip self-notification)
-      if (reel.userId !== userId) {
+      if (reel.userId && reel.userId !== userId) {
         this.notifications.create({
           userId: reel.userId, actorId: userId,
           type: 'LIKE', reelId,
@@ -549,7 +549,7 @@ export class ReelsService {
       `,
     ]);
     // Notify reel owner (skip self-notification)
-    if (reel.userId !== userId) {
+    if (reel.userId && reel.userId !== userId) {
       this.notifications.create({
         userId: reel.userId, actorId: userId,
         type: 'COMMENT', reelId,

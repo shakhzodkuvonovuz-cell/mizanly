@@ -246,18 +246,17 @@ describe('ChannelsService', () => {
   });
 
   describe('delete', () => {
-    it('should soft-delete channel if user is owner', async () => {
+    it('should hard-delete channel if user is owner', async () => {
       const handle = 'tech';
       const userId = 'owner-123';
       const existingChannel = { id: 'channel-456', userId, handle };
       prisma.channel.findUnique.mockResolvedValue(existingChannel as any);
-      prisma.channel.update.mockResolvedValue({} as any);
+      prisma.channel.delete.mockResolvedValue({} as any);
 
       await service.delete(handle, userId);
 
-      expect(prisma.channel.update).toHaveBeenCalledWith({
+      expect(prisma.channel.delete).toHaveBeenCalledWith({
         where: { handle },
-        data: { isActive: false },
       });
     });
 

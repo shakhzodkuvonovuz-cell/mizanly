@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   Dimensions,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -310,10 +310,9 @@ function SeriesDetailScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor={colors.emerald}
             />
           }
           ListEmptyComponent={

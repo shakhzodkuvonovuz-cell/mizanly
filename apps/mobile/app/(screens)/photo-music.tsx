@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, Dimensions,
-  ScrollView, TextInput, RefreshControl,
+  ScrollView, TextInput,
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -29,6 +29,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { AudioTrack } from '@/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -375,10 +376,9 @@ function PhotoMusicScreen() {
                 index,
               })}
               refreshControl={
-                <RefreshControl
+                <BrandedRefreshControl
                   refreshing={false}
                   onRefresh={pickImages}
-                  tintColor={colors.emerald}
                 />
               }
             />

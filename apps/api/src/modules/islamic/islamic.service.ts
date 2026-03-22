@@ -18,7 +18,7 @@ import * as tafsirJson from './data/tafsir.json';
 import * as duasData from './data/duas.json';
 import * as asmaUlHusnaData from './data/asma-ul-husna.json';
 
-interface NameOfAllah {
+export interface NameOfAllah {
   number: number;
   arabicName: string;
   transliteration: string;
@@ -27,7 +27,7 @@ interface NameOfAllah {
   quranRef?: string;
 }
 
-interface DuaEntry {
+export interface DuaEntry {
   id: string;
   category: string;
   arabicText: string;

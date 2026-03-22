@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
 } from 'react-native';
 import { showToast } from '@/components/ui/Toast';
@@ -22,6 +21,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow, fontSizeExt } from '@/theme';
 import { gamificationApi } from '@/services/api';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -411,10 +411,9 @@ function ChallengesScreen() {
             }}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={isRefetching}
                 onRefresh={refetch}
-                tintColor={colors.emerald}
               />
             }
             ListEmptyComponent={

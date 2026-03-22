@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Dimensions, RefreshControl,
+  FlatList, Dimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import type { Post, Thread, Reel, Video } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { navigate } from '@/utils/navigation';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -296,7 +297,7 @@ export default function SavedScreen() {
             }}
             onEndReachedThreshold={0.4}
             refreshControl={
-              <RefreshControl refreshing={refreshingPosts} onRefresh={onRefreshPosts} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshingPosts} onRefresh={onRefreshPosts} />
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
@@ -335,7 +336,7 @@ export default function SavedScreen() {
             }}
             onEndReachedThreshold={0.4}
             refreshControl={
-              <RefreshControl refreshing={refreshingThreads} onRefresh={onRefreshThreads} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshingThreads} onRefresh={onRefreshThreads} />
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
@@ -387,7 +388,7 @@ export default function SavedScreen() {
             }}
             onEndReachedThreshold={0.4}
             refreshControl={
-              <RefreshControl refreshing={refreshingReels} onRefresh={onRefreshReels} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshingReels} onRefresh={onRefreshReels} />
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
@@ -426,7 +427,7 @@ export default function SavedScreen() {
             }}
             onEndReachedThreshold={0.4}
             refreshControl={
-              <RefreshControl refreshing={refreshingVideos} onRefresh={onRefreshVideos} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={refreshingVideos} onRefresh={onRefreshVideos} />
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>

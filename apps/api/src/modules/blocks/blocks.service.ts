@@ -98,7 +98,7 @@ export class BlocksService {
 
     // Invalidate profile cache for both users so blocked state is immediately visible
     if (target.username) {
-      this.redis.del(`user:${target.username}`).catch(() => {});
+      this.redis.del(`user:${target.username}`).catch(err => this.logger.warn('Failed to invalidate user cache', err instanceof Error ? err.message : err));
     }
     // Also invalidate blocker's profile cache (follower counts changed)
     const blocker = await this.prisma.user.findUnique({
@@ -106,7 +106,7 @@ export class BlocksService {
       select: { username: true },
     });
     if (blocker?.username) {
-      this.redis.del(`user:${blocker.username}`).catch(() => {});
+      this.redis.del(`user:${blocker.username}`).catch(err => this.logger.warn('Failed to invalidate blocker cache', err instanceof Error ? err.message : err));
     }
 
     // Post-block cleanup (non-blocking): remove from circles + archive DM conversations
@@ -136,7 +136,7 @@ export class BlocksService {
       // Decrement membersCount for affected circles
       if (result.count > 0) {
         for (const circleId of circleIds) {
-          await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = GREATEST("membersCount" - 1, 1) WHERE id = ${circleId}`.catch(() => {});
+          await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = GREATEST("membersCount" - 1, 1) WHERE id = ${circleId}`.catch(err => this.logger.warn('Failed to update circle member count', err instanceof Error ? err.message : err));
         }
       }
     }

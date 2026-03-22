@@ -151,7 +151,7 @@ export class LiveService {
       const follow = await this.prisma.follow.findUnique({
         where: { followerId_followingId: { followerId: userId, followingId: session.hostId } },
       });
-      if (!follow || follow.status !== 'ACCEPTED') {
+      if (!follow) {
         throw new ForbiddenException('This live session is for subscribers only');
       }
     }

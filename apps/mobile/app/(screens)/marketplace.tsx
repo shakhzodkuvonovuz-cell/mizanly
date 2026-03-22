@@ -5,7 +5,6 @@ import {
   TextInput,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   Dimensions,
   ScrollView,
@@ -28,6 +27,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
 import { formatCount } from '@/utils/formatCount';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width: screenWidth } = Dimensions.get('window');
 const GRID_GAP = spacing.sm;
@@ -322,10 +322,9 @@ function MarketplaceContent() {
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={productsQuery.isFetching && !productsQuery.isLoading}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
           />

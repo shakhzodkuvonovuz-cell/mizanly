@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, FlatList, Alert, Pressable, RefreshControl, Dimensions, type ViewStyle, type ImageStyle,
+  View, StyleSheet, FlatList, Alert, Pressable, Dimensions, type ViewStyle, type ImageStyle,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { storiesApi } from '@/services/api';
 import type { Story } from '@/types';
 import { useStore } from '@/store';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -194,10 +195,9 @@ export default function ArchiveScreen() {
             </View>
           }
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={colors.emerald}
             />
           }
         />

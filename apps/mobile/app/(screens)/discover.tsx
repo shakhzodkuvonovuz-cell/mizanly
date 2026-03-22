@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  RefreshControl,
   FlatList,
   Pressable,
   Image,
@@ -27,6 +26,7 @@ import { colors, spacing, fontSize, radius, lineHeight, letterSpacing } from '@/
 import { formatCount } from '@/utils/formatCount';
 import { searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -522,10 +522,9 @@ export default function DiscoverScreen() {
             ) : null
           }
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.emerald}
             />
           }
           onEndReached={loadMore}

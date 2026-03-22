@@ -32,7 +32,7 @@ describe('NotificationsService', () => {
             follow: { findMany: jest.fn().mockResolvedValue([]) },
             block: { findFirst: jest.fn().mockResolvedValue(null) },
             mute: { findFirst: jest.fn().mockResolvedValue(null) },
-            settings: { findUnique: jest.fn().mockResolvedValue(null) },
+            userSettings: { findUnique: jest.fn().mockResolvedValue(null) },
             user: { findUnique: jest.fn().mockResolvedValue({ notificationsOn: true }) },
           },
         },
@@ -440,7 +440,7 @@ describe('NotificationsService', () => {
     });
 
     it('should skip LIKE notification when user has notifyLikes: false', async () => {
-      prisma.settings.findUnique.mockResolvedValue({
+      prisma.userSettings.findUnique.mockResolvedValue({
         notifyLikes: false,
         notifyComments: true,
         notifyFollows: true,
@@ -461,7 +461,7 @@ describe('NotificationsService', () => {
     });
 
     it('should skip REEL_LIKE notification when user has notifyLikes: false', async () => {
-      prisma.settings.findUnique.mockResolvedValue({
+      prisma.userSettings.findUnique.mockResolvedValue({
         notifyLikes: false,
         notifyComments: true,
         notifyFollows: true,
@@ -482,7 +482,7 @@ describe('NotificationsService', () => {
     });
 
     it('should skip FOLLOW notification when user has notifyFollows: false', async () => {
-      prisma.settings.findUnique.mockResolvedValue({
+      prisma.userSettings.findUnique.mockResolvedValue({
         notifyLikes: true,
         notifyComments: true,
         notifyFollows: false,
@@ -502,7 +502,7 @@ describe('NotificationsService', () => {
     });
 
     it('should skip FOLLOW_REQUEST notification when user has notifyFollows: false', async () => {
-      prisma.settings.findUnique.mockResolvedValue({
+      prisma.userSettings.findUnique.mockResolvedValue({
         notifyLikes: true,
         notifyComments: true,
         notifyFollows: false,
@@ -522,7 +522,7 @@ describe('NotificationsService', () => {
     });
 
     it('should skip COMMENT notification when user has notifyComments: false', async () => {
-      prisma.settings.findUnique.mockResolvedValue({
+      prisma.userSettings.findUnique.mockResolvedValue({
         notifyLikes: true,
         notifyComments: false,
         notifyFollows: true,
@@ -543,7 +543,7 @@ describe('NotificationsService', () => {
     });
 
     it('should skip MENTION notification when user has notifyMentions: false', async () => {
-      prisma.settings.findUnique.mockResolvedValue({
+      prisma.userSettings.findUnique.mockResolvedValue({
         notifyLikes: true,
         notifyComments: true,
         notifyFollows: true,
@@ -564,7 +564,7 @@ describe('NotificationsService', () => {
     });
 
     it('should allow LIKE notification when user has notifyLikes: true', async () => {
-      prisma.settings.findUnique.mockResolvedValue({
+      prisma.userSettings.findUnique.mockResolvedValue({
         notifyLikes: true,
         notifyComments: true,
         notifyFollows: true,
@@ -589,7 +589,7 @@ describe('NotificationsService', () => {
 
     it('should block ALL notifications when global notificationsOn: false', async () => {
       // Per-type settings allow likes
-      prisma.settings.findUnique.mockResolvedValue({
+      prisma.userSettings.findUnique.mockResolvedValue({
         notifyLikes: true,
         notifyComments: true,
         notifyFollows: true,
@@ -613,7 +613,7 @@ describe('NotificationsService', () => {
     });
 
     it('should block FOLLOW notification when global notificationsOn: false', async () => {
-      prisma.settings.findUnique.mockResolvedValue(null); // No per-type settings
+      prisma.userSettings.findUnique.mockResolvedValue(null); // No per-type settings
       prisma.user.findUnique.mockResolvedValue({ notificationsOn: false });
 
       const result = await service.create({
@@ -627,7 +627,7 @@ describe('NotificationsService', () => {
     });
 
     it('should allow notification when global notificationsOn: true and no per-type settings', async () => {
-      prisma.settings.findUnique.mockResolvedValue(null); // No per-type settings at all
+      prisma.userSettings.findUnique.mockResolvedValue(null); // No per-type settings at all
       prisma.user.findUnique.mockResolvedValue({ notificationsOn: true });
 
       const mockNotification = { id: 'notif-global-on', isRead: false, createdAt: new Date() };
@@ -645,7 +645,7 @@ describe('NotificationsService', () => {
     });
 
     it('should skip notification when recipient has blocked the actor', async () => {
-      prisma.settings.findUnique.mockResolvedValue(null);
+      prisma.userSettings.findUnique.mockResolvedValue(null);
       prisma.user.findUnique.mockResolvedValue({ notificationsOn: true });
       prisma.block.findFirst.mockResolvedValue({
         id: 'block-1',
@@ -665,7 +665,7 @@ describe('NotificationsService', () => {
     });
 
     it('should skip notification when recipient has muted the actor', async () => {
-      prisma.settings.findUnique.mockResolvedValue(null);
+      prisma.userSettings.findUnique.mockResolvedValue(null);
       prisma.user.findUnique.mockResolvedValue({ notificationsOn: true });
       prisma.block.findFirst.mockResolvedValue(null);
       prisma.mute.findFirst.mockResolvedValue({

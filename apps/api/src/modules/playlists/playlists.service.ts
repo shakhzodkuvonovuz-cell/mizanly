@@ -214,7 +214,7 @@ export class PlaylistsService {
     channelId: string;
     isCollaborative: boolean;
     videosCount: number;
-    channel: { userId: string };
+    channel: { userId: string | null };
   }> {
     const playlist = await this.prisma.playlist.findUnique({
       where: { id: playlistId },

@@ -41,7 +41,7 @@ export class OgService {
         user: { select: { username: true, displayName: true, avatarUrl: true, isBanned: true, isDeactivated: true } },
       },
     });
-    if (!post || post.user.isBanned || post.user.isDeactivated) throw new NotFoundException('Post not found');
+    if (!post || !post.user || post.user.isBanned || post.user.isDeactivated) throw new NotFoundException('Post not found');
 
     const title = `${post.user.displayName || post.user.username} on ${APP_NAME}`;
     const description = post.content ? truncate(post.content, 200) : `Post by @${post.user.username}`;
@@ -61,7 +61,7 @@ export class OgService {
         user: { select: { username: true, displayName: true, avatarUrl: true, isBanned: true, isDeactivated: true } },
       },
     });
-    if (!reel || reel.user.isBanned || reel.user.isDeactivated) throw new NotFoundException('Reel not found');
+    if (!reel || !reel.user || reel.user.isBanned || reel.user.isDeactivated) throw new NotFoundException('Reel not found');
 
     const title = `${reel.user.displayName || reel.user.username} — Reel on ${APP_NAME}`;
     const description = reel.caption ? truncate(reel.caption, 200) : `Watch this reel by @${reel.user.username}`;
@@ -104,7 +104,7 @@ export class OgService {
         user: { select: { username: true, displayName: true, avatarUrl: true, isBanned: true, isDeactivated: true } },
       },
     });
-    if (!thread || thread.user.isBanned || thread.user.isDeactivated) throw new NotFoundException('Thread not found');
+    if (!thread || !thread.user || thread.user.isBanned || thread.user.isDeactivated) throw new NotFoundException('Thread not found');
 
     const title = `${thread.user.displayName || thread.user.username} on ${APP_NAME}`;
     const description = thread.content ? truncate(thread.content, 200) : `Thread by @${thread.user.username}`;

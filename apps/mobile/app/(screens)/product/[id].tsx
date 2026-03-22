@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   Dimensions,
   FlatList,
@@ -30,6 +29,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { navigate } from '@/utils/navigation';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width: screenWidth } = Dimensions.get('window');
 const IMAGE_HEIGHT = 300;
@@ -288,10 +288,9 @@ function ProductDetailScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={isRefetching}
             onRefresh={refetch}
-            tintColor={colors.emerald}
           />
         }
       >

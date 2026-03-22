@@ -362,6 +362,18 @@ export class PostsController {
     return this.postsService.getShareLink(id);
   }
 
+  @Post(':id/share-as-story')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Share a post as a story' })
+  shareAsStory(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.shareAsStory(id, userId);
+  }
+
   @Post(':id/cross-post')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

@@ -70,8 +70,7 @@ export class ParentalControlsController {
     @Param('childId') childId: string,
     @Body() dto: UpdateParentalControlDto,
   ) {
-    const { pin, ...controls } = dto;
-    return this.parentalControlsService.updateControls(parentUserId, childId, pin, controls);
+    return this.parentalControlsService.updateControls(parentUserId, childId, dto.pin, dto);
   }
 
   @Post(':childId/pin')

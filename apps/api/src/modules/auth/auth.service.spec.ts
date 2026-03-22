@@ -51,7 +51,7 @@ describe('AuthService', () => {
             follow: {
               findMany: jest.fn(),
             },
-            pushToken: {
+            device: {
               deleteMany: jest.fn(),
             },
           },
@@ -162,7 +162,7 @@ describe('AuthService', () => {
       const mockUser = { id: 'user-123', clerkId };
       prisma.user.findFirst.mockResolvedValue(mockUser);
       prisma.user.update.mockResolvedValue({ ...mockUser, isDeactivated: true });
-      prisma.pushToken.deleteMany.mockResolvedValue({ count: 0 });
+      prisma.device.deleteMany.mockResolvedValue({ count: 0 });
 
       const result = await service.deactivateByClerkId(clerkId);
 
@@ -171,7 +171,7 @@ describe('AuthService', () => {
         where: { id: mockUser.id },
         data: { isDeactivated: true, deactivatedAt: expect.any(Date) },
       });
-      expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({ where: { userId: mockUser.id } });
+      expect(prisma.device.deleteMany).toHaveBeenCalledWith({ where: { userId: mockUser.id } });
       expect(result).toEqual({ count: 1 });
     });
 

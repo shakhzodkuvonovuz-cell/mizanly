@@ -97,7 +97,7 @@ export class ChannelsService {
     }
 
     // Gamification: award XP for channel creation
-    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'channel_created' }).catch(() => {});
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'channel_created' }).catch(err => this.logger.warn('Failed to queue gamification XP', err instanceof Error ? err.message : err));
 
     return {
       ...channel,
@@ -168,10 +168,9 @@ export class ChannelsService {
     if (!channel) throw new NotFoundException('Channel not found');
     if (channel.userId !== userId) throw new ForbiddenException();
 
-    // Soft delete — preserve data for potential recovery
-    await this.prisma.channel.update({
+    // Hard delete — Channel model has no isActive/soft-delete field
+    await this.prisma.channel.delete({
       where: { handle },
-      data: { isActive: false },
     });
 
     return { deleted: true };
@@ -203,11 +202,13 @@ export class ChannelsService {
     ]);
 
     // Notify channel owner
-    this.notifications.create({
-      userId: channel.userId,
-      actorId: userId,
-      type: 'FOLLOW', // reuse follow notification type for subscription
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+    if (channel.userId) {
+      this.notifications.create({
+        userId: channel.userId,
+        actorId: userId,
+        type: 'FOLLOW', // reuse follow notification type for subscription
+      }).catch((err) => this.logger.error('Failed to create notification', err));
+    }
 
     return { subscribed: true };
   }

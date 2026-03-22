@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
   TextInput, Alert, KeyboardAvoidingView, Platform,
-  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { BlockedKeyword } from '@/types';
@@ -161,7 +161,7 @@ export default function BlockedKeywordsScreen() {
               contentContainerStyle={{ paddingBottom: 40 }}
               removeClippedSubviews={true}
               refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+                <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
               }
               renderItem={({ item, index }) => (
                 <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>

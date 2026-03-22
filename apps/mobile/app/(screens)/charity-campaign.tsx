@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  RefreshControl,
   Share,
   Image,
 } from 'react-native';
@@ -17,6 +16,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
@@ -106,10 +106,9 @@ function CampaignScreenContent() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={campaignQuery.isFetching && !campaignQuery.isLoading}
             onRefresh={handleRefresh}
-            tintColor={colors.emerald}
           />
         }
       >

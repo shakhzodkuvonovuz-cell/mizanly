@@ -164,7 +164,7 @@ export class MonetizationService {
     ]);
 
     // Batch fetch sender details for top supporters (single query instead of N+1)
-    const senderIds = topSupporters.map((s) => s.senderId);
+    const senderIds = topSupporters.map((s) => s.senderId).filter((id): id is string => id !== null);
     const users = senderIds.length > 0
       ? await this.prisma.user.findMany({
           where: { id: { in: senderIds } },
@@ -174,7 +174,7 @@ export class MonetizationService {
     const userMap = new Map(users.map((u) => [u.id, u]));
 
     const supporterDetails = topSupporters.map((supporter) => ({
-      user: userMap.get(supporter.senderId) || null,
+      user: supporter.senderId ? userMap.get(supporter.senderId) ?? null : null,
       totalAmount: Number(supporter._sum.amount || 0),
     }));
 

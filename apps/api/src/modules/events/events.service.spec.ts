@@ -122,7 +122,7 @@ describe('EventsService', () => {
 
       expect(mockPrismaService.event.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          communityId: 'comm1',
+          community: { connect: { id: 'comm1' } },
         }),
         include: expect.objectContaining({
           user: expect.any(Object),

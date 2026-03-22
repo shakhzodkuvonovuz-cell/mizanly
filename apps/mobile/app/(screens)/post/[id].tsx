@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
+  KeyboardAvoidingView, Platform, FlatList, Alert, Share,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { showToast } from '@/components/ui/Toast';
@@ -35,6 +35,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useTTS } from '@/hooks/useTTS';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart } from '@/utils/rtl';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -471,10 +472,9 @@ export default function PostDetailScreen() {
           }}
           onEndReachedThreshold={0.4}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={postQuery.isRefetching || commentsQuery.isRefetching}
               onRefresh={handleRefresh}
-              tintColor={colors.emerald}
             />
           }
           ListHeaderComponent={listHeader}

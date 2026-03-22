@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { CallStatus, CallType, CallParticipant } from '@prisma/client';
 
-interface CallSessionWithParticipants {
+export interface CallSessionWithParticipants {
   id: string;
   callType: CallType;
   status: CallStatus;

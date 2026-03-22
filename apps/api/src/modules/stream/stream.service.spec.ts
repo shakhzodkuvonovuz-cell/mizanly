@@ -214,7 +214,7 @@ describe('StreamService', () => {
   });
 
   describe('handleStreamError', () => {
-    it('should set video status to FAILED on error', async () => {
+    it('should set video status to DRAFT on error', async () => {
       prisma.video.findFirst.mockResolvedValueOnce({
         id: 'video-1',
         streamId: 'stream-uid-123',
@@ -225,7 +225,7 @@ describe('StreamService', () => {
 
       expect(prisma.video.update).toHaveBeenCalledWith({
         where: { id: 'video-1' },
-        data: { status: 'FAILED' },
+        data: { status: 'DRAFT' },
       });
     });
 

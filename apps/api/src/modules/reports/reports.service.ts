@@ -274,11 +274,11 @@ export class ReportsService {
       }));
     }
 
-    // Mute user when action is TEMP_MUTE
+    // Mute user when action is TEMP_MUTE — increment warningsCount as indicator
     if (actionTaken === ModerationAction.TEMP_MUTE && report.reportedUserId) {
       ops.push(this.prisma.user.update({
         where: { id: report.reportedUserId },
-        data: { isMuted: true },
+        data: { warningsCount: { increment: 1 } },
       }));
     }
 

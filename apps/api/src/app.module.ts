@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './config/prisma.module';
@@ -108,6 +109,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     }),
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    ScheduleModule.forRoot(),
     PrismaModule, RedisModule, AsyncJobsModule, QueueModule, FeatureFlagsModule, AnalyticsModule,
     AuthModule,
     UsersModule,

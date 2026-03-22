@@ -4,8 +4,8 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -262,10 +262,9 @@ function XPHistoryScreen() {
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={xpQuery.isRefetching || historyQuery.isRefetching}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
           />

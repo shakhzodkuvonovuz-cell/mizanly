@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  RefreshControl, FlatList, Dimensions, Share,
+  FlatList, Dimensions, Share,
 } from 'react-native';
 import { showToast } from '@/components/ui/Toast';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,6 +22,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
@@ -587,7 +588,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             ) : null
           }
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           onEndReached={activeTab === 'videos' || activeTab === 'playlists' ? onEndReached : undefined}
           onEndReachedThreshold={0.4}
@@ -756,7 +757,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
               />
             }
             refreshControl={
-              <RefreshControl refreshing={false} onRefresh={() => videosQuery.refetch()} tintColor={colors.emerald} />
+              <BrandedRefreshControl refreshing={false} onRefresh={() => videosQuery.refetch()} />
             }
             showsVerticalScrollIndicator={false}
           />

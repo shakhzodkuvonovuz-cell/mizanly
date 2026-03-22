@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  RefreshControl,
   Dimensions,
   Image,
 } from 'react-native';
@@ -22,6 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { creatorApi } from '@/services/creatorApi';
@@ -491,10 +491,9 @@ function CreatorDashboardContent() {
           paddingBottom: insets.bottom + spacing['2xl'],
         }}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.emerald}
           />
         }
         showsVerticalScrollIndicator={false}

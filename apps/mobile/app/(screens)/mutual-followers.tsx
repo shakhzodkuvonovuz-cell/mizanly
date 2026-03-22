@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, RefreshControl,
+  View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, followsApi } from '@/services/api';
 import type { User, PaginatedResponse } from '@/types';
 import { useStore } from '@/store';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -240,7 +241,7 @@ export default function MutualFollowersScreen() {
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
           ListEmptyComponent={() =>
             mutualFollowersQuery.isLoading ? null : (

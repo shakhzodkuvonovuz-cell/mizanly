@@ -31,6 +31,7 @@ describe('PostsController', () => {
     unlikeComment: jest.fn(),
     report: jest.fn(),
     dismiss: jest.fn(),
+    shareAsStory: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -219,6 +220,16 @@ describe('PostsController', () => {
       mockService.dismiss.mockResolvedValue({ dismissed: true });
       await controller.dismiss('post-1', 'user-1');
       expect(mockService.dismiss).toHaveBeenCalledWith('post-1', 'user-1');
+    });
+  });
+
+  describe('shareAsStory', () => {
+    it('should call service.shareAsStory with postId and userId', async () => {
+      const mockStory = { id: 'story-1', mediaUrl: 'https://cdn.example.com/img.jpg', mediaType: 'image' };
+      mockService.shareAsStory.mockResolvedValue(mockStory);
+      const result = await controller.shareAsStory('post-1', 'user-1');
+      expect(mockService.shareAsStory).toHaveBeenCalledWith('post-1', 'user-1');
+      expect(result).toEqual(mockStory);
     });
   });
 });

@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   Dimensions, TextInput, Platform,
-  KeyboardAvoidingView, FlatList, RefreshControl,
+  KeyboardAvoidingView, FlatList,
   ViewToken,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -575,10 +576,9 @@ const StoryGroupPage = memo(function StoryGroupPage({
             data={viewersQuery.data?.data ?? []}
             keyExtractor={(item) => item.id}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={viewersQuery.isRefetching}
                 onRefresh={() => viewersQuery.refetch()}
-                tintColor={colors.emerald}
               />
             }
             renderItem={({ item }) => (

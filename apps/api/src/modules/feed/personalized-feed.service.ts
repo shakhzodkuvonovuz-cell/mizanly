@@ -3,7 +3,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { EmbeddingContentType, PostVisibility, ReelStatus } from '@prisma/client';
 
-interface FeedItem {
+export interface FeedItem {
   id: string;
   type: 'post' | 'reel' | 'thread' | 'video';
   score: number;
@@ -587,14 +587,14 @@ export class PersonalizedFeedService {
         select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
         take: 500,
       });
-      items.forEach(i => map.set(i.id, i));
+      items.forEach(i => map.set(i.id, { ...i, userId: i.userId ?? undefined }));
     } else if (contentType === EmbeddingContentType.REEL) {
       const items = await this.prisma.reel.findMany({
         where: { id: { in: ids } },
         select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
         take: 500,
       });
-      items.forEach(i => map.set(i.id, i));
+      items.forEach(i => map.set(i.id, { ...i, userId: i.userId ?? undefined }));
     } else if (contentType === EmbeddingContentType.THREAD) {
       const items = await this.prisma.thread.findMany({
         where: { id: { in: ids } },
@@ -608,7 +608,7 @@ export class PersonalizedFeedService {
         viewsCount: i.viewsCount,
         hashtags: i.hashtags,
         createdAt: i.createdAt,
-        userId: i.userId,
+        userId: i.userId ?? undefined,
       }));
     }
 

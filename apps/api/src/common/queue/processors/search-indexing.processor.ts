@@ -73,7 +73,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
       case 'index':
       case 'update':
         if (document) {
-          await this.meilisearch.addDocuments(indexName, [{ id: documentId, ...document }]);
+          await this.meilisearch.addDocuments(indexName, [{ id: documentId, type: indexName, ...document }]);
           this.logger.debug(`Indexed document ${documentId} in ${indexName}`);
         }
         break;

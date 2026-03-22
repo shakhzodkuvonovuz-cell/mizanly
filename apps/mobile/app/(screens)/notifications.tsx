@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, SectionList, RefreshControl,
+  View, Text, StyleSheet, Pressable, SectionList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +9,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -475,7 +476,7 @@ export default function NotificationsScreen() {
           onEndReachedThreshold={0.4}
           onScroll={onScrollElastic}
           scrollEventThrottle={16}
-          refreshControl={<RefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={onRefresh} tintColor={colors.emerald} />}
+          refreshControl={<BrandedRefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={onRefresh} />}
           ListEmptyComponent={() =>
             query.isLoading ? (
               <View style={styles.skeletonList}>

@@ -93,7 +93,7 @@ export class FeedService {
   }
 
   async getDismissedIds(userId: string, contentType: string): Promise<string[]> {
-    const d = await this.prisma.feedDismissal.findMany({ where: { userId, contentType }, select: { contentId: true }, take: 5000 });
+    const d = await this.prisma.feedDismissal.findMany({ where: { userId, contentType }, select: { contentId: true }, take: 1000 });
     return d.map(x => x.contentId);
   }
 

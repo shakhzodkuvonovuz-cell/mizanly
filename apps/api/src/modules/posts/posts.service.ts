@@ -104,9 +104,9 @@ export class PostsService {
     if (type === 'foryou') {
       // Get blocked/muted users to exclude (bidirectional for blocks) + dismissed posts
       const [blocksOut, blocksIn, mutes, dismissals] = await Promise.all([
-        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 5000 }),
-        this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 5000 }),
-        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 5000 }),
+        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 1000 }),
+        this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 1000 }),
+        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 1000 }),
         this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'post' }, select: { contentId: true }, take: 200 }),
       ]);
       const dismissedPostIds = dismissals.map(d => d.contentId);
@@ -564,7 +564,7 @@ export class PostsService {
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
 
     // Check block status
-    if (viewerId && viewerId !== post.user.id) {
+    if (viewerId && post.user && viewerId !== post.user.id) {
       const blocked = await this.prisma.block.findFirst({
         where: {
           OR: [
@@ -609,7 +609,6 @@ export class PostsService {
         commentsDisabled: data.commentsDisabled,
         isSensitive: data.isSensitive,
         altText: data.altText,
-        editedAt: new Date(),
       },
       select: POST_SELECT,
     });
@@ -642,7 +641,7 @@ export class PostsService {
     // Remove from Meilisearch index on deletion
     this.queueService.addSearchIndexJob({
       action: 'delete', indexName: 'posts', documentId: postId,
-    }).catch(() => {});
+    }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
 
     return { deleted: true };
   }
@@ -678,7 +677,7 @@ export class PostsService {
           }),
         ]);
         // Notify post owner (skip if reacting to own post)
-        if (post.userId !== userId) {
+        if (post.userId && post.userId !== userId) {
           try {
             const notification = await this.notifications.create({
               userId: post.userId, actorId: userId,
@@ -752,7 +751,7 @@ export class PostsService {
     if (!original || original.isRemoved) throw new NotFoundException('Post not found');
 
     // Block check: cannot share posts from users who blocked you or whom you blocked
-    if (original.userId !== userId) {
+    if (original.userId && original.userId !== userId) {
       const blocked = await this.prisma.block.findFirst({
         where: {
           OR: [
@@ -786,6 +785,69 @@ export class PostsService {
       }),
     ]);
     return shared;
+  }
+
+  async shareAsStory(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        user: { select: { id: true, username: true } },
+      },
+    });
+    if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+
+    // Block check: cannot share posts from users who blocked you or whom you blocked
+    if (post.userId && post.userId !== userId) {
+      const blocked = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: post.userId },
+            { blockerId: post.userId, blockedId: userId },
+          ],
+        },
+      });
+      if (blocked) throw new NotFoundException('Post not found');
+    }
+
+    // Determine media for the story
+    const mediaUrl = post.mediaUrls?.[0];
+    if (!mediaUrl) {
+      throw new BadRequestException('Post has no media to share as a story');
+    }
+
+    const mediaType = post.mediaTypes?.[0] ?? 'image';
+    const authorUsername = post.user?.username ?? 'unknown';
+    const textOverlay = `Shared from @${authorUsername}`;
+
+    const story = await this.prisma.story.create({
+      data: {
+        userId,
+        mediaUrl,
+        mediaType,
+        thumbnailUrl: post.thumbnailUrl,
+        textOverlay,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+      select: {
+        id: true,
+        userId: true,
+        mediaUrl: true,
+        mediaType: true,
+        thumbnailUrl: true,
+        textOverlay: true,
+        viewsCount: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+    });
+
+    // Increment share count on the original post
+    await this.prisma.post.update({
+      where: { id: postId },
+      data: { sharesCount: { increment: 1 } },
+    });
+
+    return story;
   }
 
   async getComments(postId: string, cursor?: string, limit = 20) {
@@ -893,7 +955,7 @@ export class PostsService {
             this.queueService.addPushNotificationJob({ notificationId: notification.id });
           }
         }
-      } else if (post.userId !== userId) {
+      } else if (post.userId && post.userId !== userId) {
         // Top-level comment — notify post owner (skip self-notification)
         const notification = await this.notifications.create({
           userId: post.userId, actorId: userId,
@@ -922,7 +984,7 @@ export class PostsService {
 
     return this.prisma.comment.update({
       where: { id: commentId },
-      data: { content: sanitizeText(content), editedAt: new Date() },
+      data: { content: sanitizeText(content) },
       include: {
         user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       },
@@ -1222,10 +1284,10 @@ export class PostsService {
             reporterId: userId,
             reportedUserId: userId,
             reportedPostId: postId,
-            reason: 'INAPPROPRIATE',
+            reason: ReportReason.OTHER,
             description: `[Auto-moderation] Image blocked: ${result.reason || 'Policy violation'}`,
             status: 'RESOLVED',
-            actionTaken: 'REMOVE',
+            actionTaken: 'CONTENT_REMOVED',
           },
         });
       } else if (result.classification === 'WARNING') {

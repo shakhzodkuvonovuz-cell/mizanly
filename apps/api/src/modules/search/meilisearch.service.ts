@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-interface MeilisearchDocument {
+export interface MeilisearchDocument {
   id: string;
   type: string; // user, post, thread, reel, video, hashtag
   title?: string;

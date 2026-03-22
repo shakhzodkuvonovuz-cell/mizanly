@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
 type ContentType = 'post' | 'reel' | 'video';
@@ -8,6 +8,7 @@ const WINNER_THRESHOLD = 1000; // impressions before declaring winner
 
 @Injectable()
 export class ThumbnailsService {
+  private readonly logger = new Logger(ThumbnailsService.name);
   constructor(private prisma: PrismaService) {}
 
   /**
@@ -110,7 +111,7 @@ export class ThumbnailsService {
     this.prisma.thumbnailVariant.update({
       where: { id: selected.id },
       data: { impressions: { increment: 1 } },
-    }).then(() => this.checkForWinner(contentType, contentId)).catch(() => {});
+    }).then(() => this.checkForWinner(contentType, contentId)).catch(err => this.logger.warn('Failed to check thumbnail winner', err instanceof Error ? err.message : err));
 
     return { thumbnailUrl: selected.thumbnailUrl, variantId: selected.id };
   }

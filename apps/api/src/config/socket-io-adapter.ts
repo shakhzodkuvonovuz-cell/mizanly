@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { createAdapter } from '@socket.io/redis-adapter';
 import Redis from 'ioredis';
 import { Logger } from '@nestjs/common';
 
@@ -12,7 +11,7 @@ import { Logger } from '@nestjs/common';
  * Falls back to default in-memory adapter when Redis is unavailable.
  */
 export class RedisIoAdapter extends IoAdapter {
-  private adapterConstructor: ReturnType<typeof createAdapter> | undefined;
+  private adapterConstructor: ((...args: unknown[]) => unknown) | undefined;
   private readonly logger = new Logger('RedisIoAdapter');
 
   async connectToRedis(): Promise<void> {
@@ -23,12 +22,13 @@ export class RedisIoAdapter extends IoAdapter {
     }
 
     try {
+      const { createAdapter } = await import('@socket.io/redis-adapter');
       const pubClient = new Redis(redisUrl, { lazyConnect: true });
       const subClient = pubClient.duplicate();
 
       await Promise.all([pubClient.connect(), subClient.connect()]);
 
-      this.adapterConstructor = createAdapter(pubClient, subClient);
+      this.adapterConstructor = createAdapter(pubClient, subClient) as unknown as (...args: unknown[]) => unknown;
       this.logger.log('Socket.io Redis adapter connected — horizontal scaling enabled');
     } catch (error) {
       this.logger.error('Failed to connect Socket.io Redis adapter — falling back to in-memory');

@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -310,10 +310,9 @@ function SeriesDiscoverContent() {
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={seriesQuery.isFetching && !seriesQuery.isLoading}
                 onRefresh={handleRefresh}
-                tintColor={colors.emerald}
               />
             }
           />

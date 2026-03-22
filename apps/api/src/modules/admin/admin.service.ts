@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { ReportStatus, ModerationAction } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
   constructor(private prisma: PrismaService) {}
 
   async verifyAdmin(userId: string) {
@@ -135,13 +137,13 @@ export class AdminService {
     if (actionTaken === 'CONTENT_REMOVED') {
       const removals: Promise<unknown>[] = [];
       if (report.reportedPostId) {
-        removals.push(this.prisma.post.update({ where: { id: report.reportedPostId }, data: { isRemoved: true } }).catch(() => {}));
+        removals.push(this.prisma.post.update({ where: { id: report.reportedPostId }, data: { isRemoved: true } }).catch(err => this.logger.warn('Failed to remove post', err instanceof Error ? err.message : err)));
       }
       if (report.reportedCommentId) {
-        removals.push(this.prisma.comment.update({ where: { id: report.reportedCommentId }, data: { isRemoved: true } }).catch(() => {}));
+        removals.push(this.prisma.comment.update({ where: { id: report.reportedCommentId }, data: { isRemoved: true } }).catch(err => this.logger.warn('Failed to remove comment', err instanceof Error ? err.message : err)));
       }
       if (report.reportedMessageId) {
-        removals.push(this.prisma.message.update({ where: { id: report.reportedMessageId }, data: { isDeleted: true } }).catch(() => {}));
+        removals.push(this.prisma.message.update({ where: { id: report.reportedMessageId }, data: { isDeleted: true } }).catch(err => this.logger.warn('Failed to remove message', err instanceof Error ? err.message : err)));
       }
       await Promise.all(removals);
     }
@@ -158,8 +160,8 @@ export class AdminService {
     if (actionTaken === 'TEMP_MUTE' && report.reportedUserId) {
       await this.prisma.user.update({
         where: { id: report.reportedUserId },
-        data: { isMuted: true },
-      }).catch(() => {});
+        data: { warningsCount: { increment: 1 } },
+      }).catch(err => this.logger.warn('Failed to update user ban status', err instanceof Error ? err.message : err));
     }
 
     // Finding 30 (Audit 13): Handle WARNING — notify the reported user
@@ -172,7 +174,7 @@ export class AdminService {
           title: 'Content Warning',
           body: `Your content was flagged. Repeated violations may result in account restrictions.`,
         },
-      }).catch(() => {}); // Don't fail resolution if notification fails
+      }).catch(err => this.logger.warn('Failed to send resolution notification', err instanceof Error ? err.message : err));
     }
 
     // Create moderation log for audit trail (Finding 21, Audit 13)
@@ -189,7 +191,7 @@ export class AdminService {
           reason: note || `Report resolved: ${action}`,
           explanation: `Admin resolved report ${reportId} with action: ${action}`,
         },
-      }).catch(() => {}); // Don't fail the resolution if log fails
+      }).catch(err => this.logger.warn('Failed to create moderation log', err instanceof Error ? err.message : err));
     }
 
     return this.prisma.report.update({

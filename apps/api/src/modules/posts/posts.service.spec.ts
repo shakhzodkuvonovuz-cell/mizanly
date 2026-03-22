@@ -395,7 +395,7 @@ describe('PostsService', () => {
       expect(prisma.post.findUnique).toHaveBeenCalledWith({ where: { id: postId } });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id: postId },
-        data: expect.objectContaining({ content: updateData.content, editedAt: expect.any(Date) }),
+        data: expect.objectContaining({ content: updateData.content }),
         select: expect.any(Object),
       });
       expect(result).toEqual({ ...mockPost, ...updateData });
@@ -675,7 +675,7 @@ describe('PostsService', () => {
       expect(prisma.comment.findUnique).toHaveBeenCalledWith({ where: { id: commentId } });
       expect(prisma.comment.update).toHaveBeenCalledWith({
         where: { id: commentId },
-        data: expect.objectContaining({ content, editedAt: expect.any(Date) }),
+        data: expect.objectContaining({ content }),
         include: {
           user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
         },

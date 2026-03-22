@@ -1,9 +1,10 @@
 import { useState, useCallback, memo } from 'react';
 import {
   View, Text, StyleSheet,
-  FlatList, RefreshControl, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
+  FlatList, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -882,13 +883,12 @@ export default function ProfileScreen() {
           ) : null
         }
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={currentQuery.isRefetching}
             onRefresh={() => {
               profileQuery.refetch();
               currentQuery.refetch();
             }}
-            tintColor={colors.emerald}
           />
         }
         contentContainerStyle={activeTab === 'threads' ? { paddingBottom: 100 } : styles.gridContainer}

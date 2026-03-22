@@ -189,7 +189,7 @@ export class StreamService {
     if (video) {
       await this.prisma.video.update({
         where: { id: video.id },
-        data: { status: 'FAILED' },
+        data: { status: 'DRAFT' },
       });
       return;
     }

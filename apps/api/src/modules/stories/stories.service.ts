@@ -13,6 +13,7 @@ import { sanitizeText } from '../../common/utils/sanitize';
 
 const STORY_SELECT = {
   id: true,
+  userId: true,
   mediaUrl: true,
   mediaType: true,
   thumbnailUrl: true,
@@ -115,6 +116,7 @@ export class StoriesService {
     >();
 
     for (const story of stories) {
+      if (!story.user) continue;
       const key = story.user.id;
       if (!grouped.has(key)) {
         grouped.set(key, { user: story.user, stories: [], hasUnread: false });
@@ -141,8 +143,8 @@ export class StoriesService {
 
     // Sort: own stories first, then by hasUnread, then by latest story
     result.sort((a, b) => {
-      if (a.user.id === userId) return -1;
-      if (b.user.id === userId) return 1;
+      if (a.user?.id === userId) return -1;
+      if (b.user?.id === userId) return 1;
       if (a.hasUnread && !b.hasUnread) return -1;
       if (!a.hasUnread && b.hasUnread) return 1;
       return 0;
@@ -192,7 +194,7 @@ export class StoriesService {
     }
 
     // Gamification: award XP for story creation
-    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'story_created' }).catch(() => {});
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'story_created' }).catch(err => this.logger.warn('Failed to queue gamification XP', err instanceof Error ? err.message : err));
 
     return story;
   }
@@ -228,16 +230,18 @@ export class StoriesService {
       if (story.expiresAt && story.expiresAt < new Date()) throw new NotFoundException('Story has expired');
 
       // Private account: only approved followers can view stories
-      const author = await this.prisma.user.findUnique({
-        where: { id: story.userId },
-        select: { isPrivate: true },
-      });
-      if (author?.isPrivate) {
-        if (!viewerId) throw new ForbiddenException('This account is private');
-        const follow = await this.prisma.follow.findUnique({
-          where: { followerId_followingId: { followerId: viewerId, followingId: story.userId } },
+      if (story.userId) {
+        const author = await this.prisma.user.findUnique({
+          where: { id: story.userId },
+          select: { isPrivate: true },
         });
-        if (!follow) throw new ForbiddenException('This account is private');
+        if (author?.isPrivate) {
+          if (!viewerId) throw new ForbiddenException('This account is private');
+          const follow = await this.prisma.follow.findUnique({
+            where: { followerId_followingId: { followerId: viewerId, followingId: story.userId } },
+          });
+          if (!follow) throw new ForbiddenException('This account is private');
+        }
       }
 
       // Record view if viewer is authenticated and not the owner
@@ -246,7 +250,7 @@ export class StoriesService {
           where: { storyId_viewerId: { storyId, viewerId } },
           create: { storyId, viewerId },
           update: {},
-        }).catch(() => {}); // non-blocking, don't fail the read
+        }).catch(err => this.logger.warn('Failed to record story view', err instanceof Error ? err.message : err));
       }
     }
 
@@ -348,6 +352,7 @@ export class StoriesService {
     if (!story) throw new NotFoundException('Story not found');
 
     const ownerId = story.userId;
+    if (!ownerId) throw new NotFoundException('Story not found');
     if (senderId === ownerId) {
       throw new BadRequestException('Cannot reply to your own story');
     }

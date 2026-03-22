@@ -401,11 +401,11 @@ export class ModerationService {
     // If accepted, reverse the action (un-remove content, un-ban user)
     if (accepted) {
       if (log.action === 'CONTENT_REMOVED') {
-        if (log.targetPostId) await this.prisma.post.update({ where: { id: log.targetPostId }, data: { isRemoved: false } }).catch(() => {});
-        if (log.targetCommentId) await this.prisma.comment.update({ where: { id: log.targetCommentId }, data: { isRemoved: false } }).catch(() => {});
+        if (log.targetPostId) await this.prisma.post.update({ where: { id: log.targetPostId }, data: { isRemoved: false } }).catch(err => this.logger.warn('Failed to restore post', err instanceof Error ? err.message : err));
+        if (log.targetCommentId) await this.prisma.comment.update({ where: { id: log.targetCommentId }, data: { isRemoved: false } }).catch(err => this.logger.warn('Failed to restore comment', err instanceof Error ? err.message : err));
       }
       if ((log.action === 'PERMANENT_BAN' || log.action === 'TEMP_BAN') && log.targetUserId) {
-        await this.prisma.user.update({ where: { id: log.targetUserId }, data: { isBanned: false, banExpiresAt: null } }).catch(() => {});
+        await this.prisma.user.update({ where: { id: log.targetUserId }, data: { isBanned: false, banExpiresAt: null } }).catch(err => this.logger.warn('Failed to unban user', err instanceof Error ? err.message : err));
       }
     }
 

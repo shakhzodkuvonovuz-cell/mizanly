@@ -64,7 +64,7 @@ export class FeedTransparencyService {
         user: { select: { username: true } },
       },
     });
-    if (!post) return { reasons: ['Post not found'] };
+    if (!post || !post.userId) return { reasons: ['Post not found'] };
 
     // Check if user follows the author
     const follows = await this.prisma.follow.findUnique({
@@ -76,7 +76,7 @@ export class FeedTransparencyService {
       },
     });
     if (follows) {
-      reasons.push(`Posted by @${post.user.username}, who you follow`);
+      reasons.push(`Posted by @${post.user?.username ?? 'unknown'}, who you follow`);
     }
 
     // Check engagement
@@ -131,7 +131,7 @@ export class FeedTransparencyService {
         user: { select: { username: true } },
       },
     });
-    if (!thread) return { reasons: ['Thread not found'] };
+    if (!thread || !thread.userId) return { reasons: ['Thread not found'] };
 
     const follows = await this.prisma.follow.findUnique({
       where: {
@@ -142,7 +142,7 @@ export class FeedTransparencyService {
       },
     });
     if (follows) {
-      reasons.push(`Posted by @${thread.user.username}, who you follow`);
+      reasons.push(`Posted by @${thread.user?.username ?? 'unknown'}, who you follow`);
     }
     if (thread.likesCount > 50) {
       reasons.push(`Trending thread with ${thread.likesCount} likes`);
@@ -216,7 +216,8 @@ export class FeedTransparencyService {
     });
 
     const hasMore = posts.length > limit;
-    const data = hasMore ? posts.slice(0, limit) : posts;
+    const sliced = hasMore ? posts.slice(0, limit) : posts;
+    const data = sliced.filter((p): p is typeof p & { user: NonNullable<typeof p.user> } => p.user !== null);
     return {
       data,
       meta: {

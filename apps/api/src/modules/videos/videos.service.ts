@@ -41,6 +41,7 @@ const VIDEO_SELECT = {
   dislikesCount: true,
   commentsCount: true,
   status: true,
+  isRemoved: true,
   publishedAt: true,
   createdAt: true,
   user: {
@@ -285,7 +286,7 @@ export class VideosService {
     if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
 
     // Check block status
-    if (userId && userId !== video.user.id) {
+    if (userId && video.user && userId !== video.user.id) {
       const blocked = await this.prisma.block.findFirst({
         where: {
           OR: [
@@ -392,7 +393,7 @@ export class VideosService {
     // Remove from Meilisearch index on deletion
     this.queueService.addSearchIndexJob({
       action: 'delete', indexName: 'videos', documentId: videoId,
-    }).catch(() => {});
+    }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
 
     return { deleted: true };
   }
@@ -436,7 +437,7 @@ export class VideosService {
       });
 
       // Notify video owner (not self)
-      if (video.userId !== userId) {
+      if (video.userId && video.userId !== userId) {
         this.notifications.create({
           userId: video.userId,
           actorId: userId,
@@ -549,7 +550,7 @@ export class VideosService {
     ]);
 
     // Notify video owner (if not own comment)
-    if (video.userId !== userId) {
+    if (video.userId && video.userId !== userId) {
       this.notifications.create({
         userId: video.userId,
         actorId: userId,

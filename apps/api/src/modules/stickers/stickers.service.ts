@@ -34,7 +34,6 @@ export class StickersService {
         coverUrl: data.coverUrl,
         isFree: data.isFree ?? true,
         stickersCount: data.stickers.length,
-        ...(userId ? { createdById: userId } : {}),
         stickers: {
           createMany: {
             data: data.stickers.map((s, i) => ({ url: s.url, name: s.name, position: i })),
@@ -136,18 +135,12 @@ export class StickersService {
   async deletePack(packId: string, userId?: string) {
     // Verify ownership or admin before deleting
     if (userId) {
-      const pack = await this.prisma.stickerPack.findUnique({
-        where: { id: packId },
-        select: { createdById: true },
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
       });
-      if (pack && pack.createdById && pack.createdById !== userId) {
-        const user = await this.prisma.user.findUnique({
-          where: { id: userId },
-          select: { role: true },
-        });
-        if (!user || user.role !== 'ADMIN') {
-          throw new BadRequestException('Not authorized to delete this pack');
-        }
+      if (!user || user.role !== 'ADMIN') {
+        throw new BadRequestException('Not authorized to delete this pack');
       }
     }
     try {

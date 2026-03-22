@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   useWindowDimensions,
 } from 'react-native';
@@ -19,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, fontSizeExt } from '@/theme';
 import { gamificationApi } from '@/services/api';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -312,10 +312,9 @@ function AchievementsScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={isRefetching}
                 onRefresh={refetch}
-                tintColor={colors.emerald}
               />
             }
             ListEmptyComponent={

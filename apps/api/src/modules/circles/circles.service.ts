@@ -165,8 +165,8 @@ export class CirclesService {
       where: { circleId },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       take: limit + 1,
-      orderBy: { createdAt: 'asc' },
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { joinedAt: 'asc' },
+      ...(cursor ? { cursor: { circleId_userId: { circleId, userId: cursor } }, skip: 1 } : {}),
     });
 
     const hasMore = members.length > limit;
@@ -174,7 +174,7 @@ export class CirclesService {
     return {
       data: items,
       meta: {
-        cursor: hasMore ? items[items.length - 1].id : null,
+        cursor: hasMore ? items[items.length - 1].userId : null,
         hasMore,
       },
     };

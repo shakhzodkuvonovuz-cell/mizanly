@@ -110,7 +110,7 @@ export class StripeWebhookController {
         break;
       }
       case 'charge.dispute.created': {
-        const dispute = event.data.object;
+        const dispute = event.data.object as unknown as Record<string, unknown>;
         await this.paymentsService.handleDisputeCreated(dispute);
         break;
       }

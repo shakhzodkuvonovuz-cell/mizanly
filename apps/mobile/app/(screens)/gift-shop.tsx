@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList, RefreshControl, ScrollView,
+  View, Text, StyleSheet, Pressable, FlatList, ScrollView,
 } from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { TabSelector } from '@/components/ui/TabSelector';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -258,10 +259,9 @@ function GiftShopContent() {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + spacing.xl }]}
       refreshControl={
-        <RefreshControl
+        <BrandedRefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.emerald}
         />
       }
     >
@@ -368,10 +368,9 @@ function GiftShopContent() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.historyList, { paddingBottom: insets.bottom + spacing.xl }]}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.emerald}
           />
         }
       />

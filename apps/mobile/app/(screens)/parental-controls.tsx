@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +24,7 @@ import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import type { ParentalControl } from '@/types';
 import { navigate } from '@/utils/navigation';
 import { formatCount } from '@/utils/formatCount';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 // ── PIN Pad ──
 function PinPad({
@@ -611,10 +611,9 @@ export default function ParentalControlsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 60 }]}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={childrenQuery.isFetching && !childrenQuery.isLoading}
               onRefresh={onRefresh}
-              tintColor={colors.emerald}
             />
           }
           ListHeaderComponent={

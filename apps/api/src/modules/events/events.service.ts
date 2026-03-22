@@ -30,7 +30,7 @@ export class EventsService {
       user: { connect: { id: userId } },
     };
     if (dto.communityId) {
-      data.communityId = dto.communityId;
+      data.community = { connect: { id: dto.communityId } };
     }
 
     const event = await this.prisma.event.create({
@@ -228,7 +228,9 @@ export class EventsService {
     if (dto.eventType !== undefined) data.eventType = dto.eventType;
     if (dto.privacy !== undefined) data.privacy = dto.privacy;
     if (dto.communityId !== undefined) {
-      data.communityId = dto.communityId;
+      data.community = dto.communityId
+        ? { connect: { id: dto.communityId } }
+        : { disconnect: true };
     }
 
     const updated = await this.prisma.event.update({

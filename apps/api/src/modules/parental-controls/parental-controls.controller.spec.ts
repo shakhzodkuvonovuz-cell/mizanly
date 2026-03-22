@@ -89,8 +89,8 @@ describe('ParentalControlsController', () => {
 
       await controller.updateControls(userId, 'child-1', dto as any);
 
-      // Controller destructures pin from DTO and passes it separately
-      expect(service.updateControls).toHaveBeenCalledWith(userId, 'child-1', '1234', { screenTimeLimit: 120, contentFilter: 'strict' });
+      // Controller passes full DTO (no destructuring)
+      expect(service.updateControls).toHaveBeenCalledWith(userId, 'child-1', '1234', dto);
     });
   });
 

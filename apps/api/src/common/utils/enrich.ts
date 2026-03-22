@@ -106,7 +106,7 @@ export async function enrichVideosForUser<T extends { id: string }>(
   const [reactions, saved] = await Promise.all([
     prisma.videoReaction.findMany({
       where: { userId, videoId: { in: videoIds } },
-      select: { videoId: true, reaction: true },
+      select: { videoId: true, isLike: true },
       take: 50,
     }),
     prisma.videoBookmark.findMany({
@@ -115,7 +115,7 @@ export async function enrichVideosForUser<T extends { id: string }>(
       take: 50,
     }),
   ]);
-  const reactionMap = new Map(reactions.map(r => [r.videoId, r.reaction]));
+  const reactionMap = new Map(reactions.map(r => [r.videoId, r.isLike ? 'LIKE' : 'DISLIKE']));
   const savedSet = new Set(saved.map(s => s.videoId));
   return videos.map(video => ({
     ...video,

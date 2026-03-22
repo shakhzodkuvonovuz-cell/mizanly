@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
@@ -21,6 +20,7 @@ import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { creatorApi } from '@/services/creatorApi';
 import { postsApi } from '@/services/api';
 import type { Post } from '@/types';
@@ -191,10 +191,9 @@ function PostInsightsContent() {
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.emerald}
           />
         }
       >

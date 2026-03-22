@@ -317,8 +317,8 @@ export class AuthService {
       data: { isDeactivated: true, deactivatedAt: new Date() },
     });
 
-    // Clean up push tokens so no notifications are sent to deactivated user
-    await this.prisma.pushToken.deleteMany({ where: { userId: user.id } });
+    // Clean up device tokens so no notifications are sent to deactivated user
+    await this.prisma.device.deleteMany({ where: { userId: user.id } });
 
     return { count: 1 };
   }

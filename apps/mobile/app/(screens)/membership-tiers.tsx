@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
   TextInput,
   Dimensions,
@@ -27,6 +26,7 @@ import type { MembershipTier, MembershipSubscription } from '@/types/monetizatio
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width } = Dimensions.get('window');
 
@@ -267,7 +267,7 @@ export default function MembershipTiersScreen() {
           <FlatList
             data={tiers}
             keyExtractor={item => item.id}
-            refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+            refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             contentContainerStyle={styles.scrollContent}
             ListHeaderComponent={
               <>

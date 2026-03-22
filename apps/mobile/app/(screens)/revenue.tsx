@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -22,6 +21,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 import { navigate } from '@/utils/navigation';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 // ── Local types ──
 
@@ -329,10 +329,9 @@ function RevenueContent() {
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.emerald}
           />
         }
         showsVerticalScrollIndicator={false}

@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   Pressable,
   TextInput,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -232,10 +232,9 @@ function ScholarVerificationContent() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.emerald}
           />
         }
       >
@@ -302,10 +301,9 @@ function ScholarVerificationContent() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       refreshControl={
-        <RefreshControl
+        <BrandedRefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.emerald}
         />
       }
     >

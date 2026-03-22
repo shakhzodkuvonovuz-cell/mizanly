@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
   useWindowDimensions,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -286,10 +286,9 @@ function StreaksScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={isRefetching}
             onRefresh={refetch}
-            tintColor={colors.emerald}
           />
         }
       >

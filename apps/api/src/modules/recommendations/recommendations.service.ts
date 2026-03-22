@@ -327,13 +327,13 @@ export class RecommendationsService {
 
     if (contentType === EmbeddingContentType.POST) {
       const items = await this.prisma.post.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.userId));
+      items.forEach(i => { if (i.userId) map.set(i.id, i.userId); });
     } else if (contentType === EmbeddingContentType.REEL) {
       const items = await this.prisma.reel.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.userId));
+      items.forEach(i => { if (i.userId) map.set(i.id, i.userId); });
     } else if (contentType === EmbeddingContentType.THREAD) {
       const items = await this.prisma.thread.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.userId));
+      items.forEach(i => { if (i.userId) map.set(i.id, i.userId); });
     }
 
     return map;

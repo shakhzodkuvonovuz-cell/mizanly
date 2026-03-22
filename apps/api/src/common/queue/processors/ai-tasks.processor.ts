@@ -101,16 +101,16 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
         let reportedUserId: string | undefined;
         if (contentType === 'post') {
           const post = await this.prisma.post.findUnique({ where: { id: contentId }, select: { userId: true } });
-          reportedUserId = post?.userId;
+          reportedUserId = post?.userId ?? undefined;
         } else if (contentType === 'thread') {
           const thread = await this.prisma.thread.findUnique({ where: { id: contentId }, select: { userId: true } });
-          reportedUserId = thread?.userId;
+          reportedUserId = thread?.userId ?? undefined;
         } else if (contentType === 'reel') {
           const reel = await this.prisma.reel.findUnique({ where: { id: contentId }, select: { userId: true } });
-          reportedUserId = reel?.userId;
+          reportedUserId = reel?.userId ?? undefined;
         } else if (contentType === 'comment') {
           const comment = await this.prisma.comment.findUnique({ where: { id: contentId }, select: { userId: true } });
-          reportedUserId = comment?.userId;
+          reportedUserId = comment?.userId ?? undefined;
         }
 
         await this.prisma.report.create({

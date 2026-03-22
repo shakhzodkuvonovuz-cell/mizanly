@@ -430,7 +430,7 @@ export class ThreadsService {
     let userReaction: string | null = null;
     let isBookmarked = false;
 
-    if (viewerId) {
+    if (viewerId && thread.user) {
       // Check if blocked in either direction
       const block = await this.prisma.block.findFirst({
         where: {
@@ -465,7 +465,7 @@ export class ThreadsService {
 
     return this.prisma.thread.update({
       where: { id: threadId },
-      data: { content: sanitizeText(content), editedAt: new Date() },
+      data: { content: sanitizeText(content) },
       select: THREAD_SELECT,
     });
   }
@@ -495,7 +495,7 @@ export class ThreadsService {
     // Remove from Meilisearch index on deletion
     this.queueService.addSearchIndexJob({
       action: 'delete', indexName: 'threads', documentId: threadId,
-    }).catch(() => {});
+    }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
 
     return { deleted: true };
   }
@@ -525,7 +525,7 @@ export class ThreadsService {
         }),
       ]);
       // Notify thread owner (skip self-notification)
-      if (thread.userId !== userId) {
+      if (thread.userId && thread.userId !== userId) {
         this.notifications.create({
           userId: thread.userId, actorId: userId,
           type: 'LIKE', threadId,
@@ -591,10 +591,12 @@ export class ThreadsService {
       }),
     ]);
     // Notify thread owner (always different user due to self-repost guard above)
-    this.notifications.create({
-      userId: original.userId, actorId: userId,
-      type: 'REPOST', threadId,
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+    if (original.userId) {
+      this.notifications.create({
+        userId: original.userId, actorId: userId,
+        type: 'REPOST', threadId,
+      }).catch((err) => this.logger.error('Failed to create notification', err));
+    }
     return repost;
   }
 
@@ -728,7 +730,7 @@ export class ThreadsService {
 
     // Enforce reply permission
     if (thread.replyPermission && thread.replyPermission !== 'everyone' && thread.userId !== userId) {
-      if (thread.replyPermission === 'following') {
+      if (thread.replyPermission === 'following' && thread.userId) {
         const isFollowing = await this.prisma.follow.findUnique({
           where: { followerId_followingId: { followerId: thread.userId, followingId: userId } },
         });
@@ -756,10 +758,10 @@ export class ThreadsService {
       }),
     ]);
     // Gamification: award XP for thread reply
-    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_reply_created' }).catch(() => {});
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_reply_created' }).catch(err => this.logger.warn('Failed to queue gamification XP', err instanceof Error ? err.message : err));
 
     // Notify thread owner (skip self-notification)
-    if (thread.userId !== userId) {
+    if (thread.userId && thread.userId !== userId) {
       this.notifications.create({
         userId: thread.userId, actorId: userId,
         type: 'THREAD_REPLY', threadId,
@@ -918,7 +920,7 @@ export class ThreadsService {
 
     // Following check requires authenticated user
     if (permission === 'following') {
-      if (!userId) return { canReply: false, reason: 'not_following' };
+      if (!userId || !thread.userId) return { canReply: false, reason: 'not_following' };
       const follow = await this.prisma.follow.findUnique({
         where: { followerId_followingId: { followerId: userId, followingId: thread.userId } },
       });

@@ -46,7 +46,7 @@ describe('SearchIndexingProcessor', () => {
         updateProgress: jest.fn(),
       };
       await (processor as any).processSearchIndex(job);
-      expect(meilisearch.addDocuments).toHaveBeenCalledWith('posts', [{ id: 'p1', content: 'test' }]);
+      expect(meilisearch.addDocuments).toHaveBeenCalledWith('posts', [{ id: 'p1', type: 'posts', content: 'test' }]);
       expect(job.updateProgress).toHaveBeenCalledWith(100);
     });
 

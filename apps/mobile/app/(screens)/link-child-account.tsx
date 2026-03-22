@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  RefreshControl, TextInput,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +18,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, parentalApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
@@ -260,10 +261,9 @@ export default function LinkChildAccountScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl
+              <BrandedRefreshControl
                 refreshing={searchResults.isFetching && !searchResults.isLoading}
                 onRefresh={() => searchResults.refetch()}
-                tintColor={colors.emerald}
               />
             }
             renderItem={({ item }) => (

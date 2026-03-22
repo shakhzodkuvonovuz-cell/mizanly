@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, RefreshControl,
+  View, Text, StyleSheet, ScrollView, Pressable,
 } from 'react-native';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -219,10 +220,9 @@ export default function ScreenTimeScreen() {
           style={styles.body}
           contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}
           refreshControl={
-            <RefreshControl
+            <BrandedRefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.emerald}
             />
           }
         >

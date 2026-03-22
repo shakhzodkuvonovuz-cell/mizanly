@@ -154,7 +154,7 @@ export class NotificationsService {
 
     // Fetch all pre-creation checks in parallel: settings, user prefs, block/mute
     const [settings, user, blockExists, muteExists] = await Promise.all([
-      this.prisma.settings.findUnique({
+      this.prisma.userSettings.findUnique({
         where: { userId: params.userId },
         select: { notifyLikes: true, notifyComments: true, notifyFollows: true, notifyMentions: true, notifyMessages: true, notifyLiveStreams: true },
       }),

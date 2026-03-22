@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet,
-  FlatList, Alert, RefreshControl,
+  FlatList, Alert,
 } from 'react-native';
 import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
@@ -32,6 +32,7 @@ interface MutedUser {
 import type { PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function MutedScreen() {
@@ -111,7 +112,7 @@ export default function MutedScreen() {
           }}
           onEndReachedThreshold={0.4}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           renderItem={({ item, index }) => {
             const u = item.muted;

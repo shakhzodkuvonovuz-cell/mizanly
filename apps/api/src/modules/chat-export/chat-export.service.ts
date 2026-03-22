@@ -107,7 +107,7 @@ export class ChatExportService {
           messageType: msg.messageType,
           mediaUrl: includeMedia ? ((msg as Record<string, unknown>).mediaUrl as string | null) ?? null : null,
           createdAt: msg.createdAt,
-          sender: msg.sender,
+          sender: msg.sender ?? { username: 'deleted', displayName: 'Deleted User' },
         });
       }
 
