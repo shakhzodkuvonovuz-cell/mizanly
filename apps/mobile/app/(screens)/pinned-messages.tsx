@@ -92,14 +92,14 @@ export default function PinnedMessagesScreen() {
                   accessibilityLabel={t('screens.pinned-messages.unpin')}
                   accessibilityRole="button"
                 >
-                  <Icon name="x" size="xs" color={colors.text.tertiary} />
+                  <Icon name="x" size="xs" color={tc.text.tertiary} />
                 </Pressable>
               </View>
             </View>
             {item.content && <Text style={styles.content}>{item.content}</Text>}
             {item.mediaUrl && (
               <View style={styles.mediaPlaceholder}>
-                <Icon name="image" size={20} color={colors.text.secondary} />
+                <Icon name="image" size={20} color={tc.text.secondary} />
                 <Text style={styles.mediaText}>{t('screens.pinned-messages.media')}</Text>
               </View>
             )}
@@ -114,7 +114,7 @@ export default function PinnedMessagesScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
           title={t('screens.pinned-messages.title')}
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back() }}
         />
         <View style={styles.skeletonContainer}>
           {Array.from({ length: 5 }).map((_, i) => (
@@ -130,7 +130,7 @@ export default function PinnedMessagesScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
           title={t('screens.pinned-messages.title')}
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back() }}
         />
         <EmptyState
           icon="slash"
@@ -148,7 +148,7 @@ export default function PinnedMessagesScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
           title={t('screens.pinned-messages.title')}
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back() }}
         />
 
         <FlatList

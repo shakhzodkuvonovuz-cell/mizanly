@@ -336,7 +336,7 @@ export default function SearchResultsScreen() {
               <TextInput
                 style={styles.searchInput}
                 placeholder={t('screens.search-results.placeholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={query}
                 onChangeText={handleQueryChange}
                 onFocus={() => setIsFocused(true)}
@@ -347,7 +347,7 @@ export default function SearchResultsScreen() {
               />
               {query.length > 0 && (
                 <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
-                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                  <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               )}
             </View>

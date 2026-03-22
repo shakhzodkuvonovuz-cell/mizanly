@@ -317,7 +317,7 @@ function ScholarVerificationContent() {
           value={institution}
           onChangeText={setInstitution}
           placeholder={t('scholar.institution')}
-          placeholderTextColor={colors.text.tertiary}
+          placeholderTextColor={tc.text.tertiary}
           maxLength={200}
         />
       </Animated.View>
@@ -336,7 +336,7 @@ function ScholarVerificationContent() {
               ? SPECIALIZATIONS.find(s => s.key === specialization)?.label
               : t('scholar.specialization')}
           </Text>
-          <Icon name="chevron-down" size={18} color={colors.text.secondary} />
+          <Icon name="chevron-down" size={18} color={tc.text.secondary} />
         </Pressable>
       </Animated.View>
 
@@ -354,7 +354,7 @@ function ScholarVerificationContent() {
               ? MADHABS.find(m => m.key === madhab)?.label
               : t('scholar.madhab')}
           </Text>
-          <Icon name="chevron-down" size={18} color={colors.text.secondary} />
+          <Icon name="chevron-down" size={18} color={tc.text.secondary} />
         </Pressable>
       </Animated.View>
 
@@ -398,7 +398,7 @@ function ScholarVerificationContent() {
           <BottomSheetItem
             key={spec.key}
             label={spec.label}
-            icon={<Icon name="book-open" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="book-open" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setSpecialization(spec.key);
               setSpecSheetVisible(false);
@@ -414,7 +414,7 @@ function ScholarVerificationContent() {
           <BottomSheetItem
             key={m.key}
             label={m.label}
-            icon={<Icon name="book-open" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="book-open" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setMadhab(m.key);
               setMadhabSheetVisible(false);

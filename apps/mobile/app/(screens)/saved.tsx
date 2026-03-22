@@ -87,7 +87,7 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
         />
       ) : (
         <View style={[styles.gridImage, styles.placeholder]}>
-          <Icon name="video" size={24} color={colors.text.secondary} />
+          <Icon name="video" size={24} color={tc.text.secondary} />
         </View>
       )}
       <View style={styles.playOverlay}>
@@ -119,7 +119,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
         />
       ) : (
         <View style={[styles.videoThumbnail, styles.placeholder]}>
-          <Icon name="video" size={24} color={colors.text.secondary} />
+          <Icon name="video" size={24} color={tc.text.secondary} />
         </View>
       )}
       <View style={styles.videoInfo}>

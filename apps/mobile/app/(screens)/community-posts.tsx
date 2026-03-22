@@ -119,7 +119,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
           <Icon
             name={liked ? 'heart-filled' : 'heart'}
             size="sm"
-            color={liked ? colors.error : colors.text.secondary}
+            color={liked ? colors.error : tc.text.secondary}
           />
           <Text style={[styles.postActionCount, liked && styles.likedCount]}>
             {formatCount(likeCount)}

@@ -115,7 +115,7 @@ export default function NasheedModeScreen() {
 
           {/* Info text */}
           <View style={styles.infoRow}>
-            <Icon name="eye" size="sm" color={colors.text.tertiary} />
+            <Icon name="eye" size="sm" color={tc.text.tertiary} />
             <Text style={styles.infoText}>{t('nasheed.info')}</Text>
           </View>
         </ScrollView>

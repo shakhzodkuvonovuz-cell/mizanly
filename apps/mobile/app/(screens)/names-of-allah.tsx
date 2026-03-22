@@ -87,7 +87,7 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, onPlayAudio, expa
               accessibilityLabel={t('common.listen', { defaultValue: 'Listen' })}
               accessibilityRole="button"
             >
-              <Icon name="play" size={16} color={colors.text.secondary} />
+              <Icon name="play" size={16} color={tc.text.secondary} />
               <Text style={styles.nameActionText}>{t('common.listen', { defaultValue: 'Listen' })}</Text>
             </Pressable>
             <Pressable
@@ -97,7 +97,7 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, onPlayAudio, expa
               accessibilityLabel={t('namesOfAllah.markAsLearned')}
               accessibilityRole="button"
             >
-              <Icon name={isLearned ? 'check-circle' : 'check'} size={16} color={isLearned ? colors.emerald : colors.text.secondary} />
+              <Icon name={isLearned ? 'check-circle' : 'check'} size={16} color={isLearned ? colors.emerald : tc.text.secondary} />
               <Text style={[styles.nameActionText, isLearned && { color: colors.emerald }]}>
                 {isLearned ? t('namesOfAllah.learned') : t('namesOfAllah.markAsLearned')}
               </Text>
@@ -109,7 +109,7 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, onPlayAudio, expa
               accessibilityLabel={t('common.share')}
               accessibilityRole="button"
             >
-              <Icon name="share" size={16} color={colors.text.secondary} />
+              <Icon name="share" size={16} color={tc.text.secondary} />
               <Text style={styles.nameActionText}>{t('common.share')}</Text>
             </Pressable>
           </View>

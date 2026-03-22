@@ -157,7 +157,7 @@ export default function ShareProfileScreen() {
                 <QRCode
                   value={profileUrl}
                   size={180}
-                  color={colors.text.primary}
+                  color={tc.text.primary}
                   backgroundColor="transparent"
                   logoBackgroundColor="transparent"
                 />
@@ -180,7 +180,7 @@ export default function ShareProfileScreen() {
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{user.displayName || user.username}</Text>
               <View style={styles.usernameBadge}>
-                <Icon name="at-sign" size={12} color={colors.text.tertiary} />
+                <Icon name="at-sign" size={12} color={tc.text.tertiary} />
                 <Text style={styles.profileUsername}>{user.username}</Text>
               </View>
             </View>
@@ -204,7 +204,7 @@ export default function ShareProfileScreen() {
                 colors={copied ? [colors.emerald, 'rgba(10,123,79,0.8)'] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={[styles.button, copied && styles.copyButtonActive]}
               >
-                <Icon name={copied ? 'check' : 'link'} size="md" color={copied ? '#fff' : colors.text.primary} />
+                <Icon name={copied ? 'check' : 'link'} size="md" color={copied ? '#fff' : tc.text.primary} />
                 <Text style={[styles.buttonLabel, copied && styles.buttonLabelActive]}>
                   {copied ? t('screens.share-profile.copied') : t('screens.share-profile.copyLink')}
                 </Text>
@@ -238,7 +238,7 @@ export default function ShareProfileScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.button}
               >
-                <Icon name="camera" size="md" color={colors.text.primary} />
+                <Icon name="camera" size="md" color={tc.text.primary} />
                 <Text style={styles.buttonLabel}>{t('screens.share-profile.scanQR')}</Text>
               </LinearGradient>
             </Pressable>

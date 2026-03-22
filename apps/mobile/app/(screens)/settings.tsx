@@ -126,7 +126,7 @@ function Row({
         <Text style={styles.rowRightText}>{rightText}</Text>
       ) : onPress ? (
         <View style={styles.rowChevron}>
-          <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={colors.text.tertiary} />
+          <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={tc.text.tertiary} />
         </View>
       ) : null}
     </Pressable>
@@ -716,13 +716,13 @@ export default function SettingsScreen() {
             <View style={styles.divider} />
             <Row
               label={t('settings.mutedAccounts')}
-              icon={<Icon name="volume-x" size="sm" color={colors.text.tertiary} />}
+              icon={<Icon name="volume-x" size="sm" color={tc.text.tertiary} />}
               onPress={() => router.push('/(screens)/muted')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.restrictedAccounts')}
-              icon={<Icon name="eye-off" size="sm" color={colors.text.tertiary} />}
+              icon={<Icon name="eye-off" size="sm" color={tc.text.tertiary} />}
               onPress={() => navigate('/(screens)/restricted')}
             />
             <View style={styles.divider} />
@@ -734,7 +734,7 @@ export default function SettingsScreen() {
             <View style={styles.divider} />
             <Row
               label={t('settings.appealModeration')}
-              icon={<Icon name="flag" size="sm" color={colors.text.secondary} />}
+              icon={<Icon name="flag" size="sm" color={tc.text.secondary} />}
               onPress={() => navigate('/(screens)/appeal-moderation')}
               isLast
             />
@@ -1070,19 +1070,19 @@ export default function SettingsScreen() {
             <View style={styles.divider} />
             <Row
               label={t('settings.termsOfService')}
-              icon={<Icon name="file-text" size="sm" color={colors.text.secondary} />}
+              icon={<Icon name="file-text" size="sm" color={tc.text.secondary} />}
               onPress={() => Linking.openURL('https://mizanly.app/terms')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.privacyPolicy')}
-              icon={<Icon name="shield" size="sm" color={colors.text.secondary} />}
+              icon={<Icon name="shield" size="sm" color={tc.text.secondary} />}
               onPress={() => Linking.openURL('https://mizanly.app/privacy')}
             />
             <View style={styles.divider} />
             <Row
               label={t('settings.licenses')}
-              icon={<Icon name="layers" size="sm" color={colors.text.secondary} />}
+              icon={<Icon name="layers" size="sm" color={tc.text.secondary} />}
               onPress={() => Linking.openURL('https://mizanly.app/licenses')}
               isLast
             />

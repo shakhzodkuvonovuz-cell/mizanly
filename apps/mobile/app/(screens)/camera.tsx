@@ -16,6 +16,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -30,6 +31,7 @@ export default function CameraScreen() {
   const [flashOn, setFlashOn] = useState(false);
   const [isFrontCamera, setIsFrontCamera] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const tc = useThemeColors();
 
   const captureScale = useSharedValue(1);
   const recordProgress = useSharedValue(0);
@@ -248,7 +250,7 @@ export default function CameraScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.galleryThumbnail}
               >
-                <Icon name="image" size="sm" color={colors.text.tertiary} />
+                <Icon name="image" size="sm" color={tc.text.tertiary} />
               </LinearGradient>
             </Pressable>
 

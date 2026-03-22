@@ -75,7 +75,7 @@ function IslamicThemeBanner() {
       paddingHorizontal: 16,
       alignItems: 'center',
     }}>
-      <Text style={{ color: colors.text.primary, fontWeight: '700', fontSize: 13 }}>
+      <Text style={{ color: tc.text.primary, fontWeight: '700', fontSize: 13 }}>
         {theme.bannerTextKey === 'themes.eidMubarak'
           ? t('themes.eidMubarak')
           : t('themes.ramadanKareem')}
@@ -113,7 +113,7 @@ function EidCelebrationOverlay() {
   return (
     <View style={{
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: colors.dark.bgSheet,
+      backgroundColor: tc.bgSheet,
       opacity: 0.95,
       justifyContent: 'center',
       alignItems: 'center',
@@ -123,7 +123,7 @@ function EidCelebrationOverlay() {
       <Text style={{ color: colors.gold, fontSize: fontSizeExt.heading, fontWeight: '700', marginTop: 16 }}>
         {t('themes.eidMubarak')}
       </Text>
-      <Text style={{ color: colors.text.secondary, fontSize: 16, marginTop: 8 }}>
+      <Text style={{ color: tc.text.secondary, fontSize: 16, marginTop: 8 }}>
         {t('themes.eidGreeting')}
       </Text>
     </View>
@@ -310,7 +310,7 @@ const createLockStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.c
     zIndex: 9999,
   },
   text: {
-    color: colors.text.secondary,
+    color: tc.text.secondary,
     fontSize: 16,
     marginTop: 16,
     marginBottom: 24,

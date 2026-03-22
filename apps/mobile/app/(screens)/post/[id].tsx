@@ -207,7 +207,7 @@ function CommentRow({
           <Icon
             name={localLiked ? 'heart-filled' : 'heart'}
             size={16}
-            color={localLiked ? colors.like : colors.text.tertiary}
+            color={localLiked ? colors.like : tc.text.tertiary}
             fill={localLiked ? colors.like : undefined}
           />
         </Pressable>
@@ -454,7 +454,7 @@ export default function PostDetailScreen() {
                   {t('saf.replyingTo', { username: replyTo.username })}
                 </Text>
                 <Pressable onPress={() => setReplyTo(null)} hitSlop={8} accessibilityLabel={t('accessibility.cancelReply')} accessibilityRole="button">
-                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                  <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               </View>
             )}
@@ -464,7 +464,7 @@ export default function PostDetailScreen() {
                 ref={inputRef}
                 style={styles.input}
                 placeholder={replyTo ? t('saf.replyToUser', { username: replyTo.username }) : t('saf.addComment')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={commentText}
                 onChangeText={setCommentText}
                 multiline
@@ -484,7 +484,7 @@ export default function PostDetailScreen() {
                 <Icon
                   name={sendMutation.isPending ? 'loader' : 'send'}
                   size="sm"
-                  color={canSend ? colors.emerald : colors.text.tertiary}
+                  color={canSend ? colors.emerald : tc.text.tertiary}
                 />
               </AnimatedPressable>
             </View>

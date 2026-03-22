@@ -62,7 +62,7 @@ function notificationIcon(type: string): { name: NotifIconName; color: string } 
     case 'MENTION':         return { name: 'at-sign', color: colors.gold };
     case 'REPOST':
     case 'QUOTE_POST':      return { name: 'repeat', color: colors.emerald };
-    default:                return { name: 'bell', color: colors.text.secondary };
+    default:                return { name: 'bell', color: tc.text.secondary};
   }
 }
 

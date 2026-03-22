@@ -83,7 +83,7 @@ export default function WatchPartyScreen() {
               </View>
             )}
             <View style={styles.viewerRow}>
-              <Icon name="eye" size="xs" color={colors.text.tertiary} />
+              <Icon name="eye" size="xs" color={tc.text.tertiary} />
               <Text style={styles.viewerCount}>{t('community.watchingCount', { count: item.viewerCount as number })}</Text>
             </View>
           </View>
@@ -143,14 +143,14 @@ export default function WatchPartyScreen() {
               value={newTitle}
               onChangeText={setNewTitle}
               placeholder={t('community.partyNamePlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
             />
             <TextInput
               style={styles.createInput}
               value={newVideoId}
               onChangeText={setNewVideoId}
               placeholder={t('community.videoIdPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
             />
             <Pressable
               accessibilityRole="button"

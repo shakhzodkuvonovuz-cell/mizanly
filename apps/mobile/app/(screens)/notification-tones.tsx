@@ -279,7 +279,7 @@ function NotificationTonesScreen() {
                 <Icon
                   name={isPlaying ? 'check' : 'play'}
                   size="sm"
-                  color={isPlaying ? colors.emerald : colors.text.tertiary}
+                  color={isPlaying ? colors.emerald : tc.text.tertiary}
                 />
               </Pressable>
             ) : (

@@ -95,7 +95,7 @@ function PostInsightsContent() {
             { label: t('postInsights.home', 'Home'), percentage: 0, color: colors.emerald },
             { label: t('postInsights.explore', 'Explore'), percentage: 0, color: colors.info },
             { label: t('postInsights.hashtags', 'Hashtags'), percentage: 0, color: colors.gold },
-            { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: colors.text.tertiary },
+            { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: tc.text.tertiary},
           ],
           interactions: {
             profileTaps: Number((raw.interactions as Record<string, unknown>)?.profileTaps ?? 0),
@@ -118,7 +118,7 @@ function PostInsightsContent() {
             { label: t('postInsights.home', 'Home'), percentage: 0, color: colors.emerald },
             { label: t('postInsights.explore', 'Explore'), percentage: 0, color: colors.info },
             { label: t('postInsights.hashtags', 'Hashtags'), percentage: 0, color: colors.gold },
-            { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: colors.text.tertiary },
+            { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: tc.text.tertiary},
           ],
           interactions: { profileTaps: 0, websiteTaps: 0, emailTaps: 0 },
         });
@@ -211,7 +211,7 @@ function PostInsightsContent() {
                 />
               ) : (
                 <View style={[styles.postThumbnail, styles.postPlaceholder]}>
-                  <Icon name="image" size="md" color={colors.text.tertiary} />
+                  <Icon name="image" size="md" color={tc.text.tertiary} />
                 </View>
               )}
               <View style={styles.postPreviewInfo}>
@@ -325,35 +325,35 @@ function PostInsightsContent() {
             </View>
             <View style={styles.interactionsList}>
               <View style={styles.interactionRow}>
-                <Icon name="user" size="sm" color={colors.text.secondary} />
+                <Icon name="user" size="sm" color={tc.text.secondary} />
                 <Text style={styles.interactionLabel}>
                   {t('postInsights.profileVisits', 'Profile visits')}
                 </Text>
                 <Text style={styles.interactionValue}>{formatNumber(insights.profileVisits)}</Text>
               </View>
               <View style={styles.interactionRow}>
-                <Icon name="users" size="sm" color={colors.text.secondary} />
+                <Icon name="users" size="sm" color={tc.text.secondary} />
                 <Text style={styles.interactionLabel}>
                   {t('postInsights.follows', 'Follows')}
                 </Text>
                 <Text style={styles.interactionValue}>{formatNumber(insights.follows)}</Text>
               </View>
               <View style={styles.interactionRow}>
-                <Icon name="user" size="sm" color={colors.text.secondary} />
+                <Icon name="user" size="sm" color={tc.text.secondary} />
                 <Text style={styles.interactionLabel}>
                   {t('postInsights.profileTaps', 'Profile taps')}
                 </Text>
                 <Text style={styles.interactionValue}>{formatNumber(insights.interactions.profileTaps)}</Text>
               </View>
               <View style={styles.interactionRow}>
-                <Icon name="link" size="sm" color={colors.text.secondary} />
+                <Icon name="link" size="sm" color={tc.text.secondary} />
                 <Text style={styles.interactionLabel}>
                   {t('postInsights.websiteTaps', 'Website taps')}
                 </Text>
                 <Text style={styles.interactionValue}>{formatNumber(insights.interactions.websiteTaps)}</Text>
               </View>
               <View style={styles.interactionRow}>
-                <Icon name="mail" size="sm" color={colors.text.secondary} />
+                <Icon name="mail" size="sm" color={tc.text.secondary} />
                 <Text style={styles.interactionLabel}>
                   {t('postInsights.emailTaps', 'Email taps')}
                 </Text>

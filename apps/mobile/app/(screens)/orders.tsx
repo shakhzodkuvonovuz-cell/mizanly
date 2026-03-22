@@ -115,7 +115,7 @@ function OrdersContent() {
                 />
               ) : (
                 <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
-                  <Icon name="image" size="md" color={colors.text.tertiary} />
+                  <Icon name="image" size="md" color={tc.text.tertiary} />
                 </View>
               )}
             </View>

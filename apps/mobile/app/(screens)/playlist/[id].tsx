@@ -17,6 +17,7 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { PlaylistItem } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -31,6 +32,7 @@ export default function PlaylistDetailScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
 
   const insets = useSafeAreaInsets();
   const playlistId = Array.isArray(params.id) ? params.id[0] : params.id;

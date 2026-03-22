@@ -198,7 +198,7 @@ function SeriesDetailContent() {
             {new Date(item.createdAt).toLocaleDateString()}
           </Text>
         </View>
-        <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+        <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
       </Pressable>
     </Animated.View>
   );
@@ -215,7 +215,7 @@ function SeriesDetailContent() {
           />
         ) : (
           <View style={[styles.heroImage, styles.heroPlaceholder]}>
-            <Icon name="layers" size="xl" color={colors.text.tertiary} />
+            <Icon name="layers" size="xl" color={tc.text.tertiary} />
           </View>
         )}
         <LinearGradient
@@ -264,7 +264,7 @@ function SeriesDetailContent() {
             </View>
             <Text style={styles.creatorUsername}>@{series.creator.username}</Text>
           </View>
-          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+          <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
         </Pressable>
 
         {/* Follow / Add Episode Buttons */}
@@ -366,7 +366,7 @@ function SeriesDetailContent() {
         </Text>
         <BottomSheetItem
           label={t('series.linkPost', 'Link a Post')}
-          icon={<Icon name="image" size="md" color={colors.text.primary} />}
+          icon={<Icon name="image" size="md" color={tc.text.primary} />}
           onPress={() => {
             setAddEpisodeSheet(false);
             navigate('/(screens)/content-picker', { type: 'post', seriesId: params.id! });
@@ -374,7 +374,7 @@ function SeriesDetailContent() {
         />
         <BottomSheetItem
           label={t('series.linkReel', 'Link a Reel')}
-          icon={<Icon name="video" size="md" color={colors.text.primary} />}
+          icon={<Icon name="video" size="md" color={tc.text.primary} />}
           onPress={() => {
             setAddEpisodeSheet(false);
             navigate('/(screens)/content-picker', { type: 'reel', seriesId: params.id! });
@@ -382,7 +382,7 @@ function SeriesDetailContent() {
         />
         <BottomSheetItem
           label={t('series.linkVideo', 'Link a Video')}
-          icon={<Icon name="play" size="md" color={colors.text.primary} />}
+          icon={<Icon name="play" size="md" color={tc.text.primary} />}
           onPress={() => {
             setAddEpisodeSheet(false);
             navigate('/(screens)/content-picker', { type: 'video', seriesId: params.id! });
@@ -390,7 +390,7 @@ function SeriesDetailContent() {
         />
         <BottomSheetItem
           label={t('common.cancel', 'Cancel')}
-          icon={<Icon name="x" size="md" color={colors.text.secondary} />}
+          icon={<Icon name="x" size="md" color={tc.text.secondary} />}
           onPress={() => setAddEpisodeSheet(false)}
         />
       </BottomSheet>

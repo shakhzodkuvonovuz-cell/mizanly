@@ -175,7 +175,7 @@ function PrayerCard({
             }
             style={styles.prayerIconBg}
           >
-            <Icon name={prayer.icon} size="sm" color={isCurrent ? '#fff' : colors.text.tertiary} />
+            <Icon name={prayer.icon} size="sm" color={isCurrent ? '#fff' : tc.text.tertiary} />
           </LinearGradient>
 
           <View style={styles.prayerInfo}>
@@ -534,7 +534,7 @@ export default function PrayerTimesScreen() {
                   </LinearGradient>
                   <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
                   <View style={{ flex: 1 }} />
-                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                 </View>
 
                 <View style={styles.compassContainer}>
@@ -615,7 +615,7 @@ export default function PrayerTimesScreen() {
                 <Text style={styles.methodLabel}>{t('islamic.prayerMethod')}</Text>
                 <Text style={styles.methodValue}>{calculationMethod}</Text>
               </View>
-              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+              <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
             </LinearGradient>
           </Pressable>
 

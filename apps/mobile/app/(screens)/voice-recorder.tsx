@@ -226,7 +226,7 @@ export default function VoiceRecorderScreen() {
                       s.amplitudeBar,
                       {
                         height: 8 + (isRecording ? l * 0.3 : 0),
-                        backgroundColor: isRecording ? colors.emerald : colors.text.tertiary,
+                        backgroundColor: isRecording ? colors.emerald : tc.text.tertiary,
                       },
                     ]}
                   />
@@ -310,8 +310,8 @@ const createS = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  timerText: { fontSize: fontSize['3xl'], fontWeight: '700', color: colors.text.primary, letterSpacing: 1 },
-  timerSubtext: { fontSize: fontSize.sm, color: colors.text.secondary, marginTop: spacing.xs },
+  timerText: { fontSize: fontSize['3xl'], fontWeight: '700', color: tc.text.primary, letterSpacing: 1 },
+  timerSubtext: { fontSize: fontSize.sm, color: tc.text.secondary, marginTop: spacing.xs },
   amplitudeContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -337,7 +337,7 @@ const createS = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.3)',
   },
-  hintText: { fontSize: fontSize.sm, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.sm },
+  hintText: { fontSize: fontSize.sm, color: tc.text.secondary, textAlign: 'center', marginTop: spacing.sm },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',

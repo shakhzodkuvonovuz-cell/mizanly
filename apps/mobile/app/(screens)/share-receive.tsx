@@ -133,7 +133,7 @@ function SharedContentPreview({
             style={StyleSheet.absoluteFill}
           />
           <View style={styles.playOverlay}>
-            <Icon name="play" size="xl" color={colors.text.primary} />
+            <Icon name="play" size="xl" color={tc.text.primary} />
           </View>
           <Text style={styles.videoLabel} numberOfLines={1}>
             {sharedVideo.split('/').pop() ?? t('shareReceive.preview')}
@@ -372,7 +372,7 @@ function ShareReceiveContent() {
             value={caption}
             onChangeText={setCaption}
             placeholder={t('shareReceive.addCaption')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             multiline
             maxLength={MAX_CAPTION_LENGTH}
             textAlignVertical="top"

@@ -135,7 +135,7 @@ function ReplyRow({
             accessibilityLabel={t('accessibility.replyToUser', { username: reply.user.displayName })}
             accessibilityRole="button"
           >
-            <Icon name="message-circle" size={20} color={colors.text.secondary} />
+            <Icon name="message-circle" size={20} color={tc.text.secondary} />
             {(reply._count?.replies ?? 0) > 0 && (
               <Text style={styles.replyActionCount}>{reply._count?.replies ?? 0}</Text>
             )}
@@ -150,7 +150,7 @@ function ReplyRow({
             <Icon
               name={liked ? 'heart-filled' : 'heart'}
               size={20}
-              color={liked ? colors.like : colors.text.secondary}
+              color={liked ? colors.like : tc.text.secondary}
               fill={liked ? colors.like : undefined}
             />
             {likeCount > 0 && (
@@ -434,7 +434,7 @@ export default function ThreadDetailScreen() {
                   accessibilityLabel={t('accessibility.cancelReply')}
                   accessibilityRole="button"
                 >
-                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                  <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               </View>
             )}
@@ -444,7 +444,7 @@ export default function ThreadDetailScreen() {
                 ref={inputRef}
                 style={styles.input}
                 placeholder={replyTo ? t('saf.replyToUser', { username: replyTo.username }) : t('majlis.writeReply')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={replyText}
                 onChangeText={setReplyText}
                 multiline

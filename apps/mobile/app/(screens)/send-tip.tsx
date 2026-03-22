@@ -275,7 +275,7 @@ export default function SendTipScreen() {
                 colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                 style={styles.avatarContainer}
               >
-                <Icon name="user" size="lg" color={colors.text.secondary} />
+                <Icon name="user" size="lg" color={tc.text.secondary} />
               </LinearGradient>
 
               {/* Creator Details */}
@@ -312,7 +312,7 @@ export default function SendTipScreen() {
               colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
               style={styles.customAmountContainer}
             >
-              <Icon name="circle" size="sm" color={colors.text.tertiary} />
+              <Icon name="circle" size="sm" color={tc.text.tertiary} />
               <Text style={styles.currencyPrefixLarge}>$</Text>
               <TextInput
                 style={styles.customAmountInput}
@@ -324,7 +324,7 @@ export default function SendTipScreen() {
                   }
                 }}
                 placeholder={t('monetization.enterCustomAmount')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 keyboardType="decimal-pad"
               />
             </LinearGradient>
@@ -352,7 +352,7 @@ export default function SendTipScreen() {
                   value={message}
                   onChangeText={setMessage}
                   placeholder={t('monetization.addMessageOptional')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   multiline
                   numberOfLines={2}
                   maxLength={MAX_MESSAGE_LENGTH}
@@ -409,7 +409,7 @@ export default function SendTipScreen() {
                 ) : (
                   <>
                     <Text style={styles.sendButtonText}>{t('monetization.sendAmount', { amount: total.toFixed(2) })}</Text>
-                    <Icon name="send" size="sm" color={colors.text.primary} />
+                    <Icon name="send" size="sm" color={tc.text.primary} />
                   </>
                 )}
               </LinearGradient>

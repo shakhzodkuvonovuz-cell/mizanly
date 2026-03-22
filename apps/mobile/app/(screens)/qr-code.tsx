@@ -85,7 +85,7 @@ export default function QrCodeScreen() {
                   value={qrValue}
                   size={220}
                   backgroundColor="transparent"
-                  color={colors.text.primary}
+                  color={tc.text.primary}
                 />
               </LinearGradient>
             </LinearGradient>
@@ -105,7 +105,7 @@ export default function QrCodeScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.shareGradient}
               >
-                <Icon name="share" size="md" color={colors.text.primary} />
+                <Icon name="share" size="md" color={tc.text.primary} />
                 <Text style={styles.buttonText}>{t('common.share')}</Text>
               </LinearGradient>
             </Pressable>

@@ -371,7 +371,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         </View>
         <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
-          <Icon name="eye" size="sm" color={colors.text.secondary} />
+          <Icon name="eye" size="sm" color={tc.text.secondary} />
           <Text style={[styles.statNumEnhanced, { color: tc.text.primary }]}>{formatCount(channel?.totalViews ?? 0)}</Text>
           <Text style={[styles.statLabelEnhanced, { color: tc.text.secondary }]}>{t('minbar.viewCount')}</Text>
         </View>
@@ -405,7 +405,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
               <ProgressiveImage uri={channel.trailerVideo.thumbnailUrl} width="100%" height={FEATURED_HEIGHT} contentFit="cover" />
             ) : (
               <View style={[styles.trailerThumbnail, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
-                <Icon name="video" size="xl" color={colors.text.secondary} />
+                <Icon name="video" size="xl" color={tc.text.secondary} />
               </View>
             )}
             <LinearGradient
@@ -602,7 +602,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           {isOwner && (
             <BottomSheetItem
               label={t('channelTrailer.setTrailer')}
-              icon={<Icon name="video" size="sm" color={colors.text.primary} />}
+              icon={<Icon name="video" size="sm" color={tc.text.primary} />}
               onPress={() => {
                 setShowMenu(false);
                 setShowTrailerPicker(true);
@@ -622,7 +622,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           )}
           <BottomSheetItem
             label={t('channel.reportChannel')}
-            icon={<Icon name="flag" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="flag" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setShowMenu(false);
               handleReport();
@@ -638,7 +638,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           />
           <BottomSheetItem
             label={t('common.copyLink')}
-            icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="link" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setShowMenu(false);
               handleCopyLink();
@@ -648,7 +648,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             <>
               <BottomSheetItem
                 label={t('settings.edit')}
-                icon={<Icon name="pencil" size="sm" color={colors.text.primary} />}
+                icon={<Icon name="pencil" size="sm" color={tc.text.primary} />}
                 onPress={() => {
                   setShowMenu(false);
                   navigate('/(screens)/edit-channel', { handle });
@@ -656,7 +656,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
               />
               <BottomSheetItem
                 label={t('settings.manage')}
-                icon={<Icon name="settings" size="sm" color={colors.text.primary} />}
+                icon={<Icon name="settings" size="sm" color={tc.text.primary} />}
                 onPress={() => {
                   setShowMenu(false);
                   navigate('/(screens)/manage-broadcast', { channelId: channel?.id ?? '' });
@@ -689,7 +689,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           />
           <BottomSheetItem
             label={t('common.copyLink')}
-            icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="link" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setShowShareSheet(false);
               handleCopyLink();

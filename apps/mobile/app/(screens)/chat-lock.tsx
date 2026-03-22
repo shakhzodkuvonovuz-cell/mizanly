@@ -108,7 +108,7 @@ function ChatLockContent() {
             end={{ x: 1, y: 1 }}
             style={styles.iconCircle}
           >
-            <Icon name="lock" size={48} color={locked ? colors.text.primary : colors.text.secondary} />
+            <Icon name="lock" size={48} color={locked ? colors.text.primary : tc.text.secondary} />
           </LinearGradient>
         </Animated.View>
 
@@ -160,7 +160,7 @@ function ChatLockContent() {
               <Icon
                 name={biometricAvailable ? 'check-circle' : 'slash'}
                 size={20}
-                color={biometricAvailable ? colors.emerald : colors.text.tertiary}
+                color={biometricAvailable ? colors.emerald : tc.text.tertiary}
               />
             </View>
             <Text style={[styles.infoText, { color: tc.text.secondary }]}>

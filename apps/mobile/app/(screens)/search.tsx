@@ -90,9 +90,9 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
         <Text style={[styles.videoTitle, { textAlign: rtlTextAlign(isRTL) }]} numberOfLines={2}>{video.title}</Text>
         <Text style={[styles.videoChannel, { textAlign: rtlTextAlign(isRTL) }]}>{video.channel?.name || t('common.unknown')}</Text>
         <View style={[styles.videoStats, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Icon name="eye" size={14} color={colors.text.secondary} />
+          <Icon name="eye" size={14} color={tc.text.secondary} />
           <Text style={styles.videoStat}>{formatCount(video.viewsCount)} {t('search.views')}</Text>
-          <Icon name="clock" size={14} color={colors.text.secondary} />
+          <Icon name="clock" size={14} color={tc.text.secondary} />
           <Text style={styles.videoStat}>{durationText}</Text>
         </View>
       </View>
@@ -270,14 +270,14 @@ export default function SearchScreen() {
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
+          <Icon name={rtlArrow(isRTL, 'back')} size="md" color={tc.text.primary} />
         </Pressable>
         <View style={[styles.searchBox, isFocused && styles.searchBoxFocused, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Icon name="search" size="xs" color={colors.text.tertiary} />
+          <Icon name="search" size="xs" color={tc.text.tertiary} />
           <TextInput
             style={[styles.searchInput, { textAlign: rtlTextAlign(isRTL) }]}
             placeholder={t('search.placeholder')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             value={query}
             onChangeText={handleQueryChange}
             onFocus={() => setIsFocused(true)}
@@ -290,7 +290,7 @@ export default function SearchScreen() {
           />
           {query.length > 0 && (
             <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
-              <Icon name="x" size="xs" color={colors.text.secondary} />
+              <Icon name="x" size="xs" color={tc.text.secondary} />
             </Pressable>
           )}
         </View>
@@ -437,11 +437,11 @@ export default function SearchScreen() {
                               {item.caption || t('search.noCaption')}
                             </Text>
                             <View style={styles.reelStats}>
-                              <Icon name="heart" size={14} color={colors.text.secondary} />
+                              <Icon name="heart" size={14} color={tc.text.secondary} />
                               <Text style={styles.reelStat}>{formatCount(item.likesCount)}</Text>
-                              <Icon name="message-circle" size={14} color={colors.text.secondary} />
+                              <Icon name="message-circle" size={14} color={tc.text.secondary} />
                               <Text style={styles.reelStat}>{formatCount(item.commentsCount)}</Text>
-                              <Icon name="eye" size={14} color={colors.text.secondary} />
+                              <Icon name="eye" size={14} color={tc.text.secondary} />
                               <Text style={styles.reelStat}>{formatCount(item.viewsCount)}</Text>
                             </View>
                             <View style={styles.reelUser}>
@@ -639,7 +639,7 @@ export default function SearchScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={`Search for ${item}`}
                     >
-                      <Icon name="clock" size={16} color={colors.text.secondary} />
+                      <Icon name="clock" size={16} color={tc.text.secondary} />
                       <Text style={styles.historyTerm}>{item}</Text>
                     </Pressable>
                     <Pressable
@@ -650,7 +650,7 @@ export default function SearchScreen() {
                       }}
                       hitSlop={8}
                     >
-                      <Icon name="x" size={16} color={colors.text.tertiary} />
+                      <Icon name="x" size={16} color={tc.text.tertiary} />
                     </Pressable>
                   </View>
                 )}
@@ -695,12 +695,12 @@ export default function SearchScreen() {
                     />
                   ) : (
                     <View style={[styles.exploreImage, { backgroundColor: tc.bgElevated }]}>
-                      <Icon name="image" size={24} color={colors.text.tertiary} />
+                      <Icon name="image" size={24} color={tc.text.tertiary} />
                     </View>
                   )}
                   {item.postType === 'VIDEO' && (
                     <View style={styles.videoOverlay}>
-                      <Icon name="play" size={14} color={colors.text.primary} />
+                      <Icon name="play" size={14} color={tc.text.primary} />
                     </View>
                   )}
                 </Pressable>

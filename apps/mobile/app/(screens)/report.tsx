@@ -187,7 +187,7 @@ export default function ReportScreen() {
               <TextInput
                 style={styles.detailsInput}
                 placeholder={t('screens.report.detailsPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={details}
                 onChangeText={setDetails}
                 multiline

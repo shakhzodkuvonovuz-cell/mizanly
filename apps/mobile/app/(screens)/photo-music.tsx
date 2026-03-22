@@ -273,7 +273,7 @@ function PhotoMusicScreen() {
           accessibilityLabel={t('photoMusic.removePhoto')}
         >
           <View style={styles.removeButtonInner}>
-            <Icon name="x" size="sm" color={colors.text.primary} />
+            <Icon name="x" size="sm" color={tc.text.primary} />
           </View>
         </Pressable>
       )}
@@ -398,7 +398,7 @@ function PhotoMusicScreen() {
               <Icon
                 name={isPreviewPlaying ? 'x' : 'play'}
                 size="sm"
-                color={colors.text.primary}
+                color={tc.text.primary}
               />
               <Text style={styles.previewButtonText}>
                 {isPreviewPlaying
@@ -442,10 +442,10 @@ function PhotoMusicScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('photoMusic.removeMusic')}
               >
-                <Icon name="x" size="sm" color={colors.text.secondary} />
+                <Icon name="x" size="sm" color={tc.text.secondary} />
               </Pressable>
             ) : (
-              <Icon name="chevron-right" size="sm" color={colors.text.secondary} />
+              <Icon name="chevron-right" size="sm" color={tc.text.secondary} />
             )}
           </Pressable>
         </Animated.View>
@@ -464,7 +464,7 @@ function PhotoMusicScreen() {
             <TextInput
               style={styles.captionInput}
               placeholder={t('photoMusic.captionPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={caption}
               onChangeText={setCaption}
               maxLength={MAX_CAPTION}

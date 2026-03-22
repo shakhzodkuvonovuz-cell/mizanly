@@ -86,7 +86,7 @@ function renderStars(rating: number, size: 'xs' | 'sm' = 'xs') {
         key={`star-${i}`}
         name={i < full ? 'heart-filled' : 'heart'}
         size={size}
-        color={i < full ? colors.gold : colors.text.tertiary}
+        color={i < full ? colors.gold : tc.text.tertiary}
       />
     );
   }
@@ -240,7 +240,7 @@ function ProductDetailContent() {
                 />
               ) : (
                 <View style={[styles.carouselImage, styles.imagePlaceholder]}>
-                  <Icon name="image" size="xl" color={colors.text.tertiary} />
+                  <Icon name="image" size="xl" color={tc.text.tertiary} />
                 </View>
               )
             }
@@ -313,7 +313,7 @@ function ProductDetailContent() {
               </View>
               <Text style={styles.sellerUsername}>@{product.seller.username}</Text>
             </View>
-            <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+            <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
           </Pressable>
         </Animated.View>
 
@@ -336,7 +336,7 @@ function ProductDetailContent() {
             fullWidth
           />
           <View style={styles.installmentRow}>
-            <Icon name="clock" size="sm" color={colors.text.secondary} />
+            <Icon name="clock" size="sm" color={tc.text.secondary} />
             <Text style={styles.installmentText}>
               {t('product.installment', 'Pay in 2-4 installments (interest-free)')}
             </Text>
@@ -413,7 +413,7 @@ function ProductDetailContent() {
                     />
                   ) : (
                     <View style={[styles.relatedImage, styles.imagePlaceholder]}>
-                      <Icon name="image" size="md" color={colors.text.tertiary} />
+                      <Icon name="image" size="md" color={tc.text.tertiary} />
                     </View>
                   )}
                   <Text style={styles.relatedTitle} numberOfLines={1}>

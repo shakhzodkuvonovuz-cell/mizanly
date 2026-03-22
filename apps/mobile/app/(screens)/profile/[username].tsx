@@ -125,7 +125,7 @@ const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel;
           />
         ) : (
           <View style={styles.gridTextPost}>
-            <Icon name="video" size={24} color={colors.text.secondary} />
+            <Icon name="video" size={24} color={tc.text.secondary} />
           </View>
         )}
         <View style={styles.reelOverlay}>
@@ -410,7 +410,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
-            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
+            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={tc.text.primary} />
           </Pressable>
         </View>
         <Skeleton.ProfileHeader />
@@ -423,7 +423,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
-            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
+            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={tc.text.primary} />
           </Pressable>
         </View>
         <EmptyState
@@ -442,7 +442,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
-            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
+            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={tc.text.primary} />
           </Pressable>
         </View>
         <EmptyState icon="user" title={t('profile.userNotFound')} />
@@ -498,7 +498,7 @@ export default function ProfileScreen() {
               accessibilityLabel={t('profile.archive')}
               accessibilityRole="button"
             >
-              <Icon name="clock" size="sm" color={colors.text.primary} />
+              <Icon name="clock" size="sm" color={tc.text.primary} />
             </Pressable>
           </View>
         ) : (
@@ -523,7 +523,7 @@ export default function ProfileScreen() {
               accessibilityLabel={t('profile.sendMessage')}
               accessibilityRole="button"
             >
-              <Icon name="mail" size="xs" color={colors.text.primary} />
+              <Icon name="mail" size="xs" color={tc.text.primary} />
             </Pressable>
           </View>
         )}
@@ -608,7 +608,7 @@ export default function ProfileScreen() {
                   {album.coverUrl ? (
                     <ProgressiveImage uri={album.coverUrl} width={64} height={64} borderRadius={9999} contentFit="cover" accessibilityLabel="Highlight cover" />
                   ) : (
-                    <Icon name="image" size="md" color={colors.text.tertiary} />
+                    <Icon name="image" size="md" color={tc.text.tertiary} />
                   )}
                 </View>
               </View>
@@ -654,7 +654,7 @@ export default function ProfileScreen() {
               </View>
             ))}
           </View>
-          <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, ...rtlMargin(isRTL, spacing.sm, 0), flex: 1, textAlign: rtlTextAlign(isRTL) }}>
+          <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, ...rtlMargin(isRTL, spacing.sm, 0), flex: 1, textAlign: rtlTextAlign(isRTL) }}>
             {mutualFollowers.length === 1
               ? t('profile.followedByOne', { displayName: mutualFollowers[0]?.displayName })
               : t('profile.followedByMany', {
@@ -717,29 +717,29 @@ export default function ProfileScreen() {
   const renderHeaderActions = () => (
     <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
       <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn} accessibilityLabel={t('common.back')} accessibilityRole="button">
-        <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
+        <Icon name={rtlArrow(isRTL, 'back')} size="md" color={tc.text.primary} />
       </Pressable>
       <Text style={styles.headerUsername}>@{username}</Text>
       <View style={[styles.headerActions, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable hitSlop={8} onPress={() => setShowShareSheet(true)} accessibilityLabel={t('profile.shareProfile')} accessibilityRole="button">
-          <Icon name="share" size="sm" color={colors.text.primary} />
+          <Icon name="share" size="sm" color={tc.text.primary} />
         </Pressable>
         {isOwnProfile ? (
           <>
             <Pressable hitSlop={8} onPress={() => navigate('/(screens)/saved')} accessibilityLabel={t('profile.savedPosts')} accessibilityRole="link">
-              <Icon name="bookmark" size="sm" color={colors.text.primary} />
+              <Icon name="bookmark" size="sm" color={tc.text.primary} />
             </Pressable>
             <Pressable hitSlop={8} onPress={() => navigate('/(screens)/archive')} accessibilityLabel={t('profile.archive')} accessibilityRole="link">
-              <Icon name="clock" size="sm" color={colors.text.primary} />
+              <Icon name="clock" size="sm" color={tc.text.primary} />
             </Pressable>
 
             <Pressable hitSlop={8} onPress={() => navigate('/(screens)/settings')} accessibilityLabel={t('common.settings')} accessibilityRole="link">
-              <Icon name="settings" size="sm" color={colors.text.primary} />
+              <Icon name="settings" size="sm" color={tc.text.primary} />
             </Pressable>
           </>
         ) : (
           <Pressable hitSlop={8} onPress={() => { haptic.longPress(); setShowMenu(true); }} accessibilityLabel={t('profile.options')} accessibilityRole="button">
-            <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
+            <Icon name="more-horizontal" size="sm" color={tc.text.secondary} />
           </Pressable>
         )}
       </View>
@@ -759,11 +759,11 @@ export default function ProfileScreen() {
           <Text style={[styles.threadContent, { textAlign: rtlTextAlign(isRTL) }]} numberOfLines={3}>{thread.content}</Text>
           <View style={[styles.threadMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
             <View style={[styles.threadMetaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-              <Icon name="heart" size={12} color={colors.text.tertiary} />
+              <Icon name="heart" size={12} color={tc.text.tertiary} />
               <Text style={styles.threadMetaText}>{thread.likesCount}</Text>
             </View>
             <View style={[styles.threadMetaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-              <Icon name="message-circle" size={12} color={colors.text.tertiary} />
+              <Icon name="message-circle" size={12} color={tc.text.tertiary} />
               <Text style={styles.threadMetaText}>{thread.repliesCount}</Text>
             </View>
           </View>
@@ -864,7 +864,7 @@ export default function ProfileScreen() {
         />
         <BottomSheetItem
           label={t('profile.muteUser', { username })}
-          icon={<Icon name="volume-x" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="volume-x" size="sm" color={tc.text.primary} />}
           onPress={() => muteMutation.mutate()}
         />
         <BottomSheetItem
@@ -884,7 +884,7 @@ export default function ProfileScreen() {
       <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
         <BottomSheetItem
           label={t('profile.shareProfile')}
-          icon={<Icon name="share" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="share" size="sm" color={tc.text.primary} />}
           onPress={() => {
             setShowShareSheet(false);
             handleShareProfile();
@@ -892,7 +892,7 @@ export default function ProfileScreen() {
         />
         <BottomSheetItem
           label={t('profile.qrCode')}
-          icon={<Icon name="hash" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="hash" size="sm" color={tc.text.primary} />}
           onPress={() => {
             setShowShareSheet(false);
             navigate(`/(screens)/qr-code?username=${username}`);

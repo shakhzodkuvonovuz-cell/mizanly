@@ -210,7 +210,7 @@ export default function ConversationInfoScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('conversation.chatInfo')}
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back() }}
         />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <EmptyState
@@ -243,7 +243,7 @@ export default function ConversationInfoScreen() {
         {/* Header */}
         <GlassHeader
           title={t('conversation.chatInfo')}
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back() }}
         />
 
         <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
@@ -260,7 +260,7 @@ export default function ConversationInfoScreen() {
                     colors={[colors.emerald, colors.emeraldDark]}
                     style={styles.avatarOverlayGradient}
                   >
-                    <Icon name="edit" size={16} color={colors.text.primary} />
+                    <Icon name="edit" size={16} color={tc.text.primary} />
                   </LinearGradient>
                 )}
               </Pressable>
@@ -268,7 +268,7 @@ export default function ConversationInfoScreen() {
                 <Text style={[styles.heroName, { color: tc.text.primary }]}>{name}</Text>
                 {isGroup && isCreator && (
                   <Pressable onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel={t('accessibility.editGroupName')}>
-                    <Icon name="edit" size={16} color={colors.text.secondary} />
+                    <Icon name="edit" size={16} color={tc.text.secondary} />
                   </Pressable>
                 )}
               </View>
@@ -355,7 +355,7 @@ export default function ConversationInfoScreen() {
                           )}
                           {(m as { tag?: string | null }).tag && (
                             <View style={{ backgroundColor: tc.surface, borderRadius: radius.full, paddingHorizontal: spacing.xs, paddingVertical: 1 }}>
-                              <Text style={{ color: colors.text.secondary, fontSize: fontSizeExt.tiny, fontWeight: '500' }}>{(m as { tag?: string | null }).tag}</Text>
+                              <Text style={{ color: tc.text.secondary, fontSize: fontSizeExt.tiny, fontWeight: '500' }}>{(m as { tag?: string | null }).tag}</Text>
                             </View>
                           )}
                         </View>
@@ -558,7 +558,7 @@ export default function ConversationInfoScreen() {
                 value={newGroupName}
                 onChangeText={setNewGroupName}
                 placeholder={t('groups.enterNewGroupName')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 autoFocus
                 maxLength={MAX_GROUP_NAME}
               />
@@ -615,7 +615,7 @@ export default function ConversationInfoScreen() {
                         style={styles.chipRemove}
                         accessibilityLabel={t('groups.removeMember')}
                       >
-                        <Icon name="x" size={12} color={colors.text.secondary} />
+                        <Icon name="x" size={12} color={tc.text.secondary} />
                       </Pressable>
                     </View>
                   ))}
@@ -625,19 +625,19 @@ export default function ConversationInfoScreen() {
 
             {/* Search input */}
             <View style={[styles.searchWrap, { backgroundColor: tc.bgCard }]}>
-              <Icon name="search" size="sm" color={colors.text.secondary} />
+              <Icon name="search" size="sm" color={tc.text.secondary} />
               <TextInput
                 style={[styles.searchInput, { color: tc.text.primary }]}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder={t('common.searchPeople')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               {searchQuery.length > 0 && (
                 <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')}>
-                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                  <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               )}
             </View>
@@ -731,7 +731,7 @@ export default function ConversationInfoScreen() {
               )}
               <BottomSheetItem
                 label={t('conversation.viewProfile')}
-                icon={<Icon name="user" size="sm" color={colors.text.primary} />}
+                icon={<Icon name="user" size="sm" color={tc.text.primary} />}
                 onPress={() => {
                   setMemberActionSheetOpen(false);
                   router.push(`/(screens)/profile/${selectedMember.username}`);

@@ -75,7 +75,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
                 value={isCloseFriend}
                 onValueChange={(value) => onToggle(user.id, value)}
                 trackColor={{ false: tc.border, true: colors.emerald }}
-                thumbColor={isCloseFriend ? '#fff' : colors.text.secondary}
+                thumbColor={isCloseFriend ? '#fff' : tc.text.secondary}
                 ios_backgroundColor={tc.border}
                 disabled={disabled}
               />
@@ -297,11 +297,11 @@ export default function CloseFriendsScreen() {
             colors={colors.gradient.cardDark}
             style={styles.searchGradient}
           >
-            <Icon name="search" size="sm" color={colors.text.secondary} />
+            <Icon name="search" size="sm" color={tc.text.secondary} />
             <TextInput
               style={[styles.searchInput, { color: tc.text.primary }]}
               placeholder={t('screens.closeFriends.searchPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -309,7 +309,7 @@ export default function CloseFriendsScreen() {
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <Icon name="x" size="sm" color={colors.text.secondary} />
+                <Icon name="x" size="sm" color={tc.text.secondary} />
               </Pressable>
             )}
           </LinearGradient>

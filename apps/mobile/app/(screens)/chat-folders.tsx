@@ -139,7 +139,7 @@ export default function ChatFoldersScreen() {
               {Boolean(item.includeChannels) && ` · ${t('risalah.channels')}`}
             </Text>
           </View>
-          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+          <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
         </Pressable>
       </Animated.View>
     );
@@ -201,7 +201,7 @@ export default function ChatFoldersScreen() {
               value={newName}
               onChangeText={setNewName}
               placeholder={t('risalah.folderNamePlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               maxLength={50}
               autoFocus
             />
@@ -215,7 +215,7 @@ export default function ChatFoldersScreen() {
                   style={[styles.iconOption, selectedIcon === i && { borderColor: FOLDER_COLORS[i] }]}
                   onPress={() => { setSelectedIcon(i); haptic.tick(); }}
                 >
-                  <Icon name={icon} size="sm" color={selectedIcon === i ? FOLDER_COLORS[i] : colors.text.secondary} />
+                  <Icon name={icon} size="sm" color={selectedIcon === i ? FOLDER_COLORS[i] : tc.text.secondary} />
                 </Pressable>
               ))}
             </View>
@@ -279,7 +279,7 @@ export default function ChatFoldersScreen() {
         <BottomSheet visible={!!menuFolder} onClose={() => setMenuFolder(null)}>
           <BottomSheetItem
             label={t('risalah.editFolder')}
-            icon={<Icon name="pencil" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="pencil" size="sm" color={tc.text.primary} />}
             onPress={() => {
               const folder = menuFolder;
               setMenuFolder(null);

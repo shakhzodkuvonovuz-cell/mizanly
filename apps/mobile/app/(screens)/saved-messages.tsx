@@ -111,7 +111,7 @@ export default function SavedMessagesScreen() {
 
           {isForwarded && (
             <View style={styles.forwardBadge}>
-              <Icon name="share" size="xs" color={colors.text.tertiary} />
+              <Icon name="share" size="xs" color={tc.text.tertiary} />
               <Text style={styles.forwardText}>{t('risalah.forwardedFrom', { source: item.forwardedFromType as string })}</Text>
             </View>
           )}
@@ -159,17 +159,17 @@ export default function SavedMessagesScreen() {
         {/* Search bar */}
         {searchMode && (
           <Animated.View entering={FadeIn.duration(200)} style={styles.searchWrap}>
-            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <Icon name="search" size="sm" color={tc.text.tertiary} />
             <TextInput
               style={styles.searchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder={t('risalah.searchSavedMessages')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               autoFocus
             />
             <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }}>
-              <Icon name="x" size="sm" color={colors.text.tertiary} />
+              <Icon name="x" size="sm" color={tc.text.tertiary} />
             </Pressable>
           </Animated.View>
         )}
@@ -208,7 +208,7 @@ export default function SavedMessagesScreen() {
             value={newMessage}
             onChangeText={setNewMessage}
             placeholder={t('risalah.typeNote')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             multiline
             maxLength={5000}
           />

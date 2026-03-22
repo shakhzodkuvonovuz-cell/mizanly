@@ -133,7 +133,7 @@ function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; 
               accessibilityRole="button"
               accessibilityLabel={t('discover.filterBy', { category: cat.label })}
             >
-              <Icon name={cat.icon} size={14} color={isActive ? '#fff' : colors.text.primary} />
+              <Icon name={cat.icon} size={14} color={isActive ? '#fff' : tc.text.primary} />
               <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
                 {cat.label}
               </Text>
@@ -461,14 +461,14 @@ export default function DiscoverScreen() {
                   onPress={() => navigate('/(screens)/hashtag-explore')}
                 >
                   <Icon name="hash" size="sm" color={colors.emerald} />
-                  <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('screens.hashtag-explore.title')}</Text>
+                  <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('screens.hashtag-explore.title')}</Text>
                 </Pressable>
                 <Pressable
                   style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border }}
                   onPress={() => navigate('/(screens)/series-discover')}
                 >
                   <Icon name="layers" size="sm" color={colors.gold} />
-                  <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('series.discoverTitle')}</Text>
+                  <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('series.discoverTitle')}</Text>
                 </Pressable>
               </View>
               <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('discover.explore')}</Text>

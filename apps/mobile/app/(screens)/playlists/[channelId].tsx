@@ -18,6 +18,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi } from '@/services/api';
 import type { Playlist, PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function ChannelPlaylistsScreen() {
@@ -25,6 +26,7 @@ export default function ChannelPlaylistsScreen() {
   const params = useLocalSearchParams<{ channelId: string }>();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
 
   const insets = useSafeAreaInsets();
   const channelId = Array.isArray(params.channelId) ? params.channelId[0] : params.channelId;

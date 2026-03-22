@@ -190,7 +190,7 @@ function StickerBrowserScreenInner() {
                 <ProgressiveImage uri={pack.coverUrl} width={120} height={120} borderRadius={radius.md} />
               ) : (
                 <View style={[styles.featuredCover, styles.placeholderCover]}>
-                  <Icon name="smile" size={32} color={colors.text.tertiary} />
+                  <Icon name="smile" size={32} color={tc.text.tertiary} />
                 </View>
               )}
               <Text style={styles.featuredTitle} numberOfLines={1}>{pack.name}</Text>
@@ -243,7 +243,7 @@ function StickerBrowserScreenInner() {
             <TextInput
               style={styles.searchInput}
               placeholder={t('screens.sticker-browser.searchPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -251,7 +251,7 @@ function StickerBrowserScreenInner() {
             />
             {searchQuery.length > 0 && (
               <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setSearchQuery('')}>
-                <Icon name="x" size="xs" color={colors.text.secondary} />
+                <Icon name="x" size="xs" color={tc.text.secondary} />
               </Pressable>
             )}
           </LinearGradient>

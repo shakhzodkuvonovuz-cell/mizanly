@@ -196,7 +196,7 @@ function VolunteerBoardContent() {
           <View style={styles.metaRow}>
             {item.location && (
               <View style={styles.metaItem}>
-                <Icon name="map-pin" size="xs" color={colors.text.tertiary} />
+                <Icon name="map-pin" size="xs" color={tc.text.tertiary} />
                 <Text style={styles.metaText} numberOfLines={1}>
                   {item.location}
                 </Text>
@@ -204,7 +204,7 @@ function VolunteerBoardContent() {
             )}
             {item.date && (
               <View style={styles.metaItem}>
-                <Icon name="clock" size="xs" color={colors.text.tertiary} />
+                <Icon name="clock" size="xs" color={tc.text.tertiary} />
                 <Text style={styles.metaText}>
                   {new Date(item.date).toLocaleDateString()}
                 </Text>

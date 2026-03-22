@@ -210,7 +210,7 @@ function MilestoneBadges({
                   <Icon
                     name={achieved ? 'check-circle' : 'lock'}
                     size="md"
-                    color={achieved ? colors.gold : colors.text.tertiary}
+                    color={achieved ? colors.gold : tc.text.tertiary}
                   />
                 </LinearGradient>
                 <Text

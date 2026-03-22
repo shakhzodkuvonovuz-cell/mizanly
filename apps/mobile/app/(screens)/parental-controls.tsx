@@ -85,7 +85,7 @@ function PinPad({
             disabled={d === ''}
           >
             {d === 'del' ? (
-              <Icon name="arrow-left" size="md" color={colors.text.primary} />
+              <Icon name="arrow-left" size="md" color={tc.text.primary} />
             ) : (
               <Text style={styles.numKeyText}>{d}</Text>
             )}
@@ -334,7 +334,7 @@ function ChildCard({
           <Icon
             name={expanded ? 'chevron-down' : 'chevron-right'}
             size="sm"
-            color={colors.text.tertiary}
+            color={tc.text.tertiary}
           />
         </Pressable>
 

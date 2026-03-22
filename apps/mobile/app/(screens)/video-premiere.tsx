@@ -88,7 +88,7 @@ export default function VideoPremiereScreen() {
               value={date}
               onChangeText={setDate}
               placeholder="2026-03-25"
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               keyboardType={Platform.OS === 'ios' ? 'default' : 'default'}
             />
           </Animated.View>
@@ -101,7 +101,7 @@ export default function VideoPremiereScreen() {
               value={time}
               onChangeText={setTime}
               placeholder="18:00"
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
             />
           </Animated.View>
 

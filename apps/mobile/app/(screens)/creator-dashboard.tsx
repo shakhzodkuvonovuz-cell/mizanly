@@ -190,7 +190,7 @@ function CreatorDashboardContent() {
         <Text
           style={[
             styles.overviewChange,
-            { color: item.change.startsWith('+') ? colors.emerald : item.change.startsWith('-') ? colors.error : colors.text.tertiary },
+            { color: item.change.startsWith('+') ? colors.emerald : item.change.startsWith('-') ? colors.error : tc.text.tertiary},
           ]}
         >
           {item.change}

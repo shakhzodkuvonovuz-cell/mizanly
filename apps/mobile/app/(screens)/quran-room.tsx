@@ -384,7 +384,7 @@ export default function QuranRoomScreen() {
             onPress={handleToggleTranslation}
             style={styles.toggleRow}
           >
-            <Icon name="globe" size="sm" color={colors.text.secondary} />
+            <Icon name="globe" size="sm" color={tc.text.secondary} />
             <Text style={styles.toggleText}>{t('quranRoom.showTranslation')}</Text>
             <View
               style={[
@@ -421,12 +421,12 @@ export default function QuranRoomScreen() {
         >
           <BottomSheetItem
             label={t('quranRoom.nextVerse')}
-            icon={<Icon name="chevron-right" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="chevron-right" size="sm" color={tc.text.primary} />}
             onPress={handleNextVerse}
           />
           <BottomSheetItem
             label={t('quranRoom.prevVerse')}
-            icon={<Icon name="chevron-left" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="chevron-left" size="sm" color={tc.text.primary} />}
             onPress={handlePrevVerse}
             disabled={!roomState || roomState.currentVerse <= 1}
           />

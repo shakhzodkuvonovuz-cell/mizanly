@@ -257,7 +257,7 @@ function ChatWallpaperScreen() {
             ]}
           >
             {selectedColor === color.value && (
-              <Icon name="check" size="sm" color={colors.text.primary} />
+              <Icon name="check" size="sm" color={tc.text.primary} />
             )}
           </View>
           <Text style={[styles.colorName, { color: tc.text.secondary }]}>{color.name}</Text>
@@ -290,7 +290,7 @@ function ChatWallpaperScreen() {
               ]}
             >
               {isSelected && (
-                <Icon name="check" size="md" color={colors.text.primary} />
+                <Icon name="check" size="md" color={tc.text.primary} />
               )}
             </LinearGradient>
             <Text style={[styles.gradientName, { color: tc.text.secondary }]}>{pair.name}</Text>
@@ -322,7 +322,7 @@ function ChatWallpaperScreen() {
               <Text style={styles.patternLabel}>{pattern.name}</Text>
               {isSelected && (
                 <View style={styles.patternCheck}>
-                  <Icon name="check" size="sm" color={colors.text.primary} />
+                  <Icon name="check" size="sm" color={tc.text.primary} />
                 </View>
               )}
             </View>
@@ -343,7 +343,7 @@ function ChatWallpaperScreen() {
             accessibilityRole="button"
             accessibilityLabel={t('common.remove')}
           >
-            <Icon name="x" size="sm" color={colors.text.primary} />
+            <Icon name="x" size="sm" color={tc.text.primary} />
           </Pressable>
         </View>
       ) : null}
@@ -442,7 +442,7 @@ function ChatWallpaperScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('chatWallpaper.useDefault')}
         >
-          <Icon name="slash" size="sm" color={colors.text.secondary} />
+          <Icon name="slash" size="sm" color={tc.text.secondary} />
           <Text style={[styles.defaultText, { color: tc.text.secondary }]}>{t('chatWallpaper.useDefault')}</Text>
         </Pressable>
 

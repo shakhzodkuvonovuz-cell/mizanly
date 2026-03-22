@@ -144,7 +144,7 @@ function InputCard({
                 value={value}
                 onChangeText={onChangeText}
                 placeholder={placeholder || '0'}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 keyboardType="decimal-pad"
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
@@ -356,7 +356,7 @@ export default function ZakatCalculatorScreen() {
                       style={styles.nextButton}
                     >
                       <Text style={styles.nextButtonText}>{t('screens.zakatCalculator.nextDeductions')}</Text>
-                      <Icon name="chevron-right" size="sm" color={colors.text.primary} />
+                      <Icon name="chevron-right" size="sm" color={tc.text.primary} />
                     </LinearGradient>
                   </Pressable>
                 </Animated.View>
@@ -416,7 +416,7 @@ export default function ZakatCalculatorScreen() {
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.backButtonGradient}
                     >
-                      <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
+                      <Icon name="chevron-left" size="sm" color={tc.text.secondary} />
                       <Text style={styles.backButtonText}>{t('common.back')}</Text>
                     </LinearGradient>
                   </Pressable>
@@ -427,7 +427,7 @@ export default function ZakatCalculatorScreen() {
                       style={styles.calculateButtonGradient}
                     >
                       <Text style={styles.calculateButtonText}>{t('screens.zakatCalculator.calculateZakat')}</Text>
-                      <Icon name="check-circle" size="sm" color={colors.text.primary} />
+                      <Icon name="check-circle" size="sm" color={tc.text.primary} />
                     </LinearGradient>
                   </Pressable>
                 </View>
@@ -508,7 +508,7 @@ export default function ZakatCalculatorScreen() {
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.actionButtonHalfGradient}
                     >
-                      <Icon name="repeat" size="sm" color={colors.text.secondary} />
+                      <Icon name="repeat" size="sm" color={tc.text.secondary} />
                       <Text style={styles.actionButtonHalfText}>{t('screens.zakatCalculator.recalculate')}</Text>
                     </LinearGradient>
                   </Pressable>
@@ -518,7 +518,7 @@ export default function ZakatCalculatorScreen() {
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.actionButtonHalfGradient}
                     >
-                      <Icon name="share" size="sm" color={colors.text.primary} />
+                      <Icon name="share" size="sm" color={tc.text.primary} />
                       <Text style={styles.shareButtonText}>{t('common.share')}</Text>
                     </LinearGradient>
                   </Pressable>

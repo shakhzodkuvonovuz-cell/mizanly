@@ -184,7 +184,7 @@ function SeriesDiscoverContent() {
             />
           ) : (
             <View style={[styles.coverImage, styles.coverPlaceholder]}>
-              <Icon name="layers" size="xl" color={colors.text.tertiary} />
+              <Icon name="layers" size="xl" color={tc.text.tertiary} />
             </View>
           )}
           <LinearGradient
@@ -194,7 +194,7 @@ function SeriesDiscoverContent() {
           {/* Badges on cover */}
           <View style={styles.coverBadgeRow}>
             <View style={styles.episodeBadge}>
-              <Icon name="layers" size="xs" color={colors.text.primary} />
+              <Icon name="layers" size="xs" color={tc.text.primary} />
               <Text style={styles.episodeBadgeText}>
                 {item.episodeCount} {t('series.episodes', 'episodes')}
               </Text>

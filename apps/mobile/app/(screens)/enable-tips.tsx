@@ -384,7 +384,7 @@ export default function EnableTipsScreen() {
                       <Icon
                         name={isConnected ? 'check-circle' : 'link'}
                         size="sm"
-                        color={isConnected ? colors.emerald : colors.text.primary}
+                        color={isConnected ? colors.emerald : tc.text.primary}
                       />
                       <Text
                         style={[

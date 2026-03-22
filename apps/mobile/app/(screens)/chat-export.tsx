@@ -136,7 +136,7 @@ function ChatExportContent() {
                 <Icon
                   name={stats.isGroup ? 'users' : 'message-circle'}
                   size={20}
-                  color={colors.text.primary}
+                  color={tc.text.primary}
                 />
               </LinearGradient>
               <View style={styles.statsHeaderText}>
@@ -202,7 +202,7 @@ function ChatExportContent() {
                       {option.description}
                     </Text>
                   </View>
-                  <Icon name={option.icon} size={20} color={selected ? colors.emerald : colors.text.tertiary} />
+                  <Icon name={option.icon} size={20} color={selected ? colors.emerald : tc.text.tertiary} />
                 </Pressable>
               );
             })}
@@ -251,7 +251,7 @@ function ChatExportContent() {
 
         {/* Info Footer */}
         <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.infoFooter}>
-          <Icon name="lock" size={16} color={colors.text.tertiary} />
+          <Icon name="lock" size={16} color={tc.text.tertiary} />
           <Text style={[styles.infoFooterText, { color: tc.text.tertiary }]}>
             {t(
               'chatExport.privacyNote',

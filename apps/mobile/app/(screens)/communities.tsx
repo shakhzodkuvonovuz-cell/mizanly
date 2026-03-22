@@ -287,7 +287,7 @@ export default function CommunitiesScreen() {
               colors={activeTab === 'discover' ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['transparent', 'transparent']}
               style={styles.tabGradient}
             >
-              <Icon name="search" size="xs" color={activeTab === 'discover' ? colors.emerald : colors.text.tertiary} />
+              <Icon name="search" size="xs" color={activeTab === 'discover' ? colors.emerald : tc.text.tertiary} />
               <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>{t('screens.communities.tabDiscover')}</Text>
             </LinearGradient>
           </Pressable>
@@ -301,7 +301,7 @@ export default function CommunitiesScreen() {
               colors={activeTab === 'joined' ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['transparent', 'transparent']}
               style={styles.tabGradient}
             >
-              <Icon name="users" size="xs" color={activeTab === 'joined' ? colors.emerald : colors.text.tertiary} />
+              <Icon name="users" size="xs" color={activeTab === 'joined' ? colors.emerald : tc.text.tertiary} />
               <Text style={[styles.tabText, activeTab === 'joined' && styles.tabTextActive]}>
                 {t('screens.communities.tabJoined')} {joinedCount > 0 && `(${joinedCount})`}
               </Text>

@@ -197,7 +197,7 @@ export default function BookmarkFoldersScreen() {
             <TextInput
               style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
               placeholder={t('screens.bookmarkFolders.folderNamePlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={newFolderName}
               onChangeText={setNewFolderName}
               autoFocus

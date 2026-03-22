@@ -529,7 +529,7 @@ export default function ReelDetailScreen() {
                     {t('comments.replyingTo')} @{replyTo.username}
                   </Text>
                   <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
-                    <Icon name="x" size="xs" color={colors.text.secondary} />
+                    <Icon name="x" size="xs" color={tc.text.secondary} />
                   </Pressable>
                 </View>
               )}
@@ -539,7 +539,7 @@ export default function ReelDetailScreen() {
                   ref={inputRef}
                   style={styles.input}
                   placeholder={replyTo ? t('comments.replyPlaceholder', { username: replyTo.username }) : t('comments.addCommentPlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   value={commentText}
                   onChangeText={setCommentText}
                   multiline

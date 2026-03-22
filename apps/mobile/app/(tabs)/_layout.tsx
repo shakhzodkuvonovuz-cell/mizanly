@@ -21,6 +21,7 @@ import { colors, tabBar, spacing, fontSize, animation, radius, shadow, fontSizeE
 import { useStore } from '@/store';
 import { navigate as navTo } from '@/utils/navigation';
 import { useState } from 'react';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type TabName = 'saf' | 'bakra' | 'minbar' | 'majlis' | 'risalah';
 
@@ -53,7 +54,7 @@ function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; ba
       <Icon
         name={icon}
         size="md"
-        color={focused ? colors.emerald : colors.text.secondary}
+        color={focused ? colors.emerald : tc.text.secondary}
         strokeWidth={focused ? 2.5 : 2}
       />
       {badge !== undefined && badge > 0 && (
@@ -112,37 +113,37 @@ function CreateButton() {
         </View>
         <BottomSheetItem
           label={t('tabs.createSheet.photoOrVideoPost')}
-          icon={<Icon name="image" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="image" size="sm" color={tc.text.primary} />}
           onPress={() => navigate('/(screens)/create-post')}
         />
         <BottomSheetItem
           label={t('tabs.createSheet.startThread')}
-          icon={<Icon name="message-circle" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="message-circle" size="sm" color={tc.text.primary} />}
           onPress={() => navigate('/(screens)/create-thread')}
         />
         <BottomSheetItem
           label={t('tabs.createSheet.shareStory')}
-          icon={<Icon name="circle-plus" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="circle-plus" size="sm" color={tc.text.primary} />}
           onPress={() => navigate('/(screens)/create-story')}
         />
         <BottomSheetItem
           label={t('tabs.createSheet.shortVideoReel')}
-          icon={<Icon name="video" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="video" size="sm" color={tc.text.primary} />}
           onPress={() => navigate('/(screens)/create-reel')}
         />
         <BottomSheetItem
           label={t('tabs.createSheet.longVideo')}
-          icon={<Icon name="play" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="play" size="sm" color={tc.text.primary} />}
           onPress={() => navigate('/(screens)/create-video')}
         />
         <BottomSheetItem
           label={t('tabs.createSheet.goLive')}
-          icon={<Icon name="globe" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="globe" size="sm" color={tc.text.primary} />}
           onPress={() => navigate('/(screens)/go-live')}
         />
         <BottomSheetItem
           label={t('tabs.createSheet.voicePost')}
-          icon={<Icon name="mic" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="mic" size="sm" color={tc.text.primary} />}
           onPress={() => navigate('/(screens)/voice-post-create')}
         />
       </BottomSheet>
@@ -156,6 +157,7 @@ export default function TabLayout() {
   const unreadNotifications = useStore(s => s.unreadNotifications);
   const unreadMessages = useStore(s => s.unreadMessages);
   const { isDesktop, isTablet } = useResponsive();
+  const tc = useThemeColors();
   const isWebWide = Platform.OS === 'web' && (isDesktop || isTablet);
 
   // Register web keyboard shortcuts (no-op on native)
@@ -169,7 +171,7 @@ export default function TabLayout() {
           tabBarShowLabel: false,
           tabBarStyle: isWebWide ? styles.tabBarHidden : styles.tabBar,
           tabBarActiveTintColor: colors.emerald,
-          tabBarInactiveTintColor: colors.text.secondary,
+          tabBarInactiveTintColor: tc.text.secondary,
           tabBarLabelStyle: styles.tabLabel,
           tabBarBackground: () =>
             isWebWide ? null : (

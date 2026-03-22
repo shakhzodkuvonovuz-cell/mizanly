@@ -97,7 +97,7 @@ export default function StarredMessagesScreen() {
             {item.content && <Text style={styles.content}>{item.content}</Text>}
             {item.mediaUrl && (
               <View style={styles.mediaPlaceholder}>
-                <Icon name="image" size={20} color={colors.text.secondary} />
+                <Icon name="image" size={20} color={tc.text.secondary} />
                 <Text style={styles.mediaText}>{t('screens.starred-messages.media')}</Text>
               </View>
             )}

@@ -335,7 +335,7 @@ export default function BroadcastChannelsScreen() {
         </View>
         <BottomSheet visible={showCreateSheet} onClose={() => setShowCreateSheet(false)} snapPoint={0.5}>
           <View style={{ padding: spacing.base, gap: spacing.md }}>
-            <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.text.primary }}>{t('broadcastChannels.createChannel')}</Text>
+            <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: tc.text.primary}}>{t('broadcastChannels.createChannel')}</Text>
             <TextInput
               style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base }}
               placeholder={t('broadcastChannels.channelNamePlaceholder')}
@@ -345,7 +345,7 @@ export default function BroadcastChannelsScreen() {
               maxLength={50}
             />
             <TextInput
-              style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, minHeight: 80 }}
+              style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base, minHeight: 80 }}
               placeholder={t('broadcastChannels.descriptionPlaceholder')}
               placeholderTextColor={tc.text.tertiary}
               value={newChannelDesc}

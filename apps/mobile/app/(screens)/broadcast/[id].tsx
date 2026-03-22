@@ -275,7 +275,7 @@ export default function BroadcastChannelScreen() {
                   />
                   {channel.isMuted && (
                     <Pressable style={styles.muteBadge}>
-                      <Icon name="volume-x" size="xs" color={colors.text.tertiary} />
+                      <Icon name="volume-x" size="xs" color={tc.text.tertiary} />
                       <Text style={styles.muteText}>{t('broadcast.muted')}</Text>
                     </Pressable>
                   )}
@@ -310,7 +310,7 @@ export default function BroadcastChannelScreen() {
               <TextInput
                 style={styles.composeInput}
                 placeholder={t('broadcast.sendMessagePlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={newMessage}
                 onChangeText={setNewMessage}
                 onSubmitEditing={handleSendMessage}
@@ -323,7 +323,7 @@ export default function BroadcastChannelScreen() {
                 onPress={handleSendMessage}
                 disabled={!newMessage.trim() || sending}
               >
-                <Icon name="send" size="md" color={colors.text.primary} />
+                <Icon name="send" size="md" color={tc.text.primary} />
               </Pressable>
             </View>
           )}
@@ -336,7 +336,7 @@ export default function BroadcastChannelScreen() {
             {selectedMessage?.user?.id === channel?.userId && (
               <BottomSheetItem
                 label={selectedMessage?.isPinned ? t('broadcast.unpinMessage') : t('broadcast.pinMessage')}
-                icon={<Icon name="map-pin" size="md" color={colors.text.primary} />}
+                icon={<Icon name="map-pin" size="md" color={tc.text.primary} />}
                 onPress={handlePinMessage}
               />
             )}

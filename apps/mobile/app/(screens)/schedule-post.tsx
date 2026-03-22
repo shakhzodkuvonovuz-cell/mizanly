@@ -172,7 +172,7 @@ export default function SchedulePostScreen() {
               {/* User Info */}
               <View style={styles.userRow}>
                 <View style={styles.avatarPlaceholder}>
-                  <Icon name="user" size="md" color={colors.text.tertiary} />
+                  <Icon name="user" size="md" color={tc.text.tertiary} />
                 </View>
                 <View style={styles.userInfo}>
                   <Text style={styles.userName}>{t('screens.schedule-post.yourName')}</Text>
@@ -198,7 +198,7 @@ export default function SchedulePostScreen() {
               <View style={styles.postMeta}>
                 {postData.hasMedia && (
                   <View style={styles.mediaIndicator}>
-                    <Icon name="image" size="xs" color={colors.text.tertiary} />
+                    <Icon name="image" size="xs" color={tc.text.tertiary} />
                   </View>
                 )}
                 <View style={styles.spaceBadge}>
@@ -233,11 +233,11 @@ export default function SchedulePostScreen() {
                 </View>
                 <View style={styles.monthNavigation}>
                   <Pressable accessibilityRole="button" onPress={() => changeMonth(-1)}>
-                    <Icon name="chevron-left" size="md" color={colors.text.secondary} />
+                    <Icon name="chevron-left" size="md" color={tc.text.secondary} />
                   </Pressable>
                   <Text style={styles.monthText}>{monthNames[currentMonth]} {currentYear}</Text>
                   <Pressable accessibilityRole="button" onPress={() => changeMonth(1)}>
-                    <Icon name="chevron-right" size="md" color={colors.text.secondary} />
+                    <Icon name="chevron-right" size="md" color={tc.text.secondary} />
                   </Pressable>
                 </View>
               </View>
@@ -445,7 +445,7 @@ export default function SchedulePostScreen() {
               style={styles.timezoneGradient}
             >
               <View style={styles.timezoneRow}>
-                <Icon name="globe" size="sm" color={colors.text.secondary} />
+                <Icon name="globe" size="sm" color={tc.text.secondary} />
                 <View style={styles.timezoneInfo}>
                   <Text style={styles.timezoneLabel}>{t('screens.schedule-post.timezone')}</Text>
                   <Text style={styles.timezoneValue}>{`UTC${-(new Date().getTimezoneOffset() / 60) >= 0 ? '+' : ''}${-(new Date().getTimezoneOffset() / 60)} (${Intl.DateTimeFormat().resolvedOptions().timeZone})`}</Text>
@@ -468,12 +468,12 @@ export default function SchedulePostScreen() {
                 <Text style={styles.summaryValue}>{formatScheduledTime()}</Text>
 
                 <View style={styles.summaryRow}>
-                  <Icon name="share" size="xs" color={colors.text.secondary} />
+                  <Icon name="share" size="xs" color={tc.text.secondary} />
                   <Text style={styles.summaryDetail}>{t('screens.schedule-post.willPostTo', { space: postData.space })}</Text>
                 </View>
 
                 <View style={styles.summaryRow}>
-                  <Icon name="bell" size="xs" color={colors.text.secondary} />
+                  <Icon name="bell" size="xs" color={tc.text.secondary} />
                   <Text style={styles.summaryDetail}>{t('screens.schedule-post.reminderNote')}</Text>
                 </View>
               </View>

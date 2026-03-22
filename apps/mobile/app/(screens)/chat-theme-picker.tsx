@@ -182,7 +182,7 @@ export default function ChatThemePickerScreen() {
                 colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
                 style={styles.checkOverlay}
               >
-                <Icon name="check" size="sm" color={colors.text.primary} />
+                <Icon name="check" size="sm" color={tc.text.primary} />
               </LinearGradient>
             )}
           </View>
@@ -213,7 +213,7 @@ export default function ChatThemePickerScreen() {
           >
             {isSelected && (
               <View style={styles.checkOverlay}>
-                <Icon name="check" size="sm" color={colors.text.primary} />
+                <Icon name="check" size="sm" color={tc.text.primary} />
               </View>
             )}
           </LinearGradient>
@@ -271,13 +271,13 @@ export default function ChatThemePickerScreen() {
             </View>
           ) : (
             <View style={styles.photoContent}>
-              <Icon name="image" size="md" color={colors.text.tertiary} />
+              <Icon name="image" size="md" color={tc.text.tertiary} />
               <Text style={[styles.themeName, { color: tc.text.secondary }]}>{t(`chatThemePicker.themeName.${item.id}`)}</Text>
             </View>
           )}
           {isSelected && !isUpload && (
             <View style={styles.photoCheck}>
-              <Icon name="check" size="xs" color={colors.text.primary} />
+              <Icon name="check" size="xs" color={tc.text.primary} />
             </View>
           )}
         </Pressable>
@@ -447,13 +447,13 @@ export default function ChatThemePickerScreen() {
             </View>
             <View style={styles.sliderButtons}>
               <Pressable onPress={() => setOpacity(Math.max(0, opacity - 10))} accessibilityRole="button" accessibilityLabel={t('chatThemePicker.decreaseOpacity')}>
-                <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
+                <Icon name="chevron-left" size="sm" color={tc.text.secondary} />
               </Pressable>
               <View style={[styles.sliderTrack, { backgroundColor: tc.surface, flex: 1 }]}>
                 <View style={[styles.sliderFill, { width: `${opacity}%` }]} />
               </View>
               <Pressable onPress={() => setOpacity(Math.min(100, opacity + 10))} accessibilityRole="button" accessibilityLabel={t('chatThemePicker.increaseOpacity')}>
-                <Icon name="chevron-right" size="sm" color={colors.text.secondary} />
+                <Icon name="chevron-right" size="sm" color={tc.text.secondary} />
               </Pressable>
             </View>
 
@@ -463,13 +463,13 @@ export default function ChatThemePickerScreen() {
             </View>
             <View style={styles.sliderButtons}>
               <Pressable onPress={() => setBlur(Math.max(0, blur - 10))} accessibilityRole="button" accessibilityLabel={t('chatThemePicker.decreaseBlur')}>
-                <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
+                <Icon name="chevron-left" size="sm" color={tc.text.secondary} />
               </Pressable>
               <View style={[styles.sliderTrack, { backgroundColor: tc.surface, flex: 1 }]}>
                 <View style={[styles.sliderFill, { width: `${blur}%` }]} />
               </View>
               <Pressable onPress={() => setBlur(Math.min(100, blur + 10))} accessibilityRole="button" accessibilityLabel={t('chatThemePicker.increaseBlur')}>
-                <Icon name="chevron-right" size="sm" color={colors.text.secondary} />
+                <Icon name="chevron-right" size="sm" color={tc.text.secondary} />
               </Pressable>
             </View>
           </LinearGradient>

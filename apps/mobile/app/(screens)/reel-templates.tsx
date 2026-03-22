@@ -181,7 +181,7 @@ export default function ReelTemplatesScreen() {
               />
             ) : (
               <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
-                <Icon name="video" size="lg" color={colors.text.tertiary} />
+                <Icon name="video" size="lg" color={tc.text.tertiary} />
               </View>
             )}
 

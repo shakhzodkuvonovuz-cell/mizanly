@@ -160,7 +160,7 @@ export default function DMNoteEditorScreen() {
                     maxLength={MAX_LENGTH}
                     multiline
                     placeholder={t('dmNotes.placeholder')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     accessibilityLabel={t('dmNotes.placeholder')}
                   />
                 </LinearGradient>
@@ -232,7 +232,7 @@ export default function DMNoteEditorScreen() {
                     colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
                     style={styles.currentNoteCard}
                   >
-                    <Icon name="check-circle" size="sm" color={colors.text.secondary} />
+                    <Icon name="check-circle" size="sm" color={tc.text.secondary} />
                     <Text style={[styles.currentNoteText, { color: tc.text.secondary }]}>
                       {t('dmNotes.currentNote')}
                     </Text>

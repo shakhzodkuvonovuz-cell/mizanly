@@ -126,7 +126,7 @@ function ScheduleItem({ prayer, index, t }: { prayer: PrayerTime; index: number;
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(300)} style={styles.scheduleItem}>
       <View style={styles.scheduleIconContainer}>
-        <Icon name="clock" size="xs" color={prayer.isCurrent ? colors.emerald : colors.text.tertiary} />
+        <Icon name="clock" size="xs" color={prayer.isCurrent ? colors.emerald : tc.text.tertiary} />
       </View>
       <View style={styles.scheduleContent}>
         <Text
@@ -189,7 +189,7 @@ function GoalItem({
             ]}
             style={styles.goalIconBg}
           >
-            <Icon name={goal.icon} size="sm" color={goal.completed ? colors.emerald : colors.text.secondary} />
+            <Icon name={goal.icon} size="sm" color={goal.completed ? colors.emerald : tc.text.secondary} />
           </LinearGradient>
 
           <Text
@@ -204,7 +204,7 @@ function GoalItem({
           <View style={styles.checkContainer}>
             {goal.completed ? (
               <LinearGradient colors={[colors.emerald, colors.emeraldLight]} style={styles.checkCircle}>
-                <Icon name="check" size="xs" color={colors.text.primary} />
+                <Icon name="check" size="xs" color={tc.text.primary} />
               </LinearGradient>
             ) : (
               <View style={styles.uncheckCircle} />

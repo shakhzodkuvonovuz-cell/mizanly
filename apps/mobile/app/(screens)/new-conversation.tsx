@@ -96,7 +96,7 @@ export default function NewConversationScreen() {
               value={query}
               onChangeText={handleQueryChange}
               placeholder={t('common.searchPeople')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               autoFocus
               autoCapitalize="none"
               autoCorrect={false}
@@ -109,7 +109,7 @@ export default function NewConversationScreen() {
                 accessibilityLabel={t('accessibility.clearSearchQuery')}
                 accessibilityRole="button"
               >
-                <Icon name="x" size="xs" color={colors.text.secondary} />
+                <Icon name="x" size="xs" color={tc.text.secondary} />
               </Pressable>
             )}
           </LinearGradient>

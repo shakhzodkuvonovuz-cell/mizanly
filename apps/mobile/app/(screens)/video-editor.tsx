@@ -301,7 +301,7 @@ export default function VideoEditorScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.splitButtonGradient}
               >
-                <Icon name="scissors" size="sm" color={colors.text.primary} />
+                <Icon name="scissors" size="sm" color={tc.text.primary} />
                 <Text style={styles.splitButtonText}>{t('videoEditor.splitAtPlayhead')}</Text>
               </LinearGradient>
             </Pressable>
@@ -385,7 +385,7 @@ export default function VideoEditorScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.addTextButtonGradient}
               >
-                <Icon name="type" size="sm" color={colors.text.primary} />
+                <Icon name="type" size="sm" color={tc.text.primary} />
                 <Text style={styles.addTextButtonText}>{t('videoEditor.addTextOverlay')}</Text>
               </LinearGradient>
             </Pressable>
@@ -444,7 +444,7 @@ export default function VideoEditorScreen() {
               >
                 <Icon name="music" size="sm" color={colors.emerald} />
                 <Text style={styles.libraryButtonText}>{t('videoEditor.addFromAudioLibrary')}</Text>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
               </LinearGradient>
             </Pressable>
 
@@ -482,7 +482,7 @@ export default function VideoEditorScreen() {
 
             <View style={styles.volumeRow}>
               <View style={styles.volumeIconContainer}>
-                <Icon name="volume-2" size="sm" color={colors.text.secondary} />
+                <Icon name="volume-2" size="sm" color={tc.text.secondary} />
               </View>
               <View style={styles.volumeLabelContainer}>
                 <Text style={styles.volumeLabel}>{t('videoEditor.originalAudio')}</Text>
@@ -496,7 +496,7 @@ export default function VideoEditorScreen() {
 
             <View style={[styles.volumeRow, styles.volumeRowSecond]}>
               <View style={styles.volumeIconContainer}>
-                <Icon name="music" size="sm" color={colors.text.secondary} />
+                <Icon name="music" size="sm" color={tc.text.secondary} />
               </View>
               <View style={styles.volumeLabelContainer}>
                 <Text style={styles.volumeLabel}>{t('videoEditor.backgroundMusic')}</Text>
@@ -565,7 +565,7 @@ export default function VideoEditorScreen() {
               />
             ) : (
               <View style={styles.videoPlaceholder}>
-                <Icon name="video" size="xl" color={colors.text.tertiary} />
+                <Icon name="video" size="xl" color={tc.text.tertiary} />
                 <Text style={styles.noVideoText}>{t('videoEditor.noVideo')}</Text>
               </View>
             )}
@@ -675,7 +675,7 @@ export default function VideoEditorScreen() {
                   <Icon
                     name={tool.icon}
                     size="sm"
-                    color={selectedTool === tool.id ? colors.emerald : colors.text.secondary}
+                    color={selectedTool === tool.id ? colors.emerald : tc.text.secondary}
                   />
                   <Text style={[
                     styles.toolTabText,

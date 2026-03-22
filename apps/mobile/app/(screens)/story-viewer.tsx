@@ -34,6 +34,7 @@ import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useStore } from '@/store';
 
 type Sticker = {
@@ -612,6 +613,7 @@ export default function StoryViewerScreen() {
   const storyViewerData = useStore((s) => s.storyViewerData);
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   // Resolve groups array and initial group index
   const { groups, initialGroupIndex, ownStory } = useMemo(() => {

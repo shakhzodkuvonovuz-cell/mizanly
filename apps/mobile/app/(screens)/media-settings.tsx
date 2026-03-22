@@ -87,7 +87,7 @@ function SettingRow({
   return (
     <View style={[styles.settingRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}>
       <View style={styles.settingIcon}>
-        <Icon name={icon} size="sm" color={disabled ? colors.text.tertiary : colors.text.secondary} />
+        <Icon name={icon} size="sm" color={disabled ? colors.text.tertiary : tc.text.secondary} />
       </View>
       <Text
         style={[
@@ -103,7 +103,7 @@ function SettingRow({
         onValueChange={handleToggle}
         disabled={disabled}
         trackColor={{ false: tc.surface, true: colors.emerald }}
-        thumbColor={value && !disabled ? '#FFFFFF' : colors.text.tertiary}
+        thumbColor={value && !disabled ? '#FFFFFF' : tc.text.tertiary}
         ios_backgroundColor={tc.surface}
       />
     </View>
@@ -260,7 +260,7 @@ export default function MediaSettingsScreen() {
                     value={settings.dataSaver}
                     onValueChange={handleDataSaverToggle}
                     trackColor={{ false: tc.surface, true: colors.emerald }}
-                    thumbColor={settings.dataSaver ? '#FFFFFF' : colors.text.tertiary}
+                    thumbColor={settings.dataSaver ? '#FFFFFF' : tc.text.tertiary}
                     ios_backgroundColor={tc.surface}
                   />
                 </LinearGradient>
@@ -348,7 +348,7 @@ export default function MediaSettingsScreen() {
                       <Icon
                         name={option === 'wifi' ? 'globe' : option === 'always' ? 'play' : 'slash'}
                         size="sm"
-                        color={autoPlay === option ? colors.emerald : colors.text.secondary}
+                        color={autoPlay === option ? colors.emerald : tc.text.secondary}
                       />
                     </View>
                     <Text

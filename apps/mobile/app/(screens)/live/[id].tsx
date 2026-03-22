@@ -347,7 +347,7 @@ export default function LiveViewerScreen() {
           <View style={styles.participantActions}>
             {item.role === 'LISTENER' && (
               <Pressable onPress={() => handleInviteSpeaker(item.id)} style={styles.participantActionBtn}>
-                <Icon name="mic" size="sm" color={colors.text.secondary} />
+                <Icon name="mic" size="sm" color={tc.text.secondary} />
               </Pressable>
             )}
             <Pressable onPress={() => handleRemoveParticipant(item.id)} style={styles.participantActionBtn}>
@@ -552,7 +552,7 @@ export default function LiveViewerScreen() {
           <View style={styles.overlayActionRow}>
             <Pressable style={styles.overlayActionButton} onPress={handleRaiseHand} accessibilityRole="button">
               <View style={[styles.overlayActionCircle, isHandRaised && styles.overlayActionCircleActive]}>
-                <Icon name="edit" size="md" color={isHandRaised ? '#fff' : colors.text.primary} />
+                <Icon name="edit" size="md" color={isHandRaised ? '#fff' : tc.text.primary} />
               </View>
               <Text style={styles.overlayActionLabel}>
                 {isHandRaised ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}
@@ -560,13 +560,13 @@ export default function LiveViewerScreen() {
             </Pressable>
             <Pressable style={styles.overlayActionButton} onPress={() => setShowChat(true)} accessibilityRole="button">
               <View style={styles.overlayActionCircle}>
-                <Icon name="message-circle" size="md" color={colors.text.primary} />
+                <Icon name="message-circle" size="md" color={tc.text.primary} />
               </View>
               <Text style={styles.overlayActionLabel}>{t('screens.live.chat')}</Text>
             </Pressable>
             <Pressable style={styles.overlayActionButton} onPress={handleShare} accessibilityRole="button">
               <View style={styles.overlayActionCircle}>
-                <Icon name="share" size="md" color={colors.text.primary} />
+                <Icon name="share" size="md" color={tc.text.primary} />
               </View>
               <Text style={styles.overlayActionLabel}>{t('common.share')}</Text>
             </Pressable>
@@ -668,7 +668,7 @@ export default function LiveViewerScreen() {
             <TextInput
               style={styles.chatInput}
               placeholder={t('screens.live.sendMessage')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={chatMessage}
               onChangeText={setChatMessage}
               multiline
@@ -683,7 +683,7 @@ export default function LiveViewerScreen() {
                 colors={chatMessage.trim() ? [colors.emerald, colors.extended.greenDark] : [tc.surface, tc.surface]}
                 style={styles.sendButtonGradient}
               >
-                <Icon name="send" size={14} color={chatMessage.trim() ? '#fff' : colors.text.tertiary} />
+                <Icon name="send" size={14} color={chatMessage.trim() ? '#fff' : tc.text.tertiary} />
               </LinearGradient>
             </Pressable>
           </View>

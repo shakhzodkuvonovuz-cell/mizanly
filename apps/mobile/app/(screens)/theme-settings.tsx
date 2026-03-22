@@ -118,19 +118,19 @@ export default function ThemeSettingsScreen() {
       value: 'dark',
       label: t('screens.theme-settings.dark'),
       description: t('screens.theme-settings.darkDesc'),
-      icon: <Icon name="moon" size="md" color={colors.text.primary} />,
+      icon: <Icon name="moon" size="md" color={tc.text.primary} />,
     },
     {
       value: 'light',
       label: t('screens.theme-settings.light'),
       description: t('screens.theme-settings.lightDesc'),
-      icon: <Icon name="sun" size="md" color={colors.text.primary} />,
+      icon: <Icon name="sun" size="md" color={tc.text.primary} />,
     },
     {
       value: 'system',
       label: t('screens.theme-settings.system'),
       description: t('screens.theme-settings.systemDesc'),
-      icon: <Icon name="settings" size="md" color={colors.text.primary} />,
+      icon: <Icon name="settings" size="md" color={tc.text.primary} />,
     },
   ];
 

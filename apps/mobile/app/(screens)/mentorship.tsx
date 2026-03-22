@@ -95,8 +95,8 @@ export default function MentorshipScreen() {
                   {isMentor ? t('community.mentee') : t('community.mentor')}
                 </Text>
               </View>
-              <View style={[styles.badge, { backgroundColor: (item.status === 'active' ? colors.emerald : colors.text.tertiary) + '20' }]}>
-                <Text style={[styles.badgeText, { color: item.status === 'active' ? colors.emerald : colors.text.tertiary }]}>
+              <View style={[styles.badge, { backgroundColor: (item.status === 'active' ? colors.emerald : tc.text.tertiary) + '20' }]}>
+                <Text style={[styles.badgeText, { color: item.status === 'active' ? colors.emerald : tc.text.tertiary}]}>
                   {item.status as string}
                 </Text>
               </View>

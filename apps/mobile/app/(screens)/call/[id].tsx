@@ -299,7 +299,7 @@ export default function CallScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.videoPreviewGradient}
               >
-                <Icon name="video" size="lg" color={colors.text.tertiary} />
+                <Icon name="video" size="lg" color={tc.text.tertiary} />
                 <Text style={[styles.videoPreviewText, { color: tc.text.tertiary }]}>{t('calls.videoPreview')}</Text>
               </LinearGradient>
             </Animated.View>
@@ -324,7 +324,7 @@ export default function CallScreen() {
                     {declineMutation.isPending ? (
                       <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                     ) : (
-                      <Icon name="x" size="xl" color={colors.text.primary} />
+                      <Icon name="x" size="xl" color={tc.text.primary} />
                     )}
                   </LinearGradient>
                   <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.decline')}</Text>
@@ -345,7 +345,7 @@ export default function CallScreen() {
                     {answerMutation.isPending ? (
                       <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                     ) : (
-                      <Icon name="phone" size="xl" color={colors.text.primary} />
+                      <Icon name="phone" size="xl" color={tc.text.primary} />
                     )}
                   </LinearGradient>
                   <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.answer')}</Text>
@@ -364,7 +364,7 @@ export default function CallScreen() {
                     colors={isMuted ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.controlGradient}
                   >
-                    <Icon name={isMuted ? 'volume-x' : 'mic'} size="lg" color={colors.text.primary} />
+                    <Icon name={isMuted ? 'volume-x' : 'mic'} size="lg" color={tc.text.primary} />
                   </LinearGradient>
                   <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
                 </Pressable>
@@ -380,7 +380,7 @@ export default function CallScreen() {
                     colors={isSpeaker ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.controlGradient}
                   >
-                    <Icon name="volume-x" size="lg" color={colors.text.primary} />
+                    <Icon name="volume-x" size="lg" color={tc.text.primary} />
                   </LinearGradient>
                   <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{isSpeaker ? t('calls.speakerOff') : t('calls.speaker')}</Text>
                 </Pressable>
@@ -397,7 +397,7 @@ export default function CallScreen() {
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.controlGradient}
                     >
-                      <Icon name="repeat" size="lg" color={colors.text.primary} />
+                      <Icon name="repeat" size="lg" color={tc.text.primary} />
                     </LinearGradient>
                     <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.flip')}</Text>
                   </Pressable>
@@ -418,7 +418,7 @@ export default function CallScreen() {
                     {endCallMutation.isPending ? (
                       <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                     ) : (
-                      <Icon name="phone" size="xl" color={colors.text.primary} />
+                      <Icon name="phone" size="xl" color={tc.text.primary} />
                     )}
                   </LinearGradient>
                   <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{t('calls.end')}</Text>

@@ -362,7 +362,7 @@ export default function QiblaCompassScreen() {
 
           {/* Calibration hint */}
           <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.calibrateContainer}>
-            <Icon name="sliders" size="xs" color={colors.text.tertiary} />
+            <Icon name="sliders" size="xs" color={tc.text.tertiary} />
             <Text style={styles.calibrateText}>{t('qibla.calibrate')}</Text>
           </Animated.View>
         </View>

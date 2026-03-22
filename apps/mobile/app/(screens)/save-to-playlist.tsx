@@ -153,12 +153,12 @@ export default function SaveToPlaylistScreen() {
                 colors={isInPlaylist ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
                 style={styles.iconBg}
               >
-                <Icon name="layers" size="md" color={isInPlaylist ? colors.emerald : colors.text.secondary} />
+                <Icon name="layers" size="md" color={isInPlaylist ? colors.emerald : tc.text.secondary} />
               </LinearGradient>
               <View style={styles.playlistInfo}>
                 <Text style={[styles.playlistName, isInPlaylist && styles.playlistNameActive]} numberOfLines={1}>{item.title}</Text>
                 <View style={styles.metaRow}>
-                  <Icon name="video" size={10} color={colors.text.tertiary} />
+                  <Icon name="video" size={10} color={tc.text.tertiary} />
                   <Text style={styles.playlistMeta}>{item.videosCount} {t('screens.save-to-playlist.videos')}</Text>
                 </View>
               </View>
@@ -173,7 +173,7 @@ export default function SaveToPlaylistScreen() {
                 <Icon
                   name={isInPlaylist ? 'check' : 'circle-plus'}
                   size="md"
-                  color={isInPlaylist ? '#fff' : colors.text.tertiary}
+                  color={isInPlaylist ? '#fff' : tc.text.tertiary}
                 />
               </LinearGradient>
             )}

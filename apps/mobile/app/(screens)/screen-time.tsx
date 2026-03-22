@@ -325,7 +325,7 @@ export default function ScreenTimeScreen() {
                   </Text>
                 </View>
                 <View style={styles.chevronWrap}>
-                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
                 </View>
               </View>
             </LinearGradient>
@@ -381,7 +381,7 @@ export default function ScreenTimeScreen() {
                 <Icon
                   name={currentLimit === value ? 'check-circle' : 'clock'}
                   size="sm"
-                  color={currentLimit === value ? colors.emerald : colors.text.secondary}
+                  color={currentLimit === value ? colors.emerald : tc.text.secondary}
                 />
               }
               onPress={() => handleSetLimit(value)}

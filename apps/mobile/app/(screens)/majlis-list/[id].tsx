@@ -14,6 +14,7 @@ import { colors, spacing, fontSize } from '@/theme';
 import { majlisListsApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Thread, MajlisList } from '@/types';
 
 export default function MajlisListDetailScreen() {
@@ -22,6 +23,7 @@ export default function MajlisListDetailScreen() {
   const { user } = useUser();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const tc = useThemeColors();
 
   const listQuery = useQuery({
     queryKey: ['majlis-list', id],

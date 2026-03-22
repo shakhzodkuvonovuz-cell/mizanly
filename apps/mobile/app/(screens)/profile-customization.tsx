@@ -330,7 +330,7 @@ function ProfileCustomizationScreen() {
                     <Icon
                       name={LAYOUT_ICONS[layout.key] ?? 'layout'}
                       size="lg"
-                      color={layoutStyle === layout.key ? colors.emerald : colors.text.tertiary}
+                      color={layoutStyle === layout.key ? colors.emerald : tc.text.tertiary}
                     />
                     <Text
                       style={[
@@ -430,7 +430,7 @@ function ProfileCustomizationScreen() {
                   colors={colors.gradient.cardDark}
                   style={[styles.uploadInner, { flexDirection: rtlFlexRow(isRTL) }]}
                 >
-                  <Icon name="image" size="md" color={colors.text.secondary} />
+                  <Icon name="image" size="md" color={tc.text.secondary} />
                   <Text style={styles.uploadText}>
                     {t('gamification.profileCustomization.uploadBackground')}
                   </Text>
@@ -442,13 +442,13 @@ function ProfileCustomizationScreen() {
             <SectionLabel text={t('gamification.profileCustomization.music')} delay={500} />
             <Animated.View entering={FadeInUp.delay(550).duration(400)}>
               <View style={styles.inputContainer}>
-                <Icon name="music" size="sm" color={colors.text.tertiary} />
+                <Icon name="music" size="sm" color={tc.text.tertiary} />
                 <TextInput
                   style={[styles.textInput, { textAlign: rtlTextAlign(isRTL) }]}
                   value={musicUrl}
                   onChangeText={setMusicUrl}
                   placeholder={t('gamification.profileCustomization.musicUrl')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"

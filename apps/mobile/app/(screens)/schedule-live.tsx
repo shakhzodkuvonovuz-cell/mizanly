@@ -197,7 +197,7 @@ export default function ScheduleLiveScreen() {
               <TextInput
                 style={styles.input}
                 placeholder={t('screens.schedule-live.titlePlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 accessibilityLabel={t('screens.schedule-live.titleLabel')}
                 value={title}
                 onChangeText={setTitle}
@@ -220,7 +220,7 @@ export default function ScheduleLiveScreen() {
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder={t('screens.schedule-live.descriptionPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 accessibilityLabel={t('screens.schedule-live.descriptionLabel')}
                 value={description}
                 onChangeText={setDescription}
@@ -282,7 +282,7 @@ export default function ScheduleLiveScreen() {
                   <Icon name="clock" size="sm" color={colors.emerald} />
                 </LinearGradient>
                 <Text style={styles.dateSelectorText}>{formattedDate}</Text>
-                <Icon name="edit" size="sm" color={colors.text.tertiary} />
+                <Icon name="edit" size="sm" color={tc.text.tertiary} />
               </Pressable>
             </LinearGradient>
           </Animated.View>

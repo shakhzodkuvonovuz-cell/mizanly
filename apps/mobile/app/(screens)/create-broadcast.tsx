@@ -161,7 +161,7 @@ export default function CreateBroadcastScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholder={t('createBroadcast.placeholder.name')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 maxLength={50}
                 autoCorrect={false}
                 accessibilityLabel={t('createBroadcast.accessibility.name')}
@@ -192,7 +192,7 @@ export default function CreateBroadcastScreen() {
                   value={slug}
                   onChangeText={(text) => setSlug(slugify(text))}
                   placeholder={t('createBroadcast.placeholder.url')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   maxLength={30}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -224,7 +224,7 @@ export default function CreateBroadcastScreen() {
                 value={description}
                 onChangeText={setDescription}
                 placeholder={t('createBroadcast.placeholder.description')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 multiline
                 maxLength={200}
                 textAlignVertical="top"

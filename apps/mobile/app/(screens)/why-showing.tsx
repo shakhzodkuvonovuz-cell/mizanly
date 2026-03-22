@@ -229,7 +229,7 @@ function WhyShowingContent() {
             onPress={handleSeeLess}
             accessibilityRole="button"
           >
-            <Icon name="eye-off" size="sm" color={colors.text.secondary} />
+            <Icon name="eye-off" size="sm" color={tc.text.secondary} />
             <Text style={styles.actionButtonSecondaryText}>
               {t('whyShowing.seeLess', 'See less like this')}
             </Text>

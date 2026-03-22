@@ -220,7 +220,7 @@ export default function QuranShareScreen() {
                   <Text style={styles.surahNumber}>{t('screens.quranShare.surahNumber', { number: currentSurah.number })}</Text>
                   <Text style={styles.verseCount}>{t('screens.quranShare.versesCount', { count: currentSurah.verses })}</Text>
                 </View>
-                <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
+                <Icon name="chevron-down" size="sm" color={tc.text.tertiary} />
               </LinearGradient>
             </Pressable>
           </Animated.View>
@@ -374,7 +374,7 @@ export default function QuranShareScreen() {
                 colors={colors.gradient.cardDark}
                 style={styles.copyButtonGradient}
               >
-                <Icon name="link" size="sm" color={colors.text.secondary} />
+                <Icon name="link" size="sm" color={tc.text.secondary} />
                 <Text style={styles.copyButtonText}>{t('screens.quranShare.copyText')}</Text>
               </LinearGradient>
             </Pressable>
@@ -384,13 +384,13 @@ export default function QuranShareScreen() {
         {/* Surah Picker Bottom Sheet */}
         <BottomSheet visible={showSurahPicker} onClose={() => { setShowSurahPicker(false); setSurahSearch(''); }}>
           <View style={styles.surahSearchBar}>
-            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <Icon name="search" size="sm" color={tc.text.tertiary} />
             <TextInput
               style={styles.surahSearchInput}
               value={surahSearch}
               onChangeText={setSurahSearch}
               placeholder={t('screens.quranShare.searchSurahs')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
             />
           </View>
           {(surahs ?? []).filter(s => !surahSearch.trim() || s.name.toLowerCase().includes(surahSearch.toLowerCase()) || s.arabicName.includes(surahSearch)).map((surah) => (
@@ -426,7 +426,7 @@ export default function QuranShareScreen() {
           />
           <BottomSheetItem
             label={t('screens.quranShare.copyText')}
-            icon={<Icon name="link" size="sm" color={colors.text.secondary} />}
+            icon={<Icon name="link" size="sm" color={tc.text.secondary} />}
             onPress={handleCopyText}
           />
           <BottomSheetItem

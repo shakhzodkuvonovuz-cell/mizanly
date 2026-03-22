@@ -108,7 +108,7 @@ function EpisodeRow({
               {new Date(episode.createdAt).toLocaleDateString()}
             </Text>
           </View>
-          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+          <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
         </View>
       </Pressable>
     </Animated.View>
@@ -246,13 +246,13 @@ function SeriesDetailScreen() {
       {/* Stats + Follow */}
       <View style={[styles.statsRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         <View style={[styles.statItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Icon name="video" size="sm" color={colors.text.secondary} />
+          <Icon name="video" size="sm" color={tc.text.secondary} />
           <Text style={styles.statText}>
             {t('gamification.series.episodes', { count: data.episodeCount })}
           </Text>
         </View>
         <View style={[styles.statItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Icon name="users" size="sm" color={colors.text.secondary} />
+          <Icon name="users" size="sm" color={tc.text.secondary} />
           <Text style={styles.statText}>
             {t('gamification.series.followers', { count: data.followersCount })}
           </Text>
@@ -270,7 +270,7 @@ function SeriesDetailScreen() {
 
       {/* Episodes header */}
       <View style={[styles.episodesHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
-        <Icon name="layers" size="sm" color={colors.text.primary} />
+        <Icon name="layers" size="sm" color={tc.text.primary} />
         <Text style={styles.episodesHeaderText}>
           {t('series.episodeList', 'Episodes')} ({data.episodes?.length ?? 0})
         </Text>

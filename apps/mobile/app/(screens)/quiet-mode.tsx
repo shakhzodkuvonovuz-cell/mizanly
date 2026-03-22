@@ -233,7 +233,7 @@ export default function QuietModeScreen() {
                     onPress={() => { haptic.selection(); setShowStartPicker(true); }}
                   >
                     <Text style={styles.timeButtonText}>{startTime}</Text>
-                    <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
+                    <Icon name="chevron-down" size="xs" color={tc.text.tertiary} />
                   </Pressable>
                 </View>
                 <View style={styles.divider} />
@@ -247,7 +247,7 @@ export default function QuietModeScreen() {
                     onPress={() => { haptic.selection(); setShowEndPicker(true); }}
                   >
                     <Text style={styles.timeButtonText}>{endTime}</Text>
-                    <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
+                    <Icon name="chevron-down" size="xs" color={tc.text.tertiary} />
                   </Pressable>
                 </View>
               </>
@@ -273,7 +273,7 @@ export default function QuietModeScreen() {
               onChangeText={(text) => setAutoReply(text.slice(0, 200))}
               onBlur={handleAutoReplyBlur}
               placeholder={t('quietMode.autoReplyPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               multiline
               maxLength={200}
             />

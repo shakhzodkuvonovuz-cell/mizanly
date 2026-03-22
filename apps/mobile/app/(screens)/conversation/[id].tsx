@@ -310,7 +310,7 @@ function GifPicker({ visible, onClose, onSelect }: {
           <TextInput
             style={[styles.gifSearchInput, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
             placeholder={t('gif.searchPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             accessibilityLabel={t('gif.search')}
             value={search}
             onChangeText={setSearch}
@@ -318,7 +318,7 @@ function GifPicker({ visible, onClose, onSelect }: {
             returnKeyType="search"
           />
           <Pressable onPress={handleSearch} style={styles.gifSearchButton} accessibilityRole="button" accessibilityLabel={t('gif.search')}>
-            <Icon name="search" size="sm" color={colors.text.secondary} />
+            <Icon name="search" size="sm" color={tc.text.secondary} />
           </Pressable>
         </View>
         {loading ? (
@@ -356,7 +356,8 @@ function GifPicker({ visible, onClose, onSelect }: {
 
 const ReadReceiptIcon = ({ status }: { status: 'sent' | 'delivered' | 'read' }) => {
   const { isRTL } = useTranslation();
-  const color = status === 'read' ? colors.emerald : colors.text.tertiary;
+  const tc = useThemeColors();
+  const color = status === 'read' ? colors.emerald : tc.text.tertiary;
   return (
     <View style={{ flexDirection: rtlFlexRow(isRTL), ...rtlMargin(isRTL, 4, 0) }}>
       <Icon name="check" size={12} color={color} />
@@ -423,7 +424,7 @@ const MessageBubble = memo(function MessageBubble({
     return (
       <View style={styles.systemMessageWrap}>
         <View style={styles.systemMessageBubble}>
-          <Icon name={isSecurityMsg ? 'lock' : 'bell'} size="xs" color={colors.text.tertiary} />
+          <Icon name={isSecurityMsg ? 'lock' : 'bell'} size="xs" color={tc.text.tertiary} />
           <Text style={[styles.systemMessageText, { color: tc.text.tertiary }]}>
             {message.content}
           </Text>
@@ -494,7 +495,7 @@ const MessageBubble = memo(function MessageBubble({
         )}
         {message.isForwarded && (
           <View style={[styles.forwardedLabel, { flexDirection: rtlFlexRow(isRTL) }]}>
-            <Icon name="share" size={10} color={colors.text.tertiary} />
+            <Icon name="share" size={10} color={tc.text.tertiary} />
             <Text style={[styles.forwardedText, { color: tc.text.tertiary }]}>{t('messages.forwarded')}</Text>
           </View>
         )}
@@ -541,8 +542,8 @@ const MessageBubble = memo(function MessageBubble({
               flexDirection: 'row',
               gap: spacing.xs,
             }, spoilerAnimStyle]}>
-              <Icon name="eye-off" size={14} color={colors.text.secondary} />
-              <Text style={{ color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' }}>
+              <Icon name="eye-off" size={14} color={tc.text.secondary} />
+              <Text style={{ color: tc.text.secondary, fontSize: fontSize.sm, fontWeight: '500' }}>
                 {t('risalah.tapToReveal')}
               </Text>
             </Animated.View>
@@ -577,7 +578,7 @@ const MessageBubble = memo(function MessageBubble({
           <View style={{ marginTop: spacing.xs, paddingTop: spacing.xs, borderTopWidth: 0.5, borderTopColor: isOwn ? 'rgba(255,255,255,0.15)' : tc.border }}>
             <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn, { fontStyle: 'italic' }]}>{translatedText}</Text>
             <Pressable onPress={() => setTranslatedText(null)} hitSlop={8}>
-              <Text style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : colors.text.tertiary, fontSize: fontSizeExt.tiny }}>{t('ai.showOriginal')}</Text>
+              <Text style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : tc.text.tertiary, fontSize: fontSizeExt.tiny }}>{t('ai.showOriginal')}</Text>
             </Pressable>
           </View>
         )}
@@ -594,7 +595,7 @@ const MessageBubble = memo(function MessageBubble({
             hitSlop={8}
             style={{ marginTop: 2 }}
           >
-            <Text style={{ color: colors.text.tertiary, fontSize: fontSizeExt.tiny }}>
+            <Text style={{ color: tc.text.tertiary, fontSize: fontSizeExt.tiny }}>
               {isTranslating ? t('ai.translating') : t('ai.translate')}
             </Text>
           </Pressable>
@@ -629,8 +630,8 @@ const MessageBubble = memo(function MessageBubble({
           )}
           {message.expiresAt && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-              <Icon name="clock" size={10} color={colors.text.tertiary} />
-              <Text style={{ color: colors.text.tertiary, fontSize: fontSizeExt.tiny, marginLeft: 2 }}>
+              <Icon name="clock" size={10} color={tc.text.tertiary} />
+              <Text style={{ color: tc.text.tertiary, fontSize: fontSizeExt.tiny, marginLeft: 2 }}>
                 {formatDistanceToNowStrict(new Date(message.expiresAt), { addSuffix: false, locale: getDateFnsLocale() })}
               </Text>
             </View>
@@ -1382,16 +1383,16 @@ export default function ConversationScreen() {
         <SafeAreaView edges={['top']} style={{ backgroundColor: tc.bg }}>
           <View style={[styles.searchHeader, { borderBottomColor: tc.border }]}>
             <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} hitSlop={8} style={styles.backBtn}>
-              <Icon name="arrow-left" size="md" color={colors.text.primary} />
+              <Icon name="arrow-left" size="md" color={tc.text.primary} />
             </Pressable>
             <View style={[styles.searchInputWrap, { backgroundColor: tc.bgCard }]}>
-              <Icon name="search" size="sm" color={colors.text.secondary} />
+              <Icon name="search" size="sm" color={tc.text.secondary} />
               <TextInput
                 style={[styles.searchInput, { color: tc.text.primary }]}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder={t('messages.searchPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 accessibilityLabel={t('messages.search')}
                 autoFocus
                 autoCapitalize="none"
@@ -1399,7 +1400,7 @@ export default function ConversationScreen() {
               />
               {searchQuery.length > 0 && (
                 <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                  <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               )}
             </View>
@@ -1489,15 +1490,15 @@ export default function ConversationScreen() {
               >
                 <Icon name="map-pin" size="xs" color={colors.emerald} />
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                  <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs }}>
+                  <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs }}>
                     {t('risalah.pinnedMessage')}
                   </Text>
-                  <Text numberOfLines={1} style={{ color: colors.text.primary, fontSize: fontSize.sm }}>
+                  <Text numberOfLines={1} style={{ color: tc.text.primary, fontSize: fontSize.sm }}>
                     {pinnedMessage.content}
                   </Text>
                 </View>
                 <Pressable onPress={() => setPinnedMessage(null)}>
-                  <Icon name="x" size="xs" color={colors.text.tertiary} />
+                  <Icon name="x" size="xs" color={tc.text.tertiary} />
                 </Pressable>
               </Pressable>
             )}
@@ -1546,7 +1547,7 @@ export default function ConversationScreen() {
               }}
               style={styles.scrollToBottomFab}
             >
-              <Icon name="chevron-down" size="sm" color={colors.text.primary} />
+              <Icon name="chevron-down" size="sm" color={tc.text.primary} />
             </Pressable>
           )}
           </>
@@ -1581,7 +1582,7 @@ export default function ConversationScreen() {
                 </Text>
               </View>
               <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
-                <Icon name="x" size="xs" color={colors.text.secondary} />
+                <Icon name="x" size="xs" color={tc.text.secondary} />
               </Pressable>
             </View>
           )}
@@ -1589,12 +1590,12 @@ export default function ConversationScreen() {
             <View style={[styles.replyBanner, { backgroundColor: tc.bgElevated }]}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.editingMessage')}</Text>
-                <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs }} numberOfLines={1}>
+                <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs }} numberOfLines={1}>
                   {editingMsg.content}
                 </Text>
               </View>
               <Pressable onPress={() => { setEditingMsg(null); setText(''); }} hitSlop={8}>
-                <Icon name="x" size="xs" color={colors.text.tertiary} />
+                <Icon name="x" size="xs" color={tc.text.tertiary} />
               </Pressable>
             </View>
           )}
@@ -1606,7 +1607,7 @@ export default function ConversationScreen() {
                   <Icon name="eye-off" size={12} color={colors.emerald} />
                   <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.spoiler')}</Text>
                   <Pressable onPress={() => setSendAsSpoiler(false)} hitSlop={8}>
-                    <Icon name="x" size={12} color={colors.text.tertiary} />
+                    <Icon name="x" size={12} color={tc.text.tertiary} />
                   </Pressable>
                 </View>
               )}
@@ -1615,7 +1616,7 @@ export default function ConversationScreen() {
                   <Icon name="clock" size={12} color={colors.gold} />
                   <Text style={{ color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.viewOnce')}</Text>
                   <Pressable onPress={() => setSendAsViewOnce(false)} hitSlop={8}>
-                    <Icon name="x" size={12} color={colors.text.tertiary} />
+                    <Icon name="x" size={12} color={tc.text.tertiary} />
                   </Pressable>
                 </View>
               )}
@@ -1633,7 +1634,7 @@ export default function ConversationScreen() {
               <Icon
                 name="paperclip"
                 size="sm"
-                color={uploadingMedia ? colors.text.tertiary : colors.text.secondary}
+                color={uploadingMedia ? colors.text.tertiary : tc.text.secondary}
               />
             </Pressable>
             <Pressable
@@ -1643,7 +1644,7 @@ export default function ConversationScreen() {
               accessibilityLabel={t('risalah.spoiler')}
               accessibilityRole="button"
             >
-              <Icon name="eye-off" size="sm" color={sendAsSpoiler ? colors.emerald : colors.text.secondary} />
+              <Icon name="eye-off" size="sm" color={sendAsSpoiler ? colors.emerald : tc.text.secondary} />
             </Pressable>
             <Pressable
               style={styles.attachBtn}
@@ -1652,7 +1653,7 @@ export default function ConversationScreen() {
               accessibilityLabel={t('risalah.viewOnce')}
               accessibilityRole="button"
             >
-              <Icon name="clock" size="sm" color={sendAsViewOnce ? colors.gold : colors.text.secondary} />
+              <Icon name="clock" size="sm" color={sendAsViewOnce ? colors.gold : tc.text.secondary} />
             </Pressable>
             <Pressable
               style={styles.gifBtn}
@@ -1662,7 +1663,7 @@ export default function ConversationScreen() {
               accessibilityLabel={t('accessibility.gifPicker')}
               accessibilityRole="button"
             >
-              <Icon name="smile" size="sm" color={colors.text.secondary} />
+              <Icon name="smile" size="sm" color={tc.text.secondary} />
             </Pressable>
             <Pressable
               style={styles.gifBtn}
@@ -1671,13 +1672,13 @@ export default function ConversationScreen() {
               accessibilityLabel={t('risalah.stickers')}
               accessibilityRole="button"
             >
-              <Icon name="heart" size="sm" color={colors.text.secondary} />
+              <Icon name="heart" size="sm" color={tc.text.secondary} />
             </Pressable>
             <TextInput
               ref={inputRef}
               style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
               placeholder={t('risalah.typeMessage')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               accessibilityLabel={t('accessibility.messageInput')}
               value={text}
               onChangeText={handleChangeText}
@@ -1725,12 +1726,12 @@ export default function ConversationScreen() {
                     <Icon
                       name="mic"
                       size="sm"
-                      color={isRecording ? colors.error : uploadingVoice ? colors.text.tertiary : colors.text.secondary}
+                      color={isRecording ? colors.error : uploadingVoice ? colors.text.tertiary : tc.text.secondary}
                     />
                   </Pressable>
                   {isRecording && (
                     <View style={[styles.slideCancelIndicator, { backgroundColor: tc.bgElevated }, { transform: [{ translateX: slideOffset }] }]}>
-                      <Icon name="x" size="sm" color={colors.text.secondary} />
+                      <Icon name="x" size="sm" color={tc.text.secondary} />
                     </View>
                   )}
                 </View>
@@ -1786,7 +1787,7 @@ export default function ConversationScreen() {
         {contextMenuMsg?.content ? (
           <BottomSheetItem
             label={t('common.copy')}
-            icon={<Icon name="edit" size="sm" color={colors.text.secondary} />}
+            icon={<Icon name="edit" size="sm" color={tc.text.secondary} />}
             onPress={() => {
               Clipboard.setStringAsync(contextMenuMsg.content ?? '');
               setContextMenuMsg(null);
@@ -1795,7 +1796,7 @@ export default function ConversationScreen() {
         ) : null}
         <BottomSheetItem
           label={t('common.reply')}
-          icon={<Icon name="message-circle" size="sm" color={colors.text.secondary} />}
+          icon={<Icon name="message-circle" size="sm" color={tc.text.secondary} />}
           onPress={() => {
             if (contextMenuMsg) {
               setReplyTo({
@@ -1810,7 +1811,7 @@ export default function ConversationScreen() {
         />
         <BottomSheetItem
           label={t('risalah.forward')}
-          icon={<Icon name="repeat" size="sm" color={colors.text.secondary} />}
+          icon={<Icon name="repeat" size="sm" color={tc.text.secondary} />}
           onPress={() => {
             if (contextMenuMsg) {
               setForwardMsg(contextMenuMsg);
@@ -1820,7 +1821,7 @@ export default function ConversationScreen() {
         />
         <BottomSheetItem
           label={contextMenuMsg?.isPinned ? t('risalah.unpinMessage') : t('risalah.pinMessage')}
-          icon={<Icon name="map-pin" size="sm" color={contextMenuMsg?.isPinned ? colors.error : colors.text.primary} />}
+          icon={<Icon name="map-pin" size="sm" color={contextMenuMsg?.isPinned ? colors.error : tc.text.primary} />}
           onPress={() => {
             if (contextMenuMsg) {
               if (contextMenuMsg?.isPinned) {
@@ -1838,7 +1839,7 @@ export default function ConversationScreen() {
         />
         <BottomSheetItem
           label={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? t('risalah.unstarMessage') : t('risalah.starMessage')}
-          icon={<Icon name="bookmark" size="sm" color={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? colors.gold : colors.text.primary} />}
+          icon={<Icon name="bookmark" size="sm" color={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? colors.gold : tc.text.primary} />}
           onPress={() => {
             if (contextMenuMsg) {
               messagesApi.toggleStar(id as string, contextMenuMsg.id).then(() => {
@@ -1850,7 +1851,7 @@ export default function ConversationScreen() {
         />
         <BottomSheetItem
           label={t('risalah.react')}
-          icon={<Icon name="smile" size="sm" color={colors.text.secondary} />}
+          icon={<Icon name="smile" size="sm" color={tc.text.secondary} />}
           onPress={() => {
             setShowReactionPicker(true);
           }}
@@ -1858,7 +1859,7 @@ export default function ConversationScreen() {
         {!isEncrypted && convo && (
           <BottomSheetItem
             label={t('chat.enableEncryption')}
-            icon={<Icon name="lock" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="lock" size="sm" color={tc.text.primary} />}
             onPress={async () => {
               const memberIds = convo.members.map((m: ConversationMember) => m.userId).filter((uid): uid is string => !!uid);
               const success = await encryptionService.setupConversationEncryption(id, memberIds);
@@ -1878,7 +1879,7 @@ export default function ConversationScreen() {
             {isMessageEditable(contextMenuMsg) && (
               <BottomSheetItem
                 label={t('common.edit')}
-                icon={<Icon name="pencil" size="sm" color={colors.text.secondary} />}
+                icon={<Icon name="pencil" size="sm" color={tc.text.secondary} />}
                 onPress={() => {
                   setEditingMsg(contextMenuMsg);
                   setText(contextMenuMsg.content ?? '');
@@ -1918,7 +1919,7 @@ export default function ConversationScreen() {
 
       {/* Forward picker */}
       <BottomSheet visible={!!forwardMsg} onClose={() => setForwardMsg(null)}>
-        <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600', padding: spacing.base }}>
+        <Text style={{ color: tc.text.primary, fontSize: fontSize.md, fontWeight: '600', padding: spacing.base }}>
           {t('risalah.forwardTo')}
         </Text>
         {conversationsQuery.isLoading ? (

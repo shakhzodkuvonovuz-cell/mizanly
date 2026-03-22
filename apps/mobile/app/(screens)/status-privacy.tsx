@@ -181,7 +181,7 @@ function StatusPrivacyContent() {
             end={{ x: 1, y: 1 }}
             style={styles.iconCircle}
           >
-            <Icon name="eye-off" size={40} color={colors.text.primary} />
+            <Icon name="eye-off" size={40} color={tc.text.primary} />
           </LinearGradient>
         </Animated.View>
 
@@ -277,7 +277,7 @@ function StatusPrivacyContent() {
 
         {/* Info Footer */}
         <Animated.View entering={FadeInUp.delay(500).duration(400)} style={styles.infoFooter}>
-          <Icon name="clock" size={16} color={colors.text.tertiary} />
+          <Icon name="clock" size={16} color={tc.text.tertiary} />
           <Text style={styles.infoFooterText}>
             {t('statusPrivacy.applyNote', 'Changes apply to future interactions')}
           </Text>

@@ -83,7 +83,7 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
       />
       {item.type === 'video' && (
         <View style={styles.videoOverlay}>
-          <Icon name="play" size={28} color={colors.text.primary} />
+          <Icon name="play" size={28} color={tc.text.primary} />
         </View>
       )}
     </AnimatedPressable>
@@ -264,7 +264,7 @@ export default function ConversationMediaScreen() {
             {new Date(item.createdAt).toLocaleDateString()}
           </Text>
         </View>
-        <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+        <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
       </Pressable>
     </Animated.View>
   );
@@ -297,7 +297,7 @@ export default function ConversationMediaScreen() {
             {new Date(item.createdAt).toLocaleDateString()}
           </Text>
         </View>
-        <Icon name="download" size="sm" color={colors.text.tertiary} />
+        <Icon name="download" size="sm" color={tc.text.tertiary} />
       </Pressable>
     </Animated.View>
   );
@@ -350,7 +350,7 @@ export default function ConversationMediaScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('conversationMedia.title')}
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
 
         {/* Tabs */}

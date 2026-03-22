@@ -125,7 +125,7 @@ export default function TrendingAudioScreen() {
               colors={[colors.emerald, colors.emeraldDark]}
               style={styles.playButton}
             >
-              <Icon name={playingId === item.id ? 'loader' : 'play'} size="xs" color={colors.text.primary} />
+              <Icon name={playingId === item.id ? 'loader' : 'play'} size="xs" color={tc.text.primary} />
             </LinearGradient>
           </Pressable>
         </View>

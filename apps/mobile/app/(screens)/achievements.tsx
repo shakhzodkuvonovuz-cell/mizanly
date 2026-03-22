@@ -105,7 +105,7 @@ function AchievementCard({
             {achievement.isUnlocked ? (
               <Icon name="check-circle" size="lg" color={rarityColor} />
             ) : (
-              <Icon name="lock" size="lg" color={colors.text.tertiary} />
+              <Icon name="lock" size="lg" color={tc.text.tertiary} />
             )}
           </LinearGradient>
           {achievement.isUnlocked && (

@@ -89,7 +89,7 @@ function ImageCarousel({ images }: { images: string[] }) {
   if (images.length === 0) {
     return (
       <View style={styles.imagePlaceholder}>
-        <Icon name="image" size="xl" color={colors.text.tertiary} />
+        <Icon name="image" size="xl" color={tc.text.tertiary} />
       </View>
     );
   }
@@ -156,7 +156,7 @@ function ReviewCard({
                   key={star}
                   name={star <= review.rating ? 'heart-filled' : 'heart'}
                   size={12}
-                  color={star <= review.rating ? colors.gold : colors.text.tertiary}
+                  color={star <= review.rating ? colors.gold : tc.text.tertiary}
                 />
               ))}
             </View>
@@ -339,7 +339,7 @@ function ProductDetailScreen() {
                   key={star}
                   name={star <= Math.round(data.rating) ? 'heart-filled' : 'heart'}
                   size={16}
-                  color={star <= Math.round(data.rating) ? colors.gold : colors.text.tertiary}
+                  color={star <= Math.round(data.rating) ? colors.gold : tc.text.tertiary}
                 />
               ))}
             </View>
@@ -379,7 +379,7 @@ function ProductDetailScreen() {
                   </View>
                   <Text style={styles.sellerUsername}>@{data.seller.username}</Text>
                 </View>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
               </LinearGradient>
             </Pressable>
           </Animated.View>

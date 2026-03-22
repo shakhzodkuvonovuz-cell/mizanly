@@ -144,7 +144,7 @@ function UpNextSection({ videoId, tc }: { videoId: string; tc: ReturnType<typeof
               />
             ) : (
               <View style={[styles.upNextThumbnailImage, { backgroundColor: tc.surface, justifyContent: 'center', alignItems: 'center' }]}>
-                <Icon name="video" size="md" color={colors.text.tertiary} />
+                <Icon name="video" size="md" color={tc.text.tertiary} />
               </View>
             )}
             {video.duration > 0 && (
@@ -679,12 +679,12 @@ export default function VideoDetailScreen() {
             {/* Enhanced stats row with icons */}
             <View style={styles.videoStatsRow}>
               <View style={styles.statItem}>
-                <Icon name="eye" size="xs" color={colors.text.secondary} />
+                <Icon name="eye" size="xs" color={tc.text.secondary} />
                 <Text style={styles.videoStatText}>{formatCount(video.viewsCount)}</Text>
               </View>
               <Text style={styles.statDivider}>•</Text>
               <View style={styles.statItem}>
-                <Icon name="clock" size="xs" color={colors.text.secondary} />
+                <Icon name="clock" size="xs" color={tc.text.secondary} />
                 <Text style={styles.videoStatText}>
                   {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                 </Text>
@@ -699,7 +699,7 @@ export default function VideoDetailScreen() {
             {/* Action row */}
             <View style={styles.actionRow}>
               <ActionButton
-                icon={<Icon name="heart" size="md" color={colors.text.primary} />}
+                icon={<Icon name="heart" size="md" color={tc.text.primary} />}
                 activeIcon={<Icon name="heart-filled" size="md" color={colors.error} />}
                 isActive={video.isLiked}
                 count={video.likesCount}
@@ -708,7 +708,7 @@ export default function VideoDetailScreen() {
                 accessibilityLabel={t('common.like')}
               />
               <ActionButton
-                icon={<Icon name="thumbs-down" size="md" color={colors.text.primary} />}
+                icon={<Icon name="thumbs-down" size="md" color={tc.text.primary} />}
                 activeIcon={<Icon name="thumbs-down" size="md" color={colors.error} />}
                 isActive={video.isDisliked}
                 count={video.dislikesCount}
@@ -717,13 +717,13 @@ export default function VideoDetailScreen() {
                 accessibilityLabel={t('minbar.dislike')}
               />
               <ActionButton
-                icon={<Icon name="message-circle" size="md" color={colors.text.primary} />}
+                icon={<Icon name="message-circle" size="md" color={tc.text.primary} />}
                 count={video.commentsCount}
                 onPress={() => setCommentSheetOpen(true)}
                 accessibilityLabel={t('accessibility.commentReel')}
               />
               <ActionButton
-                icon={<Icon name="bookmark" size="md" color={colors.text.primary} />}
+                icon={<Icon name="bookmark" size="md" color={tc.text.primary} />}
                 activeIcon={<Icon name="bookmark-filled" size="md" color={colors.gold} />}
                 isActive={video.isBookmarked}
                 onPress={handleBookmark}
@@ -731,7 +731,7 @@ export default function VideoDetailScreen() {
                 accessibilityLabel={t('common.bookmark')}
               />
               <ActionButton
-                icon={<Icon name="share" size="md" color={colors.text.primary} />}
+                icon={<Icon name="share" size="md" color={tc.text.primary} />}
                 onPress={handleShare}
                 accessibilityLabel={t('common.share')}
               />
@@ -817,7 +817,7 @@ export default function VideoDetailScreen() {
                     <Icon
                       name={showChapters ? 'chevron-down' : 'chevron-right'}
                       size="sm"
-                      color={colors.text.tertiary}
+                      color={tc.text.tertiary}
                     />
                   </Pressable>
 
@@ -908,7 +908,7 @@ export default function VideoDetailScreen() {
             <TextInput
               style={styles.commentInput}
               placeholder={t('comments.addCommentPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={commentText}
               onChangeText={setCommentText}
               multiline
@@ -920,7 +920,7 @@ export default function VideoDetailScreen() {
               accessibilityLabel={t('accessibility.sendComment')}
               accessibilityRole="button"
             >
-              <Icon name="send" size="sm" color={commentText.trim() ? colors.emerald : colors.text.tertiary} />
+              <Icon name="send" size="sm" color={commentText.trim() ? colors.emerald : tc.text.tertiary} />
             </Pressable>
           </View>
         </BottomSheet>
@@ -932,7 +932,7 @@ export default function VideoDetailScreen() {
           </View>
           <BottomSheetItem
             label={t('video.saveToPlaylist')}
-            icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="layers" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setShowMenu(false);
               router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
@@ -940,7 +940,7 @@ export default function VideoDetailScreen() {
           />
           <BottomSheetItem
             label={t('clips.title')}
-            icon={<Icon name="scissors" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="scissors" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setShowMenu(false);
               navigate(`/(screens)/create-clip?videoId=${video.id}`);

@@ -377,7 +377,7 @@ function VerifyEncryptionContent() {
                     value={qrValue}
                     size={180}
                     backgroundColor="transparent"
-                    color={colors.text.primary}
+                    color={tc.text.primary}
                   />
                 </LinearGradient>
               </LinearGradient>
@@ -453,7 +453,7 @@ function VerifyEncryptionContent() {
               colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
               style={styles.infoCard}
             >
-              <Icon name="lock" size="sm" color={colors.text.tertiary} />
+              <Icon name="lock" size="sm" color={tc.text.tertiary} />
               <Text style={styles.infoText}>
                 {t('screens.verify-encryption.infoText')}
               </Text>

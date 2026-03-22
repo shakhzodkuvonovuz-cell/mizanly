@@ -130,7 +130,7 @@ export default function CreateGroupScreen() {
         {/* Header */}
         <GlassHeader
           title={t('groups.createGroup')}
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={tc.text.primary} />, onPress: () => router.back() }}
         />
 
         <ScrollView contentContainerStyle={styles.content}>
@@ -143,7 +143,7 @@ export default function CreateGroupScreen() {
                 value={groupName}
                 onChangeText={setGroupName}
                 placeholder={t('groups.enterGroupName')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 autoFocus
                 maxLength={MAX_GROUP_NAME}
               />
@@ -163,11 +163,11 @@ export default function CreateGroupScreen() {
                 <Avatar uri={avatarUri} name={groupName || t('common.group')} size="2xl" />
               ) : (
                 <View style={[styles.avatarPlaceholder, { backgroundColor: tc.bgCard }]}>
-                  <Icon name="camera" size={32} color={colors.text.secondary} />
+                  <Icon name="camera" size={32} color={tc.text.secondary} />
                 </View>
               )}
               <View style={styles.avatarOverlay}>
-                <Icon name="edit" size={16} color={colors.text.primary} />
+                <Icon name="edit" size={16} color={tc.text.primary} />
               </View>
             </Pressable>
             <Pressable
@@ -203,7 +203,7 @@ export default function CreateGroupScreen() {
                       accessibilityLabel={t('groups.removeMember', { name: member.displayName })}
                       accessibilityRole="button"
                     >
-                      <Icon name="x" size={12} color={colors.text.secondary} />
+                      <Icon name="x" size={12} color={tc.text.secondary} />
                     </Pressable>
                   </View>
                 ))}
@@ -215,19 +215,19 @@ export default function CreateGroupScreen() {
           <View style={styles.section}>
             <Text style={[styles.label, { color: tc.text.secondary }]}>{t('groups.addMembers')}</Text>
             <View style={[styles.searchWrap, { backgroundColor: tc.bgCard }]}>
-              <Icon name="search" size="sm" color={colors.text.secondary} />
+              <Icon name="search" size="sm" color={tc.text.secondary} />
               <TextInput
                 style={[styles.searchInput, { color: tc.text.primary }]}
                 value={query}
                 onChangeText={handleQueryChange}
                 placeholder={t('common.searchPeople')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               {query.length > 0 && (
                 <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')} accessibilityRole="button">
-                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                  <Icon name="x" size="xs" color={tc.text.secondary} />
                 </Pressable>
               )}
             </View>

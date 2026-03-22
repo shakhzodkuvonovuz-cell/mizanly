@@ -176,7 +176,7 @@ export default function StitchCreateScreen() {
                 {/* Creator Info */}
                 <View style={styles.creatorRow}>
                   <View style={styles.avatarPlaceholder}>
-                    <Icon name="user" size="md" color={colors.text.tertiary} />
+                    <Icon name="user" size="md" color={tc.text.tertiary} />
                   </View>
                   <View style={styles.creatorInfo}>
                     <View style={styles.creatorNameRow}>
@@ -204,7 +204,7 @@ export default function StitchCreateScreen() {
                       colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
                       style={styles.videoPreview}
                     >
-                      <Icon name="play" size="xl" color={colors.text.tertiary} />
+                      <Icon name="play" size="xl" color={tc.text.tertiary} />
                     </LinearGradient>
                   )}
                 </View>
@@ -282,7 +282,7 @@ export default function StitchCreateScreen() {
                           <Icon
                             name={transition.icon}
                             size="sm"
-                            color={selectedTransition === transition.id ? colors.emerald : colors.text.secondary}
+                            color={selectedTransition === transition.id ? colors.emerald : tc.text.secondary}
                           />
                           <Text style={[
                             styles.transitionButtonText,
@@ -340,7 +340,7 @@ export default function StitchCreateScreen() {
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.controlButtonGradientSmall}
                     >
-                      <Icon name="repeat" size="sm" color={colors.text.secondary} />
+                      <Icon name="repeat" size="sm" color={tc.text.secondary} />
                     </LinearGradient>
                   </Pressable>
 
@@ -376,7 +376,7 @@ export default function StitchCreateScreen() {
                       }
                       style={styles.controlButtonGradientSmall}
                     >
-                      <Icon name="sun" size="sm" color={flashOn ? colors.gold : colors.text.secondary} />
+                      <Icon name="sun" size="sm" color={flashOn ? colors.gold : tc.text.secondary} />
                     </LinearGradient>
                   </Pressable>
                 </View>
@@ -413,7 +413,7 @@ export default function StitchCreateScreen() {
                       colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
                       style={styles.sequenceThumbnail}
                     >
-                      <Icon name="play" size="md" color={colors.text.tertiary} />
+                      <Icon name="play" size="md" color={tc.text.tertiary} />
                       <View style={styles.sequenceDurationBadge}>
                         <Text style={styles.sequenceDurationText}>{selectedDuration}s</Text>
                       </View>
