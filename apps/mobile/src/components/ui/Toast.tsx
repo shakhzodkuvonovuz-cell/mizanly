@@ -46,7 +46,7 @@ const VARIANT_CONFIG: Record<ToastVariant, { color: string; icon: IconName }> = 
   success: { color: colors.emerald, icon: 'check-circle' },
   error: { color: colors.error, icon: 'slash' },
   warning: { color: colors.gold, icon: 'bell' },
-  info: { color: colors.info, icon: 'info' },
+  info: { color: colors.info, icon: 'globe' },
 };
 
 const DEFAULT_DURATION = 3000;
