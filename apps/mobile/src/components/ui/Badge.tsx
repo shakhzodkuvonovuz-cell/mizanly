@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withSequence,
 } from 'react-native-reanimated';
 import { colors, animation, spacing, radius } from '@/theme';
 
@@ -12,18 +13,29 @@ interface BadgeProps {
   color?: string;
   size?: 'sm' | 'md';
   style?: object;
+  accessibilityLabel?: string;
 }
 
-export function Badge({ count, color = colors.error, size = 'sm', style, accessibilityLabel }: BadgeProps & { accessibilityLabel?: string }) {
-  const scale = useSharedValue(0);
+export const Badge = memo(function Badge({ count, color = colors.error, size = 'sm', style, accessibilityLabel }: BadgeProps) {
+  const scale = useSharedValue(count > 0 ? 1 : 0);
+  const prevCount = useRef(count);
 
   useEffect(() => {
-    if (count > 0) {
-      scale.value = 0;
-      scale.value = withSpring(1, animation.spring.bouncy);
-    } else {
+    const wasZero = prevCount.current <= 0;
+    const isPositive = count > 0;
+    prevCount.current = count;
+
+    if (isPositive && wasZero) {
+      // Appearing: 0 -> positive — bounce in
+      scale.value = withSequence(
+        withSpring(1.3, animation.spring.bouncy),
+        withSpring(1, animation.spring.responsive),
+      );
+    } else if (!isPositive) {
+      // Disappearing: positive -> 0 — scale out
       scale.value = withSpring(0, animation.spring.bouncy);
     }
+    // Count changing within positive range (e.g. 5->6): no animation, stays at scale 1
   }, [count, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -66,7 +78,7 @@ export function Badge({ count, color = colors.error, size = 'sm', style, accessi
       </Text>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   badge: {

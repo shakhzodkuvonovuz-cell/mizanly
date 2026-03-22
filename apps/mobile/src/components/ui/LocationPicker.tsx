@@ -134,7 +134,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
   return (
     <BottomSheet visible={visible} onClose={onClose} snapPoint={0.7}>
       <View style={styles.container}>
-        <Text style={styles.title}>Add Location</Text>
+        <Text style={styles.title}>{t('locationPicker.title')}</Text>
 
         <View style={styles.searchRow}>
           <View style={[styles.searchInput, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
@@ -163,12 +163,12 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
           <View style={styles.currentLocationIcon}>
             <Icon name="map-pin" size="md" color={colors.emerald} />
           </View>
-          <Text style={styles.currentLocationText}>Use Current Location</Text>
+          <Text style={styles.currentLocationText}>{t('locationPicker.useCurrentLocation')}</Text>
         </Pressable>
 
         {recentLocations.length > 0 && !query && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recent</Text>
+            <Text style={styles.sectionTitle}>{t('locationPicker.recent')}</Text>
             {recentLocations.map((loc) => (
               <BottomSheetItem
                 key={loc.id}
@@ -182,7 +182,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {query ? 'Search Results' : 'Popular Locations'}
+            {query ? t('locationPicker.searchResults') : t('locationPicker.popularLocations')}
           </Text>
 
           {loading ? (
@@ -199,7 +199,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
             </View>
           ) : results.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>No locations found</Text>
+              <Text style={styles.emptyText}>{t('locationPicker.noLocationsFound')}</Text>
             </View>
           ) : (
             results.map((loc) => (

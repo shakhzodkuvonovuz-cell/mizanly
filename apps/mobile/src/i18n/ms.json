@@ -3357,7 +3357,9 @@
     "noHashtagsFound": "No hashtags found for \"{{query}}\"",
     "noUsersFound": "No users found for \"{{query}}\"",
     "hashtagResults": "hashtag results",
-    "userResults": "user results"
+    "userResults": "user results",
+    "postsCount": "{{count}} posts",
+    "createHashtag": "Create #{{tag}}"
   },
   "chatExport": {
     "errorTitle": "Error",
@@ -3509,5 +3511,17 @@
     "options": "Options",
     "saveToPlaylist": "Save to Playlist",
     "upNext": "Up Next"
+  },
+  "locationPicker": {
+    "title": "Add Location",
+    "useCurrentLocation": "Use Current Location",
+    "recent": "Recent",
+    "searchResults": "Search Results",
+    "popularLocations": "Popular Locations",
+    "noLocationsFound": "No locations found"
+  },
+  "errorBoundary": {
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "goHome": "Go Home"
   }
 }

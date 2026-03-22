@@ -120,7 +120,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
           <View style={styles.itemContent}>
             <Text style={styles.itemTitle}>#{hashtag.name}</Text>
             <Text style={styles.itemSubtitle}>
-              {hashtag.postsCount.toLocaleString()} posts
+              {t('autocomplete.postsCount', { count: hashtag.postsCount.toLocaleString() })}
             </Text>
           </View>
         </Pressable>
@@ -182,7 +182,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
               }}
             >
               <Text style={styles.createTagText}>
-                Create #{query.replace(/^#/, '')}
+                {t('autocomplete.createHashtag', { tag: query.replace(/^#/, '') })}
               </Text>
             </Pressable>
           )}

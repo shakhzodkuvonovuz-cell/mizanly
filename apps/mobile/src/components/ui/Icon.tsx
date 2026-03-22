@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { View, I18nManager } from 'react-native';
 import { colors, iconSize as iconSizes } from '@/theme';
 import {
@@ -144,7 +145,7 @@ const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);
 
 const MIRROR_IN_RTL: Set<IconName> = new Set(['arrow-left', 'chevron-left', 'chevron-right']);
 
-export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill, style }: IconProps) {
+export const Icon = memo(function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill, style }: IconProps) {
   const LucideIcon = iconMap[name];
   if (!LucideIcon) {
     if (__DEV__) console.warn(`[Icon] Unknown icon name: "${name}"`);
@@ -175,4 +176,4 @@ export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill, style
   }
 
   return icon;
-}
+});
