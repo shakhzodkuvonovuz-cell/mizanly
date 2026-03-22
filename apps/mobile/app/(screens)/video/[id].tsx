@@ -1357,7 +1357,7 @@ const styles = StyleSheet.create({
   nowPlayingText: {
     color: '#0D1117',
     fontSize: 8,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
 });

@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   statValue: {
     color: colors.text.primary,
     fontSize: fontSize.xl,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   statLabel: {
     color: colors.text.secondary,

@@ -37,6 +37,7 @@ import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
 import { formatHijriDate } from '@/utils/hijri';
 import { feedCache, CACHE_KEYS } from '@/utils/feedCache';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Post, StoryGroup, SuggestedUser } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -56,11 +57,12 @@ function SuggestedUserCard({
 }) {
   const { t, isRTL } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
 
   if (users.length === 0) return null;
 
   return (
-    <View style={suggestedStyles.container}>
+    <View style={[suggestedStyles.container, { backgroundColor: tc.bgCard }]}>
       <Text style={[suggestedStyles.title, { textAlign: rtlTextAlign(isRTL) }]}>
         {t('feed.suggestedForYou')}
       </Text>
@@ -191,6 +193,7 @@ export default function SafScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const queryClient = useQueryClient();
   const feedType = useStore((s) => s.safFeedType);
   const setFeedType = useStore((s) => s.setSafFeedType);
@@ -364,7 +367,7 @@ export default function SafScreen() {
         }}
       />
       {/* Story row separator */}
-      <View style={styles.storySeparator} />
+      <View style={[styles.storySeparator, { backgroundColor: tc.border }]} />
       {/* Explore-first banner for new users */}
       {!bannerDismissed && (
         <ExploreFirstBanner onDismiss={dismissBanner} />
@@ -423,7 +426,7 @@ export default function SafScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       {/* Header — hides on scroll down, reveals on scroll up */}
       <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
         <View>
@@ -525,6 +528,7 @@ export default function SafScreen() {
 }
 
 const styles = StyleSheet.create({
+  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
   container: { flex: 1, backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row',
@@ -550,6 +554,7 @@ const styles = StyleSheet.create({
     top: -6,
   },
   footer: { paddingVertical: spacing.sm },
+  // TODO: colors.dark.border overridden by inline style with tc.border from useThemeColors()
   storySeparator: {
     height: 0.5,
     backgroundColor: colors.dark.border,
@@ -559,6 +564,7 @@ const styles = StyleSheet.create({
 
 // ── Suggested User Card Styles ──
 const suggestedStyles = StyleSheet.create({
+  // TODO: colors.dark.bgCard overridden by inline style with tc.bgCard from useThemeColors()
   container: {
     backgroundColor: colors.dark.bgCard,
     marginHorizontal: spacing.base,

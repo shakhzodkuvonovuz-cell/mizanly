@@ -33,6 +33,7 @@ import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart, rtlMargin, rtlAbsoluteEnd, rtlChevron } from '@/utils/rtl';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -171,6 +172,7 @@ export default function RisalahScreen() {
   const { user } = useUser();
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
   const queryClient = useQueryClient();
 
   const TABS = useMemo(() => [
@@ -322,7 +324,7 @@ export default function RisalahScreen() {
     if (archivedCount === 0) return null;
     return (
       <Pressable
-        style={[styles.archivedRow, { flexDirection: rtlFlexRow(isRTL) }]}
+        style={[styles.archivedRow, { flexDirection: rtlFlexRow(isRTL), borderBottomColor: tc.border }]}
         onPress={() => router.push('/(screens)/archive')}
         accessibilityLabel={t('accessibility.archivedConversations')}
         accessibilityRole="button"
@@ -376,7 +378,7 @@ export default function RisalahScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.risalah')}</Text>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -463,7 +465,7 @@ export default function RisalahScreen() {
         {(['all', 'unread', 'groups'] as const).map((chip) => (
           <Pressable
             key={chip}
-            style={[styles.filterChip, filterChip === chip && styles.filterChipSelected]}
+            style={[styles.filterChip, { backgroundColor: tc.surface, borderColor: tc.border }, filterChip === chip && styles.filterChipSelected]}
             onPress={() => setFilterChip(chip)}
             accessibilityLabel={chip === 'groups' ? t('risalah.groups') : chip === 'unread' ? t('risalah.unread') : t('risalah.all')}
             accessibilityRole="button"
@@ -509,6 +511,7 @@ export default function RisalahScreen() {
 }
 
 const styles = StyleSheet.create({
+  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
   container: { flex: 1, backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row',
@@ -573,6 +576,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: spacing.sm,
   },
+  // TODO: colors.dark.surface/border overridden by inline style with tc.surface/tc.border from useThemeColors()
   filterChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -594,6 +598,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  // TODO: colors.dark.border overridden by inline style with tc.border from useThemeColors()
   archivedRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -954,7 +954,7 @@ const styles = StyleSheet.create({
   liveBadgeText: {
     color: '#fff',
     fontSize: fontSize.xs,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
   viewerCountBadge: {

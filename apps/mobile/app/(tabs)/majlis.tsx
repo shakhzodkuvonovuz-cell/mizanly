@@ -26,6 +26,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd, rtlBorderStart } from '@/utils/rtl';
 import type { Thread } from '@/types';
 
@@ -77,6 +78,7 @@ export default function MajlisScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
@@ -203,7 +205,7 @@ export default function MajlisScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.majlis')}</Text>
@@ -261,7 +263,7 @@ export default function MajlisScreen() {
           {trendingHashtagsQuery.data.map((hashtag) => (
             <Pressable
               key={hashtag.name}
-              style={styles.hashtagChip}
+              style={[styles.hashtagChip, { backgroundColor: tc.surface, borderColor: tc.border }]}
               onPress={() => {
                 haptic.light();
                 router.push(`/(screens)/hashtag/${hashtag.name}`);
@@ -323,6 +325,7 @@ export default function MajlisScreen() {
 }
 
 const styles = StyleSheet.create({
+  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
   container: { flex: 1, backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row',
@@ -369,6 +372,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
   },
+  // TODO: colors.dark.surface/border overridden by inline style with tc.surface/tc.border from useThemeColors()
   hashtagChip: {
     backgroundColor: colors.dark.surface,
     borderRadius: radius.full,

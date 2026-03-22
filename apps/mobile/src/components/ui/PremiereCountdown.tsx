@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   liveText: {
     color: '#FFF',
     fontSize: fontSize.lg,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 2,
   },
   actions: {

@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
   countdownText: {
     color: '#fff',
     fontSize: 60,
-    fontWeight: '800',
+    fontWeight: '700',
   },
 
   // Focus ring video container

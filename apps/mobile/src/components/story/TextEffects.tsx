@@ -52,12 +52,12 @@ interface StylePreset {
   id: TextEffect['style'];
   label: string;
   fontFamily: string | undefined;
-  fontWeight: '400' | '600' | '800' | '900';
+  fontWeight: '400' | '600' | '700' | '900';
 }
 
 const STYLE_PRESETS: StylePreset[] = [
   { id: 'classic', label: 'Classic', fontFamily: undefined, fontWeight: '400' },
-  { id: 'modern', label: 'Modern', fontFamily: undefined, fontWeight: '800' },
+  { id: 'modern', label: 'Modern', fontFamily: undefined, fontWeight: '700' },
   { id: 'neon', label: 'Neon', fontFamily: undefined, fontWeight: '600' },
   {
     id: 'typewriter',

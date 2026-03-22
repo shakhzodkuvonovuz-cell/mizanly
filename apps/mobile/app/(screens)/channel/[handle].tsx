@@ -1076,7 +1076,7 @@ const styles = StyleSheet.create({
   statNumEnhanced: {
     color: colors.text.primary,
     fontSize: fontSize.lg,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   statLabelEnhanced: {
     color: colors.text.secondary,
@@ -1148,7 +1148,7 @@ const styles = StyleSheet.create({
   featuredBadgeText: {
     color: '#0D1117',
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
   featuredTitle: {

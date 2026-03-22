@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     borderColor: colors.gold + '30',
   },
   timeTitle: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500', marginTop: spacing.md },
-  timeValue: { color: colors.gold, fontSize: 48, fontWeight: '800', fontVariant: ['tabular-nums'], marginVertical: spacing.sm },
+  timeValue: { color: colors.gold, fontSize: 48, fontWeight: '700', fontVariant: ['tabular-nums'], marginVertical: spacing.sm },
   timeReason: { color: colors.text.tertiary, fontSize: fontSize.sm, textAlign: 'center' },
   emptyWrap: { marginTop: spacing['2xl'] },
 });

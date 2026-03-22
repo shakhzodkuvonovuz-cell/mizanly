@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   timeNumber: {
     color: colors.text.primary,
     fontSize: fontSize['2xl'],
-    fontWeight: '800',
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   timeLabel: {
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   endedTitle: {
     color: colors.gold,
     fontSize: fontSize.xl,
-    fontWeight: '800',
+    fontWeight: '700',
     marginBottom: spacing.xs,
   },
   endedSubtitle: {

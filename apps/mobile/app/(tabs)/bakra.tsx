@@ -41,6 +41,7 @@ import { navigate } from '@/utils/navigation';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import * as Clipboard from 'expo-clipboard';
 import { useVideoPreloader } from '@/hooks/useVideoPreloader';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -127,6 +128,7 @@ const ReelItem = memo(function ReelItem({
   heartTrigger,
 }: ReelItemProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const localVideoRef = useRef<Video | null>(null);
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -259,7 +261,7 @@ const ReelItem = memo(function ReelItem({
                   hitSlop={12}
                   accessibilityLabel={item.user?.isFollowing ? t('common.following') : t('common.follow')}
                   accessibilityRole="button"
-                  style={styles.followButtonOverlay}
+                  style={[styles.followButtonOverlay, { borderColor: tc.bg }]}
                 >
                   {item.user?.isFollowing ? (
                     <View
@@ -424,6 +426,7 @@ export default function BakraScreen() {
   const { user } = useUser();
   const router = useRouter();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
@@ -680,7 +683,7 @@ export default function BakraScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Bakra</Text>
@@ -767,6 +770,7 @@ export default function BakraScreen() {
 }
 
 const styles = StyleSheet.create({
+  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
   container: { flex: 1, backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row',
@@ -1008,7 +1012,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: colors.dark.bg,
+    borderColor: colors.dark.bg, // TODO: overridden by inline style with tc.bg from useThemeColors()
   },
   followIconContainer: {
     width: 34,

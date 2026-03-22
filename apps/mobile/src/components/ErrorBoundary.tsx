@@ -47,6 +47,8 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 const styles = StyleSheet.create({
+  // TODO: colors.dark.bg cannot be replaced with useThemeColors() — ErrorBoundary is a class component.
+  // Convert to a function component wrapper with useThemeColors() to make this theme-aware.
   container: {
     flex: 1, backgroundColor: colors.dark.bg,
     alignItems: 'center', justifyContent: 'center',

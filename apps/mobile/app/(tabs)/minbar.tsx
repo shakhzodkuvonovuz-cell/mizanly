@@ -26,6 +26,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -37,11 +38,13 @@ interface CategoryChipProps {
 
 const CategoryChip = memo(function CategoryChip({ cat, isActive, onPress }: CategoryChipProps) {
   const chipPress = useAnimatedPress();
+  const tc = useThemeColors();
   return (
     <AnimatedPressable
       key={cat.key}
       style={[
         styles.categoryChip,
+        { backgroundColor: tc.surface, borderColor: tc.border },
         isActive && styles.categoryChipActive,
         chipPress.animatedStyle,
       ]}
@@ -77,6 +80,7 @@ interface VideoWithProgress extends Video {
 
 const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMorePress }: VideoCardProps) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const video = item as VideoWithProgress;
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
@@ -90,7 +94,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
       onPress={() => onPress(video)}
     >
       {/* Thumbnail */}
-      <View style={styles.thumbnailContainer}>
+      <View style={[styles.thumbnailContainer, { backgroundColor: tc.surface }]}>
         {video.thumbnailUrl ? (
           <Image source={{ uri: video.thumbnailUrl }} style={styles.thumbnail} />
         ) : (
@@ -162,6 +166,7 @@ export default function MinbarScreen() {
   const navigation = useNavigation();
   const haptic = useHaptic();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [selectedCategory, setSelectedCategory] = useState<VideoCategory | 'all'>('all');
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -281,11 +286,11 @@ export default function MinbarScreen() {
                 style={styles.continueCard}
                 onPress={() => router.push(`/(screens)/video/${item.id}`)}
               >
-                <View style={styles.continueThumbWrap}>
+                <View style={[styles.continueThumbWrap, { backgroundColor: tc.bgCard }]}>
                   {item.thumbnailUrl ? (
                     <Image source={{ uri: item.thumbnailUrl }} style={styles.continueThumb} />
                   ) : (
-                    <View style={[styles.continueThumb, styles.continueThumbPlaceholder]}>
+                    <View style={[styles.continueThumb, styles.continueThumbPlaceholder, { backgroundColor: tc.surface }]}>
                       <Icon name="video" size="lg" color={colors.text.secondary} />
                     </View>
                   )}
@@ -380,7 +385,7 @@ export default function MinbarScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>Minbar</Text>
@@ -483,6 +488,7 @@ export default function MinbarScreen() {
 }
 
 const styles = StyleSheet.create({
+  // TODO: colors.dark.bg overridden by inline style with tc.bg from useThemeColors()
   container: { flex: 1, backgroundColor: colors.dark.bg },
   header: {
     flexDirection: 'row',
@@ -509,6 +515,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: spacing.sm,
   },
+  // TODO: colors.dark.surface/border overridden by inline style with tc.surface/tc.border from useThemeColors()
   categoryChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -533,6 +540,7 @@ const styles = StyleSheet.create({
   videoCard: {
     marginBottom: spacing.lg,
   },
+  // TODO: colors.dark.surface overridden by inline style with tc.surface from useThemeColors()
   thumbnailContainer: {
     position: 'relative',
     width: '100%',
@@ -646,6 +654,7 @@ const styles = StyleSheet.create({
   continueCard: {
     width: 200,
   },
+  // TODO: colors.dark.bgCard overridden by inline style with tc.bgCard from useThemeColors()
   continueThumbWrap: {
     width: 200,
     height: 112,
@@ -657,6 +666,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  // TODO: colors.dark.surface overridden by inline style with tc.surface from useThemeColors()
   continueThumbPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',

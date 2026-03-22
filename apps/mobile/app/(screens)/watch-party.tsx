@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   partyHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: '#F85149' + '20', paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#F85149' },
-  liveText: { color: '#F85149', fontSize: fontSize.xs, fontWeight: '800' },
+  liveText: { color: '#F85149', fontSize: fontSize.xs, fontWeight: '700' },
   partyTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600', flex: 1 },
   partyInfo: { gap: spacing.sm, marginBottom: spacing.md },
   hostRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

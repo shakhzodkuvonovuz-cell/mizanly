@@ -4,6 +4,7 @@ import Animated from 'react-native-reanimated';
 import { Icon } from './Icon';
 import { GradientButton } from './GradientButton';
 import { useEntranceAnimation } from '@/hooks/useEntranceAnimation';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius } from '@/theme';
 
 export interface EmptyStateProps {
@@ -17,11 +18,12 @@ export interface EmptyStateProps {
 
 export function EmptyState({ icon, title, subtitle, actionLabel, onAction, style }: EmptyStateProps) {
   const { animatedStyle: entranceStyle } = useEntranceAnimation();
+  const tc = useThemeColors();
 
   return (
     <Animated.View style={[styles.container, entranceStyle, style]}>
       {icon && (
-        <View style={styles.iconWrap}>
+        <View style={[styles.iconWrap, { backgroundColor: tc.bgElevated }]}>
           <Icon name={icon} size="xl" color={colors.text.tertiary} />
         </View>
       )}
@@ -43,6 +45,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     gap: spacing.sm,
   },
+  // TODO: colors.dark.bgElevated overridden by inline style with tc.bgElevated from useThemeColors()
   iconWrap: {
     width: 64,
     height: 64,

@@ -13,6 +13,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, radius, spacing, animation } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -28,6 +29,7 @@ interface BottomSheetProps {
 export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdrop }: BottomSheetProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -118,7 +120,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(33, 40, 59, 0.92)', borderTopWidth: 0.5, borderTopColor: colors.glass.border }]} />
           )}
           <View style={styles.handleContainer}>
-            <View style={styles.handle} />
+            <View style={[styles.handle, { backgroundColor: tc.borderLight }]} />
           </View>
           <View style={styles.content}>{children}</View>
         </Animated.View>
@@ -190,6 +192,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
   },
+  // TODO: colors.dark.borderLight overridden by inline style with tc.borderLight from useThemeColors()
   handle: {
     width: 36,
     height: 4,

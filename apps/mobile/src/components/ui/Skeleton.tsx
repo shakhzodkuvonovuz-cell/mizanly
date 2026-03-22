@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, animation } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
   width: DimensionValue;
@@ -17,6 +18,7 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
   borderRadius?: number;
   style?: object;
 }) {
+  const tc = useThemeColors();
   const shimmer = useSharedValue(0);
 
   useEffect(() => {
@@ -38,10 +40,10 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
           width,
           height,
           borderRadius,
-          backgroundColor: colors.dark.bgElevated,
+          backgroundColor: tc.bgElevated,
           overflow: 'hidden',
           borderWidth: 0.5,
-          borderColor: colors.dark.borderLight,
+          borderColor: tc.borderLight,
         },
         style,
       ]}
@@ -82,8 +84,9 @@ function TextLine({ width = '100%', style }: { width?: DimensionValue; style?: o
 }
 
 function PostCard() {
+  const tc = useThemeColors();
   return (
-    <View style={skeletonStyles.postCard} accessibilityLabel="Loading post" accessibilityRole="progressbar">
+    <View style={[skeletonStyles.postCard, { backgroundColor: tc.bgCard, borderBottomColor: tc.border }]} accessibilityLabel="Loading post" accessibilityRole="progressbar">
       <View style={skeletonStyles.postHeader}>
         <Circle size={40} />
         <View style={skeletonStyles.postHeaderText}>
@@ -104,8 +107,9 @@ function PostCard() {
 }
 
 function ThreadCard() {
+  const tc = useThemeColors();
   return (
-    <View style={skeletonStyles.threadCard} accessibilityLabel="Loading thread" accessibilityRole="progressbar">
+    <View style={[skeletonStyles.threadCard, { backgroundColor: tc.bgCard, borderBottomColor: tc.border }]} accessibilityLabel="Loading thread" accessibilityRole="progressbar">
       <Circle size={40} />
       <View style={skeletonStyles.threadContent}>
         <View style={skeletonStyles.threadHeader}>
@@ -167,6 +171,7 @@ export const Skeleton = {
 };
 
 const skeletonStyles = StyleSheet.create({
+  // TODO: colors.dark.bgCard/border overridden by inline style with tc.bgCard/tc.border from useThemeColors()
   postCard: {
     padding: spacing.base,
     borderBottomWidth: 0.5,
@@ -184,6 +189,7 @@ const skeletonStyles = StyleSheet.create({
     gap: spacing.xl,
     marginTop: spacing.md,
   },
+  // TODO: colors.dark.bgCard/border overridden by inline style with tc.bgCard/tc.border from useThemeColors()
   threadCard: {
     flexDirection: 'row',
     padding: spacing.base,

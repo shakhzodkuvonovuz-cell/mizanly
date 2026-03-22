@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.base },
   timerSection: { alignItems: 'center', marginBottom: spacing['2xl'] },
-  timer: { fontSize: 64, fontWeight: '800', color: colors.text.primary, fontVariant: ['tabular-nums'] },
+  timer: { fontSize: 64, fontWeight: '700', color: colors.text.primary, fontVariant: ['tabular-nums'] },
   maxDuration: { color: colors.text.tertiary, fontSize: fontSize.sm, marginTop: spacing.xs },
   waveform: { flexDirection: 'row', alignItems: 'center', gap: 3, height: 60, marginBottom: spacing['2xl'] },
   waveBar: { width: 4, borderRadius: 2, minHeight: 4 },

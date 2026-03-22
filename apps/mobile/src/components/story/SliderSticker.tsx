@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   valueNumber: {
     color: colors.emerald,
     fontSize: fontSize['2xl'],
-    fontWeight: '800',
+    fontWeight: '700',
   },
   footer: {
     flexDirection: 'row',

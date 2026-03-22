@@ -943,7 +943,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stat: { gap: 2 },
-  statNum: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '800' },
+  statNum: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   statLabel: { color: colors.text.tertiary, fontSize: fontSize.xs },
   statDivider: { width: 1, height: 24, backgroundColor: colors.dark.border, alignSelf: 'center' },
   pinnedSection: { marginTop: spacing.xl },

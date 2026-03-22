@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 
@@ -42,6 +43,7 @@ export interface GlassHeaderProps {
 
 function HeaderButton({ icon, onPress, accessibilityLabel, badge }: HeaderAction) {
   const haptic = useHaptic();
+  const tc = useThemeColors();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.88 });
 
   const handlePress = () => {
@@ -65,7 +67,7 @@ function HeaderButton({ icon, onPress, accessibilityLabel, badge }: HeaderAction
         icon
       )}
       {badge != null && badge > 0 ? (
-        <View style={styles.badge}>
+        <View style={[styles.badge, { borderColor: tc.bg }]}>
           <Text style={styles.badgeText}>
             {badge > 99 ? '99+' : badge}
           </Text>
@@ -90,6 +92,7 @@ export const GlassHeader = memo(function GlassHeader({
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   // Resolve left action: explicit leftAction > showBackButton/showBack
   const resolvedLeftAction = leftAction ?? (
@@ -108,7 +111,7 @@ export const GlassHeader = memo(function GlassHeader({
       style={[
         styles.inner,
         { paddingTop: insets.top },
-        !borderless && styles.border,
+        !borderless && [styles.border, { borderBottomColor: tc.border }],
       ]}
     >
       <View style={styles.row}>
@@ -175,6 +178,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     paddingHorizontal: spacing.base,
   },
+  // TODO: colors.dark.border overridden by inline style with tc.border from useThemeColors()
   border: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.dark.border,
@@ -231,7 +235,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: colors.dark.bg,
+    borderColor: colors.dark.bg, // TODO: overridden by inline style with tc.bg from useThemeColors()
   },
   badgeText: {
     fontFamily: fonts.bodySemiBold,
