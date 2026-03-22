@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions, TextInput, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, TextInput, FlatList } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -15,6 +15,9 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { SubtitleTrack } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { showToast } from '@/components/ui/Toast';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -58,6 +61,7 @@ export default function CaptionEditorScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
+  const haptic = useContextualHaptic();
 
   const [localCaptions, setLocalCaptions] = useState<Caption[]>([]);
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
@@ -97,8 +101,12 @@ export default function CaptionEditorScreen() {
       return res;
     },
     onSuccess: () => {
+      showToast({ message: 'Captions generated', variant: 'success' });
       setHasLocalEdits(false);
       queryClient.invalidateQueries({ queryKey: ['subtitles', videoId] });
+    },
+    onError: () => {
+      showToast({ message: 'Failed to generate captions', variant: 'error' });
     },
   });
 
@@ -124,8 +132,12 @@ export default function CaptionEditorScreen() {
       });
     },
     onSuccess: () => {
+      showToast({ message: 'Captions saved', variant: 'success' });
       setHasLocalEdits(false);
       queryClient.invalidateQueries({ queryKey: ['subtitles', videoId] });
+    },
+    onError: () => {
+      showToast({ message: 'Failed to save captions', variant: 'error' });
     },
   });
 
@@ -147,6 +159,7 @@ export default function CaptionEditorScreen() {
   };
 
   const handleDeleteCaption = (id: string) => {
+    haptic.delete();
     setHasLocalEdits(true);
     setLocalCaptions(captions.filter(c => c.id !== id));
   };
@@ -157,14 +170,17 @@ export default function CaptionEditorScreen() {
   };
 
   const handleAutoGenerate = () => {
+    haptic.navigate();
     generateMutation.mutate();
   };
 
   const handleSave = () => {
+    haptic.success();
     saveMutation.mutate();
   };
 
   const handleAddCaption = () => {
+    haptic.tick();
     const lastCaption = captions[captions.length - 1];
     const newStart = lastCaption ? lastCaption.endTime : 0;
     const newCaption: Caption = {
@@ -277,7 +293,7 @@ export default function CaptionEditorScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />}
+          refreshControl={<BrandedRefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}
         >
           {/* Video Preview */}
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
@@ -354,39 +370,39 @@ export default function CaptionEditorScreen() {
                   <Pressable
                     accessibilityRole="button"
                     style={styles.controlCircle}
-                    onPress={() => setCurrentTime(Math.max(0, currentTime - 5))}
+                    onPress={() => { haptic.tick(); setCurrentTime(Math.max(0, currentTime - 5)); }}
                   >
                     <LinearGradient
                       colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                       style={styles.controlGradient}
                     >
-                      <Icon name="rewind" size="sm" color={colors.text.primary} />
+                      <Icon name="chevron-left" size="sm" color={colors.text.primary} />
                     </LinearGradient>
                   </Pressable>
 
                   <Pressable
                     accessibilityRole="button"
                     style={[styles.controlCircle, styles.playCircle]}
-                    onPress={() => setIsPlaying(!isPlaying)}
+                    onPress={() => { haptic.tick(); setIsPlaying(!isPlaying); }}
                   >
                     <LinearGradient
                       colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                       style={styles.controlGradient}
                     >
-                      <Icon name={isPlaying ? 'pause' : 'play'} size="md" color="#FFF" />
+                      <Icon name="play" size="md" color="#FFF" />
                     </LinearGradient>
                   </Pressable>
 
                   <Pressable
                     accessibilityRole="button"
                     style={styles.controlCircle}
-                    onPress={() => setCurrentTime(Math.min(90, currentTime + 5))}
+                    onPress={() => { haptic.tick(); setCurrentTime(Math.min(90, currentTime + 5)); }}
                   >
                     <LinearGradient
                       colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                       style={styles.controlGradient}
                     >
-                      <Icon name="fast-forward" size="sm" color={colors.text.primary} />
+                      <Icon name="chevron-right" size="sm" color={colors.text.primary} />
                     </LinearGradient>
                   </Pressable>
                 </View>
@@ -456,7 +472,7 @@ export default function CaptionEditorScreen() {
                       accessibilityRole="button"
                       key={font}
                       style={styles.selectorButton}
-                      onPress={() => setSelectedFont(font)}
+                      onPress={() => { haptic.tick(); setSelectedFont(font); }}
                     >
                       <LinearGradient
                         colors={selectedFont === font
@@ -484,7 +500,7 @@ export default function CaptionEditorScreen() {
                       accessibilityRole="button"
                       key={size}
                       style={styles.selectorButton}
-                      onPress={() => setSelectedSize(size)}
+                      onPress={() => { haptic.tick(); setSelectedSize(size); }}
                     >
                       <LinearGradient
                         colors={selectedSize === size
@@ -512,7 +528,7 @@ export default function CaptionEditorScreen() {
                       accessibilityRole="button"
                       key={position}
                       style={styles.selectorButton}
-                      onPress={() => setSelectedPosition(position)}
+                      onPress={() => { haptic.tick(); setSelectedPosition(position); }}
                     >
                       <LinearGradient
                         colors={selectedPosition === position
@@ -540,7 +556,7 @@ export default function CaptionEditorScreen() {
                       accessibilityRole="button"
                       key={bg}
                       style={styles.selectorButton}
-                      onPress={() => setSelectedBackground(bg)}
+                      onPress={() => { haptic.tick(); setSelectedBackground(bg); }}
                     >
                       <LinearGradient
                         colors={selectedBackground === bg
@@ -572,7 +588,7 @@ export default function CaptionEditorScreen() {
                         { backgroundColor: color },
                         selectedColor === color && styles.colorCircleActive
                       ]}
-                      onPress={() => setSelectedColor(color)}
+                      onPress={() => { haptic.tick(); setSelectedColor(color); }}
                     />
                   ))}
                 </View>
