@@ -6,8 +6,6 @@ import {
   ScrollView,
   Switch,
   Pressable,
-  Alert,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -68,7 +66,6 @@ function ContentFilterSettingsContent() {
       islamicApi.updateContentFilterSettings(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['content-filter-settings'] });
-      Alert.alert(t('contentFilter.saved'));
     },
   });
 

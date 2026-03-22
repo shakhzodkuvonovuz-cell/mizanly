@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  ScrollView, Alert,
-  Pressable,
+  ScrollView, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -90,6 +89,8 @@ export default function AccountSettingsScreen() {
 
   const primaryEmail = clerkUser?.emailAddresses?.find(addr => addr.id === clerkUser.primaryEmailAddressId)?.emailAddress;
   const primaryPhone = clerkUser?.phoneNumbers?.find(phone => phone.id === clerkUser.primaryPhoneNumberId)?.phoneNumber;
+  const maskedEmail = primaryEmail ? primaryEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3') : '';
+  const maskedPhone = primaryPhone ? primaryPhone.replace(/(.{4})(.*)(.{4})/, '$1****$3') : '';
   const joinedDate = userQuery.data?.createdAt ? new Date(userQuery.data.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -114,9 +115,13 @@ export default function AccountSettingsScreen() {
 
   const exportDataMutation = useMutation({
     mutationFn: () => usersApi.exportData(),
-    onSuccess: (data) => {
-      // In a real app, you would download the data file
-      Alert.alert(t('accountSettings.dataReadyTitle'), t('accountSettings.dataReadyMessage'));
+    onSuccess: async (data) => {
+      try {
+        const { Share } = await import('react-native');
+        await Share.share({ message: JSON.stringify(data, null, 2), title: 'Mizanly Data Export' });
+      } catch {
+        Alert.alert(t('accountSettings.dataReadyTitle'), t('accountSettings.dataReadyMessage'));
+      }
     },
     onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
@@ -130,7 +135,20 @@ export default function AccountSettingsScreen() {
         {
           text: t('accountSettings.deactivateButton'),
           style: 'destructive',
-          onPress: () => deactivateMutation.mutate(),
+          onPress: () => {
+            Alert.alert(
+              t('accountSettings.deactivateConfirmTitle'),
+              t('accountSettings.deactivateConfirmMessage'),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                {
+                  text: t('accountSettings.deactivateConfirmButton'),
+                  style: 'destructive',
+                  onPress: () => deactivateMutation.mutate(),
+                },
+              ],
+            );
+          },
         },
       ],
     );
@@ -155,7 +173,17 @@ export default function AccountSettingsScreen() {
                   text: t('accountSettings.deleteConfirmButton'),
                   style: 'destructive',
                   onPress: async () => {
-                    await requestDeletionMutation.mutateAsync();
+                    try {
+                      const LocalAuth = await import('expo-local-authentication');
+                      const hasHardware = await LocalAuth.hasHardwareAsync();
+                      if (hasHardware) {
+                        const result = await LocalAuth.authenticateAsync({ promptMessage: t('accountSettings.confirmIdentity') });
+                        if (!result.success) return;
+                      }
+                      await requestDeletionMutation.mutateAsync();
+                    } catch {
+                      await requestDeletionMutation.mutateAsync();
+                    }
                   },
                 },
               ],
@@ -182,37 +210,41 @@ export default function AccountSettingsScreen() {
 
   if (userQuery.isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <GlassHeader
-          title={t('accountSettings.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-        />
-        <View style={{ flex: 1, padding: spacing.base, paddingTop: insets.top + 60, gap: spacing.lg }}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton.Rect key={i} width="100%" height={48} />
-          ))}
+      <ScreenErrorBoundary>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
+          <GlassHeader
+            title={t('accountSettings.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          />
+          <View style={{ flex: 1, padding: spacing.base, paddingTop: insets.top + 60, gap: spacing.lg }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton.Rect key={i} width="100%" height={48} />
+            ))}
+          </View>
         </View>
-      </View>
+      </ScreenErrorBoundary>
     );
   }
 
   if (userQuery.isError) {
     return (
-      <View style={[styles.container, { backgroundColor: tc.bg }]}>
-        <GlassHeader
-          title={t('accountSettings.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-        />
-        <View style={{ flex: 1, justifyContent: 'center', paddingTop: insets.top + 60 }}>
-          <EmptyState
-            icon="flag"
-            title={t('accountSettings.error.loadAccount')}
-            subtitle={t('accountSettings.error.checkConnection')}
-            actionLabel={t('common.retry')}
-            onAction={() => userQuery.refetch()}
+      <ScreenErrorBoundary>
+        <View style={[styles.container, { backgroundColor: tc.bg }]}>
+          <GlassHeader
+            title={t('accountSettings.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
           />
+          <View style={{ flex: 1, justifyContent: 'center', paddingTop: insets.top + 60 }}>
+            <EmptyState
+              icon="flag"
+              title={t('accountSettings.error.loadAccount')}
+              subtitle={t('accountSettings.error.checkConnection')}
+              actionLabel={t('common.retry')}
+              onAction={() => userQuery.refetch()}
+            />
+          </View>
         </View>
-      </View>
+      </ScreenErrorBoundary>
     );
   }
 
@@ -224,7 +256,11 @@ export default function AccountSettingsScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
 
-        <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}
+          refreshControl={<RefreshControl refreshing={userQuery.isLoading} onRefresh={() => userQuery.refetch()} tintColor={colors.emerald} />}
+        >
           {/* Account Info */}
           <SectionHeader title={t('accountSettings.sections.accountInfo')} index={0} />
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
@@ -234,12 +270,12 @@ export default function AccountSettingsScreen() {
             >
               <Row
                 label={t('auth.email')}
-                value={primaryEmail || t('accountSettings.notSet')}
+                value={maskedEmail || t('accountSettings.notSet')}
               />
               <View style={styles.divider} />
               <Row
                 label={t('auth.phone')}
-                value={primaryPhone || t('accountSettings.notSet')}
+                value={maskedPhone || t('accountSettings.notSet')}
               />
               <View style={styles.divider} />
               <Row
@@ -265,7 +301,7 @@ export default function AccountSettingsScreen() {
               <Row
                 label={t('accountSettings.manageData')}
                 hint={t('accountSettings.manageDataHint')}
-                onPress={() => router.push('/(screens)/manage-data')}
+                onPress={() => router.push('/(screens)/storage-management')}
               />
             </LinearGradient>
           </Animated.View>
@@ -298,7 +334,7 @@ export default function AccountSettingsScreen() {
               colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
               style={styles.versionCard}
             >
-              <Text style={styles.version}>Mizanly v0.1.0</Text>
+              <Text style={styles.version}>Mizanly v{require('../../../app.json').expo?.version ?? '0.1.0'}</Text>
             </LinearGradient>
           </Animated.View>
         </ScrollView>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -91,9 +91,9 @@ export default function BiometricLockScreen() {
     haptic.light();
     const success = await authenticate();
     if (success) {
-      Alert.alert(t('biometric.title'), 'Authentication successful!');
+      Alert.alert(t('biometric.title'), t('biometric.testSuccess'));
     } else {
-      Alert.alert(t('biometric.title'), 'Authentication failed.');
+      Alert.alert(t('biometric.title'), t('biometric.testFailed'));
     }
   }, [authenticate, haptic, t]);
 
@@ -221,9 +221,15 @@ export default function BiometricLockScreen() {
               </View>
             </View>
             {/* Tap area covers the whole row */}
-            <View style={StyleSheet.absoluteFill}>
-              <View style={styles.touchOverlay} onTouchEnd={handleToggle} />
-            </View>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={handleToggle}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: biometricLockEnabled }}
+              accessibilityLabel={t('biometric.enable')}
+            >
+              <View style={styles.touchOverlay} />
+            </Pressable>
           </LinearGradient>
 
           {/* Test Authentication Button */}

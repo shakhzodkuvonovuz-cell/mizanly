@@ -1,8 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
   RefreshControl,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -440,6 +439,8 @@ export default function ParentalControlsScreen() {
   const [changePinStep, setChangePinStep] = useState<'current' | 'new'>('current');
   const [currentPinValue, setCurrentPinValue] = useState('');
   const [unlinkPinSheet, setUnlinkPinSheet] = useState(false);
+  const [pinAttempts, setPinAttempts] = useState(0);
+  const [pinError, setPinError] = useState(false);
 
   const childrenQuery = useQuery({
     queryKey: ['parental-children'],
@@ -479,8 +480,9 @@ export default function ParentalControlsScreen() {
   });
 
   // Check if user has any children linked (for PIN gate vs first-time setup)
+  // Use same query key as childrenQuery so React Query deduplicates the request
   const hasControlsQuery = useQuery({
-    queryKey: ['parental-has-controls'],
+    queryKey: ['parental-children'],
     queryFn: () => parentalApi.getChildren(),
   });
 
@@ -494,19 +496,29 @@ export default function ParentalControlsScreen() {
       return;
     }
 
+    if (pinAttempts >= 5) return;
+
     try {
       const first = ((hasControlsQuery.data ?? []) as ParentalControl[])[0];
       const result = await parentalApi.verifyPin(first.childUserId, pin) as { valid: boolean };
       if (result.valid) {
         haptic.success();
         setPinVerified(true);
+        setPinAttempts(0);
+        setPinError(false);
       } else {
         haptic.error();
+        setPinAttempts(prev => prev + 1);
+        setPinError(true);
+        setTimeout(() => setPinError(false), 2000);
       }
     } catch {
       haptic.error();
+      setPinAttempts(prev => prev + 1);
+      setPinError(true);
+      setTimeout(() => setPinError(false), 2000);
     }
-  }, [hasControls, hasControlsQuery.data, haptic]);
+  }, [hasControls, hasControlsQuery.data, haptic, pinAttempts]);
 
   const handleUnlink = (childId: string) => {
     setUnlinkChildId(childId);
@@ -543,6 +555,7 @@ export default function ParentalControlsScreen() {
 
   // PIN gate
   if (!pinVerified && hasControls) {
+    const isLocked = pinAttempts >= 5;
     return (
       <ScreenErrorBoundary>
         <View style={styles.container}>
@@ -551,21 +564,37 @@ export default function ParentalControlsScreen() {
             leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
           />
           <View style={[styles.pinGate, { paddingTop: insets.top + 80 }]}>
-            <PinPad
-              onComplete={handlePinComplete}
-              title={t('parentalControls.enterPin')}
-              subtitle={t('parentalControls.enterPinSubtitle')}
-            />
+            {isLocked ? (
+              <Animated.View entering={FadeInDown.duration(400)} style={styles.pinContainer}>
+                <Icon name="lock" size="xl" color={colors.error} />
+                <Text style={[styles.pinTitle, { color: colors.error }]}>
+                  {t('parentalControls.tooManyAttempts')}
+                </Text>
+              </Animated.View>
+            ) : (
+              <>
+                <PinPad
+                  onComplete={handlePinComplete}
+                  title={t('parentalControls.enterPin')}
+                  subtitle={pinError ? t('parentalControls.wrongPin') : t('parentalControls.enterPinSubtitle')}
+                />
+                {pinError && (
+                  <Text style={{ color: colors.error, fontSize: fontSize.sm, marginTop: spacing.sm }}>
+                    {t('parentalControls.wrongPin')}
+                  </Text>
+                )}
+              </>
+            )}
           </View>
         </View>
       </ScreenErrorBoundary>
     );
   }
 
-  // If no controls and not verified, auto-verify
-  if (!pinVerified && !hasControls) {
-    setPinVerified(true);
-  }
+  // If no controls and not verified, auto-verify (in useEffect to avoid setState during render)
+  useEffect(() => {
+    if (!pinVerified && !hasControls) setPinVerified(true);
+  }, [pinVerified, hasControls]);
 
   // Main content
   return (

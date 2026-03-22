@@ -46,7 +46,7 @@ function StatusPrivacyContent() {
           if (typeof data.typingIndicators === 'boolean') setTypingIndicators(data.typingIndicators);
         }
       } catch {
-        // Use defaults on error
+        Alert.alert(t('common.error'), t('statusPrivacy.loadError'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -55,11 +55,12 @@ function StatusPrivacyContent() {
     return () => { cancelled = true; };
   }, []);
 
-  const saveSettings = useCallback(async (updates: Record<string, unknown>) => {
+  const saveSettings = useCallback(async (updates: Record<string, unknown>, rollback?: () => void) => {
     setSaving(true);
     try {
       await settingsApi.updatePrivacy(updates as Parameters<typeof settingsApi.updatePrivacy>[0]);
     } catch {
+      rollback?.();
       Alert.alert(
         t('statusPrivacy.errorTitle', 'Error'),
         t('statusPrivacy.errorSave', 'Failed to save privacy settings'),
@@ -70,24 +71,28 @@ function StatusPrivacyContent() {
   }, [t]);
 
   const handleLastSeenChange = useCallback((value: LastSeenOption) => {
+    const prev = lastSeen;
     setLastSeen(value);
-    saveSettings({ lastSeenPrivacy: value });
-  }, [saveSettings]);
+    saveSettings({ lastSeenPrivacy: value }, () => setLastSeen(prev));
+  }, [saveSettings, lastSeen]);
 
   const handleOnlineStatusChange = useCallback((value: OnlineStatusOption) => {
+    const prev = onlineStatus;
     setOnlineStatus(value);
-    saveSettings({ onlineStatusPrivacy: value });
-  }, [saveSettings]);
+    saveSettings({ onlineStatusPrivacy: value }, () => setOnlineStatus(prev));
+  }, [saveSettings, onlineStatus]);
 
   const handleReadReceiptsChange = useCallback((value: boolean) => {
+    const prev = readReceipts;
     setReadReceipts(value);
-    saveSettings({ readReceipts: value });
-  }, [saveSettings]);
+    saveSettings({ readReceipts: value }, () => setReadReceipts(prev));
+  }, [saveSettings, readReceipts]);
 
   const handleTypingIndicatorsChange = useCallback((value: boolean) => {
+    const prev = typingIndicators;
     setTypingIndicators(value);
-    saveSettings({ typingIndicators: value });
-  }, [saveSettings]);
+    saveSettings({ typingIndicators: value }, () => setTypingIndicators(prev));
+  }, [saveSettings, typingIndicators]);
 
   const lastSeenOptions: { key: LastSeenOption; label: string }[] = [
     { key: 'everyone', label: t('statusPrivacy.everyone', 'Everyone') },

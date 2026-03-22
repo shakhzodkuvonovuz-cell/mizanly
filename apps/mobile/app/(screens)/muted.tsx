@@ -28,12 +28,10 @@ interface MutedUser {
   };
 }
 
-import type { User, PaginatedResponse } from '@/types';
+import type { PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-
-type MutedPage = PaginatedResponse<User>;
 
 export default function MutedScreen() {
   const { t, isRTL } = useTranslation();
@@ -134,7 +132,16 @@ export default function MutedScreen() {
                       label={t('screens.muted.unmute')}
                       variant="secondary"
                       size="sm"
-                      onPress={() => unmuteMutation.mutate(u.id)}
+                      onPress={() => {
+                        Alert.alert(
+                          t('screens.muted.unmuteConfirmTitle', 'Unmute'),
+                          t('screens.muted.unmuteConfirmMessage', `Are you sure you want to unmute @${u.username}?`),
+                          [
+                            { text: t('common.cancel'), style: 'cancel' },
+                            { text: t('screens.muted.unmute'), style: 'destructive', onPress: () => unmuteMutation.mutate(u.id) },
+                          ],
+                        );
+                      }}
                       loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
                       disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
                     />

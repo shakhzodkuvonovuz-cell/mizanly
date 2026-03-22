@@ -92,7 +92,7 @@ export default function RestrictedScreen() {
           }}
         />
         <EmptyState
-          icon="alert-circle"
+          icon="flag"
           title={t('screens.restricted.errorTitle')}
           subtitle={t('screens.restricted.errorSubtitle')}
           actionLabel={t('common.retry')}

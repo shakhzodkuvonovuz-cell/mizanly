@@ -30,10 +30,8 @@ interface BlockedUser {
   };
 }
 
-import type { User, PaginatedResponse } from '@/types';
+import type { PaginatedResponse } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-
-type BlockedPage = PaginatedResponse<User>;
 
 export default function BlockedScreen() {
   const router = useRouter();

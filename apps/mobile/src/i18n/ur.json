@@ -904,6 +904,7 @@
     "backupCodes": "Backup Codes",
     "generateBackupCodes": "Generate Backup Codes",
     "downloadBackupCodes": "Download Backup Codes",
+    "backupCodesWarning": "Save these codes in a secure place. You will need them if you lose access to your authenticator app.",
     "saveBackupCodes": "Save Backup Codes",
     "tagline": "Your balanced digital community",
     "emailPlaceholder": "Email address",
@@ -2081,7 +2082,9 @@
     "testAuth": "Test Authentication",
     "notAvailable": "Biometric authentication is not available on this device",
     "notEnrolled": "No biometrics enrolled. Set up Face ID or fingerprint in device settings.",
-    "unlockPrompt": "Unlock Mizanly"
+    "unlockPrompt": "Unlock Mizanly",
+    "testSuccess": "Authentication successful",
+    "testFailed": "Authentication failed"
   },
   "undoSend": {
     "sending": "Sending message...",

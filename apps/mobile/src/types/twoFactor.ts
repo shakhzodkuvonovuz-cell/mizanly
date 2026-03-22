@@ -20,7 +20,6 @@ export interface VerifyTwoFactorDto {
 }
 
 export interface ValidateTwoFactorDto {
-  userId: string;
   code: string;
 }
 
@@ -29,7 +28,6 @@ export interface DisableTwoFactorDto {
 }
 
 export interface BackupCodeDto {
-  userId: string;
   backupCode: string;
 }
 

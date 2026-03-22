@@ -237,6 +237,7 @@
     "backupCodes": "رموز النسخ الاحتياطي",
     "generateBackupCodes": "إنشاء رموز النسخ الاحتياطي",
     "downloadBackupCodes": "تنزيل رموز النسخ الاحتياطي",
+    "backupCodesWarning": "Save these codes in a secure place. You will need them if you lose access to your authenticator app.",
     "saveBackupCodes": "حفظ رموز النسخ الاحتياطي",
     "tagline": "مجتمعك الرقمي المتوازن",
     "emailPlaceholder": "البريد الإلكتروني",
@@ -1911,7 +1912,9 @@
     "testAuth": "اختبار المصادقة",
     "notAvailable": "المصادقة البيومترية غير متاحة على هذا الجهاز",
     "notEnrolled": "لا توجد بصمات مسجلة. قم بإعداد بصمة الوجه أو الإصبع في إعدادات الجهاز.",
-    "unlockPrompt": "فتح ميزانلي"
+    "unlockPrompt": "فتح ميزانلي",
+    "testSuccess": "Authentication successful",
+    "testFailed": "Authentication failed"
   },
   "undoSend": {
     "sending": "جاري إرسال الرسالة...",

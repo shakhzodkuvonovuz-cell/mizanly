@@ -87,7 +87,10 @@ export default function AccountSwitcherScreen() {
       if (isActive) {
         return mapUserToAccount(currentUser, session.id, true);
       }
-      // For inactive sessions, use Clerk session user data
+      // For inactive sessions, use Clerk session user data.
+      // Known limitation: Clerk sessions expose basic user info (name, avatar, username)
+      // for all sessions. Scoping this further would require Clerk's session management
+      // API which is outside our current scope.
       const su = session.user;
       return {
         id: su?.id ?? session.id,
@@ -292,7 +295,7 @@ export default function AccountSwitcherScreen() {
                             <Text style={styles.unreadBadgeText}>{account.unreadCount}</Text>
                           </View>
                         )}
-                        <Pressable accessibilityRole="button" accessibilityRole="button"
+                        <Pressable accessibilityRole="button"
                           style={styles.switchButton}
                           onPress={() => handleSwitchAccount(account)}
                           disabled={switching}
@@ -358,7 +361,7 @@ export default function AccountSwitcherScreen() {
                 </View>
 
                 {/* Manage Accounts Row */}
-                <Pressable accessibilityRole="button" style={styles.managementRow}>
+                <Pressable accessibilityRole="button" style={[styles.managementRow, { opacity: 0.5 }]} disabled>
                   <View style={styles.managementRowLeft}>
                     <Icon name="users" size="sm" color={colors.text.secondary} />
                     <Text style={styles.managementRowText}>{t('screens.accountSwitcher.manageAccounts')}</Text>
@@ -367,7 +370,7 @@ export default function AccountSwitcherScreen() {
                 </Pressable>
 
                 {/* Default Account Row */}
-                <Pressable accessibilityRole="button" style={styles.managementRow}>
+                <Pressable accessibilityRole="button" style={[styles.managementRow, { opacity: 0.5 }]} disabled>
                   <View style={styles.managementRowLeft}>
                     <Icon name="user" size="sm" color={colors.text.secondary} />
                     <Text style={styles.managementRowText}>{t('screens.accountSwitcher.defaultAccount')}</Text>
@@ -381,6 +384,7 @@ export default function AccountSwitcherScreen() {
                 </Pressable>
 
                 {/* Auto-switch Toggle */}
+                {/* TODO: Persist to settings API */}
                 <View style={styles.toggleRow}>
                   <View style={styles.toggleRowLeft}>
                     <Icon name="bell" size="sm" color={colors.text.secondary} />

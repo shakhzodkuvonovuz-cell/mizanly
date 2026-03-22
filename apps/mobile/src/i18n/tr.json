@@ -237,6 +237,7 @@
     "backupCodes": "Yedek Kodlar",
     "generateBackupCodes": "Yedek Kodları Oluştur",
     "downloadBackupCodes": "Yedek Kodları İndir",
+    "backupCodesWarning": "Save these codes in a secure place. You will need them if you lose access to your authenticator app.",
     "saveBackupCodes": "Yedek Kodları Kaydet",
     "tagline": "Dengeli dijital topluluğunuz",
     "emailPlaceholder": "E-posta adresi",
@@ -2080,7 +2081,9 @@
     "testAuth": "Kimlik Doğrulamayı Test Et",
     "notAvailable": "Bu cihazda biyometrik kimlik doğrulama mevcut değil",
     "notEnrolled": "Biyometrik kayıt yok. Cihaz ayarlarında Face ID veya parmak izi ayarlayın.",
-    "unlockPrompt": "Mizanly'nin Kilidini Aç"
+    "unlockPrompt": "Mizanly'nin Kilidini Aç",
+    "testSuccess": "Authentication successful",
+    "testFailed": "Authentication failed"
   },
   "undoSend": {
     "sending": "Mesaj gönderiliyor...",

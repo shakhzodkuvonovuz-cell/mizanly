@@ -137,6 +137,15 @@ export default function ContentSettingsScreen() {
   useEffect(() => {
     if (s) {
       setSensitiveContent(s.sensitiveContentFilter ?? false);
+      // Hydrate daily reminder from server if available
+      const serverData = s as { dailyReminderEnabled?: boolean; dailyReminderMinutes?: string };
+      if (serverData.dailyReminderEnabled) {
+        const mins = serverData.dailyReminderMinutes;
+        if (mins === '30') setDailyReminder('30min');
+        else if (mins === '60') setDailyReminder('1h');
+        else if (mins === '120') setDailyReminder('2h');
+        else setDailyReminder('off');
+      }
     }
   }, [s]);
 
@@ -156,6 +165,7 @@ export default function ContentSettingsScreen() {
   };
 
   const handleUpdateDailyReminder = async (option: DailyReminderOption) => {
+    const prev = dailyReminder;
     setDailyReminder(option);
     const timeMap: Record<DailyReminderOption, string | undefined> = {
       'off': undefined,
@@ -166,7 +176,8 @@ export default function ContentSettingsScreen() {
     try {
       await usersApi.updateDailyReminder(option !== 'off', timeMap[option]);
     } catch {
-      // Silently fail — setting is persisted locally regardless
+      Alert.alert(t('common.error'), t('contentSettings.saveError', 'Failed to save setting'));
+      setDailyReminder(prev);
     }
   };
 
@@ -310,13 +321,15 @@ export default function ContentSettingsScreen() {
                 icon="eye"
               />
               <View style={styles.divider} />
-              <Row
-                label={t('settings.hideRepostedContent')}
-                hint={t('settings.hints.hideRepostedContent')}
-                value={hideRepostedContent}
-                onToggle={setHideRepostedContent}
-                icon="repeat"
-              />
+              {/* Not yet persisted — requires backend support */}
+              <View style={{ opacity: 0.5 }}>
+                <Row
+                  label={`${t('settings.hideRepostedContent')} (${t('common.comingSoon', 'Coming soon')})`}
+                  hint={t('settings.hints.hideRepostedContent')}
+                  value={hideRepostedContent}
+                  icon="repeat"
+                />
+              </View>
             </LinearGradient>
           </Animated.View>
 

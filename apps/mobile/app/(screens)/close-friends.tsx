@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { colors, spacing, fontSize, fonts, radius } from '@/theme';
-import { followsApi, circlesApi } from '@/services/api';
+import { followsApi, circlesApi, usersApi } from '@/services/api';
 import type { User, PaginatedResponse, Circle, CircleMember } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -91,8 +91,11 @@ export default function CloseFriendsScreen() {
   const tc = useThemeColors();
   const queryClient = useQueryClient();
   const { user: clerkUser } = useUser();
-  const currentUserId = clerkUser?.id;
   const { t } = useTranslation();
+
+  // Use backend user ID for comparisons instead of Clerk ID
+  const { data: meData } = useQuery({ queryKey: ['user', 'me'], queryFn: () => usersApi.getMe() });
+  const currentUserId = meData?.id ?? clerkUser?.id;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -335,7 +338,7 @@ export default function CloseFriendsScreen() {
           renderItem={({ item, index }) => (
             <UserRow
               user={item}
-              isMe={clerkUser?.id === item.id}
+              isMe={currentUserId === item.id}
               isCloseFriend={memberIds.includes(item.id)}
               onToggle={toggleCloseFriend}
               onPress={() => router.push(`/(screens)/profile/${item.username}`)}

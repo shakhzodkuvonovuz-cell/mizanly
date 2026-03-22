@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   ScrollView,
-  Dimensions,
+  Share,
   TextInput,
   Alert,
   Image,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, SlideInDown } from 'react-native-reanimated';
@@ -20,12 +21,9 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, animation, fonts } from '@/theme';
 import { twoFactorApi } from '@/services/twoFactorApi';
-import { useUser } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/types/twoFactor';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 // Mock authenticator apps
 const AUTHENTICATOR_APPS: { name: string; icon: IconName }[] = [
@@ -45,7 +43,6 @@ export default function TwoFactorSetupScreen() {
   const [showAppPicker, setShowAppPicker] = useState(false);
   const [copiedCodes, setCopiedCodes] = useState<string[]>([]);
   const [isEnabling, setIsEnabling] = useState(false);
-  const user = useUser();
   const [secret, setSecret] = useState<string>('');
   const [qrDataUri, setQrDataUri] = useState<string>('');
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
@@ -54,8 +51,9 @@ export default function TwoFactorSetupScreen() {
   const [setupResponse, setSetupResponse] = useState<TwoFactorSetupResponse | null>(null);
   const { t } = useTranslation();
 
-  // Refs for OTP inputs (simplified array)
-  const inputRefs = Array(6).fill(null);
+  // Refs for OTP inputs
+  const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
+  const submittingRef = useRef(false);
 
   const handleCodeChange = (text: string, index: number) => {
     if (!/^\d?$/.test(text)) return;
@@ -66,12 +64,15 @@ export default function TwoFactorSetupScreen() {
 
     // Auto-focus next input
     if (text && index < 5) {
-      inputRefs[index + 1]?.focus();
+      inputRefs.current[index + 1]?.focus();
     }
 
     // Auto-submit when all digits entered
     if (newCode.every(digit => digit !== '') && index === 5) {
-      handleEnable2FA();
+      if (!submittingRef.current) {
+        submittingRef.current = true;
+        handleEnable2FA();
+      }
     }
   };
 
@@ -90,7 +91,7 @@ export default function TwoFactorSetupScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (activeStep === 'qr' && !setupResponse) {
@@ -116,18 +117,19 @@ export default function TwoFactorSetupScreen() {
       // Optionally shake animation
     } finally {
       setIsEnabling(false);
+      submittingRef.current = false;
     }
   };
 
-  const copyBackupCode = (code: string) => {
-    // In real app: Clipboard.setString(code);
+  const copyBackupCode = async (code: string) => {
+    await Clipboard.setStringAsync(code);
     setCopiedCodes(prev => [...prev, code]);
     Alert.alert(t('common.copied'), t('auth.backupCodeCopied', { code }));
   };
 
-  const copyAllBackupCodes = () => {
+  const copyAllBackupCodes = async () => {
     const allCodes = backupCodes.join('\n');
-    // Clipboard.setString(allCodes);
+    await Clipboard.setStringAsync(allCodes);
     Alert.alert(t('common.copied'), t('auth.allBackupCodesCopied'));
   };
 
@@ -137,7 +139,11 @@ export default function TwoFactorSetupScreen() {
       t('auth.downloadBackupCodesMessage'),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.download'), onPress: () => {} },
+        { text: t('common.download'), onPress: async () => {
+          try {
+            await Share.share({ message: backupCodes.join('\n'), title: '2FA Backup Codes' });
+          } catch {}
+        } },
       ]
     );
   };
@@ -308,7 +314,7 @@ export default function TwoFactorSetupScreen() {
                 {/* Manual Secret */}
                 <View style={styles.secretContainer}>
                   <Text style={styles.secretLabel}>{t('auth.enterSecretManually')}</Text>
-                  <Pressable onPress={() => {}}>
+                  <Pressable onPress={async () => { await Clipboard.setStringAsync(secret); Alert.alert(t('common.copied')); }}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                       style={styles.secretBox}
@@ -365,7 +371,7 @@ export default function TwoFactorSetupScreen() {
                         style={styles.otpDigitBox}
                       >
                         <TextInput
-                          ref={el => inputRefs[idx] = el}
+                          ref={el => inputRefs.current[idx] = el}
                           style={styles.otpDigit}
                           value={digit}
                           onChangeText={text => handleCodeChange(text, idx)}
@@ -424,6 +430,7 @@ export default function TwoFactorSetupScreen() {
                 </Text>
 
                 {/* Backup Codes Grid */}
+                <Text style={styles.backupWarning}>{t('auth.backupCodesWarning')}</Text>
                 <View style={styles.backupGrid}>
                   {backupCodes.map((code, idx) => (
                     <Pressable
@@ -763,6 +770,12 @@ const styles = StyleSheet.create({
   },
 
   // Backup Codes
+  backupWarning: {
+    color: colors.warning,
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
   backupGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

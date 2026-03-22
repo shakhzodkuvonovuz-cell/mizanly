@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
   RefreshControl, TextInput, Alert,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -53,7 +52,6 @@ export default function LinkChildAccountScreen() {
     onSuccess: () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['parental-children'] });
-      queryClient.invalidateQueries({ queryKey: ['parental-has-controls'] });
       router.back();
     },
     onError: (err: Error) => {

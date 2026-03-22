@@ -8,6 +8,8 @@ import {
   Pressable,
   TextInput,
   Dimensions,
+  Alert,
+  Linking,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -174,7 +176,7 @@ export default function AppealModerationScreen() {
               </View>
             </View>
 
-            <Pressable style={styles.guidelinesLink}>
+            <Pressable style={styles.guidelinesLink} onPress={() => Linking.openURL('https://mizanly.com/guidelines')}>
               <Icon name="link" size="xs" color={colors.emerald} />
               <Text style={styles.guidelinesText}>{t('appealModeration.guidelinesText')}</Text>
             </Pressable>
@@ -275,7 +277,20 @@ export default function AppealModerationScreen() {
             <Text style={styles.evidenceLabel}>{t('appealModeration.evidenceLabel')}</Text>
 
             <View style={styles.evidenceButtons}>
-              <Pressable style={styles.evidenceButton}>
+              <Pressable
+                style={styles.evidenceButton}
+                onPress={async () => {
+                  try {
+                    const ImagePicker = await import('expo-image-picker');
+                    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] });
+                    if (!result.canceled) {
+                      // TODO: Store result.assets and display selected images
+                    }
+                  } catch {
+                    // Image picker not available
+                  }
+                }}
+              >
                 <View style={styles.evidenceButtonInner}>
                   <Icon name="image" size="md" color={colors.emerald} />
                   <Icon name="plus" size="xs" color={colors.gold} style={styles.evidencePlus} />
@@ -283,7 +298,15 @@ export default function AppealModerationScreen() {
                 </View>
               </Pressable>
 
-              <Pressable style={styles.evidenceButton}>
+              <Pressable
+                style={styles.evidenceButton}
+                onPress={() => {
+                  Alert.alert(
+                    t('appealModeration.evidenceTitle'),
+                    t('appealModeration.documentUploadComingSoon', 'Document upload coming soon'),
+                  );
+                }}
+              >
                 <View style={styles.evidenceButtonInner}>
                   <Icon name="paperclip" size="md" color={colors.emerald} />
                   <Icon name="plus" size="xs" color={colors.gold} style={styles.evidencePlus} />

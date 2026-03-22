@@ -5,14 +5,12 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  Dimensions,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   FadeInUp,
   SlideInDown,
-  withSpring,
   useSharedValue,
   useAnimatedStyle,
   withSequence,
@@ -23,16 +21,11 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize, animation, fonts } from '@/theme';
 import { twoFactorApi } from '@/services/twoFactorApi';
-import { useUser } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
-import type { ValidateTwoFactorDto, BackupCodeDto } from '@/types/twoFactor';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 export default function TwoFactorVerifyScreen() {
   const router = useRouter();
-  const user = useUser();
   const { t } = useTranslation();
   const [mode, setMode] = useState<'code' | 'backup'>('code');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
@@ -41,9 +34,10 @@ export default function TwoFactorVerifyScreen() {
   const [error, setError] = useState(false);
 
   const shakeAnimation = useSharedValue(0);
+  const submittingRef = useRef(false);
 
   // Refs for OTP inputs
-  const inputRefs = Array(6).fill(null);
+  const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
   const backupInputRef = useRef<TextInput>(null);
 
   const handleCodeChange = (text: string, index: number) => {
@@ -56,7 +50,7 @@ export default function TwoFactorVerifyScreen() {
 
     // Auto-focus next input
     if (text && index < 5) {
-      inputRefs[index + 1]?.focus();
+      inputRefs.current[index + 1]?.focus();
     }
 
     // Auto-submit when all digits entered
@@ -81,19 +75,16 @@ export default function TwoFactorVerifyScreen() {
   };
 
   const handleVerify = useCallback(async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setLoading(true);
     setError(false);
-    if (!user?.id) {
-      Alert.alert(t('screens.2faVerify.errorTitle'), t('screens.2faVerify.userNotFound'));
-      setLoading(false);
-      return;
-    }
     try {
       if (mode === 'code') {
         const code = verificationCode.join('');
-        await twoFactorApi.validate({ userId: user.id, code });
+        await twoFactorApi.validate({ code });
       } else {
-        await twoFactorApi.backup({ userId: user.id, backupCode });
+        await twoFactorApi.backup({ backupCode });
       }
       Alert.alert(
         t('screens.2faVerify.verificationSuccessTitle'),
@@ -106,8 +97,9 @@ export default function TwoFactorVerifyScreen() {
       Alert.alert(t('screens.2faVerify.verificationFailedTitle'), t('screens.2faVerify.invalidCodeMessage'));
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
-  }, [mode, verificationCode, backupCode, user, router]);
+  }, [mode, verificationCode, backupCode, router]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeAnimation.value }],
@@ -133,7 +125,7 @@ export default function TwoFactorVerifyScreen() {
               style={styles.otpDigitBox}
             >
               <TextInput
-                ref={el => inputRefs[idx] = el}
+                ref={el => inputRefs.current[idx] = el}
                 style={[styles.otpDigit, error && styles.otpDigitError]}
                 value={digit}
                 onChangeText={text => handleCodeChange(text, idx)}

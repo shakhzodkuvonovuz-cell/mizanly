@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
@@ -90,6 +91,18 @@ function ChatExportContent() {
       icon: 'bar-chart-2',
     },
   ];
+
+  if (!conversationId) {
+    return (
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
+        <GlassHeader
+          title={t('chatExport.title', 'Export Chat')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back', 'Go back') }}
+        />
+        <EmptyState icon="flag" title={t('common.error')} subtitle={t('chatExport.errorTitle', 'Error')} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: tc.bg }]}>
