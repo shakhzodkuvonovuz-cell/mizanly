@@ -180,7 +180,13 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - Caption generation — placeholder; needs AI image analysis service (Claude Vision or similar) to auto-generate alt text
 - Image resize doesn't upload — media processor resizes locally but needs R2 credentials to upload the resized variants
 
-**Audit status: 0 OPEN, 7 NOTED (external deps only), 178 FIXED. 4,276 tests, 0 failures. 830 commits.**
+**PRE-APP STORE BLOCKERS (must complete before submission):**
+- **WebRTC 1:1 calls:** `react-native-webrtc` installed but not wired. Need ~500-800 lines: `RTCPeerConnection` + `getUserMedia()` + ICE candidate exchange via existing Socket.io signaling (`call_initiate`/`call_answer`/`call_signal` already implemented on backend). TURN credentials set (Metered.ca, 500MB free/month). Estimated 2-3 days. Group calls (SFU) can be post-launch.
+- **App icon + splash screen:** Currently 69-byte placeholder PNGs. Need proper 1024x1024 icon + splash assets.
+- **google-services.json:** Firebase Android push notifications config file missing.
+- **Apple Developer Program:** $99/yr enrollment required for App Store submission.
+
+**Audit status: 0 OPEN, 7 NOTED (external deps only), 178 FIXED. 4,483 tests, 0 failures. 940+ commits.**
 
 ### Backend + Performance Hardening (Batches 68, A1-C)
 - ~~TODO stubs~~ — ✅ Fixed
