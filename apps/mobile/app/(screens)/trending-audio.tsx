@@ -64,7 +64,7 @@ export default function TrendingAudioScreen() {
         }
       });
     } catch (err) {
-      console.warn('Audio playback failed:', err);
+      if (__DEV__) console.warn('Audio playback failed:', err);
       setPlayingId(null);
     }
   }, [playingId]);

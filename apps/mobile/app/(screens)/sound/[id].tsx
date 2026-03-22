@@ -84,7 +84,7 @@ export default function SoundScreen() {
         }
       });
     } catch (err) {
-      console.warn('Audio playback failed:', err);
+      if (__DEV__) console.warn('Audio playback failed:', err);
       setIsPlayingPreview(false);
     }
   }, [track?.audioUrl]);

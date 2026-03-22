@@ -1085,7 +1085,7 @@ const styles = StyleSheet.create({
   audioDisc: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: radius.full,
     borderWidth: 2,
     borderColor: '#fff',
     overflow: 'hidden',
@@ -1100,14 +1100,14 @@ const styles = StyleSheet.create({
   audioDiscInner: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.full,
     justifyContent: 'center',
     alignItems: 'center',
   },
   audioDiscImage: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.full,
   },
   trendingBadge: {
     position: 'absolute',

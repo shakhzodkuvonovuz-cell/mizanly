@@ -236,7 +236,7 @@ export default function AudioLibraryScreen() {
         }
       });
     } catch (err) {
-      console.warn('Audio playback failed:', err);
+      if (__DEV__) console.warn('Audio playback failed:', err);
       setIsPlaying(false);
       setCurrentTrackId(null);
     }
