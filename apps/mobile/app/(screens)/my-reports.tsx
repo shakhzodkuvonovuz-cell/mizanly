@@ -101,7 +101,7 @@ export default function MyReportsScreen() {
           </View>
           <Text style={[styles.target, { color: tc.text.secondary }]} numberOfLines={1}>{getTargetText(item)}</Text>
           <Text style={[styles.date, { color: tc.text.tertiary }]}>
-            {format(new Date(item.createdAt), 'PPP', { locale: getDateFnsLocale() })} • {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
+            {format(new Date(item.createdAt), 'PPP', { locale: getDateFnsLocale() })} â€¢ {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </LinearGradient>
       </Animated.View>

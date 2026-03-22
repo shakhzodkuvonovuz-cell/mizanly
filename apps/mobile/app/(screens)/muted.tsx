@@ -124,7 +124,7 @@ export default function MutedScreen() {
                     <View style={styles.info}>
                       <Text style={[styles.name, { color: tc.text.primary }]}>{u.displayName}</Text>
                       <View style={styles.mutedBadge}>
-                        <Icon name="volume-x" size={10} color={colors.text.tertiary} />
+                        <Icon name="volume-x" size={10} color={tc.text.tertiary} />
                         <Text style={[styles.username, { color: tc.text.secondary }]}>@{u.username}</Text>
                       </View>
                     </View>

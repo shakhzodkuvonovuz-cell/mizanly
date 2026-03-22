@@ -50,6 +50,7 @@ function Row({
   icon?: IconName;
 }) {
   const tc = useThemeColors();
+  const tc = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
@@ -317,7 +318,7 @@ export default function ContentSettingsScreen() {
                 icon="eye"
               />
               <View style={styles.divider} />
-              {/* Not yet persisted — requires backend support */}
+              {/* Not yet persisted â€” requires backend support */}
               <View style={{ opacity: 0.5 }}>
                 <Row
                   label={`${t('settings.hideRepostedContent')} (${t('common.comingSoon', 'Coming soon')})`}
