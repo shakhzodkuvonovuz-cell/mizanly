@@ -52,5 +52,19 @@ describe('PrivacyController', () => {
       expect(service.deleteAllUserData).toHaveBeenCalledWith(userId);
       expect(result).toEqual({ deleted: true });
     });
+
+    it('should propagate service errors on deleteAll', async () => {
+      service.deleteAllUserData.mockRejectedValue(new Error('Deletion failed'));
+
+      await expect(controller.deleteAll(userId)).rejects.toThrow('Deletion failed');
+    });
+  });
+
+  describe('exportData — error cases', () => {
+    it('should propagate service errors on export', async () => {
+      service.exportUserData.mockRejectedValue(new Error('Export failed'));
+
+      await expect(controller.exportData(userId)).rejects.toThrow('Export failed');
+    });
   });
 });

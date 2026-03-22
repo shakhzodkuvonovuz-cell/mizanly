@@ -64,5 +64,30 @@ describe('MutesController', () => {
       expect(service.getMutedList).toHaveBeenCalledWith(userId, 'cursor-1');
       expect(result.data).toHaveLength(1);
     });
+
+    it('should return empty list when no mutes', async () => {
+      service.getMutedList.mockResolvedValue({ data: [], meta: { hasMore: false, cursor: null } } as any);
+
+      const result = await controller.getMutedList(userId, undefined);
+
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('mute — error cases', () => {
+    it('should propagate BadRequestException when muting self', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+      service.mute.mockRejectedValue(new BadRequestException('Cannot mute yourself'));
+
+      await expect(controller.mute(userId, userId)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate NotFoundException when target not found', async () => {
+      const { NotFoundException } = require('@nestjs/common');
+      service.mute.mockRejectedValue(new NotFoundException('User not found'));
+
+      await expect(controller.mute(userId, 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
   });
 });

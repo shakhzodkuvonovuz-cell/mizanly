@@ -57,11 +57,50 @@ describe('RestrictsController', () => {
 
   describe('getRestrictedList', () => {
     it('should call restrictsService.getRestrictedList with userId and cursor', async () => {
-      service.getRestrictedList.mockResolvedValue({ data: [] } as any);
+      service.getRestrictedList.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
 
-      await controller.getRestrictedList(userId, 'cursor-1');
+      const result = await controller.getRestrictedList(userId, 'cursor-1');
 
       expect(service.getRestrictedList).toHaveBeenCalledWith(userId, 'cursor-1');
+      expect(result.data).toEqual([]);
+    });
+
+    it('should return paginated data with hasMore', async () => {
+      service.getRestrictedList.mockResolvedValue({
+        data: [{ id: 'user-456', username: 'restricted1' }],
+        meta: { hasMore: true, cursor: 'user-456' },
+      } as any);
+
+      const result = await controller.getRestrictedList(userId, undefined);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(true);
+    });
+  });
+
+  describe('restrict — error cases', () => {
+    it('should propagate BadRequestException when restricting self', async () => {
+      const { BadRequestException } = require('@nestjs/common');
+      service.restrict.mockRejectedValue(new BadRequestException('Cannot restrict yourself'));
+
+      await expect(controller.restrict(userId, userId)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate NotFoundException when target not found', async () => {
+      const { NotFoundException } = require('@nestjs/common');
+      service.restrict.mockRejectedValue(new NotFoundException('User not found'));
+
+      await expect(controller.restrict(userId, 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unrestrict — idempotent', () => {
+    it('should succeed even if not currently restricted', async () => {
+      service.unrestrict.mockResolvedValue({ message: 'User unrestricted' } as any);
+
+      const result = await controller.unrestrict(userId, 'user-456');
+
+      expect(result).toEqual({ message: 'User unrestricted' });
     });
   });
 });
