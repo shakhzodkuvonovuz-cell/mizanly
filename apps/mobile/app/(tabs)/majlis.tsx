@@ -239,7 +239,7 @@ export default function MajlisScreen() {
       return (
         <View style={styles.endOfFeed}>
           <Icon name="check-circle" size="sm" color={colors.emerald} />
-          <Text style={styles.endOfFeedText}>{t('majlis.caughtUp')}</Text>
+          <Text style={[styles.endOfFeedText, { color: tc.text.secondary }]}>{t('majlis.caughtUp')}</Text>
         </View>
       );
     }
@@ -279,7 +279,7 @@ export default function MajlisScreen() {
             accessibilityLabel={t('tabs.audioRooms')}
             accessibilityRole="button"
           >
-            <Icon name="mic" size="sm" color={colors.text.primary} />
+            <Icon name="mic" size="sm" color={tc.text.primary} />
           </Pressable>
           <Pressable
             hitSlop={8}
@@ -287,7 +287,7 @@ export default function MajlisScreen() {
             accessibilityLabel={t('screens.majlis-lists.title')}
             accessibilityRole="button"
           >
-            <Icon name="layers" size="sm" color={colors.text.primary} />
+            <Icon name="layers" size="sm" color={tc.text.primary} />
           </Pressable>
           <Pressable
             hitSlop={8}
@@ -296,7 +296,7 @@ export default function MajlisScreen() {
             accessibilityRole="button"
             accessibilityHint={t('accessibility.searchHint')}
           >
-            <Icon name="search" size="sm" color={colors.text.primary} />
+            <Icon name="search" size="sm" color={tc.text.primary} />
           </Pressable>
         </View>
       </Animated.View>
@@ -312,7 +312,7 @@ export default function MajlisScreen() {
       {trendingHashtagsQuery.isLoading || (trendingHashtagsQuery.data && trendingHashtagsQuery.data.length > 0) ? (
         <View style={[styles.trendingHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="trending-up" size="sm" color={colors.gold} />
-          <Text style={styles.trendingHeaderText}>{t('tabs.trending')}</Text>
+          <Text style={[styles.trendingHeaderText, { color: tc.text.primary }]}>{t('tabs.trending')}</Text>
         </View>
       ) : null}
       {trendingHashtagsQuery.isLoading ? (

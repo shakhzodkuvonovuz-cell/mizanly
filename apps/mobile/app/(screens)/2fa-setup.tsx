@@ -20,6 +20,7 @@ import type { IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, animation, fonts } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/types/twoFactor';
@@ -50,6 +51,7 @@ export default function TwoFactorSetupScreen() {
   const [error, setError] = useState<string | null>(null);
   const [setupResponse, setSetupResponse] = useState<TwoFactorSetupResponse | null>(null);
   const { t } = useTranslation();
+  const tc = useThemeColors();
 
   // Refs for OTP inputs
   const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
@@ -182,7 +184,7 @@ export default function TwoFactorSetupScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('auth.twoFactorAuthentication')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -223,7 +225,7 @@ export default function TwoFactorSetupScreen() {
                   colors={activeStep === 'info' ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
                   style={styles.stepIconBg}
                 >
-                  <Icon name="chevron-down" size="sm" color={activeStep === 'info' ? '#fff' : colors.text.tertiary} />
+                  <Icon name="chevron-down" size="sm" color={activeStep === 'info' ? '#fff' : tc.text.tertiary} />
                 </LinearGradient>
                 <Text style={[styles.stepTitle, activeStep === 'info' && styles.stepTitleActive]}>
                   {t('auth.step1InstallAuthenticatorApp')}
@@ -248,7 +250,7 @@ export default function TwoFactorSetupScreen() {
                       {selectedApp || t('auth.selectAuthenticatorApp')}
                     </Text>
                   </View>
-                  <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
+                  <Icon name="chevron-down" size="sm" color={tc.text.tertiary} />
                 </LinearGradient>
               </Pressable>
 
@@ -262,7 +264,7 @@ export default function TwoFactorSetupScreen() {
                   style={styles.nextButtonGradient}
                 >
                   <Text style={styles.nextButtonText}>{t('common.continue')}</Text>
-                  <Icon name="chevron-right" size="sm" color={colors.text.primary} />
+                  <Icon name="chevron-right" size="sm" color={tc.text.primary} />
                 </LinearGradient>
               </Pressable>
             </Animated.View>
@@ -297,7 +299,7 @@ export default function TwoFactorSetupScreen() {
                       <View style={styles.qrMock}>
                         {loading ? (
                           <>
-                            <Icon name="loader" size="lg" color={colors.text.tertiary} />
+                            <Icon name="loader" size="lg" color={tc.text.tertiary} />
                             <Text style={styles.qrMockSubtext}>{t('auth.generatingQRCode')}</Text>
                           </>
                         ) : (
@@ -469,7 +471,7 @@ export default function TwoFactorSetupScreen() {
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.backupActionGradient}
                     >
-                      <Icon name="layers" size="sm" color={colors.text.primary} />
+                      <Icon name="layers" size="sm" color={tc.text.primary} />
                       <Text style={styles.backupActionText}>{t('common.copyAll')}</Text>
                     </LinearGradient>
                   </Pressable>
@@ -483,7 +485,7 @@ export default function TwoFactorSetupScreen() {
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.backupActionGradient}
                     >
-                      <Icon name="chevron-down" size="sm" color={colors.text.primary} />
+                      <Icon name="chevron-down" size="sm" color={tc.text.primary} />
                       <Text style={styles.backupActionText}>{t('common.download')}</Text>
                     </LinearGradient>
                   </Pressable>
@@ -513,7 +515,7 @@ export default function TwoFactorSetupScreen() {
             <BottomSheetItem
               key={app.name}
               label={app.name}
-              icon={<Icon name={app.icon as IconName} size="sm" color={colors.text.primary} />}
+              icon={<Icon name={app.icon as IconName} size="sm" color={tc.text.primary} />}
               onPress={() => {
                 setSelectedApp(app.name);
                 setShowAppPicker(false);
@@ -530,7 +532,7 @@ export default function TwoFactorSetupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: colors.dark.bg, // overridden inline
   },
   scrollView: {
     flex: 1,

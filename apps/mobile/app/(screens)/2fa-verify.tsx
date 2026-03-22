@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize, animation, fonts } from '@/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -27,6 +28,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 export default function TwoFactorVerifyScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [mode, setMode] = useState<'code' | 'backup'>('code');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [backupCode, setBackupCode] = useState('');
@@ -161,7 +163,7 @@ export default function TwoFactorVerifyScreen() {
             value={backupCode}
             onChangeText={handleBackupCodeChange}
             placeholder={t('screens.2faVerify.backupPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             autoCapitalize="characters"
             autoCorrect={false}
             autoFocus
@@ -169,7 +171,7 @@ export default function TwoFactorVerifyScreen() {
             editable={!loading}
           />
           <Pressable onPress={() => setBackupCode('')}>
-            <Icon name="x" size="sm" color={colors.text.tertiary} />
+            <Icon name="x" size="sm" color={tc.text.tertiary} />
           </Pressable>
         </LinearGradient>
       </Animated.View>
@@ -181,7 +183,7 @@ export default function TwoFactorVerifyScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader
           title={t('screens.2faVerify.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
@@ -268,7 +270,7 @@ export default function TwoFactorVerifyScreen() {
                 )
               }
             >
-              <Icon name="circle" size="xs" color={colors.text.tertiary} />
+              <Icon name="circle" size="xs" color={tc.text.tertiary} />
               <Text style={styles.lostAccessText}>{t('screens.2faVerify.lostAccessLinkText')}</Text>
             </Pressable>
           </Animated.View>
@@ -298,7 +300,7 @@ export default function TwoFactorVerifyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.bg,
+    backgroundColor: colors.dark.bg, // overridden inline
   },
   content: {
     flex: 1,

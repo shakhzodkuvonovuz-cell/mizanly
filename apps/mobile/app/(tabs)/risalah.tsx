@@ -154,10 +154,10 @@ const ConversationRow = memo(function ConversationRow({
             <Icon name="check-check" size={12} color={colors.emerald} />
           )}
           {!item.isGroup && !isTyping && !lastMessageRead && item.lastMessageAt && (
-            <Icon name="check" size={12} color={colors.text.tertiary} />
+            <Icon name="check" size={12} color={tc.text.tertiary} />
           )}
           {item.isMuted && (
-            <Icon name="volume-x" size={14} color={colors.text.tertiary} />
+            <Icon name="volume-x" size={14} color={tc.text.tertiary} />
           )}
         </View>
       </View>
@@ -354,11 +354,11 @@ export default function RisalahScreen() {
         accessibilityLabel={t('accessibility.archivedConversations')}
         accessibilityRole="button"
       >
-        <Icon name="layers" size="sm" color={colors.text.secondary} />
-        <Text style={styles.archivedText}>{t('risalah.archived')}</Text>
-        <Badge count={archivedCount} color={colors.text.tertiary} size="sm" />
+        <Icon name="layers" size="sm" color={tc.text.secondary} />
+        <Text style={[styles.archivedText, { color: tc.text.secondary }]}>{t('risalah.archived')}</Text>
+        <Badge count={archivedCount} color={tc.text.tertiary} size="sm" />
         <View style={{ flex: 1 }} />
-        <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={colors.text.tertiary} />
+        <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={tc.text.tertiary} />
       </Pressable>
     );
   }, [archivedCount, router, isRTL, t, tc.border]);
@@ -375,7 +375,7 @@ export default function RisalahScreen() {
         accessibilityLabel={t('accessibility.archiveConversation')}
         accessibilityRole="button"
       >
-        <Icon name="archive" size="sm" color={colors.text.primary} />
+        <Icon name="archive" size="sm" color={tc.text.primary} />
       </Pressable>
     );
 
@@ -414,7 +414,7 @@ export default function RisalahScreen() {
             accessibilityRole="button"
             accessibilityHint={t('accessibility.searchHint')}
           >
-            <Icon name="search" size="sm" color={colors.text.primary} />
+            <Icon name="search" size="sm" color={tc.text.primary} />
           </Pressable>
           <Pressable
             hitSlop={8}
@@ -422,7 +422,7 @@ export default function RisalahScreen() {
             accessibilityLabel={t('risalah.savedMessages')}
             accessibilityRole="button"
           >
-            <Icon name="bookmark" size="sm" color={colors.text.primary} />
+            <Icon name="bookmark" size="sm" color={tc.text.primary} />
           </Pressable>
           <Pressable
             hitSlop={8}
@@ -430,7 +430,7 @@ export default function RisalahScreen() {
             accessibilityLabel={t('risalah.call')}
             accessibilityRole="button"
           >
-            <Icon name="phone" size="sm" color={colors.text.primary} />
+            <Icon name="phone" size="sm" color={tc.text.primary} />
           </Pressable>
           <Pressable
             hitSlop={8}
@@ -439,7 +439,7 @@ export default function RisalahScreen() {
             accessibilityRole="button"
             accessibilityHint={t('accessibility.newConversationHint')}
           >
-            <Icon name="pencil" size="sm" color={colors.text.primary} />
+            <Icon name="pencil" size="sm" color={tc.text.primary} />
           </Pressable>
         </View>
       </View>
@@ -447,7 +447,7 @@ export default function RisalahScreen() {
       <BottomSheet visible={openNewConvoSheet} onClose={() => setOpenNewConvoSheet(false)}>
         <BottomSheetItem
           label={t('risalah.newMessage')}
-          icon={<Icon name="mail" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="mail" size="sm" color={tc.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
             router.push('/(screens)/new-conversation');
@@ -455,7 +455,7 @@ export default function RisalahScreen() {
         />
         <BottomSheetItem
           label={t('risalah.newGroup')}
-          icon={<Icon name="users" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="users" size="sm" color={tc.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
             router.push('/(screens)/create-group');
@@ -463,7 +463,7 @@ export default function RisalahScreen() {
         />
         <BottomSheetItem
           label={t('risalah.chatFolders')}
-          icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="layers" size="sm" color={tc.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
             navigate('/(screens)/chat-folders');
@@ -471,7 +471,7 @@ export default function RisalahScreen() {
         />
         <BottomSheetItem
           label={t('dmNotes.title')}
-          icon={<Icon name="edit" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="edit" size="sm" color={tc.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
             navigate('/(screens)/dm-note-editor');
@@ -479,7 +479,7 @@ export default function RisalahScreen() {
         />
         <BottomSheetItem
           label={t('risalah.createBroadcast')}
-          icon={<Icon name="globe" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="globe" size="sm" color={tc.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
             navigate('/(screens)/create-broadcast');
@@ -537,7 +537,7 @@ export default function RisalahScreen() {
         accessibilityLabel={t('accessibility.broadcastChannels')}
         accessibilityRole="button"
       >
-        <Icon name="hash" size="lg" color={colors.text.primary} />
+        <Icon name="hash" size="lg" color={tc.text.primary} />
       </Pressable>
     </SafeAreaView>
     </ScreenErrorBoundary>

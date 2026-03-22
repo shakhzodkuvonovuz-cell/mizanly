@@ -155,7 +155,7 @@ function SuggestedUserRow({
         accessibilityLabel={t('common.close')}
         accessibilityRole="button"
       >
-        <Icon name="x" size="xs" color={colors.text.tertiary} />
+        <Icon name="x" size="xs" color={tc.text.tertiary} />
       </Pressable>
     </Animated.View>
   );
@@ -187,7 +187,7 @@ function ExploreFirstBanner({ onDismiss }: { onDismiss: () => void }) {
           accessibilityLabel={t('common.close')}
           accessibilityRole="button"
         >
-          <Icon name="x" size="sm" color={colors.text.secondary} />
+          <Icon name="x" size="sm" color={tc.text.secondary} />
         </Pressable>
       </View>
     </Animated.View>
@@ -549,7 +549,7 @@ export default function SafScreen() {
             accessibilityRole="button"
             accessibilityHint={t('accessibility.createStoryHint')}
           >
-            <Icon name="camera" size="sm" color={colors.text.primary} />
+            <Icon name="camera" size="sm" color={tc.text.primary} />
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
@@ -561,7 +561,7 @@ export default function SafScreen() {
             accessibilityRole="button"
             accessibilityHint={t('accessibility.searchHint')}
           >
-            <Icon name="search" size="sm" color={colors.text.primary} />
+            <Icon name="search" size="sm" color={tc.text.primary} />
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
@@ -573,7 +573,7 @@ export default function SafScreen() {
             accessibilityRole="button"
           >
             <View>
-              <Icon name="send" size="sm" color={colors.text.primary} />
+              <Icon name="send" size="sm" color={tc.text.primary} />
               {unreadMessages > 0 && (
                 <Badge
                   count={unreadMessages}
@@ -599,7 +599,7 @@ export default function SafScreen() {
           >
             <Animated.View style={bellShake.animatedStyle}>
               <View>
-                <Icon name="bell" size="sm" color={colors.text.primary} />
+                <Icon name="bell" size="sm" color={tc.text.primary} />
                 {unreadNotifications > 0 && (
                   <Badge
                     count={unreadNotifications}

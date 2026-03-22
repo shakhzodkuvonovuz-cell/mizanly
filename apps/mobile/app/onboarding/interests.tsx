@@ -97,8 +97,8 @@ function InterestsScreenContent() {
       </View>
 
       <View style={styles.header}>
-        <Text style={styles.title}>{t('onboarding.interests.title')}</Text>
-        <Text style={styles.subtitle}>{t('onboarding.interests.subtitle')}</Text>
+        <Text style={[styles.title, { color: tc.text.primary }]}>{t('onboarding.interests.title')}</Text>
+        <Text style={[styles.subtitle, { color: tc.text.secondary }]}>{t('onboarding.interests.subtitle')}</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
@@ -111,16 +111,16 @@ function InterestsScreenContent() {
               style={[styles.chip, { borderColor: tc.border, backgroundColor: tc.bgElevated }, on && styles.chipOn]}
               onPress={() => toggle(item.id)}
             >
-              <Icon name={item.icon} size="sm" color={on ? colors.emerald : colors.text.secondary} />
-              <Text style={[styles.chipLabel, on && styles.chipLabelOn]}>{t(item.label)}</Text>
+              <Icon name={item.icon} size="sm" color={on ? colors.emerald : tc.text.secondary} />
+              <Text style={[styles.chipLabel, { color: tc.text.secondary }, on && styles.chipLabelOn]}>{t(item.label)}</Text>
             </Pressable>
           );
         })}
 
         {/* Madhab selector (74.8) */}
         <View style={[styles.madhabSection, { borderTopColor: tc.border }]}>
-          <Text style={styles.madhabTitle}>{t('onboarding.madhab.title')}</Text>
-          <Text style={styles.madhabSubtitle}>{t('onboarding.madhab.subtitle')}</Text>
+          <Text style={[styles.madhabTitle, { color: tc.text.primary }]}>{t('onboarding.madhab.title')}</Text>
+          <Text style={[styles.madhabSubtitle, { color: tc.text.secondary }]}>{t('onboarding.madhab.subtitle')}</Text>
           <View style={styles.madhabRow}>
             {MADHABS.map((m) => (
               <Pressable
@@ -129,7 +129,7 @@ function InterestsScreenContent() {
                 style={[styles.chip, { borderColor: tc.border, backgroundColor: tc.bgElevated }, selectedMadhab === m.id && styles.chipOn]}
                 onPress={() => { haptic.tick(); setSelectedMadhab(m.id); }}
               >
-                <Text style={[styles.chipLabel, selectedMadhab === m.id && styles.chipLabelOn]}>{t(m.label)}</Text>
+                <Text style={[styles.chipLabel, { color: tc.text.secondary }, selectedMadhab === m.id && styles.chipLabelOn]}>{t(m.label)}</Text>
               </Pressable>
             ))}
           </View>
@@ -137,7 +137,7 @@ function InterestsScreenContent() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Text style={styles.count}>
+        <Text style={[styles.count, { color: tc.text.secondary }]}>
           {t('onboarding.interests.selectedCount', { count: selected.size })} {selected.size < 3 ? t('onboarding.interests.needMore', { count: 3 - selected.size }) : ''}
         </Text>
         <GradientButton
@@ -148,7 +148,7 @@ function InterestsScreenContent() {
           fullWidth
         />
         <Pressable onPress={handleSkip} style={styles.skipBtn} accessibilityRole="button">
-          <Text style={styles.skipText}>{t('common.skipForNow')}</Text>
+          <Text style={[styles.skipText, { color: tc.text.secondary }]}>{t('common.skipForNow')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

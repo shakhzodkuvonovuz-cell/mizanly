@@ -99,19 +99,19 @@ function SignInScreenContent() {
         <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
           <KeyboardAvoidingView style={styles.inner} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <Pressable onPress={() => { setNeeds2FA(false); setTwoFACode(''); setError(''); }} style={{ alignSelf: 'flex-start', padding: spacing.sm }} accessibilityRole="button">
-              <Icon name="arrow-left" size="md" color={colors.text.secondary} />
+              <Icon name="arrow-left" size="md" color={tc.text.secondary} />
             </Pressable>
             <View style={styles.logoSection}>
               <Icon name="lock" size="xl" color={colors.emerald} />
-              <Text style={[styles.tagline, { marginTop: spacing.md }]}>{t('auth.twoFactorRequired')}</Text>
+              <Text style={[styles.tagline, { marginTop: spacing.md, color: tc.text.secondary }]}>{t('auth.twoFactorRequired')}</Text>
             </View>
             <View style={styles.form}>
               <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
-                <Icon name="lock" size="sm" color={colors.text.tertiary} />
+                <Icon name="lock" size="sm" color={tc.text.tertiary} />
                 <TextInput
-                  style={styles.inputInner}
+                  style={[styles.inputInner, { color: tc.text.primary }]}
                   placeholder={t('auth.verificationCode')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   value={twoFACode}
                   onChangeText={(v) => setTwoFACode(v.replace(/[^0-9]/g, '').slice(0, 6))}
                   keyboardType="number-pad"
@@ -149,7 +149,7 @@ function SignInScreenContent() {
         <Animated.View style={[styles.logoSection, logoAnimStyle]}>
           <Text style={styles.logo}>Mizanly</Text>
           <Text style={styles.logoArabic}>ميزانلي</Text>
-          <Text style={styles.tagline}>{t('auth.tagline')}</Text>
+          <Text style={[styles.tagline, { color: tc.text.secondary }]}>{t('auth.tagline')}</Text>
         </Animated.View>
 
         {/* Form */}
@@ -159,12 +159,12 @@ function SignInScreenContent() {
             <Icon
               name="mail"
               size="sm"
-              color={emailFocused ? colors.emerald : colors.text.tertiary}
+              color={emailFocused ? colors.emerald : tc.text.tertiary}
             />
             <TextInput
-              style={styles.inputInner}
+              style={[styles.inputInner, { color: tc.text.primary }]}
               placeholder={t('auth.emailPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -180,12 +180,12 @@ function SignInScreenContent() {
             <Icon
               name="lock"
               size="sm"
-              color={passwordFocused ? colors.emerald : colors.text.tertiary}
+              color={passwordFocused ? colors.emerald : tc.text.tertiary}
             />
             <TextInput
-              style={styles.inputInner}
+              style={[styles.inputInner, { color: tc.text.primary }]}
               placeholder={t('auth.passwordPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -202,7 +202,7 @@ function SignInScreenContent() {
               <Icon
                 name={showPassword ? 'eye-off' : 'eye'}
                 size="sm"
-                color={colors.text.tertiary}
+                color={tc.text.tertiary}
               />
             </Pressable>
           </View>
@@ -218,7 +218,7 @@ function SignInScreenContent() {
             hitSlop={8}
             accessibilityRole="link"
           >
-            <Text style={styles.forgotText}>{t('auth.forgotPassword') || 'Forgot password?'}</Text>
+            <Text style={[styles.forgotText, { color: tc.text.secondary }]}>{t('auth.forgotPassword') || 'Forgot password?'}</Text>
           </Pressable>
 
           <GradientButton
@@ -232,7 +232,7 @@ function SignInScreenContent() {
           {/* Divider */}
           <View style={styles.dividerRow}>
             <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
-            <Text style={styles.dividerText}>{t('auth.or')}</Text>
+            <Text style={[styles.dividerText, { color: tc.text.tertiary }]}>{t('auth.or')}</Text>
             <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
           </View>
 
@@ -244,8 +244,8 @@ function SignInScreenContent() {
               accessibilityLabel={t('auth.signInWith') + " Google — " + t('common.comingSoon')}
               accessibilityRole="button"
             >
-              <Text style={styles.socialText}>{t('auth.google')}</Text>
-              <Text style={styles.comingSoonText}>{t('common.comingSoon')}</Text>
+              <Text style={[styles.socialText, { color: tc.text.primary }]}>{t('auth.google')}</Text>
+              <Text style={[styles.comingSoonText, { color: tc.text.tertiary }]}>{t('common.comingSoon')}</Text>
             </Pressable>
             <Pressable
               style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]}
@@ -253,15 +253,15 @@ function SignInScreenContent() {
               accessibilityLabel={t('auth.signInWith') + " Apple — " + t('common.comingSoon')}
               accessibilityRole="button"
             >
-              <Text style={styles.socialText}>{t('auth.apple')}</Text>
-              <Text style={styles.comingSoonText}>{t('common.comingSoon')}</Text>
+              <Text style={[styles.socialText, { color: tc.text.primary }]}>{t('auth.apple')}</Text>
+              <Text style={[styles.comingSoonText, { color: tc.text.tertiary }]}>{t('common.comingSoon')}</Text>
             </Pressable>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>{t('auth.dontHaveAccount')}</Text>
+          <Text style={[styles.footerText, { color: tc.text.secondary }]}>{t('auth.dontHaveAccount')}</Text>
           <Pressable
             onPress={() => router.replace('/(auth)/sign-up')}
             hitSlop={8}

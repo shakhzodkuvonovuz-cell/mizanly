@@ -134,7 +134,7 @@ function SignUpScreenContent() {
             accessibilityRole="button"
             accessibilityLabel={t('common.goBack')}
           >
-            <Icon name="arrow-left" size="md" color={colors.text.secondary} />
+            <Icon name="arrow-left" size="md" color={tc.text.secondary} />
           </Pressable>
 
           {/* Animated envelope icon */}
@@ -142,8 +142,8 @@ function SignUpScreenContent() {
             <Icon name="mail" size="xl" color={colors.emerald} />
           </Animated.View>
 
-          <Text style={styles.title}>{t('auth.checkEmail')}</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, { color: tc.text.primary }]}>{t('auth.checkEmail')}</Text>
+          <Text style={[styles.subtitle, { color: tc.text.secondary }]}>
             {t('auth.verificationSent')}{'\n'}
             <Text style={styles.emailHighlight}>{email}</Text>
           </Text>
@@ -163,7 +163,7 @@ function SignUpScreenContent() {
                     i === code.length && styles.digitBoxActive,
                   ]}
                 >
-                  <Text style={styles.digitText}>{d}</Text>
+                  <Text style={[styles.digitText, { color: tc.text.primary }]}>{d}</Text>
                 </View>
               ))}
             </Pressable>
@@ -179,7 +179,7 @@ function SignUpScreenContent() {
 
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
-            <Text style={styles.hintText}>{t('auth.checkSpam')}</Text>
+            <Text style={[styles.hintText, { color: tc.text.tertiary }]}>{t('auth.checkSpam')}</Text>
 
             <GradientButton
               label={t('auth.verifyEmail')}
@@ -232,8 +232,8 @@ function SignUpScreenContent() {
 
           {/* Logo */}
           <Animated.View style={[styles.logoSection, logoAnimStyle]}>
-            <Text style={styles.logo}>{t('auth.joinTitle')}</Text>
-            <Text style={styles.tagline}>{t('auth.tagline')}</Text>
+            <Text style={[styles.logo, { color: tc.text.primary }]}>{t('auth.joinTitle')}</Text>
+            <Text style={[styles.tagline, { color: tc.text.secondary }]}>{t('auth.tagline')}</Text>
           </Animated.View>
 
           <View style={styles.form}>
@@ -242,12 +242,12 @@ function SignUpScreenContent() {
               <Icon
                 name="mail"
                 size="sm"
-                color={emailFocused ? colors.emerald : colors.text.tertiary}
+                color={emailFocused ? colors.emerald : tc.text.tertiary}
               />
               <TextInput
-                style={styles.inputInner}
+                style={[styles.inputInner, { color: tc.text.primary }]}
                 placeholder={t('auth.emailPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -263,12 +263,12 @@ function SignUpScreenContent() {
               <Icon
                 name="lock"
                 size="sm"
-                color={passwordFocused ? colors.emerald : colors.text.tertiary}
+                color={passwordFocused ? colors.emerald : tc.text.tertiary}
               />
               <TextInput
-                style={styles.inputInner}
+                style={[styles.inputInner, { color: tc.text.primary }]}
                 placeholder={t('auth.passwordPlaceholderMin')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -281,7 +281,7 @@ function SignUpScreenContent() {
                 hitSlop={12}
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
-                <Icon name={showPassword ? 'eye-off' : 'eye'} size="sm" color={colors.text.tertiary} />
+                <Icon name={showPassword ? 'eye-off' : 'eye'} size="sm" color={tc.text.tertiary} />
               </Pressable>
             </View>
 
@@ -319,33 +319,33 @@ function SignUpScreenContent() {
               fullWidth
             />
 
-            <Text style={styles.terms}>
+            <Text style={[styles.terms, { color: tc.text.tertiary }]}>
               {t('auth.termsAgreement')}
             </Text>
 
             {/* Divider */}
             <View style={styles.dividerRow}>
               <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
-              <Text style={styles.dividerText}>{t('auth.or')}</Text>
+              <Text style={[styles.dividerText, { color: tc.text.tertiary }]}>{t('auth.or')}</Text>
               <View style={[styles.dividerLine, { backgroundColor: tc.border }]} />
             </View>
 
             {/* Social auth — coming soon */}
             <View style={styles.socialRow}>
               <Pressable style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]} disabled>
-                <Text style={styles.socialText}>{t('auth.google')}</Text>
-                <Text style={styles.comingSoonText}>{t('common.comingSoon')}</Text>
+                <Text style={[styles.socialText, { color: tc.text.primary }]}>{t('auth.google')}</Text>
+                <Text style={[styles.comingSoonText, { color: tc.text.tertiary }]}>{t('common.comingSoon')}</Text>
               </Pressable>
               <Pressable style={[styles.socialBtn, { backgroundColor: tc.bgElevated, borderColor: tc.border, opacity: 0.5 }]} disabled>
-                <Text style={styles.socialText}>{t('auth.apple')}</Text>
-                <Text style={styles.comingSoonText}>{t('common.comingSoon')}</Text>
+                <Text style={[styles.socialText, { color: tc.text.primary }]}>{t('auth.apple')}</Text>
+                <Text style={[styles.comingSoonText, { color: tc.text.tertiary }]}>{t('common.comingSoon')}</Text>
               </Pressable>
             </View>
           </View>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')}</Text>
+            <Text style={[styles.footerText, { color: tc.text.secondary }]}>{t('auth.alreadyHaveAccount')}</Text>
             <Pressable onPress={() => router.replace('/(auth)/sign-in')} hitSlop={8} accessibilityRole="link">
               <Text style={styles.footerLink}>{t('auth.signIn')}</Text>
             </Pressable>

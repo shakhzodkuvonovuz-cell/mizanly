@@ -73,8 +73,8 @@ function SuggestedScreenContent() {
       </View>
 
       <View style={styles.header}>
-        <Text style={styles.title}>{t('onboarding.suggested.title')}</Text>
-        <Text style={styles.subtitle}>{t('onboarding.suggested.subtitle')}</Text>
+        <Text style={[styles.title, { color: tc.text.primary }]}>{t('onboarding.suggested.title')}</Text>
+        <Text style={[styles.subtitle, { color: tc.text.secondary }]}>{t('onboarding.suggested.subtitle')}</Text>
       </View>
 
       {isLoading ? (
@@ -106,16 +106,16 @@ function SuggestedScreenContent() {
               <View style={styles.row}>
                 <Avatar uri={item.avatarUrl} name={item.displayName} size="lg" />
                 <View style={styles.info}>
-                  <Text style={styles.name}>{item.displayName}</Text>
-                  <Text style={styles.handle}>@{item.username}</Text>
-                  {item.bio ? <Text style={styles.bio} numberOfLines={1}>{item.bio}</Text> : null}
+                  <Text style={[styles.name, { color: tc.text.primary }]}>{item.displayName}</Text>
+                  <Text style={[styles.handle, { color: tc.text.secondary }]}>@{item.username}</Text>
+                  {item.bio ? <Text style={[styles.bio, { color: tc.text.tertiary }]} numberOfLines={1}>{item.bio}</Text> : null}
                 </View>
                 <Pressable
                   accessibilityRole="button"
                   style={[styles.followBtn, isFollowing && [styles.followingBtn, { borderColor: tc.border }]]}
                   onPress={() => handleFollow(item.id)}
                 >
-                  <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
+                  <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText, isFollowing && { color: tc.text.secondary }]}>
                     {isFollowing ? t('onboarding.suggested.following') : t('onboarding.suggested.follow')}
                   </Text>
                 </Pressable>
@@ -135,7 +135,7 @@ function SuggestedScreenContent() {
           {finishing ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnText}>{t('onboarding.suggested.getStarted')}</Text>}
         </Pressable>
         <Pressable accessibilityRole="button" onPress={handleFinish}>
-          <Text style={styles.skip}>{t('onboarding.suggested.skipForNow')}</Text>
+          <Text style={[styles.skip, { color: tc.text.secondary }]}>{t('onboarding.suggested.skipForNow')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

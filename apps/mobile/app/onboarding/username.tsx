@@ -130,7 +130,7 @@ function UsernameScreenContent() {
   const statusText = () => {
     if (username.length < 3) return null;
     if (!USERNAME_RE.test(username)) return { text: t('onboarding.username.validation.invalidChars'), color: colors.error };
-    if (checking) return { text: t('onboarding.username.checking'), color: colors.text.secondary };
+    if (checking) return { text: t('onboarding.username.checking'), color: tc.text.secondary };
     if (available === true) return { text: `@${username} ${t('onboarding.username.available')}`, color: colors.emerald };
     if (available === false) return { text: t('onboarding.username.taken'), color: colors.error };
     return null;
@@ -146,24 +146,24 @@ function UsernameScreenContent() {
           <Animated.View style={[styles.progressFill, progressStyle]} />
         </View>
 
-        <Text style={styles.title}>{t('onboarding.username.title')}</Text>
-        <Text style={styles.subtitle}>{t('onboarding.username.subtitle')}</Text>
+        <Text style={[styles.title, { color: tc.text.primary }]}>{t('onboarding.username.title')}</Text>
+        <Text style={[styles.subtitle, { color: tc.text.secondary }]}>{t('onboarding.username.subtitle')}</Text>
 
         <View style={[styles.inputWrap, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
-          <Text style={styles.at}>@</Text>
+          <Text style={[styles.at, { color: tc.text.secondary }]}>@</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: tc.text.primary }]}
             value={username}
             onChangeText={(v) => setUsername(v.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
             placeholder={t('onboarding.username.placeholder')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             autoCapitalize="none"
             autoCorrect={false}
             maxLength={30}
           />
           {checking && (
             <Animated.View style={spinStyle}>
-              <Icon name="loader" size="sm" color={colors.text.secondary} />
+              <Icon name="loader" size="sm" color={tc.text.secondary} />
             </Animated.View>
           )}
           {!checking && available === true && (
@@ -184,7 +184,7 @@ function UsernameScreenContent() {
 
         {/* Username preview card */}
         <Animated.View style={[styles.previewCard, { backgroundColor: tc.bgCard, borderColor: tc.border }, previewFadeStyle]}>
-          <Text style={styles.previewText}>{t('onboarding.username.preview', { username })}</Text>
+          <Text style={[styles.previewText, { color: tc.text.secondary }]}>{t('onboarding.username.preview', { username })}</Text>
         </Animated.View>
 
         <View style={styles.btnWrap}>

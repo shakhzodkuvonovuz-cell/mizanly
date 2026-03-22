@@ -102,8 +102,8 @@ function OnboardingProfileScreenContent() {
         <Animated.View style={[styles.progressFill, progressStyle]} />
       </View>
 
-      <Text style={styles.title}>{t('onboarding.profile.title')}</Text>
-      <Text style={styles.subtitle}>{t('onboarding.profile.subtitle')}</Text>
+      <Text style={[styles.title, { color: tc.text.primary }]}>{t('onboarding.profile.title')}</Text>
+      <Text style={[styles.subtitle, { color: tc.text.secondary }]}>{t('onboarding.profile.subtitle')}</Text>
 
       {/* Avatar (read-only from Clerk, changeable later in settings) */}
       {user?.imageUrl ? (
@@ -116,29 +116,29 @@ function OnboardingProfileScreenContent() {
       ) : (
         <Animated.View style={[styles.avatarPlaceholderWrap, pulseStyle]}>
           <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: tc.bgElevated }]}>
-            <Icon name="user" size="lg" color={colors.text.tertiary} />
+            <Icon name="user" size="lg" color={tc.text.tertiary} />
           </View>
         </Animated.View>
       )}
-      <Text style={styles.avatarHint}>
+      <Text style={[styles.avatarHint, { color: tc.text.tertiary }]}>
         {t('onboarding.profile.avatarHint')}
       </Text>
 
       {/* Display name with icon */}
       <View style={styles.field}>
-        <Text style={styles.label}>{t('onboarding.profile.displayName')}</Text>
+        <Text style={[styles.label, { color: tc.text.secondary }]}>{t('onboarding.profile.displayName')}</Text>
         <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }, nameFocused && styles.inputRowFocused]}>
           <Icon
             name="user"
             size="sm"
-            color={nameFocused ? colors.emerald : colors.text.tertiary}
+            color={nameFocused ? colors.emerald : tc.text.tertiary}
           />
           <TextInput
-            style={styles.inputInner}
+            style={[styles.inputInner, { color: tc.text.primary }]}
             value={displayName}
             onChangeText={(text) => { setDisplayName(text); setError(''); }}
             placeholder={t('onboarding.profile.namePlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             maxLength={50}
             autoFocus
             returnKeyType="next"
@@ -150,14 +150,14 @@ function OnboardingProfileScreenContent() {
 
       {/* Bio with focus glow */}
       <View style={styles.field}>
-        <Text style={styles.label}>{t('onboarding.profile.bioLabel')} <Text style={styles.optional}>{t('onboarding.profile.optional')}</Text></Text>
+        <Text style={[styles.label, { color: tc.text.secondary }]}>{t('onboarding.profile.bioLabel')} <Text style={[styles.optional, { color: tc.text.tertiary }]}>{t('onboarding.profile.optional')}</Text></Text>
         <View style={[styles.bioRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }, bioFocused && styles.bioRowFocused]}>
           <TextInput
             style={[styles.inputInner, styles.bioInput]}
             value={bio}
             onChangeText={setBio}
             placeholder={t('onboarding.profile.bioPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
+            placeholderTextColor={tc.text.tertiary}
             multiline
             maxLength={150}
             onFocus={() => setBioFocused(true)}

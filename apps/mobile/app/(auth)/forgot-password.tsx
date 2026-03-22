@@ -107,14 +107,14 @@ export default function ForgotPasswordScreen() {
           >
             {step === 'email' && (
               <View style={styles.form}>
-                <Text style={styles.heading}>{t('auth.resetPassword')}</Text>
-                <Text style={styles.subtitle}>{t('auth.resetPasswordHint')}</Text>
+                <Text style={[styles.heading, { color: tc.text.primary }]}>{t('auth.resetPassword')}</Text>
+                <Text style={[styles.subtitle, { color: tc.text.secondary }]}>{t('auth.resetPasswordHint')}</Text>
                 <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
-                  <Icon name="mail" size="sm" color={colors.text.tertiary} />
+                  <Icon name="mail" size="sm" color={tc.text.tertiary} />
                   <TextInput
-                    style={styles.inputInner}
+                    style={[styles.inputInner, { color: tc.text.primary }]}
                     placeholder={t('auth.email')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     value={email}
                     onChangeText={setEmail}
                     autoCapitalize="none"
@@ -135,14 +135,14 @@ export default function ForgotPasswordScreen() {
 
             {step === 'code' && (
               <View style={styles.form}>
-                <Text style={styles.heading}>{t('auth.verificationCode')}</Text>
-                <Text style={styles.subtitle}>{t('auth.codeSentTo')} {email}</Text>
+                <Text style={[styles.heading, { color: tc.text.primary }]}>{t('auth.verificationCode')}</Text>
+                <Text style={[styles.subtitle, { color: tc.text.secondary }]}>{t('auth.codeSentTo')} {email}</Text>
                 <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
-                  <Icon name="lock" size="sm" color={colors.text.tertiary} />
+                  <Icon name="lock" size="sm" color={tc.text.tertiary} />
                   <TextInput
-                    style={styles.inputInner}
+                    style={[styles.inputInner, { color: tc.text.primary }]}
                     placeholder={t('auth.verificationCode')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     value={code}
                     onChangeText={setCode}
                     keyboardType="number-pad"
@@ -164,24 +164,24 @@ export default function ForgotPasswordScreen() {
 
             {step === 'newPassword' && (
               <View style={styles.form}>
-                <Text style={styles.heading}>{t('auth.newPassword')}</Text>
+                <Text style={[styles.heading, { color: tc.text.primary }]}>{t('auth.newPassword')}</Text>
                 <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
-                  <Icon name="lock" size="sm" color={colors.text.tertiary} />
+                  <Icon name="lock" size="sm" color={tc.text.tertiary} />
                   <TextInput
-                    style={styles.inputInner}
+                    style={[styles.inputInner, { color: tc.text.primary }]}
                     placeholder={t('auth.newPassword')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     value={newPassword}
                     onChangeText={setNewPassword}
                     secureTextEntry
                   />
                 </View>
                 <View style={[styles.inputRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}>
-                  <Icon name="lock" size="sm" color={colors.text.tertiary} />
+                  <Icon name="lock" size="sm" color={tc.text.tertiary} />
                   <TextInput
-                    style={styles.inputInner}
+                    style={[styles.inputInner, { color: tc.text.primary }]}
                     placeholder={t('auth.confirmPassword')}
-                    placeholderTextColor={colors.text.tertiary}
+                    placeholderTextColor={tc.text.tertiary}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry

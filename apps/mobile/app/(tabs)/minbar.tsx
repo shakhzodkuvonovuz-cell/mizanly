@@ -110,7 +110,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
           <ProgressiveImage uri={video.thumbnailUrl} width="100%" height={THUMBNAIL_HEIGHT} contentFit="cover" />
         ) : (
           <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
-            <Icon name="video" size="lg" color={colors.text.secondary} />
+            <Icon name="video" size="lg" color={tc.text.secondary} />
           </View>
         )}
         {/* Dark overlay gradient at bottom */}
@@ -150,7 +150,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
             {video.title}
           </Text>
           <View style={styles.channelNameRow}>
-            <Icon name="globe" size={10} color={colors.text.secondary} />
+            <Icon name="globe" size={10} color={tc.text.secondary} />
             <Text style={styles.channelName} numberOfLines={1}>
               {video.channel.name}
             </Text>
@@ -164,7 +164,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
           onPress={() => onMorePress(video)}
           hitSlop={8}
         >
-          <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
+          <Icon name="more-horizontal" size="sm" color={tc.text.secondary} />
         </Pressable>
       </View>
     </Pressable>
@@ -298,15 +298,15 @@ export default function MinbarScreen() {
                     <ProgressiveImage uri={item.thumbnailUrl} width={200} height={112} contentFit="cover" />
                   ) : (
                     <View style={[styles.continueThumb, styles.continueThumbPlaceholder, { backgroundColor: tc.surface }]}>
-                      <Icon name="video" size="lg" color={colors.text.secondary} />
+                      <Icon name="video" size="lg" color={tc.text.secondary} />
                     </View>
                   )}
                   <View style={styles.progressBarBg}>
                     <View style={[styles.progressBarFill, { width: `${item.progress * 100}%` }]} />
                   </View>
                 </View>
-                <Text style={styles.continueCardTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.continueCardMeta}>{item.channel?.name}</Text>
+                <Text style={[styles.continueCardTitle, { color: tc.text.primary }]} numberOfLines={1}>{item.title}</Text>
+                <Text style={[styles.continueCardMeta, { color: tc.text.secondary }]}>{item.channel?.name}</Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -407,7 +407,7 @@ export default function MinbarScreen() {
             accessibilityRole="button"
             accessibilityHint={t('accessibility.searchHint')}
           >
-            <Icon name="search" size="sm" color={colors.text.primary} />
+            <Icon name="search" size="sm" color={tc.text.primary} />
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
@@ -419,7 +419,7 @@ export default function MinbarScreen() {
             accessibilityRole="button"
             accessibilityHint={t('accessibility.watchLaterHint')}
           >
-            <Icon name="clock" size="sm" color={colors.text.primary} />
+            <Icon name="clock" size="sm" color={tc.text.primary} />
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
@@ -436,7 +436,7 @@ export default function MinbarScreen() {
             accessibilityHint={t('accessibility.notificationsHint')}
           >
             <View>
-              <Icon name="bell" size="sm" color={colors.text.primary} />
+              <Icon name="bell" size="sm" color={tc.text.primary} />
               {unreadNotifications > 0 && (
                 <Badge
                   count={unreadNotifications}
@@ -473,7 +473,7 @@ export default function MinbarScreen() {
       >
         <BottomSheetItem
           label={t('common.report')}
-          icon={<Icon name="flag" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="flag" size="sm" color={tc.text.primary} />}
           onPress={() => {
             setSelectedVideoId(null);
             router.push(`/(screens)/report?type=video&id=${selectedVideoId}`);
@@ -481,14 +481,14 @@ export default function MinbarScreen() {
         />
         <BottomSheetItem
           label={t('minbar.saveToWatchLater')}
-          icon={<Icon name="clock" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="clock" size="sm" color={tc.text.primary} />}
           onPress={() => {
             if (selectedVideoId) handleSaveToWatchLater(selectedVideoId);
           }}
         />
         <BottomSheetItem
           label={t('minbar.notInterested')}
-          icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
+          icon={<Icon name="eye-off" size="sm" color={tc.text.primary} />}
           onPress={() => {
             if (selectedVideoId) {
               feedApi.dismiss('VIDEO', selectedVideoId).catch(() => {});
