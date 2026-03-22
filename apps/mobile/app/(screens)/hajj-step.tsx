@@ -182,22 +182,22 @@ function HajjStepContent() {
                 {isCompleted ? (
                   <Icon name="check" size="md" color="#fff" />
                 ) : (
-                  <Text style={styles.headerCircleText}>{stepIndex + 1}</Text>
+                  <Text style={[styles.headerCircleText, { color: tc.text.primary }]}>{stepIndex + 1}</Text>
                 )}
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.stepNameAr}>{step.nameAr}</Text>
+                <Text style={[styles.stepNameAr, { color: tc.text.primary }]}>{step.nameAr}</Text>
                 <Text style={styles.stepNameEn}>{step.name}</Text>
               </View>
             </View>
-            <Text style={styles.descriptionAr}>{step.descriptionAr}</Text>
-            <Text style={styles.description}>{step.description}</Text>
+            <Text style={[styles.descriptionAr, { color: tc.text.secondary }]}>{step.descriptionAr}</Text>
+            <Text style={[styles.description, { color: tc.text.tertiary }]}>{step.description}</Text>
           </LinearGradient>
         </Animated.View>
 
         {/* Duas section */}
         <Animated.View entering={FadeInUp.delay(100).duration(300)}>
-          <Text style={styles.sectionTitle}>{t('hajj.duas')}</Text>
+          <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('hajj.duas')}</Text>
           {step.duas.map((dua, duaIndex) => (
             <Pressable
               accessibilityRole="button"
@@ -213,7 +213,7 @@ function HajjStepContent() {
                 <Animated.View entering={FadeInDown.duration(200)}>
                   <View style={[styles.duaDivider, { backgroundColor: tc.border }]} />
                   <Text style={styles.duaTranslit}>{dua.transliteration}</Text>
-                  <Text style={styles.duaEnglish}>{dua.english}</Text>
+                  <Text style={[styles.duaEnglish, { color: tc.text.secondary }]}>{dua.english}</Text>
                 </Animated.View>
               )}
               <View style={styles.duaExpandHint}>
@@ -229,7 +229,7 @@ function HajjStepContent() {
 
         {/* Checklist */}
         <Animated.View entering={FadeInUp.delay(200).duration(300)}>
-          <Text style={styles.sectionTitle}>{t('hajj.checklist')}</Text>
+          <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('hajj.checklist')}</Text>
           {step.checklist.map((item, idx) => (
             <Pressable
               accessibilityRole="button"

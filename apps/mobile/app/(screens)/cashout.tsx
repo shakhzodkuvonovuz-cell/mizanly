@@ -166,7 +166,7 @@ function CashoutContent() {
               : t('cashout.successStandard', 'Your funds will arrive in 3-5 business days')}
           </Animated.Text>
           <Animated.View entering={FadeInUp.delay(500).duration(400)} style={[styles.successAmountCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-            <Text style={styles.successAmountLabel}>
+            <Text style={[styles.successAmountLabel, { color: tc.text.secondary }]}>
               {t('cashout.amountSent', 'Amount')}
             </Text>
             <Text style={styles.successAmount}>
@@ -236,19 +236,19 @@ function CashoutContent() {
             end={{ x: 1, y: 1 }}
             style={[styles.balanceCard, { borderColor: tc.border }]}
           >
-            <Text style={styles.balanceLabel}>
+            <Text style={[styles.balanceLabel, { color: tc.text.secondary }]}>
               {t('cashout.availableBalance', 'Available Balance')}
             </Text>
             <View style={styles.balanceRow}>
               <Icon name="layers" size="md" color={colors.gold} />
-              <Text style={styles.balanceDiamonds}>
+              <Text style={[styles.balanceDiamonds, { color: tc.text.primary }]}>
                 {formatCount(balance?.diamonds ?? 0)}
               </Text>
             </View>
             <Text style={styles.balanceUsd}>
               = ${(balance?.usdEquivalent ?? 0).toFixed(2)} USD
             </Text>
-            <Text style={styles.rateText}>
+            <Text style={[styles.rateText, { color: tc.text.tertiary }]}>
               {t('cashout.exchangeRate', '100 diamonds = $0.70')}
             </Text>
           </LinearGradient>
@@ -256,7 +256,7 @@ function CashoutContent() {
 
         {/* Amount Input */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.inputCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-          <Text style={styles.inputLabel}>
+          <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>
             {t('cashout.amountLabel', 'Diamonds to cash out')}
           </Text>
           <View style={styles.inputRow}>
@@ -266,7 +266,7 @@ function CashoutContent() {
               onChangeText={setAmountText}
               keyboardType="numeric"
               placeholder="0"
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               maxLength={10}
               accessibilityLabel={t('cashout.amountInput', 'Enter diamond amount')}
             />
@@ -284,7 +284,7 @@ function CashoutContent() {
             </Pressable>
           </View>
           {amount > 0 && (
-            <Text style={styles.usdEquivalent}>
+            <Text style={[styles.usdEquivalent, { color: tc.text.secondary }]}>
               = ${usdValue.toFixed(2)} USD
               {fee > 0 && ` (${t('cashout.fee', 'fee')}: -$${fee.toFixed(2)})`}
             </Text>
@@ -293,7 +293,7 @@ function CashoutContent() {
 
         {/* Payout Speed Selector */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.speedCard}>
-          <Text style={styles.sectionLabel}>
+          <Text style={[styles.sectionLabel, { color: tc.text.primary }]}>
             {t('cashout.payoutMethod', 'Payout Method')}
           </Text>
 
@@ -308,14 +308,14 @@ function CashoutContent() {
           >
             <View style={styles.speedContent}>
               <View style={styles.speedHeader}>
-                <Text style={styles.speedTitle}>
+                <Text style={[styles.speedTitle, { color: tc.text.primary }]}>
                   {t('cashout.instantPayout', 'Instant Payout')}
                 </Text>
                 <View style={styles.feeBadge}>
                   <Text style={styles.feeText}>{INSTANT_FEE_PERCENT}%</Text>
                 </View>
               </View>
-              <Text style={styles.speedDesc}>
+              <Text style={[styles.speedDesc, { color: tc.text.secondary }]}>
                 {t('cashout.instantDesc', 'Arrives immediately')}
               </Text>
             </View>
@@ -335,7 +335,7 @@ function CashoutContent() {
           >
             <View style={styles.speedContent}>
               <View style={styles.speedHeader}>
-                <Text style={styles.speedTitle}>
+                <Text style={[styles.speedTitle, { color: tc.text.primary }]}>
                   {t('cashout.standardPayout', 'Standard Payout')}
                 </Text>
                 <View style={[styles.feeBadge, styles.freeBadge]}>
@@ -344,7 +344,7 @@ function CashoutContent() {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.speedDesc}>
+              <Text style={[styles.speedDesc, { color: tc.text.secondary }]}>
                 {t('cashout.standardDesc', '3-5 business days')}
               </Text>
             </View>
@@ -357,7 +357,7 @@ function CashoutContent() {
         {/* Saved Payment Methods */}
         {paymentMethods.length > 0 && (
           <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.methodsCard}>
-            <Text style={styles.sectionLabel}>
+            <Text style={[styles.sectionLabel, { color: tc.text.primary }]}>
               {t('cashout.paymentMethod', 'Payment Method')}
             </Text>
             {paymentMethods.map((method) => (
@@ -375,12 +375,12 @@ function CashoutContent() {
                   <Icon
                     name={method.type === 'bank' ? 'layers' : 'globe'}
                     size="sm"
-                    color={colors.text.secondary}
+                    color={tc.text.secondary}
                   />
                 </View>
                 <View style={styles.methodContent}>
-                  <Text style={styles.methodLabel}>{method.label}</Text>
-                  <Text style={styles.methodLast4}>
+                  <Text style={[styles.methodLabel, { color: tc.text.primary }]}>{method.label}</Text>
+                  <Text style={[styles.methodLast4, { color: tc.text.secondary }]}>
                     {t('cashout.endingIn', 'Ending in')} {method.lastFour}
                   </Text>
                 </View>

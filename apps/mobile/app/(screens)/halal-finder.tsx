@@ -65,7 +65,7 @@ function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; 
       )}
       <View style={styles.cardContent}>
         <View style={[styles.cardHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Text style={[styles.cardName, { textAlign: rtlTextAlign(isRTL) }]} numberOfLines={1}>
+          <Text style={[styles.cardName, { textAlign: rtlTextAlign(isRTL) }, { color: tc.text.primary }]} numberOfLines={1}>
             {restaurant.name}
           </Text>
           {restaurant.halalCertified && (
@@ -80,13 +80,13 @@ function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; 
           )}
         </View>
 
-        <Text style={styles.cardAddress} numberOfLines={1}>{restaurant.address}</Text>
+        <Text style={[styles.cardAddress, { color: tc.text.secondary }]} numberOfLines={1}>{restaurant.address}</Text>
 
         <View style={[styles.cardMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
           {restaurant.cuisineType && (
-            <Text style={styles.metaText}>{restaurant.cuisineType}</Text>
+            <Text style={[styles.metaText, { color: tc.text.tertiary }]}>{restaurant.cuisineType}</Text>
           )}
-          {priceLabel ? <Text style={styles.metaText}>{priceLabel}</Text> : null}
+          {priceLabel ? <Text style={[styles.metaText, { color: tc.text.tertiary }]}>{priceLabel}</Text> : null}
           {restaurant.averageRating > 0 && (
             <View style={[styles.ratingRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="heart-filled" size={12} color={colors.gold} />
@@ -96,7 +96,7 @@ function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; 
             </View>
           )}
           {restaurant.distanceKm !== undefined && (
-            <Text style={styles.distanceText}>
+            <Text style={[styles.distanceText, { color: tc.text.tertiary }]}>
               {t('halal.distance', { distance: restaurant.distanceKm.toString() })}
             </Text>
           )}

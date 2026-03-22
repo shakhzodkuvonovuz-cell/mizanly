@@ -66,7 +66,7 @@ function ChallengeCard({
         style={styles.challengeCard}
       >
         <View style={styles.challengeHeader}>
-          <Text style={styles.challengeTitle} numberOfLines={1}>{challenge.title}</Text>
+          <Text style={[styles.challengeTitle, { color: tc.text.primary }]} numberOfLines={1}>{challenge.title}</Text>
           <Text style={styles.challengePhrase}>
             {PHRASE_ARABIC_MAP[challenge.phrase] || challenge.phrase}
           </Text>
@@ -78,7 +78,7 @@ function ChallengeCard({
         </View>
 
         <View style={styles.challengeFooter}>
-          <Text style={styles.challengeProgress}>
+          <Text style={[styles.challengeProgress, { color: tc.text.secondary }]}>
             {t('dhikr.progress', {
               current: challenge.currentTotal.toLocaleString(),
               target: challenge.targetTotal.toLocaleString(),
@@ -86,7 +86,7 @@ function ChallengeCard({
           </Text>
           <View style={styles.participantBadge}>
             <Icon name="users" size="xs" color={tc.text.tertiary} />
-            <Text style={styles.participantText}>
+            <Text style={[styles.participantText, { color: tc.text.tertiary }]}>
               {t('dhikr.participants', { count: formatCount(challenge.participantCount) })}
             </Text>
           </View>
@@ -255,11 +255,11 @@ export default function DhikrChallengesScreen() {
         {/* Create Challenge BottomSheet */}
         <BottomSheet visible={showCreateSheet} onClose={() => setShowCreateSheet(false)}>
           <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>{t('dhikr.createChallenge')}</Text>
+            <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>{t('dhikr.createChallenge')}</Text>
 
-            <Text style={styles.inputLabel}>{t('dhikr.title')}</Text>
+            <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('dhikr.title')}</Text>
             <TextInput
-              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
+              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }, { color: tc.text.primary, backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newTitle}
               onChangeText={setNewTitle}
               placeholder={t('dhikr.title')}
@@ -267,20 +267,20 @@ export default function DhikrChallengesScreen() {
               maxLength={100}
             />
 
-            <Text style={styles.inputLabel}>{t('dhikr.phrase')}</Text>
+            <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('dhikr.phrase')}</Text>
             <Pressable
               accessibilityRole="button"
               onPress={() => setShowPhraseSheet(true)}
 
               style={[styles.pickerButton, { backgroundColor: tc.surface, borderColor: tc.border }]}
             >
-              <Text style={styles.pickerText}>{selectedPhraseLabel}</Text>
+              <Text style={[styles.pickerText, { color: tc.text.primary }]}>{selectedPhraseLabel}</Text>
               <Icon name="chevron-down" size="xs" color={tc.text.tertiary} />
             </Pressable>
 
-            <Text style={styles.inputLabel}>{t('dhikr.target')}</Text>
+            <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('dhikr.target')}</Text>
             <TextInput
-              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
+              style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }, { color: tc.text.primary, backgroundColor: tc.surface, borderColor: tc.border }]}
               value={newTarget}
               onChangeText={setNewTarget}
               placeholder="1000"

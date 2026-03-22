@@ -26,6 +26,7 @@ interface AnalyticsResponse {
 const { width: screenWidth } = Dimensions.get('window');
 
 function SummaryCard({ title, value, change, icon, index }: { title: string; value: string; change?: string; icon: IconName; index: number }) {
+  const tc = useThemeColors();
   const isPositive = change?.startsWith('+');
   const isNegative = change?.startsWith('-');
   return (
@@ -41,18 +42,19 @@ function SummaryCard({ title, value, change, icon, index }: { title: string; val
           >
             <Icon name={icon} size="xs" color={colors.emerald} />
           </LinearGradient>
-          <Text style={styles.cardTitle}>{title}</Text>
+          <Text style={[styles.cardTitle, { color: tc.text.secondary }]}>{title}</Text>
         </View>
-        <Text style={styles.cardValue}>{value}</Text>
+        <Text style={[styles.cardValue, { color: tc.text.primary }]}>{value}</Text>
         {change && (
           <View style={styles.changeRow}>
             <Icon
               name={isPositive ? 'trending-up' : isNegative ? 'trending-down' : 'minus'}
               size="xs"
-              color={isPositive ? colors.success : isNegative ? colors.error : colors.text.tertiary}
+              color={isPositive ? colors.success : isNegative ? colors.error : tc.text.tertiary}
             />
             <Text style={[
               styles.cardChange,
+              { color: tc.text.tertiary },
               isPositive && styles.positive,
               isNegative && styles.negative
             ]}>
@@ -90,7 +92,7 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
         >
           <Icon name="bar-chart-2" size="xs" color={colors.gold} />
         </LinearGradient>
-        <Text style={styles.sectionTitle}>{t('analytics.engagementOverTime')}</Text>
+        <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('analytics.engagementOverTime')}</Text>
       </View>
       <LinearGradient
         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
@@ -108,7 +110,7 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
               />
-              <Text style={styles.barLabel}>
+              <Text style={[styles.barLabel, { color: tc.text.tertiary }]}>
                 {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </Text>
             </View>
@@ -121,6 +123,7 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
 
 function TopContentSection() {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   // Top content analytics require backend data pipeline unification.
   // Show honest empty state explaining what's needed, not a fake "Coming Soon".
   return (
@@ -132,7 +135,7 @@ function TopContentSection() {
         >
           <Icon name="trending-up" size="xs" color={colors.emerald} />
         </LinearGradient>
-        <Text style={styles.sectionTitle}>{t('analytics.topPerformingContent')}</Text>
+        <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('analytics.topPerformingContent')}</Text>
       </View>
       <LinearGradient
         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}

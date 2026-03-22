@@ -173,8 +173,8 @@ export default function BroadcastChannelsScreen() {
             <Avatar uri={item.avatarUrl} name={item.name} size="lg" />
           </LinearGradient>
           <View style={styles.channelInfo}>
-            <Text style={styles.channelName}>{item.name}</Text>
-            <Text style={styles.channelDescription} numberOfLines={2}>{item.description}</Text>
+            <Text style={[styles.channelName, { color: tc.text.primary }]}>{item.name}</Text>
+            <Text style={[styles.channelDescription, { color: tc.text.secondary }]} numberOfLines={2}>{item.description}</Text>
             <LinearGradient
               colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
               style={styles.subscribersBadge}
@@ -192,7 +192,7 @@ export default function BroadcastChannelsScreen() {
               colors={item.isSubscribed ? colors.gradient.cardDark : ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
               style={styles.subscribeBtn}
             >
-              <Text style={[styles.subscribeText, item.isSubscribed && { color: colors.text.secondary }]}>
+              <Text style={[styles.subscribeText, item.isSubscribed && { color: tc.text.secondary }]}>
                 {item.isSubscribed ? t('broadcastChannels.subscribed') : t('broadcastChannels.subscribe')}
               </Text>
             </LinearGradient>
@@ -285,12 +285,12 @@ export default function BroadcastChannelsScreen() {
         />
         <View style={[styles.container, { backgroundColor: tc.bg }]}>
           <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base }]}>
-            <Icon name="search" size="sm" color={colors.text.secondary} style={styles.searchIcon} />
+            <Icon name="search" size="sm" color={tc.text.secondary} style={styles.searchIcon} />
             <TextInput
               ref={searchInputRef}
               style={styles.searchInput}
               placeholder={t('broadcastChannels.searchPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               onSubmitEditing={handleSearchSubmit}
@@ -298,7 +298,7 @@ export default function BroadcastChannelsScreen() {
             />
             {searchQuery.length > 0 && (
               <Pressable accessibilityRole="button" onPress={() => setSearchQuery('')} style={styles.clearButton}>
-                <Icon name="x" size="sm" color={colors.text.secondary} />
+                <Icon name="x" size="sm" color={tc.text.secondary} />
               </Pressable>
             )}
           </View>
@@ -337,9 +337,9 @@ export default function BroadcastChannelsScreen() {
           <View style={{ padding: spacing.base, gap: spacing.md }}>
             <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.text.primary }}>{t('broadcastChannels.createChannel')}</Text>
             <TextInput
-              style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base }}
+              style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: tc.text.primary, fontSize: fontSize.base }}
               placeholder={t('broadcastChannels.channelNamePlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={newChannelName}
               onChangeText={setNewChannelName}
               maxLength={50}
@@ -347,7 +347,7 @@ export default function BroadcastChannelsScreen() {
             <TextInput
               style={{ backgroundColor: tc.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, minHeight: 80 }}
               placeholder={t('broadcastChannels.descriptionPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               value={newChannelDesc}
               onChangeText={setNewChannelDesc}
               maxLength={200}

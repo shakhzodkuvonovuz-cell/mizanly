@@ -45,8 +45,8 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
       <View style={[styles.folderIcon, { backgroundColor: tc.bgElevated }]}>
         <Icon name="bookmark" size="xl" color={colors.gold} />
       </View>
-      <Text style={styles.folderName} numberOfLines={1}>{folder.name}</Text>
-      <Text style={styles.folderCount}>
+      <Text style={[styles.folderName, { color: tc.text.primary }]} numberOfLines={1}>{folder.name}</Text>
+      <Text style={[styles.folderCount, { color: tc.text.tertiary }]}>
         {t('screens.bookmarkFolders.itemsCount', { count: itemCount })}
       </Text>
     </Pressable>
@@ -195,7 +195,7 @@ export default function BookmarkFoldersScreen() {
         {/* Create Folder BottomSheet */}
         <BottomSheet visible={createSheetVisible} onClose={() => setCreateSheetVisible(false)}>
           <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>{t('screens.bookmarkFolders.createSheetTitle')}</Text>
+            <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>{t('screens.bookmarkFolders.createSheetTitle')}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
               placeholder={t('screens.bookmarkFolders.folderNamePlaceholder')}
@@ -206,7 +206,7 @@ export default function BookmarkFoldersScreen() {
             />
             <View style={styles.sheetButtons}>
               <Pressable style={styles.cancelBtn} onPress={() => setCreateSheetVisible(false)}>
-                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+                <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable style={styles.createBtn} onPress={handleCreateFolder}>
                 <Text style={styles.createText}>{t('screens.bookmarkFolders.createButton')}</Text>

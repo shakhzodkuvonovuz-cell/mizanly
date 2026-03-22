@@ -122,10 +122,10 @@ export default function MutedScreen() {
                   >
                     <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
                     <View style={styles.info}>
-                      <Text style={styles.name}>{u.displayName}</Text>
+                      <Text style={[styles.name, { color: tc.text.primary }]}>{u.displayName}</Text>
                       <View style={styles.mutedBadge}>
                         <Icon name="volume-x" size={10} color={colors.text.tertiary} />
-                        <Text style={styles.username}>@{u.username}</Text>
+                        <Text style={[styles.username, { color: tc.text.secondary }]}>@{u.username}</Text>
                       </View>
                     </View>
                     <GradientButton

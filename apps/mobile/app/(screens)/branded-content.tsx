@@ -89,8 +89,8 @@ function BrandedContentContent() {
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.toggleCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.toggleRow}>
             <View style={styles.toggleInfo}>
-              <Text style={styles.toggleLabel}>{t('branded.paidPartnership')}</Text>
-              <Text style={styles.toggleSub}>{t('branded.paidPartnershipSub')}</Text>
+              <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>{t('branded.paidPartnership')}</Text>
+              <Text style={[styles.toggleSub, { color: tc.text.tertiary }]}>{t('branded.paidPartnershipSub')}</Text>
             </View>
             <Switch
               value={isPaidPartnership}
@@ -105,13 +105,13 @@ function BrandedContentContent() {
         {/* Partner Name Input */}
         {isPaidPartnership && (
           <Animated.View entering={FadeIn.duration(300)} style={[styles.inputCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-            <Text style={styles.inputLabel}>{t('branded.partnerName')}</Text>
+            <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('branded.partnerName')}</Text>
             <TextInput
               style={[styles.textInput, { backgroundColor: tc.surface, borderColor: tc.border }]}
               value={partnerName}
               onChangeText={setPartnerName}
               placeholder={t('branded.partnerPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               maxLength={100}
               accessibilityLabel={t('branded.partnerNameLabel')}
             />
@@ -120,23 +120,23 @@ function BrandedContentContent() {
 
         {/* Preview Card */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)} style={[styles.previewCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-          <Text style={styles.sectionTitle}>{t('branded.preview')}</Text>
+          <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>{t('branded.preview')}</Text>
           <View style={styles.previewPost}>
             <View style={styles.previewHeader}>
               <View style={[styles.previewAvatar, { backgroundColor: tc.surface }]} />
               <View style={styles.previewNameCol}>
-                <Text style={styles.previewName}>{t('branded.yourName')}</Text>
+                <Text style={[styles.previewName, { color: tc.text.primary }]}>{t('branded.yourName')}</Text>
                 {isPaidPartnership && partnerName.trim() ? (
                   <View style={styles.partnershipBadge}>
-                    <Icon name="check-circle" size="xs" color={colors.text.secondary} />
-                    <Text style={styles.partnershipText}>
+                    <Icon name="check-circle" size="xs" color={tc.text.secondary} />
+                    <Text style={[styles.partnershipText, { color: tc.text.secondary }]}>
                       {t('branded.paidPartnershipWith', { partner: partnerName.trim() })}
                     </Text>
                   </View>
                 ) : isPaidPartnership ? (
                   <View style={styles.partnershipBadge}>
-                    <Icon name="check-circle" size="xs" color={colors.text.secondary} />
-                    <Text style={styles.partnershipText}>
+                    <Icon name="check-circle" size="xs" color={tc.text.secondary} />
+                    <Text style={[styles.partnershipText, { color: tc.text.secondary }]}>
                       {t('branded.paidPartnershipLabel')}
                     </Text>
                   </View>
@@ -144,7 +144,7 @@ function BrandedContentContent() {
               </View>
             </View>
             <View style={[styles.previewImagePlaceholder, { backgroundColor: tc.surface }]}>
-              <Icon name="image" size="xl" color={colors.text.tertiary} />
+              <Icon name="image" size="xl" color={tc.text.tertiary} />
             </View>
           </View>
         </Animated.View>
@@ -154,7 +154,7 @@ function BrandedContentContent() {
           <Icon name="flag" size="md" color={colors.gold} />
           <View style={styles.infoContent}>
             <Text style={styles.infoTitle}>{t('branded.disclosureTitle')}</Text>
-            <Text style={styles.infoText}>{t('branded.disclosureText')}</Text>
+            <Text style={[styles.infoText, { color: tc.text.secondary }]}>{t('branded.disclosureText')}</Text>
           </View>
         </Animated.View>
 

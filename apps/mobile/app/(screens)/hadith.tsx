@@ -78,7 +78,7 @@ function ActionButton({
           color={isActive ? tc.text.primary : tc.text.secondary}
         />
       </LinearGradient>
-      <Text style={styles.actionLabel}>{label}</Text>
+      <Text style={[styles.actionLabel, { color: tc.text.secondary }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -100,12 +100,12 @@ function PreviousHadithCard({
           style={styles.previousCard}
         >
           <View style={styles.previousCardContent}>
-            <Text style={styles.previousEnglish} numberOfLines={2}>
+            <Text style={[styles.previousEnglish, { color: tc.text.primary }]} numberOfLines={2}>
               {hadith.english}
             </Text>
             <View style={styles.previousMeta}>
-              <Text style={styles.previousSource}>{hadith.source}</Text>
-              {hadith.date ? <Text style={styles.previousDate}>{hadith.date}</Text> : null}
+              <Text style={[styles.previousSource, { color: tc.text.tertiary }]}>{hadith.source}</Text>
+              {hadith.date ? <Text style={[styles.previousDate, { color: tc.text.secondary }]}>{hadith.date}</Text> : null}
             </View>
           </View>
           {hadith.isBookmarked && (
@@ -329,15 +329,15 @@ export default function HadithScreen() {
                   </LinearGradient>
 
                   {/* Arabic Text */}
-                  <Text style={styles.arabicText}>{currentHadith.arabic}</Text>
+                  <Text style={[styles.arabicText, { color: tc.text.primary }]}>{currentHadith.arabic}</Text>
 
                   {/* English Translation */}
-                  <Text style={styles.englishText}>{currentHadith.english}</Text>
+                  <Text style={[styles.englishText, { color: tc.text.primary }]}>{currentHadith.english}</Text>
 
                   {/* Source & Narrator */}
                   <View style={styles.attributionContainer}>
-                    <Text style={styles.sourceText}>{currentHadith.source}</Text>
-                    <Text style={styles.narratorText}>{currentHadith.narrator}</Text>
+                    <Text style={[styles.sourceText, { color: tc.text.tertiary }]}>{currentHadith.source}</Text>
+                    <Text style={[styles.narratorText, { color: tc.text.secondary }]}>{currentHadith.narrator}</Text>
                   </View>
 
                   {/* Action Row */}
@@ -360,7 +360,7 @@ export default function HadithScreen() {
 
               {/* Section Title */}
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{t('islamic.previousHadith')}</Text>
+                <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('islamic.previousHadith')}</Text>
               </View>
             </>
           }
@@ -388,7 +388,7 @@ export default function HadithScreen() {
                 >
                   <View style={styles.infoRow}>
                     <Icon name="check-circle" size="sm" color={colors.emerald} />
-                    <Text style={styles.infoText}>
+                    <Text style={[styles.infoText, { color: tc.text.secondary }]}>
                       {t('islamic.hadithSourceInfo')}
                     </Text>
                   </View>

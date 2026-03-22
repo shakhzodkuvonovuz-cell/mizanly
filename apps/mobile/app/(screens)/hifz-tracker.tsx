@@ -178,11 +178,11 @@ const SurahRow = React.memo(function SurahRow({ surah, progress, onPress }: {
       <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
       <View style={styles.surahInfo}>
         <View style={[styles.surahNameRow, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <Text style={styles.surahNum}>{surah.num}.</Text>
-          <Text style={styles.surahName}>{surah.name}</Text>
-          <Text style={styles.surahArabic}>{surah.arabic}</Text>
+          <Text style={[styles.surahNum, { color: tc.text.tertiary }]}>{surah.num}.</Text>
+          <Text style={[styles.surahName, { color: tc.text.primary }]}>{surah.name}</Text>
+          <Text style={[styles.surahArabic, { color: tc.text.secondary }]}>{surah.arabic}</Text>
         </View>
-        <Text style={styles.surahMeta}>
+        <Text style={[styles.surahMeta, { color: tc.text.tertiary }]}>
           {surah.ayahs} ayahs · {t(STATUS_LABELS[progress.status])}
         </Text>
       </View>
@@ -243,16 +243,16 @@ export default function HifzTrackerScreen() {
       {stats ? (
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.emerald }]}>
-            <Text style={[styles.statValue, { color: colors.emerald }]}>{stats.memorized}</Text>
-            <Text style={styles.statLabel}>{t('hifz.memorized')}</Text>
+            <Text style={[styles.statValue, { color: colors.emerald }, { color: tc.text.primary }]}>{stats.memorized}</Text>
+            <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{t('hifz.memorized')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.gold }]}>
-            <Text style={[styles.statValue, { color: colors.gold }]}>{stats.inProgress}</Text>
-            <Text style={styles.statLabel}>{t('hifz.inProgress')}</Text>
+            <Text style={[styles.statValue, { color: colors.gold }, { color: tc.text.primary }]}>{stats.inProgress}</Text>
+            <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{t('hifz.inProgress')}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: tc.bgCard }, { borderLeftColor: colors.extended.orange }]}>
-            <Text style={[styles.statValue, { color: colors.extended.orange }]}>{stats.needsReview}</Text>
-            <Text style={styles.statLabel}>{t('hifz.needsReview')}</Text>
+            <Text style={[styles.statValue, { color: colors.extended.orange }, { color: tc.text.primary }]}>{stats.needsReview}</Text>
+            <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{t('hifz.needsReview')}</Text>
           </View>
         </View>
       ) : (
@@ -266,7 +266,7 @@ export default function HifzTrackerScreen() {
       {/* Progress bar */}
       {stats && (
         <View style={styles.progressSection}>
-          <Text style={styles.progressText}>
+          <Text style={[styles.progressText, { color: tc.text.secondary }]}>
             {t('hifz.totalMemorized', { count: stats.memorized.toString() })} ({stats.percentage}%)
           </Text>
           <View style={[styles.progressBar, { backgroundColor: tc.surface }]}>
@@ -278,7 +278,7 @@ export default function HifzTrackerScreen() {
       {/* Review Today */}
       {reviewList.length > 0 && (
         <View style={[styles.reviewSection, { backgroundColor: tc.bgCard }]}>
-          <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>
+          <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }, { color: tc.text.primary }]}>
             {t('hifz.reviewToday')}
           </Text>
           {reviewList.slice(0, 5).map((r: SurahProgress) => {
@@ -286,14 +286,14 @@ export default function HifzTrackerScreen() {
             return surah ? (
               <View key={r.surahNum} style={styles.reviewItem}>
                 <Icon name="clock" size={14} color="#F59E0B" />
-                <Text style={styles.reviewText}>{surah.num}. {surah.name} ({surah.arabic})</Text>
+                <Text style={[styles.reviewText, { color: tc.text.secondary }]}>{surah.num}. {surah.name} ({surah.arabic})</Text>
               </View>
             ) : null;
           })}
         </View>
       )}
 
-      <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL), paddingHorizontal: spacing.base }]}>
+      <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL), paddingHorizontal: spacing.base }, { color: tc.text.primary }]}>
         {t('hifz.surahView')}
       </Text>
     </View>

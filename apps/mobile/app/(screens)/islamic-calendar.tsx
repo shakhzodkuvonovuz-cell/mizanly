@@ -211,8 +211,8 @@ function EventCard({
           <Icon name={event.type === 'eid' ? 'star' : 'flag'} size="sm" color={event.type === 'eid' ? colors.gold : colors.emerald} />
         </LinearGradient>
         <View style={styles.eventInfo}>
-          <Text style={[styles.eventName, event.type === 'eid' && styles.eventNameEid]}>{t(event.name)}</Text>
-          <Text style={styles.eventDate}>{monthNames[event.month]} {event.day}</Text>
+          <Text style={[styles.eventName, event.type === 'eid' && styles.eventNameEid, { color: tc.text.primary }]}>{t(event.name)}</Text>
+          <Text style={[styles.eventDate, { color: tc.text.tertiary }]}>{monthNames[event.month]} {event.day}</Text>
         </View>
         <View style={[
           styles.eventBadge,
@@ -362,7 +362,7 @@ export default function IslamicCalendarScreen() {
 
                 <View style={styles.monthTitleContainer}>
                   <Text style={styles.monthTitleArabic}>{HIJRI_MONTHS_AR[currentMonth]}</Text>
-                  <Text style={styles.monthTitle}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
+                  <Text style={[styles.monthTitle, { color: tc.text.secondary }]}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
                 </View>
 
                 <Pressable accessibilityRole="button" onPress={handleNextMonth} style={styles.monthNavButton}>
@@ -378,7 +378,7 @@ export default function IslamicCalendarScreen() {
               {/* Weekday Headers */}
               <View style={styles.weekdayHeader}>
                 {WEEKDAY_KEYS.map((dayKey) => (
-                  <Text key={dayKey} style={styles.weekdayText}>{t(dayKey)}</Text>
+                  <Text key={dayKey} style={[styles.weekdayText, { color: tc.text.tertiary }]}>{t(dayKey)}</Text>
                 ))}
               </View>
 
@@ -398,7 +398,7 @@ export default function IslamicCalendarScreen() {
               </View>
 
               {/* Disclaimer about approximate computation */}
-              <Text style={styles.disclaimerText}>
+              <Text style={[styles.disclaimerText, { color: tc.text.tertiary }]}>
                 {t('screens.islamicCalendar.approximateDisclaimer')}
               </Text>
 
@@ -406,15 +406,15 @@ export default function IslamicCalendarScreen() {
               <View style={styles.calendarLegend}>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: colors.emerald }]} />
-                  <Text style={styles.legendText}>{t('screens.islamicCalendar.legendToday')}</Text>
+                  <Text style={[styles.legendText, { color: tc.text.secondary }]}>{t('screens.islamicCalendar.legendToday')}</Text>
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: colors.gold }]} />
-                  <Text style={styles.legendText}>{t('screens.islamicCalendar.legendEid')}</Text>
+                  <Text style={[styles.legendText, { color: tc.text.secondary }]}>{t('screens.islamicCalendar.legendEid')}</Text>
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: colors.emerald, opacity: 0.5 }]} />
-                  <Text style={styles.legendText}>{t('screens.islamicCalendar.legendImportant')}</Text>
+                  <Text style={[styles.legendText, { color: tc.text.secondary }]}>{t('screens.islamicCalendar.legendImportant')}</Text>
                 </View>
               </View>
             </LinearGradient>
@@ -429,7 +429,7 @@ export default function IslamicCalendarScreen() {
               >
                 <Icon name="flag" size="xs" color={colors.gold} />
               </LinearGradient>
-              <Text style={styles.sectionTitle}>{t('screens.islamicCalendar.upcomingEvents')}</Text>
+              <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('screens.islamicCalendar.upcomingEvents')}</Text>
             </View>
 
             {upcomingEvents.length === 0 ? (
@@ -452,7 +452,7 @@ export default function IslamicCalendarScreen() {
                 style={styles.quickLinkGradient}
               >
                 <Icon name="clock" size="sm" color={colors.emerald} />
-                <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.prayerTimes')}</Text>
+                <Text style={[styles.quickLinkText, { color: tc.text.primary }]}>{t('screens.islamicCalendar.prayerTimes')}</Text>
               </LinearGradient>
             </Pressable>
 
@@ -462,7 +462,7 @@ export default function IslamicCalendarScreen() {
                 style={styles.quickLinkGradient}
               >
                 <Icon name="book-open" size="sm" color={colors.gold} />
-                <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.quran')}</Text>
+                <Text style={[styles.quickLinkText, { color: tc.text.primary }]}>{t('screens.islamicCalendar.quran')}</Text>
               </LinearGradient>
             </Pressable>
           </View>
@@ -495,10 +495,10 @@ export default function IslamicCalendarScreen() {
               ]}>
                 {t(selectedEvent.name)}
               </Text>
-              <Text style={styles.eventSheetDate}>
+              <Text style={[styles.eventSheetDate, { color: tc.text.secondary }]}>
                 {monthNames[selectedEvent.month]} {selectedEvent.day}
               </Text>
-              <Text style={styles.eventSheetDescription}>
+              <Text style={[styles.eventSheetDescription, { color: tc.text.secondary }]}>
                 {t(selectedEvent.description)}
               </Text>
             </View>

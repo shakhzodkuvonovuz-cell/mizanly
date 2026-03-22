@@ -119,7 +119,7 @@ function FacilityBadge({ facility }: { facility: string }) {
   return (
     <View style={styles.facilityBadge}>
       <Icon name={FACILITY_ICONS[facility]} size="xs" color={tc.text.tertiary} />
-      <Text style={styles.facilityText}>{t(`islamic.facilities.${facility}`) || facility}</Text>
+      <Text style={[styles.facilityText, { color: tc.text.tertiary }]}>{t(`islamic.facilities.${facility}`) || facility}</Text>
     </View>
   );
 }
@@ -152,8 +152,8 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
         {/* Header Row */}
         <View style={styles.mosqueHeader}>
           <View style={styles.mosqueNameContainer}>
-            <Text style={styles.mosqueName}>{mosque.name}</Text>
-            <Text style={styles.mosqueAddress}>{mosque.address}</Text>
+            <Text style={[styles.mosqueName, { color: tc.text.primary }]}>{mosque.name}</Text>
+            <Text style={[styles.mosqueAddress, { color: tc.text.secondary }]}>{mosque.address}</Text>
           </View>
 
           {/* Distance Badge */}
@@ -200,7 +200,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
             style={styles.directionsGradient}
           >
             <Icon name="map-pin" size="xs" color={tc.text.primary} />
-            <Text style={styles.directionsText}>{t('islamic.directions')}</Text>
+            <Text style={[styles.directionsText, { color: tc.text.primary }]}>{t('islamic.directions')}</Text>
           </LinearGradient>
         </Pressable>
       </LinearGradient>
@@ -355,7 +355,7 @@ export default function MosqueFinderScreen() {
                 >
                   <Icon name="search" size="sm" color={tc.text.tertiary} />
                   <TextInput
-                    style={styles.searchInput}
+                    style={[styles.searchInput, { color: tc.text.primary }]}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder={t('islamic.searchMosquesPlaceholder')}
@@ -371,7 +371,7 @@ export default function MosqueFinderScreen() {
 
               {/* Results Count */}
               <View style={styles.resultsHeader}>
-                <Text style={styles.resultsText}>
+                <Text style={[styles.resultsText, { color: tc.text.tertiary }]}>
   {t('islamic.mosquesNearby', { count: filteredMosques.length })}
                 </Text>
               </View>
@@ -403,13 +403,13 @@ export default function MosqueFinderScreen() {
                   </LinearGradient>
 
                   <View style={styles.qiblaContent}>
-                    <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
+                    <Text style={[styles.qiblaTitle, { color: tc.text.primary }]}>{t('islamic.qiblaDirection')}</Text>
                     <Text style={styles.qiblaDirection}>
                       {userLocation
                         ? `${computeQiblaBearing(userLocation.lat, userLocation.lng).degrees}° ${computeQiblaBearing(userLocation.lat, userLocation.lng).direction}`
                         : '--°'}
                     </Text>
-                    <Text style={styles.qiblaHint}>{t('islamic.qiblaHint')}</Text>
+                    <Text style={[styles.qiblaHint, { color: tc.text.secondary }]}>{t('islamic.qiblaHint')}</Text>
                   </View>
 
                   {/* Arrow Indicator */}

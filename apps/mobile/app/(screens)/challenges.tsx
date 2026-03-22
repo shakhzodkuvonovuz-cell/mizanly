@@ -141,7 +141,7 @@ function ChallengeCard({
                   style={[styles.progressFill, { width: `${progress * 100}%` }]}
                 />
               </View>
-              <Text style={[styles.progressText, { textAlign: rtlTextAlign(isRTL) }]}>
+              <Text style={[styles.progressText, { color: tc.text.secondary }, { textAlign: rtlTextAlign(isRTL) }]}>
                 {t('gamification.challenges.progress', {
                   current: challenge.currentProgress ?? 0,
                   target: challenge.targetCount,
@@ -154,14 +154,14 @@ function ChallengeCard({
           <View style={[styles.challengeFooter, { flexDirection: rtlFlexRow(isRTL) }]}>
             <View style={[styles.footerMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
               <View style={[styles.metaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-                <Icon name="users" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.metaText}>
+                <Icon name="users" size="xs" color={tc.text.tertiary} />
+                <Text style={[styles.metaText, { color: tc.text.tertiary }]}>
                   {t('gamification.challenges.participants', { count: formatCount(challenge.participantsCount) })}
                 </Text>
               </View>
               <View style={[styles.metaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-                <Icon name="clock" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.metaText}>
+                <Icon name="clock" size="xs" color={tc.text.tertiary} />
+                <Text style={[styles.metaText, { color: tc.text.tertiary }]}>
                   {daysLeft > 0
                     ? t('gamification.challenges.daysLeft', { count: daysLeft })
                     : t('gamification.challenges.ended')}
@@ -326,7 +326,7 @@ function ChallengesScreen() {
               }
               style={styles.tabChip}
             >
-              <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
+              <Text style={[styles.tabText, { color: tc.text.secondary }, activeTab === tab.key && styles.tabTextActive]}>
                 {tab.label}
               </Text>
             </LinearGradient>
@@ -361,11 +361,12 @@ function ChallengesScreen() {
                 <Icon
                   name={cat.icon}
                   size="xs"
-                  color={selectedCategory === cat.key ? colors.emerald : colors.text.tertiary}
+                  color={selectedCategory === cat.key ? colors.emerald : tc.text.tertiary}
                 />
                 <Text
                   style={[
                     styles.categoryChipText,
+                    { color: tc.text.secondary },
                     selectedCategory === cat.key && styles.categoryChipTextActive,
                   ]}
                 >

@@ -133,10 +133,10 @@ export default function BlockedScreen() {
                   >
                     <Avatar uri={u.avatarUrl} name={u.displayName} size="md" showRing ringColor={colors.error} />
                     <View style={styles.info}>
-                      <Text style={styles.name}>{u.displayName}</Text>
+                      <Text style={[styles.name, { color: tc.text.primary }]}>{u.displayName}</Text>
                       <View style={styles.blockedBadge}>
                         <Icon name="slash" size={10} color={colors.error} />
-                        <Text style={styles.username}>@{u.username}</Text>
+                        <Text style={[styles.username, { color: tc.text.secondary }]}>@{u.username}</Text>
                       </View>
                     </View>
                     <GradientButton

@@ -55,7 +55,7 @@ function CreateSheet({
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <Text style={styles.sheetTitle}>{t('screens.circles.newCircleTitle')}</Text>
+      <Text style={[styles.sheetTitle, { color: tc.text.primary }]}>{t('screens.circles.newCircleTitle')}</Text>
 
       {/* Emoji picker */}
       <View style={styles.emojiRow}>
@@ -82,7 +82,7 @@ function CreateSheet({
         value={name}
         onChangeText={setName}
         placeholder={t('screens.circles.circleNamePlaceholder')}
-        placeholderTextColor={colors.text.tertiary}
+        placeholderTextColor={tc.text.tertiary}
         maxLength={40}
         autoFocus
       />
@@ -215,10 +215,10 @@ export default function CirclesScreen() {
                     </LinearGradient>
                   </View>
                   <View style={styles.circleInfo}>
-                    <Text style={styles.circleName}>{item.name}</Text>
+                    <Text style={[styles.circleName, { color: tc.text.primary }]}>{item.name}</Text>
                     <View style={styles.memberBadge}>
-                      <Icon name="users" size="xs" color={colors.text.tertiary} />
-                      <Text style={styles.circleMemberCount}>
+                      <Icon name="users" size="xs" color={tc.text.tertiary} />
+                      <Text style={[styles.circleMemberCount, { color: tc.text.tertiary }]}>
                         {t('screens.circles.memberCount', { count: item._count?.members ?? 0 })}
                       </Text>
                     </View>

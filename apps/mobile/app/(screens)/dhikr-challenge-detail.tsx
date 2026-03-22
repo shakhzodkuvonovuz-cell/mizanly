@@ -50,8 +50,8 @@ function ProgressRing({ current, target }: { current: number; target: number }) 
         end={{ x: 1, y: 1 }}
       >
         <View style={[styles.progressRingInner, { backgroundColor: tc.bgCard }]}>
-          <Text style={styles.progressRingPercent}>{percentage}%</Text>
-          <Text style={styles.progressRingLabel}>
+          <Text style={[styles.progressRingPercent, { color: tc.text.primary }]}>{percentage}%</Text>
+          <Text style={[styles.progressRingLabel, { color: tc.text.secondary }]}>
             {current.toLocaleString()} / {target.toLocaleString()}
           </Text>
         </View>
@@ -70,14 +70,14 @@ function ContributorRow({
   return (
     <View style={styles.contributorRow}>
       <View style={styles.rankBadge}>
-        <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>{rank}</Text>
+        <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop, { color: tc.text.tertiary }]}>{rank}</Text>
       </View>
       <Avatar
         uri={contributor.user?.avatarUrl ?? null}
         name={contributor.user?.displayName ?? 'User'}
         size="sm"
       />
-      <Text style={styles.contributorName} numberOfLines={1}>
+      <Text style={[styles.contributorName, { color: tc.text.primary }]} numberOfLines={1}>
         {contributor.user?.displayName ?? 'Anonymous'}
       </Text>
       <Text style={styles.contributorCount}>
@@ -179,20 +179,20 @@ export default function DhikrChallengeDetailScreen() {
         {/* Challenge Info */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
           <View style={styles.challengeInfo}>
-            <Text style={styles.challengeTitle}>{detail.title}</Text>
+            <Text style={[styles.challengeTitle, { color: tc.text.primary }]}>{detail.title}</Text>
             <Text style={styles.challengePhrase}>
               {PHRASE_ARABIC_MAP[detail.phrase] || detail.phrase}
             </Text>
             <View style={styles.metaRow}>
               <View style={styles.metaItem}>
                 <Icon name="users" size="xs" color={tc.text.tertiary} />
-                <Text style={styles.metaText}>
+                <Text style={[styles.metaText, { color: tc.text.tertiary }]}>
                   {t('dhikr.participants', { count: formatCount(detail.participantCount) })}
                 </Text>
               </View>
               <View style={styles.metaItem}>
                 <Icon name="bar-chart-2" size="xs" color={tc.text.tertiary} />
-                <Text style={styles.metaText}>
+                <Text style={[styles.metaText, { color: tc.text.tertiary }]}>
                   {t('dhikr.progress', {
                     current: detail.currentTotal.toLocaleString(),
                     target: detail.targetTotal.toLocaleString(),
@@ -241,7 +241,7 @@ export default function DhikrChallengeDetailScreen() {
                     end={{ x: 1, y: 1 }}
                   >
                     <View style={[styles.contributeCounterInner, { backgroundColor: tc.bgCard }]}>
-                      <Text style={styles.contributeCountText}>{contributeCount}</Text>
+                      <Text style={[styles.contributeCountText, { color: tc.text.primary }]}>{contributeCount}</Text>
                       <Text style={styles.contributeTapHint}>
                         {PHRASE_ARABIC_MAP[detail.phrase] || detail.phrase}
                       </Text>
@@ -273,7 +273,7 @@ export default function DhikrChallengeDetailScreen() {
 
         {/* Leaderboard Title */}
         <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <Text style={styles.leaderboardTitle}>{t('dhikr.leaderboard')}</Text>
+          <Text style={[styles.leaderboardTitle, { color: tc.text.primary }]}>{t('dhikr.leaderboard')}</Text>
         </Animated.View>
       </View>
     );

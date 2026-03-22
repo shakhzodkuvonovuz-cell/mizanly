@@ -127,7 +127,7 @@ function DonateScreenContent() {
             <Text style={styles.successTitle}>{t('charity.success')}</Text>
           </Animated.View>
           <Animated.View entering={FadeInUp.delay(300).duration(500).springify()}>
-            <Text style={styles.successMessage}>{t('charity.successMessage')}</Text>
+            <Text style={[styles.successMessage, { color: tc.text.secondary }]}>{t('charity.successMessage')}</Text>
           </Animated.View>
           <Animated.View entering={FadeInUp.delay(400).duration(500).springify()} style={styles.successAction}>
             <GradientButton
@@ -146,10 +146,10 @@ function DonateScreenContent() {
       <View style={styles.donationLeft}>
         <Icon name="heart" size="sm" color={colors.emerald} />
         <View style={styles.donationInfo}>
-          <Text style={styles.donationAmount}>
+          <Text style={[styles.donationAmount, { color: tc.text.primary }]}>
             {formatAmount(item.amount, item.currency as Currency)}
           </Text>
-          <Text style={styles.donationDate}>
+          <Text style={[styles.donationDate, { color: tc.text.tertiary }]}>
             {new Date(item.createdAt).toLocaleDateString()}
           </Text>
         </View>
@@ -183,9 +183,9 @@ function DonateScreenContent() {
               <Skeleton.Rect width="100%" height={80} borderRadius={radius.md} />
             ) : campaign ? (
               <>
-                <Text style={styles.campaignTitle}>{campaign.title}</Text>
+                <Text style={[styles.campaignTitle, { color: tc.text.primary }]}>{campaign.title}</Text>
                 {campaign.description && (
-                  <Text style={styles.campaignDescription}>{campaign.description}</Text>
+                  <Text style={[styles.campaignDescription, { color: tc.text.secondary }]}>{campaign.description}</Text>
                 )}
                 <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
                   <View
@@ -195,7 +195,7 @@ function DonateScreenContent() {
                     ]}
                   />
                 </View>
-                <Text style={styles.campaignRaised}>
+                <Text style={[styles.campaignRaised, { color: tc.text.secondary }]}>
                   {t('charity.raised', {
                     amount: formatAmount(campaign.raisedAmount, currency),
                     goal: formatAmount(campaign.goalAmount, currency),
@@ -209,7 +209,7 @@ function DonateScreenContent() {
 
       {/* Amount picker */}
       <Animated.View entering={FadeInUp.delay(150).duration(400).springify()}>
-        <Text style={styles.sectionLabel}>{t('charity.amount')}</Text>
+        <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('charity.amount')}</Text>
         <View style={styles.amountGrid}>
           {PRESET_AMOUNTS.map((amt, index) => {
             const isActive = !isCustom && selectedAmount === amt;
@@ -235,7 +235,7 @@ function DonateScreenContent() {
                       </Text>
                     </LinearGradient>
                   ) : (
-                    <Text style={styles.amountChipText}>
+                    <Text style={[styles.amountChipText, { color: tc.text.primary }]}>
                       {formatAmount(amt, currency)}
                     </Text>
                   )}
@@ -249,9 +249,9 @@ function DonateScreenContent() {
       {/* Custom amount */}
       <Animated.View entering={FadeInUp.delay(450).duration(400).springify()}>
         <View style={[styles.customInputRow, { backgroundColor: tc.bgCard, borderColor: tc.border }, isCustom && styles.customInputRowActive]}>
-          <Text style={styles.currencySymbol}>{CURRENCY_SYMBOLS[currency]}</Text>
+          <Text style={[styles.currencySymbol, { color: tc.text.secondary }]}>{CURRENCY_SYMBOLS[currency]}</Text>
           <TextInput
-            style={styles.customInput}
+            style={[styles.customInput, { color: tc.text.primary }]}
             placeholder={t('charity.custom')}
             placeholderTextColor={tc.text.tertiary}
             keyboardType="decimal-pad"
@@ -272,7 +272,7 @@ function DonateScreenContent() {
               style={[styles.currencyPill, { backgroundColor: tc.bgCard, borderColor: tc.border }, currency === cur && styles.currencyPillActive]}
               onPress={() => setCurrency(cur)}
             >
-              <Text style={[styles.currencyText, currency === cur && styles.currencyTextActive]}>
+              <Text style={[styles.currencyText, currency === cur && styles.currencyTextActive, { color: tc.text.secondary }]}>
                 {cur.toUpperCase()}
               </Text>
             </Pressable>
@@ -295,7 +295,7 @@ function DonateScreenContent() {
 
       {/* My Donations header */}
       <Animated.View entering={FadeInUp.delay(600).duration(400).springify()}>
-        <Text style={styles.sectionLabel}>{t('charity.myDonations')}</Text>
+        <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('charity.myDonations')}</Text>
       </Animated.View>
     </View>
   );

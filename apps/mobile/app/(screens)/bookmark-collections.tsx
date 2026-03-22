@@ -72,10 +72,10 @@ export default function BookmarkCollectionsScreen() {
             )}
           </View>
           <View style={styles.info}>
-            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+            <Text style={[styles.name, { color: tc.text.primary }]} numberOfLines={1}>{item.name}</Text>
             <View style={styles.countBadge}>
-              <Icon name="bookmark" size={10} color={colors.text.tertiary} />
-              <Text style={styles.count}>{t('screens.bookmarkCollections.savedCount', { count: item.count })}</Text>
+              <Icon name="bookmark" size={10} color={tc.text.tertiary} />
+              <Text style={[styles.count, { color: tc.text.secondary }]}>{t('screens.bookmarkCollections.savedCount', { count: item.count })}</Text>
             </View>
           </View>
         </LinearGradient>

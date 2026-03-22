@@ -88,6 +88,7 @@ function AchievementCard({
         colors={achievement.isUnlocked ? gradientColors : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
         style={[
           styles.achievementCard,
+          { borderColor: tc.borderLight },
           !achievement.isUnlocked && styles.lockedCard,
         ]}
       >
@@ -118,7 +119,8 @@ function AchievementCard({
         <Text
           style={[
             styles.cardName,
-            !achievement.isUnlocked && styles.lockedText,
+            { color: tc.text.primary },
+            !achievement.isUnlocked && { color: tc.text.tertiary },
             { textAlign: 'center' },
           ]}
           numberOfLines={2}
@@ -128,7 +130,7 @@ function AchievementCard({
 
         {/* Description */}
         <Text
-          style={[styles.cardDesc, { textAlign: 'center' }]}
+          style={[styles.cardDesc, { color: tc.text.secondary, textAlign: 'center' }]}
           numberOfLines={2}
         >
           {achievement.isUnlocked ? achievement.description : (achievement.criteria ?? achievement.description)}
@@ -143,7 +145,7 @@ function AchievementCard({
 
         {/* Unlock date */}
         {achievement.isUnlocked && achievement.unlockedAt && (
-          <Text style={styles.unlockDate}>
+          <Text style={[styles.unlockDate, { color: tc.text.tertiary }]}>
             {t('gamification.achievements.unlockedAt', {
               date: new Date(achievement.unlockedAt).toLocaleDateString(),
             })}
@@ -256,6 +258,7 @@ function AchievementsScreen() {
               <Text
                 style={[
                   styles.chipText,
+                  { color: tc.text.secondary },
                   selectedCategory === cat.key && styles.chipTextActive,
                 ]}
               >
@@ -269,7 +272,7 @@ function AchievementsScreen() {
       {/* Progress counter */}
       <Animated.View entering={FadeIn.duration(400)} style={[styles.counterRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Icon name="check-circle" size="sm" color={colors.emerald} />
-        <Text style={styles.counterText}>
+        <Text style={[styles.counterText, { color: tc.text.primary }]}>
           {unlockedCount}/{achievements.length} {t('gamification.achievements.unlocked')}
         </Text>
       </Animated.View>

@@ -208,7 +208,7 @@ export default function ArchiveScreen() {
         >
           <BottomSheetItem
             label={t('screens.archive.unarchiveLabel')}
-            icon={<Icon name="repeat" size="md" color={colors.text.primary} />}
+            icon={<Icon name="repeat" size="md" color={tc.text.primary} />}
             onPress={handleUnarchive}
           />
           <BottomSheetItem

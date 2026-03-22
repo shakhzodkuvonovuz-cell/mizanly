@@ -41,10 +41,10 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
           <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
           <View style={styles.info}>
             <View style={styles.nameRow}>
-              <Text style={styles.name}>{user.displayName}</Text>
+              <Text style={[styles.name, { color: tc.text.primary }]}>{user.displayName}</Text>
               {user.isVerified && <VerifiedBadge size={13} />}
             </View>
-            <Text style={styles.handle}>@{user.username}</Text>
+            <Text style={[styles.handle, { color: tc.text.secondary }]}>@{user.username}</Text>
           </View>
           {!isMe && (
             <GradientButton

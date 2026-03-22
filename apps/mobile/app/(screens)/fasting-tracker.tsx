@@ -36,8 +36,8 @@ function StatCard({ label, value, color }: { label: string; value: string | numb
   const tc = useThemeColors();
   return (
     <View style={[styles.statCard, { backgroundColor: tc.bgCard }]}>
-      <Text style={[styles.statValue, color ? { color } : undefined]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, color ? { color } : undefined, { color: tc.text.primary }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{label}</Text>
     </View>
   );
 }
@@ -187,7 +187,7 @@ export default function FastingTrackerScreen() {
           {/* Today's Prompt */}
           {!todayLog && (
             <Animated.View entering={FadeInUp.duration(300)} style={[styles.todayCard, { backgroundColor: tc.bgCard }]}>
-              <Text style={[styles.todayTitle, { textAlign: rtlTextAlign(isRTL) }]}>
+              <Text style={[styles.todayTitle, { textAlign: rtlTextAlign(isRTL) }, { color: tc.text.primary }]}>
                 {t('fasting.areYouFasting')}
               </Text>
               <View style={[styles.todayButtons, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -209,14 +209,14 @@ export default function FastingTrackerScreen() {
                   accessibilityRole="button"
                 >
                   <Icon name="x" size={18} color={tc.text.primary} />
-                  <Text style={styles.todayBtnTextNo}>{t('fasting.notFasting')}</Text>
+                  <Text style={[styles.todayBtnTextNo, { todayBtnTextNo: tc.text.primary }]}>{t('fasting.notFasting')}</Text>
                 </Pressable>
               </View>
             </Animated.View>
           )}
 
           {todayLog && (
-            <View style={[styles.todayCard, { borderColor: todayLog.isFasting ? colors.emerald : tc.border }]}>
+            <View style={[styles.todayCard, { borderColor: todayLog.isFasting ? colors.emerald : tc.border }, { backgroundColor: tc.bg, backgroundColor: tc.bgCard }]}>
               <Text style={styles.todayStatusText}>
                 {todayLog.isFasting ? t('fasting.yesFasting') : t('fasting.notFasting')}
               </Text>
@@ -244,7 +244,7 @@ export default function FastingTrackerScreen() {
               <Pressable onPress={() => navigateMonth(-1)} hitSlop={12} accessibilityLabel="Previous month" accessibilityRole="button">
                 <Icon name="chevron-left" size="md" color={tc.text.secondary} />
               </Pressable>
-              <Text style={styles.calMonthLabel}>{monthLabel}</Text>
+              <Text style={[styles.calMonthLabel, { color: tc.text.primary }]}>{monthLabel}</Text>
               <Pressable onPress={() => navigateMonth(1)} hitSlop={12} accessibilityLabel="Next month" accessibilityRole="button">
                 <Icon name="chevron-right" size="md" color={tc.text.secondary} />
               </Pressable>
@@ -253,7 +253,7 @@ export default function FastingTrackerScreen() {
             {/* Day labels */}
             <View style={styles.calWeekRow}>
               {DAYS_OF_WEEK_KEYS.map((key, i) => (
-                <Text key={i} style={styles.calWeekLabel}>{t(key)}</Text>
+                <Text key={i} style={[styles.calWeekLabel, { color: tc.text.tertiary }]}>{t(key)}</Text>
               ))}
             </View>
 
@@ -267,16 +267,16 @@ export default function FastingTrackerScreen() {
 
           {/* Sunnah Fasts Info */}
           <View style={[styles.sunnahSection, { backgroundColor: tc.bgCard }]}>
-            <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>
+            <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }, { color: tc.text.primary }]}>
               {t('fasting.sunnahFasts')}
             </Text>
             <View style={styles.sunnahItem}>
               <Icon name="check-circle" size={16} color={colors.emerald} />
-              <Text style={styles.sunnahText}>{t('fasting.mondayThursday')}</Text>
+              <Text style={[styles.sunnahText, { color: tc.text.secondary }]}>{t('fasting.mondayThursday')}</Text>
             </View>
             <View style={styles.sunnahItem}>
               <Icon name="check-circle" size={16} color={colors.emerald} />
-              <Text style={styles.sunnahText}>{t('fasting.whiteDays')}</Text>
+              <Text style={[styles.sunnahText, { color: tc.text.secondary }]}>{t('fasting.whiteDays')}</Text>
             </View>
           </View>
         </ScrollView>

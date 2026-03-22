@@ -73,11 +73,11 @@ function VideoCard({ video }: { video: Video }) {
           <ProgressiveImage uri={video.thumbnailUrl} width="100%" height={THUMB_16_9} contentFit="cover" />
         ) : (
           <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
-            <Icon name="video" size="lg" color={colors.text.secondary} />
+            <Icon name="video" size="lg" color={tc.text.secondary} />
           </View>
         )}
         <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>{durationText}</Text>
+          <Text style={[styles.durationText, { color: tc.text.primary }]}>{durationText}</Text>
         </View>
       </View>
 
@@ -92,14 +92,14 @@ function VideoCard({ video }: { video: Video }) {
           />
         </Pressable>
         <View style={styles.videoDetails}>
-          <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
-          <Text style={styles.videoCardChannelName} numberOfLines={1}>{video.channel.name}</Text>
-          <Text style={styles.videoStats} numberOfLines={1}>
+          <Text style={[styles.videoTitle, { color: tc.text.primary }]} numberOfLines={2}>{video.title}</Text>
+          <Text style={[styles.videoCardChannelName, { color: tc.text.secondary }]} numberOfLines={1}>{video.channel.name}</Text>
+          <Text style={[styles.videoStats, { color: tc.text.tertiary }]} numberOfLines={1}>
             {formatCount(video.viewsCount)} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </View>
         <Pressable style={styles.moreButton} hitSlop={8} onPress={() => {/* Video options: handled by parent channel menu */}}>
-          <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
+          <Icon name="more-horizontal" size="sm" color={tc.text.secondary} />
         </Pressable>
       </View>
     </Pressable>
@@ -127,16 +127,16 @@ function VideoCard({ video }: { video: Video }) {
                 <Icon name="check" size={10} color="#fff" />
                 <Text style={styles.featuredBadgeText}>FEATURED</Text>
               </View>
-              <Text style={styles.featuredTitle} numberOfLines={2}>{video.title}</Text>
+              <Text style={[styles.featuredTitle, { color: tc.text.primary }]} numberOfLines={2}>{video.title}</Text>
               <View style={styles.featuredStats}>
-                <Text style={styles.featuredStatText}>{formatCount(video.viewsCount)} {t('minbar.viewCount')}</Text>
-                <Text style={styles.featuredStatDot}>•</Text>
-                <Text style={styles.featuredStatText}>{durationText}</Text>
+                <Text style={[styles.featuredStatText, { color: tc.text.secondary }]}>{formatCount(video.viewsCount)} {t('minbar.viewCount')}</Text>
+                <Text style={[styles.featuredStatDot, { color: tc.text.tertiary }]}>•</Text>
+                <Text style={[styles.featuredStatText, { color: tc.text.secondary }]}>{durationText}</Text>
               </View>
             </View>
           </LinearGradient>
           <View style={styles.featuredDurationBadge}>
-            <Text style={styles.durationText}>{durationText}</Text>
+            <Text style={[styles.durationText, { color: tc.text.primary }]}>{durationText}</Text>
           </View>
         </Pressable>
       </Animated.View>
@@ -158,12 +158,12 @@ function VideoCard({ video }: { video: Video }) {
         <ProgressiveImage uri={playlist.thumbnailUrl} width={120} height={68} borderRadius={radius.sm} contentFit="cover" />
       ) : (
         <View style={[styles.playlistThumbnail, { backgroundColor: tc.bgCard }, styles.playlistThumbnailPlaceholder]}>
-          <Icon name="layers" size="lg" color={colors.text.tertiary} />
+          <Icon name="layers" size="lg" color={tc.text.tertiary} />
         </View>
       )}
       <View style={styles.playlistInfo}>
-        <Text style={styles.playlistTitle} numberOfLines={2}>{playlist.title}</Text>
-        <Text style={styles.playlistMeta}>{playlist.videosCount} {t('minbar.videos')}</Text>
+        <Text style={[styles.playlistTitle, { color: tc.text.primary }]} numberOfLines={2}>{playlist.title}</Text>
+        <Text style={[styles.playlistMeta, { color: tc.text.tertiary }]}>{playlist.videosCount} {t('minbar.videos')}</Text>
       </View>
     </Pressable>
   );
@@ -349,30 +349,30 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           />
         </View>
         <View style={styles.nameRow}>
-          <Text style={styles.channelName}>{channel?.name}</Text>
+          <Text style={[styles.channelName, { color: tc.text.primary }]}>{channel?.name}</Text>
           {channel?.isVerified && <VerifiedBadge size={18} />}
         </View>
-        <Text style={styles.handle}>@{handle}</Text>
+        <Text style={[styles.handle, { color: tc.text.secondary }]}>@{handle}</Text>
       </View>
 
       {/* Enhanced Stats with icons */}
       <View style={[styles.statsEnhanced, { backgroundColor: tc.surface }]}>
         <View style={styles.statItemEnhanced}>
           <Icon name="users" size="sm" color={colors.emerald} />
-          <Text style={styles.statNumEnhanced}>{formatCount(channel?.subscribersCount ?? 0)}</Text>
-          <Text style={styles.statLabelEnhanced}>{t('channel.subscribers')}</Text>
+          <Text style={[styles.statNumEnhanced, { color: tc.text.primary }]}>{formatCount(channel?.subscribersCount ?? 0)}</Text>
+          <Text style={[styles.statLabelEnhanced, { color: tc.text.secondary }]}>{t('channel.subscribers')}</Text>
         </View>
         <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
           <Icon name="video" size="sm" color={colors.gold} />
-          <Text style={styles.statNumEnhanced}>{formatCount(channel?.videosCount ?? 0)}</Text>
-          <Text style={styles.statLabelEnhanced}>{t('minbar.videos')}</Text>
+          <Text style={[styles.statNumEnhanced, { color: tc.text.primary }]}>{formatCount(channel?.videosCount ?? 0)}</Text>
+          <Text style={[styles.statLabelEnhanced, { color: tc.text.secondary }]}>{t('minbar.videos')}</Text>
         </View>
         <View style={[styles.statDividerEnhanced, { backgroundColor: tc.border }]} />
         <View style={styles.statItemEnhanced}>
           <Icon name="eye" size="sm" color={colors.text.secondary} />
-          <Text style={styles.statNumEnhanced}>{formatCount(channel?.totalViews ?? 0)}</Text>
-          <Text style={styles.statLabelEnhanced}>{t('minbar.viewCount')}</Text>
+          <Text style={[styles.statNumEnhanced, { color: tc.text.primary }]}>{formatCount(channel?.totalViews ?? 0)}</Text>
+          <Text style={[styles.statLabelEnhanced, { color: tc.text.secondary }]}>{t('minbar.viewCount')}</Text>
         </View>
       </View>
 
@@ -385,7 +385,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             end={{ x: 1, y: 1 }}
             style={styles.descriptionGradient}
           >
-            <Text style={styles.descriptionText}>{channel.description}</Text>
+            <Text style={[styles.descriptionText, { color: tc.text.secondary }]}>{channel.description}</Text>
           </LinearGradient>
         </View>
       )}
@@ -393,7 +393,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       {/* Channel Trailer Section (non-subscribers only) */}
       {showTrailerSection && channel.trailerVideo && (
         <Animated.View entering={FadeInUp.delay(150)} style={styles.trailerContainer}>
-          <Text style={styles.trailerSectionTitle}>{t('channelTrailer.title')}</Text>
+          <Text style={[styles.trailerSectionTitle, { color: tc.text.primary }]}>{t('channelTrailer.title')}</Text>
           <Pressable
             accessibilityRole="button"
             style={[styles.trailerCard, { backgroundColor: tc.surface }]}
@@ -416,13 +416,13 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                 <View style={styles.trailerPlayButton}>
                   <Icon name="play" size="lg" color="#fff" />
                 </View>
-                <Text style={styles.trailerTitle} numberOfLines={2}>{channel.trailerVideo.title}</Text>
+                <Text style={[styles.trailerTitle, { color: tc.text.primary }]} numberOfLines={2}>{channel.trailerVideo.title}</Text>
                 <Text style={styles.trailerCta}>{t('channelTrailer.subscribeToUnlock')}</Text>
               </View>
             </LinearGradient>
             {channel.trailerVideo.duration > 0 && (
               <View style={styles.trailerDurationBadge}>
-                <Text style={styles.durationText}>
+                <Text style={[styles.durationText, { color: tc.text.primary }]}>
                   {Math.floor(channel.trailerVideo.duration / 60)}:{Math.floor(channel.trailerVideo.duration % 60).toString().padStart(2, '0')}
                 </Text>
               </View>
@@ -489,7 +489,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+            <Icon name="arrow-left" size="md" color={tc.text.primary} />
           </Pressable>
         </View>
         <EmptyState
@@ -509,15 +509,15 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+            <Icon name="arrow-left" size="md" color={tc.text.primary} />
           </Pressable>
-          <Text style={styles.headerTitle}>@{handle}</Text>
+          <Text style={[styles.headerTitle, { color: tc.text.primary }]}>@{handle}</Text>
           <View style={styles.headerRight}>
             <Pressable hitSlop={8} onPress={handleShare} style={styles.headerAction}>
-              <Icon name="share" size="sm" color={colors.text.primary} />
+              <Icon name="share" size="sm" color={tc.text.primary} />
             </Pressable>
             <Pressable hitSlop={8} onPress={() => setShowMenu(true)} style={styles.headerAction}>
-              <Icon name="more-horizontal" size="sm" color={colors.text.primary} />
+              <Icon name="more-horizontal" size="sm" color={tc.text.primary} />
             </Pressable>
           </View>
         </View>
@@ -536,16 +536,16 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
               {/* About tab content rendered as part of header (Finding 29: was incorrectly in ListEmptyComponent) */}
               {activeTab === 'about' && (
                 <View style={styles.aboutTab}>
-                  <Text style={styles.aboutDescription}>{channel.description || t('channel.noDescription', 'No description provided.')}</Text>
+                  <Text style={[styles.aboutDescription, { color: tc.text.secondary }]}>{channel.description || t('channel.noDescription', 'No description provided.')}</Text>
                   <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
-                    <Text style={styles.aboutMetaLabel}>{t('channel.joined')}</Text>
-                    <Text style={styles.aboutMetaValue}>
+                    <Text style={[styles.aboutMetaLabel, { color: tc.text.secondary }]}>{t('channel.joined')}</Text>
+                    <Text style={[styles.aboutMetaValue, { color: tc.text.primary }]}>
                       {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                     </Text>
                   </View>
                   <View style={[styles.aboutMeta, { borderBottomColor: tc.border }]}>
-                    <Text style={styles.aboutMetaLabel}>{t('channel.totalViews')}</Text>
-                    <Text style={styles.aboutMetaValue}>{formatCount(channel.totalViews ?? 0)}</Text>
+                    <Text style={[styles.aboutMetaLabel, { color: tc.text.secondary }]}>{t('channel.totalViews')}</Text>
+                    <Text style={[styles.aboutMetaValue, { color: tc.text.primary }]}>{formatCount(channel.totalViews ?? 0)}</Text>
                   </View>
                 </View>
               )}
@@ -596,7 +596,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         {/* More menu bottom sheet */}
         <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
           <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
-            <Text style={styles.sheetTitle}>{t('channel.options', 'Channel options')}</Text>
+            <Text style={[styles.sheetTitle, { color: tc.text.secondary }]}>{t('channel.options', 'Channel options')}</Text>
           </View>
           {isOwner && (
             <BottomSheetItem
@@ -629,7 +629,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           />
           <BottomSheetItem
             label={t('channel.shareChannel')}
-            icon={<Icon name="share" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="share" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setShowMenu(false);
               handleShare();
@@ -676,11 +676,11 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         {/* Share bottom sheet */}
         <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
           <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
-            <Text style={styles.sheetTitle}>{t('channel.shareChannel')}</Text>
+            <Text style={[styles.sheetTitle, { color: tc.text.secondary }]}>{t('channel.shareChannel')}</Text>
           </View>
           <BottomSheetItem
             label={t('common.shareVia')}
-            icon={<Icon name="share" size="sm" color={colors.text.primary} />}
+            icon={<Icon name="share" size="sm" color={tc.text.primary} />}
             onPress={() => {
               setShowShareSheet(false);
               handleNativeShare();
@@ -699,9 +699,9 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         {/* Trailer picker bottom sheet (owner only) */}
         <BottomSheet visible={showTrailerPicker} onClose={() => setShowTrailerPicker(false)} snapPoint={0.7}>
           <View style={[styles.sheetHeader, { borderBottomColor: tc.border }]}>
-            <Text style={styles.sheetTitle}>{t('channelTrailer.setTrailer')}</Text>
+            <Text style={[styles.sheetTitle, { color: tc.text.secondary }]}>{t('channelTrailer.setTrailer')}</Text>
           </View>
-          <Text style={styles.trailerPickerHint}>{t('channelTrailer.selectVideo')}</Text>
+          <Text style={[styles.trailerPickerHint, { color: tc.text.secondary }]}>{t('channelTrailer.selectVideo')}</Text>
           {channel?.trailerVideoId && (
             <View style={styles.trailerPickerCurrent}>
               <Icon name="check-circle" size="sm" color={colors.emerald} />
@@ -731,13 +731,13 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                       <ProgressiveImage uri={item.thumbnailUrl} width={100} height={56} contentFit="cover" />
                     ) : (
                       <View style={[styles.trailerPickerThumb, styles.trailerThumbnailPlaceholder, { backgroundColor: tc.bgCard }]}>
-                        <Icon name="video" size="sm" color={colors.text.tertiary} />
+                        <Icon name="video" size="sm" color={tc.text.tertiary} />
                       </View>
                     )}
                   </View>
                   <View style={styles.trailerPickerInfo}>
-                    <Text style={styles.trailerPickerTitle} numberOfLines={2}>{item.title}</Text>
-                    <Text style={styles.trailerPickerMeta}>
+                    <Text style={[styles.trailerPickerTitle, { color: tc.text.primary }]} numberOfLines={2}>{item.title}</Text>
+                    <Text style={[styles.trailerPickerMeta, { color: tc.text.tertiary }]}>
                       {mins}:{secs.toString().padStart(2, '0')}
                     </Text>
                   </View>

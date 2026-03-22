@@ -130,11 +130,11 @@ function PhraseButton({
           isSelected && styles.phraseButtonSelected,
         ]}
       >
-        <Text style={[styles.phraseLatin, isSelected && styles.phraseLatinSelected]}>
+        <Text style={[styles.phraseLatin, isSelected && styles.phraseLatinSelected, { color: tc.text.secondary }]}>
           {phrase.latin}
         </Text>
-        <Text style={styles.phraseArabic}>{phrase.arabic}</Text>
-        <Text style={styles.phraseMeaning}>{t(`screens.dhikrCounter.phraseMeaning.${phrase.id}`)}</Text>
+        <Text style={[styles.phraseArabic, { color: tc.text.primary }]}>{phrase.arabic}</Text>
+        <Text style={[styles.phraseMeaning, { color: tc.text.tertiary }]}>{t(`screens.dhikrCounter.phraseMeaning.${phrase.id}`)}</Text>
       </LinearGradient>
     </Pressable>
   );
@@ -163,8 +163,8 @@ function StatCard({
         >
           <Icon name={icon} size="sm" color={colors.emerald} />
         </LinearGradient>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
+        <Text style={[styles.statValue, { color: tc.text.primary }]}>{value}</Text>
+        <Text style={[styles.statLabel, { color: tc.text.secondary }]}>{label}</Text>
       </LinearGradient>
     </Animated.View>
   );
@@ -360,13 +360,13 @@ export default function DhikrCounterScreen() {
             <View style={styles.dailyStatsBar}>
               <View style={styles.dailyStatItem}>
                 <Icon name="trending-up" size="xs" color={colors.gold} />
-                <Text style={styles.dailyStatText}>
+                <Text style={[styles.dailyStatText, { color: tc.text.secondary }]}>
                   {t('dhikr.streak', { count: stats.streak })}
                 </Text>
               </View>
               <View style={styles.dailyStatItem}>
                 <Icon name="bar-chart-2" size="xs" color={colors.emerald} />
-                <Text style={styles.dailyStatText}>
+                <Text style={[styles.dailyStatText, { color: tc.text.secondary }]}>
                   {t('dhikr.todayCount', { count: (statsData?.todayCount ?? 0) + count })}
                 </Text>
               </View>
@@ -387,14 +387,14 @@ export default function DhikrCounterScreen() {
                   {/* Inner Circle */}
                   <View style={[styles.counterInnerCircle, { backgroundColor: tc.bgCard }]}>
                     {/* Count Number */}
-                    <Text style={styles.countNumber}>{count}</Text>
+                    <Text style={[styles.countNumber, { color: tc.text.primary }]}>{count}</Text>
 
                     {/* Arabic Phrase */}
                     <Text style={styles.countArabic}>{selectedPhrase.arabic}</Text>
 
                     {/* Hint Text */}
                     {!hasStarted && (
-                      <Text style={styles.tapHint}>{t('screens.dhikrCounter.tapHint')}</Text>
+                      <Text style={[styles.tapHint, { color: tc.text.tertiary }]}>{t('screens.dhikrCounter.tapHint')}</Text>
                     )}
                   </View>
                 </LinearGradient>
@@ -431,7 +431,7 @@ export default function DhikrCounterScreen() {
               style={styles.progressCard}
             >
               <View style={styles.progressHeader}>
-                <Text style={styles.progressTitle}>
+                <Text style={[styles.progressTitle, { color: tc.text.primary }]}>
                   {isComplete ? t('screens.dhikrCounter.setComplete') : t('screens.dhikrCounter.progressTitle', { count, goal: DAILY_GOAL })}
                 </Text>
                 {isComplete && <Icon name="check-circle" size="sm" color={colors.gold} />}
@@ -450,7 +450,7 @@ export default function DhikrCounterScreen() {
                 </View>
               </View>
 
-              <Text style={styles.progressSubtitle}>
+              <Text style={[styles.progressSubtitle, { color: tc.text.tertiary }]}>
                 {t('screens.dhikrCounter.progressSubtitle')}
               </Text>
             </LinearGradient>
@@ -465,7 +465,7 @@ export default function DhikrCounterScreen() {
                   style={styles.actionButton}
                 >
                   <Icon name="share" size="sm" color={colors.emerald} />
-                  <Text style={styles.actionButtonText}>{t('dhikr.shareProgress')}</Text>
+                  <Text style={[styles.actionButtonText, { color: tc.text.primary }]}>{t('dhikr.shareProgress')}</Text>
                 </LinearGradient>
               </Pressable>
               <Pressable
@@ -479,7 +479,7 @@ export default function DhikrCounterScreen() {
                   style={styles.actionButton}
                 >
                   <Icon name="users" size="sm" color={colors.gold} />
-                  <Text style={styles.actionButtonText}>{t('dhikr.challenges')}</Text>
+                  <Text style={[styles.actionButtonText, { color: tc.text.primary }]}>{t('dhikr.challenges')}</Text>
                 </LinearGradient>
               </Pressable>
             </View>
@@ -487,7 +487,7 @@ export default function DhikrCounterScreen() {
 
           {/* Daily Summary */}
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-            <Text style={styles.summaryTitle}>{t('dhikr.stats')}</Text>
+            <Text style={[styles.summaryTitle, { color: tc.text.primary }]}>{t('dhikr.stats')}</Text>
             <View style={styles.statsRow}>
               <StatCard icon="bar-chart-2" label={t('screens.dhikrCounter.stats.totalCounts')} value={formatCount(statsData?.totalCount ?? stats.totalCount)} delay={350} />
               <StatCard icon="check-circle" label={t('screens.dhikrCounter.stats.setsDone')} value={formatCount(stats.setsCompleted)} delay={400} />

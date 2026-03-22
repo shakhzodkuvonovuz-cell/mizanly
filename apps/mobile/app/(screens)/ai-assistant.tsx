@@ -113,14 +113,14 @@ export default function AiAssistantScreen() {
                 accessibilityRole="button"
                 key={tab.id}
                 onPress={() => { setActiveTab(tab.id); haptic.tick(); }}
-                style={[styles.tab, activeTab === tab.id && styles.tabActive]}
+                style={[styles.tab, { backgroundColor: tc.bgCard, borderColor: tc.border }, activeTab === tab.id && styles.tabActive]}
               >
                 <Icon
                   name={tab.icon}
                   size="sm"
-                  color={activeTab === tab.id ? colors.emerald : colors.text.secondary}
+                  color={activeTab === tab.id ? colors.emerald : tc.text.secondary}
                 />
-                <Text style={[styles.tabLabel, activeTab === tab.id && styles.tabLabelActive]}>
+                <Text style={[styles.tabLabel, { color: tc.text.secondary }, activeTab === tab.id && styles.tabLabelActive]}>
                   {t(tab.label)}
                 </Text>
               </Pressable>
@@ -131,7 +131,7 @@ export default function AiAssistantScreen() {
           {activeTab !== 'ideas' && (
             <Animated.View entering={FadeInUp.delay(100).duration(300)} style={[styles.inputCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
               <TextInput
-                style={[styles.input, isRTL && { textAlign: 'right' }]}
+                style={[styles.input, { color: tc.text.primary }, isRTL && { textAlign: 'right' }]}
                 value={input}
                 onChangeText={setInput}
                 placeholder={
@@ -139,7 +139,7 @@ export default function AiAssistantScreen() {
                     ? t('ai.captionPlaceholder')
                     : t('ai.hashtagPlaceholder')
                 }
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 multiline
                 maxLength={500}
               />
@@ -174,7 +174,7 @@ export default function AiAssistantScreen() {
           {/* Results: Captions */}
           {activeTab === 'captions' && captions.length > 0 && (
             <View style={styles.results}>
-              <Text style={styles.resultsTitle}>{t('ai.suggestions')}</Text>
+              <Text style={[styles.resultsTitle, { color: tc.text.secondary }]}>{t('ai.suggestions')}</Text>
               {captions.map((suggestion, i) => (
                 <Animated.View
                   key={i}
@@ -194,10 +194,10 @@ export default function AiAssistantScreen() {
                       <Icon
                         name={copiedIndex === i ? 'check' : 'layers'}
                         size="xs"
-                        color={copiedIndex === i ? colors.emerald : colors.text.tertiary}
+                        color={copiedIndex === i ? colors.emerald : tc.text.tertiary}
                       />
                     </View>
-                    <Text style={styles.captionText}>{suggestion.caption}</Text>
+                    <Text style={[styles.captionText, { color: tc.text.primary }]}>{suggestion.caption}</Text>
                   </Pressable>
                 </Animated.View>
               ))}
@@ -208,7 +208,7 @@ export default function AiAssistantScreen() {
           {activeTab === 'hashtags' && hashtags.length > 0 && (
             <Animated.View entering={FadeIn.duration(300)} style={styles.results}>
               <View style={styles.hashtagHeader}>
-                <Text style={styles.resultsTitle}>{t('ai.suggestions')}</Text>
+                <Text style={[styles.resultsTitle, { color: tc.text.secondary }]}>{t('ai.suggestions')}</Text>
                 <Pressable onPress={handleCopyHashtags} style={styles.copyAllBtn}>
                   <Icon name="layers" size="xs" color={colors.emerald} />
                   <Text style={styles.copyAllText}>{t('ai.copyAll')}</Text>
@@ -238,11 +238,11 @@ export default function AiAssistantScreen() {
                 style={styles.timeCardGradient}
               >
                 <Icon name="clock" size="lg" color={colors.gold} />
-                <Text style={styles.timeTitle}>{t('ai.bestTime')}</Text>
+                <Text style={[styles.timeTitle, { color: tc.text.secondary }]}>{t('ai.bestTime')}</Text>
                 <Text style={styles.timeValue}>
                   {(timeMutation.data as { bestTime: string }).bestTime}
                 </Text>
-                <Text style={styles.timeReason}>
+                <Text style={[styles.timeReason, { color: tc.text.tertiary }]}>
                   {(timeMutation.data as { reason: string }).reason}
                 </Text>
               </LinearGradient>

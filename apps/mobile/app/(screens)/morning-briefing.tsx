@@ -94,8 +94,8 @@ function DhikrCounter({ target, initialCount, onComplete }: { target: number; in
         accessibilityLabel={`Dhikr counter ${count} of ${target}`}
         accessibilityRole="button"
       >
-        <Text style={styles.dhikrCount}>{count}</Text>
-        <Text style={styles.dhikrTarget}>/ {target}</Text>
+        <Text style={[styles.dhikrCount, { color: tc.text.primary }]}>{count}</Text>
+        <Text style={[styles.dhikrTarget, { color: tc.text.secondary }]}>/ {target}</Text>
       </Pressable>
       <View style={styles.dhikrProgressBg}>
         <View style={[styles.dhikrProgressFill, { width: `${progress * 100}%` }]} />
@@ -253,7 +253,7 @@ export default function MorningBriefingScreen() {
             <>
               {/* Header: Greeting + Hijri Date */}
               <Animated.View entering={FadeInUp.duration(400)}>
-                <Text style={styles.greeting}>{greeting}</Text>
+                <Text style={[styles.greeting, { color: tc.text.primary }]}>{greeting}</Text>
                 <Text style={styles.hijriDate}>{briefing.hijriDate}</Text>
               </Animated.View>
 
@@ -264,7 +264,7 @@ export default function MorningBriefingScreen() {
                   style={styles.progressCard}
                 >
                   <View style={styles.progressHeader}>
-                    <Text style={styles.progressTitle}>
+                    <Text style={[styles.progressTitle, { color: tc.text.primary }]}>
                       {t('dailyBriefing.tasksComplete', {
                         completed: String(briefing.tasksCompleted),
                         total: String(briefing.totalTasks),
@@ -291,13 +291,13 @@ export default function MorningBriefingScreen() {
                   >
                     <View style={styles.cardHeader}>
                       <Icon name="clock" size="sm" color={colors.gold} />
-                      <Text style={styles.cardTitle}>{t('islamic.prayerTimes')}</Text>
+                      <Text style={[styles.cardTitle, { color: tc.text.primary }]}>{t('islamic.prayerTimes')}</Text>
                     </View>
                     <View style={styles.prayerTimesGrid}>
                       {Object.entries(briefing.prayerTimes).map(([name, time]) => (
                         <View key={name} style={styles.prayerTimeItem}>
-                          <Text style={styles.prayerName}>{name}</Text>
-                          <Text style={styles.prayerTime}>{time}</Text>
+                          <Text style={[styles.prayerName, { color: tc.text.secondary }]}>{name}</Text>
+                          <Text style={[styles.prayerTime, { color: tc.text.primary }]}>{time}</Text>
                         </View>
                       ))}
                     </View>
@@ -313,7 +313,7 @@ export default function MorningBriefingScreen() {
                 >
                   <View style={styles.cardHeader}>
                     <Icon name="layers" size="sm" color={colors.gold} />
-                    <Text style={styles.cardTitle}>{t('dailyBriefing.hadithOfTheDay')}</Text>
+                    <Text style={[styles.cardTitle, { color: tc.text.primary }]}>{t('dailyBriefing.hadithOfTheDay')}</Text>
                     <Pressable
                       onPress={handlePlayHadith}
                       hitSlop={8}
@@ -325,10 +325,10 @@ export default function MorningBriefingScreen() {
                     </Pressable>
                   </View>
                   {briefing.hadithOfTheDay.arabic ? (
-                    <Text style={styles.arabicText}>{briefing.hadithOfTheDay.arabic}</Text>
+                    <Text style={[styles.arabicText, { color: tc.text.primary }]}>{briefing.hadithOfTheDay.arabic}</Text>
                   ) : null}
-                  <Text style={styles.contentText}>{briefing.hadithOfTheDay.text}</Text>
-                  <Text style={styles.sourceText}>
+                  <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.hadithOfTheDay.text}</Text>
+                  <Text style={[styles.sourceText, { color: tc.text.tertiary }]}>
                     — {briefing.hadithOfTheDay.source} ({briefing.hadithOfTheDay.narrator})
                   </Text>
                 </LinearGradient>
@@ -342,7 +342,7 @@ export default function MorningBriefingScreen() {
                 >
                   <View style={styles.cardHeader}>
                     <Icon name="heart" size="sm" color={colors.emerald} />
-                    <Text style={styles.cardTitle}>{t('dailyBriefing.duaOfTheDay')}</Text>
+                    <Text style={[styles.cardTitle, { color: tc.text.primary }]}>{t('dailyBriefing.duaOfTheDay')}</Text>
                     <Pressable
                       onPress={handlePlayDua}
                       hitSlop={8}
@@ -353,10 +353,10 @@ export default function MorningBriefingScreen() {
                       <Icon name="play" size="sm" color={colors.emerald} />
                     </Pressable>
                   </View>
-                  <Text style={styles.arabicText}>{briefing.duaOfTheDay.arabic}</Text>
-                  <Text style={styles.transliterationText}>{briefing.duaOfTheDay.transliteration}</Text>
-                  <Text style={styles.contentText}>{briefing.duaOfTheDay.translation}</Text>
-                  <Text style={styles.sourceText}>— {briefing.duaOfTheDay.source}</Text>
+                  <Text style={[styles.arabicText, { color: tc.text.primary }]}>{briefing.duaOfTheDay.arabic}</Text>
+                  <Text style={[styles.transliterationText, { color: tc.text.secondary }]}>{briefing.duaOfTheDay.transliteration}</Text>
+                  <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.duaOfTheDay.translation}</Text>
+                  <Text style={[styles.sourceText, { color: tc.text.tertiary }]}>— {briefing.duaOfTheDay.source}</Text>
                 </LinearGradient>
               </Animated.View>
 
@@ -368,14 +368,14 @@ export default function MorningBriefingScreen() {
                 >
                   <View style={styles.cardHeader}>
                     <Icon name="check-circle" size="sm" color={colors.emerald} />
-                    <Text style={styles.cardTitle}>{t('dailyBriefing.dhikrChallenge')}</Text>
+                    <Text style={[styles.cardTitle, { color: tc.text.primary }]}>{t('dailyBriefing.dhikrChallenge')}</Text>
                     {completedTasks.includes('dhikr') && (
                       <View style={styles.completeBadge}>
                         <Icon name="check" size="xs" color={colors.emerald} />
                       </View>
                     )}
                   </View>
-                  <Text style={styles.dhikrPhrase}>
+                  <Text style={[styles.dhikrPhrase, { color: tc.text.primary }]}>
                     "{briefing.dhikrChallenge.text}" × {briefing.dhikrChallenge.target}
                   </Text>
                   <DhikrCounter
@@ -403,7 +403,7 @@ export default function MorningBriefingScreen() {
                   >
                     <View style={styles.cardHeader}>
                       <Icon name="layers" size="sm" color={colors.gold} />
-                      <Text style={styles.cardTitle}>{t('dailyBriefing.ayahOfTheDay')}</Text>
+                      <Text style={[styles.cardTitle, { color: tc.text.primary }]}>{t('dailyBriefing.ayahOfTheDay')}</Text>
                       <Pressable
                         onPress={(e) => {
                           e.stopPropagation?.();
@@ -430,7 +430,7 @@ export default function MorningBriefingScreen() {
                     <Text style={styles.surahRef}>
                       {briefing.ayahOfTheDay.surah}:{briefing.ayahOfTheDay.ayahNumber}
                     </Text>
-                    <Text style={styles.contentText}>{briefing.ayahOfTheDay.translation}</Text>
+                    <Text style={[styles.contentText, { color: tc.text.secondary }]}>{briefing.ayahOfTheDay.translation}</Text>
                   </LinearGradient>
                 </Pressable>
               </Animated.View>
@@ -443,7 +443,7 @@ export default function MorningBriefingScreen() {
                 >
                   <View style={styles.cardHeader}>
                     <Icon name="edit" size="sm" color={colors.gold} />
-                    <Text style={styles.cardTitle}>{t('dailyBriefing.dailyReflection')}</Text>
+                    <Text style={[styles.cardTitle, { color: tc.text.primary }]}>{t('dailyBriefing.dailyReflection')}</Text>
                     {completedTasks.includes('reflection') && (
                       <View style={styles.completeBadge}>
                         <Icon name="check" size="xs" color={colors.emerald} />
@@ -452,11 +452,11 @@ export default function MorningBriefingScreen() {
                   </View>
                   {!completedTasks.includes('reflection') ? (
                     <>
-                      <Text style={styles.reflectionPrompt}>
+                      <Text style={[styles.reflectionPrompt, { color: tc.text.secondary }]}>
                         {t('dailyBriefing.gratefulPrompt')}
                       </Text>
                       <TextInput
-                        style={[styles.reflectionInput, { borderColor: tc.border }]}
+                        style={[styles.reflectionInput, { borderColor: tc.border }, { color: tc.text.primary, borderColor: tc.border }]}
                         value={reflectionText}
                         onChangeText={setReflectionText}
                         placeholder={t('dailyBriefing.gratefulPrompt')}

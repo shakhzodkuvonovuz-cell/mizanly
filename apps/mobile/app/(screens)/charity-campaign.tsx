@@ -123,9 +123,9 @@ function CampaignScreenContent() {
         )}
 
         {/* Title & description */}
-        <Text style={styles.title}>{campaign.title}</Text>
+        <Text style={[styles.title, { color: tc.text.primary }]}>{campaign.title}</Text>
         {campaign.description && (
-          <Text style={styles.description}>{campaign.description}</Text>
+          <Text style={[styles.description, { color: tc.text.secondary }]}>{campaign.description}</Text>
         )}
 
         {/* Progress section */}
@@ -134,7 +134,7 @@ function CampaignScreenContent() {
             <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
           </View>
           <View style={styles.progressStats}>
-            <Text style={styles.raisedText}>
+            <Text style={[styles.raisedText, { color: tc.text.secondary }]}>
               {t('charity.raised', {
                 amount: formatAmount(campaign.raisedAmount),
                 goal: formatAmount(campaign.goalAmount),

@@ -120,7 +120,7 @@ export default function EidCardsScreen() {
             <View style={styles.previewContainer}>
               <EidFrame occasion={selectedOccasion}>
                 <View style={styles.previewContent}>
-                  <Text style={styles.previewText}>{t('eidCards.preview')}</Text>
+                  <Text style={[styles.previewText, { color: tc.text.secondary }]}>{t('eidCards.preview')}</Text>
                 </View>
               </EidFrame>
               <View style={styles.actionRow}>

@@ -69,7 +69,7 @@ export default function FatwaQAScreen() {
           <View style={styles.questionHeader}>
             <Avatar uri={asker?.avatarUrl as string | null} name={asker?.displayName as string || ''} size="sm" />
             <View style={{ flex: 1 }}>
-              <Text style={styles.askerName}>{asker?.displayName as string}</Text>
+              <Text style={[styles.askerName, { askerName: tc.text.primary }]}>{asker?.displayName as string}</Text>
               {Boolean(item.madhab) ? (
                 <View style={styles.madhabBadge}>
                   <Text style={styles.madhabBadgeText}>{String(item.madhab)}</Text>
@@ -83,11 +83,11 @@ export default function FatwaQAScreen() {
               </Text>
             </View>
           </View>
-          <Text style={styles.questionText}>{item.question as string}</Text>
+          <Text style={[styles.questionText, { questionText: tc.text.primary }]}>{item.question as string}</Text>
           {isAnswered && (item.answer || item.answerText) ? (
             <View style={styles.answerCard}>
               <Icon name="check-circle" size="sm" color={colors.emerald} />
-              <Text style={styles.answerText} numberOfLines={3}>{String(item.answer || item.answerText)}</Text>
+              <Text style={[styles.answerText, { answerText: tc.text.secondary }]} numberOfLines={3}>{String(item.answer || item.answerText)}</Text>
             </View>
           ) : null}
         </View>
@@ -113,7 +113,7 @@ export default function FatwaQAScreen() {
               onPress={() => { setActiveTab(tab); haptic.tick(); }}
             >
               <Icon name={tab === 'browse' ? 'search' : 'pencil'} size="sm" color={activeTab === tab ? colors.emerald : tc.text.secondary} />
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive, { tabText: tc.text.secondary }]}>
                 {tab === 'browse' ? t('community.browse') : t('community.ask')}
               </Text>
             </Pressable>
@@ -131,7 +131,7 @@ export default function FatwaQAScreen() {
                   style={[styles.filterChip, { backgroundColor: tc.bgCard, borderColor: tc.border }, selectedMadhab === id && styles.filterChipActive]}
                   onPress={() => { setSelectedMadhab(id); haptic.tick(); }}
                 >
-                  <Text style={[styles.filterChipText, selectedMadhab === id && styles.filterChipTextActive]}>
+                  <Text style={[styles.filterChipText, selectedMadhab === id && styles.filterChipTextActive, { filterChipText: tc.text.secondary }]}>
                     {t(`community.madhab.${id}`)}
                   </Text>
                 </Pressable>
@@ -160,10 +160,10 @@ export default function FatwaQAScreen() {
           </>
         ) : (
           <Animated.View entering={FadeInDown.duration(300)} style={styles.askForm}>
-            <Text style={styles.askLabel}>{t('community.yourQuestion')}</Text>
+            <Text style={[styles.askLabel, { askLabel: tc.text.secondary }]}>{t('community.yourQuestion')}</Text>
             <View style={styles.inputWrap}>
               <TextInput
-                style={[styles.questionInput, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+                style={[styles.questionInput, { backgroundColor: tc.bgCard, borderColor: tc.border }, { questionInput: tc.bg, questionInput: tc.bgCard, questionInput: tc.border, questionInput: tc.text.primary }]}
                 value={question}
                 onChangeText={(text) => setQuestion(text.slice(0, 2000))}
                 placeholder={t('community.questionPlaceholder')}
@@ -176,9 +176,9 @@ export default function FatwaQAScreen() {
               </View>
             </View>
 
-            <Text style={[styles.askLabel, { marginTop: spacing.xl }]}>{t('community.preferredMadhab')}</Text>
+            <Text style={[styles.askLabel, { marginTop: spacing.xl }, { askLabel: tc.text.secondary }]}>{t('community.preferredMadhab')}</Text>
             <Pressable accessibilityRole="button" style={[styles.madhabSelector, { backgroundColor: tc.bgCard, borderColor: tc.border }]} onPress={() => setMadhabSheetOpen(true)}>
-              <Text style={styles.madhabSelectorText}>
+              <Text style={[styles.madhabSelectorText, { madhabSelectorText: tc.text.primary }]}>
                 {t(`community.madhab.${askMadhab}`)}
               </Text>
               <Icon name="chevron-down" size="sm" color={tc.text.secondary} />

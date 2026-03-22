@@ -113,23 +113,23 @@ function BoostPostContent() {
         {/* Post Preview */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={[styles.previewCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={styles.previewHeader}>
-            <Icon name="image" size="md" color={colors.text.secondary} />
-            <Text style={styles.previewLabel}>{t('boost.postPreview')}</Text>
+            <Icon name="image" size="md" color={tc.text.secondary} />
+            <Text style={[styles.previewLabel, { color: tc.text.secondary }]}>{t('boost.postPreview')}</Text>
           </View>
           <View style={styles.previewBody}>
             <View style={[styles.previewThumb, { backgroundColor: tc.surface }]} />
             <View style={styles.previewMeta}>
-              <Text style={styles.previewId} numberOfLines={1}>
+              <Text style={[styles.previewId, { color: tc.text.primary }]} numberOfLines={1}>
                 {t('boost.postIdLabel')}: {postId.slice(0, 12)}...
               </Text>
-              <Text style={styles.previewHint}>{t('boost.boostHint')}</Text>
+              <Text style={[styles.previewHint, { color: tc.text.tertiary }]}>{t('boost.boostHint')}</Text>
             </View>
           </View>
         </Animated.View>
 
         {/* Budget Selector */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <Text style={styles.sectionTitle}>{t('boost.budget')}</Text>
+          <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('boost.budget')}</Text>
           <View style={styles.pillRow}>
             {BUDGET_OPTIONS.map((amount) => {
               const active = !isCustom && selectedBudget === amount;
@@ -141,7 +141,7 @@ function BoostPostContent() {
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.pillText, active && styles.pillTextActive]}>
+                  <Text style={[styles.pillText, { color: tc.text.secondary }, active && styles.pillTextActive]}>
                     ${amount}
                   </Text>
                 </Pressable>
@@ -168,7 +168,7 @@ function BoostPostContent() {
                 onChangeText={setCustomBudget}
                 keyboardType="number-pad"
                 placeholder={t('boost.enterAmount')}
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={tc.text.tertiary}
                 maxLength={5}
                 accessibilityLabel={t('boost.customAmountLabel')}
               />
@@ -178,7 +178,7 @@ function BoostPostContent() {
 
         {/* Duration Selector */}
         <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <Text style={styles.sectionTitle}>{t('boost.duration')}</Text>
+          <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('boost.duration')}</Text>
           <View style={styles.pillRow}>
             {DURATION_OPTIONS.map(({ days, labelKey }) => {
               const active = selectedDuration === days;
@@ -190,7 +190,7 @@ function BoostPostContent() {
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                 >
-                  <Text style={[styles.pillText, active && styles.pillTextActive]}>
+                  <Text style={[styles.pillText, { color: tc.text.secondary }, active && styles.pillTextActive]}>
                     {t(labelKey)}
                   </Text>
                 </Pressable>
@@ -209,8 +209,8 @@ function BoostPostContent() {
           >
             <Icon name="trending-up" size="lg" color={colors.emerald} />
             <View style={styles.reachInfo}>
-              <Text style={styles.reachTitle}>{t('boost.estimatedReach')}</Text>
-              <Text style={styles.reachHonestText}>
+              <Text style={[styles.reachTitle, { color: tc.text.secondary }]}>{t('boost.estimatedReach')}</Text>
+              <Text style={[styles.reachHonestText, { color: tc.text.secondary }]}>
                 {t('boost.reachHonestMessage', { defaultValue: 'Estimated reach will be calculated based on your audience and budget after the boost starts' })}
               </Text>
             </View>
@@ -219,8 +219,8 @@ function BoostPostContent() {
 
         {/* Info Text */}
         <Animated.View entering={FadeInUp.delay(500).duration(400)} style={styles.infoRow}>
-          <Icon name="clock" size="sm" color={colors.text.tertiary} />
-          <Text style={styles.infoText}>
+          <Icon name="clock" size="sm" color={tc.text.tertiary} />
+          <Text style={[styles.infoText, { color: tc.text.tertiary }]}>
             {t('boost.infoText')}
           </Text>
         </Animated.View>
@@ -241,17 +241,17 @@ function BoostPostContent() {
         {/* Summary */}
         <Animated.View entering={FadeIn.delay(700).duration(400)} style={[styles.summary, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
           <View style={[styles.summaryRow, { borderBottomColor: tc.border }]}>
-            <Text style={styles.summaryLabel}>{t('boost.budget')}</Text>
-            <Text style={styles.summaryValue}>${activeBudget}</Text>
+            <Text style={[styles.summaryLabel, { color: tc.text.secondary }]}>{t('boost.budget')}</Text>
+            <Text style={[styles.summaryValue, { color: tc.text.primary }]}>${activeBudget}</Text>
           </View>
           <View style={[styles.summaryRow, { borderBottomColor: tc.border }]}>
-            <Text style={styles.summaryLabel}>{t('boost.duration')}</Text>
-            <Text style={styles.summaryValue}>
+            <Text style={[styles.summaryLabel, { color: tc.text.secondary }]}>{t('boost.duration')}</Text>
+            <Text style={[styles.summaryValue, { color: tc.text.primary }]}>
               {selectedDuration} {selectedDuration === 1 ? t('boost.day') : t('boost.days')}
             </Text>
           </View>
           <View style={[styles.summaryRow, styles.summaryRowLast]}>
-            <Text style={styles.summaryLabel}>{t('boost.totalCost')}</Text>
+            <Text style={[styles.summaryLabel, { color: tc.text.secondary }]}>{t('boost.totalCost')}</Text>
             <Text style={[styles.summaryValue, styles.summaryTotal]}>${activeBudget}</Text>
           </View>
         </Animated.View>

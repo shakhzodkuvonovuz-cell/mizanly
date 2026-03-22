@@ -64,18 +64,18 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
   return (
     <Animated.View entering={FadeInUp.delay(50).duration(350).springify()} style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
       {/* Arabic text */}
-      <Text style={styles.arabicText}>{dua.arabicText}</Text>
+      <Text style={[styles.arabicText, { color: tc.text.primary }]}>{dua.arabicText}</Text>
 
       {/* Transliteration */}
       <Text style={styles.transliteration}>{dua.transliteration}</Text>
 
       {/* Translation */}
-      <Text style={[styles.translationText, { textAlign: rtlTextAlign(isRTL) }]}>
+      <Text style={[styles.translationText, { textAlign: rtlTextAlign(isRTL) }, { color: tc.text.primary }]}>
         {translation}
       </Text>
 
       {/* Source */}
-      <Text style={styles.sourceText}>
+      <Text style={[styles.sourceText, { color: tc.text.tertiary }]}>
         {t('duas.source')}: {dua.source} {dua.sourceRef}
       </Text>
 
@@ -89,7 +89,7 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
           accessibilityRole="button"
         >
           <Icon name="play" size={18} color={tc.text.secondary} />
-          <Text style={styles.actionText}>{t('common.listen', { defaultValue: 'Listen' })}</Text>
+          <Text style={[styles.actionText, { color: tc.text.secondary }]}>{t('common.listen', { defaultValue: 'Listen' })}</Text>
         </Pressable>
         <Pressable
           onPress={onBookmark}
@@ -99,7 +99,7 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
           accessibilityRole="button"
         >
           <Icon name="bookmark" size={18} color={tc.text.secondary} />
-          <Text style={styles.actionText}>{t('duas.bookmark')}</Text>
+          <Text style={[styles.actionText, { color: tc.text.secondary }]}>{t('duas.bookmark')}</Text>
         </Pressable>
         <Pressable
           onPress={onShare}
@@ -109,7 +109,7 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
           accessibilityRole="button"
         >
           <Icon name="share" size={18} color={tc.text.secondary} />
-          <Text style={styles.actionText}>{t('duas.shareDua')}</Text>
+          <Text style={[styles.actionText, { color: tc.text.secondary }]}>{t('duas.shareDua')}</Text>
         </Pressable>
       </View>
     </Animated.View>
@@ -195,9 +195,9 @@ export default function DuaCollectionScreen() {
       {dailyDuaQuery.data && (
         <View style={[styles.dailyCard, { backgroundColor: tc.bgCard }]}>
           <Text style={styles.dailyLabel}>{t('duas.duaOfTheDay')}</Text>
-          <Text style={styles.dailyArabic}>{dailyDuaQuery.data.arabicText}</Text>
-          <Text style={styles.dailyTransliteration}>{dailyDuaQuery.data.transliteration}</Text>
-          <Text style={styles.dailyTranslation}>
+          <Text style={[styles.dailyArabic, { color: tc.text.primary }]}>{dailyDuaQuery.data.arabicText}</Text>
+          <Text style={[styles.dailyTransliteration, { color: tc.text.secondary }]}>{dailyDuaQuery.data.transliteration}</Text>
+          <Text style={[styles.dailyTranslation, { color: tc.text.primary }]}>
             {dailyDuaQuery.data.translation[locale] || dailyDuaQuery.data.translation.en}
           </Text>
         </View>
@@ -210,7 +210,7 @@ export default function DuaCollectionScreen() {
           onPress={() => { setShowBookmarked(false); haptic.tick(); }}
           accessibilityRole="tab"
         >
-          <Text style={[styles.tabText, !showBookmarked && styles.tabTextActive]}>
+          <Text style={[styles.tabText, !showBookmarked && styles.tabTextActive, { tabText: tc.text.secondary }]}>
             {t('duas.categories')}
           </Text>
         </Pressable>
@@ -219,7 +219,7 @@ export default function DuaCollectionScreen() {
           onPress={() => { setShowBookmarked(true); haptic.tick(); }}
           accessibilityRole="tab"
         >
-          <Text style={[styles.tabText, showBookmarked && styles.tabTextActive]}>
+          <Text style={[styles.tabText, showBookmarked && styles.tabTextActive, { tabText: tc.text.secondary }]}>
             {t('duas.bookmarked')}
           </Text>
         </Pressable>
@@ -246,7 +246,7 @@ export default function DuaCollectionScreen() {
                   color={selectedCategory === item ? '#fff' : tc.text.secondary}
                 />
               )}
-              <Text style={[styles.chipText, selectedCategory === item && styles.chipTextActive]}>
+              <Text style={[styles.chipText, selectedCategory === item && styles.chipTextActive, { chipText: tc.text.secondary }]}>
                 {item ? getCategoryLabel(item) : t('common.viewAll')}
               </Text>
             </Pressable>

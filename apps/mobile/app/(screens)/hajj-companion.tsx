@@ -164,8 +164,8 @@ function HajjCompanionContent() {
               end={{ x: 1, y: 1 }}
             >
               <Icon name="map-pin" size="xl" color={colors.emerald} />
-              <Text style={styles.startTitle}>{t('hajj.title')}</Text>
-              <Text style={styles.startSubtitle}>
+              <Text style={[styles.startTitle, { color: tc.text.primary }]}>{t('hajj.title')}</Text>
+              <Text style={[styles.startSubtitle, { color: tc.text.secondary }]}>
                 {t('hajj.year')}: {currentYear}
               </Text>
               <Pressable
@@ -208,10 +208,10 @@ function HajjCompanionContent() {
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.progressHeader}>
-              <Text style={styles.progressDay}>
+              <Text style={[styles.progressDay, { color: tc.text.primary }]}>
                 {t('hajj.day', { day: currentStep + 1 })}
               </Text>
-              <Text style={styles.progressYear}>
+              <Text style={[styles.progressYear, { color: tc.text.secondary }]}>
                 {t('hajj.year')}: {progress.year}
               </Text>
             </View>
@@ -291,9 +291,9 @@ function HajjCompanionContent() {
 
                   {/* Step info */}
                   <View style={styles.stepInfo}>
-                    <Text style={styles.stepNameAr}>{step.nameAr}</Text>
+                    <Text style={[styles.stepNameAr, { color: tc.text.primary }]}>{step.nameAr}</Text>
                     <Text style={styles.stepName}>{step.name}</Text>
-                    <Text style={styles.stepDesc} numberOfLines={2}>
+                    <Text style={[styles.stepDesc, { color: tc.text.tertiary }]} numberOfLines={2}>
                       {step.description}
                     </Text>
                   </View>
@@ -327,7 +327,7 @@ function HajjCompanionContent() {
             style={styles.resetButton}
             onPress={() => setShowResetSheet(true)}
           >
-            <Text style={styles.resetButtonText}>{t('hajj.reset')}</Text>
+            <Text style={[styles.resetButtonText, { color: tc.text.tertiary }]}>{t('hajj.reset')}</Text>
           </Pressable>
         </View>
 

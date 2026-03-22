@@ -150,14 +150,14 @@ export default function AppealModerationScreen() {
             </LinearGradient>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>{t('appealModeration.actionTitle')}</Text>
-              <Text style={styles.actionReason}>
+              <Text style={[styles.actionReason, { color: tc.text.secondary }]}>
                 {t('appealModeration.actionReason')}
               </Text>
               <View style={styles.actionMeta}>
-                <Icon name="clock" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.actionDate}>{t('appealModeration.actionDate')}</Text>
+                <Icon name="clock" size="xs" color={tc.text.tertiary} />
+                <Text style={[styles.actionDate, { color: tc.text.tertiary }]}>{t('appealModeration.actionDate')}</Text>
               </View>
-              <Text style={styles.actionId}>{t('appealModeration.actionId')}</Text>
+              <Text style={[styles.actionId, { color: tc.text.tertiary }]}>{t('appealModeration.actionId')}</Text>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -168,16 +168,16 @@ export default function AppealModerationScreen() {
             colors={colors.gradient.cardDark}
             style={styles.contentCard}
           >
-            <Text style={styles.contentHeader}>{t('appealModeration.contentHeader')}</Text>
+            <Text style={[styles.contentHeader, { color: tc.text.primary }]}>{t('appealModeration.contentHeader')}</Text>
 
             <View style={styles.contentPreview}>
               <View style={styles.contentTextContainer}>
-                <Text style={styles.contentText} numberOfLines={2}>
+                <Text style={[styles.contentText, { color: tc.text.secondary }]} numberOfLines={2}>
                   Breaking: New study shows significant benefits of intermittent fasting during Ramadan for metabolic health...
                 </Text>
               </View>
               <View style={[styles.contentThumbnail, { backgroundColor: tc.surface }]}>
-                <Icon name="image" size="md" color={colors.text.tertiary} />
+                <Icon name="image" size="md" color={tc.text.tertiary} />
               </View>
             </View>
 
@@ -201,18 +201,18 @@ export default function AppealModerationScreen() {
               >
                 <Icon name="pencil" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formTitle}>{t('appealModeration.formTitle')}</Text>
+              <Text style={[styles.formTitle, { color: tc.text.primary }]}>{t('appealModeration.formTitle')}</Text>
             </View>
 
             {/* Reason Selector */}
-            <Text style={styles.reasonLabel}>{t('appealModeration.reasonLabel')}</Text>
+            <Text style={[styles.reasonLabel, { color: tc.text.primary }]}>{t('appealModeration.reasonLabel')}</Text>
             {APPEAL_REASONS.map((reason, index) => (
               <Pressable
                 accessibilityRole="button"
                 key={reason.id}
                 style={[
                   styles.reasonRow,
-                  index < APPEAL_REASONS.length - 1 && styles.reasonRowBorder,
+                  index < APPEAL_REASONS.length - 1 && [styles.reasonRowBorder, { borderBottomColor: tc.border }],
                 ]}
                 onPress={() => setSelectedReason(reason.id)}
                
@@ -220,6 +220,7 @@ export default function AppealModerationScreen() {
                 <View
                   style={[
                     styles.radioCircle,
+                    { borderColor: tc.surface, backgroundColor: tc.bgCard },
                     selectedReason === reason.id && styles.radioCircleSelected,
                   ]}
                 >
@@ -230,7 +231,8 @@ export default function AppealModerationScreen() {
                 <Text
                   style={[
                     styles.reasonText,
-                    selectedReason === reason.id && styles.reasonTextSelected,
+                    { color: tc.text.secondary },
+                    selectedReason === reason.id && { color: tc.text.primary },
                   ]}
                 >
                   {reason.label}
@@ -247,7 +249,7 @@ export default function AppealModerationScreen() {
                 <TextInput
                   style={styles.detailsInput}
                   placeholder={t('appealModeration.detailsPlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
+                  placeholderTextColor={tc.text.tertiary}
                   value={details}
                   onChangeText={setDetails}
                   multiline
@@ -276,10 +278,10 @@ export default function AppealModerationScreen() {
               >
                 <Icon name="paperclip" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formTitle}>{t('appealModeration.evidenceTitle')}</Text>
+              <Text style={[styles.formTitle, { color: tc.text.primary }]}>{t('appealModeration.evidenceTitle')}</Text>
             </View>
 
-            <Text style={styles.evidenceLabel}>{t('appealModeration.evidenceLabel')}</Text>
+            <Text style={[styles.evidenceLabel, { color: tc.text.secondary }]}>{t('appealModeration.evidenceLabel')}</Text>
 
             <View style={styles.evidenceButtons}>
               <Pressable
@@ -335,7 +337,7 @@ export default function AppealModerationScreen() {
               >
                 <Icon name="clock" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formTitle}>{t('appealModeration.historyTitle')}</Text>
+              <Text style={[styles.formTitle, { color: tc.text.primary }]}>{t('appealModeration.historyTitle')}</Text>
             </View>
 
             {isLoading && (
@@ -355,7 +357,7 @@ export default function AppealModerationScreen() {
 
             {!isLoading && appealHistory && <View style={styles.historyEntry}>
               <View style={styles.historyHeader}>
-                <Text style={styles.historyTitle}>{t('appealModeration.appealNumber')}{appealHistory.number}</Text>
+                <Text style={[styles.historyTitle, { color: tc.text.primary }]}>{t('appealModeration.appealNumber')}{appealHistory.number}</Text>
                 <LinearGradient
                   colors={getStatusBadge(appealHistory.status).colors}
                   style={styles.statusBadge}
@@ -363,6 +365,7 @@ export default function AppealModerationScreen() {
                   <Text
                     style={[
                       styles.statusText,
+                      { color: tc.text.primary },
                       appealHistory.status === 'review' && { color: tc.bg },
                     ]}
                   >
@@ -370,7 +373,7 @@ export default function AppealModerationScreen() {
                   </Text>
                 </LinearGradient>
               </View>
-              <Text style={styles.historyDate}>{t('appealModeration.submitted')} {appealHistory.submittedDate}</Text>
+              <Text style={[styles.historyDate, { color: tc.text.tertiary }]}>{t('appealModeration.submitted')} {appealHistory.submittedDate}</Text>
 
               {/* Timeline */}
               <View style={styles.timeline}>
@@ -393,7 +396,8 @@ export default function AppealModerationScreen() {
                         <Text
                           style={[
                             styles.timelineLabel,
-                            step === appealHistory.status && styles.timelineLabelActive,
+                            { color: tc.text.tertiary },
+                            step === appealHistory.status && { color: tc.text.primary },
                           ]}
                         >
                           {step === 'submitted' ? t('appealModeration.status.submitted') : step === 'review' ? t('appealModeration.status.underReview') : t('appealModeration.status.decision')}
@@ -420,20 +424,20 @@ export default function AppealModerationScreen() {
               >
                 <Icon name="check-circle" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formTitle}>{t('appealModeration.importantNotes')}</Text>
+              <Text style={[styles.formTitle, { color: tc.text.primary }]}>{t('appealModeration.importantNotes')}</Text>
             </View>
 
             <View style={styles.noteItem}>
               <View style={styles.noteBullet} />
-              <Text style={styles.noteText}>{t('appealModeration.note1')}</Text>
+              <Text style={[styles.noteText, { color: tc.text.secondary }]}>{t('appealModeration.note1')}</Text>
             </View>
             <View style={styles.noteItem}>
               <View style={styles.noteBullet} />
-              <Text style={styles.noteText}>{t('appealModeration.note2')}</Text>
+              <Text style={[styles.noteText, { color: tc.text.secondary }]}>{t('appealModeration.note2')}</Text>
             </View>
             <View style={styles.noteItem}>
               <View style={styles.noteBullet} />
-              <Text style={styles.noteText}>{t('appealModeration.note3')}</Text>
+              <Text style={[styles.noteText, { color: tc.text.secondary }]}>{t('appealModeration.note3')}</Text>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -445,7 +449,7 @@ export default function AppealModerationScreen() {
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <Pressable onPress={() => router.back()}>
-          <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+          <Text style={[styles.cancelText, { color: tc.text.secondary }]}>{t('common.cancel')}</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -457,7 +461,7 @@ export default function AppealModerationScreen() {
             colors={isSubmitDisabled ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)'] : [colors.emerald, colors.emeraldDark]}
             style={[styles.submitButton, isSubmitDisabled && styles.submitButtonDisabled]}
           >
-            <Text style={[styles.submitText, isSubmitDisabled && styles.submitTextDisabled]}>
+            <Text style={[styles.submitText, { color: tc.text.primary }, isSubmitDisabled && { color: tc.text.tertiary }]}>
               {submitAppealMutation.isPending
                 ? (t('common.submitting') || 'Submitting...')
                 : t('appealModeration.submitAppeal')}

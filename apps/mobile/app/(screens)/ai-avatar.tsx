@@ -116,25 +116,25 @@ export default function AiAvatarScreen() {
           <Animated.View entering={FadeInUp.duration(300)} style={styles.previewSection}>
             <View style={styles.previewCard}>
               <Avatar uri={user?.avatarUrl || null} name={user?.displayName || ''} size="3xl" />
-              <Text style={styles.previewLabel}>{t('ai.avatar.currentPhoto')}</Text>
+              <Text style={[styles.previewLabel, { color: tc.text.secondary }]}>{t('ai.avatar.currentPhoto')}</Text>
             </View>
           </Animated.View>
 
           {/* Style selector */}
           <Animated.View entering={FadeInUp.delay(100).duration(300)}>
-            <Text style={styles.sectionTitle}>{t('ai.avatar.selectStyle')}</Text>
+            <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>{t('ai.avatar.selectStyle')}</Text>
             <View style={styles.styleGrid}>
               {STYLES.map((style) => (
                 <Pressable
                   accessibilityRole="button"
                   key={style.id}
                   onPress={() => { setSelectedStyle(style.id); haptic.tick(); }}
-                  style={[styles.styleCard, selectedStyle === style.id && { borderColor: style.color }]}
+                  style={[styles.styleCard, { borderColor: tc.border, backgroundColor: tc.bgCard }, selectedStyle === style.id && { borderColor: style.color }]}
                 >
                   <View style={[styles.styleIconWrap, { backgroundColor: style.color + '20' }]}>
                     <Icon name={style.icon} size="md" color={style.color} />
                   </View>
-                  <Text style={[styles.styleLabel, selectedStyle === style.id && { color: style.color }]}>
+                  <Text style={[styles.styleLabel, { color: tc.text.secondary }, selectedStyle === style.id && { color: style.color }]}>
                     {t(style.label)}
                   </Text>
                 </Pressable>
@@ -145,7 +145,7 @@ export default function AiAvatarScreen() {
           {/* Generate button */}
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.generateSection}>
             {!user?.avatarUrl && (
-              <Text style={styles.noAvatarHint}>{t('ai.avatar.uploadFirst')}</Text>
+              <Text style={[styles.noAvatarHint, { color: tc.text.secondary }]}>{t('ai.avatar.uploadFirst')}</Text>
             )}
             <Pressable
               accessibilityRole="button"
@@ -174,7 +174,7 @@ export default function AiAvatarScreen() {
             </View>
           ) : avatars.length > 0 ? (
             <View>
-              <Text style={styles.sectionTitle}>{t('ai.avatar.gallery')}</Text>
+              <Text style={[styles.sectionTitle, { color: tc.text.secondary }]}>{t('ai.avatar.gallery')}</Text>
               <View style={styles.avatarGrid}>
                 {avatars.map((avatar, i) => (
                   <View key={avatar.id} style={{ width: '48%' }}>
