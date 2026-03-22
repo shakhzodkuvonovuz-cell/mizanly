@@ -1,17 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
+import { GradientButton } from '@/components/ui/GradientButton';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { clipsApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -23,15 +24,15 @@ function formatTime(seconds: number): string {
 
 export default function CreateClipScreen() {
   const { videoId, currentTime, duration, thumbnailUrl, videoTitle } = useLocalSearchParams<{
-  const tc = useThemeColors();
     videoId: string;
     currentTime?: string;
     duration?: string;
     thumbnailUrl?: string;
     videoTitle?: string;
   }>();
+  const tc = useThemeColors();
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -54,20 +55,24 @@ export default function CreateClipScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clips', videoId] });
       haptic.success();
+      showToast({ message: t('clips.created') || 'Clip created', variant: 'success' });
       router.back();
+    },
+    onError: () => {
+      showToast({ message: t('clips.createFailed') || 'Failed to create clip', variant: 'error' });
     },
   });
 
   const adjustStart = (delta: number) => {
     const newStart = Math.max(0, Math.min(startTime + delta, endTime - 0.5));
     setStartTime(newStart);
-    haptic.light();
+    haptic.tick();
   };
 
   const adjustEnd = (delta: number) => {
     const newEnd = Math.min(totalDuration, Math.max(endTime + delta, startTime + 0.5));
     setEndTime(newEnd);
-    haptic.light();
+    haptic.tick();
   };
 
   return (
@@ -81,10 +86,17 @@ export default function CreateClipScreen() {
           {/* Thumbnail */}
           <Animated.View entering={FadeInUp.duration(300)} style={styles.thumbnailWrap}>
             {thumbnailUrl ? (
-              <Image source={{ uri: thumbnailUrl }} style={styles.thumbnail} contentFit="cover" />
+              <ProgressiveImage
+                uri={thumbnailUrl as string}
+                width="100%"
+                height={200}
+                borderRadius={radius.lg}
+                contentFit="cover"
+                accessibilityLabel={videoTitle as string || 'Video thumbnail'}
+              />
             ) : (
               <View style={[styles.thumbnail, { backgroundColor: tc.surface, justifyContent: 'center', alignItems: 'center' }]}>
-                <Icon name="video" size="xl" color={colors.text.tertiary} />
+                <Icon name="video" size="xl" color={tc.text.tertiary} />
               </View>
             )}
             <View style={styles.durationBadge}>
@@ -94,29 +106,29 @@ export default function CreateClipScreen() {
 
           {/* Time range controls */}
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.timeSection}>
-            <Text style={styles.sectionLabel}>{t('clips.from')}</Text>
+            <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('clips.from')}</Text>
             <View style={styles.timeControls}>
               <Pressable onPress={() => adjustStart(-5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
-                <Icon name="chevron-left" size="sm" color={colors.text.primary} />
+                <Icon name="chevron-left" size="sm" color={tc.text.primary} />
               </Pressable>
               <View style={[styles.timeDisplay, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 <Text style={styles.timeText}>{formatTime(startTime)}</Text>
               </View>
               <Pressable onPress={() => adjustStart(5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
-                <Icon name="chevron-right" size="sm" color={colors.text.primary} />
+                <Icon name="chevron-right" size="sm" color={tc.text.primary} />
               </Pressable>
-              <Text style={styles.timeSep}>—</Text>
+              <Text style={[styles.timeSep, { color: tc.text.tertiary }]}>—</Text>
               <Pressable onPress={() => adjustEnd(-5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
-                <Icon name="chevron-left" size="sm" color={colors.text.primary} />
+                <Icon name="chevron-left" size="sm" color={tc.text.primary} />
               </Pressable>
               <View style={[styles.timeDisplay, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 <Text style={styles.timeText}>{formatTime(endTime)}</Text>
               </View>
               <Pressable onPress={() => adjustEnd(5)} style={[styles.timeBtn, { backgroundColor: tc.surface }]}>
-                <Icon name="chevron-right" size="sm" color={colors.text.primary} />
+                <Icon name="chevron-right" size="sm" color={tc.text.primary} />
               </Pressable>
             </View>
-            <Text style={styles.durationLabel}>
+            <Text style={[styles.durationLabel, { color: tc.text.tertiary }]}>
               {t('clips.duration')}: {formatTime(clipDuration)}
               {clipDuration > 60 && ` (${t('clips.maxDuration')})`}
             </Text>
@@ -125,42 +137,39 @@ export default function CreateClipScreen() {
           {/* Title */}
           <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.section}>
             <View style={styles.titleHeader}>
-              <Text style={styles.sectionLabel}>{t('clips.clipTitle')}</Text>
+              <Text style={[styles.sectionLabel, { color: tc.text.secondary }]}>{t('clips.clipTitle')}</Text>
               <CharCountRing current={title.length} max={100} size={24} />
             </View>
             <TextInput
-              style={[styles.input, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+              style={[styles.input, { backgroundColor: tc.bgCard, borderColor: tc.border, color: tc.text.primary }]}
               value={title}
               onChangeText={(text) => setTitle(text.slice(0, 100))}
               placeholder={t('clips.titlePlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={tc.text.tertiary}
               maxLength={100}
             />
           </Animated.View>
 
           {/* Source info */}
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={[styles.infoCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
-            <Icon name="link" size="sm" color={colors.text.secondary} />
-            <Text style={styles.infoText} numberOfLines={1}>{videoTitle || 'Source video'}</Text>
+            <Icon name="link" size="sm" color={tc.text.secondary} />
+            <Text style={[styles.infoText, { color: tc.text.secondary }]} numberOfLines={1}>{videoTitle || 'Source video'}</Text>
           </Animated.View>
 
           {/* Max duration hint */}
-          <Text style={styles.hint}>{t('clips.maxDuration')}</Text>
+          <Text style={[styles.hint, { color: tc.text.tertiary }]}>{t('clips.maxDuration')}</Text>
 
           {/* Submit */}
           <Animated.View entering={FadeInDown.delay(250).duration(300)} style={styles.submitSection}>
-            <Pressable
-              accessibilityRole="button"
+            <GradientButton
+              label={createMutation.isPending ? t('clips.creating') : t('clips.create')}
               onPress={() => createMutation.mutate()}
               disabled={!isValid || createMutation.isPending}
-              style={[styles.submitBtn, (!isValid || createMutation.isPending) && { opacity: 0.5 }]}
-            >
-              <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.submitGradient}>
-                <Text style={styles.submitText}>
-                  {createMutation.isPending ? t('clips.creating') : t('clips.create')}
-                </Text>
-              </LinearGradient>
-            </Pressable>
+              loading={createMutation.isPending}
+              fullWidth
+              size="lg"
+              icon="send"
+            />
           </Animated.View>
         </ScrollView>
       </View>
@@ -169,7 +178,7 @@ export default function CreateClipScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
+  container: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: spacing.base, paddingBottom: spacing['2xl'] },
   thumbnailWrap: { borderRadius: radius.lg, overflow: 'hidden', marginBottom: spacing.xl, position: 'relative' },
@@ -185,53 +194,42 @@ const styles = StyleSheet.create({
   },
   durationText: { color: '#FFF', fontSize: fontSize.xs, fontWeight: '600', fontVariant: ['tabular-nums'] },
   timeSection: { marginBottom: spacing.xl },
-  sectionLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500', marginBottom: spacing.sm },
+  sectionLabel: { fontSize: fontSize.sm, fontWeight: '500', marginBottom: spacing.sm },
   timeControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   timeBtn: {
     width: 36,
     height: 36,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   timeDisplay: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.dark.border,
   },
   timeText: { color: colors.emerald, fontSize: fontSize.md, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  timeSep: { color: colors.text.tertiary, fontSize: fontSize.base, marginHorizontal: spacing.xs },
-  durationLabel: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.sm },
+  timeSep: { fontSize: fontSize.base, marginHorizontal: spacing.xs },
+  durationLabel: { fontSize: fontSize.xs, marginTop: spacing.sm },
   section: { marginBottom: spacing.xl },
   titleHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   input: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     padding: spacing.md,
-    color: colors.text.primary,
     fontSize: fontSize.base,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.dark.bgCard,
     padding: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.dark.border,
     marginBottom: spacing.md,
   },
-  infoText: { color: colors.text.secondary, fontSize: fontSize.sm, flex: 1 },
-  hint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginBottom: spacing.xl },
+  infoText: { fontSize: fontSize.sm, flex: 1 },
+  hint: { fontSize: fontSize.xs, marginBottom: spacing.xl },
   submitSection: { marginTop: spacing.md },
-  submitBtn: { borderRadius: radius.md, overflow: 'hidden' },
-  submitGradient: { paddingVertical: spacing.base, alignItems: 'center', borderRadius: radius.md },
-  submitText: { color: '#FFF', fontSize: fontSize.md, fontWeight: '700' },
 });
