@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { islamicApi } from '@/services/islamicApi';
 import type { Hadith as ApiHadith } from '@/types/islamic';
 import type { PaginatedResponse } from '@/types';
+import { Audio } from 'expo-av';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
@@ -130,6 +131,19 @@ export default function HadithScreen() {
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const scaleAnim = useSharedValue(1);
   const tc = useThemeColors();
+
+  // Audio playback (hadith recitation not yet available from API)
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const handlePlayAudio = useCallback(() => {
+    haptic.navigate();
+    showToast({ message: t('islamic.audioRecitationComingSoon', { defaultValue: 'Audio recitation coming soon' }), variant: 'info' });
+  }, [haptic, t]);
+
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync(); };
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -328,6 +342,7 @@ export default function HadithScreen() {
 
                   {/* Action Row */}
                   <View style={styles.actionRow}>
+                    <ActionButton icon="play" label={t('common.listen', { defaultValue: 'Listen' })} onPress={handlePlayAudio} />
                     <Animated.View style={animatedBookmarkStyle}>
                       <ActionButton
                         icon={currentHadith.isBookmarked ? 'bookmark-filled' : 'bookmark'}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Share,
 } from 'react-native';
@@ -7,12 +7,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useQuery } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -31,11 +33,12 @@ interface NameOfAllah {
 
 const LEARNED_KEY = 'mizanly_learned_names';
 
-function NameCard({ name, isLearned, onToggleLearned, onShare, expanded, onToggleExpand }: {
+function NameCard({ name, isLearned, onToggleLearned, onShare, onPlayAudio, expanded, onToggleExpand }: {
   name: NameOfAllah;
   isLearned: boolean;
   onToggleLearned: () => void;
   onShare: () => void;
+  onPlayAudio: () => void;
   expanded: boolean;
   onToggleExpand: () => void;
 }) {
@@ -78,6 +81,16 @@ function NameCard({ name, isLearned, onToggleLearned, onShare, expanded, onToggl
 
           <View style={[styles.nameActions, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Pressable
+              onPress={onPlayAudio}
+              style={styles.nameActionBtn}
+              hitSlop={8}
+              accessibilityLabel={t('common.listen', { defaultValue: 'Listen' })}
+              accessibilityRole="button"
+            >
+              <Icon name="play" size={16} color={colors.text.secondary} />
+              <Text style={styles.nameActionText}>{t('common.listen', { defaultValue: 'Listen' })}</Text>
+            </Pressable>
+            <Pressable
               onPress={onToggleLearned}
               style={[styles.nameActionBtn, isLearned && styles.nameActionBtnActive]}
               hitSlop={8}
@@ -115,6 +128,18 @@ export default function NamesOfAllahScreen() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [learnedSet, setLearnedSet] = useState<Set<number>>(new Set());
   const [learnedLoaded, setLearnedLoaded] = useState(false);
+
+  // Audio playback (name pronunciation not yet available from API)
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const handlePlayAudio = useCallback(() => {
+    haptic.navigate();
+    showToast({ message: t('islamic.audioPronunciationComingSoon', { defaultValue: 'Audio pronunciation coming soon' }), variant: 'info' });
+  }, [haptic, t]);
+
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync(); };
+  }, []);
 
   // Load learned names from AsyncStorage
   const loadLearned = useCallback(async () => {
@@ -216,6 +241,7 @@ export default function NamesOfAllahScreen() {
               isLearned={learnedSet.has(item.number)}
               onToggleLearned={() => toggleLearned(item.number)}
               onShare={() => handleShare(item)}
+              onPlayAudio={handlePlayAudio}
               expanded={expandedId === item.number}
               onToggleExpand={() => setExpandedId(expandedId === item.number ? null : item.number)}
             />

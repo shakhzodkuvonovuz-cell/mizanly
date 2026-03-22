@@ -10,6 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { io, Socket } from 'socket.io-client';
+import { Audio } from 'expo-av';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -18,6 +19,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, radius, fontSize, fontSizeExt, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -37,6 +39,30 @@ interface VerseChangeEvent {
 
 interface ReciterUpdateEvent {
   reciterId: string;
+}
+
+/**
+ * Construct Quran verse audio URL from cdn.islamic.network (Mishary Alafasy).
+ * This is the same CDN the backend uses. The audio number is the cumulative
+ * ayah index across all surahs.
+ */
+const SURAH_OFFSETS = [
+  0, 7, 293, 493, 669, 789, 954, 1160, 1235, 1364, 1473, 1596, 1707, 1750,
+  1802, 1901, 2029, 2140, 2250, 2348, 2483, 2595, 2673, 2791, 2855, 2932,
+  3159, 3252, 3340, 3409, 3469, 3503, 3533, 3606, 3660, 3705, 3788, 3970,
+  4058, 4133, 4218, 4272, 4325, 4414, 4473, 4510, 4545, 4583, 4612, 4630,
+  4675, 4735, 4784, 4846, 4901, 4979, 5075, 5104, 5126, 5150, 5163, 5177,
+  5188, 5199, 5217, 5229, 5241, 5271, 5323, 5367, 5395, 5423, 5451, 5507,
+  5542, 5573, 5623, 5663, 5709, 5755, 5784, 5813, 5849, 5874, 5896, 5913,
+  5932, 5958, 5988, 6008, 6023, 6044, 6058, 6066, 6074, 6093, 6098, 6106,
+  6117, 6125, 6130, 6138, 6146, 6154, 6162, 6170, 6176, 6179, 6182, 6185,
+  6188, 6193, 6197, 6204,
+];
+
+function getQuranAudioUrl(surah: number, ayah: number): string {
+  const offset = SURAH_OFFSETS[surah - 1] ?? 0;
+  const audioNumber = offset + ayah;
+  return `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${audioNumber}.mp3`;
 }
 
 export default function QuranRoomScreen() {
@@ -60,7 +86,60 @@ export default function QuranRoomScreen() {
   const [loadingVerse, setLoadingVerse] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Audio playback for Quran verse recitation
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const currentUserId = user?.id ?? '';
+
+  const playVerseAudio = useCallback(async () => {
+    try {
+      // Stop if already playing (toggle behavior)
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+        if (isPlaying) { setIsPlaying(false); return; }
+      }
+
+      if (!roomState) return;
+
+      // Use audioUrl from backend response, or construct from CDN directly
+      const audioUrl = verseText?.audioUrl ?? getQuranAudioUrl(roomState.currentSurah, roomState.currentVerse);
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUrl },
+        { shouldPlay: true },
+      );
+      soundRef.current = sound;
+      setIsPlaying(true);
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsPlaying(false);
+          sound.unloadAsync();
+          soundRef.current = null;
+        }
+      });
+    } catch {
+      showToast({ message: t('islamic.audioPlaybackUnavailable', { defaultValue: 'Audio playback unavailable' }), variant: 'info' });
+      setIsPlaying(false);
+    }
+  }, [isPlaying, roomState, verseText, t]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync(); };
+  }, []);
+
+  // Stop audio when verse changes
+  useEffect(() => {
+    if (soundRef.current) {
+      soundRef.current.stopAsync().then(() => soundRef.current?.unloadAsync()).catch(() => {});
+      soundRef.current = null;
+      setIsPlaying(false);
+    }
+  }, [roomState?.currentSurah, roomState?.currentVerse]);
 
   // Socket connection
   useEffect(() => {
@@ -287,6 +366,18 @@ export default function QuranRoomScreen() {
             </LinearGradient>
           )}
 
+          {/* Verse audio playback */}
+          <Pressable
+            accessibilityRole="button"
+            onPress={playVerseAudio}
+            style={styles.audioPlayButton}
+          >
+            <Icon name={isPlaying ? 'loader' : 'play'} size="md" color={isPlaying ? colors.gold : colors.emerald} />
+            <Text style={styles.audioPlayText}>
+              {isPlaying ? t('quranRoom.playing', { defaultValue: 'Playing...' }) : t('quranRoom.listenToVerse', { defaultValue: 'Listen to verse' })}
+            </Text>
+          </Pressable>
+
           {/* Translation toggle */}
           <Pressable
             accessibilityRole="button"
@@ -423,6 +514,24 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.text.tertiary,
     fontSize: fontSize.sm,
     textAlign: 'center',
+  },
+  audioPlayButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.active.emerald10,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+    marginBottom: spacing.base,
+    borderWidth: 1,
+    borderColor: colors.emerald,
+  },
+  audioPlayText: {
+    color: colors.emerald,
+    fontSize: fontSize.base,
+    fontWeight: '600',
   },
   toggleRow: {
     flexDirection: 'row',

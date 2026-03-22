@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput,
 } from 'react-native';
@@ -8,12 +8,14 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
+import { Audio } from 'expo-av';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -30,6 +32,39 @@ interface DailyBriefing {
   tasksCompleted: number;
   totalTasks: number;
   completedTasks: string[];
+}
+
+/**
+ * Construct Quran verse audio URL from cdn.islamic.network (Mishary Alafasy).
+ */
+const SURAH_OFFSETS = [
+  0, 7, 293, 493, 669, 789, 954, 1160, 1235, 1364, 1473, 1596, 1707, 1750,
+  1802, 1901, 2029, 2140, 2250, 2348, 2483, 2595, 2673, 2791, 2855, 2932,
+  3159, 3252, 3340, 3409, 3469, 3503, 3533, 3606, 3660, 3705, 3788, 3970,
+  4058, 4133, 4218, 4272, 4325, 4414, 4473, 4510, 4545, 4583, 4612, 4630,
+  4675, 4735, 4784, 4846, 4901, 4979, 5075, 5104, 5126, 5150, 5163, 5177,
+  5188, 5199, 5217, 5229, 5241, 5271, 5323, 5367, 5395, 5423, 5451, 5507,
+  5542, 5573, 5623, 5663, 5709, 5755, 5784, 5813, 5849, 5874, 5896, 5913,
+  5932, 5958, 5988, 6008, 6023, 6044, 6058, 6066, 6074, 6093, 6098, 6106,
+  6117, 6125, 6130, 6138, 6146, 6154, 6162, 6170, 6176, 6179, 6182, 6185,
+  6188, 6193, 6197, 6204,
+];
+
+/**
+ * Parse surah number from a surah name/reference string like "Al-Baqarah" or "2".
+ * Returns 0 if not parseable (we then just show a toast).
+ */
+function parseSurahNumber(surahRef: string): number {
+  // Try direct numeric parse first
+  const num = parseInt(surahRef, 10);
+  if (!isNaN(num) && num >= 1 && num <= 114) return num;
+  return 0;
+}
+
+function getQuranAudioUrl(surah: number, ayah: number): string {
+  const offset = SURAH_OFFSETS[surah - 1] ?? 0;
+  const audioNumber = offset + ayah;
+  return `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${audioNumber}.mp3`;
 }
 
 function DhikrCounter({ target, initialCount, onComplete }: { target: number; initialCount: number; onComplete: () => void }) {
@@ -79,6 +114,61 @@ export default function MorningBriefingScreen() {
   const queryClient = useQueryClient();
   const [reflectionText, setReflectionText] = useState('');
   const tc = useThemeColors();
+
+  // Audio playback
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const [isPlayingAyah, setIsPlayingAyah] = useState(false);
+
+  const playAyahAudio = useCallback(async (surahRef: string, ayahNumber: number) => {
+    try {
+      // Stop if already playing (toggle)
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+        if (isPlayingAyah) { setIsPlayingAyah(false); return; }
+      }
+
+      const surahNum = parseSurahNumber(surahRef);
+      if (surahNum === 0) {
+        showToast({ message: t('islamic.audioPlaybackUnavailable', { defaultValue: 'Audio playback unavailable' }), variant: 'info' });
+        return;
+      }
+
+      const audioUrl = getQuranAudioUrl(surahNum, ayahNumber);
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUrl },
+        { shouldPlay: true },
+      );
+      soundRef.current = sound;
+      setIsPlayingAyah(true);
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setIsPlayingAyah(false);
+          sound.unloadAsync();
+          soundRef.current = null;
+        }
+      });
+    } catch {
+      showToast({ message: t('islamic.audioPlaybackUnavailable', { defaultValue: 'Audio playback unavailable' }), variant: 'info' });
+      setIsPlayingAyah(false);
+    }
+  }, [isPlayingAyah, t]);
+
+  const handlePlayHadith = useCallback(() => {
+    haptic.navigate();
+    showToast({ message: t('islamic.audioRecitationComingSoon', { defaultValue: 'Audio recitation coming soon' }), variant: 'info' });
+  }, [haptic, t]);
+
+  const handlePlayDua = useCallback(() => {
+    haptic.navigate();
+    showToast({ message: t('islamic.audioRecitationComingSoon', { defaultValue: 'Audio recitation coming soon' }), variant: 'info' });
+  }, [haptic, t]);
+
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync(); };
+  }, []);
 
   const locationQuery = useQuery({
     queryKey: ['briefing-location'],
@@ -224,6 +314,15 @@ export default function MorningBriefingScreen() {
                   <View style={styles.cardHeader}>
                     <Icon name="layers" size="sm" color={colors.gold} />
                     <Text style={styles.cardTitle}>{t('dailyBriefing.hadithOfTheDay')}</Text>
+                    <Pressable
+                      onPress={handlePlayHadith}
+                      hitSlop={8}
+                      accessibilityLabel={t('common.listen', { defaultValue: 'Listen' })}
+                      accessibilityRole="button"
+                      style={styles.cardPlayBtn}
+                    >
+                      <Icon name="play" size="sm" color={colors.gold} />
+                    </Pressable>
                   </View>
                   {briefing.hadithOfTheDay.arabic ? (
                     <Text style={styles.arabicText}>{briefing.hadithOfTheDay.arabic}</Text>
@@ -244,6 +343,15 @@ export default function MorningBriefingScreen() {
                   <View style={styles.cardHeader}>
                     <Icon name="heart" size="sm" color={colors.emerald} />
                     <Text style={styles.cardTitle}>{t('dailyBriefing.duaOfTheDay')}</Text>
+                    <Pressable
+                      onPress={handlePlayDua}
+                      hitSlop={8}
+                      accessibilityLabel={t('common.listen', { defaultValue: 'Listen' })}
+                      accessibilityRole="button"
+                      style={styles.cardPlayBtn}
+                    >
+                      <Icon name="play" size="sm" color={colors.emerald} />
+                    </Pressable>
                   </View>
                   <Text style={styles.arabicText}>{briefing.duaOfTheDay.arabic}</Text>
                   <Text style={styles.transliterationText}>{briefing.duaOfTheDay.transliteration}</Text>
@@ -296,6 +404,19 @@ export default function MorningBriefingScreen() {
                     <View style={styles.cardHeader}>
                       <Icon name="layers" size="sm" color={colors.gold} />
                       <Text style={styles.cardTitle}>{t('dailyBriefing.ayahOfTheDay')}</Text>
+                      <Pressable
+                        onPress={(e) => {
+                          e.stopPropagation?.();
+                          haptic.navigate();
+                          playAyahAudio(briefing.ayahOfTheDay.surah, briefing.ayahOfTheDay.ayahNumber);
+                        }}
+                        hitSlop={8}
+                        accessibilityLabel={isPlayingAyah ? t('common.stop', { defaultValue: 'Stop' }) : t('common.listen', { defaultValue: 'Listen' })}
+                        accessibilityRole="button"
+                        style={styles.cardPlayBtn}
+                      >
+                        <Icon name={isPlayingAyah ? 'loader' : 'play'} size="sm" color={isPlayingAyah ? colors.gold : colors.gold} />
+                      </Pressable>
                       {completedTasks.includes('quran') ? (
                         <View style={styles.completeBadge}>
                           <Icon name="check" size="xs" color={colors.emerald} />
@@ -454,6 +575,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: fontSize.base,
     color: colors.text.primary,
+  },
+  cardPlayBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: colors.active.white5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   prayerTimesGrid: {
     flexDirection: 'row',

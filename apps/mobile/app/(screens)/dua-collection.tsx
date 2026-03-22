@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Share,
 } from 'react-native';
@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Audio } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -16,6 +17,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { showToast } from '@/components/ui/Toast';
 import { islamicApi } from '@/services/islamicApi';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
@@ -48,11 +50,12 @@ const CATEGORY_ICONS: Record<string, IconName> = {
   general: 'heart',
 };
 
-function DuaCard({ dua, language, onBookmark, onShare }: {
+function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
   dua: Dua;
   language: string;
   onBookmark: () => void;
   onShare: () => void;
+  onPlayAudio: () => void;
 }) {
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
@@ -78,6 +81,16 @@ function DuaCard({ dua, language, onBookmark, onShare }: {
 
       {/* Actions */}
       <View style={[styles.duaActions, { borderTopColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <Pressable
+          onPress={onPlayAudio}
+          style={styles.actionBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel={t('common.listen', { defaultValue: 'Listen' })}
+          accessibilityRole="button"
+        >
+          <Icon name="play" size={18} color={colors.text.secondary} />
+          <Text style={styles.actionText}>{t('common.listen', { defaultValue: 'Listen' })}</Text>
+        </Pressable>
         <Pressable
           onPress={onBookmark}
           style={styles.actionBtn}
@@ -111,6 +124,18 @@ export default function DuaCollectionScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showBookmarked, setShowBookmarked] = useState(false);
   const tc = useThemeColors();
+
+  // Audio playback (dua recitation not yet available from API)
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const handlePlayAudio = useCallback(() => {
+    haptic.navigate();
+    showToast({ message: t('islamic.audioRecitationComingSoon', { defaultValue: 'Audio recitation coming soon' }), variant: 'info' });
+  }, [haptic, t]);
+
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync(); };
+  }, []);
 
   const categoriesQuery = useQuery({
     queryKey: ['dua-categories'],
@@ -262,6 +287,7 @@ export default function DuaCollectionScreen() {
               language={locale}
               onBookmark={() => bookmarkMutation.mutate(item.id)}
               onShare={() => handleShare(item)}
+              onPlayAudio={handlePlayAudio}
             />
           )}
           ListHeaderComponent={listHeader}

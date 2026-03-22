@@ -98,6 +98,8 @@ export interface QuranVerse {
   arabic: string;
   translation: string;
   transliteration?: string;
+  /** Audio URL from cdn.islamic.network — returned by backend getQuranVerse */
+  audioUrl?: string;
 }
 
 export interface QuranRoomState {

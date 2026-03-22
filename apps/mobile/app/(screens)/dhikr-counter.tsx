@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Audio } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -46,6 +47,65 @@ const PRESET_PHRASES = [
 ];
 
 const DAILY_GOAL = 33;
+
+/**
+ * Generate a short WAV buffer for a sine-wave tick at the given frequency.
+ * Returns a base64-encoded WAV data URI playable by expo-av.
+ */
+function generateBeadClickWav(hz = 800, durationMs = 50, sampleRate = 22050): string {
+  const numSamples = Math.floor(sampleRate * (durationMs / 1000));
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+  const blockAlign = numChannels * (bitsPerSample / 8);
+  const dataSize = numSamples * blockAlign;
+  const headerSize = 44;
+  const buffer = new ArrayBuffer(headerSize + dataSize);
+  const view = new DataView(buffer);
+
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  // Generate sine wave with quick fade-in/out envelope for a clean click
+  const fadeLen = Math.floor(numSamples * 0.2);
+  for (let i = 0; i < numSamples; i++) {
+    let amplitude = 0.25;
+    if (i < fadeLen) amplitude *= i / fadeLen;
+    else if (i > numSamples - fadeLen) amplitude *= (numSamples - i) / fadeLen;
+    const sample = Math.sin(2 * Math.PI * hz * (i / sampleRate)) * amplitude;
+    const val = Math.max(-1, Math.min(1, sample));
+    view.setInt16(headerSize + i * 2, val * 0x7fff, true);
+  }
+
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  const b64 = btoa(binary);
+  return `data:audio/wav;base64,${b64}`;
+}
+
+// Pre-generate the bead click WAV URI once (avoids regenerating on every tap)
+let _beadClickUri: string | null = null;
+function getBeadClickUri(): string {
+  if (!_beadClickUri) {
+    _beadClickUri = generateBeadClickWav(800, 50);
+  }
+  return _beadClickUri;
+}
 
 function PhraseButton({
   phrase,
@@ -126,6 +186,24 @@ export default function DhikrCounterScreen() {
   const shimmerOpacity = useSharedValue(0);
   const tc = useThemeColors();
 
+  // Bead click sound on each dhikr tap
+  const playBeadClick = useCallback(async () => {
+    try {
+      const uri = getBeadClickUri();
+      const { sound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true },
+      );
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          sound.unloadAsync();
+        }
+      });
+    } catch {
+      // Silent fallback — haptic only
+    }
+  }, []);
+
   // Fetch stats from API
   const { data: statsData, refetch: refetchStats } = useQuery({
     queryKey: ['dhikr-stats'],
@@ -156,6 +234,7 @@ export default function DhikrCounterScreen() {
 
   const handleTap = useCallback(() => {
     haptic.tick();
+    playBeadClick();
     setCount(prev => prev + 1);
     setHasStarted(true);
 
@@ -164,7 +243,7 @@ export default function DhikrCounterScreen() {
       withSpring(1.05, { damping: 10, stiffness: 400 }),
       withSpring(1, { damping: 15, stiffness: 300 })
     );
-  }, [haptic, counterScale]);
+  }, [haptic, counterScale, playBeadClick]);
 
   const handleReset = useCallback(() => {
     // Save session before resetting if count > 0
