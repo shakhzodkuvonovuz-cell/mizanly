@@ -695,3 +695,10 @@ Cat 4: 38 hardcoded hex colors → colors.extended.* tokens (blue, purple, viole
 
 ### NOTED (0 remaining — all 267 findings addressed):
 File 33 complete. All theme/styling findings fixed across 4 passes.
+
+## From Audit 34 (Auth/Onboarding Screens) — 42 findings
+### FIXED directly (42 findings):
+F1 (syntax error was stale audit — file compiles), F2 (onboardingComplete now set in interests.tsx), F3 (authApi.register called in username.tsx), F4 (register called during onboarding), F5 (updateProfile→usersApi.updateMe for madhab), F6 (madhab added to UpdateProfileDto), F7 (social auth disabled + "Coming soon"), F8 (14 i18n keys added to all 8 languages), F9 (password reset navigates instead of Alert), F10 (back button on verification), F11 (username race handled by DB unique constraint), F12 (2-step flow properly wired), F13 (hasUsername→onboardingDone), F14 (inline 2FA via Clerk attemptSecondFactor), F15 (accessible={false} correct), F16 (resend code error feedback), F17 (sign-up social auth disabled), F18 (duplicate accessibilityRole removed), F19 (FlatList RefreshControl added), F20 (Skeleton→ActivityIndicator in button), F21 (optimistic follow with rollback), F22 (SafeAreaView + removed hardcoded paddingTop), F23 (camera→user icon, removed misleading text), F24 (t→text variable rename), F25 (progress 50%→100%), F26 (progress dots fixed), F27 (unused username param removed), F28 (doc gap, icons valid), F29 (stricter username regex), F30 (now does real async work), F31 (shorter error + i18n fallback), F32 (__DEV__ guard + console.warn), F33 (password labels + special char check), F34 (code structure, no fix needed), F35 (responsive gradient size), F36 (gap→spacing.xs), F37 (borderRadius: 2), F38 (accessibilityRole="link"), F39 (ScrollView handles keyboard), F40 (removed dead View styles), F41 (removeClippedSubviews removed), F42 (Reanimated stable refs, no fix needed)
+
+### Deferred: None. All 42 findings fixed.
+### New tests: +16 (checkUsername validation ×5, UpdateProfileDto validation ×11)
