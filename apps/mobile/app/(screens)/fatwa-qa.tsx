@@ -13,7 +13,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
@@ -23,7 +23,7 @@ const MADHAB_IDS = ['any', 'hanafi', 'maliki', 'shafii', 'hanbali'] as const;
 export default function FatwaQAScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'browse' | 'ask'>('browse');
@@ -109,7 +109,7 @@ export default function FatwaQAScreen() {
               accessibilityRole="button"
               key={tab}
               style={[styles.tab, { backgroundColor: tc.bgCard, borderColor: tc.border }, activeTab === tab && styles.tabActive]}
-              onPress={() => { setActiveTab(tab); haptic.light(); }}
+              onPress={() => { setActiveTab(tab); haptic.tick(); }}
             >
               <Icon name={tab === 'browse' ? 'search' : 'pencil'} size="sm" color={activeTab === tab ? colors.emerald : colors.text.secondary} />
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
@@ -128,7 +128,7 @@ export default function FatwaQAScreen() {
                   accessibilityRole="button"
                   key={id}
                   style={[styles.filterChip, { backgroundColor: tc.bgCard, borderColor: tc.border }, selectedMadhab === id && styles.filterChipActive]}
-                  onPress={() => { setSelectedMadhab(id); haptic.light(); }}
+                  onPress={() => { setSelectedMadhab(id); haptic.tick(); }}
                 >
                   <Text style={[styles.filterChipText, selectedMadhab === id && styles.filterChipTextActive]}>
                     {t(`community.madhab.${id}`)}
@@ -203,7 +203,7 @@ export default function FatwaQAScreen() {
               key={id}
               label={t(`community.madhab.${id}`)}
               icon={<Icon name={askMadhab === id ? 'check-circle' : 'globe'} size="sm" color={askMadhab === id ? colors.emerald : colors.text.secondary} />}
-              onPress={() => { setAskMadhab(id); setMadhabSheetOpen(false); haptic.light(); }}
+              onPress={() => { setAskMadhab(id); setMadhabSheetOpen(false); haptic.tick(); }}
             />
           ))}
         </BottomSheet>

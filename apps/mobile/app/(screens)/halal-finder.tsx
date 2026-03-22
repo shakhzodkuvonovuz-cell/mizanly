@@ -7,13 +7,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { halalApi } from '@/services/halalApi';
@@ -107,7 +108,7 @@ function RestaurantCard({ restaurant, onPress }: { restaurant: HalalRestaurant; 
 export default function HalalFinderScreen() {
   const router = useRouter();
   const { t, isRTL } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [selectedCuisine, setSelectedCuisine] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const tc = useThemeColors();
@@ -164,7 +165,7 @@ export default function HalalFinderScreen() {
         renderItem={({ item }) => (
           <Pressable
             onPress={() => {
-              haptic.selection();
+              haptic.tick();
               setSelectedCuisine(selectedCuisine === item ? null : item);
             }}
             style={[
@@ -213,11 +214,13 @@ export default function HalalFinderScreen() {
         <FlatList
           data={restaurants}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <RestaurantCard
-              restaurant={item}
-              onPress={() => handleOpenDirections(item)}
-            />
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+              <RestaurantCard
+                restaurant={item}
+                onPress={() => handleOpenDirections(item)}
+              />
+            </Animated.View>
           )}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={listEmpty}

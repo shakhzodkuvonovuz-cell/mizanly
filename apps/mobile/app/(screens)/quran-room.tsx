@@ -18,9 +18,10 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize, fontSizeExt } from '@/theme';
+import { colors, spacing, radius, fontSize, fontSizeExt, fonts } from '@/theme';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
 import type { QuranRoomState } from '@/types/islamic';
@@ -46,7 +47,7 @@ export default function QuranRoomScreen() {
   const router = useRouter();
   const { getToken } = useAuth();
   const { user } = useUser();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const socketRef = useRef<Socket | null>(null);
   const getTokenRef = useRef(getToken);
@@ -170,25 +171,25 @@ export default function QuranRoomScreen() {
 
   const handleNextVerse = useCallback(() => {
     if (!roomState) return;
-    haptic.light();
+    haptic.navigate();
     emitVerseSync(roomState.currentSurah, roomState.currentVerse + 1);
     setShowHostControls(false);
   }, [roomState, emitVerseSync, haptic]);
 
   const handlePrevVerse = useCallback(() => {
     if (!roomState || roomState.currentVerse <= 1) return;
-    haptic.light();
+    haptic.navigate();
     emitVerseSync(roomState.currentSurah, roomState.currentVerse - 1);
     setShowHostControls(false);
   }, [roomState, emitVerseSync, haptic]);
 
   const handleLeave = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     router.back();
   }, [router, haptic]);
 
   const handleToggleTranslation = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     setShowTranslation(prev => !prev);
   }, [haptic]);
 
@@ -261,7 +262,7 @@ export default function QuranRoomScreen() {
           <View style={styles.participantBadge}>
             <Icon name="users" size="sm" color={colors.emerald} />
             <Text style={styles.participantText}>
-              {t('quranRoom.participants', { count: roomState?.participantCount ?? 0 })}
+              {t('quranRoom.participants', { count: formatCount(roomState?.participantCount ?? 0) })}
             </Text>
           </View>
 
@@ -347,7 +348,7 @@ export default function QuranRoomScreen() {
             accessibilityRole="button"
             style={styles.hostFab}
             onPress={() => {
-              haptic.light();
+              haptic.navigate();
               setShowHostControls(true);
             }}
           >
@@ -407,9 +408,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   arabicVerse: {
     color: colors.gold,
     fontSize: fontSizeExt.heading,
+    fontFamily: fonts.arabicBold,
     lineHeight: 48,
     textAlign: 'center',
-    fontWeight: '500',
     marginBottom: spacing.base,
   },
   translationText: {

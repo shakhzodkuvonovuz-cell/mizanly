@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { islamicApi } from '@/services/islamicApi';
@@ -33,13 +33,13 @@ interface DailyBriefing {
 
 function DhikrCounter({ target, initialCount, onComplete }: { target: number; initialCount: number; onComplete: () => void }) {
   const [count, setCount] = useState(initialCount);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const isComplete = count >= target;
 
   const handlePress = useCallback(() => {
     if (isComplete) return;
-    haptic.light();
+    haptic.tick();
     const next = count + 1;
     setCount(next);
     if (next >= target) {
@@ -74,7 +74,7 @@ function DhikrCounter({ target, initialCount, onComplete }: { target: number; in
 export default function MorningBriefingScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const [reflectionText, setReflectionText] = useState('');
   const tc = useThemeColors();

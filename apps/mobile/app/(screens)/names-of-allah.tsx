@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
@@ -109,7 +109,7 @@ export default function NamesOfAllahScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [learnedSet, setLearnedSet] = useState<Set<number>>(new Set());
@@ -146,7 +146,7 @@ export default function NamesOfAllahScreen() {
   const dailyName: NameOfAllah | null = dailyQuery.data ?? null;
 
   const toggleLearned = useCallback(async (num: number) => {
-    haptic.medium();
+    haptic.success();
     setLearnedSet(prev => {
       const next = new Set(prev);
       if (next.has(num)) next.delete(num);
@@ -208,7 +208,8 @@ export default function NamesOfAllahScreen() {
         <FlatList
           data={names}
           keyExtractor={(item) => String(item.number)}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
             <NameCard
               name={item}
               isLearned={learnedSet.has(item.number)}
@@ -217,6 +218,7 @@ export default function NamesOfAllahScreen() {
               expanded={expandedId === item.number}
               onToggleExpand={() => setExpandedId(expandedId === item.number ? null : item.number)}
             />
+            </Animated.View>
           )}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={

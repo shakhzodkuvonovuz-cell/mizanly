@@ -11,7 +11,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
@@ -72,7 +72,7 @@ function CalendarDay({ day, isFasting, isMissed, isToday, isFuture }: {
 
 export default function FastingTrackerScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const { t, isRTL } = useTranslation();
   const today = new Date();
@@ -108,7 +108,7 @@ export default function FastingTrackerScreen() {
   const todayLog = logs.find(l => l.date?.startsWith(todayStr));
 
   const handleLogToday = useCallback((isFasting: boolean) => {
-    haptic.medium();
+    haptic.success();
     logMutation.mutate({ date: todayStr, isFasting, fastType: 'ramadan' });
   }, [todayStr, haptic, logMutation]);
 

@@ -10,7 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize, fontSizeExt } from '@/theme';
+import { colors, spacing, radius, fontSize, fontSizeExt, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
   monthTitleArabic: {
     color: colors.gold,
     fontSize: fontSize.lg,
-    fontWeight: '600',
+    fontFamily: fonts.arabicBold,
   },
   monthTitle: {
     color: colors.text.secondary,

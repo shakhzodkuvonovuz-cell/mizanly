@@ -945,6 +945,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: '#fff',
   },
   prayerArabic: {
+    fontFamily: fonts.arabic,
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,

@@ -20,7 +20,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -85,7 +86,7 @@ function ChallengeCard({
           <View style={styles.participantBadge}>
             <Icon name="users" size="xs" color={colors.text.tertiary} />
             <Text style={styles.participantText}>
-              {t('dhikr.participants', { count: challenge.participantCount })}
+              {t('dhikr.participants', { count: formatCount(challenge.participantCount) })}
             </Text>
           </View>
         </View>
@@ -118,7 +119,7 @@ function LoadingSkeleton() {
 
 export default function DhikrChallengesScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
@@ -187,7 +188,7 @@ export default function DhikrChallengesScreen() {
   }, [newTitle, newPhrase, newTarget, createMutation]);
 
   const renderItem = useCallback(({ item, index }: { item: DhikrChallenge; index: number }) => (
-    <Animated.View entering={FadeInUp.delay(index * 50).duration(300)}>
+    <Animated.View entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
       <ChallengeCard
         challenge={item}
         onPress={() => navigate('/(screens)/dhikr-challenge-detail', { id: item.id })}
@@ -232,7 +233,7 @@ export default function DhikrChallengesScreen() {
         <Pressable
           accessibilityRole="button"
           onPress={() => {
-            haptic.light();
+            haptic.navigate();
             setShowCreateSheet(true);
           }}
 
@@ -355,7 +356,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   challengePhrase: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.arabic,
     fontSize: fontSize.sm,
     color: colors.emerald,
     writingDirection: 'rtl',

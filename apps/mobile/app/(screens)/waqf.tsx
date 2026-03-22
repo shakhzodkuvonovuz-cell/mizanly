@@ -12,7 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { api } from '@/services/api';
 
@@ -21,7 +21,7 @@ export default function WaqfScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const fundsQuery = useInfiniteQuery({
     queryKey: ['waqf-funds'],
@@ -78,7 +78,7 @@ export default function WaqfScreen() {
           </View>
 
           <Pressable accessibilityRole="button" style={styles.contributeBtn} onPress={() => {
-              haptic.light();
+              haptic.navigate();
               // TODO: Wire to payment flow once Stripe integration is complete on mobile
               Alert.alert(t('common.comingSoon'), t('community.waqfContributeComingSoon'));
             }}>

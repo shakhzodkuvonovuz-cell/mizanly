@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -97,7 +98,7 @@ export default function NasheedModeScreen() {
             style={styles.card}
           >
             {SAMPLE_NASHEEDS.map((nasheed, i) => (
-              <View key={i} style={[styles.nasheedRow, i < SAMPLE_NASHEEDS.length - 1 && styles.nasheedRowBorder]}>
+              <Animated.View key={i} entering={FadeInUp.delay(Math.min(i, 15) * 40).duration(350).springify()} style={[styles.nasheedRow, i < SAMPLE_NASHEEDS.length - 1 && styles.nasheedRowBorder]}>
                 <LinearGradient
                   colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']}
                   style={styles.playIconContainer}
@@ -108,7 +109,7 @@ export default function NasheedModeScreen() {
                   <Text style={styles.nasheedTitle}>{nasheed.title}</Text>
                   <Text style={styles.nasheedArtist}>{nasheed.artist}</Text>
                 </View>
-              </View>
+              </Animated.View>
             ))}
           </LinearGradient>
 

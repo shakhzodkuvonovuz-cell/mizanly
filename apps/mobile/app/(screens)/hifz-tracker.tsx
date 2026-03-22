@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
@@ -191,7 +191,7 @@ const SurahRow = React.memo(function SurahRow({ surah, progress, onPress }: {
 
 export default function HifzTrackerScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const { t, isRTL } = useTranslation();
   const [statusSheet, setStatusSheet] = useState<{ visible: boolean; surahNum: number }>({ visible: false, surahNum: 0 });
@@ -318,7 +318,7 @@ export default function HifzTrackerScreen() {
               <SurahRow
                 surah={item}
                 progress={progress}
-                onPress={() => { haptic.light(); setStatusSheet({ visible: true, surahNum: item.num }); }}
+                onPress={() => { haptic.tick(); setStatusSheet({ visible: true, surahNum: item.num }); }}
               />
             );
           }}

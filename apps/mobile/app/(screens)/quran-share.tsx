@@ -14,7 +14,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { islamicApi } from '@/services/islamicApi';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { QuranSurah, QuranVerse } from '@/types/islamic';
@@ -486,7 +486,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   surahNameArabic: {
     color: colors.gold,
     fontSize: fontSize.lg,
-    fontWeight: '600',
+    fontFamily: fonts.arabicBold,
     marginBottom: 2,
   },
   surahName: {
@@ -582,6 +582,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   bismillah: {
     color: colors.gold,
     fontSize: fontSize.lg,
+    fontFamily: fonts.arabic,
     textAlign: 'center',
     marginBottom: spacing.md,
     lineHeight: 30,
@@ -596,6 +597,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   verseArabic: {
     color: colors.text.primary,
     fontSize: fontSize['2xl'],
+    fontFamily: fonts.arabicBold,
     textAlign: 'center',
     lineHeight: 48,
     marginBottom: spacing.lg,
@@ -726,6 +728,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   surahArabicList: {
     color: colors.text.tertiary,
     fontSize: fontSize.sm,
+    fontFamily: fonts.arabic,
   },
 
   // Share Sheet

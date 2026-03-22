@@ -26,7 +26,8 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -110,7 +111,7 @@ function StatCard({
 
 export default function DhikrCounterScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -152,7 +153,7 @@ export default function DhikrCounterScreen() {
   }, [refetchStats]);
 
   const handleTap = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     setCount(prev => prev + 1);
     setHasStarted(true);
 
@@ -172,7 +173,7 @@ export default function DhikrCounterScreen() {
         target: DAILY_GOAL,
       });
     }
-    haptic.medium();
+    haptic.delete();
     setCount(0);
     setHasStarted(false);
     sessionSavedRef.current = false;
@@ -187,7 +188,7 @@ export default function DhikrCounterScreen() {
         target: DAILY_GOAL,
       });
     }
-    haptic.light();
+    haptic.tick();
     setSelectedPhrase(phrase);
     setCount(0);
     setHasStarted(false);
@@ -195,7 +196,7 @@ export default function DhikrCounterScreen() {
   }, [haptic, count, selectedPhrase.id, saveSessionMutation]);
 
   const handleShareProgress = useCallback(async () => {
-    haptic.light();
+    haptic.send();
     try {
       await Share.share({
         message: `${selectedPhrase.arabic} - ${count}/${DAILY_GOAL}\n${t('dhikr.streak', { count: stats.streak })}\nMizanly - Dhikr Counter`,
@@ -407,8 +408,8 @@ export default function DhikrCounterScreen() {
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
             <Text style={styles.summaryTitle}>{t('dhikr.stats')}</Text>
             <View style={styles.statsRow}>
-              <StatCard icon="bar-chart-2" label={t('screens.dhikrCounter.stats.totalCounts')} value={statsData?.totalCount ?? stats.totalCount} delay={350} />
-              <StatCard icon="check-circle" label={t('screens.dhikrCounter.stats.setsDone')} value={stats.setsCompleted} delay={400} />
+              <StatCard icon="bar-chart-2" label={t('screens.dhikrCounter.stats.totalCounts')} value={formatCount(statsData?.totalCount ?? stats.totalCount)} delay={350} />
+              <StatCard icon="check-circle" label={t('screens.dhikrCounter.stats.setsDone')} value={formatCount(stats.setsCompleted)} delay={400} />
               <StatCard icon="trending-up" label={t('screens.dhikrCounter.stats.dayStreak')} value={stats.streak} delay={450} />
             </View>
           </Animated.View>
@@ -461,7 +462,7 @@ const styles = StyleSheet.create({
     color: colors.emerald,
   },
   phraseArabic: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.arabic,
     fontSize: fontSize.md,
     color: colors.text.primary,
     marginBottom: spacing.xs,
@@ -517,7 +518,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   countArabic: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.arabic,
     fontSize: fontSize.lg,
     color: colors.emerald,
     writingDirection: 'rtl',

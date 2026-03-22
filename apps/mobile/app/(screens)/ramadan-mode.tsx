@@ -19,7 +19,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -162,7 +162,7 @@ function GoalItem({
 }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
 
   return (
@@ -170,7 +170,7 @@ function GoalItem({
       <Pressable
         accessibilityRole="button"
         onPress={() => {
-          haptic.light();
+          haptic.tick();
           onToggle();
         }}
         style={styles.goalItem}
@@ -221,7 +221,7 @@ export default function RamadanModeScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const [goals, setGoals] = useState<DailyGoal[]>(INITIAL_GOALS);
 

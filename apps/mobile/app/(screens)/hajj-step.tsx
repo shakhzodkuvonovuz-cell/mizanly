@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { islamicApi } from '@/services/islamicApi';
 import type { HajjStep, HajjProgress } from '@/types/islamic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   },
   stepNameAr: {
     fontSize: fontSize.xl,
-    fontWeight: '700',
+    fontFamily: fonts.arabicBold,
     color: colors.text.primary,
     textAlign: 'right',
     writingDirection: 'rtl',
@@ -363,6 +363,7 @@ const styles = StyleSheet.create({
   },
   descriptionAr: {
     fontSize: fontSize.base,
+    fontFamily: fonts.arabic,
     color: colors.text.secondary,
     lineHeight: 24,
     textAlign: 'right',
@@ -391,11 +392,11 @@ const styles = StyleSheet.create({
   },
   duaArabic: {
     fontSize: fontSize.lg,
+    fontFamily: fonts.arabicBold,
     color: colors.gold,
     textAlign: 'right',
     writingDirection: 'rtl',
     lineHeight: 32,
-    fontWeight: '500',
   },
   duaDivider: {
     height: 1,

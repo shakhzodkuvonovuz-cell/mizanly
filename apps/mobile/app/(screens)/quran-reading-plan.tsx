@@ -21,7 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
@@ -196,7 +196,7 @@ function QuranReadingPlanContent() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [markSheetVisible, setMarkSheetVisible] = useState(false);
@@ -255,7 +255,7 @@ function QuranReadingPlanContent() {
 
   const handleCreatePlan = useCallback(
     (planType: string) => {
-      haptic.medium();
+      haptic.navigate();
       createMutation.mutate(planType);
     },
     [haptic, createMutation],

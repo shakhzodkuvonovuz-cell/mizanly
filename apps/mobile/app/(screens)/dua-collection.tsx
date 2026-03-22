@@ -11,7 +11,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -58,7 +58,7 @@ function DuaCard({ dua, language, onBookmark, onShare }: {
   const translation = dua.translation[language] || dua.translation.en || '';
 
   return (
-    <Animated.View entering={FadeInUp.duration(300)} style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+    <Animated.View entering={FadeInUp.delay(50).duration(350).springify()} style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
       {/* Arabic text */}
       <Text style={styles.arabicText}>{dua.arabicText}</Text>
 
@@ -104,7 +104,7 @@ function DuaCard({ dua, language, onBookmark, onShare }: {
 
 export default function DuaCollectionScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
   const { t, isRTL, locale } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -181,7 +181,7 @@ export default function DuaCollectionScreen() {
       <View style={[styles.tabRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable
           style={[styles.tab, { backgroundColor: tc.bgElevated }, !showBookmarked && styles.tabActive]}
-          onPress={() => { setShowBookmarked(false); haptic.selection(); }}
+          onPress={() => { setShowBookmarked(false); haptic.tick(); }}
           accessibilityRole="tab"
         >
           <Text style={[styles.tabText, !showBookmarked && styles.tabTextActive]}>
@@ -190,7 +190,7 @@ export default function DuaCollectionScreen() {
         </Pressable>
         <Pressable
           style={[styles.tab, { backgroundColor: tc.bgElevated }, showBookmarked && styles.tabActive]}
-          onPress={() => { setShowBookmarked(true); haptic.selection(); }}
+          onPress={() => { setShowBookmarked(true); haptic.tick(); }}
           accessibilityRole="tab"
         >
           <Text style={[styles.tabText, showBookmarked && styles.tabTextActive]}>
@@ -209,7 +209,7 @@ export default function DuaCollectionScreen() {
           contentContainerStyle={styles.chipsRow}
           renderItem={({ item }) => (
             <Pressable
-              onPress={() => { setSelectedCategory(item); haptic.selection(); }}
+              onPress={() => { setSelectedCategory(item); haptic.tick(); }}
               style={[styles.chip, { backgroundColor: tc.bgElevated, borderColor: tc.border }, selectedCategory === item && styles.chipActive]}
               accessibilityRole="button"
             >

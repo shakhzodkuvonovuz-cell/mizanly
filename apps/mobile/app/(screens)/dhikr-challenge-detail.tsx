@@ -19,7 +19,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { formatCount } from '@/utils/formatCount';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -79,7 +80,7 @@ function ContributorRow({
         {contributor.user?.displayName ?? 'Anonymous'}
       </Text>
       <Text style={styles.contributorCount}>
-        {contributor.contributed.toLocaleString()}
+        {formatCount(contributor.contributed)}
       </Text>
     </View>
   );
@@ -107,7 +108,7 @@ function LoadingSkeleton() {
 
 export default function DhikrChallengeDetailScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -147,13 +148,13 @@ export default function DhikrChallengeDetailScreen() {
   }, [refetch]);
 
   const handleContributeTap = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     setContributeCount(prev => prev + 1);
   }, [haptic]);
 
   const handleSubmitContribution = useCallback(() => {
     if (contributeCount <= 0) return;
-    haptic.medium();
+    haptic.send();
     contributeMutation.mutate(contributeCount);
   }, [contributeCount, haptic, contributeMutation]);
 
@@ -183,7 +184,7 @@ export default function DhikrChallengeDetailScreen() {
               <View style={styles.metaItem}>
                 <Icon name="users" size="xs" color={colors.text.tertiary} />
                 <Text style={styles.metaText}>
-                  {t('dhikr.participants', { count: detail.participantCount })}
+                  {t('dhikr.participants', { count: formatCount(detail.participantCount) })}
                 </Text>
               </View>
               <View style={styles.metaItem}>
@@ -208,7 +209,7 @@ export default function DhikrChallengeDetailScreen() {
                   <GradientButton
                     label={t('dhikr.joinChallenge')}
                     onPress={() => {
-                      haptic.medium();
+                      haptic.follow();
                       joinMutation.mutate();
                     }}
                     loading={joinMutation.isPending}
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   challengePhrase: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.arabic,
     fontSize: fontSize.lg,
     color: colors.emerald,
     writingDirection: 'rtl',
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   contributeTapHint: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.arabic,
     fontSize: fontSize.xs,
     color: colors.emerald,
     writingDirection: 'rtl',

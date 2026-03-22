@@ -20,7 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 import { islamicApi } from '@/services/islamicApi';
 import type { Hadith as ApiHadith } from '@/types/islamic';
@@ -55,13 +55,13 @@ function ActionButton({
   isActive?: boolean;
   activeColor?: string;
 }) {
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   return (
     <Pressable
       accessibilityRole="button"
       onPress={() => {
-        haptic.light();
+        haptic.navigate();
         onPress();
       }}
       style={styles.actionButton}
@@ -119,7 +119,7 @@ function PreviousHadithCard({
 
 export default function HadithScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -176,7 +176,7 @@ export default function HadithScreen() {
 
   const handleBookmark = useCallback(() => {
     if (!currentHadith) return;
-    haptic.medium();
+    haptic.save();
     const hadithId = currentHadith.id;
     // Optimistic UI update
     setCurrentHadith(prev => prev ? { ...prev, isBookmarked: !prev.isBookmarked } : prev);
@@ -203,7 +203,7 @@ export default function HadithScreen() {
 
   const handleShare = useCallback(async () => {
     if (!currentHadith) return;
-    haptic.light();
+    haptic.send();
     try {
       await Share.share({
         message: `${currentHadith.arabic}\n\n${currentHadith.english}\n\n— ${currentHadith.source} (${currentHadith.narrator})\n\nShared from Mizanly`,
@@ -215,7 +215,7 @@ export default function HadithScreen() {
 
   const handleCopy = useCallback(async () => {
     if (!currentHadith) return;
-    haptic.light();
+    haptic.save();
     await Clipboard.setStringAsync(`${currentHadith.arabic}\n\n${currentHadith.english}\n\n— ${currentHadith.source} (${currentHadith.narrator})`);
   }, [haptic, currentHadith]);
 
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   arabicText: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.arabic,
     fontSize: fontSize.lg,
     color: colors.text.primary,
     textAlign: 'right',

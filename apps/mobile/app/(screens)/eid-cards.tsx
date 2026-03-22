@@ -10,7 +10,8 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { EidFrame } from '@/components/islamic/EidFrame';
 import type { Occasion } from '@/components/islamic/EidFrame';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -64,18 +65,18 @@ export default function EidCardsScreen() {
           refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={false} onRefresh={() => {}} />}
         >
           <View style={styles.grid}>
-            {occasions.map((occ) => (
-              <Pressable
-                accessibilityRole="button"
-                key={occ.id}
-                onPress={() => handleOccasionPress(occ.id)}
-                style={[styles.card, { backgroundColor: tc.bgCard }]}
-               
-              >
-                <Icon name={occ.icon} size="xl" color={colors.gold} />
-                <Text style={styles.cardNameAr}>{occ.nameAr}</Text>
-                <Text style={styles.cardName}>{occ.name}</Text>
-              </Pressable>
+            {occasions.map((occ, index) => (
+              <Animated.View key={occ.id} entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => handleOccasionPress(occ.id)}
+                  style={[styles.card, { backgroundColor: tc.bgCard }]}
+                >
+                  <Icon name={occ.icon} size="xl" color={colors.gold} />
+                  <Text style={styles.cardNameAr}>{occ.nameAr}</Text>
+                  <Text style={styles.cardName}>{occ.name}</Text>
+                </Pressable>
+              </Animated.View>
             ))}
           </View>
         </ScrollView>
@@ -127,8 +128,8 @@ const styles = StyleSheet.create({
   cardNameAr: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    fontFamily: fonts.arabicBold,
     marginTop: spacing.sm,
-    fontWeight: '600',
   },
   cardName: {
     color: colors.text.secondary,

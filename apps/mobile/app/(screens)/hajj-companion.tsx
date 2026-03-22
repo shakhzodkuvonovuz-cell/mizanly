@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { islamicApi } from '@/services/islamicApi';
 import type { HajjStep, HajjProgress } from '@/types/islamic';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   },
   stepNameAr: {
     fontSize: fontSize.md,
-    fontWeight: '700',
+    fontFamily: fonts.arabicBold,
     color: colors.text.primary,
     textAlign: 'right',
     writingDirection: 'rtl',

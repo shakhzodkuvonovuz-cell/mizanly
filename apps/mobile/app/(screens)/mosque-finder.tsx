@@ -20,7 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 import { islamicApi } from '@/services/islamicApi';
 import type { Mosque as ApiMosque, PrayerTimes } from '@/types/islamic';
@@ -136,7 +136,7 @@ function openDirections(lat: number, lng: number, name: string) {
 
 function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const router = useRouter();
 
   return (
@@ -191,7 +191,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
         {/* Directions Button */}
         <Pressable
           accessibilityRole="button"
-          onPress={() => { haptic.light(); openDirections(mosque.lat, mosque.lng, mosque.name); }}
+          onPress={() => { haptic.navigate(); openDirections(mosque.lat, mosque.lng, mosque.name); }}
 
           style={styles.directionsButton}
         >
@@ -211,7 +211,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
 
 export default function MosqueFinderScreen() {
   const router = useRouter();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);

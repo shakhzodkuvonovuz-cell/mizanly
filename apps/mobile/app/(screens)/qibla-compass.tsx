@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -94,7 +94,7 @@ export default function QiblaCompassScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
 
   const [loading, setLoading] = useState(true);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -188,7 +188,7 @@ export default function QiblaCompassScreen() {
         if (aligned) {
           const now = Date.now();
           if (now - lastHapticRef.current > 1000) {
-            haptic.medium();
+            haptic.success();
             lastHapticRef.current = now;
           }
         }

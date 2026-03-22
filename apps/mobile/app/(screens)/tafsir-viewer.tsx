@@ -12,7 +12,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { islamicApi } from '@/services/islamicApi';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { TafsirEntry } from '@/types/islamic';
@@ -311,6 +311,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   verseArabic: {
     color: colors.gold,
     fontSize: fontSize.xl,
+    fontFamily: fonts.arabicBold,
     textAlign: 'center',
     lineHeight: 44,
     writingDirection: 'rtl',

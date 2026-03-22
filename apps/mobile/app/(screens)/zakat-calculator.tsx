@@ -21,7 +21,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt } from '@/theme';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -163,7 +163,7 @@ export default function ZakatCalculatorScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>(1);
 
@@ -224,24 +224,24 @@ export default function ZakatCalculatorScreen() {
   }, []);
 
   const goNext = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     setCurrentStep(prev => (prev < 3 ? ((prev + 1) as Step) : prev));
   }, [haptic]);
 
   const goBack = useCallback(() => {
-    haptic.light();
+    haptic.navigate();
     setCurrentStep(prev => (prev > 1 ? ((prev - 1) as Step) : prev));
   }, [haptic]);
 
   const reset = useCallback(() => {
-    haptic.medium();
+    haptic.delete();
     setCurrentStep(1);
     setAssets({ cash: '', gold: '', investments: '', inventory: '', property: '' });
     setDeductions({ debts: '', expenses: '' });
   }, [haptic]);
 
   const handleShare = useCallback(async () => {
-    haptic.light();
+    haptic.send();
     try {
       await Share.share({
         message: t('screens.zakatCalculator.shareMessage', {
