@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, fontSizeExt } from '@/theme';
 import { communitiesApi } from '@/services/communitiesApi';
 import type { Community } from '@/types/communities';
@@ -366,6 +367,20 @@ export default function CommunitiesScreen() {
 
         {/* Create Community FAB */}
         <FAB onPress={handleCreateCommunity} />
+
+        {/* Create Community Modal */}
+        <BottomSheet visible={showCreateModal} onClose={() => setShowCreateModal(false)}>
+          <BottomSheetItem
+            label={t('screens.communities.createCommunity') || 'Create Community'}
+            icon={<Icon name="users" size="sm" color={tc.text.primary} />}
+            onPress={() => { setShowCreateModal(false); router.push('/(screens)/create-group'); }}
+          />
+          <BottomSheetItem
+            label={t('screens.communities.browseCommunities') || 'Browse Communities'}
+            icon={<Icon name="search" size="sm" color={tc.text.primary} />}
+            onPress={() => { setShowCreateModal(false); router.push('/(screens)/discover'); }}
+          />
+        </BottomSheet>
       </View>
 
     </ScreenErrorBoundary>

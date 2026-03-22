@@ -19,7 +19,8 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { RichText } from '@/components/ui/RichText';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
-import { channelsApi, channelPostsApi } from '@/services/api';
+import { channelsApi, channelPostsApi, uploadApi } from '@/services/api';
+import { showToast } from '@/components/ui/Toast';
 import type { ChannelPost, Channel, PaginatedResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -206,15 +207,37 @@ export default function CommunityPostsScreen() {
     setRefreshing(false);
   }, [channelQuery, postsQuery]);
 
-  const handleCreatePost = useCallback(() => {
+  const handleCreatePost = useCallback(async () => {
     if (!composeText.trim() && selectedMediaList.length === 0) return;
+
+    let uploadedUrls: string[] = [];
+    if (selectedMediaList.length > 0) {
+      try {
+        uploadedUrls = await Promise.all(
+          selectedMediaList.map(async (media) => {
+            const contentType = media.type === 'video' ? 'video/mp4' : 'image/jpeg';
+            const presign = await uploadApi.getPresignUrl(contentType, 'community-posts');
+            const response = await fetch(media.uri);
+            const blob = await response.blob();
+            await fetch(presign.uploadUrl, {
+              method: 'PUT',
+              body: blob,
+              headers: { 'Content-Type': contentType },
+            });
+            return presign.publicUrl;
+          })
+        );
+      } catch {
+        showToast({ message: t('communityPosts.uploadFailed') || 'Image upload not available', variant: 'error' });
+        return;
+      }
+    }
+
     createMutation.mutate({
       content: composeText.trim(),
-      // TODO: Upload media to R2 via presigned URL before submitting, then pass returned URLs.
-      // Currently sends local file:// URIs which the backend cannot serve to other clients.
-      mediaUrls: selectedMediaList.map(m => m.uri)
+      mediaUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
     });
-  }, [composeText, selectedMediaList, createMutation]);
+  }, [composeText, selectedMediaList, createMutation, t]);
 
   const handleLike = useCallback((postId: string, liked: boolean) => {
     likeMutation.mutate({ postId, liked });

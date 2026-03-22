@@ -29,11 +29,10 @@ export default function VoicePostCreateScreen() {
   const [duration, setDuration] = useState(0);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [waveformBars, setWaveformBars] = useState<number[]>(Array(30).fill(0.15));
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const stopRecordingRef = useRef<() => void>(() => {});
   const durationRef = useRef(0);
-  // Memoize waveform random heights to prevent flickering on re-render (Finding 50)
-  const waveformHeights = useRef(Array.from({ length: 30 }, () => 10 + Math.random() * 40)).current;
 
   const pulseScale = useSharedValue(1);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulseScale.value }] }));
@@ -54,12 +53,23 @@ export default function VoicePostCreateScreen() {
       }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await recording.prepareToRecordAsync({
+        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        isMeteringEnabled: true,
+      });
+      recording.setOnRecordingStatusUpdate((status) => {
+        if (status.isRecording && status.metering != null) {
+          // Normalize metering from dBFS (typically -60..0) to 0..1
+          const normalized = Math.max(0, Math.min(1, (status.metering + 60) / 60));
+          setWaveformBars(prev => [...prev.slice(-29), normalized]);
+        }
+      });
       await recording.startAsync();
       recordingRef.current = recording;
       setIsRecording(true);
       setDuration(0);
       setRecordingUri(null);
+      setWaveformBars(Array(30).fill(0.15));
       haptic.light();
 
       pulseScale.value = withRepeat(withTiming(1.15, { duration: 800 }), -1, true);
@@ -137,11 +147,11 @@ export default function VoicePostCreateScreen() {
             <Text style={styles.maxDuration}>{t('voicePost.maxDuration', { time: formatTime(MAX_DURATION) })}</Text>
           </Animated.View>
 
-          {/* Waveform placeholder — uses memoized random heights to prevent flicker */}
+          {/* Waveform — uses real audio metering levels during recording */}
           <View style={styles.waveform}>
-            {waveformHeights.map((randomHeight, i) => {
+            {waveformBars.map((level, i) => {
               const height = isRecording
-                ? randomHeight
+                ? 6 + level * 48
                 : recordingUri ? 10 + Math.sin(i * 0.5) * 20 + 20 : 10;
               return (
                 <View
