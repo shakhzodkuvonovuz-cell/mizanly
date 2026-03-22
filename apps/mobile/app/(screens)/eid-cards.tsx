@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, RefreshControl, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -21,6 +22,15 @@ interface OccasionItem {
   nameAr: string;
   icon: IconName;
 }
+
+const CARD_GRADIENTS: Record<string, [string, string]> = {
+  'eid-fitr': ['#0A7B4F', '#065535'],
+  'eid-adha': ['#C8963E', '#8B6914'],
+  'ramadan': ['#1a1a2e', '#16213e'],
+  'mawlid': ['#6B2FA0', '#3B0764'],
+  'isra-miraj': ['#0D4F86', '#0A2647'],
+  'hijri-new-year': ['#0D1117', '#161B22'],
+};
 
 const occasions: OccasionItem[] = [
   { id: 'eid-fitr', name: 'Eid al-Fitr', nameAr: 'عيد الفطر', icon: 'star' },
@@ -53,6 +63,19 @@ export default function EidCardsScreen() {
     });
   };
 
+  const handleShareDirect = async () => {
+    if (!selectedOccasion) return;
+    const occ = occasions.find(o => o.id === selectedOccasion);
+    if (!occ) return;
+    try {
+      await Share.share({
+        message: `${occ.nameAr}\n${occ.name}\n\nSent with Mizanly`,
+      });
+    } catch {
+      // User cancelled share
+    }
+  };
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
@@ -66,15 +89,24 @@ export default function EidCardsScreen() {
         >
           <View style={styles.grid}>
             {occasions.map((occ, index) => (
-              <Animated.View key={occ.id} entering={FadeInUp.delay(Math.min(index, 15) * 40).duration(350).springify()}>
+              <Animated.View key={occ.id} entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400).springify()}>
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => handleOccasionPress(occ.id)}
-                  style={[styles.card, { backgroundColor: tc.bgCard }]}
+                  style={styles.cardOuter}
                 >
-                  <Icon name={occ.icon} size="xl" color={colors.gold} />
-                  <Text style={styles.cardNameAr}>{occ.nameAr}</Text>
-                  <Text style={styles.cardName}>{occ.name}</Text>
+                  <LinearGradient
+                    colors={CARD_GRADIENTS[occ.id] || ['#0A7B4F', '#065535']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.card}
+                  >
+                    <View style={styles.cardIconRing}>
+                      <Icon name={occ.icon} size="xl" color={colors.gold} />
+                    </View>
+                    <Text style={styles.cardNameAr}>{occ.nameAr}</Text>
+                    <Text style={styles.cardName}>{occ.name}</Text>
+                  </LinearGradient>
                 </Pressable>
               </Animated.View>
             ))}
@@ -97,6 +129,14 @@ export default function EidCardsScreen() {
                   fullWidth
                 />
               </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleShareDirect}
+                style={styles.shareDirectBtn}
+              >
+                <Icon name="share" size="sm" color={colors.gold} />
+                <Text style={styles.shareDirectText}>{t('common.share')}</Text>
+              </Pressable>
             </View>
           )}
         </BottomSheet>
@@ -118,21 +158,37 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.md,
   },
-  card: {
+  cardOuter: {
     width: '47%',
-    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  card: {
     borderRadius: radius.lg,
     padding: spacing.lg,
     alignItems: 'center',
+    minHeight: 140,
+    justifyContent: 'center',
+  },
+  cardIconRing: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(200, 150, 62, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardNameAr: {
-    color: colors.text.primary,
-    fontSize: fontSize.base,
+    color: '#FFFFFF',
+    fontSize: fontSize.md,
     fontFamily: fonts.arabicBold,
     marginTop: spacing.sm,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   cardName: {
-    color: colors.text.secondary,
+    color: 'rgba(255,255,255,0.75)',
     fontSize: fontSize.sm,
     marginTop: 2,
   },
@@ -152,5 +208,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
     marginTop: spacing.lg,
+  },
+  shareDirectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  shareDirectText: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
   },
 });

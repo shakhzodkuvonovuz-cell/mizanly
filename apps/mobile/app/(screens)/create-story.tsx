@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Dimensions, Platform, Alert, ViewStyle, TextStyle } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -6,9 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  withSpring, runOnJS, withTiming, withDelay, FadeIn,
+  runOnJS, withTiming, withDelay, FadeIn,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { MusicPicker } from '@/components/story/MusicPicker';
@@ -35,14 +36,15 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CANVAS_H = SCREEN_H * 0.7;
 
 // ── Filter presets ──
-// Full filter effects require expo-gl shader pipeline — opacity-only for now
+// Each filter applies a color overlay on top of the image for a tint effect
 const FILTERS = [
-  { id: 'none', label: 'Normal', style: {} },
-  { id: 'warm', label: 'Warm', style: { opacity: 0.85 } },
-  { id: 'cool', label: 'Cool', style: { opacity: 0.85 } },
-  { id: 'vintage', label: 'Vintage', style: { opacity: 0.8 } },
-  { id: 'noir', label: 'Noir', style: { opacity: 0.7 } },
-  { id: 'emerald', label: 'Emerald', style: { opacity: 0.9 } },
+  { id: 'none', label: 'Normal', overlay: null },
+  { id: 'warm', label: 'Warm', overlay: 'rgba(255, 180, 100, 0.15)' },
+  { id: 'cool', label: 'Cool', overlay: 'rgba(100, 150, 255, 0.15)' },
+  { id: 'vintage', label: 'Vintage', overlay: 'rgba(180, 150, 100, 0.2)' },
+  { id: 'noir', label: 'Noir', overlay: 'rgba(0, 0, 0, 0.35)' },
+  { id: 'emerald', label: 'Emerald', overlay: 'rgba(10, 123, 79, 0.15)' },
+  { id: 'gold', label: 'Gold', overlay: 'rgba(200, 150, 62, 0.15)' },
 ];
 
 // ── Font options ──
@@ -79,6 +81,66 @@ interface Sticker {
   y: number;
   scale: number;
   data: Record<string, unknown>;
+}
+
+// ── Draggable sticker wrapper — extracted to avoid Rules of Hooks in .map() ──
+function DraggableSticker({
+  sticker,
+  onRemove,
+  children,
+  stickerStyle,
+}: {
+  sticker: Sticker;
+  onRemove: (id: string) => void;
+  children: React.ReactNode;
+  stickerStyle: ViewStyle;
+}) {
+  const translateX = useSharedValue(sticker.x);
+  const translateY = useSharedValue(sticker.y);
+  const contextX = useSharedValue(0);
+  const contextY = useSharedValue(0);
+  const isDragging = useSharedValue(false);
+
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      contextX.value = translateX.value;
+      contextY.value = translateY.value;
+      isDragging.value = true;
+    })
+    .onUpdate((event) => {
+      translateX.value = contextX.value + event.translationX;
+      translateY.value = contextY.value + event.translationY;
+    })
+    .onEnd(() => {
+      isDragging.value = false;
+    });
+
+  const longPressGesture = Gesture.LongPress()
+    .minDuration(500)
+    .onEnd((_event, success) => {
+      if (success) {
+        runOnJS(onRemove)(sticker.id);
+      }
+    });
+
+  const composedGesture = Gesture.Race(panGesture, longPressGesture);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    position: 'absolute' as const,
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: isDragging.value ? sticker.scale * 1.05 : sticker.scale },
+    ],
+  }));
+
+  return (
+    <GestureDetector gesture={composedGesture}>
+      <Animated.View style={[animatedStyle, stickerStyle]}>
+        {children}
+      </Animated.View>
+    </GestureDetector>
+  );
 }
 
 export default function CreateStoryScreen() {
@@ -168,9 +230,6 @@ export default function CreateStoryScreen() {
   const [showStickerHint, setShowStickerHint] = useState(false);
   const hintOpacity = useSharedValue(0);
 
-  // ── Gradient selection animation ──
-  const gradientScales = useRef(BG_GRADIENTS.map(() => useSharedValue(1))).current;
-
   // ── Discard check ──
   const hasContent = mediaUri || text.length > 0 || stickers.length > 0;
 
@@ -238,7 +297,12 @@ export default function CreateStoryScreen() {
   };
 
   const removeSticker = (id: string) => {
-    setStickers(prev => prev.filter(s => s.id !== id));
+    Alert.alert(t('stories.removeSticker'), '', [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.remove'), style: 'destructive', onPress: () => {
+        setStickers(prev => prev.filter(s => s.id !== id));
+      }},
+    ]);
   };
 
   // ── Submit sticker forms ──
@@ -336,33 +400,21 @@ export default function CreateStoryScreen() {
   const currentFilter = FILTERS[filterIndex];
 
   // ── Render sticker on canvas ──
-  const renderSticker = (sticker: Sticker) => {
-    const stickerStyles: Record<StickerType, ViewStyle> = {
-      poll: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
-      question: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
-      countdown: { backgroundColor: tc.bgCard, borderRadius: radius.md, padding: spacing.md, minWidth: 160 },
-      quiz: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
-      location: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-      mention: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-      hashtag: { backgroundColor: 'rgba(200,150,62,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-      slider: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
-    };
+  const stickerStylesMap: Record<StickerType, ViewStyle> = {
+    poll: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
+    question: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
+    countdown: { backgroundColor: tc.bgCard, borderRadius: radius.md, padding: spacing.md, minWidth: 160 },
+    quiz: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
+    location: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+    mention: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+    hashtag: { backgroundColor: 'rgba(200,150,62,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+    slider: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
+  };
 
-    return (
-      <Pressable
-        key={sticker.id}
-        onLongPress={() => {
-          Alert.alert(t('stories.removeSticker'), '', [
-            { text: t('common.cancel'), style: 'cancel' },
-            { text: t('common.remove'), style: 'destructive', onPress: () => removeSticker(sticker.id) },
-          ]);
-        }}
-        style={[
-          { position: 'absolute', left: sticker.x, top: sticker.y, transform: [{ scale: sticker.scale }] },
-          stickerStyles[sticker.type],
-        ]}
-      >
-        {sticker.type === 'poll' && (
+  const renderStickerContent = (sticker: Sticker) => {
+    switch (sticker.type) {
+      case 'poll':
+        return (
           <View>
             <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: spacing.sm }}>
               {String(sticker.data.question)}
@@ -377,8 +429,9 @@ export default function CreateStoryScreen() {
               </View>
             ))}
           </View>
-        )}
-        {sticker.type === 'question' && (
+        );
+      case 'question':
+        return (
           <View>
             <Text style={{ color: '#fff', fontSize: fontSize.sm, fontWeight: '700', textAlign: 'center' }}>
               {String(sticker.data.prompt)}
@@ -392,8 +445,9 @@ export default function CreateStoryScreen() {
               </Text>
             </View>
           </View>
-        )}
-        {sticker.type === 'countdown' && (
+        );
+      case 'countdown':
+        return (
           <View style={{ alignItems: 'center' }}>
             <Icon name="clock" size="sm" color={colors.emerald} />
             <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginTop: 4 }}>
@@ -403,8 +457,9 @@ export default function CreateStoryScreen() {
               {sticker.data.endsAt ? String(sticker.data.endsAt) : t('stories.noEndDateSet')}
             </Text>
           </View>
-        )}
-        {sticker.type === 'quiz' && (
+        );
+      case 'quiz':
+        return (
           <View>
             <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: spacing.sm }}>
               {String(sticker.data.question)}
@@ -419,26 +474,30 @@ export default function CreateStoryScreen() {
               </View>
             ))}
           </View>
-        )}
-        {sticker.type === 'location' && (
+        );
+      case 'location':
+        return (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Icon name="map-pin" size="xs" color="#000" />
             <Text style={{ color: '#000', fontSize: fontSize.sm, fontWeight: '600', marginLeft: 4 }}>
               {t('common.location')}
             </Text>
           </View>
-        )}
-        {sticker.type === 'mention' && (
+        );
+      case 'mention':
+        return (
           <Text style={{ color: '#fff', fontSize: fontSize.sm, fontWeight: '600' }}>
             @{String(sticker.data.username)}
           </Text>
-        )}
-        {sticker.type === 'hashtag' && (
+        );
+      case 'hashtag':
+        return (
           <Text style={{ color: '#fff', fontSize: fontSize.sm, fontWeight: '600' }}>
             #{String(sticker.data.tag)}
           </Text>
-        )}
-        {sticker.type === 'slider' && (
+        );
+      case 'slider':
+        return (
           <View>
             <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: spacing.sm }}>
               {String(sticker.data.emoji)} {String(sticker.data.question)}
@@ -447,10 +506,22 @@ export default function CreateStoryScreen() {
               {String(sticker.data.minValue || 0)} – {String(sticker.data.maxValue || 100)}
             </Text>
           </View>
-        )}
-      </Pressable>
-    );
+        );
+      default:
+        return null;
+    }
   };
+
+  const renderSticker = (sticker: Sticker) => (
+    <DraggableSticker
+      key={sticker.id}
+      sticker={sticker}
+      onRemove={removeSticker}
+      stickerStyle={stickerStylesMap[sticker.type]}
+    >
+      {renderStickerContent(sticker)}
+    </DraggableSticker>
+  );
 
   return (
     <ScreenErrorBoundary>
@@ -541,7 +612,10 @@ export default function CreateStoryScreen() {
           <EidFrame occasion={eidFrameOccasion}>
             {mediaUri ? (
               <View style={{ flex: 1 }}>
-                <Image source={{ uri: mediaUri }} style={[{ width: '100%', height: '100%' }, currentFilter.style]} contentFit="cover" />
+                <Image source={{ uri: mediaUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                {currentFilter.overlay && (
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: currentFilter.overlay }]} pointerEvents="none" />
+                )}
               </View>
             ) : (
               <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={{ flex: 1 }} />
@@ -549,7 +623,10 @@ export default function CreateStoryScreen() {
           </EidFrame>
         ) : mediaUri ? (
           <View style={{ flex: 1 }}>
-            <Image source={{ uri: mediaUri }} style={[{ width: '100%', height: '100%' }, currentFilter.style]} contentFit="cover" />
+            <Image source={{ uri: mediaUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            {currentFilter.overlay && (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: currentFilter.overlay }]} pointerEvents="none" />
+            )}
           </View>
         ) : (
           <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={{ flex: 1 }} />
@@ -671,26 +748,28 @@ export default function CreateStoryScreen() {
 
         {/* No media: pick or shoot */}
         {!mediaUri && activeTool === null && (
-          <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
-            <Pressable onPress={pickMedia} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.pickFromGallery')} accessibilityRole="button">
-              <Icon name="image" size="sm" color={colors.emerald} />
-              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.gallery')}</Text>
-            </Pressable>
-            <Pressable onPress={takePhoto} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.takePhoto')} accessibilityRole="button">
-              <Icon name="camera" size="sm" color={colors.emerald} />
-              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.camera')}</Text>
-            </Pressable>
-          </View>
-          <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
-            <Pressable onPress={() => navigate('/(screens)/disposable-camera')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.disposable')} accessibilityRole="button">
-              <Icon name="camera" size="sm" color={colors.gold} />
-              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.disposable')}</Text>
-            </Pressable>
-            <Pressable onPress={() => navigate('/(screens)/photo-music')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.photoMusic')} accessibilityRole="button">
-              <Icon name="volume-x" size="sm" color={colors.gold} />
-              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.photoMusic')}</Text>
-            </Pressable>
-          </View>
+          <>
+            <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
+              <Pressable onPress={pickMedia} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.pickFromGallery')} accessibilityRole="button">
+                <Icon name="image" size="sm" color={colors.emerald} />
+                <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.gallery')}</Text>
+              </Pressable>
+              <Pressable onPress={takePhoto} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.takePhoto')} accessibilityRole="button">
+                <Icon name="camera" size="sm" color={colors.emerald} />
+                <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.camera')}</Text>
+              </Pressable>
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
+              <Pressable onPress={() => navigate('/(screens)/disposable-camera')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.disposable')} accessibilityRole="button">
+                <Icon name="camera" size="sm" color={colors.gold} />
+                <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.disposable')}</Text>
+              </Pressable>
+              <Pressable onPress={() => navigate('/(screens)/photo-music')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.photoMusic')} accessibilityRole="button">
+                <Icon name="volume-x" size="sm" color={colors.gold} />
+                <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.photoMusic')}</Text>
+              </Pressable>
+            </View>
+          </>
         )}
 
         {/* BG gradient picker (text-only stories) */}
@@ -698,55 +777,39 @@ export default function CreateStoryScreen() {
           <View style={{ marginBottom: spacing.md }}>
             <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: spacing.sm }}>{t('stories.background')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {/* Note: BG_GRADIENTS is a compile-time constant array — hook count is stable */}
               {BG_GRADIENTS.map((g, i) => {
                 const isActive = i === bgGradientIndex;
-                const animatedStyle = useAnimatedStyle(() => ({
-                  transform: [{ scale: gradientScales[i].value }],
-                }));
-
-                const handleGradientPress = () => {
-                  // Bounce animation
-                  gradientScales[i].value = withTiming(1.15, { duration: 100 }, () => {
-                    gradientScales[i].value = withTiming(1, { duration: 150 });
-                  });
-                  setBgGradientIndex(i);
-                };
-
                 return (
-                    <Pressable key={i} onPress={handleGradientPress}>
-                      <Animated.View style={[
-                        {
-                          width: 48,
-                          height: 48,
+                  <Pressable key={i} onPress={() => setBgGradientIndex(i)}>
+                    <View style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: radius.full,
+                      marginRight: spacing.sm,
+                      overflow: 'hidden',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderWidth: isActive ? 2 : 0,
+                      borderColor: colors.emerald,
+                    }}>
+                      <LinearGradient
+                        colors={g}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      {isActive && (
+                        <View style={{
+                          width: 20,
+                          height: 20,
                           borderRadius: radius.full,
-                          marginRight: spacing.sm,
-                          overflow: 'hidden',
+                          backgroundColor: colors.emerald,
                           justifyContent: 'center',
                           alignItems: 'center',
-                        },
-                        animatedStyle,
-                      ]}>
-                        <LinearGradient
-                          colors={g}
-                          style={StyleSheet.absoluteFill}
-                        />
-                        {/* Emerald check overlay when active */}
-                        {isActive && (
-                          <View style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: radius.full,
-                            backgroundColor: colors.emerald,
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                          }}>
-                            <Icon name="check" size={12} color="#fff" />
-                          </View>
-                        )}
-                      </Animated.View>
-                    </Pressable>
-                
+                        }}>
+                          <Icon name="check" size={12} color="#fff" />
+                        </View>
+                      )}
+                    </View>
+                  </Pressable>
                 );
               })}
             </ScrollView>
@@ -831,11 +894,18 @@ export default function CreateStoryScreen() {
                   {mediaUri && (
                     <View style={{ flex: 1 }}>
                       <Image source={{ uri: mediaUri }} style={{ width: 40, height: 40 }} contentFit="cover" />
-                      <View style={[StyleSheet.absoluteFill, f.style as Record<string, unknown>]} />
+                      {f.overlay && (
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: f.overlay }]} />
+                      )}
                     </View>
                   )}
                   {!mediaUri && (
-                    <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={[{ flex: 1 }, f.style as Record<string, unknown>]} />
+                    <View style={{ flex: 1 }}>
+                      <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={{ flex: 1 }} />
+                      {f.overlay && (
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: f.overlay }]} />
+                      )}
+                    </View>
                   )}
                 </View>
                 <Text style={{

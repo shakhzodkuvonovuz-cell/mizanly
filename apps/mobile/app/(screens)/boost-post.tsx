@@ -7,7 +7,6 @@ import {
   Pressable,
   Alert,
   TextInput,
-  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -48,8 +47,6 @@ function BoostPostContent() {
   const activeBudget = isCustom
     ? parseInt(customBudget, 10) || 0
     : selectedBudget;
-
-  const estimatedReach = activeBudget * 100;
 
   const handleSelectBudget = useCallback((amount: number) => {
     setIsCustom(false);
@@ -202,7 +199,7 @@ function BoostPostContent() {
           </View>
         </Animated.View>
 
-        {/* Estimated Reach */}
+        {/* Reach Estimate Info */}
         <Animated.View entering={FadeInUp.delay(400).duration(400)} style={[styles.reachCard, { borderColor: tc.border }]}>
           <LinearGradient
             colors={[colors.active.emerald10, 'transparent']}
@@ -213,8 +210,8 @@ function BoostPostContent() {
             <Icon name="trending-up" size="lg" color={colors.emerald} />
             <View style={styles.reachInfo}>
               <Text style={styles.reachTitle}>{t('boost.estimatedReach')}</Text>
-              <Text style={styles.reachValue}>
-                ~{estimatedReach.toLocaleString()} {t('boost.people')}
+              <Text style={styles.reachHonestText}>
+                {t('boost.reachHonestMessage', { defaultValue: 'Estimated reach will be calculated based on your audience and budget after the boost starts' })}
               </Text>
             </View>
           </LinearGradient>
@@ -408,6 +405,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
     color: colors.emerald,
+  },
+  reachHonestText: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+    lineHeight: 16,
   },
   infoRow: {
     flexDirection: 'row',

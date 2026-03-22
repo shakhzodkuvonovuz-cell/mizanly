@@ -11,13 +11,15 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize } from '@/theme';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
@@ -116,18 +118,24 @@ function DonateScreenContent() {
       <View style={[styles.container, { backgroundColor: tc.bg }]}>
         <GlassHeader title={t('charity.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
         <View style={styles.successContainer}>
-          <View style={styles.successIcon}>
-            <Icon name="check-circle" size="xl" color={colors.emerald} />
-          </View>
-          <Text style={styles.successTitle}>{t('charity.success')}</Text>
-          <Text style={styles.successMessage}>{t('charity.successMessage')}</Text>
-          <View style={styles.successAction}>
+          <Animated.View entering={FadeInUp.delay(100).duration(500).springify()}>
+            <View style={styles.successIcon}>
+              <Icon name="check-circle" size="xl" color={colors.gold} />
+            </View>
+          </Animated.View>
+          <Animated.View entering={FadeInUp.delay(200).duration(500).springify()}>
+            <Text style={styles.successTitle}>{t('charity.success')}</Text>
+          </Animated.View>
+          <Animated.View entering={FadeInUp.delay(300).duration(500).springify()}>
+            <Text style={styles.successMessage}>{t('charity.successMessage')}</Text>
+          </Animated.View>
+          <Animated.View entering={FadeInUp.delay(400).duration(500).springify()} style={styles.successAction}>
             <GradientButton
               label={t('common.done')}
               onPress={() => router.back()}
               fullWidth
             />
-          </View>
+          </Animated.View>
         </View>
       </View>
     );
@@ -154,106 +162,141 @@ function DonateScreenContent() {
 
   const ListHeader = () => (
     <View>
+      {/* Gold banner */}
+      <Animated.View entering={FadeInUp.delay(50).duration(400).springify()}>
+        <LinearGradient
+          colors={['rgba(200, 150, 62, 0.15)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.goldenBanner}
+        >
+          <Icon name="heart" size="lg" color={colors.gold} />
+          <Text style={styles.goldenBannerText}>{t('charity.bannerText', { defaultValue: 'Your generosity makes a difference' })}</Text>
+        </LinearGradient>
+      </Animated.View>
+
       {/* Campaign card */}
       {params.campaignId && (
-        <View style={[styles.campaignCard, { backgroundColor: tc.bgCard }]}>
-          {campaignQuery.isLoading ? (
-            <Skeleton.Rect width="100%" height={80} borderRadius={radius.md} />
-          ) : campaign ? (
-            <>
-              <Text style={styles.campaignTitle}>{campaign.title}</Text>
-              {campaign.description && (
-                <Text style={styles.campaignDescription}>{campaign.description}</Text>
-              )}
-              <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    { width: `${Math.min((campaign.raisedAmount / campaign.goalAmount) * 100, 100)}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.campaignRaised}>
-                {t('charity.raised', {
-                  amount: formatAmount(campaign.raisedAmount, currency),
-                  goal: formatAmount(campaign.goalAmount, currency),
-                })}
-              </Text>
-            </>
-          ) : null}
-        </View>
+        <Animated.View entering={FadeInUp.delay(100).duration(400).springify()}>
+          <View style={[styles.campaignCard, { backgroundColor: tc.bgCard }]}>
+            {campaignQuery.isLoading ? (
+              <Skeleton.Rect width="100%" height={80} borderRadius={radius.md} />
+            ) : campaign ? (
+              <>
+                <Text style={styles.campaignTitle}>{campaign.title}</Text>
+                {campaign.description && (
+                  <Text style={styles.campaignDescription}>{campaign.description}</Text>
+                )}
+                <View style={[styles.progressBarBg, { backgroundColor: tc.surface }]}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      { width: `${Math.min((campaign.raisedAmount / campaign.goalAmount) * 100, 100)}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.campaignRaised}>
+                  {t('charity.raised', {
+                    amount: formatAmount(campaign.raisedAmount, currency),
+                    goal: formatAmount(campaign.goalAmount, currency),
+                  })}
+                </Text>
+              </>
+            ) : null}
+          </View>
+        </Animated.View>
       )}
 
       {/* Amount picker */}
-      <Text style={styles.sectionLabel}>{t('charity.amount')}</Text>
-      <View style={styles.amountGrid}>
-        {PRESET_AMOUNTS.map((amt) => (
-          <Pressable
-            accessibilityRole="button"
-            key={amt}
-            style={[
-              styles.amountChip, { backgroundColor: tc.bgCard, borderColor: tc.border },
-              !isCustom && selectedAmount === amt && styles.amountChipActive,
-            ]}
-            onPress={() => handlePresetPress(amt)}
-           
-          >
-            <Text
-              style={[
-                styles.amountChipText,
-                !isCustom && selectedAmount === amt && styles.amountChipTextActive,
-              ]}
-            >
-              {formatAmount(amt, currency)}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <Animated.View entering={FadeInUp.delay(150).duration(400).springify()}>
+        <Text style={styles.sectionLabel}>{t('charity.amount')}</Text>
+        <View style={styles.amountGrid}>
+          {PRESET_AMOUNTS.map((amt, index) => {
+            const isActive = !isCustom && selectedAmount === amt;
+            return (
+              <Animated.View key={amt} entering={FadeInUp.delay(200 + index * 60).duration(350).springify()}>
+                <Pressable
+                  accessibilityRole="button"
+                  style={[
+                    styles.amountChip, { backgroundColor: tc.bgCard, borderColor: tc.border },
+                    isActive && styles.amountChipActive,
+                  ]}
+                  onPress={() => handlePresetPress(amt)}
+                >
+                  {isActive ? (
+                    <LinearGradient
+                      colors={[colors.emerald, '#065535']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.amountChipGradient}
+                    >
+                      <Text style={styles.amountChipTextActive}>
+                        {formatAmount(amt, currency)}
+                      </Text>
+                    </LinearGradient>
+                  ) : (
+                    <Text style={styles.amountChipText}>
+                      {formatAmount(amt, currency)}
+                    </Text>
+                  )}
+                </Pressable>
+              </Animated.View>
+            );
+          })}
+        </View>
+      </Animated.View>
 
       {/* Custom amount */}
-      <View style={[styles.customInputRow, { backgroundColor: tc.bgCard, borderColor: tc.border }, isCustom && styles.customInputRowActive]}>
-        <Text style={styles.currencySymbol}>{CURRENCY_SYMBOLS[currency]}</Text>
-        <TextInput
-          style={styles.customInput}
-          placeholder={t('charity.custom')}
-          placeholderTextColor={colors.text.tertiary}
-          keyboardType="decimal-pad"
-          value={customAmount}
-          onChangeText={setCustomAmount}
-          onFocus={handleCustomFocus}
-        />
-      </View>
+      <Animated.View entering={FadeInUp.delay(450).duration(400).springify()}>
+        <View style={[styles.customInputRow, { backgroundColor: tc.bgCard, borderColor: tc.border }, isCustom && styles.customInputRowActive]}>
+          <Text style={styles.currencySymbol}>{CURRENCY_SYMBOLS[currency]}</Text>
+          <TextInput
+            style={styles.customInput}
+            placeholder={t('charity.custom')}
+            placeholderTextColor={colors.text.tertiary}
+            keyboardType="decimal-pad"
+            value={customAmount}
+            onChangeText={setCustomAmount}
+            onFocus={handleCustomFocus}
+          />
+        </View>
+      </Animated.View>
 
       {/* Currency selector */}
-      <View style={styles.currencyRow}>
-        {CURRENCIES.map((cur) => (
-          <Pressable
-            accessibilityRole="button"
-            key={cur}
-            style={[styles.currencyPill, { backgroundColor: tc.bgCard, borderColor: tc.border }, currency === cur && styles.currencyPillActive]}
-            onPress={() => setCurrency(cur)}
-           
-          >
-            <Text style={[styles.currencyText, currency === cur && styles.currencyTextActive]}>
-              {cur.toUpperCase()}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <Animated.View entering={FadeInUp.delay(500).duration(400).springify()}>
+        <View style={styles.currencyRow}>
+          {CURRENCIES.map((cur) => (
+            <Pressable
+              accessibilityRole="button"
+              key={cur}
+              style={[styles.currencyPill, { backgroundColor: tc.bgCard, borderColor: tc.border }, currency === cur && styles.currencyPillActive]}
+              onPress={() => setCurrency(cur)}
+            >
+              <Text style={[styles.currencyText, currency === cur && styles.currencyTextActive]}>
+                {cur.toUpperCase()}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </Animated.View>
 
       {/* Donate button */}
-      <View style={styles.donateButtonRow}>
-        <GradientButton
-          label={t('charity.donate')}
-          onPress={handleDonate}
-          loading={donateMutation.isPending}
-          disabled={getAmount() < 100}
-          fullWidth
-        />
-      </View>
+      <Animated.View entering={FadeInUp.delay(550).duration(400).springify()}>
+        <View style={styles.donateButtonRow}>
+          <GradientButton
+            label={t('charity.donate')}
+            onPress={handleDonate}
+            loading={donateMutation.isPending}
+            disabled={getAmount() < 100}
+            fullWidth
+          />
+        </View>
+      </Animated.View>
 
       {/* My Donations header */}
-      <Text style={styles.sectionLabel}>{t('charity.myDonations')}</Text>
+      <Animated.View entering={FadeInUp.delay(600).duration(400).springify()}>
+        <Text style={styles.sectionLabel}>{t('charity.myDonations')}</Text>
+      </Animated.View>
     </View>
   );
 
@@ -313,6 +356,21 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     gap: spacing.md,
   },
+  goldenBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.base,
+    borderRadius: radius.lg,
+    marginBottom: spacing.md,
+  },
+  goldenBannerText: {
+    flex: 1,
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontFamily: fonts.bodyMedium,
+    fontWeight: '600',
+  },
   sectionLabel: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
@@ -348,7 +406,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.emerald,
+    backgroundColor: colors.gold,
     borderRadius: radius.full,
   },
   campaignRaised: {
@@ -374,7 +432,16 @@ const styles = StyleSheet.create({
   },
   amountChipActive: {
     borderColor: colors.emerald,
-    backgroundColor: colors.active.emerald10,
+    backgroundColor: 'transparent',
+    overflow: 'hidden' as const,
+    padding: 0,
+  },
+  amountChipGradient: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
   },
   amountChipText: {
     color: colors.text.primary,
@@ -382,7 +449,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   amountChipTextActive: {
-    color: colors.emerald,
+    color: '#FFFFFF',
+    fontSize: fontSize.base,
+    fontWeight: '700',
   },
   // Custom input
   customInputRow: {
@@ -484,16 +553,18 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: radius.full,
-    backgroundColor: colors.active.emerald10,
+    backgroundColor: 'rgba(200, 150, 62, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.lg,
+    alignSelf: 'center',
   },
   successTitle: {
-    color: colors.emerald,
+    color: colors.gold,
     fontSize: fontSize.xl,
     fontWeight: '700',
     marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   successMessage: {
     color: colors.text.secondary,
