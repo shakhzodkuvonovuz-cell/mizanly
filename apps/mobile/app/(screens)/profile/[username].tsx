@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, memo } from 'react';
+import { useState, useCallback, memo } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, RefreshControl, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
@@ -28,7 +28,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
@@ -91,6 +91,50 @@ const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress
             <Icon name="users" size={10} color="#fff" />
           </View>
         )}
+      </Pressable>
+    </Animated.View>
+  );
+});
+
+const ReelGridItem = memo(function ReelGridItem({ reel, onPress }: { reel: Reel; onPress: () => void }) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => { scale.value = withSpring(0.96, animation.spring.snappy); }}
+        onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
+        style={styles.gridItem}
+        accessibilityLabel={`View reel ${reel.id}`}
+        accessibilityRole="button"
+      >
+        {reel.thumbnailUrl ? (
+          <Image
+            source={{ uri: reel.thumbnailUrl }}
+            style={styles.gridImage}
+            contentFit="cover"
+          />
+        ) : (
+          <View style={styles.gridTextPost}>
+            <Icon name="video" size={24} color={colors.text.secondary} />
+          </View>
+        )}
+        <View style={styles.reelOverlay}>
+          <Icon name="play" size={16} color="#fff" />
+          <Text style={styles.reelDuration}>
+            {Math.floor(reel.duration / 60)}:{String(Math.floor(reel.duration % 60)).padStart(2, '0')}
+          </Text>
+        </View>
+        <View style={styles.reelStats}>
+          <Icon name="heart" size={12} color="#fff" />
+          <Text style={styles.reelStatText}>{reel.likesCount}</Text>
+        </View>
       </Pressable>
     </Animated.View>
   );
@@ -159,7 +203,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user: clerkUser } = useUser();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
   const PROFILE_TABS = [
     { key: 'posts', label: t('profile.posts') },
@@ -180,8 +224,8 @@ export default function ProfileScreen() {
 
   const coverAnimStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateY: interpolate(scrollY.value, [-100, 0, 200], [50, 0, -100], Extrapolation.CLAMP) },
-      { scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP) },
+      { translateY: interpolate(scrollY.value, [-200, 0, 200], [-100, 0, -100], Extrapolation.CLAMP) },
+      { scale: interpolate(scrollY.value, [-200, 0], [1.5, 1], Extrapolation.CLAMP) },
     ],
   }));
 
@@ -284,6 +328,7 @@ export default function ProfileScreen() {
   });
 
   const handleBlock = () => {
+    haptic.delete();
     setShowMenu(false);
     Alert.alert(t('profile.blockConfirmTitle'), t('profile.blockConfirmMessage', { username }), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -292,6 +337,7 @@ export default function ProfileScreen() {
   };
 
   const handleReport = () => {
+    haptic.delete();
     setShowMenu(false);
     const sendReport = (reason: string) => {
       if (!profile) return;
@@ -333,6 +379,7 @@ export default function ProfileScreen() {
   }, [loadingHighlightId, profile, router]);
 
   const handleShareProfile = () => {
+    haptic.send();
     const profileUrl = `https://mizanly.app/@${username}`;
     Share.share({
       message: t('profile.shareMessage', { username }),
@@ -432,7 +479,7 @@ export default function ProfileScreen() {
           <View style={{ flexDirection: rtlFlexRow(isRTL) }}>
             <Pressable
               style={styles.editBtn}
-              onPress={() => router.push('/(screens)/edit-profile')}
+              onPress={() => { haptic.navigate(); router.push('/(screens)/edit-profile'); }}
               accessibilityLabel={t('profile.editProfile')}
               accessibilityRole="button"
             >
@@ -456,12 +503,12 @@ export default function ProfileScreen() {
             <FollowButton
               isFollowing={isFollowing}
               isPending={followMutation.isPending}
-              onPress={() => { haptic.medium(); followMutation.mutate(); }}
+              onPress={() => { haptic.follow(); followMutation.mutate(); }}
             />
             <Pressable
               style={styles.msgBtn}
               onPress={async () => {
-                haptic.light();
+                haptic.navigate();
                 try {
                   const { messagesApi } = await import('@/services/api');
                   const convo = await messagesApi.createDM(profile.id);
@@ -659,7 +706,7 @@ export default function ProfileScreen() {
           { key: 'liked', label: t('profile.liked') },
         ] : PROFILE_TABS}
         activeKey={activeTab}
-        onTabChange={(key) => setActiveTab(key as Tab)}
+        onTabChange={(key) => { haptic.tick(); setActiveTab(key as Tab); }}
       />
     </View>
   );
@@ -688,7 +735,7 @@ export default function ProfileScreen() {
             </Pressable>
           </>
         ) : (
-          <Pressable hitSlop={8} onPress={() => { haptic.light(); setShowMenu(true); }} accessibilityLabel={t('profile.options')} accessibilityRole="button">
+          <Pressable hitSlop={8} onPress={() => { haptic.longPress(); setShowMenu(true); }} accessibilityLabel={t('profile.options')} accessibilityRole="button">
             <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
           </Pressable>
         )}
@@ -724,34 +771,10 @@ export default function ProfileScreen() {
     if (activeTab === 'reels') {
       const reel = item as Reel;
       return (
-        <Pressable
-          style={styles.gridItem}
+        <ReelGridItem
+          reel={reel}
           onPress={() => navigate(`/(screens)/reel/${reel.id}`)}
-          accessibilityLabel={`View reel ${reel.id}`}
-          accessibilityRole="button"
-        >
-          {reel.thumbnailUrl ? (
-            <Image
-              source={{ uri: reel.thumbnailUrl }}
-              style={styles.gridImage}
-              contentFit="cover"
-            />
-          ) : (
-            <View style={styles.gridTextPost}>
-              <Icon name="video" size={24} color={colors.text.secondary} />
-            </View>
-          )}
-          <View style={styles.reelOverlay}>
-            <Icon name="play" size={16} color="#fff" />
-            <Text style={styles.reelDuration}>
-              {Math.floor(reel.duration / 60)}:{String(Math.floor(reel.duration % 60)).padStart(2, '0')}
-            </Text>
-          </View>
-          <View style={styles.reelStats}>
-            <Icon name="heart" size={12} color="#fff" />
-            <Text style={styles.reelStatText}>{reel.likesCount}</Text>
-          </View>
-        </Pressable>
+        />
       );
     }
 
