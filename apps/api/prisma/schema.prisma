@@ -518,8 +518,8 @@ model Follow {
 
 model Post {
   id               String         @id @default(cuid())
-  userId           String
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   content          String?        @db.VarChar(2000)
   postType         PostType       @default(TEXT)
   visibility       PostVisibility @default(PUBLIC)
@@ -589,8 +589,8 @@ model Post {
 
 model Story {
   id               String                 @id @default(cuid())
-  userId           String
-  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
   mediaUrl         String
   mediaType        String
   thumbnailUrl     String?
@@ -641,8 +641,8 @@ model StoryView {
 
 model Reel {
   id              String            @id @default(cuid())
-  userId          String
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   videoUrl        String
   streamId        String?
   hlsUrl          String?
@@ -754,8 +754,8 @@ model ReelCommentReaction {
 
 model Thread {
   id              String           @id @default(cuid())
-  userId          String
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   content         String           @db.VarChar(500)
   mediaUrls       String[]         @default([])
   mediaTypes      String[]         @default([])
@@ -854,8 +854,8 @@ model ThreadReplyLike {
 
 model Channel {
   id               String         @id @default(cuid())
-  userId           String         @unique
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String?        @unique
+  user             User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   handle           String         @unique
   name             String         @db.VarChar(100)
   description      String?        @db.VarChar(5000)
@@ -882,9 +882,9 @@ model Channel {
 
 model Video {
   id                String             @id @default(cuid())
-  userId            String
+  userId            String?
   channelId         String
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
   channel           Channel            @relation(fields: [channelId], references: [id], onDelete: Cascade)
   title             String             @db.VarChar(200)
   description       String?            @db.VarChar(10000)
