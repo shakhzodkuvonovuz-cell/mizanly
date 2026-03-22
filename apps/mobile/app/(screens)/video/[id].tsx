@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Alert, Share,
+  View, Text, StyleSheet, Pressable, ScrollView, FlatList, Alert, Share,
   RefreshControl, TextInput, KeyboardAvoidingView, Platform, AppState, Dimensions,
-  Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-expo';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -14,19 +13,12 @@ import { getDateFnsLocale } from '@/utils/localeFormat';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
-  withSequence,
-  withDelay,
   withTiming,
-  interpolate,
   FadeIn,
-  FadeInUp,
-  FadeOut,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
-import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -44,6 +36,58 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+function formatTimeValue(seconds: number) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Chapter marker with progress indicator (extracted outside render)
+function ChapterMarker({ chapter, index, total, currentProgress, videoDuration, onSeek, nowPlayingLabel }: {
+  chapter: VideoChapter;
+  index: number;
+  total: number;
+  currentProgress: number;
+  videoDuration: number;
+  onSeek: (time: number) => void;
+  nowPlayingLabel: string;
+}) {
+  const tc = useThemeColors();
+  const styles = createStyles(tc);
+  const isPast = currentProgress > (chapter.startTime / (videoDuration || 1));
+  const isCurrent = Math.abs(currentProgress - (chapter.startTime / (videoDuration || 1))) < 0.05;
+
+  return (
+    <Pressable
+      style={[
+        styles.chapterMarker,
+        isCurrent && styles.chapterMarkerActive,
+        isPast && styles.chapterMarkerPast,
+      ]}
+      onPress={() => onSeek(chapter.startTime)}
+    >
+      <View style={styles.chapterMarkerLine}>
+        <LinearGradient
+          colors={isCurrent ? [colors.gold, colors.emerald] : isPast ? [colors.emerald, colors.emerald] : ['rgba(110,119,129,0.5)', 'rgba(110,119,129,0.3)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.chapterMarkerDot, isCurrent && styles.chapterMarkerDotActive]}
+        />
+      </View>
+      <View style={styles.chapterMarkerInfo}>
+        <Text style={[styles.chapterMarkerTitle, isCurrent && styles.chapterMarkerTitleActive]}>
+          {chapter.title}
+        </Text>
+        <Text style={styles.chapterMarkerTime}>{formatTimeValue(chapter.startTime)}</Text>
+      </View>
+      {isCurrent && (
+        <Animated.View entering={FadeIn} style={styles.nowPlayingBadge}>
+          <Text style={styles.nowPlayingText}>{nowPlayingLabel}</Text>
+        </Animated.View>
+      )}
+    </Pressable>
+  );
+}
 
 export default function VideoDetailScreen() {
   const tc = useThemeColors();
@@ -62,7 +106,6 @@ export default function VideoDetailScreen() {
   const [replyToId, setReplyToId] = useState<string | undefined>();
   const [showMenu, setShowMenu] = useState(false);
   const [showChapters, setShowChapters] = useState(false);
-  const [likeBursts, setLikeBursts] = useState<{ id: string; x: number; y: number }[]>([]);
 
   // Video controls state
   const [quality, setQuality] = useState<VideoQuality>('720p');
@@ -140,18 +183,6 @@ export default function VideoDetailScreen() {
   const scrollY = useSharedValue(0);
   const headerOpacity = useSharedValue(1);
 
-  // Like burst animation handler
-  const handleVideoDoubleTap = (e: { nativeEvent: { locationX: number; locationY: number } }) => {
-    const { locationX, locationY } = e.nativeEvent;
-    const id = Date.now().toString();
-    setLikeBursts(prev => [...prev, { id, x: locationX, y: locationY }]);
-    haptic.light();
-    handleLike();
-    setTimeout(() => {
-      setLikeBursts(prev => prev.filter(b => b.id !== id));
-    }, 1000);
-  };
-
   // Fetch video
   const videoQuery = useQuery({
     queryKey: ['video', id],
@@ -160,15 +191,17 @@ export default function VideoDetailScreen() {
   });
 
   // Fetch comments
-  const commentsQuery = useQuery({
+  const commentsQuery = useInfiniteQuery({
     queryKey: ['video-comments', id],
-    queryFn: () => videosApi.getComments(id).then(res => res.data),
+    queryFn: ({ pageParam }) => videosApi.getComments(id, pageParam),
+    getNextPageParam: (lastPage) => lastPage.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
     enabled: !!id,
   });
 
   const video = videoQuery.data;
   videoDataRef.current = video;
-  const comments = commentsQuery.data ?? [];
+  const comments: VideoComment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   // Set duration when video loads
   useEffect(() => {
@@ -187,12 +220,12 @@ export default function VideoDetailScreen() {
 
   const chapters = video?.chapters ?? [];
 
-  // Record view on mount
+  // Record view on mount (skip self-views)
   useEffect(() => {
-    if (video?.id && user?.id) {
-       videosApi.view(video.id).catch(() => {});
+    if (video?.id && user?.id && video.userId !== user.id) {
+      videosApi.view(video.id).catch(() => {});
     }
-  }, [video?.id, user?.id]);
+  }, [video?.id, user?.id, video?.userId]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -224,22 +257,20 @@ export default function VideoDetailScreen() {
   const subscribeMutation = useMutation({
     mutationFn: async () => {
       if (!video?.channel) return;
-      return video.isSubscribed ? channelsApi.unsubscribe(video.channel.handle) : channelsApi.subscribe(video.channel.handle);
+      return video.isSubscribed ? channelsApi.unsubscribe(video.channel?.handle) : channelsApi.subscribe(video.channel?.handle);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['video', id] }),
   });
 
   const commentMutation = useMutation({
-    mutationFn: () => videosApi.comment(id, commentText, replyToId),
+    mutationFn: () => videosApi.comment(id, commentText.trim(), replyToId),
     onSuccess: () => {
       setCommentText('');
       setReplyToId(undefined);
       queryClient.invalidateQueries({ queryKey: ['video-comments', id] });
     },
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
-
-  const [showNextEpisode, setShowNextEpisode] = useState(false);
-  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(5);
 
   const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
     if (status.isLoaded) {
@@ -256,10 +287,6 @@ export default function VideoDetailScreen() {
         }
       }
       setIsPlaying(status.isPlaying ?? false);
-      // Detect video end
-      if (status.didJustFinish) {
-        setShowNextEpisode(true);
-      }
     }
   }, []);
 
@@ -277,7 +304,7 @@ export default function VideoDetailScreen() {
 
   const handleQualityChange = useCallback((q: VideoQuality) => {
     setQuality(q);
-    // TODO: switch video source based on quality
+    // Quality switching requires multiple stream URLs from Cloudflare Stream
   }, []);
 
   const handleSpeedChange = useCallback((s: PlaybackSpeed) => {
@@ -295,21 +322,14 @@ export default function VideoDetailScreen() {
       setMiniPlayerVideo({
         id: video.id,
         title: video.title,
-        channelName: video.channel.name,
+        channelName: video.channel?.name || '',
         thumbnailUri: video.thumbnailUrl,
         videoUrl: video.videoUrl,
       });
       setMiniPlayerProgress(progressRef.current);
       setMiniPlayerPlaying(isPlaying);
-      // Optionally navigate away? Or just keep video screen open
     }
   }, [video, isPlaying]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const seekToChapter = (startTime: number) => {
     videoRef.current?.setPositionAsync(startTime * 1000);
@@ -342,6 +362,7 @@ export default function VideoDetailScreen() {
   }, [saveProgress]);
 
   const handleLike = () => {
+    if (likeMutation.isPending || removeReactionMutation.isPending) return;
     haptic.light();
     if (video?.isLiked) {
       removeReactionMutation.mutate();
@@ -374,7 +395,7 @@ export default function VideoDetailScreen() {
     if (!video) return;
     try {
       await Share.share({
-        message: `${video.title}\n\nWatch on Mizanly`,
+        message: `${video.title}\n\n${t('share.defaultMessage')}`,
         url: `mizanly://video/${video.id}`,
       });
     } catch {
@@ -388,7 +409,7 @@ export default function VideoDetailScreen() {
   };
 
   const handleChannelPress = () => {
-    if (video?.channel.handle) {
+    if (video?.channel?.handle) {
       router.push(`/(screens)/channel/${video.channel.handle}`);
     }
   };
@@ -402,79 +423,6 @@ export default function VideoDetailScreen() {
   const durationMinutes = video ? Math.floor(video.duration / 60) : 0;
   const durationSeconds = video ? Math.floor(video.duration % 60) : 0;
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
-
-  // Animated like burst component
-  function LikeBurst({ x, y }: { x: number; y: number }) {
-  const tc = useThemeColors();
-  const styles = createStyles(tc);
-    const scaleAnim = useSharedValue(0);
-    const opacityAnim = useSharedValue(1);
-    const translateY = useSharedValue(0);
-
-    useEffect(() => {
-      scaleAnim.value = withSequence(
-        withSpring(1.5, { damping: 10, stiffness: 200 }),
-        withSpring(1, { damping: 15, stiffness: 300 })
-      );
-      translateY.value = withTiming(-80, { duration: 800 });
-      opacityAnim.value = withDelay(400, withTiming(0, { duration: 400 }));
-    }, []);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [
-        { translateX: x - 40 },
-        { translateY: y + translateY.value - 40 },
-        { scale: scaleAnim.value },
-      ],
-      opacity: opacityAnim.value,
-    }));
-
-    return (
-      <Animated.View style={[styles.likeBurst, animatedStyle]}>
-        <Icon name="heart-filled" size={80} color="rgba(248,81,73,0.9)" />
-      </Animated.View>
-    );
-  }
-
-  // Chapter marker with progress indicator
-  function ChapterMarker({ chapter, index, total, currentProgress }: { chapter: VideoChapter; index: number; total: number; currentProgress: number }) {
-  const tc = useThemeColors();
-  const styles = createStyles(tc);
-    const progressPercent = ((chapter.startTime / (video?.duration || 1)) * 100);
-    const isPast = currentProgress > (chapter.startTime / (video?.duration || 1));
-    const isCurrent = Math.abs(currentProgress - (chapter.startTime / (video?.duration || 1))) < 0.05;
-
-    return (
-      <Pressable
-        style={[
-          styles.chapterMarker,
-          isCurrent && styles.chapterMarkerActive,
-          isPast && styles.chapterMarkerPast,
-        ]}
-        onPress={() => seekToChapter(chapter.startTime)}
-      >
-        <View style={styles.chapterMarkerLine}>
-          <LinearGradient
-            colors={isCurrent ? [colors.gold, colors.emerald] : isPast ? [colors.emerald, colors.emerald] : ['rgba(110,119,129,0.5)', 'rgba(110,119,129,0.3)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.chapterMarkerDot, isCurrent && styles.chapterMarkerDotActive]}
-          />
-        </View>
-        <View style={styles.chapterMarkerInfo}>
-          <Text style={[styles.chapterMarkerTitle, isCurrent && styles.chapterMarkerTitleActive]}>
-            {chapter.title}
-          </Text>
-          <Text style={styles.chapterMarkerTime}>{formatTime(chapter.startTime)}</Text>
-        </View>
-        {isCurrent && (
-          <Animated.View entering={FadeIn} style={styles.nowPlayingBadge}>
-            <Text style={styles.nowPlayingText}>{t('video.nowPlaying')}</Text>
-          </Animated.View>
-        )}
-      </Pressable>
-    );
-  }
 
   const renderCommentItem = ({ item }: { item: VideoComment }) => (
     <View style={styles.commentItem}>
@@ -623,11 +571,6 @@ export default function VideoDetailScreen() {
                 style={styles.videoGradientOverlay}
               />
 
-              {/* Like burst animations */}
-              {likeBursts.map(burst => (
-                <LikeBurst key={burst.id} x={burst.x} y={burst.y} />
-              ))}
-
               {/* Cinematic title overlay (fades on scroll) */}
               <Animated.View style={[styles.videoTitleOverlay, overlayAnimatedStyle]}>
                 <LinearGradient
@@ -722,19 +665,19 @@ export default function VideoDetailScreen() {
             <Pressable 
               style={styles.channelRow} 
               onPress={handleChannelPress}
-              accessibilityLabel={`Go to ${video.channel.name}'s channel`}
+              accessibilityLabel={t('accessibility.goToChannel', { name: video.channel?.name ?? '' })}
               accessibilityRole="button"
             >
               <Avatar
-                uri={video.channel.avatarUrl}
-                name={video.channel.name}
+                uri={video.channel?.avatarUrl}
+                name={video.channel?.name ?? ''}
                 size="lg"
                 showRing={false}
               />
               <View style={styles.channelInfo}>
-                <Text style={styles.channelName}>{video.channel.name}</Text>
+                <Text style={styles.channelName}>{video.channel?.name}</Text>
                 <Text style={styles.channelSubscribers}>
-                  {video.channel.subscribersCount.toLocaleString()} {t('channel.subscribers')}
+                  {(video.channel?.subscribersCount ?? 0).toLocaleString()} {t('channel.subscribers')}
                 </Text>
               </View>
               <Pressable
@@ -743,7 +686,7 @@ export default function VideoDetailScreen() {
                   video.isSubscribed && styles.subscribedButton,
                 ]}
                 onPress={handleSubscribe}
-                accessibilityLabel={video.isSubscribed ? "Unsubscribe" : "Subscribe"}
+                accessibilityLabel={video.isSubscribed ? t('minbar.unsubscribe') : t('minbar.subscribe')}
                 accessibilityRole="button"
               >
                 <Text style={[
@@ -783,13 +726,13 @@ export default function VideoDetailScreen() {
                   <Pressable
                     style={styles.chapterHeader}
                     onPress={() => setShowChapters(!showChapters)}
-                    accessibilityLabel={showChapters ? "Hide chapters" : "Show chapters"}
+                    accessibilityLabel={showChapters ? t('video.hideChapters') : t('video.showChapters')}
                     accessibilityRole="button"
                   >
                     <View style={styles.chapterIconContainer}>
                       <Icon name="layers" size="sm" color={colors.gold} />
                     </View>
-                    <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
+                    <Text style={styles.chapterHeaderText}>{t('video.chapters')} ({chapters.length})</Text>
                     <View style={styles.chapterTimelinePreview}>
                       {chapters.slice(0, 4).map((_, i) => (
                         <View key={i} style={[styles.timelineDot, { backgroundColor: i === 0 ? colors.gold : tc.border }]} />
@@ -812,6 +755,9 @@ export default function VideoDetailScreen() {
                           index={i}
                           total={chapters.length}
                           currentProgress={progressRef.current}
+                          videoDuration={video?.duration || 0}
+                          onSeek={seekToChapter}
+                          nowPlayingLabel={t('video.nowPlaying')}
                         />
                       ))}
                     </View>
@@ -858,11 +804,27 @@ export default function VideoDetailScreen() {
         {/* Comments bottom sheet */}
         <BottomSheet visible={commentSheetOpen} onClose={() => setCommentSheetOpen(false)} snapPoint={0.7}>
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Comments ({video.commentsCount})</Text>
+            <Text style={styles.sheetTitle}>{t('saf.comments', { count: video.commentsCount })}</Text>
           </View>
-          <ScrollView style={styles.sheetComments}>
-            {comments.map(comment => renderCommentItem({ item: comment }))}
-          </ScrollView>
+          <FlatList
+            data={comments}
+            keyExtractor={(item) => item.id}
+            renderItem={renderCommentItem}
+            style={styles.sheetComments}
+            onEndReached={() => {
+              if (commentsQuery.hasNextPage && !commentsQuery.isFetchingNextPage) {
+                commentsQuery.fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.4}
+            ListEmptyComponent={
+              <EmptyState
+                icon="message-circle"
+                title={t('comments.emptyTitle')}
+                subtitle={t('comments.emptySubtitle')}
+              />
+            }
+          />
           <View style={styles.sheetInputRow}>
             <TextInput
               style={styles.commentInput}
@@ -873,8 +835,8 @@ export default function VideoDetailScreen() {
               multiline
               accessibilityLabel={t('accessibility.commentTextInput')}
             />
-            <Pressable 
-              onPress={handleCommentSubmit} 
+            <Pressable
+              onPress={handleCommentSubmit}
               disabled={!commentText.trim()}
               accessibilityLabel={t('accessibility.sendComment')}
               accessibilityRole="button"
@@ -1208,12 +1170,6 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
-  },
-
-  // Like burst animation
-  likeBurst: {
-    position: 'absolute',
-    zIndex: 100,
   },
 
   // Title accent

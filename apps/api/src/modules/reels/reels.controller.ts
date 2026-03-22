@@ -129,7 +129,7 @@ export class ReelsController {
     @CurrentUser('id') userId: string,
     @Body() dto: CreateCommentDto,
   ) {
-    return this.reelsService.comment(id, userId, dto.content);
+    return this.reelsService.comment(id, userId, dto.content, dto.parentId);
   }
 
   @Get(':id/comments')
@@ -141,6 +141,29 @@ export class ReelsController {
     @Query('cursor') cursor?: string,
   ) {
     return this.reelsService.getComments(id, userId, cursor);
+  }
+
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Post(':id/comments/:commentId/like')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Like a reel comment' })
+  likeComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.reelsService.likeComment(id, commentId, userId);
+  }
+
+  @Delete(':id/comments/:commentId/like')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Unlike a reel comment' })
+  unlikeComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.reelsService.unlikeComment(id, commentId, userId);
   }
 
   @Delete(':id/comments/:commentId')

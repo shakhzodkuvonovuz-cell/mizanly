@@ -2,8 +2,7 @@ import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
-  Dimensions,
-  Pressable,
+  Dimensions, I18nManager,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -28,7 +27,8 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { reelsApi } from '@/services/api';
+import { reelsApi, followsApi } from '@/services/api';
+import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Comment, Reel } from '@/types';
@@ -61,13 +61,22 @@ function CommentRow({
   const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
   const isOwn = !!viewerId && comment.user.id === viewerId;
 
-  // Note: Reel comment liking not implemented in API yet
-  const handleLikeComment = () => {
-    // Optimistic-only — no backend endpoint for reel comment likes yet
+  const handleLikeComment = useCallback(async () => {
     haptic.medium();
-    setLocalLiked((p: boolean) => !p);
-    setLocalLikes((p: number) => (localLiked ? p - 1 : p + 1));
-  };
+    const wasLiked = localLiked;
+    setLocalLiked(prev => !prev);
+    setLocalLikes(prev => wasLiked ? prev - 1 : prev + 1);
+    try {
+      if (wasLiked) {
+        await reelsApi.unlikeComment(reelId, comment.id);
+      } else {
+        await reelsApi.likeComment(reelId, comment.id);
+      }
+    } catch {
+      setLocalLiked(wasLiked);
+      setLocalLikes(prev => wasLiked ? prev + 1 : prev - 1);
+    }
+  }, [haptic, localLiked, reelId, comment.id]);
 
   const deleteMutation = useMutation({
     mutationFn: () => reelsApi.deleteComment(reelId, comment.id),
@@ -82,15 +91,17 @@ function CommentRow({
     ]);
   };
 
+  const isRTL = I18nManager.isRTL;
+
   return (
-    <View style={styles.commentRow}>
+    <View style={[styles.commentRow, { flexDirection: rtlFlexRow(isRTL) }]}>
       <Avatar uri={comment.user.avatarUrl} name={comment.user.displayName} size="sm" />
       <View style={styles.commentBody}>
         <View style={styles.commentBubble}>
-          <Text style={styles.commentUser}>{comment.user.displayName}</Text>
+          <Text style={[styles.commentUser, { textAlign: rtlTextAlign(isRTL) }]}>{comment.user.displayName}</Text>
           <RichText text={comment.content} />
         </View>
-        <View style={styles.commentMeta}>
+        <View style={[styles.commentMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Text style={styles.commentTime}>{timeAgo}</Text>
           {localLikes > 0 && (
             <Text style={styles.commentLikesLabel}>{localLikes} {t('saf.likes')}</Text>
@@ -165,18 +176,19 @@ export default function ReelDetailScreen() {
     });
   }, [t, overlayOpacity]);
 
-  // Record view when component mounts
+  // Record view when component mounts (only for authenticated users)
   useEffect(() => {
-    if (id) {
+    if (id && user) {
       reelsApi.view(id).catch(() => {
         // Silently fail if view recording fails
       });
     }
-  }, [id]);
+  }, [id, user]);
 
   const reelQuery = useQuery({
     queryKey: ['reel', id],
     queryFn: () => reelsApi.getById(id),
+    enabled: !!id,
   });
 
   const commentsQuery = useInfiniteQuery({
@@ -186,19 +198,21 @@ export default function ReelDetailScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) =>
       last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: !!id,
   });
 
   const comments: Comment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const sendMutation = useMutation({
     mutationFn: () =>
-      reelsApi.comment(id, commentText.trim()),
+      reelsApi.comment(id, commentText.trim(), replyTo?.id),
     onSuccess: () => {
       setCommentText('');
       setReplyTo(null);
       queryClient.invalidateQueries({ queryKey: ['reel-comments', id] });
       queryClient.invalidateQueries({ queryKey: ['reel', id] });
     },
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const likeMutation = useMutation({
@@ -206,7 +220,18 @@ export default function ReelDetailScreen() {
       reelQuery.data?.isLiked
         ? reelsApi.unlike(id)
         : reelsApi.like(id),
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['reel', id] });
+      const prev = queryClient.getQueryData(['reel', id]);
+      queryClient.setQueryData(['reel', id], (old: Reel | undefined) =>
+        old ? { ...old, isLiked: !old.isLiked, likesCount: old.isLiked ? old.likesCount - 1 : old.likesCount + 1 } : old
+      );
+      return { prev };
+    },
+    onError: (_err: unknown, _vars: unknown, context: { prev?: unknown } | undefined) => {
+      queryClient.setQueryData(['reel', id], context?.prev);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['reel', id] });
     },
   });
@@ -238,25 +263,25 @@ export default function ReelDetailScreen() {
     commentsQuery.refetch();
   }, [reelQuery, commentsQuery]);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     if (isPlaying) {
       videoRef.current?.pauseAsync();
     } else {
       videoRef.current?.playAsync();
     }
     setIsPlaying(!isPlaying);
-  };
+  }, [isPlaying]);
 
 
-  const handleLike = () => {
+  const handleLike = useCallback(() => {
     haptic.light();
     likeMutation.mutate();
-  };
+  }, [haptic, likeMutation]);
 
-  const handleBookmark = () => {
+  const handleBookmark = useCallback(() => {
     haptic.light();
     bookmarkMutation.mutate();
-  };
+  }, [haptic, bookmarkMutation]);
 
   const handleShare = useCallback(async () => {
     haptic.light();
@@ -341,7 +366,15 @@ export default function ReelDetailScreen() {
                 <Text style={styles.reelUsername}>@{reelQuery.data.user.username}</Text>
                 <Text style={styles.reelDisplayName}>{reelQuery.data.user.displayName}</Text>
               </View>
-              <Pressable style={styles.followButton}>
+              <Pressable
+                style={styles.followButton}
+                onPress={async () => {
+                  try {
+                    await followsApi.follow(reelQuery.data?.userId);
+                    queryClient.invalidateQueries({ queryKey: ['reel', id] });
+                  } catch {}
+                }}
+              >
                 <Text style={styles.followButtonText}>{t('common.follow')}</Text>
               </Pressable>
             </View>
@@ -418,7 +451,7 @@ export default function ReelDetailScreen() {
         </View>
       </View>
     ) : null
-  ), [reelQuery.data, reelQuery.isLoading, isPlaying, animatedStyle, overlayAnimatedStyle, handleClearModeToggle]);
+  ), [reelQuery.data, reelQuery.isLoading, isPlaying, overlayAnimatedStyle, handleClearModeToggle, handlePlayPause, handleLike, handleBookmark, handleShare, likeMutation.isPending, bookmarkMutation.isPending, shareMutation.isPending, t, id, queryClient, styles]);
 
   const listEmpty = useMemo(() => (
     !commentsQuery.isLoading && reelQuery.data ? (
@@ -428,7 +461,7 @@ export default function ReelDetailScreen() {
         subtitle={t('comments.emptySubtitle')}
       />
     ) : null
-  ), [commentsQuery.isLoading, reelQuery.data]);
+  ), [commentsQuery.isLoading, reelQuery.data, t]);
 
   const listFooter = useMemo(() => (
     commentsQuery.isFetchingNextPage ? (

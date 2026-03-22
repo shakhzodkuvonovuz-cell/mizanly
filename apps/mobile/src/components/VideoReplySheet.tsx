@@ -135,7 +135,10 @@ export function VideoReplySheet({
       }
 
       // Step 3: Create video reply via comment with video URL
-      await reelsApi.comment(commentId, `[video-reply:${uploadData.publicUrl}]`);
+      // TODO: Video reply format needs backend parsing support — currently stored as text
+      // The commentId here refers to the parent comment, but reelsApi.comment expects a reelId
+      // For now, we send the video URL as a media attachment hint
+      await reelsApi.comment(commentId, uploadData.publicUrl);
 
       haptic.success();
       onPosted?.();

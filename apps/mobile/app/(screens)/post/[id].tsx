@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
-  Pressable,
+  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -235,6 +234,7 @@ export default function PostDetailScreen() {
   const postQuery = useQuery({
     queryKey: ['post', id],
     queryFn: () => postsApi.getById(id),
+    enabled: !!id,
   });
 
   const commentsQuery = useInfiniteQuery({
@@ -244,6 +244,7 @@ export default function PostDetailScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) =>
       last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: !!id,
   });
 
   const comments: Comment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -257,6 +258,7 @@ export default function PostDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['post-comments', id] });
       queryClient.invalidateQueries({ queryKey: ['post', id] });
     },
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleReply = useCallback((commentId: string, username: string) => {
@@ -268,6 +270,17 @@ export default function PostDetailScreen() {
     postQuery.refetch();
     commentsQuery.refetch();
   }, [postQuery, commentsQuery]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await Share.share({
+        message: t('share.defaultMessage'),
+        url: `mizanly://post/${id}`,
+      });
+    } catch {
+      // User cancelled
+    }
+  }, [id, t]);
 
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
 
@@ -340,7 +353,7 @@ export default function PostDetailScreen() {
         subtitle={t('saf.firstToShare')}
       />
     ) : null
-  ), [commentsQuery.isLoading, postQuery.data]);
+  ), [commentsQuery.isLoading, postQuery.data, t]);
 
   const listFooter = useMemo(() => (
     commentsQuery.isFetchingNextPage ? (
@@ -354,6 +367,9 @@ export default function PostDetailScreen() {
       <GlassHeader
         title={t('saf.post')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        rightActions={[
+          { icon: 'share', onPress: handleShare, accessibilityLabel: t('common.share') },
+        ]}
       />
       <View style={styles.headerSpacer} />
 

@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
-  Pressable,
+  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -171,6 +170,7 @@ export default function ThreadDetailScreen() {
   const threadQuery = useQuery({
     queryKey: ['thread', id],
     queryFn: () => threadsApi.getById(id),
+    enabled: !!id,
   });
 
   const repliesQuery = useInfiniteQuery({
@@ -180,6 +180,7 @@ export default function ThreadDetailScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) =>
       last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: !!id,
   });
 
   const replies: ThreadReply[] = repliesQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -198,12 +199,24 @@ export default function ThreadDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['thread-replies', id] });
       queryClient.invalidateQueries({ queryKey: ['thread', id] });
     },
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleReply = useCallback((replyId: string, username: string) => {
     setReplyTo({ id: replyId, username });
     inputRef.current?.focus();
   }, []);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await Share.share({
+        message: t('share.defaultMessage'),
+        url: `mizanly://thread/${id}`,
+      });
+    } catch {
+      // User cancelled
+    }
+  }, [id, t]);
 
   const canSend = replyText.trim().length > 0 && !sendMutation.isPending;
 
@@ -212,10 +225,10 @@ export default function ThreadDetailScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title={t('common.error')}
-          leftAction={{ 
-            icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, 
+          leftAction={{
+            icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('common.goBack')
           }}
         />
         <EmptyState
@@ -276,7 +289,7 @@ export default function ThreadDetailScreen() {
     !repliesQuery.isLoading && threadQuery.data ? (
       <EmptyState icon="message-circle" title={t('majlis.joinConversation')} subtitle={t('majlis.beFirstToShare')} />
     ) : null
-  ), [repliesQuery.isLoading, threadQuery.data]);
+  ), [repliesQuery.isLoading, threadQuery.data, t]);
 
   const listFooter = useMemo(() => (
     repliesQuery.isFetchingNextPage ? (
@@ -290,11 +303,14 @@ export default function ThreadDetailScreen() {
       {/* Header */}
       <GlassHeader
         title={t('majlis.thread')}
-        leftAction={{ 
-          icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, 
+        leftAction={{
+          icon: 'arrow-left',
           onPress: () => router.back(),
-          accessibilityLabel: 'Go back'
+          accessibilityLabel: t('common.goBack')
         }}
+        rightActions={[
+          { icon: 'share', onPress: handleShare, accessibilityLabel: t('common.share') },
+        ]}
       />
 
       <KeyboardAvoidingView

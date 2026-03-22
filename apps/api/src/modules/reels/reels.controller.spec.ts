@@ -21,12 +21,19 @@ describe('ReelsController', () => {
     comment: jest.fn(),
     getComments: jest.fn(),
     deleteComment: jest.fn(),
+    likeComment: jest.fn(),
+    unlikeComment: jest.fn(),
     share: jest.fn(),
     bookmark: jest.fn(),
     unbookmark: jest.fn(),
     view: jest.fn(),
     getUserReels: jest.fn(),
     report: jest.fn(),
+    getDuets: jest.fn(),
+    getStitches: jest.fn(),
+    archive: jest.fn(),
+    unarchive: jest.fn(),
+    getShareLink: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -113,7 +120,7 @@ describe('ReelsController', () => {
       const dto = { content: 'comment' } as any;
       mockService.comment.mockResolvedValue({ id: 'comment-1' });
       await controller.comment('reel-1', 'user-1', dto);
-      expect(mockService.comment).toHaveBeenCalledWith('reel-1', 'user-1', 'comment');
+      expect(mockService.comment).toHaveBeenCalledWith('reel-1', 'user-1', 'comment', undefined);
     });
   });
 
@@ -184,6 +191,79 @@ describe('ReelsController', () => {
       mockService.report.mockResolvedValue({ reported: true });
       await controller.report('reel-1', 'user-1', { reason: 'spam' });
       expect(mockService.report).toHaveBeenCalledWith('reel-1', 'user-1', 'spam');
+    });
+  });
+
+  describe('comment with parentId', () => {
+    it('should pass parentId to service.comment when provided', async () => {
+      const dto = { content: 'reply', parentId: 'parent-1' } as any;
+      mockService.comment.mockResolvedValue({ id: 'comment-2' });
+      await controller.comment('reel-1', 'user-1', dto);
+      expect(mockService.comment).toHaveBeenCalledWith('reel-1', 'user-1', 'reply', 'parent-1');
+    });
+
+    it('should pass undefined parentId when not provided', async () => {
+      const dto = { content: 'top-level' } as any;
+      mockService.comment.mockResolvedValue({ id: 'comment-3' });
+      await controller.comment('reel-1', 'user-1', dto);
+      expect(mockService.comment).toHaveBeenCalledWith('reel-1', 'user-1', 'top-level', undefined);
+    });
+  });
+
+  describe('likeComment', () => {
+    it('should call service.likeComment with reelId, commentId, and userId', async () => {
+      mockService.likeComment.mockResolvedValue({ liked: true });
+      await controller.likeComment('reel-1', 'comment-1', 'user-1');
+      expect(mockService.likeComment).toHaveBeenCalledWith('reel-1', 'comment-1', 'user-1');
+    });
+  });
+
+  describe('unlikeComment', () => {
+    it('should call service.unlikeComment with reelId, commentId, and userId', async () => {
+      mockService.unlikeComment.mockResolvedValue({ unliked: true });
+      await controller.unlikeComment('reel-1', 'comment-1', 'user-1');
+      expect(mockService.unlikeComment).toHaveBeenCalledWith('reel-1', 'comment-1', 'user-1');
+    });
+  });
+
+  describe('archive', () => {
+    it('should call service.archive with id and userId', async () => {
+      mockService.archive.mockResolvedValue({ archived: true });
+      await controller.archive('reel-1', 'user-1');
+      expect(mockService.archive).toHaveBeenCalledWith('reel-1', 'user-1');
+    });
+  });
+
+  describe('unarchive', () => {
+    it('should call service.unarchive with id and userId', async () => {
+      mockService.unarchive.mockResolvedValue({ unarchived: true });
+      await controller.unarchive('reel-1', 'user-1');
+      expect(mockService.unarchive).toHaveBeenCalledWith('reel-1', 'user-1');
+    });
+  });
+
+  describe('getDuets', () => {
+    it('should call service.getDuets with id, cursor, limit, and userId', async () => {
+      mockService.getDuets.mockResolvedValue({ data: [] });
+      await controller.getDuets('reel-1', 'user-1', 'cursor-1');
+      expect(mockService.getDuets).toHaveBeenCalledWith('reel-1', 'cursor-1', 20, 'user-1');
+    });
+  });
+
+  describe('getStitches', () => {
+    it('should call service.getStitches with id, cursor, limit, and userId', async () => {
+      mockService.getStitches.mockResolvedValue({ data: [] });
+      await controller.getStitches('reel-1', 'user-1', 'cursor-1');
+      expect(mockService.getStitches).toHaveBeenCalledWith('reel-1', 'cursor-1', 20, 'user-1');
+    });
+  });
+
+  describe('getShareLink', () => {
+    it('should call service.getShareLink with id', async () => {
+      mockService.getShareLink.mockResolvedValue({ url: 'https://mizanly.com/reel/reel-1' });
+      const result = await controller.getShareLink('reel-1');
+      expect(mockService.getShareLink).toHaveBeenCalledWith('reel-1');
+      expect(result).toEqual({ url: 'https://mizanly.com/reel/reel-1' });
     });
   });
 });

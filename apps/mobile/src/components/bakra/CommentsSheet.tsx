@@ -26,6 +26,102 @@ interface ReelComment extends Comment {
   parentId?: string;
 }
 
+interface CommentItemProps {
+  item: ReelComment;
+  reelUserId: string | undefined;
+  reelId: string;
+  onReply: (comment: ReelComment) => void;
+}
+
+const CommentItem = memo(function CommentItem({ item, reelUserId, reelId, onReply }: CommentItemProps) {
+  const { t } = useTranslation();
+  const haptic = useHaptic();
+  const likeScale = useSharedValue(1);
+
+  const likeAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: likeScale.value }],
+  }));
+
+  const handleLikeComment = async () => {
+    haptic.light();
+    likeScale.value = withSequence(
+      withSpring(1.3, { damping: 12, stiffness: 350 }),
+      withSpring(1, { damping: 10, stiffness: 400 })
+    );
+    try {
+      await api.post(`/reels/${reelId}/comments/${item.id}/like`);
+    } catch {
+      // Silently fail — backend endpoint may not exist yet
+    }
+  };
+
+  const isCreator = item.user.id === reelUserId;
+  const isPinned = item.isPinned;
+
+  return (
+    <View style={[
+      styles.commentItem,
+      isCreator && styles.opComment,
+      item.parentId && styles.replyComment,
+    ]}>
+      {isPinned && (
+        <View style={styles.pinnedIndicator}>
+          <Icon name="bookmark" size={10} color={colors.gold} />
+          <Text style={styles.pinnedText}>{t('saf.pinned')}</Text>
+        </View>
+      )}
+      <Avatar
+        uri={item.user.avatarUrl}
+        name={item.user.username}
+        size="sm"
+        showRing={false}
+      />
+      <View style={styles.commentContent}>
+        <View style={styles.commentHeader}>
+          <View style={styles.commentHeaderLeft}>
+            <Text style={styles.commentUsername}>{item.user.username}</Text>
+            {isCreator && (
+              <View style={styles.creatorBadge}>
+                <Text style={styles.creatorBadgeText}>{t('saf.creator')}</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.commentTime}>
+            {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
+          </Text>
+        </View>
+        <Text style={styles.commentText}>{item.content}</Text>
+        <View style={styles.commentActions}>
+          <Pressable
+            accessibilityRole="button"
+            style={styles.commentAction}
+            onPress={handleLikeComment}
+            hitSlop={8}
+          >
+            <Animated.View style={likeAnimStyle}>
+              <Icon name="heart" size="xs" color={colors.text.secondary} />
+            </Animated.View>
+            <Text style={styles.commentActionText}>
+              {item.likesCount > 0 ? item.likesCount : ''}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            style={styles.commentAction}
+            onPress={() => onReply(item)}
+            hitSlop={8}
+          >
+            <Icon name="message-circle" size="xs" color={colors.text.secondary} />
+            <Text style={styles.commentActionText}>
+              {item._count?.replies ? item._count.replies : ''}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+});
+
 interface CommentsSheetProps {
   reel: Reel;
   visible: boolean;
@@ -70,97 +166,19 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
     addCommentMutation.mutate(trimmed);
   };
 
-  // Heart bounce animation per comment
-  const likeScales = useRef<{ [key: string]: Animated.SharedValue<number> }>({});
+  const handleReply = useCallback((comment: ReelComment) => {
+    setReplyTo(comment);
+    inputRef.current?.focus();
+  }, []);
 
-  const getLikeScale = (commentId: string) => {
-    if (!likeScales.current[commentId]) {
-      likeScales.current[commentId] = useSharedValue(1);
-    }
-    return likeScales.current[commentId];
-  };
-
-  const handleLikeComment = async (commentId: string) => {
-    // Optimistic-only — no backend endpoint for reel comment likes yet
-    haptic.light();
-    const scale = getLikeScale(commentId);
-    scale.value = withSequence(
-      withSpring(1.3, { damping: 12, stiffness: 350 }),
-      withSpring(1, { damping: 10, stiffness: 400 })
-    );
-  };
-
-  const renderComment = ({ item }: { item: ReelComment }) => {
-    const likeAnimStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: getLikeScale(item.id).value }],
-    }));
-
-    const isCreator = item.user.id === reel.user?.id;
-    const isPinned = item.isPinned;
-
-    return (
-      <View style={[
-        styles.commentItem,
-        isCreator && styles.opComment,
-        item.parentId && styles.replyComment,
-      ]}>
-        {isPinned && (
-          <View style={styles.pinnedIndicator}>
-            <Icon name="bookmark" size={10} color={colors.gold} />
-            <Text style={styles.pinnedText}>Pinned</Text>
-          </View>
-        )}
-        <Avatar
-          uri={item.user.avatarUrl}
-          name={item.user.username}
-          size="sm"
-          showRing={false}
-        />
-        <View style={styles.commentContent}>
-          <View style={styles.commentHeader}>
-            <View style={styles.commentHeaderLeft}>
-              <Text style={styles.commentUsername}>{item.user.username}</Text>
-              {isCreator && (
-                <View style={styles.creatorBadge}>
-                  <Text style={styles.creatorBadgeText}>Creator</Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.commentTime}>
-              {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
-            </Text>
-          </View>
-          <Text style={styles.commentText}>{item.content}</Text>
-          <View style={styles.commentActions}>
-            <Pressable
-              accessibilityRole="button"
-              style={styles.commentAction}
-              onPress={() => handleLikeComment(item.id)}
-              hitSlop={8}
-            >
-              <Animated.View style={likeAnimStyle}>
-                <Icon name="heart" size="xs" color={colors.text.secondary} />
-              </Animated.View>
-              <Text style={styles.commentActionText}>
-                {item.likesCount > 0 ? item.likesCount : ''}
-              </Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              style={styles.commentAction}
-              onPress={() => setReplyTo(item)}
-              hitSlop={8}
-            >
-              <Icon name="message-circle" size="xs" color={colors.text.secondary} />
-              <Text style={styles.commentActionText}>
-                {item._count?.replies ? item._count.replies : ''}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    );
-  };
+  const renderComment = useCallback(({ item }: { item: ReelComment }) => (
+    <CommentItem
+      item={item}
+      reelUserId={reel.user?.id}
+      reelId={reel.id}
+      onReply={handleReply}
+    />
+  ), [reel.user?.id, reel.id, handleReply]);
 
   const listEmpty = commentsQuery.isLoading ? (
     <View style={styles.skeletonContainer}>
@@ -191,7 +209,7 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
       >
         {/* Header with comment count */}
         <View style={[styles.header, { borderBottomColor: tc.border }]}>
-          <Text style={styles.headerTitle}>Comments · {reel.commentsCount}</Text>
+          <Text style={styles.headerTitle}>{t('saf.commentsWithCount', { count: reel.commentsCount })}</Text>
           <Pressable onPress={onClose} hitSlop={8}>
             <Icon name="x" size="sm" color={colors.text.primary} />
           </Pressable>
@@ -219,7 +237,7 @@ export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClos
         {/* Reply banner */}
         {replyTo && (
           <View style={styles.replyBanner}>
-            <Text style={styles.replyLabel}>Replying to @{replyTo.user.username}</Text>
+            <Text style={styles.replyLabel}>{t('saf.replyingTo', { username: replyTo.user.username })}</Text>
             <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
               <Icon name="x" size="xs" color={colors.text.tertiary} />
             </Pressable>

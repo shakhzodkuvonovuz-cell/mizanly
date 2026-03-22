@@ -513,6 +513,9 @@
     "firstToShare": "كن أول من يشارك أفكاره",
     "noComments": "لا توجد تعليقات بعد",
     "beFirstToComment": "كن أول من يعلّق",
+    "commentsWithCount": "التعليقات \u00b7 {{count}}",
+    "pinned": "مثبّت",
+    "creator": "صاحب المنشور",
     "questionPlaceholder": "اكتب سؤالك...",
     "couldNotLoadContent": "تعذر تحميل هذا المحتوى",
     "goBack": "رجوع"

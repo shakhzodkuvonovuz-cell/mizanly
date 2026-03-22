@@ -490,9 +490,15 @@ export class ReelsService {
     return { liked: false };
   }
 
-  async comment(reelId: string, userId: string, content: string) {
+  async comment(reelId: string, userId: string, content: string, parentId?: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
+
+    // Validate parentId belongs to the same reel
+    if (parentId) {
+      const parent = await this.prisma.reelComment.findUnique({ where: { id: parentId } });
+      if (!parent || parent.reelId !== reelId) throw new NotFoundException('Parent comment not found');
+    }
 
     const [comment] = await this.prisma.$transaction([
       this.prisma.reelComment.create({
@@ -500,6 +506,7 @@ export class ReelsService {
           userId,
           reelId,
           content: sanitizeText(content),
+          ...(parentId && { parentId }),
         },
         select: {
           id: true,
@@ -550,6 +557,43 @@ export class ReelsService {
       this.prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
     ]);
     return { deleted: true };
+  }
+
+  async likeComment(reelId: string, commentId: string, userId: string) {
+    const comment = await this.prisma.reelComment.findUnique({ where: { id: commentId } });
+    if (!comment || comment.reelId !== reelId) throw new NotFoundException('Comment not found');
+
+    try {
+      await this.prisma.reelCommentReaction.create({
+        data: { commentId, userId },
+      });
+      await this.prisma.reelComment.update({
+        where: { id: commentId },
+        data: { likesCount: { increment: 1 } },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return { liked: true };
+      }
+      throw error;
+    }
+    return { liked: true };
+  }
+
+  async unlikeComment(reelId: string, commentId: string, userId: string) {
+    const comment = await this.prisma.reelComment.findUnique({ where: { id: commentId } });
+    if (!comment || comment.reelId !== reelId) throw new NotFoundException('Comment not found');
+
+    const deleted = await this.prisma.reelCommentReaction.deleteMany({
+      where: { commentId, userId },
+    });
+    if (deleted.count > 0) {
+      await this.prisma.reelComment.update({
+        where: { id: commentId },
+        data: { likesCount: { decrement: 1 } },
+      });
+    }
+    return { unliked: true };
   }
 
   async getComments(reelId: string, userId: string | undefined, cursor?: string, limit = 20) {

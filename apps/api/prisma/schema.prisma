@@ -290,7 +290,8 @@ model User {
   // Bakra
   reels         Reel[]
   reelReactions ReelReaction[]
-  reelComments  ReelComment[]
+  reelComments          ReelComment[]
+  reelCommentReactions  ReelCommentReaction[]
 
   // Majlis
   threads          Thread[]
@@ -715,21 +716,35 @@ model ReelReaction {
 }
 
 model ReelComment {
-  id         String        @id @default(cuid())
+  id         String                @id @default(cuid())
   reelId     String
   userId     String
-  reel       Reel          @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reel       Reel                  @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   parentId   String?
-  parent     ReelComment?  @relation("ReelCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
-  replies    ReelComment[] @relation("ReelCommentThread")
-  content    String        @db.VarChar(500)
-  likesCount Int           @default(0)
-  createdAt  DateTime      @default(now())
+  parent     ReelComment?          @relation("ReelCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    ReelComment[]         @relation("ReelCommentThread")
+  reactions  ReelCommentReaction[]
+  content    String                @db.VarChar(500)
+  likesCount Int                   @default(0)
+  createdAt  DateTime              @default(now())
 
   @@index([reelId, createdAt])
   @@index([parentId])
   @@map("reel_comments")
+}
+
+model ReelCommentReaction {
+  userId    String
+  commentId String
+  reaction  ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   ReelComment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, commentId])
+  @@index([commentId])
+  @@map("reel_comment_reactions")
 }
 
 // ============================================================

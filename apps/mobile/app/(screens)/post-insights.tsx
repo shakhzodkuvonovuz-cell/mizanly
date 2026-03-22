@@ -4,9 +4,9 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  Image,
   Pressable,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -92,10 +92,10 @@ function PostInsightsContent() {
               likes: Number(raw.likes ?? 0),
               comments: Number(raw.comments ?? 0),
               discovery: (raw.discovery as DiscoverySource[]) ?? [
-                { label: t('postInsights.home', 'Home'), percentage: 45, color: colors.emerald },
-                { label: t('postInsights.explore', 'Explore'), percentage: 30, color: colors.info },
-                { label: t('postInsights.hashtags', 'Hashtags'), percentage: 15, color: colors.gold },
-                { label: t('postInsights.otherSource', 'Other'), percentage: 10, color: colors.text.tertiary },
+                { label: t('postInsights.home', 'Home'), percentage: 0, color: colors.emerald },
+                { label: t('postInsights.explore', 'Explore'), percentage: 0, color: colors.info },
+                { label: t('postInsights.hashtags', 'Hashtags'), percentage: 0, color: colors.gold },
+                { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: colors.text.tertiary },
               ],
               interactions: {
                 profileTaps: Number((raw.interactions as Record<string, unknown>)?.profileTaps ?? 0),
@@ -115,10 +115,10 @@ function PostInsightsContent() {
               likes: 0,
               comments: 0,
               discovery: [
-                { label: t('postInsights.home', 'Home'), percentage: 45, color: colors.emerald },
-                { label: t('postInsights.explore', 'Explore'), percentage: 30, color: colors.info },
-                { label: t('postInsights.hashtags', 'Hashtags'), percentage: 15, color: colors.gold },
-                { label: t('postInsights.otherSource', 'Other'), percentage: 10, color: colors.text.tertiary },
+                { label: t('postInsights.home', 'Home'), percentage: 0, color: colors.emerald },
+                { label: t('postInsights.explore', 'Explore'), percentage: 0, color: colors.info },
+                { label: t('postInsights.hashtags', 'Hashtags'), percentage: 0, color: colors.gold },
+                { label: t('postInsights.otherSource', 'Other'), percentage: 0, color: colors.text.tertiary },
               ],
               interactions: { profileTaps: 0, websiteTaps: 0, emailTaps: 0 },
             });

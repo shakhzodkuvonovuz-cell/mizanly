@@ -439,7 +439,8 @@ export const reelsApi = {
   deleteComment: (reelId: string, commentId: string) => api.delete(`/reels/${reelId}/comments/${commentId}`),
   like: (id: string) => api.post(`/reels/${id}/like`),
   unlike: (id: string) => api.delete(`/reels/${id}/like`),
-  comment: (id: string, content: string) => api.post(`/reels/${id}/comment`, { content }),
+  comment: (id: string, content: string, parentId?: string) =>
+    api.post(`/reels/${id}/comment`, { content, ...(parentId && { parentId }) }),
   getComments: (id: string, cursor?: string) => api.get<PaginatedResponse<Comment>>(`/reels/${id}/comments${qs({ cursor })}`),
   share: (id: string) => api.post(`/reels/${id}/share`),
   bookmark: (id: string) => api.post(`/reels/${id}/bookmark`),
