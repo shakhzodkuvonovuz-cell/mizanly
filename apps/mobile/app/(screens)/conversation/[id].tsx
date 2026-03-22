@@ -18,6 +18,7 @@ import Animated, {
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import * as Clipboard from 'expo-clipboard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -743,6 +744,27 @@ export default function ConversationScreen() {
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  // Chat theme
+  const [chatThemeBg, setChatThemeBg] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(`chat-theme:${id}`).then((val) => {
+      if (val) {
+        try {
+          const saved = JSON.parse(val) as { themeId: string; opacity: number; blur: number };
+          // Map theme ID to background color
+          const THEME_COLORS: Record<string, string> = {
+            'default': '', midnight: '#1a1a2e', purple: '#2d1b4e', forest: '#0d3322',
+            charcoal: '#242424', navy: '#1a237e', slate: '#263238', burgundy: '#3e1c1c',
+            teal: '#004d40', espresso: '#3e2723', graphite: '#333333', obsidian: '#1c1c1c',
+          };
+          const color = THEME_COLORS[saved.themeId];
+          if (color) setChatThemeBg(color);
+        } catch { /* ignore */ }
+      }
+    });
+  }, [id]);
+
   // E2E encryption
   const [isEncrypted, setIsEncrypted] = useState(false);
   const [encryptionReady, setEncryptionReady] = useState(false);
@@ -1345,7 +1367,7 @@ export default function ConversationScreen() {
 
   return (
     <ScreenErrorBoundary>
-    <View style={[styles.container, { backgroundColor: tc.bg }]}>
+    <View style={[styles.container, { backgroundColor: chatThemeBg || tc.bg }]}>
       {/* Header */}
       {searchMode ? (
         <SafeAreaView edges={['top']} style={{ backgroundColor: tc.bg }}>

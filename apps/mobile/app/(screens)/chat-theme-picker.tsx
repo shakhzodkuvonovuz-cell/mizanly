@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   Pressable,
   Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +22,8 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
+
+const CHAT_THEME_STORAGE_PREFIX = 'chat-theme:';
 
 type TabType = 'solid' | 'gradients' | 'patterns' | 'photos';
 
@@ -84,6 +87,8 @@ const PHOTOS: ThemeOption[] = [
 
 export default function ChatThemePickerScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ conversationId: string }>();
+  const conversationId = params.conversationId;
   const tc = useThemeColors();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('solid');
@@ -91,6 +96,25 @@ export default function ChatThemePickerScreen() {
   const [opacity, setOpacity] = useState(30);
   const [blur, setBlur] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Load saved theme on mount
+  useEffect(() => {
+    if (!conversationId) return;
+    AsyncStorage.getItem(`${CHAT_THEME_STORAGE_PREFIX}${conversationId}`).then(
+      (val) => {
+        if (val) {
+          try {
+            const saved = JSON.parse(val) as { themeId: string; opacity: number; blur: number };
+            setSelectedTheme(saved.themeId);
+            setOpacity(saved.opacity);
+            setBlur(saved.blur);
+          } catch {
+            // Corrupted data — ignore
+          }
+        }
+      },
+    );
+  }, [conversationId]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -440,7 +464,10 @@ export default function ChatThemePickerScreen() {
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { backgroundColor: tc.bg, borderTopColor: tc.border }]}>
         <Pressable
-          onPress={() => {
+          onPress={async () => {
+            if (conversationId) {
+              await AsyncStorage.removeItem(`${CHAT_THEME_STORAGE_PREFIX}${conversationId}`);
+            }
             setSelectedTheme('default');
             setActiveTab('solid');
             setOpacity(30);
@@ -453,9 +480,13 @@ export default function ChatThemePickerScreen() {
           <Text style={styles.resetText}>{t('chatThemePicker.resetToDefault')}</Text>
         </Pressable>
         <Pressable
-          onPress={() => {
-            // TODO: Persist theme selection to AsyncStorage or API
-            // For now, go back to confirm selection
+          onPress={async () => {
+            if (conversationId) {
+              await AsyncStorage.setItem(
+                `${CHAT_THEME_STORAGE_PREFIX}${conversationId}`,
+                JSON.stringify({ themeId: selectedTheme, opacity, blur }),
+              );
+            }
             router.back();
           }}
           accessibilityRole="button"

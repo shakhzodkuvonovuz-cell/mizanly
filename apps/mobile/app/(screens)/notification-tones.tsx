@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 import Animated, {
   FadeIn, FadeInUp,
   useSharedValue, useAnimatedStyle, withSpring,
@@ -26,19 +27,74 @@ const TONE_STORAGE_PREFIX = 'notification-tone:';
 interface ToneOption {
   id: string;
   labelKey: string;
-  icon: 'bell' | 'volume-x' | 'volume-x';
+  icon: 'bell' | 'volume-x';
+  /** Frequency in Hz for generated preview tone (0 = silent) */
+  previewHz: number;
 }
 
 const TONE_OPTIONS: ToneOption[] = [
-  { id: 'default', labelKey: 'notificationTones.default', icon: 'bell' },
-  { id: 'silent', labelKey: 'notificationTones.silent', icon: 'volume-x' },
-  { id: 'gentle_bell', labelKey: 'notificationTones.gentleBell', icon: 'bell' },
-  { id: 'soft_chime', labelKey: 'notificationTones.softChime', icon: 'bell' },
-  { id: 'adhan_soft', labelKey: 'notificationTones.adhanSoft', icon: 'bell' },
-  { id: 'islamic_melody', labelKey: 'notificationTones.islamicMelody', icon: 'bell' },
-  { id: 'water_drop', labelKey: 'notificationTones.waterDrop', icon: 'bell' },
-  { id: 'none', labelKey: 'notificationTones.none', icon: 'volume-x' },
+  { id: 'default', labelKey: 'notificationTones.default', icon: 'bell', previewHz: 880 },
+  { id: 'silent', labelKey: 'notificationTones.silent', icon: 'volume-x', previewHz: 0 },
+  { id: 'gentle_bell', labelKey: 'notificationTones.gentleBell', icon: 'bell', previewHz: 659 },
+  { id: 'soft_chime', labelKey: 'notificationTones.softChime', icon: 'bell', previewHz: 523 },
+  { id: 'adhan_soft', labelKey: 'notificationTones.adhanSoft', icon: 'bell', previewHz: 440 },
+  { id: 'islamic_melody', labelKey: 'notificationTones.islamicMelody', icon: 'bell', previewHz: 587 },
+  { id: 'water_drop', labelKey: 'notificationTones.waterDrop', icon: 'bell', previewHz: 784 },
+  { id: 'none', labelKey: 'notificationTones.none', icon: 'volume-x', previewHz: 0 },
 ];
+
+/**
+ * Generate a short WAV buffer for a sine-wave beep at the given frequency.
+ * Returns a base64-encoded WAV data URI playable by expo-av.
+ */
+function generateToneWav(hz: number, durationMs = 300, sampleRate = 22050): string {
+  const numSamples = Math.floor(sampleRate * (durationMs / 1000));
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+  const blockAlign = numChannels * (bitsPerSample / 8);
+  const dataSize = numSamples * blockAlign;
+  const headerSize = 44;
+  const buffer = new ArrayBuffer(headerSize + dataSize);
+  const view = new DataView(buffer);
+
+  // RIFF header
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  // Generate sine wave samples with fade-in/out envelope
+  const fadeLen = Math.floor(numSamples * 0.15);
+  for (let i = 0; i < numSamples; i++) {
+    let amplitude = 0.35;
+    if (i < fadeLen) amplitude *= i / fadeLen;
+    else if (i > numSamples - fadeLen) amplitude *= (numSamples - i) / fadeLen;
+    const sample = Math.sin(2 * Math.PI * hz * (i / sampleRate)) * amplitude;
+    const val = Math.max(-1, Math.min(1, sample));
+    view.setInt16(headerSize + i * 2, val * 0x7fff, true);
+  }
+
+  // Convert to base64
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  // Use btoa which is available in React Native Hermes
+  const b64 = btoa(binary);
+  return `data:audio/wav;base64,${b64}`;
+}
 
 function NotificationTonesScreen() {
   const tc = useThemeColors();
@@ -82,13 +138,54 @@ function NotificationTonesScreen() {
     setSelectedTone(toneId);
   }, [haptic]);
 
-  const handlePreview = useCallback((toneId: string) => {
-    // Audio files not yet available — preview is a visual-only indicator
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const handlePreview = useCallback(async (toneId: string) => {
     haptic.tick();
+
+    const tone = TONE_OPTIONS.find((o) => o.id === toneId);
+    if (!tone || tone.previewHz === 0) {
+      // Silent tone — just show brief visual
+      setPlayingTone(toneId);
+      setTimeout(() => setPlayingTone(null), 400);
+      return;
+    }
+
+    // Stop any currently playing preview
+    if (soundRef.current) {
+      try { await soundRef.current.unloadAsync(); } catch { /* ignore */ }
+      soundRef.current = null;
+    }
+
     setPlayingTone(toneId);
-    // Auto-clear after brief visual feedback
-    setTimeout(() => setPlayingTone(null), 1500);
+
+    try {
+      const wavUri = generateToneWav(tone.previewHz, 300);
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: wavUri },
+        { shouldPlay: true },
+      );
+      soundRef.current = sound;
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setPlayingTone(null);
+          sound.unloadAsync().catch(() => {});
+          soundRef.current = null;
+        }
+      });
+    } catch {
+      // Fallback: just show visual feedback if audio fails
+      setTimeout(() => setPlayingTone(null), 400);
+    }
   }, [haptic]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      soundRef.current?.unloadAsync().catch(() => {});
+    };
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!conversationId) return;
@@ -179,7 +276,7 @@ function NotificationTonesScreen() {
                 hitSlop={8}
               >
                 <Icon
-                  name={isPlaying ? 'loader' : 'volume-x'}
+                  name={isPlaying ? 'check' : 'play'}
                   size="sm"
                   color={isPlaying ? colors.emerald : colors.text.tertiary}
                 />
