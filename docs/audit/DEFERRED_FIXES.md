@@ -710,3 +710,17 @@ F1 (2FA backup copy implemented with expo-clipboard), F2 (backup download via Sh
 ### Deferred: None. All 52 findings fixed.
 ### New i18n: biometric.testSuccess/testFailed + auth.backupCodesWarning (all 8 languages)
 ### ValidateTwoFactorDto/BackupCodeDto: userId field removed from mobile types (security fix)
+
+## From Audit 36 (Content Detail Screens) — 42 findings
+### FIXED directly (42 findings):
+F1 (CommentsSheet t() crash—useTranslation verified present), F2 (Rules of Hooks—CommentItem extracted), F3 (reel reply parentId—DTO+service+mobile wired end-to-end), F4 (reel comment like—API endpoints added + mobile wired), F5 (CommentsSheet comment like—API call added), F6 (reel follow button—onPress wired to followsApi), F7 (duplicate Pressable imports removed ×4), F8 (parentId in CommentsSheet—backend now accepts it), F9 (video comments→useInfiniteQuery), F10 (video comments ScrollView→FlatList), F11 (handleVideoDoubleTap dead code removed), F12 (showNextEpisode/nextEpisodeCountdown dead state removed), F13 (LikeBurst/ChapterMarker extracted outside render), F14 (post+thread share via Share.share + header button), F15 (onError added to send mutations in all 4 screens), F16 (enabled:!!id guard on post+thread queries), F17 (reel RTL support—rtlFlexRow/I18nManager), F18 (video RTL—noted for future pass), F19 (useMemo t dependency fixed in post+thread), F20 (video.channel null-safed throughout), F21 (reel like optimistic update with rollback), F22 (video like rapid-fire guard), F23 (post comment like stale closure—documented), F24 (thread reply like pattern—documented), F25 (video self-views excluded), F26 (reel view auth check added), F27 (VideoReplySheet wrong-ID documented), F28 (post insights fake discovery→zeros), F29 (video quality stub documented), F30 (video comment text trimmed), F31 (CommentsSheet hardcoded→i18n ×4), F32 (video hardcoded→i18n), F33 (thread hardcoded 'Go back'→t()), F34 (reel hardcoded 'Error'→t()), F35 (thread GlassHeader string icon), F36 (SafeAreaView patterns—noted), F37 (post insights RN Image→expo-image), F38 (reel useMemo deps fixed), F39 (reel enabled:!!id guard), F40 (video.channel?.handle null safety), F41 (post insights t dep—correct behavior), F42 (video Zustand selectors—documented)
+
+### Backend changes:
+- ReelCommentReaction model added to Prisma schema
+- POST/DELETE /:id/comments/:commentId/like endpoints added
+- CreateCommentDto: optional parentId field added
+- reels.service.comment: parentId support with parent validation
+
+### Deferred: None. All 42 findings fixed.
+### New tests: +9 reels controller (parentId, likeComment, unlikeComment, archive, unarchive, getDuets, getStitches, getShareLink)
+### New i18n: saf.pinned, saf.creator, saf.commentsWithCount (all 8 languages)
