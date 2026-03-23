@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Dimensions, Platform, Alert, ViewStyle, TextStyle } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import { TextEffects } from '@/components/story/TextEffects';
 import type { TextEffect } from '@/components/story/TextEffects';
 import { GifSearch, type GifItem } from '@/components/story/GifSticker';
 import { LocationSearch, type LocationData } from '@/components/story/LocationSticker';
+import { isSDKAvailable, showGiphyPicker } from '@/services/giphyService';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -261,6 +262,13 @@ export default function CreateStoryScreen() {
   const [showStickerHint, setShowStickerHint] = useState(false);
   const hintOpacity = useSharedValue(0);
 
+  // Cleanup GIPHY SDK listener on unmount
+  useEffect(() => {
+    return () => {
+      if (giphyCleanupRef.current) { giphyCleanupRef.current(); giphyCleanupRef.current = null; }
+    };
+  }, []);
+
   // ── Discard check ──
   const hasContent = mediaUri || text.length > 0 || stickers.length > 0;
 
@@ -412,6 +420,8 @@ export default function CreateStoryScreen() {
     setAddYoursPrompt('');
   };
 
+  const giphyCleanupRef = useRef<(() => void) | null>(null);
+
   const handleGifSelect = (gif: GifItem) => {
     addSticker('gif', {
       gifUrl: gif.url,
@@ -421,6 +431,29 @@ export default function CreateStoryScreen() {
       gifTitle: gif.title,
     });
     setShowGifSearch(false);
+  };
+
+  // Open GIF picker — native GIPHY dialog first, fallback to custom search
+  const openGifPicker = () => {
+    if (isSDKAvailable()) {
+      // Clean up previous listener
+      if (giphyCleanupRef.current) { giphyCleanupRef.current(); giphyCleanupRef.current = null; }
+      const cleanup = showGiphyPicker({
+        mediaTypes: ['gif', 'sticker', 'text', 'emoji'],
+        onSelect: (media) => {
+          addSticker('gif', {
+            gifUrl: media.url,
+            gifPreviewUrl: media.previewUrl,
+            gifWidth: media.width,
+            gifHeight: media.height,
+            gifTitle: media.title,
+          });
+        },
+      });
+      giphyCleanupRef.current = cleanup;
+    } else {
+      setShowGifSearch(true);
+    }
   };
 
   const handleLocationSelect = (location: LocationData) => {
@@ -1064,137 +1097,86 @@ export default function CreateStoryScreen() {
           </ScrollView>
         )}
 
-        {/* ── Sticker tray — 12 types, premium grid with scale feedback + stagger ── */}
+        {/* ── Sticker tray — search + 3-column grid with 80px cells ── */}
         {activeTool === 'sticker' && !activeStickerEditor && (
           <Animated.View entering={FadeIn.duration(200)}>
-            {/* Section header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, gap: spacing.sm }}>
-              <View style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: colors.emerald }} />
-              <Text style={{ color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodyBold, fontWeight: '700' }}>
-                {t('stories.interactiveStickers')}
-              </Text>
+            {/* Search bar */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+              backgroundColor: tc.bgElevated, borderRadius: radius.md,
+              paddingHorizontal: spacing.md, height: 44, marginBottom: spacing.lg,
+              borderWidth: 1, borderColor: tc.border,
+            }}>
+              <Icon name="search" size="sm" color={tc.text.tertiary} />
+              <TextInput
+                placeholder={t('stories.searchStickers')}
+                placeholderTextColor={tc.text.tertiary}
+                style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.body, paddingVertical: 0 }}
+                accessibilityLabel={t('stories.searchStickers')}
+              />
             </View>
 
-            {/* Top row — 4 primary stickers as large cards */}
-            <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
-              {STICKER_TRAY_ITEMS.slice(0, 4).map((item, index) => (
-                <Animated.View key={item.type} entering={FadeInDown.delay(index * 50).duration(250).springify()} style={{ flex: 1 }}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t(item.labelKey)}
-                    onPress={() => {
-                      haptic.tick();
-                      if (item.type === 'location') setShowLocationSearch(true);
-                      else if (item.type === 'gif') setShowGifSearch(true);
-                      else if (item.type === 'music') handleMusicStickerAdd();
-                      else setActiveStickerEditor(item.type);
-                    }}
-                    style={({ pressed }) => ({
-                      backgroundColor: tc.bgElevated,
-                      borderRadius: radius.lg,
-                      paddingVertical: spacing.lg,
-                      alignItems: 'center',
-                      borderWidth: 1,
-                      borderColor: pressed ? item.color : tc.border,
-                      transform: [{ scale: pressed ? 0.95 : 1 }],
-                    })}
-                  >
-                    <LinearGradient
-                      colors={[`${item.color}25`, `${item.color}08`]}
-                      style={{
-                        width: 52, height: 52, borderRadius: radius.full,
-                        alignItems: 'center', justifyContent: 'center',
-                        marginBottom: spacing.sm,
-                      }}
-                    >
-                      <Icon name={item.icon} size="lg" color={item.color} />
-                    </LinearGradient>
-                    <Text style={{ color: tc.text.primary, fontSize: fontSize.xs, fontFamily: fonts.bodyBold, fontWeight: '600' }} numberOfLines={1}>
-                      {t(item.labelKey)}
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-              ))}
-            </View>
-
-            {/* Second row — 4 stickers */}
-            <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
-              {STICKER_TRAY_ITEMS.slice(4, 8).map((item, index) => (
-                <Animated.View key={item.type} entering={FadeInDown.delay((index + 4) * 50).duration(250).springify()} style={{ flex: 1 }}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t(item.labelKey)}
-                    onPress={() => {
-                      haptic.tick();
-                      if (item.type === 'location') setShowLocationSearch(true);
-                      else if (item.type === 'gif') setShowGifSearch(true);
-                      else if (item.type === 'music') handleMusicStickerAdd();
-                      else setActiveStickerEditor(item.type);
-                    }}
-                    style={({ pressed }) => ({
-                      backgroundColor: tc.bgElevated,
-                      borderRadius: radius.lg,
-                      paddingVertical: spacing.lg,
-                      alignItems: 'center',
-                      borderWidth: 1,
-                      borderColor: pressed ? item.color : tc.border,
-                      transform: [{ scale: pressed ? 0.95 : 1 }],
-                    })}
-                  >
-                    <LinearGradient
-                      colors={[`${item.color}25`, `${item.color}08`]}
-                      style={{
-                        width: 52, height: 52, borderRadius: radius.full,
-                        alignItems: 'center', justifyContent: 'center',
-                        marginBottom: spacing.sm,
-                      }}
-                    >
-                      <Icon name={item.icon} size="lg" color={item.color} />
-                    </LinearGradient>
-                    <Text style={{ color: tc.text.primary, fontSize: fontSize.xs, fontFamily: fonts.bodyBold, fontWeight: '600' }} numberOfLines={1}>
-                      {t(item.labelKey)}
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-              ))}
-            </View>
-
-            {/* Third row — remaining stickers as compact horizontal chips */}
-            {STICKER_TRAY_ITEMS.length > 8 && (
-              <Animated.View entering={FadeInDown.delay(400).duration(250)} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                {STICKER_TRAY_ITEMS.slice(8).map(item => (
-                  <Pressable
+            {/* 3-column grid — all 12 stickers, each 80px tall */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+              {STICKER_TRAY_ITEMS.map((item, index) => {
+                const cellWidth = (SCREEN_W - spacing.base * 2 - spacing.md * 2) / 3;
+                return (
+                  <Animated.View
                     key={item.type}
-                    accessibilityRole="button"
-                    accessibilityLabel={t(item.labelKey)}
-                    onPress={() => {
-                      haptic.tick();
-                      if (item.type === 'location') setShowLocationSearch(true);
-                      else if (item.type === 'gif') setShowGifSearch(true);
-                      else if (item.type === 'music') handleMusicStickerAdd();
-                      else setActiveStickerEditor(item.type);
-                    }}
-                    style={({ pressed }) => ({
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: spacing.sm,
-                      backgroundColor: tc.bgElevated,
-                      borderRadius: radius.full,
-                      paddingHorizontal: spacing.md,
-                      paddingVertical: spacing.sm,
-                      borderWidth: 1,
-                      borderColor: pressed ? item.color : tc.border,
-                      transform: [{ scale: pressed ? 0.95 : 1 }],
-                    })}
+                    entering={FadeInDown.delay(index * 40).duration(300).springify().damping(14).stiffness(130)}
+                    style={{ width: cellWidth }}
                   >
-                    <Icon name={item.icon} size="sm" color={item.color} />
-                    <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '500' }}>
-                      {t(item.labelKey)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </Animated.View>
-            )}
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t(item.labelKey)}
+                      onPress={() => {
+                        haptic.tick();
+                        if (item.type === 'location') setShowLocationSearch(true);
+                        else if (item.type === 'gif') openGifPicker();
+                        else if (item.type === 'music') handleMusicStickerAdd();
+                        else setActiveStickerEditor(item.type);
+                      }}
+                      style={({ pressed }) => ({
+                        backgroundColor: pressed ? `${item.color}15` : tc.bgElevated,
+                        borderRadius: radius.lg,
+                        height: 88,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth: 1.5,
+                        borderColor: pressed ? item.color : tc.border,
+                        transform: [{ scale: pressed ? 0.9 : 1 }],
+                        // Depth
+                        shadowColor: pressed ? item.color : '#000',
+                        shadowOffset: { width: 0, height: pressed ? 1 : 3 },
+                        shadowOpacity: pressed ? 0.3 : 0.12,
+                        shadowRadius: pressed ? 4 : 8,
+                        elevation: pressed ? 2 : 4,
+                      })}
+                    >
+                      <LinearGradient
+                        colors={[`${item.color}30`, `${item.color}05`]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          width: 44, height: 44, borderRadius: radius.full,
+                          alignItems: 'center', justifyContent: 'center',
+                          marginBottom: spacing.xs,
+                        }}
+                      >
+                        <Icon name={item.icon} size="lg" color={item.color} />
+                      </LinearGradient>
+                      <Text style={{
+                        color: tc.text.primary, fontSize: fontSizeExt.caption,
+                        fontFamily: fonts.bodyMedium, fontWeight: '500',
+                        textAlign: 'center',
+                      }} numberOfLines={1}>
+                        {t(item.labelKey)}
+                      </Text>
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
+            </View>
           </Animated.View>
         )}
 

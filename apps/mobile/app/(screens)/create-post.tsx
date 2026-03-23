@@ -84,14 +84,11 @@ export default function CreatePostScreen() {
   const [tagSearchQuery, setTagSearchQuery] = useState('');
   const [collaboratorUsername, setCollaboratorUsername] = useState('');
   const [commentControl, setCommentControl] = useState<'everyone' | 'followers' | 'nobody'>('everyone');
-  const [showCommentControl, setShowCommentControl] = useState(false);
   const [shareToFeed, setShareToFeed] = useState(true);
   const [brandedContent, setBrandedContent] = useState(false);
   const [brandPartner, setBrandPartner] = useState('');
   const [remixAllowed, setRemixAllowed] = useState(true);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [showTopics, setShowTopics] = useState(false);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   const inputRef = useRef<TextInput>(null);
   const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -602,58 +599,50 @@ export default function CreatePostScreen() {
               </View>
             </AnimatedAccordion>
 
-            {/* ── Who can comment ── */}
-            <Pressable
-              onPress={() => setShowCommentControl(!showCommentControl)}
-              style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-              accessibilityRole="button"
-              accessibilityLabel={t('compose.whoCanComment')}
+            {/* ── Who can comment — animated accordion ── */}
+            <AnimatedAccordion
+              icon="message-circle"
+              title={t('compose.whoCanComment')}
+              subtitle={t(`compose.comment${commentControl.charAt(0).toUpperCase() + commentControl.slice(1)}`)}
+              isActive={commentControl !== 'everyone'}
             >
-              <Icon name="message-circle" size="sm" color={commentControl !== 'everyone' ? colors.emerald : tc.text.secondary} />
-              <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
-                {t('compose.whoCanComment')}
-              </Text>
-              <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, textTransform: 'capitalize' }}>
-                {t(`compose.comment${commentControl.charAt(0).toUpperCase() + commentControl.slice(1)}`)}
-              </Text>
-              <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
-            </Pressable>
-            {showCommentControl && (
-              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, overflow: 'hidden' }}>
+              <View style={{ paddingTop: spacing.sm, borderRadius: radius.md, overflow: 'hidden' }}>
                 {(['everyone', 'followers', 'nobody'] as const).map(opt => (
                   <Pressable
                     key={opt}
-                    onPress={() => { setCommentControl(opt); setShowCommentControl(false); }}
-                    style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.md, gap: spacing.md, backgroundColor: commentControl === opt ? colors.active.emerald10 : 'transparent' }}
+                    onPress={() => setCommentControl(opt)}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row', alignItems: 'center',
+                      padding: spacing.md, gap: spacing.md,
+                      backgroundColor: commentControl === opt ? colors.active.emerald10 : pressed ? colors.active.white10 : 'transparent',
+                      transform: [{ scale: pressed ? 0.98 : 1 }],
+                    })}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: commentControl === opt }}
                     accessibilityLabel={t(`compose.comment${opt.charAt(0).toUpperCase() + opt.slice(1)}`)}
                   >
-                    <Text style={{ flex: 1, color: commentControl === opt ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500', textTransform: 'capitalize' }}>
+                    <View style={{
+                      width: 20, height: 20, borderRadius: radius.full,
+                      borderWidth: 2, borderColor: commentControl === opt ? colors.emerald : tc.border,
+                      backgroundColor: commentControl === opt ? colors.emerald : 'transparent',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {commentControl === opt && <Icon name="check" size={12} color="#fff" />}
+                    </View>
+                    <Text style={{ flex: 1, color: commentControl === opt ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '500' }}>
                       {t(`compose.comment${opt.charAt(0).toUpperCase() + opt.slice(1)}`)}
                     </Text>
-                    {commentControl === opt && <Icon name="check" size="sm" color={colors.emerald} />}
                   </Pressable>
                 ))}
               </View>
-            )}
+            </AnimatedAccordion>
 
-            {/* ── Advanced settings toggle ── */}
-            <Pressable
-              onPress={() => setShowAdvancedSettings(!showAdvancedSettings)}
-              style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-              accessibilityRole="button"
-              accessibilityLabel={t('compose.advancedSettings')}
+            {/* ── Advanced settings — animated accordion ── */}
+            <AnimatedAccordion
+              icon="settings"
+              title={t('compose.advancedSettings')}
             >
-              <Icon name="settings" size="sm" color={tc.text.secondary} />
-              <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
-                {t('compose.advancedSettings')}
-              </Text>
-              <Icon name={showAdvancedSettings ? 'chevron-down' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
-            </Pressable>
-
-            {showAdvancedSettings && (
-              <View style={{ gap: spacing.sm }}>
+              <View style={{ gap: spacing.sm, paddingTop: spacing.sm }}>
                 {/* Share to feed toggle */}
                 <Pressable
                   onPress={() => setShareToFeed(!shareToFeed)}
@@ -769,7 +758,7 @@ export default function CreatePostScreen() {
                   </View>
                 )}
               </View>
-            )}
+            </AnimatedAccordion>
           </Animated.View>
         </ScrollView>
 
