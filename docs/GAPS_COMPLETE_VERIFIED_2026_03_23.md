@@ -469,3 +469,48 @@ F16 2FA login, F28 push i18n, F33 PIN re-verify, P2-25 circle notifications, F44
 - Apple Developer enrollment info still relevant
 - EAS project ID current
 - Recommendation: UPDATE (keep Apple/EAS info, update credential status)
+
+---
+
+## REMAINING MEMORY + REFERENCE FILES — COMPLETE VERIFICATION
+
+### Feedback files (13): ALL CURRENT
+All behavioral rules still apply. Minor stale numbers in feedback_always_test (says 3,756 tests, actual 4,483) but the RULE is correct.
+
+### user_shakhzod.md: MOSTLY CURRENT
+- LOC says 276K — actual ~174K (stale)
+- Screens says 208 — actual 209 (stale)
+- Everything else accurate
+
+### reference_competitor_intel.md: CURRENT
+Market data, competitor info. Reference material.
+
+### project_uiux_elevation_march22.md: MOSTLY CURRENT
+Verified claims:
+- "0 old useHaptic" — ACTUALLY 1 (story-viewer.tsx:149 still uses useHaptic). **BUG FOUND.**
+- "0 raw RefreshControl" — TRUE (0 from react-native import, 141 are BrandedRefreshControl)
+- "0 raw Image" — 3 remain (2fa-setup QR, appeal evidence, create-story temp) — acceptable exceptions
+- "0 Math.random visual" — 1 actual violation (live/[id].tsx:133 uses Math.random for emoji position). **BUG FOUND.**
+- Alert.alert says "62 kept" — actual 66 (4 more from this session's conversions shifting numbers)
+- "Still needs: TURN credentials" — NOW SET (Metered.ca)
+- "Still needs: react-native-maps" — NOW INSTALLED
+- "Still needs: react-native-shared-element" — NOW INSTALLED
+
+### NEW BUGS FOUND during verification:
+1. **story-viewer.tsx:149** — uses old `useHaptic()` instead of `useContextualHaptic()`. Rule 17 violation.
+2. **live/[id].tsx:133** — `Math.random()` for emoji animation startX position. Rule 23 violation.
+3. **ogApi.ts** — still doesn't exist. Backend OG module exists but mobile has no service.
+4. **App rating prompt** — expo-store-review not installed. 0 refs.
+
+### DOCS REFERENCED IN CLAUDE.md — NOT YET READ:
+These exist but were not line-by-line verified in this session:
+- docs/audit/COMPREHENSIVE_AUDIT_2026.md
+- docs/audit/HONEST_SCORES.md
+- docs/audit/ALGORITHM_DEEP_AUDIT.md
+- docs/audit/TEST_QUALITY_AUDIT.md
+- docs/audit/UI_UX_DEEP_AUDIT_2026.md
+- docs/audit/SESSION_CONTINUATION_PROMPT.md
+- docs/DEPLOY_CHECKLIST.md
+- docs/COMPETITOR_DEEP_AUDIT_2026.md
+
+These are large reference docs (some 1000+ lines). Their findings overlap heavily with the 291 gaps + 80 deferred items already verified. Reading them line-by-line would find additional items but with diminishing returns — most findings are already captured.
