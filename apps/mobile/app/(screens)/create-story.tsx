@@ -89,7 +89,8 @@ interface Sticker {
 }
 
 // ── Sticker tray items (all 10 + mention/hashtag) ──
-const STICKER_TRAY_ITEMS: Array<{ type: StickerType; icon: string; labelKey: string; color: string }> = [
+type IconName = React.ComponentProps<typeof Icon>['name'];
+const STICKER_TRAY_ITEMS: Array<{ type: StickerType; icon: IconName; labelKey: string; color: string }> = [
   { type: 'poll', icon: 'bar-chart-2', labelKey: 'stories.poll', color: colors.emerald },
   { type: 'quiz', icon: 'check-circle', labelKey: 'stories.quiz', color: colors.extended.purple },
   { type: 'question', icon: 'at-sign', labelKey: 'stories.question', color: colors.extended.blue },
@@ -1103,7 +1104,7 @@ export default function CreateStoryScreen() {
                     alignItems: 'center', justifyContent: 'center',
                     marginBottom: spacing.xs,
                   }}>
-                    <Icon name={item.icon as never} size="md" color={item.color} />
+                    <Icon name={item.icon} size="md" color={item.color} />
                   </View>
                   <Text style={{ color: tc.text.primary, fontSize: fontSizeExt.tiny, fontFamily: fonts.bodyMedium, fontWeight: '500', textAlign: 'center' }} numberOfLines={1}>
                     {t(item.labelKey)}

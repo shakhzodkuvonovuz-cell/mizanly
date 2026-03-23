@@ -3038,7 +3038,17 @@
     "brandPartnerPlaceholder": "Brand partner @username",
     "brandPartner": "Brand partner",
     "addTopics": "Add topics",
-    "topicsSelected": "topics selected"
+    "topicsSelected": "topics selected",
+    "topicIslamic": "Islamic",
+    "topicLifestyle": "Lifestyle",
+    "topicEducation": "Education",
+    "topicTechnology": "Technology",
+    "topicFood": "Food",
+    "topicTravel": "Travel",
+    "topicFashion": "Fashion",
+    "topicSports": "Sports",
+    "topicBusiness": "Business",
+    "topicArt": "Art"
   },
   "community": {
     "fatwaQA": "أسئلة وفتاوى",

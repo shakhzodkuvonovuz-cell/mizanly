@@ -757,7 +757,7 @@ export default function CreatePostScreen() {
                 </Pressable>
                 {showTopics && (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, padding: spacing.sm }}>
-                    {['Islamic', 'Lifestyle', 'Education', 'Technology', 'Food', 'Travel', 'Fashion', 'Sports', 'Business', 'Art'].map(topic => {
+                    {(['Islamic', 'Lifestyle', 'Education', 'Technology', 'Food', 'Travel', 'Fashion', 'Sports', 'Business', 'Art'] as const).map(topic => {
                       const isSelected = selectedTopics.includes(topic);
                       return (
                         <Pressable
@@ -780,7 +780,7 @@ export default function CreatePostScreen() {
                           accessibilityLabel={topic}
                         >
                           <Text style={{ color: isSelected ? '#fff' : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
-                            {topic}
+                            {t(`compose.topic${topic}`)}
                           </Text>
                         </Pressable>
                       );

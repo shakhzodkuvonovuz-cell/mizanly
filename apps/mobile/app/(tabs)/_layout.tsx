@@ -146,6 +146,13 @@ export default function TabLayout() {
             tabBarIcon: ({ focused }) => <TabIcon name="risalah" focused={focused} badge={unreadMessages || undefined} />,
           }}
         />
+        {/* Hidden — create.tsx file exists for deep-link safety but has no tab */}
+        <Tabs.Screen
+          name="create"
+          options={{
+            href: null, // Prevents tab from showing
+          }}
+        />
       </Tabs>
     </WebLayout>
   );
@@ -190,8 +197,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     end: 0,
-  },
-  // createButton styles removed — now in CreateSheet.tsx
-    fontWeight: '700',
   },
 });
