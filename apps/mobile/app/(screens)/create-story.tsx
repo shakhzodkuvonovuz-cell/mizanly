@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  runOnJS, withTiming, withDelay, FadeIn,
+  runOnJS, withTiming, withDelay, FadeIn, FadeInDown,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { MusicPicker } from '@/components/story/MusicPicker';
@@ -1064,55 +1064,138 @@ export default function CreateStoryScreen() {
           </ScrollView>
         )}
 
-        {/* ── Sticker tray — 12 types in a beautiful grid ── */}
+        {/* ── Sticker tray — 12 types, premium grid with scale feedback + stagger ── */}
         {activeTool === 'sticker' && !activeStickerEditor && (
-          <View>
-            <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.bodyMedium, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.md }}>
-              {t('stories.interactiveStickers')}
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-              {STICKER_TRAY_ITEMS.map(item => (
-                <Pressable
-                  key={item.type}
-                  accessibilityRole="button"
-                  accessibilityLabel={t(item.labelKey)}
-                  onPress={() => {
-                    haptic.tick();
-                    if (item.type === 'location') {
-                      setShowLocationSearch(true);
-                    } else if (item.type === 'gif') {
-                      setShowGifSearch(true);
-                    } else if (item.type === 'music') {
-                      handleMusicStickerAdd();
-                    } else {
-                      setActiveStickerEditor(item.type);
-                    }
-                  }}
-                  style={({ pressed }) => ({
-                    backgroundColor: pressed ? colors.active.white10 : tc.bgElevated,
-                    borderRadius: radius.md,
-                    padding: spacing.md,
-                    alignItems: 'center',
-                    width: (SCREEN_W - spacing.base * 2 - spacing.sm * 3) / 4 - 1,
-                    borderWidth: 1,
-                    borderColor: tc.border,
-                  })}
-                >
-                  <View style={{
-                    width: 44, height: 44, borderRadius: radius.full,
-                    backgroundColor: `${item.color}15`,
-                    alignItems: 'center', justifyContent: 'center',
-                    marginBottom: spacing.xs,
-                  }}>
-                    <Icon name={item.icon} size="md" color={item.color} />
-                  </View>
-                  <Text style={{ color: tc.text.primary, fontSize: fontSizeExt.tiny, fontFamily: fonts.bodyMedium, fontWeight: '500', textAlign: 'center' }} numberOfLines={1}>
-                    {t(item.labelKey)}
-                  </Text>
-                </Pressable>
+          <Animated.View entering={FadeIn.duration(200)}>
+            {/* Section header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, gap: spacing.sm }}>
+              <View style={{ width: 3, height: 16, borderRadius: 2, backgroundColor: colors.emerald }} />
+              <Text style={{ color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.bodyBold, fontWeight: '700' }}>
+                {t('stories.interactiveStickers')}
+              </Text>
+            </View>
+
+            {/* Top row — 4 primary stickers as large cards */}
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
+              {STICKER_TRAY_ITEMS.slice(0, 4).map((item, index) => (
+                <Animated.View key={item.type} entering={FadeInDown.delay(index * 50).duration(250).springify()} style={{ flex: 1 }}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t(item.labelKey)}
+                    onPress={() => {
+                      haptic.tick();
+                      if (item.type === 'location') setShowLocationSearch(true);
+                      else if (item.type === 'gif') setShowGifSearch(true);
+                      else if (item.type === 'music') handleMusicStickerAdd();
+                      else setActiveStickerEditor(item.type);
+                    }}
+                    style={({ pressed }) => ({
+                      backgroundColor: tc.bgElevated,
+                      borderRadius: radius.lg,
+                      paddingVertical: spacing.lg,
+                      alignItems: 'center',
+                      borderWidth: 1,
+                      borderColor: pressed ? item.color : tc.border,
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    })}
+                  >
+                    <LinearGradient
+                      colors={[`${item.color}25`, `${item.color}08`]}
+                      style={{
+                        width: 52, height: 52, borderRadius: radius.full,
+                        alignItems: 'center', justifyContent: 'center',
+                        marginBottom: spacing.sm,
+                      }}
+                    >
+                      <Icon name={item.icon} size="lg" color={item.color} />
+                    </LinearGradient>
+                    <Text style={{ color: tc.text.primary, fontSize: fontSize.xs, fontFamily: fonts.bodyBold, fontWeight: '600' }} numberOfLines={1}>
+                      {t(item.labelKey)}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
               ))}
             </View>
-          </View>
+
+            {/* Second row — 4 stickers */}
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
+              {STICKER_TRAY_ITEMS.slice(4, 8).map((item, index) => (
+                <Animated.View key={item.type} entering={FadeInDown.delay((index + 4) * 50).duration(250).springify()} style={{ flex: 1 }}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t(item.labelKey)}
+                    onPress={() => {
+                      haptic.tick();
+                      if (item.type === 'location') setShowLocationSearch(true);
+                      else if (item.type === 'gif') setShowGifSearch(true);
+                      else if (item.type === 'music') handleMusicStickerAdd();
+                      else setActiveStickerEditor(item.type);
+                    }}
+                    style={({ pressed }) => ({
+                      backgroundColor: tc.bgElevated,
+                      borderRadius: radius.lg,
+                      paddingVertical: spacing.lg,
+                      alignItems: 'center',
+                      borderWidth: 1,
+                      borderColor: pressed ? item.color : tc.border,
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    })}
+                  >
+                    <LinearGradient
+                      colors={[`${item.color}25`, `${item.color}08`]}
+                      style={{
+                        width: 52, height: 52, borderRadius: radius.full,
+                        alignItems: 'center', justifyContent: 'center',
+                        marginBottom: spacing.sm,
+                      }}
+                    >
+                      <Icon name={item.icon} size="lg" color={item.color} />
+                    </LinearGradient>
+                    <Text style={{ color: tc.text.primary, fontSize: fontSize.xs, fontFamily: fonts.bodyBold, fontWeight: '600' }} numberOfLines={1}>
+                      {t(item.labelKey)}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              ))}
+            </View>
+
+            {/* Third row — remaining stickers as compact horizontal chips */}
+            {STICKER_TRAY_ITEMS.length > 8 && (
+              <Animated.View entering={FadeInDown.delay(400).duration(250)} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                {STICKER_TRAY_ITEMS.slice(8).map(item => (
+                  <Pressable
+                    key={item.type}
+                    accessibilityRole="button"
+                    accessibilityLabel={t(item.labelKey)}
+                    onPress={() => {
+                      haptic.tick();
+                      if (item.type === 'location') setShowLocationSearch(true);
+                      else if (item.type === 'gif') setShowGifSearch(true);
+                      else if (item.type === 'music') handleMusicStickerAdd();
+                      else setActiveStickerEditor(item.type);
+                    }}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: spacing.sm,
+                      backgroundColor: tc.bgElevated,
+                      borderRadius: radius.full,
+                      paddingHorizontal: spacing.md,
+                      paddingVertical: spacing.sm,
+                      borderWidth: 1,
+                      borderColor: pressed ? item.color : tc.border,
+                      transform: [{ scale: pressed ? 0.95 : 1 }],
+                    })}
+                  >
+                    <Icon name={item.icon} size="sm" color={item.color} />
+                    <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '500' }}>
+                      {t(item.labelKey)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </Animated.View>
+            )}
+          </Animated.View>
         )}
 
         {/* ── Sticker editors ── */}
