@@ -117,6 +117,16 @@ export interface EditParams {
   vignette?: boolean;             // standalone vignette effect
   grain?: boolean;                // film grain effect
   audioPitch?: number;            // -12 to +12 semitones (0 = neutral)
+  flipH?: boolean;                // horizontal flip (mirror)
+  flipV?: boolean;                // vertical flip
+  glitch?: boolean;               // RGB split glitch effect
+  letterbox?: boolean;            // cinematic 2.35:1 bars
+  boomerang?: boolean;            // forward + reverse loop
+  textSize?: number;              // font size override (default 48)
+  textBg?: boolean;               // dark background box behind text
+  textShadow?: boolean;           // drop shadow on text
+  textX?: number;                 // text X position (0-100% of width, default 50 = center)
+  textY?: number;                 // text Y position (0-100% of height, default 90 = bottom)
 }
 
 export interface ExportResult {
@@ -331,15 +341,22 @@ export function buildCommand(params: EditParams, outputPath: string): string {
       .replace(/%/g, '%%')          // percent (FFmpeg time code)
       .replace(/\[/g, '\\[')        // brackets
       .replace(/\]/g, '\\]');
-    // Text timing: enable only between textStartTime and textEndTime
-    // Convert from absolute video time to relative-to-trimmed-clip time
+    // Text timing
     const rawTxtStart = params.textStartTime ?? 0;
     const rawTxtEnd = params.textEndTime && params.textEndTime > 0 ? params.textEndTime : endTime;
     const txtStart = Math.max(0, rawTxtStart - startTime);
     const txtEnd = Math.min(clipDuration, rawTxtEnd - startTime);
     const enableExpr = `:enable='between(t,${txtStart.toFixed(2)},${txtEnd.toFixed(2)})'`;
+
+    // Text size, position, background, shadow
+    const fontSize = params.textSize || 48;
+    const xExpr = params.textX !== undefined ? `x=w*${(params.textX / 100).toFixed(2)}-text_w/2` : 'x=(w-text_w)/2';
+    const yExpr = params.textY !== undefined ? `y=h*${(params.textY / 100).toFixed(2)}-th/2` : 'y=h-th-80';
+    const bgExpr = params.textBg ? ':box=1:boxcolor=black@0.6:boxborderw=12' : '';
+    const shadowExpr = params.textShadow ? ':shadowcolor=black@0.5:shadowx=3:shadowy=3' : '';
+
     vFilters.push(
-      `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5${enableExpr}`
+      `drawtext=text='${escaped}':fontsize=${fontSize}:fontcolor=${captionColor}:${xExpr}:${yExpr}:borderw=2:bordercolor=black@0.5${bgExpr}${shadowExpr}${enableExpr}`
     );
   }
 
@@ -407,6 +424,23 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   if (params.grain) {
     vFilters.push('noise=alls=20:allf=t');
   }
+
+  // Horizontal/vertical flip
+  if (params.flipH) vFilters.push('hflip');
+  if (params.flipV) vFilters.push('vflip');
+
+  // Glitch effect (RGB channel split + noise)
+  if (params.glitch) {
+    vFilters.push('rgbashift=rh=5:bh=-5:rv=-3:bv=3');
+  }
+
+  // Letterbox (cinematic 2.35:1 black bars overlaid on video)
+  if (params.letterbox) {
+    // Draw black bars at top and bottom (12% of height each)
+    vFilters.push('drawbox=x=0:y=0:w=iw:h=ih*0.12:color=black:t=fill,drawbox=x=0:y=ih*0.88:w=iw:h=ih*0.12:color=black:t=fill');
+  }
+
+  // Boomerang: handled at command level (forward+reverse concat) — see below
 
   // Freeze frame — hold the last frame for 2 seconds (fps-independent)
   // Uses tpad=stop_mode=clone which clones the final frame for stop_duration seconds.
@@ -544,6 +578,19 @@ export async function executeExport(
         activeSessionId = null;
         const returnCode = await session.getReturnCode();
         if (returnCode.isValueSuccess()) {
+          // Post-processing: boomerang (forward + reverse concat)
+          if (params.boomerang) {
+            const boomerangPath = outputPath.replace('.mp4', '_boom.mp4');
+            const boomCmd = `-i "${outputPath}" -filter_complex "[0:v]split[fwd][rev];[rev]reverse[rvid];[fwd][rvid]concat=n=2:v=1:a=0[outv];[0:a]apad=pad_dur=0[outa]" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -shortest -y "${boomerangPath}"`;
+            const boomSession = await kit.FFmpegKit.execute(boomCmd);
+            const boomCode = await boomSession.getReturnCode();
+            if (boomCode.isValueSuccess()) {
+              try { await FileSystem.deleteAsync(outputPath, { idempotent: true }); } catch {}
+              resolve({ success: true, outputUri: boomerangPath });
+              return;
+            }
+            // Boomerang failed — return original export
+          }
           resolve({ success: true, outputUri: outputPath });
         } else if (returnCode.isValueCancel()) {
           // Clean up partial file

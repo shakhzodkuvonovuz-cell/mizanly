@@ -61,7 +61,8 @@ type EditSnapshot = {
   brightness: number; contrast: number; saturation: number; temperature: number;
   fadeIn: number; fadeOut: number;
   rotation: 0 | 90 | 180 | 270; sharpen: boolean; vignetteOn: boolean; grain: boolean;
-  audioPitch: number;
+  audioPitch: number; flipH: boolean; flipV: boolean; glitch: boolean;
+  letterbox: boolean; boomerang: boolean; textSize: number; textBg: boolean; textShadow: boolean;
 };
 
 export default function VideoEditorScreen() {
@@ -117,6 +118,14 @@ export default function VideoEditorScreen() {
   const [vignetteOn, setVignetteOn] = useState(false);
   const [grain, setGrain] = useState(false);
   const [audioPitch, setAudioPitch] = useState(0); // -12 to +12 semitones
+  const [flipH, setFlipH] = useState(false);
+  const [flipV, setFlipV] = useState(false);
+  const [glitch, setGlitch] = useState(false);
+  const [letterbox, setLetterbox] = useState(false);
+  const [boomerang, setBoomerang] = useState(false);
+  const [textSize, setTextSize] = useState(48);
+  const [textBg, setTextBg] = useState(false);
+  const [textShadow, setTextShadow] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -134,7 +143,8 @@ export default function VideoEditorScreen() {
     textStartTime, textEndTime, aspectRatio,
     brightness, contrast, saturation, temperature, fadeIn, fadeOut,
     rotation, sharpen, vignetteOn, grain, audioPitch,
-  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, audioPitch]);
+    flipH, flipV, glitch, letterbox, boomerang, textSize, textBg, textShadow,
+  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, audioPitch, flipH, flipV, glitch, letterbox, boomerang, textSize, textBg, textShadow]);
 
   const applySnapshot = useCallback((s: EditSnapshot) => {
     setStartTime(s.startTime); setEndTime(s.endTime);
@@ -142,7 +152,9 @@ export default function VideoEditorScreen() {
     setBrightness(s.brightness); setContrast(s.contrast); setSaturation(s.saturation);
     setTemperature(s.temperature); setFadeIn(s.fadeIn); setFadeOut(s.fadeOut);
     setRotation(s.rotation); setSharpen(s.sharpen); setVignetteOn(s.vignetteOn); setGrain(s.grain);
-    setAudioPitch(s.audioPitch);
+    setAudioPitch(s.audioPitch); setFlipH(s.flipH); setFlipV(s.flipV); setGlitch(s.glitch);
+    setLetterbox(s.letterbox); setBoomerang(s.boomerang); setTextSize(s.textSize);
+    setTextBg(s.textBg); setTextShadow(s.textShadow);
     setCaptionText(s.captionText); setOriginalVolume(s.originalVolume);
     setMusicVolume(s.musicVolume); setIsReversed(s.isReversed);
     setVoiceEffect(s.voiceEffect); setStabilize(s.stabilize);
@@ -438,6 +450,14 @@ export default function VideoEditorScreen() {
         vignette: vignetteOn || undefined,
         grain: grain || undefined,
         audioPitch: audioPitch !== 0 ? audioPitch : undefined,
+        flipH: flipH || undefined,
+        flipV: flipV || undefined,
+        glitch: glitch || undefined,
+        letterbox: letterbox || undefined,
+        boomerang: boomerang || undefined,
+        textSize: textSize !== 48 ? textSize : undefined,
+        textBg: textBg || undefined,
+        textShadow: textShadow || undefined,
       };
 
       const result = await executeExport(editParams, (percent) => {
@@ -465,7 +485,7 @@ export default function VideoEditorScreen() {
     } finally {
       setIsExporting(false);
     }
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, audioPitch, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, audioPitch, flipH, flipV, glitch, letterbox, boomerang, textSize, textBg, textShadow, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
 
   // Cancel export handler
   const handleCancelExport = useCallback(async () => {
@@ -813,6 +833,36 @@ export default function VideoEditorScreen() {
               ))}
             </View>
 
+            {/* Text size */}
+            <Text style={styles.toolSubTitle}>{t('videoEditor.textSizeLabel')}</Text>
+            <View style={styles.adjustPresetRow}>
+              {[24, 36, 48, 64, 80].map(size => (
+                <Pressable
+                  key={size}
+                  style={[styles.adjustPreset, textSize === size && styles.adjustPresetActive]}
+                  onPress={() => { pushUndo(); setTextSize(size); haptic.tick(); }}
+                >
+                  <Text style={[styles.adjustPresetText, textSize === size && styles.adjustPresetTextActive]}>{size}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Text style toggles */}
+            <View style={[styles.effectToggleGrid, { marginTop: spacing.sm }]}>
+              <Pressable
+                style={[styles.effectToggleItem, textBg && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setTextBg(!textBg); haptic.tick(); }}
+              >
+                <Text style={[styles.effectToggleText, textBg && styles.effectToggleTextActive]}>{t('videoEditor.textBackground')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, textShadow && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setTextShadow(!textShadow); haptic.tick(); }}
+              >
+                <Text style={[styles.effectToggleText, textShadow && styles.effectToggleTextActive]}>{t('videoEditor.textShadowLabel')}</Text>
+              </Pressable>
+            </View>
+
             {/* Text-to-Speech + Emoji */}
             <View style={styles.ttsRow}>
               <Pressable
@@ -1132,6 +1182,41 @@ export default function VideoEditorScreen() {
                 <Text style={[styles.effectToggleText, rotation !== 0 && styles.effectToggleTextActive]}>
                   {rotation === 0 ? t('videoEditor.rotate') : `${rotation}°`}
                 </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, flipH && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setFlipH(!flipH); haptic.tick(); }}
+              >
+                <Icon name="arrow-left" size="sm" color={flipH ? colors.emerald : tc.text.secondary} style={{ transform: [{ scaleX: -1 }] }} />
+                <Text style={[styles.effectToggleText, flipH && styles.effectToggleTextActive]}>{t('videoEditor.flipH')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, flipV && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setFlipV(!flipV); haptic.tick(); }}
+              >
+                <Icon name="arrow-left" size="sm" color={flipV ? colors.emerald : tc.text.secondary} style={{ transform: [{ rotate: '90deg' }] }} />
+                <Text style={[styles.effectToggleText, flipV && styles.effectToggleTextActive]}>{t('videoEditor.flipV')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, glitch && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setGlitch(!glitch); haptic.tick(); }}
+              >
+                <Icon name="slash" size="sm" color={glitch ? colors.error : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, glitch && styles.effectToggleTextActive]}>{t('videoEditor.glitchEffect')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, letterbox && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setLetterbox(!letterbox); haptic.tick(); }}
+              >
+                <Icon name="minus" size="sm" color={letterbox ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, letterbox && styles.effectToggleTextActive]}>{t('videoEditor.letterbox')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, boomerang && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setBoomerang(!boomerang); haptic.tick(); }}
+              >
+                <Icon name="repeat" size="sm" color={boomerang ? colors.gold : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, boomerang && { color: colors.gold, fontWeight: '600' }]}>{t('videoEditor.boomerang')}</Text>
               </Pressable>
             </View>
           </View>
