@@ -102,17 +102,31 @@ export function MusicSticker({ data, isPlaying = true, style }: MusicStickerProp
   const tc = useThemeColors();
   const { t } = useTranslation();
 
-  // ── Lyric scroll — cycle through lines every 3 seconds ──
-  const [activeLyricOffset, setActiveLyricOffset] = useState(0);
+  // ── Lyric state: active line index + active word index within that line ──
+  const [activeLine, setActiveLine] = useState(0);
+  const [activeWord, setActiveWord] = useState(0);
 
   useEffect(() => {
-    if (data.displayMode === 'lyrics' && data.lyrics && data.lyrics.length > 4 && isPlaying) {
-      const interval = setInterval(() => {
-        setActiveLyricOffset(prev => (prev + 1) % Math.max(1, data.lyrics!.length - 3));
-      }, 3000);
-      return () => clearInterval(interval);
+    if (data.displayMode !== 'lyrics' || !data.lyrics || data.lyrics.length === 0 || !isPlaying) return;
+
+    const lyrics = data.lyrics;
+    const words = lyrics[activeLine]?.split(/\s+/) || [];
+    const wordDuration = 400; // ms per word highlight
+    const linePause = 600; // ms pause between lines
+
+    // Advance words within current line
+    if (activeWord < words.length - 1) {
+      const timer = setTimeout(() => setActiveWord(prev => prev + 1), wordDuration);
+      return () => clearTimeout(timer);
     }
-  }, [data.displayMode, data.lyrics, isPlaying]);
+
+    // Move to next line after finishing all words
+    const timer = setTimeout(() => {
+      setActiveLine(prev => (prev + 1) % lyrics.length);
+      setActiveWord(0);
+    }, linePause);
+    return () => clearTimeout(timer);
+  }, [data.displayMode, data.lyrics, isPlaying, activeLine, activeWord]);
 
   if (data.displayMode === 'compact') {
     return (
@@ -169,18 +183,44 @@ export function MusicSticker({ data, isPlaying = true, style }: MusicStickerProp
       </View>
       {data.lyrics && data.lyrics.length > 0 ? (
         <View style={styles.lyricsBody}>
-          {data.lyrics.slice(activeLyricOffset, activeLyricOffset + 4).map((line, i) => (
-            <Animated.Text
-              key={`${activeLyricOffset}-${i}`}
-              entering={FadeIn.delay(i * 150).duration(250)}
-              style={[
-                styles.lyricLine,
-                i === 0 && styles.lyricLineActive,
-              ]}
-            >
-              {line}
-            </Animated.Text>
-          ))}
+          {/* Show 3 lines: previous (dim), current (word highlight), next (dim) */}
+          {[-1, 0, 1].map(offset => {
+            const lineIdx = (activeLine + offset + data.lyrics!.length) % data.lyrics!.length;
+            const line = data.lyrics![lineIdx];
+            const isCurrent = offset === 0;
+            const words = line.split(/\s+/);
+
+            if (!isCurrent) {
+              return (
+                <Animated.Text
+                  key={`line-${lineIdx}-${offset}`}
+                  entering={FadeIn.duration(200)}
+                  style={[styles.lyricLine, { opacity: offset === -1 ? 0.3 : 0.5 }]}
+                >
+                  {line}
+                </Animated.Text>
+              );
+            }
+
+            // Current line — word-by-word highlighting
+            return (
+              <Animated.View key={`line-${lineIdx}-active`} entering={FadeIn.duration(200)} style={styles.lyricActiveRow}>
+                <Text style={styles.lyricLineActive}>
+                  {words.map((word, wIdx) => (
+                    <Text
+                      key={wIdx}
+                      style={{
+                        color: wIdx <= activeWord ? colors.text.primary : 'rgba(255,255,255,0.4)',
+                        fontWeight: wIdx <= activeWord ? '700' : '500',
+                      }}
+                    >
+                      {word}{wIdx < words.length - 1 ? ' ' : ''}
+                    </Text>
+                  ))}
+                </Text>
+              </Animated.View>
+            );
+          })}
         </View>
       ) : (
         <Text style={styles.noLyrics}>
@@ -277,7 +317,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   lyricsBody: {
-    gap: spacing.sm,
+    gap: spacing.md,
+    minHeight: 100,
+    justifyContent: 'center',
+  },
+  lyricActiveRow: {
+    paddingVertical: spacing.xs,
   },
   lyricLine: {
     color: 'rgba(255,255,255,0.5)',
