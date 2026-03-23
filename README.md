@@ -38,10 +38,10 @@
 - [Custom Hooks](#custom-hooks)
 - [Service Layer](#service-layer)
 - [Backend Modules](#backend-modules)
-- [Database Schema](#database-schema-188-models)
+- [Database Schema](#database-schema-193-models-55-enums)
 - [WebSocket Gateway](#websocket-gateway)
 - [Internationalization](#internationalization-i18n)
-- [All Screens](#all-screens-209-total)
+- [All Screens](#all-screens-212-total)
 - [Getting Started](#getting-started)
 - [Development Scripts](#development-scripts)
 - [Local Development with Docker](#local-development-with-docker)
@@ -87,29 +87,30 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Source Lines (TS/TSX) | 118,000+ |
-| Test Lines (*.spec.ts) | 55,462 |
-| Total TypeScript | 173,000+ |
-| Mobile Screens | 209 |
+| Source Lines (TS/TSX) | 125,000+ |
+| Test Lines (*.spec.ts) | 60,000+ |
+| Total TypeScript | 185,000+ |
+| Mobile Screens | 212 |
 | Backend Modules | 79 |
 | Backend Controllers | 82 |
 | Backend Services | 86 |
-| Prisma Models | 188 |
-| Prisma Schema Lines | 4,080 |
-| Test Suites | 284 |
-| Tests Passing | 4,429 (100%) |
-| UI Components | 70 |
+| Prisma Models | 193 |
+| Prisma Enums | 55 |
+| Prisma Schema Lines | 4,700+ |
+| Test Suites | 286 |
+| Tests Passing | 4,740 (100%) |
+| UI Components | 76 |
 | Custom Hooks | 23 |
-| API Service Files | 32 |
-| Translation Keys | 3,173+ per language |
-| Accessibility Keys | 103 |
+| API Service Files | 33 |
+| Translation Keys | 3,500+ per language |
+| Accessibility Coverage | 210/212 screens |
 | Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
-| REST Endpoints | 850+ |
+| REST Endpoints | 870+ |
 | Socket Events | 16 |
-| DTOs | 120+ |
-| Audit Findings Fixed | 4,300+ (across 72 deep audit files) |
-| UI/UX Elevation | 87 commits, 272 files, +12.5K/-5.5K lines |
-| Git Commits | 930+ |
+| DTOs | 140+ |
+| Audit Findings Fixed | 4,500+ (72 deep audit files + 11-wave remediation) |
+| RTL Support | Complete (~430 replacements across 134 files) |
+| Git Commits | 970+ |
 | Development Time | 21 days (Mar 3–23, 2026) |
 
 ---
@@ -949,7 +950,7 @@ All 79 NestJS modules in `apps/api/src/modules/`:
 
 ---
 
-## Database Schema (188 Models)
+## Database Schema (193 Models, 55 Enums)
 
 The Prisma schema (`apps/api/prisma/schema.prisma`) contains 188 models across 4,080 lines with 450+ relations. Models are organized by domain:
 
@@ -1066,7 +1067,7 @@ Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. A
 
 ---
 
-## All Screens (209 Total)
+## All Screens (212 Total)
 
 <details>
 <summary>Click to expand complete screen list</summary>
@@ -1672,21 +1673,35 @@ The codebase has undergone a comprehensive 72-agent deep audit with 4,300+ findi
 
 ---
 
+## Algorithm & Intelligence
+
+| Layer | Technology | Details |
+|-------|-----------|---------|
+| **Embeddings** | Gemini text-embedding-004 | 768-dim vectors, pgvector with HNSW index |
+| **Retrieval** | KNN similarity search | Multi-cluster interest vectors (k-means, 2-3 centroids per user) |
+| **Scoring** | Weighted engagement | likes(2) + comments(3) + shares(4) + saved(3) + viewDuration |
+| **Islamic Boost** | Location-aware | Prayer-calculator integration, Ramadan/Jummah awareness, up to 50% boost |
+| **Exploration** | Fresh content slots | 15% of feed reserved for <6h/<100 views content |
+| **Diversity** | 2-pass reranking | Author dedup + hashtag cluster diversity |
+| **Session** | Redis-backed | Real-time interest adaptation, 30min TTL, category tracking |
+| **Trending** | Decay scoring | 24h window, 12h linear decay, cursor-based keyset pagination |
+| **Safety** | Tiered defense | Client-side nsfwjs → pre-save moderation → AI prompt-hardened analysis |
+
 ## Roadmap
 
-Full roadmap with 200+ features across 16 tiers:
-
-| Tier | Theme | Batches | Status |
-|------|-------|---------|--------|
-| 1-8 | Full Platform Parity — Instagram, TikTok, X, WhatsApp, YouTube | 1-43 | Complete |
-| 9 | AI-Powered Moat — Content assistant, auto-translate, moderation, captions, avatars | 44-45 | Complete |
-| 10 | Gamification — Streaks, achievements, XP/levels, leaderboards, challenges, series | 46-47 | Complete |
-| 11 | Commerce — Halal marketplace, business directory, Zakat, Waqf, premium | 48-49 | Complete |
-| 12 | Community — Local boards, mentorship, study circles, fatwa Q&A, volunteer, events | 50-52 | Complete |
-| 13 | Audit & Hardening — P0-P2 bug fixes, screen wiring, i18n cleanup, type safety, security | 53-64 | Complete |
-| 14 | 2026 Competitor Parity — Multi-guest live, group calls, video chapters, demographics, Quran audio, Zakat calculator, webhooks, role permissions, 8 languages | 65-85 | Complete |
-| 15 | Performance — Unbounded query caps, DB indexes, optimistic updates, memo components, Sentry | A1-C, 85 | Complete |
-| 16 | **72-Agent Deep Audit** — SQL injection fixes, fail-closed moderation, cascade delete safety, auth guard hardening, 100+ DTO validations, SSRF prevention, webhook security, notification settings enforcement, appeal workflow, 2FA security, onboarding flow, content detail screens, theme system, RTL, accessibility | Files 01-72 | **Complete (72/72 files, 4,300+ findings fixed, 4,429 tests)** |
+| Tier | Theme | Status |
+|------|-------|--------|
+| 1-8 | Full Platform Parity — Instagram, TikTok, X, WhatsApp, YouTube | Complete |
+| 9 | AI-Powered Moat — Content assistant, auto-translate, moderation, captions, avatars | Complete |
+| 10 | Gamification — Streaks, achievements, XP/levels, leaderboards, challenges, series | Complete |
+| 11 | Commerce — Halal marketplace, business directory, Zakat, Waqf, premium | Complete |
+| 12 | Community — Local boards, mentorship, study circles, fatwa Q&A, volunteer, events | Complete |
+| 13 | Audit & Hardening — P0-P2 fixes, screen wiring, i18n, type safety, security | Complete |
+| 14 | 2026 Competitor Parity — Live, calls, video chapters, Quran audio, 8 languages | Complete |
+| 15 | Performance — Query caps, indexes, optimistic updates, memo, Sentry | Complete |
+| 16 | 72-Agent Deep Audit — 4,300+ findings across 72 files | Complete |
+| 17 | **11-Wave Remediation** — 85 agents, ~240 fixes, algorithm tuning, schema enums, RTL complete, accessibility, payments, new components | **Complete (4,740 tests)** |
+| **Next** | WebRTC calls, performance/latency, maps, audio, Apple IAP, App Store submission | **In Progress** |
 
 ---
 

@@ -28,16 +28,19 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ## Current State (as of 2026-03-23)
 
-**Backend:** NestJS 10, 79 modules, 82 controllers, 86 services, 193 Prisma models, 81 enums (4,623 lines). 286 test suites, 4,675 tests, 100% pass, 0 TypeScript errors. Server starts clean.
-**Mobile:** React Native Expo SDK 52, 212 screens, 76 components, 23 hooks, 33 API services. 0 mobile TypeScript errors.
-**i18n:** 8 languages (en, ar, tr, ur, bn, fr, id, ms), 3,400+ keys each, 103 accessibility keys, ~300 keys added in session 2.
-**Real-time:** Socket.io on 4 screens (chat, calls, Quran rooms, conversation list) with Clerk JWT auth, reconnection, token refresh.
-**Algorithm:** 3-stage ranking (pgvector KNN → weighted scoring → diversity reranking), 15% exploration slots, Islamic boost location-aware via prayer-calculator, session signals in Redis, trending 24h window with decay, HNSW vector index.
+**Backend:** NestJS 10, 79 modules, 82 controllers, 86 services, 193 Prisma models, 55 enums (4,700+ lines). 286 test suites, 4,740 tests, 100% pass, 0 TypeScript errors. Server starts clean.
+**Mobile:** React Native Expo SDK 52, 212 screens, 76 components, 23 hooks, 33 API services. 0 mobile TypeScript errors. 210/212 screens accessible.
+**i18n:** 8 languages (en, ar, tr, ur, bn, fr, id, ms), 3,500+ keys each, ~400 keys added in session 2.
+**Real-time:** Socket.io on 4 screens (chat, calls, Quran rooms, conversation list) with Clerk JWT auth, reconnection, token refresh. Redis pub/sub for notification delivery to socket rooms.
+**Algorithm:** 3-stage ranking (pgvector KNN → weighted scoring → diversity reranking), k-means multi-cluster interest vectors (2-3 centroids), 15% exploration slots, hashtag diversity reranking, Islamic boost location-aware via prayer-calculator, session signals in Redis, trending 24h window with 12h decay, HNSW vector index, cursor-based keyset pagination.
+**Payments:** Stripe PaymentIntent wired on donate, gift-shop, waqf, orders, send-tip. 4 cashout wallet endpoints (balance, payment-methods, cashout, payout-history). Apple IAP not installed.
 **All credentials configured** (31/33 — only Meilisearch + APP_URL production). R2, Cloudflare Stream, Sentry, Resend, Stripe, TURN, Gemini, Whisper, Claude all SET.
-**Schema:** All 41 String→Enum conversions complete. 5 dangling FK relations fixed. StarredMessage join table. 15+ new indexes.
+**Schema:** 55 Prisma enums (all 41 String→Enum complete). 7/8 dangling FK relations fixed (1 unfixable — polymorphic). StarredMessage + WaqfDonation + VideoCommentLike + ScholarQuestionVote + HalalVerifyVote join tables. 25+ indexes. previousUsername for redirect. Privacy settings server-side. TOTP encryption + backup salt fields.
+**RTL:** Complete — ~430 margin/padding/position replacements across 134 files.
+**Security:** Pre-save moderation on all content types, AI prompt XML hardening, device fingerprint (5/device), nsfwjs client-side service ready, file size limits on uploads.
 **Database synced** — `prisma db push` confirmed in sync. Production uses `prisma migrate deploy`.
-**CI/CD:** GitHub Actions — lint-typecheck PASS, test-api PASS, build-api PASS. build-mobile FAIL (metro version conflict — needs root metro dep removed).
-**957 commits**, 8 waves of fixes in session 2 (68 agents, ~350 files changed).
+**CI/CD:** GitHub Actions — lint-typecheck PASS, test-api PASS, build-api PASS. build-mobile needs `npm install --legacy-peer-deps` (metro removed from root, vuln overrides added).
+**970 commits**, 11 waves in session 2 (85 agents, ~400+ files changed).
 
 ## Key Documentation
 - `docs/DEPLOYMENT.md` — Production deployment guide (Railway, Neon, Cloudflare, Clerk, Stripe)
