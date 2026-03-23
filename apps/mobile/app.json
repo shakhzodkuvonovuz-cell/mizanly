@@ -107,7 +107,8 @@
       "expo-web-browser",
       "expo-screen-orientation",
       "expo-screen-capture",
-      "./plugins/ffmpeg-kit/app.plugin"
+      "./plugins/ffmpeg-kit/app.plugin",
+      "./plugins/giphy-sdk/app.plugin"
     ],
     "experiments": {
       "typedRoutes": true

@@ -20,6 +20,7 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setupDeepLinkListeners } from '@/utils/deepLinking';
 import { api } from '@/services/api';
+import { initGiphy } from '@/services/giphyService';
 import { widgetData } from '@/services/widgetData';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -247,6 +248,11 @@ function AuthGuard() {
       setSentryUser(user.id, user.username ?? undefined);
     }
   }, [isSignedIn, user?.id, user?.username]);
+
+  // Initialize GIPHY SDK (once, on mount)
+  useEffect(() => {
+    initGiphy();
+  }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
