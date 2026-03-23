@@ -46,7 +46,7 @@ export default function VideoEditorScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
-  const params = useLocalSearchParams<{ videoUri?: string }>();
+  const params = useLocalSearchParams<{ videoUri?: string; uri?: string; returnTo?: string }>();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
   const videoRef = useRef<Video>(null);
@@ -67,7 +67,7 @@ export default function VideoEditorScreen() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
-  const videoUri = params.videoUri || null;
+  const videoUri = params.videoUri || params.uri || null;
 
   // Timeline width reference for gesture calculations
   const timelineWidth = useRef(0);
@@ -302,8 +302,12 @@ export default function VideoEditorScreen() {
         setExportProgress(100);
         exportProgressAnim.value = withTiming(100, { duration: 200 });
         showToast({ message: t('videoEditor.exportComplete'), variant: 'success' });
-        // Navigate back with the exported URI so the caller can use it
-        router.back();
+        // Pass exported URI back — if returnTo is specified, navigate there with the URI
+        if (params.returnTo) {
+          router.replace({ pathname: params.returnTo as any, params: { videoUri: result.outputUri, edited: 'true' } });
+        } else {
+          router.back();
+        }
       } else if (result.cancelled) {
         showToast({ message: t('videoEditor.exportCancelled'), variant: 'info' });
       } else {
@@ -345,7 +349,21 @@ export default function VideoEditorScreen() {
                 />
               </View>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.splitAtPlayhead')} style={styles.splitButton}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('videoEditor.splitAtPlayhead')}
+              style={styles.splitButton}
+              onPress={() => {
+                // Split at current playhead: set endTime to current position
+                if (currentTime > startTime + 1 && currentTime < endTime - 1) {
+                  haptic.tick();
+                  setEndTime(currentTime);
+                  showToast({ message: t('videoEditor.splitDone'), variant: 'success' });
+                } else {
+                  showToast({ message: t('videoEditor.splitTooShort'), variant: 'info' });
+                }
+              }}
+            >
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.splitButtonGradient}
@@ -354,7 +372,17 @@ export default function VideoEditorScreen() {
                 <Text style={styles.splitButtonText}>{t('videoEditor.splitAtPlayhead')}</Text>
               </LinearGradient>
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.deleteSelectedSegment')} style={styles.deleteButton}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('videoEditor.deleteSelectedSegment')}
+              style={styles.deleteButton}
+              onPress={() => {
+                // Reset trim to full duration
+                haptic.delete();
+                setStartTime(0);
+                setEndTime(totalDuration);
+              }}
+            >
               <View style={styles.deleteButtonInner}>
                 <Icon name="trash" size="sm" color={colors.error} />
                 <Text style={styles.deleteButtonText}>{t('videoEditor.deleteSelectedSegment')}</Text>
@@ -431,15 +459,19 @@ export default function VideoEditorScreen() {
         return (
           <View style={styles.toolPanel}>
             <Text style={styles.toolPanelTitle}>{t('videoEditor.addCaption')}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.addTextOverlay')} style={styles.addTextButton}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                style={styles.addTextButtonGradient}
-              >
-                <Icon name="type" size="sm" color={tc.text.primary} />
-                <Text style={styles.addTextButtonText}>{t('videoEditor.addTextOverlay')}</Text>
-              </LinearGradient>
-            </Pressable>
+            <TextInput
+              style={styles.captionInput}
+              placeholder={t('videoEditor.addTextOverlay')}
+              placeholderTextColor={tc.text.tertiary}
+              value={captionText}
+              onChangeText={setCaptionText}
+              maxLength={200}
+              multiline
+              numberOfLines={3}
+            />
+            {captionText.length > 0 && (
+              <Text style={styles.captionCharCount}>{captionText.length}/200</Text>
+            )}
 
             <Text style={styles.toolSubTitle}>{t('videoEditor.fontStyle')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fontScroll}>
@@ -1173,6 +1205,22 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   filterName: {
     fontSize: fontSize.xs,
     color: colors.text.secondary,
+  },
+  captionInput: {
+    backgroundColor: tc.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    fontSize: fontSize.base,
+    color: tc.text.primary,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: tc.border,
+  },
+  captionCharCount: {
+    fontSize: fontSize.xs,
+    color: tc.text.tertiary,
+    textAlign: 'right',
   },
   addTextButton: {
     borderRadius: radius.md,

@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TextInput,
   ScrollView, Alert, Dimensions, Pressable,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withSequence, withDelay } from 'react-native-reanimated';
@@ -49,6 +49,7 @@ type AutocompleteType = 'hashtag' | 'mention' | null;
 
 export default function CreateReelScreen() {
   const router = useRouter();
+  const routeParams = useLocalSearchParams<{ videoUri?: string; edited?: string }>();
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
@@ -81,6 +82,13 @@ export default function CreateReelScreen() {
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [recordTime, setRecordTime] = useState(0);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Auto-load video from route params (duet/stitch/editor return)
+  useEffect(() => {
+    if (routeParams.videoUri && !video) {
+      setVideo({ uri: routeParams.videoUri, type: 'video', duration: 0 });
+    }
+  }, [routeParams.videoUri, video]);
 
   useEffect(() => {
     if (isRecording) {
@@ -419,6 +427,22 @@ export default function CreateReelScreen() {
                   </Text>
                 </LinearGradient>
               </View>
+
+              {/* Edit video button */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('common.edit')}
+                style={styles.editVideoButton}
+                onPress={() => navigate('/(screens)/video-editor', { videoUri: video.uri, returnTo: '/(screens)/create-reel' })}
+                hitSlop={8}
+              >
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.9)']}
+                  style={styles.editVideoGradient}
+                >
+                  <Icon name="scissors" size="sm" color="#fff" />
+                </LinearGradient>
+              </Pressable>
 
               <Pressable
                 accessibilityRole="button"
@@ -852,6 +876,26 @@ const styles = StyleSheet.create({
     height: VIDEO_PREVIEW_HEIGHT,
     borderRadius: radius.md,
     backgroundColor: colors.dark.surface,
+  },
+  editVideoButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    end: spacing.sm + 40,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: radius.full,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    overflow: 'hidden',
+  },
+  editVideoGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   removeVideoButton: {
     position: 'absolute',

@@ -444,7 +444,7 @@ export default function CreateVideoScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('common.edit')}
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: tc.border }}
-                onPress={() => navigate('/(screens)/video-editor', { uri: video.uri })}
+                onPress={() => navigate('/(screens)/video-editor', { videoUri: video.uri, returnTo: '/(screens)/create-video' })}
               >
                 <Icon name="video" size="sm" color={colors.gold} />
                 <Text style={{ color: tc.text.primary, fontSize: fontSize.sm }}>{t('common.edit')}</Text>
