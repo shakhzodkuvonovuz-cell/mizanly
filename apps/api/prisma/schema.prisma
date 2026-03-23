@@ -651,8 +651,9 @@ model User {
   id             String  @id @default(cuid())
   clerkId        String  @unique
   email          String  @unique
-  username       String  @unique
-  displayName    String
+  username         String  @unique
+  previousUsername String?
+  displayName      String
   bio            String  @default("") @db.VarChar(500)
   avatarUrl      String?
   avatarBlurhash String?
@@ -1121,6 +1122,7 @@ model Reel {
   notifications   Notification[]
   duets           Reel[]            @relation("DuetOf")
   stitches        Reel[]            @relation("StitchOf")
+  templates       ReelTemplate[]    @relation("ReelTemplateSource")
   seriesEpisodes  SeriesEpisode[]   @relation("seriesEpisodeReels")
 
   @@index([userId, createdAt(sort: Desc)])
@@ -1598,6 +1600,7 @@ model Message {
   deliveredAt     DateTime?
   isForwarded     Boolean           @default(false)
   forwardedFromId String?
+  forwardedFrom   Message?          @relation("MessageForwardedFrom", fields: [forwardedFromId], references: [id], onDelete: SetNull)
   forwardCount    Int               @default(0)
   editableUntil   DateTime?
   expiresAt       DateTime?
@@ -1624,6 +1627,7 @@ model Message {
   reactions       MessageReaction[]
   reportedReports Report[]          @relation("reportedMessages")
   starredRecords  StarredMessage[]  @relation("starredMessages")
+  forwardedCopies Message[]         @relation("MessageForwardedFrom")
 
   @@index([conversationId, createdAt(sort: Desc)])
   @@index([senderId])
@@ -2449,6 +2453,9 @@ model UserSettings {
   messagePermission      String   @default("everyone")
   mentionPermission      String   @default("everyone")
   activityStatus         Boolean  @default(true)
+  readReceipts           Boolean  @default(true)
+  typingIndicators       Boolean  @default(true)
+  lastSeenVisibility     String   @default("everyone") // "everyone" | "contacts" | "nobody"
   // Notifications
   notifyLikes            Boolean  @default(true)
   notifyComments         Boolean  @default(true)
@@ -2741,6 +2748,7 @@ model ReelTemplate {
   id           String   @id @default(cuid())
   name         String   @db.VarChar(100)
   sourceReelId String
+  sourceReel   Reel     @relation("ReelTemplateSource", fields: [sourceReelId], references: [id], onDelete: Cascade)
   userId       String
   user         User     @relation("reelTemplates", fields: [userId], references: [id], onDelete: Cascade)
   segments     Json
@@ -3823,10 +3831,12 @@ model FatwaQuestion {
   language   String      @default("en")
   status     FatwaStatus @default(FATWA_PENDING)
   answerId   String?
+  answer     FatwaQuestion? @relation("FatwaAnswer", fields: [answerId], references: [id], onDelete: SetNull)
   answeredBy String?
   answeredAt DateTime?
   createdAt  DateTime  @default(now())
-  asker      User      @relation("FatwaAsker", fields: [askerId], references: [id], onDelete: Cascade)
+  asker          User            @relation("FatwaAsker", fields: [askerId], references: [id], onDelete: Cascade)
+  answeredQuestions FatwaQuestion[] @relation("FatwaAnswer")
 
   @@index([status, madhab])
   @@index([askerId])

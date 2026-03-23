@@ -8,6 +8,12 @@ import { ApiProperty } from '@nestjs/swagger';
 const MEDIA_URL_PATTERN = /^https:\/\/(.*\.r2\.cloudflarestorage\.com|.*\.r2\.dev|img\.clerk\.com|images\.clerk\.dev|pub-[a-z0-9]+\.r2\.dev)\//;
 
 export class UpdateProfileDto {
+  @ApiProperty({ required: false, maxLength: 30, description: 'New username (alphanumeric, underscores, periods — 3-30 chars)' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-zA-Z0-9_.]{3,30}$/, { message: 'Username must be 3-30 characters: letters, numbers, underscores, or periods' })
+  username?: string;
+
   @ApiProperty({ required: false, maxLength: 50 })
   @IsOptional()
   @IsString()

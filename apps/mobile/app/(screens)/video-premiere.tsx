@@ -71,7 +71,7 @@ export default function VideoPremiereScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('premiere.schedule')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back', 'Go back') }}
         />
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           {/* Video info */}
@@ -90,6 +90,7 @@ export default function VideoPremiereScreen() {
               placeholder="2026-03-25"
               placeholderTextColor={tc.text.tertiary}
               keyboardType={Platform.OS === 'ios' ? 'default' : 'default'}
+              accessibilityLabel={t('premiere.dateLabel')}
             />
           </Animated.View>
 
@@ -102,6 +103,7 @@ export default function VideoPremiereScreen() {
               onChangeText={setTime}
               placeholder="18:00"
               placeholderTextColor={tc.text.tertiary}
+              accessibilityLabel={t('premiere.timeLabel')}
             />
           </Animated.View>
 
@@ -134,9 +136,11 @@ export default function VideoPremiereScreen() {
               <Text style={styles.toggleHint}>{t('premiere.enableChatHint')}</Text>
             </View>
             <Pressable
-              accessibilityRole="button"
+              accessibilityRole="switch"
               accessibilityLabel={t('premiere.enableChat')}
+              accessibilityState={{ checked: chatEnabled }}
               onPress={() => { setChatEnabled(!chatEnabled); haptic.tick(); }}
+              hitSlop={8}
               style={[styles.toggleBtn, chatEnabled && styles.toggleBtnActive]}
             >
               <View style={[styles.toggleKnob, chatEnabled && styles.toggleKnobActive]} />

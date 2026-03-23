@@ -16,6 +16,12 @@ interface UpdateTierData {
   isActive?: boolean;
 }
 
+export interface CashoutRequestDto {
+  amount: number; // diamonds to cash out
+  payoutSpeed: 'instant' | 'standard';
+  paymentMethodId: string;
+}
+
 // Single source of truth for platform fee rates
 const PLATFORM_FEE_RATE = 0.10; // 10% platform fee on tips
 const MIN_TIP_AMOUNT = 0.50; // Minimum $0.50 (Stripe minimum for card payments)
@@ -25,6 +31,8 @@ const MAX_TIP_AMOUNT = 10000;
 // 1 diamond = $0.007 USD (100 diamonds = $0.70)
 // Must be kept in sync with gifts.service.ts DIAMOND_TO_USD
 const DIAMOND_TO_USD = 0.007;
+const DIAMONDS_PER_USD_CENT = 100 / 70;
+const MIN_CASHOUT_DIAMONDS = 100;
 
 // Valid tier levels
 const VALID_TIER_LEVELS = ['bronze', 'silver', 'gold', 'platinum'] as const;
@@ -399,6 +407,146 @@ export class MonetizationService {
     const items = hasMore ? subscriptions.slice(0, limit) : subscriptions;
     return {
       data: items,
+      meta: {
+        cursor: hasMore ? items[items.length - 1].id : null,
+        hasMore,
+      },
+    };
+  }
+
+  // ── Wallet Endpoints ──
+  // These endpoints serve the mobile cashout screen (/monetization/wallet/*)
+
+  async getWalletBalance(userId: string) {
+    const balance = await this.prisma.coinBalance.upsert({
+      where: { userId },
+      update: {},
+      create: { userId, coins: 0, diamonds: 0 },
+    });
+
+    return {
+      diamonds: balance.diamonds,
+      usdEquivalent: Math.round(balance.diamonds * DIAMOND_TO_USD * 100) / 100,
+      diamondToUsdRate: DIAMOND_TO_USD,
+    };
+  }
+
+  async getPaymentMethods(userId: string) {
+    // Payment methods are managed via Stripe Connect
+    // For now, check if user has a Stripe Connect account and return
+    // a placeholder — real payment method fetching requires Stripe API calls
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { stripeConnectAccountId: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // If user has Stripe Connect set up, return it as a payment method
+    // In production, this would call Stripe API to list external accounts
+    if (user.stripeConnectAccountId) {
+      return [
+        {
+          id: user.stripeConnectAccountId,
+          type: 'stripe' as const,
+          label: 'Stripe Account',
+          lastFour: '****',
+          isDefault: true,
+        },
+      ];
+    }
+
+    return [];
+  }
+
+  async requestCashout(userId: string, dto: CashoutRequestDto) {
+    const { amount: diamonds, payoutSpeed, paymentMethodId } = dto;
+
+    if (!Number.isInteger(diamonds) || diamonds <= 0) {
+      throw new BadRequestException('Diamonds must be a positive integer');
+    }
+
+    if (diamonds < MIN_CASHOUT_DIAMONDS) {
+      throw new BadRequestException(
+        `Minimum cashout is ${MIN_CASHOUT_DIAMONDS} diamonds`,
+      );
+    }
+
+    if (!paymentMethodId || !paymentMethodId.trim()) {
+      throw new BadRequestException('Payment method is required');
+    }
+
+    if (payoutSpeed !== 'instant' && payoutSpeed !== 'standard') {
+      throw new BadRequestException('Payout speed must be "instant" or "standard"');
+    }
+
+    const balance = await this.prisma.coinBalance.findUnique({
+      where: { userId },
+    });
+    if (!balance || balance.diamonds < diamonds) {
+      throw new BadRequestException('Insufficient diamonds');
+    }
+
+    // Convert diamonds to USD: 100 diamonds = $0.70
+    const usdCents = Math.floor(diamonds / DIAMONDS_PER_USD_CENT);
+    const usdAmount = usdCents / 100;
+
+    // Use conditional update to prevent race condition (atomic check + decrement)
+    const updated = await this.prisma.coinBalance.updateMany({
+      where: { userId, diamonds: { gte: diamonds } },
+      data: { diamonds: { decrement: diamonds } },
+    });
+
+    if (updated.count === 0) {
+      throw new BadRequestException('Insufficient diamonds');
+    }
+
+    // Record the cashout transaction
+    await this.prisma.coinTransaction.create({
+      data: {
+        userId,
+        type: 'CASHOUT',
+        amount: -diamonds,
+        description: `Cashed out ${diamonds} diamonds for $${usdAmount.toFixed(2)} (${payoutSpeed})`,
+      },
+    });
+
+    this.logger.log(`User ${userId} cashed out ${diamonds} diamonds ($${usdAmount.toFixed(2)}, ${payoutSpeed})`);
+
+    return { success: true };
+  }
+
+  async getPayoutHistory(userId: string, cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(limit, 1), 50);
+
+    const transactions = await this.prisma.coinTransaction.findMany({
+      where: {
+        userId,
+        type: 'CASHOUT',
+      },
+      take: limit + 1,
+      ...(cursor
+        ? {
+            cursor: { id: cursor },
+            skip: 1,
+          }
+        : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = transactions.length > limit;
+    const items = hasMore ? transactions.slice(0, limit) : transactions;
+
+    return {
+      data: items.map((tx) => ({
+        id: tx.id,
+        amount: Math.abs(tx.amount) * DIAMOND_TO_USD,
+        currency: tx.currency,
+        status: 'completed' as const,
+        createdAt: tx.createdAt.toISOString(),
+      })),
       meta: {
         cursor: hasMore ? items[items.length - 1].id : null,
         hasMore,

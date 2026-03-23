@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
   Logger,
   Inject,
 } from '@nestjs/common';
@@ -81,17 +82,51 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const sanitizedData = { ...dto };
-    if (sanitizedData.displayName) sanitizedData.displayName = sanitizeText(sanitizedData.displayName);
-    if (sanitizedData.bio) sanitizedData.bio = sanitizeText(sanitizedData.bio);
-    if (sanitizedData.location) sanitizedData.location = sanitizeText(sanitizedData.location);
-    if (sanitizedData.website) sanitizedData.website = sanitizeText(sanitizedData.website);
+    const sanitizedData: Record<string, unknown> = { ...dto };
+    if (sanitizedData.displayName) sanitizedData.displayName = sanitizeText(sanitizedData.displayName as string);
+    if (sanitizedData.bio) sanitizedData.bio = sanitizeText(sanitizedData.bio as string);
+    if (sanitizedData.location) sanitizedData.location = sanitizeText(sanitizedData.location as string);
+    if (sanitizedData.website) sanitizedData.website = sanitizeText(sanitizedData.website as string);
+
+    // Handle username change: save old username for redirect lookup
+    let oldUsername: string | null = null;
+    if (sanitizedData.username) {
+      const currentUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true },
+      });
+      if (!currentUser) throw new NotFoundException('User not found');
+
+      const newUsername = (sanitizedData.username as string).toLowerCase();
+
+      if (newUsername !== currentUser.username) {
+        // Check if new username is already taken
+        const existing = await this.prisma.user.findUnique({
+          where: { username: newUsername },
+          select: { id: true },
+        });
+        if (existing) throw new ConflictException('Username already taken');
+
+        // Store old username for redirect, then apply new one
+        oldUsername = currentUser.username;
+        sanitizedData.previousUsername = currentUser.username;
+        sanitizedData.username = newUsername;
+      } else {
+        // Same username, no change needed — remove from update data
+        delete sanitizedData.username;
+      }
+    }
 
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data: sanitizedData,
       select: PUBLIC_USER_FIELDS,
     });
+
+    // Invalidate cache for both old and new usernames
+    if (oldUsername) {
+      await this.redis.del(`user:${oldUsername}`);
+    }
     await this.redis.del(`user:${updated.username}`);
     return updated;
   }
@@ -284,6 +319,7 @@ export class UsersService {
     // Try cache first
     const cached = await this.redis.get(`user:${username}`);
     let user;
+    let redirectedFromPreviousUsername = false;
     if (cached) {
       user = JSON.parse(cached);
     } else {
@@ -295,8 +331,25 @@ export class UsersService {
           channel: { select: CHANNEL_SELECT },
         },
       });
+
+      // Username not found — check if someone had this as their previous username (redirect)
+      if (!user) {
+        const redirectUser = await this.prisma.user.findFirst({
+          where: { previousUsername: username },
+          select: {
+            ...PUBLIC_USER_FIELDS,
+            profileLinks: { orderBy: { position: 'asc' } },
+            channel: { select: CHANNEL_SELECT },
+          },
+        });
+        if (redirectUser) {
+          user = redirectUser;
+          redirectedFromPreviousUsername = true;
+        }
+      }
+
       if (!user) throw new NotFoundException('User not found');
-      // Cache for 5 minutes
+      // Cache for 5 minutes (cache under the looked-up username)
       await this.redis.setex(`user:${username}`, 300, JSON.stringify(user));
     }
 
@@ -344,7 +397,12 @@ export class UsersService {
       }
     }
 
-    return { ...user, isFollowing, followRequestPending };
+    return {
+      ...user,
+      isFollowing,
+      followRequestPending,
+      ...(redirectedFromPreviousUsername ? { redirectedFrom: username } : {}),
+    };
   }
 
   async getUserPosts(username: string, cursor?: string, viewerId?: string, limit = 20) {

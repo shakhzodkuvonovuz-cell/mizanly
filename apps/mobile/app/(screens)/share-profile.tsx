@@ -72,7 +72,7 @@ export default function ShareProfileScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('screens.share-profile.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={styles.headerSpacer} />
         <View style={styles.skeletonWrap}>
@@ -103,7 +103,7 @@ export default function ShareProfileScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('screens.share-profile.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <EmptyState
           icon="flag"
@@ -121,7 +121,7 @@ export default function ShareProfileScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('screens.share-profile.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={styles.headerSpacer} />
         <EmptyState

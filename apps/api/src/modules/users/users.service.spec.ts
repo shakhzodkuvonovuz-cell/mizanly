@@ -194,10 +194,62 @@ describe('UsersService', () => {
     it('should throw NotFoundException for nonexistent user', async () => {
       redis.get.mockResolvedValue(null);
       prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.findFirst.mockResolvedValue(null);
 
       await expect(service.getProfile('nonexistent')).rejects.toThrow(
         NotFoundException,
       );
+    });
+
+    it('should redirect to user when looking up a previous username', async () => {
+      const redirectedUser = {
+        id: 'user-123',
+        username: 'newname',
+        displayName: 'Test User',
+        bio: '',
+        avatarUrl: null,
+        coverUrl: null,
+        website: null,
+        location: null,
+        isVerified: false,
+        isPrivate: false,
+        followersCount: 10,
+        followingCount: 5,
+        postsCount: 3,
+        role: 'USER',
+        createdAt: new Date(),
+      };
+      redis.get.mockResolvedValue(null);
+      // Username lookup fails — no user with this current username
+      prisma.user.findUnique.mockResolvedValue(null);
+      // But previousUsername lookup succeeds
+      prisma.user.findFirst.mockResolvedValue(redirectedUser);
+
+      const result = await service.getProfile('oldname');
+
+      expect(prisma.user.findFirst).toHaveBeenCalledWith({
+        where: { previousUsername: 'oldname' },
+        select: expect.any(Object),
+      });
+      expect(result.username).toBe('newname');
+      expect(result.redirectedFrom).toBe('oldname');
+      expect(result.isFollowing).toBe(false);
+    });
+
+    it('should not include redirectedFrom when username matches directly', async () => {
+      const mockUser = {
+        id: 'user-123',
+        username: 'directmatch',
+        displayName: 'Test User',
+        isPrivate: false,
+      };
+      redis.get.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+
+      const result = await service.getProfile('directmatch');
+
+      expect(prisma.user.findFirst).not.toHaveBeenCalled();
+      expect(result.redirectedFrom).toBeUndefined();
     });
   });
 
@@ -233,6 +285,93 @@ describe('UsersService', () => {
       });
       expect(redis.del).toHaveBeenCalledWith('user:testuser');
       expect(result).toEqual(updatedUser);
+    });
+
+    it('should save old username as previousUsername when username changes', async () => {
+      const userId = 'user-123';
+      const dto = { username: 'newname' };
+      const currentUser = { username: 'oldname' };
+      const updatedUser = {
+        id: userId,
+        username: 'newname',
+        displayName: 'Test',
+        bio: '',
+        avatarUrl: null,
+        coverUrl: null,
+        website: null,
+        location: null,
+        isVerified: false,
+        isPrivate: false,
+        followersCount: 0,
+        followingCount: 0,
+        postsCount: 0,
+        role: 'USER',
+        createdAt: new Date(),
+      };
+      prisma.user.findUnique
+        .mockResolvedValueOnce(currentUser)   // fetch current user for username check
+        .mockResolvedValueOnce(null);          // check new username not taken
+      prisma.user.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: expect.objectContaining({
+          username: 'newname',
+          previousUsername: 'oldname',
+        }),
+        select: expect.any(Object),
+      });
+      // Both old and new username caches should be invalidated
+      expect(redis.del).toHaveBeenCalledWith('user:oldname');
+      expect(redis.del).toHaveBeenCalledWith('user:newname');
+      expect(result).toEqual(updatedUser);
+    });
+
+    it('should throw ConflictException when new username is already taken', async () => {
+      const userId = 'user-123';
+      const dto = { username: 'taken_name' };
+      const currentUser = { username: 'oldname' };
+      prisma.user.findUnique
+        .mockResolvedValueOnce(currentUser)           // fetch current user
+        .mockResolvedValueOnce({ id: 'other-user' }); // username exists
+
+      await expect(service.updateProfile(userId, dto)).rejects.toThrow('Username already taken');
+    });
+
+    it('should not update username when same as current', async () => {
+      const userId = 'user-123';
+      const dto = { username: 'samename', displayName: 'New Name' };
+      const currentUser = { username: 'samename' };
+      const updatedUser = {
+        id: userId,
+        username: 'samename',
+        displayName: 'New Name',
+        bio: '',
+        avatarUrl: null,
+        coverUrl: null,
+        website: null,
+        location: null,
+        isVerified: false,
+        isPrivate: false,
+        followersCount: 0,
+        followingCount: 0,
+        postsCount: 0,
+        role: 'USER',
+        createdAt: new Date(),
+      };
+      prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+      prisma.user.update.mockResolvedValue(updatedUser);
+
+      await service.updateProfile(userId, dto);
+
+      // Should only pass displayName, not username or previousUsername
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: { displayName: 'New Name' },
+        select: expect.any(Object),
+      });
     });
   });
 

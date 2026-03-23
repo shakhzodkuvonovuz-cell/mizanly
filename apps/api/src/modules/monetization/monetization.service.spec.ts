@@ -34,6 +34,15 @@ describe('MonetizationService', () => {
       count: jest.fn(),
       findMany: jest.fn(),
     },
+    coinBalance: {
+      upsert: jest.fn(),
+      findUnique: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    coinTransaction: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -683,6 +692,237 @@ describe('MonetizationService', () => {
       expect(result.data).toHaveLength(20);
       expect(result.meta.hasMore).toBe(true);
       expect(result.meta.cursor).toBe('sub19');
+    });
+  });
+
+  describe('getWalletBalance', () => {
+    it('should return diamond balance and USD equivalent', async () => {
+      mockPrismaService.coinBalance.upsert.mockResolvedValue({
+        userId: 'user1',
+        coins: 500,
+        diamonds: 1000,
+      });
+
+      const result = await service.getWalletBalance('user1');
+      expect(result.diamonds).toBe(1000);
+      expect(result.usdEquivalent).toBe(7); // 1000 * 0.007 = 7.00
+      expect(result.diamondToUsdRate).toBe(0.007);
+      expect(mockPrismaService.coinBalance.upsert).toHaveBeenCalledWith({
+        where: { userId: 'user1' },
+        update: {},
+        create: { userId: 'user1', coins: 0, diamonds: 0 },
+      });
+    });
+
+    it('should create balance record if none exists (upsert)', async () => {
+      mockPrismaService.coinBalance.upsert.mockResolvedValue({
+        userId: 'new-user',
+        coins: 0,
+        diamonds: 0,
+      });
+
+      const result = await service.getWalletBalance('new-user');
+      expect(result.diamonds).toBe(0);
+      expect(result.usdEquivalent).toBe(0);
+    });
+  });
+
+  describe('getPaymentMethods', () => {
+    it('should return Stripe Connect account as payment method', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        stripeConnectAccountId: 'acct_123',
+      });
+
+      const result = await service.getPaymentMethods('user1');
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        id: 'acct_123',
+        type: 'stripe',
+        label: 'Stripe Account',
+        lastFour: '****',
+        isDefault: true,
+      });
+    });
+
+    it('should return empty array when no Stripe Connect account', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        stripeConnectAccountId: null,
+      });
+
+      const result = await service.getPaymentMethods('user1');
+      expect(result).toEqual([]);
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      await expect(service.getPaymentMethods('missing')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('requestCashout', () => {
+    const validDto = { amount: 200, payoutSpeed: 'standard' as const, paymentMethodId: 'acct_123' };
+
+    it('should deduct diamonds and create transaction', async () => {
+      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 500 });
+      mockPrismaService.coinBalance.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.coinTransaction.create.mockResolvedValue({});
+
+      const result = await service.requestCashout('user1', validDto);
+      expect(result).toEqual({ success: true });
+      expect(mockPrismaService.coinBalance.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user1', diamonds: { gte: 200 } },
+        data: { diamonds: { decrement: 200 } },
+      });
+      expect(mockPrismaService.coinTransaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: 'user1',
+          type: 'CASHOUT',
+          amount: -200,
+        }),
+      });
+    });
+
+    it('should throw for non-integer diamond amount', async () => {
+      await expect(
+        service.requestCashout('user1', { ...validDto, amount: 150.5 }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw for zero diamond amount', async () => {
+      await expect(
+        service.requestCashout('user1', { ...validDto, amount: 0 }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw for negative diamond amount', async () => {
+      await expect(
+        service.requestCashout('user1', { ...validDto, amount: -100 }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw when below minimum cashout (100 diamonds)', async () => {
+      await expect(
+        service.requestCashout('user1', { ...validDto, amount: 50 }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw for empty payment method', async () => {
+      await expect(
+        service.requestCashout('user1', { ...validDto, paymentMethodId: '' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw for invalid payout speed', async () => {
+      await expect(
+        service.requestCashout('user1', { ...validDto, payoutSpeed: 'express' as any }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw when user has no balance record', async () => {
+      mockPrismaService.coinBalance.findUnique.mockResolvedValue(null);
+      await expect(
+        service.requestCashout('user1', validDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw when insufficient diamonds', async () => {
+      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 50 });
+      await expect(
+        service.requestCashout('user1', validDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw on race condition (updateMany returns 0)', async () => {
+      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 500 });
+      mockPrismaService.coinBalance.updateMany.mockResolvedValue({ count: 0 });
+      await expect(
+        service.requestCashout('user1', validDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept instant payout speed', async () => {
+      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 500 });
+      mockPrismaService.coinBalance.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.coinTransaction.create.mockResolvedValue({});
+
+      const result = await service.requestCashout('user1', { ...validDto, payoutSpeed: 'instant' });
+      expect(result).toEqual({ success: true });
+      expect(mockPrismaService.coinTransaction.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          description: expect.stringContaining('instant'),
+        }),
+      });
+    });
+
+    it('should accept exact minimum (100 diamonds)', async () => {
+      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 100 });
+      mockPrismaService.coinBalance.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.coinTransaction.create.mockResolvedValue({});
+
+      const result = await service.requestCashout('user1', { ...validDto, amount: 100 });
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe('getPayoutHistory', () => {
+    it('should return paginated cashout transactions', async () => {
+      const mockTxs = [
+        { id: 'tx1', amount: -200, currency: 'USD', createdAt: new Date('2026-01-15') },
+        { id: 'tx2', amount: -500, currency: 'USD', createdAt: new Date('2026-01-10') },
+      ];
+      mockPrismaService.coinTransaction.findMany.mockResolvedValue(mockTxs);
+
+      const result = await service.getPayoutHistory('user1');
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].id).toBe('tx1');
+      expect(result.data[0].amount).toBe(200 * 0.007); // abs(amount) * DIAMOND_TO_USD
+      expect(result.data[0].status).toBe('completed');
+      expect(result.meta.hasMore).toBe(false);
+      expect(mockPrismaService.coinTransaction.findMany).toHaveBeenCalledWith({
+        where: { userId: 'user1', type: 'CASHOUT' },
+        take: 21,
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should handle cursor pagination', async () => {
+      const mockTxs = new Array(22).fill(null).map((_, i) => ({
+        id: `tx${i}`,
+        amount: -100,
+        currency: 'USD',
+        createdAt: new Date(),
+      }));
+      mockPrismaService.coinTransaction.findMany.mockResolvedValue(mockTxs);
+
+      const result = await service.getPayoutHistory('user1', undefined, 20);
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('tx19');
+    });
+
+    it('should return empty array when no cashouts', async () => {
+      mockPrismaService.coinTransaction.findMany.mockResolvedValue([]);
+      const result = await service.getPayoutHistory('user1');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should clamp limit to valid range', async () => {
+      mockPrismaService.coinTransaction.findMany.mockResolvedValue([]);
+
+      // limit 0 should become 1
+      await service.getPayoutHistory('user1', undefined, 0);
+      expect(mockPrismaService.coinTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 2 }), // 1 + 1
+      );
+
+      jest.clearAllMocks();
+
+      // limit 100 should become 50
+      await service.getPayoutHistory('user1', undefined, 100);
+      expect(mockPrismaService.coinTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 51 }), // 50 + 1
+      );
     });
   });
 });

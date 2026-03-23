@@ -93,6 +93,70 @@ describe('SettingsService', () => {
 
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
+
+    it('should update readReceipts setting', async () => {
+      const userId = 'user-123';
+      const dto = { readReceipts: false };
+      const mockSettings = { userId, readReceipts: false };
+      prisma.userSettings.upsert.mockResolvedValue(mockSettings);
+
+      const result = await service.updatePrivacy(userId, dto);
+
+      expect(prisma.userSettings.upsert).toHaveBeenCalledWith({
+        where: { userId },
+        create: { userId, readReceipts: false },
+        update: { readReceipts: false },
+      });
+      expect(result).toEqual(mockSettings);
+    });
+
+    it('should update typingIndicators setting', async () => {
+      const userId = 'user-123';
+      const dto = { typingIndicators: false };
+      const mockSettings = { userId, typingIndicators: false };
+      prisma.userSettings.upsert.mockResolvedValue(mockSettings);
+
+      const result = await service.updatePrivacy(userId, dto);
+
+      expect(prisma.userSettings.upsert).toHaveBeenCalledWith({
+        where: { userId },
+        create: { userId, typingIndicators: false },
+        update: { typingIndicators: false },
+      });
+      expect(result).toEqual(mockSettings);
+    });
+
+    it('should update lastSeenVisibility setting', async () => {
+      const userId = 'user-123';
+      const dto = { lastSeenVisibility: 'nobody' };
+      const mockSettings = { userId, lastSeenVisibility: 'nobody' };
+      prisma.userSettings.upsert.mockResolvedValue(mockSettings);
+
+      const result = await service.updatePrivacy(userId, dto);
+
+      expect(prisma.userSettings.upsert).toHaveBeenCalledWith({
+        where: { userId },
+        create: { userId, lastSeenVisibility: 'nobody' },
+        update: { lastSeenVisibility: 'nobody' },
+      });
+      expect(result).toEqual(mockSettings);
+    });
+
+    it('should update all status privacy settings at once', async () => {
+      const userId = 'user-123';
+      const dto = { readReceipts: false, typingIndicators: false, lastSeenVisibility: 'contacts' as const };
+      const mockSettings = { userId, ...dto };
+      prisma.userSettings.upsert.mockResolvedValue(mockSettings);
+
+      const result = await service.updatePrivacy(userId, dto);
+
+      expect(prisma.userSettings.upsert).toHaveBeenCalledWith({
+        where: { userId },
+        create: { userId, readReceipts: false, typingIndicators: false, lastSeenVisibility: 'contacts' },
+        update: { readReceipts: false, typingIndicators: false, lastSeenVisibility: 'contacts' },
+      });
+      expect(result).toEqual(mockSettings);
+    });
   });
 
   describe('updateNotifications', () => {

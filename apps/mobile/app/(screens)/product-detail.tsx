@@ -298,6 +298,7 @@ function ProductDetailContent() {
             style={styles.sellerInner}
             onPress={() => navigate(`/(screens)/profile/${product.seller.username}`)}
             accessibilityRole="button"
+            accessibilityLabel={`View ${product.seller.displayName}'s profile`}
           >
             <Avatar
               uri={product.seller.avatarUrl}
@@ -376,7 +377,11 @@ function ProductDetailContent() {
             </Text>
           )}
           {reviews.length > 3 && (
-            <Pressable style={styles.viewAllBtn}>
+            <Pressable
+              style={styles.viewAllBtn}
+              accessibilityRole="button"
+              accessibilityLabel={t('product.viewAllReviews', 'View All Reviews')}
+            >
               <Text style={styles.viewAllText}>
                 {t('product.viewAllReviews', 'View All Reviews')}
               </Text>
@@ -402,6 +407,7 @@ function ProductDetailContent() {
                   style={styles.relatedCard}
                   onPress={() => handleRelatedPress(item.id)}
                   accessibilityRole="button"
+                  accessibilityLabel={`${item.title}, $${(item.price / 100).toFixed(2)}`}
                 >
                   {item.imageUrls?.[0] ? (
                     <ProgressiveImage

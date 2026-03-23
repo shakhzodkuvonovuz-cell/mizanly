@@ -170,7 +170,7 @@ npm install expo-store-review --legacy-peer-deps
 21. Green screen ML segmentation — needs TFLite model
 
 **Schema (4 — risky migrations, defer post-launch):**
-22. P1-DANGLING: 8 FK fields lack @relation (sourceReelId, commentId, answeredBy, answerId, completedBy, forwardedFromId ×2, targetChannelId)
+22. P1-DANGLING: 7/8 fixed (Wave 11). 1 unfixable: `VideoReply.commentId` is a polymorphic FK (points to Comment OR ReelComment based on `commentType` enum) — Prisma doesn't support polymorphic relations. Must resolve at application layer.
 23. P1-FKARRAY: 3 String[] arrays should be join tables
 24. P2-001: Mixed cuid/uuid strategy (94 cuid + 61 uuid) — leave as-is
 25. C-02: Dual balance system (CoinBalance table + User.coinBalance coexist)

@@ -132,7 +132,7 @@ export default function SoundScreen() {
   const renderGridItem = useCallback(({ item, index }: { item: Reel; index: number }) => {
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)} style={styles.gridItem as ViewStyle}>
-        <Pressable accessibilityRole="button" onPress={() => handleReelPress(item)}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${t('screens.sound.reels', 'Reel')}, ${formatNumber(item.viewsCount)} ${t('screens.sound.plays', 'views')}`} onPress={() => handleReelPress(item)}>
           <ExpoImage
             source={{ uri: item.thumbnailUrl || item.videoUrl }}
             style={styles.thumbnail as ImageStyle}
