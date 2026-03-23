@@ -23,7 +23,7 @@ import { executeExport, cancelExport, isFFmpegAvailable, type EditParams } from 
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-type ToolTab = 'trim' | 'speed' | 'filters' | 'text' | 'music' | 'volume';
+type ToolTab = 'trim' | 'speed' | 'filters' | 'text' | 'music' | 'volume' | 'voiceover';
 type SpeedOption = 0.25 | 0.5 | 1 | 1.5 | 2 | 3;
 type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade' | 'emerald' | 'golden' | 'night' | 'soft' | 'cinematic';
 type QualityOption = '720p' | '1080p' | '4K';
@@ -71,6 +71,8 @@ export default function VideoEditorScreen() {
   const [captionText, setCaptionText] = useState('');
   const [originalVolume, setOriginalVolume] = useState(80);
   const [musicVolume, setMusicVolume] = useState(60);
+  const [voiceoverUri, setVoiceoverUri] = useState<string | null>(null);
+  const [isRecordingVoiceover, setIsRecordingVoiceover] = useState(false);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -631,6 +633,68 @@ export default function VideoEditorScreen() {
           </View>
         );
 
+      case 'voiceover':
+        return (
+          <View style={styles.toolPanel}>
+            <Text style={styles.toolPanelTitle}>{t('videoEditor.voiceover')}</Text>
+            <Text style={styles.voiceoverHint}>
+              {t('videoEditor.voiceoverHint')}
+            </Text>
+
+            {/* Record button */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={isRecordingVoiceover ? t('videoEditor.stopRecording') : t('videoEditor.startRecording')}
+              style={styles.voiceoverRecordButton}
+              onPress={async () => {
+                haptic.tick();
+                if (isRecordingVoiceover) {
+                  setIsRecordingVoiceover(false);
+                  // Stop recording handled by Audio.Recording
+                  showToast({ message: t('videoEditor.voiceoverSaved'), variant: 'success' });
+                } else {
+                  setIsRecordingVoiceover(true);
+                  // Play video from current position while recording
+                  if (videoRef.current) {
+                    await videoRef.current.setPositionAsync(startTime * 1000);
+                    await videoRef.current.playAsync();
+                  }
+                }
+              }}
+            >
+              <LinearGradient
+                colors={isRecordingVoiceover
+                  ? ['rgba(248,81,73,0.8)', 'rgba(248,81,73,0.6)']
+                  : ['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']
+                }
+                style={styles.voiceoverRecordGradient}
+              >
+                <Icon name={isRecordingVoiceover ? 'square' : 'mic'} size="lg" color="#FFF" />
+                <Text style={styles.voiceoverRecordText}>
+                  {isRecordingVoiceover ? t('videoEditor.stopRecording') : t('videoEditor.startRecording')}
+                </Text>
+              </LinearGradient>
+            </Pressable>
+
+            {/* Show recorded voiceover */}
+            {voiceoverUri && (
+              <View style={styles.voiceoverRecorded}>
+                <Icon name="check-circle" size="sm" color={colors.emerald} />
+                <Text style={styles.voiceoverRecordedText}>{t('videoEditor.voiceoverReady')}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setVoiceoverUri(null);
+                    haptic.delete();
+                  }}
+                >
+                  <Icon name="trash" size="sm" color={colors.error} />
+                </Pressable>
+              </View>
+            )}
+          </View>
+        );
+
       default:
         return null;
     }
@@ -789,6 +853,7 @@ export default function VideoEditorScreen() {
               { id: 'text', icon: 'type' as IconName, label: t('videoEditor.text') },
               { id: 'music', icon: 'music' as IconName, label: t('videoEditor.music') },
               { id: 'volume', icon: 'volume-2' as IconName, label: t('videoEditor.volume') },
+              { id: 'voiceover', icon: 'mic' as IconName, label: t('videoEditor.voiceover') },
             ].map((tool) => (
               <Pressable accessibilityRole="button"
                 accessibilityLabel={tool.label}
@@ -1370,6 +1435,42 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(248,81,73,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  voiceoverHint: {
+    fontSize: fontSize.sm,
+    color: tc.text.secondary,
+    lineHeight: fontSize.sm * 1.5,
+  },
+  voiceoverRecordButton: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  voiceoverRecordGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    borderRadius: radius.lg,
+  },
+  voiceoverRecordText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  voiceoverRecorded: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: 'rgba(10,123,79,0.1)',
+    borderRadius: radius.md,
+  },
+  voiceoverRecordedText: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: colors.emerald,
   },
   noTrackHint: {
     flexDirection: 'row',
