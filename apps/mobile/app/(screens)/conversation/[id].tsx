@@ -391,6 +391,7 @@ const MessageBubble = memo(function MessageBubble({
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
   const [isReacting, setIsReacting] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
@@ -754,7 +755,7 @@ export default function ConversationScreen() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [slideOffset, setSlideOffset] = useState(0);
   const [cancelled, setCancelled] = useState(false);
-  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingCounterRef = useRef(0);
   // Context menu
   const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);

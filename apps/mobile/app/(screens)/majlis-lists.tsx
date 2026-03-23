@@ -55,7 +55,7 @@ export default function MajlisListsScreen() {
     },
     onError: () => {
       haptic.error();
-      showToast(t('screens.majlis-lists.errorCreate'), 'error');
+      showToast({ message: t('screens.majlis-lists.errorCreate'), variant: 'error' });
     },
   });
 
@@ -67,7 +67,7 @@ export default function MajlisListsScreen() {
     },
     onError: () => {
       haptic.error();
-      showToast(t('screens.majlis-lists.errorDelete'), 'error');
+      showToast({ message: t('screens.majlis-lists.errorDelete'), variant: 'error' });
     },
   });
 
@@ -80,7 +80,7 @@ export default function MajlisListsScreen() {
 
   const handleCreate = () => {
     if (!newName.trim()) {
-      showToast(t('screens.majlis-lists.requiredName'), 'error');
+      showToast({ message: t('screens.majlis-lists.requiredName'), variant: 'error' });
       return;
     }
     createMutation.mutate({ name: newName.trim(), description: newDesc.trim() || undefined, isPublic });

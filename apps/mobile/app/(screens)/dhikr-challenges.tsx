@@ -87,7 +87,7 @@ function ChallengeCard({
           <View style={styles.participantBadge}>
             <Icon name="users" size="xs" color={tc.text.tertiary} />
             <Text style={[styles.participantText, { color: tc.text.tertiary }]}>
-              {t('dhikr.participants', { count: formatCount(challenge.participantCount) })}
+              {t('dhikr.participants', { count: challenge.participantCount })}
             </Text>
           </View>
         </View>

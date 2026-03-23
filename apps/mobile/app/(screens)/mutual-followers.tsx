@@ -32,6 +32,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
   index: number;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <Pressable accessibilityRole="button" onPress={onPress}>

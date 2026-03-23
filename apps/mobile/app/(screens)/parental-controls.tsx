@@ -324,7 +324,7 @@ function ChildCard({
           accessibilityLabel={control.child?.displayName ?? control.child?.username ?? ''}
           accessibilityState={{ expanded }}
           style={[styles.childHeader, { flexDirection: rtlFlexRow(isRTL) }]}
-          onPress={() => { haptic.selection(); setExpanded(!expanded); }}
+          onPress={() => { haptic.tick(); setExpanded(!expanded); }}
 
         >
           <Avatar

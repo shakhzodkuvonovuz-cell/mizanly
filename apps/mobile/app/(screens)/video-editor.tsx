@@ -172,12 +172,13 @@ export default function VideoEditorScreen() {
           setExportProgress(5);
           exportProgressAnim.value = withTiming(5, { duration: 200 });
 
-          const { data: presign } = await uploadApi.getPresignUrl('video/mp4', 'videos');
+          const presign = await uploadApi.getPresignUrl('video/mp4', 'videos');
 
           setExportProgress(15);
           exportProgressAnim.value = withTiming(15, { duration: 200 });
 
-          const blob = await fetch(videoUri).then(r => r.blob());
+          const response = await fetch(videoUri!);
+          const blob = await (response as Response & { blob: () => Promise<Blob> }).blob();
 
           setExportProgress(30);
           exportProgressAnim.value = withTiming(30, { duration: 200 });

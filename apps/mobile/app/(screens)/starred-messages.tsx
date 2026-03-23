@@ -50,7 +50,7 @@ export default function StarredMessagesScreen() {
   const allStarred: Message[] = ((data as { data?: Message[] })?.data ?? data ?? []) as Message[];
   // If conversationId is provided, filter to only that conversation's starred messages
   const messages = conversationId
-    ? allStarred.filter((msg: Message) => (msg as Record<string, unknown>).conversationId === conversationId)
+    ? allStarred.filter((msg: Message) => (msg as unknown as Record<string, unknown>).conversationId === conversationId)
     : allStarred;
 
   const onRefresh = async () => {

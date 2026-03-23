@@ -62,8 +62,8 @@ export function useAmbientColor(imageUri: string | undefined | null) {
 
         if (cancelled || !mountedRef.current) return;
 
-        let primary = colors.emerald;
-        let accent = colors.gold;
+        let primary: string = colors.emerald;
+        let accent: string = colors.gold;
 
         if (result.platform === 'android') {
           primary = result.dominant || result.average || colors.emerald;

@@ -29,6 +29,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; badge?: number }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const iconMap: Record<TabName, { icon: React.ComponentProps<typeof Icon>['name']; label: string }> = {
     saf: { icon: 'home', label: t('tabs.saf') },
     bakra: { icon: 'play', label: t('tabs.bakra') },
@@ -70,6 +71,7 @@ function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; ba
 
 function CreateButton() {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const haptic = useContextualHaptic();

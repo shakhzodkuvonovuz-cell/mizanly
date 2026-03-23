@@ -52,6 +52,7 @@ interface StickerPackBrowserProps {
 
 export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [packs, setPacks] = useState<LocalStickerPack[]>([]);
   const [featuredPacks, setFeaturedPacks] = useState<LocalStickerPack[]>([]);

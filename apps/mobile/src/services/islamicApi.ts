@@ -191,4 +191,5 @@ export const islamicApi = {
   completeDailyTask: (taskType: string) =>
     api.post<{ success: boolean }>('/islamic/daily-tasks/complete', { taskType }),
   getDailyTasksToday: () => api.get<Array<{ type: string; label: string; completed: boolean; xpReward: number }>>('/islamic/daily-tasks/today'),
+  bookmarkHadith: (hadithId: string) => api.post<{ success: boolean }>(`/islamic/hadiths/${hadithId}/bookmark`, {}),
 };

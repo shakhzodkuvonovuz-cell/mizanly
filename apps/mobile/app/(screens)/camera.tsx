@@ -38,7 +38,7 @@ export default function CameraScreen() {
   const pulseAnim = useSharedValue(1);
 
   // Recording timer
-  const recordingInterval = useRef<NodeJS.Timeout | null>(null);
+  const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleCapturePress = useCallback(() => {
     if (mode === 'video') {

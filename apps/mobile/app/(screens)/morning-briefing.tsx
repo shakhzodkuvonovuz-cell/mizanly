@@ -71,6 +71,7 @@ function DhikrCounter({ target, initialCount, onComplete }: { target: number; in
   const [count, setCount] = useState(initialCount);
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const isComplete = count >= target;
 
   const handlePress = useCallback(() => {
@@ -186,7 +187,7 @@ export default function MorningBriefingScreen() {
     queryFn: async () => {
       const loc = locationQuery.data;
       const res = await islamicApi.getDailyBriefing(loc?.lat, loc?.lng);
-      return res.data as DailyBriefing;
+      return res as unknown as DailyBriefing;
     },
     enabled: !locationQuery.isLoading,
   });

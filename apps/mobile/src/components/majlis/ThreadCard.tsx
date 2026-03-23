@@ -377,7 +377,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               icon={<Icon name="message-circle" size="xs" color={colors.text.secondary} />}
               count={thread.repliesCount > 0 ? thread.repliesCount : undefined}
               onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
-              hapticType="light"
+              hapticType="tick"
               accessibilityLabel={t('accessibility.replyToThread')}
               accessibilityHint="Reply to this thread"
             />
@@ -410,7 +410,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
             <ActionButton
               icon={<Icon name="share" size="xs" color={colors.text.secondary} />}
               onPress={handleShare}
-              hapticType="light"
+              hapticType="tick"
               accessibilityLabel={t('accessibility.shareThread')}
               accessibilityHint="Share this thread with others"
             />

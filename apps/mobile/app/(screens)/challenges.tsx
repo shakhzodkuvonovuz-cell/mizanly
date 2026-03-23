@@ -156,7 +156,7 @@ function ChallengeCard({
               <View style={[styles.metaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Icon name="users" size="xs" color={tc.text.tertiary} />
                 <Text style={[styles.metaText, { color: tc.text.tertiary }]}>
-                  {t('gamification.challenges.participants', { count: formatCount(challenge.participantsCount) })}
+                  {t('gamification.challenges.participants', { count: challenge.participantsCount })}
                 </Text>
               </View>
               <View style={[styles.metaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -432,7 +432,7 @@ function ChallengesScreen() {
       <Pressable
         style={styles.fab}
         onPress={() => {
-          haptic.medium();
+          haptic.navigate();
           showToast({ message: t('gamification.challenges.createComingSoon'), variant: 'info' });
         }}
         accessibilityRole="button"

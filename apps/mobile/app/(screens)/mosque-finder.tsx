@@ -52,7 +52,7 @@ function computeQiblaBearing(lat: number, lng: number): { degrees: number; direc
   return { degrees: Math.round(bearing), direction: directions[idx] };
 }
 
-function computeNextPrayer(prayerTimes?: Record<string, string>): string {
+function computeNextPrayer(prayerTimes?: PrayerTimes | Record<string, string>): string {
   if (!prayerTimes) return 'Fajr';
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -67,7 +67,7 @@ function computeNextPrayer(prayerTimes?: Record<string, string>): string {
   return 'Fajr'; // Tomorrow's Fajr
 }
 
-function computeNextPrayerTime(prayerTimes?: Record<string, string>): string {
+function computeNextPrayerTime(prayerTimes?: PrayerTimes | Record<string, string>): string {
   if (!prayerTimes) return '--:--';
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -116,6 +116,7 @@ const FACILITY_ICONS: Record<string, IconName> = {
 
 function FacilityBadge({ facility }: { facility: string }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   return (
     <View style={styles.facilityBadge}>
       <Icon name={FACILITY_ICONS[facility]} size="xs" color={tc.text.tertiary} />
@@ -136,6 +137,7 @@ function openDirections(lat: number, lng: number, name: string) {
 
 function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const haptic = useContextualHaptic();
   const router = useRouter();
 
@@ -143,7 +145,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <Pressable
         accessibilityRole="button"
-        onPress={() => router.push({ pathname: '/(screens)/mosque-detail', params: { id: mosque.id } })}
+        onPress={() => router.push({ pathname: '/(screens)/mosque-detail' as never, params: { id: mosque.id } })}
       >
       <LinearGradient
         colors={colors.gradient.cardDark}

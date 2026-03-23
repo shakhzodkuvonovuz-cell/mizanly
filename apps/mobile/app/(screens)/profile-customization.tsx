@@ -197,11 +197,11 @@ function ProfileCustomizationScreen() {
     onSuccess: () => {
       haptic.success();
       queryClient.invalidateQueries({ queryKey: ['profile-customization'] });
-      showToast(t('gamification.profileCustomization.saved'), 'success');
+      showToast({ message: t('gamification.profileCustomization.saved'), variant: 'success' });
     },
     onError: () => {
       haptic.error();
-      showToast(t('gamification.profileCustomization.saveError'), 'error');
+      showToast({ message: t('gamification.profileCustomization.saveError'), variant: 'error' });
     },
   });
 

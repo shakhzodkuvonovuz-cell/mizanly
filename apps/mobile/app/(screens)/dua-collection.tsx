@@ -23,12 +23,13 @@ import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 interface Dua {
   id: string;
-  category: string;
-  arabicText: string;
-  transliteration: string;
-  translation: Record<string, string>;
-  source: string;
-  sourceRef: string;
+  category?: string;
+  arabic: string;
+  arabicText?: string;
+  transliteration?: string;
+  translation: string | Record<string, string>;
+  source?: string;
+  sourceRef?: string;
 }
 
 const CATEGORY_ICONS: Record<string, IconName> = {
@@ -59,7 +60,7 @@ function DuaCard({ dua, language, onBookmark, onShare, onPlayAudio }: {
 }) {
   const { t, isRTL } = useTranslation();
   const tc = useThemeColors();
-  const translation = dua.translation[language] || dua.translation.en || '';
+  const translation = typeof dua.translation === 'string' ? dua.translation : ((dua.translation as Record<string, string>)[language] || (dua.translation as Record<string, string>).en || '');
 
   return (
     <Animated.View entering={FadeInUp.delay(50).duration(350).springify()} style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
@@ -120,7 +121,7 @@ export default function DuaCollectionScreen() {
   const router = useRouter();
   const haptic = useContextualHaptic();
   const queryClient = useQueryClient();
-  const { t, isRTL, locale } = useTranslation();
+  const { t, isRTL, language: locale } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showBookmarked, setShowBookmarked] = useState(false);
   const tc = useThemeColors();
@@ -139,22 +140,22 @@ export default function DuaCollectionScreen() {
 
   const categoriesQuery = useQuery({
     queryKey: ['dua-categories'],
-    queryFn: () => islamicApi.getDuaCategories().then(r => r.data),
+    queryFn: () => islamicApi.getDuaCategories(),
   });
 
   const duasQuery = useQuery({
     queryKey: ['duas', selectedCategory],
-    queryFn: () => islamicApi.getDuas(selectedCategory ?? undefined).then(r => r.data),
+    queryFn: () => islamicApi.getDuas(selectedCategory ?? undefined),
   });
 
   const dailyDuaQuery = useQuery({
     queryKey: ['dua-daily'],
-    queryFn: () => islamicApi.getDuaOfTheDay().then(r => r.data),
+    queryFn: () => islamicApi.getDuaOfTheDay(),
   });
 
   const bookmarkedQuery = useQuery({
     queryKey: ['duas-bookmarked'],
-    queryFn: () => islamicApi.getBookmarkedDuas().then(r => r.data),
+    queryFn: () => islamicApi.getBookmarkedDuas(),
     enabled: showBookmarked,
   });
 
@@ -179,8 +180,8 @@ export default function DuaCollectionScreen() {
   }, [duasQuery, dailyDuaQuery, showBookmarked, bookmarkedQuery]);
 
   const handleShare = useCallback((dua: Dua) => {
-    const translation = dua.translation[locale] || dua.translation.en || '';
-    const text = `${dua.arabicText}\n\n${dua.transliteration}\n\n${translation}\n\n— ${dua.source} ${dua.sourceRef}\n\nShared from Mizanly`;
+    const translationText = typeof dua.translation === 'string' ? dua.translation : ((dua.translation as Record<string, string>)[locale] || (dua.translation as Record<string, string>).en || '');
+    const text = `${dua.arabicText ?? dua.arabic}\n\n${dua.transliteration}\n\n${translationText}\n\n— ${dua.source} ${dua.sourceRef}\n\nShared from Mizanly`;
     Share.share({ message: text }).catch(() => {});
   }, [locale]);
 
@@ -195,10 +196,10 @@ export default function DuaCollectionScreen() {
       {dailyDuaQuery.data && (
         <View style={[styles.dailyCard, { backgroundColor: tc.bgCard }]}>
           <Text style={styles.dailyLabel}>{t('duas.duaOfTheDay')}</Text>
-          <Text style={[styles.dailyArabic, { color: tc.text.primary }]}>{dailyDuaQuery.data.arabicText}</Text>
+          <Text style={[styles.dailyArabic, { color: tc.text.primary }]}>{dailyDuaQuery.data.arabic}</Text>
           <Text style={[styles.dailyTransliteration, { color: tc.text.secondary }]}>{dailyDuaQuery.data.transliteration}</Text>
           <Text style={[styles.dailyTranslation, { color: tc.text.primary }]}>
-            {dailyDuaQuery.data.translation[locale] || dailyDuaQuery.data.translation.en}
+            {typeof dailyDuaQuery.data.translation === 'string' ? dailyDuaQuery.data.translation : (dailyDuaQuery.data.translation as Record<string, string>)[locale] || (dailyDuaQuery.data.translation as Record<string, string>).en}
           </Text>
         </View>
       )}
@@ -210,7 +211,7 @@ export default function DuaCollectionScreen() {
           onPress={() => { setShowBookmarked(false); haptic.tick(); }}
           accessibilityRole="tab"
         >
-          <Text style={[styles.tabText, !showBookmarked && styles.tabTextActive, { tabText: tc.text.secondary }]}>
+          <Text style={[styles.tabText, !showBookmarked && styles.tabTextActive, { color: tc.text.secondary }]}>
             {t('duas.categories')}
           </Text>
         </Pressable>
@@ -219,7 +220,7 @@ export default function DuaCollectionScreen() {
           onPress={() => { setShowBookmarked(true); haptic.tick(); }}
           accessibilityRole="tab"
         >
-          <Text style={[styles.tabText, showBookmarked && styles.tabTextActive, { tabText: tc.text.secondary }]}>
+          <Text style={[styles.tabText, showBookmarked && styles.tabTextActive, { color: tc.text.secondary }]}>
             {t('duas.bookmarked')}
           </Text>
         </Pressable>
@@ -246,7 +247,7 @@ export default function DuaCollectionScreen() {
                   color={selectedCategory === item ? '#fff' : tc.text.secondary}
                 />
               )}
-              <Text style={[styles.chipText, selectedCategory === item && styles.chipTextActive, { chipText: tc.text.secondary }]}>
+              <Text style={[styles.chipText, selectedCategory === item && styles.chipTextActive, { color: tc.text.secondary }]}>
                 {item ? getCategoryLabel(item) : t('common.viewAll')}
               </Text>
             </Pressable>

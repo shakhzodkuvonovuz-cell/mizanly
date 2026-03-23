@@ -39,11 +39,12 @@ export function formatDate(date: Date | string, style: 'short' | 'medium' | 'lon
   const locale = i18next.language || 'en';
   const d = typeof date === 'string' ? new Date(date) : date;
 
-  const options: Intl.DateTimeFormatOptions = {
+  const optionsMap: Record<string, Intl.DateTimeFormatOptions> = {
     short: { month: 'short', day: 'numeric' },
     medium: { year: 'numeric', month: 'short', day: 'numeric' },
     long: { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' },
-  }[style];
+  };
+  const options = optionsMap[style];
 
   try {
     return new Intl.DateTimeFormat(locale, options).format(d);

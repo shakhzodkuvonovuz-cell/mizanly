@@ -234,7 +234,7 @@ function QuranReadingPlanContent() {
     mutationFn: ({ planId, data }: { planId: string; data: { currentJuz?: number; currentPage?: number; isComplete?: boolean } }) =>
       islamicApi.updateReadingPlan(planId, data),
     onSuccess: () => {
-      haptic.light();
+      haptic.tick();
       queryClient.invalidateQueries({ queryKey: ['quran-plan'] });
     },
   });
@@ -242,7 +242,7 @@ function QuranReadingPlanContent() {
   const deleteMutation = useMutation({
     mutationFn: (planId: string) => islamicApi.deleteReadingPlan(planId),
     onSuccess: () => {
-      haptic.medium();
+      haptic.navigate();
       queryClient.invalidateQueries({ queryKey: ['quran-plan'] });
     },
   });

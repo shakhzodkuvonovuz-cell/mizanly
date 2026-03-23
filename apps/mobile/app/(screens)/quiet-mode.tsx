@@ -237,7 +237,7 @@ export default function QuietModeScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={`${t('quietMode.startTime')}: ${startTime}`}
                     style={styles.timeButton}
-                    onPress={() => { haptic.selection(); setShowStartPicker(true); }}
+                    onPress={() => { haptic.tick(); setShowStartPicker(true); }}
                   >
                     <Text style={styles.timeButtonText}>{startTime}</Text>
                     <Icon name="chevron-down" size="xs" color={tc.text.tertiary} />
@@ -252,7 +252,7 @@ export default function QuietModeScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={`${t('quietMode.endTime')}: ${endTime}`}
                     style={styles.timeButton}
-                    onPress={() => { haptic.selection(); setShowEndPicker(true); }}
+                    onPress={() => { haptic.tick(); setShowEndPicker(true); }}
                   >
                     <Text style={styles.timeButtonText}>{endTime}</Text>
                     <Icon name="chevron-down" size="xs" color={tc.text.tertiary} />

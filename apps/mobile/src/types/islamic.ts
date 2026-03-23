@@ -70,6 +70,8 @@ export interface RamadanInfo {
   startDate: string;
   endDate: string;
   currentDay?: number;
+  totalDays?: number;
+  daysFasted?: number;
   daysRemaining?: number;
   iftarTime?: string;
   suhoorTime?: string;

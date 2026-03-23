@@ -142,7 +142,7 @@ function DownloadItem({
     <Animated.View entering={FadeInUp.delay(index * 40).duration(350)}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={(item as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}`}
+        accessibilityLabel={(item as unknown as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}`}
         style={styles.downloadItem}
         onLongPress={() => onLongPress(item)}
         delayLongPress={400}
@@ -166,7 +166,7 @@ function DownloadItem({
         {/* Info */}
         <View style={styles.itemInfo}>
           <Text style={[styles.itemTitle, { color: tc.text.primary }]} numberOfLines={1}>
-            {(item as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}...`}
+            {(item as unknown as Record<string, unknown>).title as string || `${item.contentType} ${item.contentId.slice(0, 8)}...`}
           </Text>
           <View style={styles.itemMeta}>
             <Text style={[styles.itemSize, { color: tc.text.tertiary }]}>{formatBytes(item.fileSize)}</Text>

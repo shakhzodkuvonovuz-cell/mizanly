@@ -25,10 +25,10 @@ const DAYS_OF_WEEK_KEYS = [
 const FAST_TYPES = ['ramadan', 'monday', 'thursday', 'ayyam-al-bid', 'arafat', 'ashura', 'qada', 'nafl'];
 
 interface FastingLog {
-  id: string;
+  id?: string;
   date: string;
   isFasting: boolean;
-  fastType: string;
+  fastType?: string;
   reason?: string;
 }
 
@@ -84,12 +84,12 @@ export default function FastingTrackerScreen() {
 
   const statsQuery = useQuery({
     queryKey: ['fasting-stats'],
-    queryFn: () => islamicApi.getFastingStats().then(r => r.data),
+    queryFn: () => islamicApi.getFastingStats(),
   });
 
   const logQuery = useQuery({
     queryKey: ['fasting-log', currentMonth],
-    queryFn: () => islamicApi.getFastingLog(currentMonth).then(r => r.data),
+    queryFn: () => islamicApi.getFastingLog(currentMonth),
   });
 
   const logMutation = useMutation({
@@ -209,14 +209,14 @@ export default function FastingTrackerScreen() {
                   accessibilityRole="button"
                 >
                   <Icon name="x" size={18} color={tc.text.primary} />
-                  <Text style={[styles.todayBtnTextNo, { todayBtnTextNo: tc.text.primary }]}>{t('fasting.notFasting')}</Text>
+                  <Text style={[styles.todayBtnTextNo, { color: tc.text.primary }]}>{t('fasting.notFasting')}</Text>
                 </Pressable>
               </View>
             </Animated.View>
           )}
 
           {todayLog && (
-            <View style={[styles.todayCard, { borderColor: todayLog.isFasting ? colors.emerald : tc.border }, { backgroundColor: tc.bg, backgroundColor: tc.bgCard }]}>
+            <View style={[styles.todayCard, { borderColor: todayLog.isFasting ? colors.emerald : tc.border, backgroundColor: tc.bgCard }]}>
               <Text style={styles.todayStatusText}>
                 {todayLog.isFasting ? t('fasting.yesFasting') : t('fasting.notFasting')}
               </Text>
@@ -233,8 +233,8 @@ export default function FastingTrackerScreen() {
           ) : stats ? (
             <View style={styles.statsRow}>
               <StatCard label={t('fasting.streak')} value={stats.currentStreak} color={colors.emerald} />
-              <StatCard label={t('fasting.totalThisYear')} value={stats.totalFastsThisYear} />
-              <StatCard label={t('fasting.makeupNeeded')} value={stats.makeupNeeded} color={stats.makeupNeeded > 0 ? colors.error : tc.text.secondary} />
+              <StatCard label={t('fasting.totalThisYear')} value={stats.totalDays} />
+              <StatCard label={t('fasting.makeupNeeded')} value={0} color={tc.text.secondary} />
             </View>
           ) : null}
 

@@ -112,6 +112,7 @@ export default function ConversationMediaScreen() {
   const conversationId = params.id || params.conversationId;
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const haptic = useContextualHaptic();
   const [activeTab, setActiveTab] = useState<TabKey>('media');
   const [lightboxVisible, setLightboxVisible] = useState(false);
@@ -132,7 +133,7 @@ export default function ConversationMediaScreen() {
     isRefetching,
   } = useInfiniteQuery({
     queryKey: ['conversation-messages', conversationId],
-    queryFn: ({ pageParam }) => messagesApi.getMessages(conversationId, pageParam),
+    queryFn: ({ pageParam }) => messagesApi.getMessages(conversationId!, pageParam),
     getNextPageParam: (lastPage) => lastPage.meta.cursor ?? undefined,
     initialPageParam: undefined as string | undefined,
   });
@@ -164,7 +165,7 @@ export default function ConversationMediaScreen() {
             id: `${msg.id}-media`,
             url: msg.mediaUrl,
             type: 'video',
-            thumbnailUrl: msg.thumbnailUrl, // Use dedicated thumbnail if available
+            thumbnailUrl: (msg as unknown as Record<string, string>).thumbnailUrl, // Use dedicated thumbnail if available
             messageId: msg.id,
             createdAt: msg.createdAt,
           });

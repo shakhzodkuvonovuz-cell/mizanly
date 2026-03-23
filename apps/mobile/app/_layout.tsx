@@ -46,10 +46,13 @@ if (I18nManager.isRTL !== needsRTL) {
 
 // Cap font scaling at 1.5x to prevent extreme scaling that breaks layout.
 // Users who need larger text get 50% larger while layouts remain intact.
-if (Text.defaultProps == null) Text.defaultProps = {};
-Text.defaultProps.maxFontSizeMultiplier = 1.5;
-if (TextInput.defaultProps == null) TextInput.defaultProps = {};
-(TextInput.defaultProps as Record<string, unknown>).maxFontSizeMultiplier = 1.5;
+// defaultProps is deprecated in React 19 types but still works at runtime for RN
+const TextWithDefaults = Text as unknown as { defaultProps: Record<string, unknown> };
+if (TextWithDefaults.defaultProps == null) TextWithDefaults.defaultProps = {};
+TextWithDefaults.defaultProps.maxFontSizeMultiplier = 1.5;
+const TextInputWithDefaults = TextInput as unknown as { defaultProps: Record<string, unknown> };
+if (TextInputWithDefaults.defaultProps == null) TextInputWithDefaults.defaultProps = {};
+TextInputWithDefaults.defaultProps.maxFontSizeMultiplier = 1.5;
 
 // Initialize Sentry crash reporting (no-op if package not installed or no DSN)
 initSentry();

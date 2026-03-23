@@ -136,7 +136,7 @@ function TierCard({
         {/* Edit Button */}
         <Pressable
           accessibilityRole="button"
-          onPress={() => haptic.light()}
+          onPress={() => haptic.tick()}
          
           style={styles.editButton}
         >
@@ -201,22 +201,22 @@ export default function MembershipTiersScreen() {
       fetchData();
       haptic.success();
     } catch (err) {
-      showToast(t('monetization.errors.failedToToggleTier'), 'error');
+      showToast({ message: t('monetization.errors.failedToToggleTier'), variant: 'error' });
     }
   }, [fetchData, haptic]);
 
   const handleCreateTier = useCallback(async () => {
     if (!currentUser) {
-      showToast(t('monetization.errors.userNotLoaded'), 'error');
+      showToast({ message: t('monetization.errors.userNotLoaded'), variant: 'error' });
       return;
     }
     const price = parseFloat(newTierPrice);
     if (!newTierName.trim() || isNaN(price) || price <= 0) {
-      showToast(t('monetization.errors.enterValidNameAndPrice'), 'error');
+      showToast({ message: t('monetization.errors.enterValidNameAndPrice'), variant: 'error' });
       return;
     }
     const benefits = newTierBenefits.split('\n').filter(b => b.trim());
-    haptic.medium();
+    haptic.navigate();
     setIsCreating(false);
     try {
       await monetizationApi.createTier({
@@ -234,7 +234,7 @@ export default function MembershipTiersScreen() {
       fetchData();
       haptic.success();
     } catch (err) {
-      showToast(t('monetization.errors.failedToCreateTier'), 'error');
+      showToast({ message: t('monetization.errors.failedToCreateTier'), variant: 'error' });
       setIsCreating(true); // Reopen form on error
     }
   }, [currentUser, newTierName, newTierPrice, newTierBenefits, fetchData, haptic]);

@@ -30,11 +30,12 @@ const FILTER_META: Record<FilterKey, { labelKey: string; icon: string; color: st
 };
 
 function filterConversation(c: Conversation, filterKey: FilterKey): boolean {
+  const convo = c as unknown as Record<string, unknown>;
   switch (filterKey) {
-    case 'unread': return ((c as Record<string, unknown>).unreadCount as number ?? 0) > 0;
+    case 'unread': return ((convo.unreadCount as number) ?? 0) > 0;
     case 'groups': return c.isGroup === true;
-    case 'channels': return (c as Record<string, unknown>).isChannel === true;
-    case 'personal': return c.isGroup !== true && (c as Record<string, unknown>).isChannel !== true;
+    case 'channels': return convo.isChannel === true;
+    case 'personal': return c.isGroup !== true && convo.isChannel !== true;
     default: return true;
   }
 }
@@ -92,8 +93,9 @@ function ChatFolderViewInner() {
   const renderItem = useCallback(({ item, index }: { item: Conversation; index: number }) => {
     const name = conversationName(item, user?.id);
     const avatarUri = conversationAvatar(item, user?.id);
-    const lastMsg = (item as Record<string, unknown>).lastMessage as Record<string, unknown> | undefined;
-    const unread = ((item as Record<string, unknown>).unreadCount as number) ?? 0;
+    const itemRecord = item as unknown as Record<string, unknown>;
+    const lastMsg = itemRecord.lastMessage as Record<string, unknown> | undefined;
+    const unread = (itemRecord.unreadCount as number) ?? 0;
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(300)}>
@@ -106,11 +108,11 @@ function ChatFolderViewInner() {
           <Avatar uri={avatarUri} name={name} size="md" showOnline />
           <View style={styles.convContent}>
             <Text style={[styles.convName, { color: tc.text.primary }]} numberOfLines={1}>{name}</Text>
-            {lastMsg?.content && (
+            {lastMsg?.content ? (
               <Text style={[styles.convLastMsg, { color: tc.text.secondary }]} numberOfLines={1}>
-                {lastMsg.content as string}
+                {String(lastMsg.content)}
               </Text>
-            )}
+            ) : null}
           </View>
           {unread > 0 && (
             <View style={styles.unreadBadge}>

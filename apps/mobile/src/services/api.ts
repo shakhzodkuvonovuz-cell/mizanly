@@ -23,6 +23,8 @@ type UpdateUserPayload = {
   isPrivate?: boolean;
   avatarUrl?: string;
   coverUrl?: string;
+  madhab?: string;
+  interests?: string[];
 };
 
 type CreatePostPayload = {
@@ -116,7 +118,7 @@ type SendMessagePayload = {
   isViewOnce?: boolean;
 };
 
-type PrivacySettings = { isPrivate?: boolean };
+type PrivacySettings = { isPrivate?: boolean; activityStatus?: boolean };
 type NotificationSettings = {
   notifyLikes?: boolean;
   notifyComments?: boolean;
@@ -914,7 +916,7 @@ export const pollsApi = {
 // Subtitles API
 export const subtitlesApi = {
   list: (videoId: string) => api.get<SubtitleTrack[]>(`/videos/${videoId}/subtitles`),
-  upload: (videoId: string, data: { label: string; language: string; srtUrl: string }) =>
+  upload: (videoId: string, data: { label: string; language: string; srtUrl?: string; srtContent?: string }) =>
     api.post(`/videos/${videoId}/subtitles`, data),
   delete: (videoId: string, trackId: string) =>
     api.delete(`/videos/${videoId}/subtitles/${trackId}`),
@@ -1325,7 +1327,7 @@ export const aiApi = {
   suggestPostingTime: () =>
     api.get<{ bestTime: string; reason: string }>('/ai/suggest-posting-time'),
   translate: (text: string, targetLanguage: string, contentId?: string, contentType?: string) =>
-    api.post('/ai/translate', { text, targetLanguage, contentId, contentType }),
+    api.post<{ translatedText: string }>('/ai/translate', { text, targetLanguage, contentId, contentType }),
   moderate: (text: string, contentType: string) =>
     api.post('/ai/moderate', { text, contentType }),
   smartReplies: (conversationContext: string, lastMessages: string[]) =>

@@ -46,7 +46,7 @@ import { useScrollLinkedHeader } from '@/hooks/useScrollLinkedHeader';
 import { formatCount } from '@/utils/formatCount';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
-import type { Post, StoryGroup, SuggestedUser } from '@/types';
+import type { Post, StoryGroup, SuggestedUser, PaginatedResponse } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -105,6 +105,7 @@ function SuggestedUserRow({
   t: (key: string) => string;
 }) {
   const [followed, setFollowed] = useState(false);
+  const tc = useThemeColors();
   const router = useRouter();
   const haptic = useContextualHaptic();
 
@@ -164,6 +165,7 @@ function SuggestedUserRow({
 // ── Explore First Banner ──
 function ExploreFirstBanner({ onDismiss }: { onDismiss: () => void }) {
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
 
   return (
     <Animated.View
@@ -360,7 +362,7 @@ export default function SafScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     placeholderData: cachedFeedData ? {
-      pages: [cachedFeedData],
+      pages: [cachedFeedData as unknown as PaginatedResponse<Post>],
       pageParams: [undefined],
     } : undefined,
   });
@@ -450,7 +452,7 @@ export default function SafScreen() {
             style={styles.commentPreview}
           >
             <Text style={[styles.commentPreviewText, { color: tc.text.secondary }]}>
-              {t('saf.viewAllComments', { count: formatCount(item.commentsCount) })}
+              {t('saf.viewAllComments', { count: item.commentsCount })}
             </Text>
           </Pressable>
         )}
@@ -695,7 +697,7 @@ export default function SafScreen() {
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        getItemType={(item) => (item._type === 'suggested' ? 'suggested' : 'post')}
+        getItemType={(item: { _type?: string }) => (item._type === 'suggested' ? 'suggested' : 'post')}
       />
     </SafeAreaView>
     </ScreenErrorBoundary>

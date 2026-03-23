@@ -55,7 +55,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.promoteToAdmin(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      showToast(t('screens.manage-broadcast.promotedSuccess'), 'success');
+      showToast({ message: t('screens.manage-broadcast.promotedSuccess'), variant: 'success' });
     },
     onError: () => haptic.error(),
   });
@@ -64,7 +64,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.demoteFromAdmin(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      showToast(t('screens.manage-broadcast.demotedSuccess'), 'success');
+      showToast({ message: t('screens.manage-broadcast.demotedSuccess'), variant: 'success' });
     },
     onError: () => haptic.error(),
   });
@@ -73,7 +73,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.removeSubscriber(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      showToast(t('screens.manage-broadcast.removedSuccess'), 'success');
+      showToast({ message: t('screens.manage-broadcast.removedSuccess'), variant: 'success' });
     },
     onError: () => haptic.error(),
   });

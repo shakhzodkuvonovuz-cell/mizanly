@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -1216,18 +1217,18 @@ export default function CreateStoryScreen() {
 // ── Shared styles ──
 const toolBtnStyle: ViewStyle = {
   flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-  backgroundColor: tc.bgElevated, borderRadius: radius.md,
+  backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
   paddingVertical: spacing.md, paddingHorizontal: spacing.base,
   marginBottom: spacing.md,
 };
 
 const editorTitle: TextStyle = {
-  color: tc.text.primary, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md,
+  color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md,
 };
 
 const editorInput: TextStyle = {
-  color: tc.text.primary, fontSize: fontSize.sm,
-  backgroundColor: tc.bgElevated, borderRadius: radius.sm,
+  color: colors.text.primary, fontSize: fontSize.sm,
+  backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
   paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
 };
 

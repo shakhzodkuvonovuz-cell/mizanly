@@ -305,7 +305,7 @@ function GiftShopContent() {
       <Pressable
         style={[styles.cashoutCard, { borderColor: tc.border }]}
         onPress={() => {
-          haptic.light();
+          haptic.tick();
           setCashoutSheet(true);
         }}
         accessibilityRole="button"

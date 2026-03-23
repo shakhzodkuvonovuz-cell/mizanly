@@ -37,6 +37,7 @@ function RequestRow({
 }) {
   const router = useRouter();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const { follower } = request;
 
   return (

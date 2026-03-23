@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { ImageStyle, StyleProp } from 'react-native';
 import { Image } from 'expo-image';
 import { BLURHASH_POST } from '@/utils/blurhash';
 
@@ -19,7 +19,7 @@ interface ProgressiveImageProps {
   /** Crossfade transition duration in ms (default: 300) */
   transition?: number;
   /** Additional styles */
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<ImageStyle>;
   /** Accessibility label */
   accessibilityLabel?: string;
 }

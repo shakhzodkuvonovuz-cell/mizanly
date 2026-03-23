@@ -63,7 +63,7 @@ export default function NewConversationScreen() {
     onSuccess: (convo) => {
       router.replace(`/(screens)/conversation/${convo.id}`);
     },
-    onError: (err: Error) => showToast(err.message || t('messages.couldNotStartConversation'), 'error'),
+    onError: (err: Error) => showToast({ message: err.message || t('messages.couldNotStartConversation'), variant: 'error' }),
   });
 
   return (

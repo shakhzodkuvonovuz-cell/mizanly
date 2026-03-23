@@ -92,6 +92,7 @@ const ConversationRow = memo(function ConversationRow({
   isTyping?: boolean;
 }) {
   const { t, isRTL } = useTranslation();
+  const tc = useThemeColors();
 
   function conversationName(convo: Conversation, myId?: string): string {
     if (convo.isGroup) return convo.groupName ?? t('risalah.group');

@@ -35,8 +35,8 @@ export default function VoiceRecorderScreen() {
   const [levels, setLevels] = useState<number[]>([]);
   const recording = useRef<Audio.Recording | null>(null);
   const sound = useRef<Audio.Sound | null>(null);
-  const timer = useRef<NodeJS.Timeout | null>(null);
-  const levelTimer = useRef<NodeJS.Timeout | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const levelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stopRef = useRef<() => void>(() => {});
 
   useEffect(() => () => {

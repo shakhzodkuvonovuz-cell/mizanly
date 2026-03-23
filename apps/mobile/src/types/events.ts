@@ -70,4 +70,5 @@ export type EventWithCounts = Event & {
     maybeCount: number;
     notGoingCount: number;
   };
+  myRsvp?: string;
 };

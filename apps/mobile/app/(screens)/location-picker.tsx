@@ -77,7 +77,7 @@ function LocationPickerContent() {
       setAddress(addr);
       haptic.success();
     } catch {
-      showToast(t('location.errorMessage', 'Could not get your current location. Please try again or enter coordinates manually.'), 'error');
+      showToast({ message: t('location.errorMessage', 'Could not get your current location. Please try again or enter coordinates manually.'), variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -96,10 +96,10 @@ function LocationPickerContent() {
         setAddress(addr || searchQuery.trim());
         haptic.success();
       } else {
-        showToast(t('location.notFoundMessage', 'No results found for this address. Try a different search.'), 'info');
+        showToast({ message: t('location.notFoundMessage', 'No results found for this address. Try a different search.'), variant: 'info' });
       }
     } catch {
-      showToast(t('location.searchErrorMessage', 'Could not search for this address. Please check your connection.'), 'error');
+      showToast({ message: t('location.searchErrorMessage', 'Could not search for this address. Please check your connection.'), variant: 'error' });
     } finally {
       setSearching(false);
     }
@@ -109,7 +109,7 @@ function LocationPickerContent() {
     const lat = parseFloat(manualLat);
     const lng = parseFloat(manualLng);
     if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      showToast(t('location.invalidCoordsMessage', 'Please enter valid latitude (-90 to 90) and longitude (-180 to 180).'), 'error');
+      showToast({ message: t('location.invalidCoordsMessage', 'Please enter valid latitude (-90 to 90) and longitude (-180 to 180).'), variant: 'error' });
       return;
     }
     haptic.tick();

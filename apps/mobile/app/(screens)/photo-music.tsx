@@ -2,7 +2,6 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, Dimensions,
   ScrollView, TextInput,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -77,13 +76,13 @@ function PhotoMusicScreen() {
   const pickImages = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      showToast(t('photoMusic.permissionMessage'), 'error');
+      showToast({ message: t('photoMusic.permissionMessage'), variant: 'error' });
       return;
     }
 
     const remaining = MAX_IMAGES - images.length;
     if (remaining <= 0) {
-      showToast(t('photoMusic.maxPhotosMessage'), 'info');
+      showToast({ message: t('photoMusic.maxPhotosMessage'), variant: 'info' });
       return;
     }
 
@@ -242,7 +241,7 @@ function PhotoMusicScreen() {
     },
     onError: () => {
       setIsPosting(false);
-      showToast(t('photoMusic.postErrorMessage'), 'error');
+      showToast({ message: t('photoMusic.postErrorMessage'), variant: 'error' });
     },
   });
 

@@ -120,7 +120,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
           <View style={styles.itemContent}>
             <Text style={styles.itemTitle}>#{hashtag.name}</Text>
             <Text style={styles.itemSubtitle}>
-              {t('autocomplete.postsCount', { count: hashtag.postsCount.toLocaleString() })}
+              {t('autocomplete.postsCount', { count: hashtag.postsCount })}
             </Text>
           </View>
         </Pressable>

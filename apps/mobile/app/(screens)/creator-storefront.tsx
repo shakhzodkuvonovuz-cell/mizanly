@@ -104,7 +104,7 @@ function CreatorStorefrontContent() {
   }, [haptic, router]);
 
   const handleAddProduct = useCallback(() => {
-    haptic.medium();
+    haptic.navigate();
     router.push('/(screens)/marketplace');
   }, [haptic, router]);
 

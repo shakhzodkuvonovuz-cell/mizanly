@@ -987,4 +987,7 @@ const styles = StyleSheet.create({
   hintText: {
     color: colors.text.tertiary, fontSize: fontSize.base,
   },
+  actionText: {
+    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '500',
+  },
 });

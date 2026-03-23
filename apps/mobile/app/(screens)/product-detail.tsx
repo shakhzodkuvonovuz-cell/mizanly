@@ -7,7 +7,6 @@ import {
   Pressable,
   Dimensions,
   FlatList,
-  Pressable,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -86,7 +85,7 @@ function renderStars(rating: number, size: 'xs' | 'sm' = 'xs') {
         key={`star-${i}`}
         name={i < full ? 'heart-filled' : 'heart'}
         size={size}
-        color={i < full ? colors.gold : tc.text.tertiary}
+        color={i < full ? colors.gold : colors.text.tertiary}
       />
     );
   }
@@ -128,7 +127,7 @@ function ProductDetailContent() {
   const product = productQuery.data;
 
   const handleBuyNow = () => {
-    haptic.medium();
+    haptic.navigate();
     orderMutation.mutate();
   };
 
@@ -203,7 +202,7 @@ function ProductDetailContent() {
         rightActions={[
           {
             icon: 'share',
-            onPress: () => haptic.light(),
+            onPress: () => haptic.tick(),
             accessibilityLabel: t('common.share', 'Share'),
           },
         ]}

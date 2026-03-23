@@ -65,11 +65,11 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
     return (
       <Pressable
         key={item.key}
-        style={({ hovered }) => [
+        style={(state) => [
           styles.navItem,
           collapsed && styles.navItemCollapsed,
           active && styles.navItemActive,
-          hovered && !active && styles.navItemHover,
+          (state as unknown as { hovered?: boolean }).hovered && !active && styles.navItemHover,
         ]}
         onPress={() => handleNav(item.route)}
         accessibilityRole="link"

@@ -67,6 +67,7 @@ function ContributorRow({
   contributor: DhikrChallengeDetail['topContributors'][0];
   rank: number;
 }) {
+  const tc = useThemeColors();
   return (
     <View style={styles.contributorRow}>
       <View style={styles.rankBadge}>
@@ -187,7 +188,7 @@ export default function DhikrChallengeDetailScreen() {
               <View style={styles.metaItem}>
                 <Icon name="users" size="xs" color={tc.text.tertiary} />
                 <Text style={[styles.metaText, { color: tc.text.tertiary }]}>
-                  {t('dhikr.participants', { count: formatCount(detail.participantCount) })}
+                  {t('dhikr.participants', { count: detail.participantCount })}
                 </Text>
               </View>
               <View style={styles.metaItem}>

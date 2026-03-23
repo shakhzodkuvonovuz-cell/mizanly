@@ -125,7 +125,7 @@ export default function ChatFoldersScreen() {
           style={[styles.folderCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
           onPress={() => {
             haptic.navigate();
-            router.push(`/(screens)/chat-folder-view?filter=folder&folderId=${item.id as string}`);
+            router.push(`/(screens)/chat-folder-view?filter=folder&folderId=${item.id as string}` as never);
           }}
           onLongPress={() => { setMenuFolder(item); haptic.longPress(); }}
         >
@@ -177,7 +177,7 @@ export default function ChatFoldersScreen() {
                 style={[styles.predefinedCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
                 onPress={() => {
                   haptic.navigate();
-                  router.push(`/(screens)/chat-folder-view?filter=${pf.key}`);
+                  router.push(`/(screens)/chat-folder-view?filter=${pf.key}` as never);
                 }}
               >
                 <View style={[styles.predefinedIconWrap, { backgroundColor: pf.color + '15' }]}>

@@ -265,6 +265,7 @@ function ChatExportContent() {
 }
 
 function StatItem({ icon, label, value }: { icon: 'users' | 'message-circle' | 'image'; label: string; value: string }) {
+  const tc = useThemeColors();
   return (
     <View style={styles.statItem}>
       <View style={styles.statIconWrapper}>

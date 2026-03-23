@@ -24,10 +24,12 @@ import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 
 interface NameOfAllah {
   number: number;
-  arabicName: string;
+  arabic: string;
+  arabicName?: string;
   transliteration: string;
-  englishMeaning: string;
-  explanation: string;
+  meaning: string;
+  englishMeaning?: string;
+  explanation?: string;
   quranRef?: string;
 }
 
@@ -160,12 +162,12 @@ export default function NamesOfAllahScreen() {
 
   const namesQuery = useQuery({
     queryKey: ['names-of-allah'],
-    queryFn: () => islamicApi.getNamesOfAllah().then(r => r.data),
+    queryFn: () => islamicApi.getNamesOfAllah(),
   });
 
   const dailyQuery = useQuery({
     queryKey: ['daily-name'],
-    queryFn: () => islamicApi.getDailyNameOfAllah().then(r => r.data),
+    queryFn: () => islamicApi.getDailyNameOfAllah(),
   });
 
   const names: NameOfAllah[] = namesQuery.data ?? [];
@@ -199,7 +201,7 @@ export default function NamesOfAllahScreen() {
       {/* Progress bar */}
       <View style={styles.progressSection}>
         <Text style={styles.progressText}>
-          {t('namesOfAllah.progress', { count: learnedCount.toString() })}
+          {t('namesOfAllah.progress', { count: learnedCount })}
         </Text>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${(learnedCount / 99) * 100}%` }]} />

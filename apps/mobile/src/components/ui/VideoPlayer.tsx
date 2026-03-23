@@ -81,14 +81,14 @@ export const VideoPlayer = memo(function VideoPlayer({
     isPlaying,
     onPiPChange: (active) => { if (active) onPiPEnter?.(); },
   });
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seekBarWidthRef = useRef<number>(1);
 
   // Double-tap seek indicator state
   const [seekIndicator, setSeekIndicator] = useState<{ side: 'left' | 'right'; visible: boolean }>({ side: 'left', visible: false });
   const seekIndicatorOpacity = useSharedValue(0);
   const seekIndicatorScale = useSharedValue(0.8);
-  const seekIndicatorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const seekIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showSeekIndicator = useCallback((side: 'left' | 'right') => {
     setSeekIndicator({ side, visible: true });
@@ -256,7 +256,7 @@ export const VideoPlayer = memo(function VideoPlayer({
     // presentFullscreenPlayer exists on Video at runtime but isn't in Expo AV types
     const ref = videoRef.current;
     if ('presentFullscreenPlayer' in ref) {
-      await (ref as Record<string, () => Promise<void>>).presentFullscreenPlayer();
+      await (ref as unknown as Record<string, () => Promise<void>>).presentFullscreenPlayer();
     }
     resetControlsTimeout();
   }, [haptic, resetControlsTimeout]);

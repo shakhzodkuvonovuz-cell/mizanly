@@ -157,15 +157,14 @@ export const Icon = memo(function Icon({ name, size = 'md', color, strokeWidth =
   const iconColor = color ?? colors.text.primary;
   const shouldMirror = I18nManager.isRTL && MIRROR_IN_RTL.has(name);
 
-  const icon = (
-    <LucideIcon
-      size={dim}
-      color={iconColor}
-      strokeWidth={strokeWidth}
-      fill={isFilled ? (fill ?? iconColor) : 'none'}
-      style={style as LucideProps['style']}
-    />
-  );
+  const iconProps: Record<string, unknown> = {
+    size: dim,
+    color: iconColor,
+    strokeWidth,
+    fill: isFilled ? (fill ?? iconColor) : 'none',
+    style,
+  };
+  const icon = <LucideIcon {...(iconProps as LucideProps)} />;
 
   if (shouldMirror) {
     return (

@@ -142,6 +142,7 @@ function CommunityCard({
 }
 
 function FAB({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
   const scaleAnim = useSharedValue(1);
 
   const handlePress = () => {

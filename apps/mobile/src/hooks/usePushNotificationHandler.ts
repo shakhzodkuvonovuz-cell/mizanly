@@ -50,17 +50,14 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
       try {
         const Notifications = await import('expo-notifications');
 
-        Notifications.setNotificationHandler({
-          handleNotification: async () => {
-            // In-app banner behavior
-            return {
-              shouldShowAlert: true,
-              shouldPlaySound: true,
-              shouldSetBadge: true,
-              priority: Notifications.AndroidNotificationPriority.HIGH,
-            };
-          },
-        });
+        const handler = {
+          handleNotification: async () => ({
+            shouldShowAlert: true as boolean,
+            shouldPlaySound: true as boolean,
+            shouldSetBadge: true as boolean,
+          }),
+        };
+        Notifications.setNotificationHandler(handler as unknown as Parameters<typeof Notifications.setNotificationHandler>[0]);
       } catch {
         // Notification handler config is non-critical
       }

@@ -210,8 +210,8 @@ export default function EventDetailScreen() {
     );
   }
 
-  const goingCount = (event as Record<string, unknown>).goingCount as number ?? event._count?.rsvps ?? 0;
-  const maybeCount = (event as Record<string, unknown>).maybeCount as number ?? 0;
+  const goingCount = (event as unknown as Record<string, unknown>).goingCount as number ?? event._count?.rsvps ?? 0;
+  const maybeCount = (event as unknown as Record<string, unknown>).maybeCount as number ?? 0;
   const totalRsvps = event._count?.rsvps ?? 0;
   const remainingAttendees = Math.max(0, goingCount - attendees.length);
   const eventTypeBadge = event.eventType === 'virtual' ? t('events.virtual') :

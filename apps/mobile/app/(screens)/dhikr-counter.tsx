@@ -117,6 +117,7 @@ function PhraseButton({
   onPress: () => void;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${phrase.latin} - ${phrase.meaning}`}>
       <LinearGradient
@@ -151,6 +152,7 @@ function StatCard({
   value: string | number;
   delay: number;
 }) {
+  const tc = useThemeColors();
   return (
     <Animated.View entering={FadeInUp.delay(delay).duration(400)} style={styles.statCardWrapper}>
       <LinearGradient

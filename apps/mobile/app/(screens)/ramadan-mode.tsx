@@ -326,7 +326,7 @@ export default function RamadanModeScreen() {
   }, []);
 
   const handleDhikrPress = useCallback(() => {
-    haptic.light();
+    haptic.tick();
     navigate('/(screens)/dhikr-counter');
   }, [haptic]);
 

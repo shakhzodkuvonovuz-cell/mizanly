@@ -143,7 +143,7 @@ const STATUS_COLORS: Record<string, string> = {
   memorized: colors.emerald,
   in_progress: colors.gold,
   needs_review: colors.extended.orange,
-  not_started: tc.surface,
+  not_started: colors.dark.surface,
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -267,7 +267,7 @@ export default function HifzTrackerScreen() {
       {stats && (
         <View style={styles.progressSection}>
           <Text style={[styles.progressText, { color: tc.text.secondary }]}>
-            {t('hifz.totalMemorized', { count: stats.memorized.toString() })} ({stats.percentage}%)
+            {t('hifz.totalMemorized', { count: stats.memorized })} ({stats.percentage}%)
           </Text>
           <View style={[styles.progressBar, { backgroundColor: tc.surface }]}>
             <View style={[styles.progressFill, { width: `${stats.percentage}%` }]} />

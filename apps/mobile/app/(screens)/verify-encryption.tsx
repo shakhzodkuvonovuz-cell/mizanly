@@ -109,7 +109,7 @@ function VerifyEncryptionContent() {
               const safeNum = computeSafetyNumber(
                 ownFp,
                 response.fingerprint,
-                encryptionService.getUserId?.() || 'self',
+                (encryptionService as unknown as { getUserId?: () => string }).getUserId?.() || 'self',
                 userId,
               );
               setSafetyNumber(safeNum);

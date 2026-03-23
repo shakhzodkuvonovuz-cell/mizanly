@@ -698,7 +698,7 @@ export default function StoryViewerScreen() {
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  const getItemLayout = useCallback((_: StoryGroup[] | null, index: number) => ({
+  const getItemLayout = useCallback((_: ArrayLike<StoryGroup> | null | undefined, index: number) => ({
     length: SCREEN_W,
     offset: SCREEN_W * index,
     index,
@@ -738,7 +738,7 @@ export default function StoryViewerScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <FlatList
+        <FlatList<StoryGroup>
           ref={flatListRef}
           data={groups}
           keyExtractor={keyExtractor}

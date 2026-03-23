@@ -65,7 +65,7 @@ export default function CallScreen() {
   const [isSpeaker, setIsSpeaker] = useState(false);
   const [isFrontCamera, setIsFrontCamera] = useState(true);
   const [duration, setDuration] = useState(0); // seconds
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: call, isLoading } = useQuery({
     queryKey: ['call', id],

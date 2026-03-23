@@ -352,7 +352,7 @@ export default function QuranRoomScreen() {
           <View style={styles.participantBadge}>
             <Icon name="users" size="sm" color={colors.emerald} />
             <Text style={styles.participantText}>
-              {t('quranRoom.participants', { count: formatCount(roomState?.participantCount ?? 0) })}
+              {t('quranRoom.participants', { count: roomState?.participantCount ?? 0 })}
             </Text>
           </View>
 

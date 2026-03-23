@@ -59,7 +59,7 @@ export function useVideoPreloader(poolSize = 3) {
       await fetch(url, {
         method: 'GET',
         headers: { Range: 'bytes=0-262143' },
-        signal: slot.abortController.signal,
+        signal: slot.abortController?.signal,
       });
       slot.state = 'ready';
       updateState(url, 'ready');

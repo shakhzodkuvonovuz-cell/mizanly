@@ -363,7 +363,7 @@ export interface WatchHistoryItem {
 }
 
 // ── Risalah: Messages ──
-export type MessageType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'VOICE' | 'FILE' | 'GIF' | 'STICKER' | 'LOCATION';
+export type MessageType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'VOICE' | 'FILE' | 'GIF' | 'STICKER' | 'LOCATION' | 'SYSTEM';
 
 export interface MessageReaction {
   id: string;

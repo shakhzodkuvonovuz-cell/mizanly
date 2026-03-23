@@ -132,13 +132,13 @@ function CommentRow({
   const deleteMutation = useMutation({
     mutationFn: () => postsApi.deleteComment(postId, comment.id),
     onSuccess: onDeleted,
-    onError: (err: Error) => showToast(err.message, 'error'),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const editMutation = useMutation({
     mutationFn: (content: string) => postsApi.editComment(postId, comment.id, content),
     onSuccess: () => setEditing(false),
-    onError: (err: Error) => showToast(err.message, 'error'),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleDelete = () => {
@@ -520,7 +520,7 @@ export default function PostDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['post-comments', id] });
       queryClient.invalidateQueries({ queryKey: ['post', id] });
     },
-    onError: (err: Error) => showToast(err.message, 'error'),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleReply = useCallback((commentId: string, username: string) => {

@@ -214,7 +214,7 @@ export default function ReelDetailScreen() {
     onError: (err: Error) => showToast({ message: err.message || t('common.error'), variant: 'error' }),
   });
 
-  const likeMutation = useMutation({
+  const likeMutation = useMutation<unknown, unknown, void>({
     mutationFn: () =>
       reelQuery.data?.isLiked
         ? reelsApi.unlike(id)
@@ -227,8 +227,8 @@ export default function ReelDetailScreen() {
       );
       return { prev };
     },
-    onError: (_err: unknown, _vars: unknown, context: { prev?: unknown } | undefined) => {
-      queryClient.setQueryData(['reel', id], context?.prev);
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(['reel', id], (context as { prev?: unknown })?.prev);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['reel', id] });
@@ -369,7 +369,7 @@ export default function ReelDetailScreen() {
                 style={styles.followButton}
                 onPress={async () => {
                   try {
-                    await followsApi.follow(reelQuery.data?.userId);
+                    await followsApi.follow(reelQuery.data?.user?.id);
                     queryClient.invalidateQueries({ queryKey: ['reel', id] });
                   } catch {}
                 }}

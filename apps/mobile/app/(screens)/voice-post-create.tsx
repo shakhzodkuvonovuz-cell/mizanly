@@ -31,7 +31,7 @@ export default function VoicePostCreateScreen() {
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [waveformBars, setWaveformBars] = useState<number[]>(Array(30).fill(0.15));
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopRecordingRef = useRef<() => void>(() => {});
   const durationRef = useRef(0);
 

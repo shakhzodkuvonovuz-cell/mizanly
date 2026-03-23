@@ -114,6 +114,7 @@ export default function CirclesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

@@ -41,6 +41,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
 }) {
   const router = useRouter();
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const [liked, setLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likesCount);
 
@@ -145,6 +146,7 @@ export default function CommunityPostsScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const tc = useThemeColors();
   const [refreshing, setRefreshing] = useState(false);
   const [composeText, setComposeText] = useState('');
   const [showCreateSheet, setShowCreateSheet] = useState(false);

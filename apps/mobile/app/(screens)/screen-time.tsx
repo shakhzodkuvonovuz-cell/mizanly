@@ -172,7 +172,7 @@ export default function ScreenTimeScreen() {
   }, [queryClient]);
 
   const handleSetLimit = (value: number | null) => {
-    haptic.selection();
+    haptic.tick();
     setScreenTimeLimitMinutes(value);
     limitMutation.mutate(value);
     setLimitSheetVisible(false);

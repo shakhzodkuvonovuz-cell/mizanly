@@ -138,7 +138,7 @@ export default function HalalFinderScreen() {
   });
 
   const rawData = restaurantsQuery.data;
-  const restaurants: HalalRestaurant[] = Array.isArray(rawData) ? rawData : (rawData as Record<string, unknown>)?.data as HalalRestaurant[] ?? [];
+  const restaurants: HalalRestaurant[] = (Array.isArray(rawData) ? rawData : (rawData as unknown as Record<string, unknown>)?.data ?? []) as HalalRestaurant[];
 
   const handleRefresh = useCallback(() => {
     restaurantsQuery.refetch();

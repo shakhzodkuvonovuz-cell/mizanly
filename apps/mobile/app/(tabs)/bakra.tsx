@@ -7,6 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -488,9 +489,8 @@ export default function BakraScreen() {
   const [bakraFeedType, setBakraFeedType] = useState<'foryou' | 'following'>('foryou');
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
-  const reelsRef = useRef(reels);
+  const reelsRef = useRef<Reel[]>([]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
-  useEffect(() => { reelsRef.current = reels; }, [reels]);
   const [commentsReel, setCommentsReel] = useState<Reel | null>(null);
   const [heartTrigger, setHeartTrigger] = useState(0);
   const videoRefs = useRef<{ [key: string]: Video }>({});
@@ -542,6 +542,7 @@ export default function BakraScreen() {
   });
 
   const reels: Reel[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
+  useEffect(() => { reelsRef.current = reels; }, [reels]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -555,7 +556,7 @@ export default function BakraScreen() {
     }
   }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
-  const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
+  const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<{ item: Reel; index: number | null }>; changed: Array<{ item: Reel; index: number | null }> }) => {
     if (viewableItems.length > 0) {
       const rawIndex = viewableItems[0].index;
       if (rawIndex != null && rawIndex !== currentIndexRef.current) {

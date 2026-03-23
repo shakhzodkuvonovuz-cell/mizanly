@@ -68,7 +68,7 @@ export function VideoControls({
   const [volumeSliderVisible, setVolumeSliderVisible] = useState(false);
 
   const controlsOpacity = useSharedValue(1);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seekBarWidthRef = useRef<number>(1);
 
   const resetHideTimeout = useCallback(() => {

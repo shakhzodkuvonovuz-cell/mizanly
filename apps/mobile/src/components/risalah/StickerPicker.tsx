@@ -10,7 +10,6 @@ import {
   Dimensions,
   TextInput,
   RefreshControl,
-  Pressable,
 } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
@@ -35,6 +34,7 @@ const ITEM_SIZE = (SCREEN_WIDTH - spacing.xl * 2 - GRID_SPACING * (GRID_COLUMNS 
 
 export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPickerProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'recent' | 'myPacks'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
   const [ownedPacks, setOwnedPacks] = useState<StickerPack[]>([]);

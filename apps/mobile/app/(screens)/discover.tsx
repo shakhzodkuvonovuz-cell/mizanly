@@ -383,24 +383,25 @@ export default function DiscoverScreen() {
 
   // Generate featured items from first 5 content items with media
   const featuredItems: FeaturedItem[] = exploreItems
-    .filter((item): item is (Post | Reel | Video) => {
-      if ('videoUrl' in item && item.videoUrl) return true; // Reel
-      if ('postType' in item && item.mediaUrls?.length > 0) return true; // Post
-      if ('channel' in item && item.thumbnailUrl) return true; // Video
+    .filter((item) => {
+      if ('videoUrl' in item) return true; // Reel
+      if ('postType' in item && (item as Post).mediaUrls?.length > 0) return true; // Post
+      if ('channel' in item) return true; // Video
       return false;
     })
     .slice(0, 5)
     .map((item) => {
-      const isReel = 'videoUrl' in item && item.videoUrl;
-      const isVideo = 'channel' in item;
+      const itemRecord = item as unknown as Record<string, unknown>;
+      const isReel = 'videoUrl' in item;
+      const isVideo = 'channel' in item && !isReel;
 
       return {
         id: item.id,
-        title: isVideo ? (item as Video).title : isReel ? (item as Reel).caption || 'Reel' : (item as Post).content?.slice(0, 60) || 'Post',
+        title: isVideo ? String(itemRecord.title || 'Video') : isReel ? String((item as Reel).caption || 'Reel') : (item as Post).content?.slice(0, 60) || 'Post',
         thumbnailUrl: isReel
           ? (item as Reel).thumbnailUrl || (item as Reel).videoUrl
           : isVideo
-            ? (item as Video).thumbnailUrl || (item as Video).videoUrl
+            ? String(itemRecord.thumbnailUrl || itemRecord.videoUrl || '')
             : (item as Post).mediaUrls[0],
         creator: {
           avatarUrl: item.user?.avatarUrl,

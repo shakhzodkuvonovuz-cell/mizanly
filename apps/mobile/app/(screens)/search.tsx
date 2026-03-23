@@ -22,7 +22,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, postsApi, feedApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
-import type { User, TrendingHashtag, Reel, Video, Channel } from '@/types';
+import type { User, TrendingHashtag, Reel, Video, Channel, Post, Thread, SearchResults } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { rtlFlexRow, rtlTextAlign, rtlArrow } from '@/utils/rtl';
@@ -253,11 +253,11 @@ export default function SearchScreen() {
   });
 
   const explorePosts = exploreQuery.data?.pages.flatMap((p) => p.data) ?? [];
-  const posts = postsQuery.data?.pages.flatMap((p) => p.data ?? p.posts ?? []) ?? [];
-  const threads = threadsQuery.data?.pages.flatMap((p) => p.data ?? p.threads ?? []) ?? [];
-  const reels: Reel[] = reelsQuery.data?.pages.flatMap((p) => p.data ?? p.reels ?? []) ?? [];
-  const videos: Video[] = videosQuery.data?.pages.flatMap((p) => p.data ?? p.videos ?? []) ?? [];
-  const channels: Channel[] = channelsQuery.data?.pages.flatMap((p) => p.data ?? p.channels ?? []) ?? [];
+  const posts: Post[] = postsQuery.data?.pages.flatMap((p) => (p.data as Post[] | undefined) ?? (p as unknown as { posts?: Post[] }).posts ?? []) ?? [];
+  const threads: Thread[] = threadsQuery.data?.pages.flatMap((p) => (p.data as Thread[] | undefined) ?? (p as unknown as { threads?: Thread[] }).threads ?? []) ?? [];
+  const reels: Reel[] = reelsQuery.data?.pages.flatMap((p) => (p.data as Reel[] | undefined) ?? (p as unknown as { reels?: Reel[] }).reels ?? []) ?? [];
+  const videos: Video[] = videosQuery.data?.pages.flatMap((p) => (p.data as Video[] | undefined) ?? (p as unknown as { videos?: Video[] }).videos ?? []) ?? [];
+  const channels: Channel[] = channelsQuery.data?.pages.flatMap((p) => (p.data as Channel[] | undefined) ?? (p as unknown as { channels?: Channel[] }).channels ?? []) ?? [];
   const people: User[] = searchQuery.data?.people ?? [];
   const hashtags = searchQuery.data?.hashtags ?? [];
   const trending: TrendingHashtag[] = trendingQuery.data ?? [];

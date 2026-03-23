@@ -36,6 +36,7 @@ function InfoRow({
   description?: string;
   icon?: IconName;
 }) {
+  const tc = useThemeColors();
   return (
     <View style={styles.infoRow}>
       <View style={styles.infoText}>
@@ -69,6 +70,7 @@ function ActionRow({
   onPress: () => void;
   loading?: boolean;
 }) {
+  const tc = useThemeColors();
   return (
     <View style={styles.actionRow}>
       <View style={styles.actionText}>
@@ -109,10 +111,10 @@ export default function ManageDataScreen() {
   const clearWatchHistoryMutation = useMutation({
     mutationFn: () => usersApi.clearWatchHistory(),
     onSuccess: () => {
-      showToast(t('settings.watchHistoryClearedSuccess'), 'success');
+      showToast({ message: t('settings.watchHistoryClearedSuccess'), variant: 'success' });
     },
     onError: (err: Error) => {
-      showToast(err.message, 'error');
+      showToast({ message: err.message, variant: 'error' });
     },
   });
 
@@ -121,7 +123,7 @@ export default function ManageDataScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => showToast(err.message, 'error'),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   const handleRequestDownload = () => {
@@ -135,9 +137,9 @@ export default function ManageDataScreen() {
           onPress: async () => {
             try {
               await accountApi.requestDataExport();
-              showToast(t('settings.requestSentMessage'), 'success');
+              showToast({ message: t('settings.requestSentMessage'), variant: 'success' });
             } catch {
-              showToast(t('settings.requestDataExportFailed'), 'error');
+              showToast({ message: t('settings.requestDataExportFailed'), variant: 'error' });
             }
           },
         },
@@ -156,7 +158,7 @@ export default function ManageDataScreen() {
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.removeItem('search-history');
-            showToast(t('settings.searchHistoryCleared'), 'success');
+            showToast({ message: t('settings.searchHistoryCleared'), variant: 'success' });
           },
         },
       ],

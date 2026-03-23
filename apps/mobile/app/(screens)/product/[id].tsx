@@ -7,7 +7,6 @@ import {
   Pressable,
   Dimensions,
   FlatList,
-  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';

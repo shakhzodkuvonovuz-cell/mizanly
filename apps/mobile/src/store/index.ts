@@ -130,7 +130,7 @@ interface AppState {
   setParentalRestrictions: (r: ParentalRestrictions | null) => void;
 
   // Story viewer (avoids JSON.stringify in route params)
-  storyViewerData: { groups: Array<{ userId: string; username: string; avatarUrl: string | null; stories: Array<{ id: string; mediaUrl: string; mediaType: string; createdAt: string }> }>; startIndex: number; isOwn?: boolean } | null;
+  storyViewerData: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null;
   setStoryViewerData: (data: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null) => void;
 
   // Islamic calendar themes

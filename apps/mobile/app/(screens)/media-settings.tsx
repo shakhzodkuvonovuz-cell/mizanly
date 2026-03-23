@@ -114,6 +114,7 @@ function SettingRow({
 }
 
 function SectionHeader({ title, index, isRTL }: { title: string; index: number; isRTL: boolean }) {
+  const tc = useThemeColors();
   return (
     <Animated.View entering={FadeInDown.delay(index * 80).duration(300)}>
       <Text style={[styles.sectionTitle, { color: tc.text.secondary, textAlign: rtlTextAlign(isRTL) }]}>{title}</Text>

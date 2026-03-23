@@ -60,7 +60,7 @@ export default function MutedScreen() {
   const unmuteMutation = useMutation({
     mutationFn: (userId: string) => mutesApi.unmute(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['muted'] }),
-    onError: (err: Error) => showToast(err.message, 'error'),
+    onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
   if (query.isError) {

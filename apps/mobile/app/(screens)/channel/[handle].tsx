@@ -111,6 +111,7 @@ function VideoCard({ video }: { video: Video }) {
 // Featured Video Card Component
   function FeaturedVideoCard({ video, onPress }: { video: Video; onPress: () => void }) {
     const { t } = useTranslation();
+    const tc = useThemeColors();
     const durationMinutes = Math.floor(video.duration / 60);
     const durationSeconds = Math.floor(video.duration % 60);
     const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
@@ -147,6 +148,8 @@ function VideoCard({ video }: { video: Video }) {
 
   function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const router = useRouter();
+  const tc = useThemeColors();
+  const { t } = useTranslation();
   const haptic = useContextualHaptic();
 
   const handlePress = () => {

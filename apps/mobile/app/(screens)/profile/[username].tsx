@@ -409,13 +409,13 @@ export default function ProfileScreen() {
       const group = {
         userId: profile.id,
         username: profile.username,
-        avatarUrl: profile.avatarUrl,
-        stories: album.stories.map((s: { id: string; mediaUrl: string; mediaType: string; createdAt: string }) => ({
+        avatarUrl: profile.avatarUrl ?? null,
+        stories: album.stories?.map((s) => ({
           id: s.id,
           mediaUrl: s.mediaUrl,
           mediaType: s.mediaType,
-          createdAt: s.createdAt,
-        })),
+          createdAt: '',
+        })) ?? [],
       };
       useStore.getState().setStoryViewerData({ groups: [group], startIndex: 0 });
       router.push('/(screens)/story-viewer');
@@ -546,7 +546,7 @@ export default function ProfileScreen() {
               <Icon name="clock" size="sm" color={tc.text.primary} />
             </Pressable>
             <Pressable
-              onPress={() => { haptic.navigate(); router.push('/(screens)/flipside'); }}
+              onPress={() => { haptic.navigate(); router.push('/(screens)/flipside' as never); }}
               style={{
                 backgroundColor: tc.bgElevated, borderRadius: radius.md,
                 paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
@@ -886,7 +886,7 @@ export default function ProfileScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         data={currentData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: { id: string }) => item.id}
         numColumns={activeTab === 'threads' ? 1 : 3}
         columnWrapperStyle={activeTab === 'threads' ? undefined : styles.gridRow}
         onEndReached={handleEndReached}

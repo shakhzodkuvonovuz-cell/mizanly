@@ -45,6 +45,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function QuestionSticker({ data, onResponse, isCreator = false, style }: QuestionStickerProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const [inputText, setInputText] = useState('');
   const [submittedQuestions, setSubmittedQuestions] = useState<SubmittedQuestion[]>(
     data.submittedQuestions || []

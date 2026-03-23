@@ -404,7 +404,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           icon={<Icon name="message-circle" size="sm" color={colors.text.secondary} />}
           count={post.commentsCount > 0 ? post.commentsCount : undefined}
           onPress={() => router.push(`/(screens)/post/${post.id}`)}
-          hapticType="light"
+          hapticType="tick"
           accessibilityLabel={tr('accessibility.commentOnPost')}
           accessibilityHint="View or add comments"
         />
@@ -413,7 +413,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           icon={<Icon name="share" size="sm" color={colors.text.secondary} />}
           count={post.sharesCount > 0 ? post.sharesCount : undefined}
           onPress={handleShare}
-          hapticType="light"
+          hapticType="tick"
           accessibilityLabel={tr('accessibility.sharePost')}
           accessibilityHint="Share this post with others"
         />
@@ -502,7 +502,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
             />
             <BottomSheetItem
               label={tr('saf.whyShowing')}
-              icon={<Icon name="help-circle" size="sm" color={colors.text.primary} />}
+              icon={<Icon name="eye" size="sm" color={colors.text.primary} />}
               onPress={() => { setShowMenu(false); navigate(`/(screens)/why-showing?postId=${post.id}`); }}
             />
             <BottomSheetItem

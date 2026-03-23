@@ -62,7 +62,7 @@ export default function LinkChildAccountScreen() {
   });
 
   const handleSelectUser = (user: User) => {
-    haptic.selection();
+    haptic.tick();
     setSelectedUser(user);
     setPinStep('confirm');
   };
