@@ -17,6 +17,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -105,18 +106,34 @@ export function LocationSearch({ onSelect, onClose, style }: LocationSearchProps
 
   return (
     <View style={[styles.searchContainer, style]}>
-      {/* Use current location button */}
+      {/* Use current location — real expo-location */}
       <Pressable
-        onPress={() => {
+        onPress={async () => {
           haptic.navigate();
-          // In production: use expo-location to get real coordinates
-          // For now, use a mock "current location" entry
-          onSelect({
-            id: 'current',
-            name: 'Current Location',
-            address: 'Using your location',
-            category: 'Current',
-          });
+          try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+              onSelect({ id: 'current', name: t('stories.useCurrentLocation'), address: '', category: 'Current' });
+              return;
+            }
+            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            // Reverse geocode to get address
+            const [geo] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+            const name = geo?.name || geo?.street || t('stories.useCurrentLocation');
+            const address = [geo?.city, geo?.region, geo?.country].filter(Boolean).join(', ');
+            onSelect({
+              id: 'current',
+              name,
+              address: address || t('stories.useCurrentLocation'),
+              city: geo?.city || undefined,
+              country: geo?.country || undefined,
+              lat: loc.coords.latitude,
+              lng: loc.coords.longitude,
+              category: 'Current',
+            });
+          } catch {
+            onSelect({ id: 'current', name: t('stories.useCurrentLocation'), address: '', category: 'Current' });
+          }
         }}
         style={({ pressed }) => [
           styles.currentLocationBtn,

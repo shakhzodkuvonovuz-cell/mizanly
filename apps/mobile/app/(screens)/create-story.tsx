@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  runOnJS, withTiming, withDelay, FadeIn, FadeInDown,
+  runOnJS, withTiming, withDelay, withSpring, FadeIn, FadeInDown,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { MusicPicker } from '@/components/story/MusicPicker';
@@ -123,12 +123,19 @@ function DraggableSticker({
   const contextX = useSharedValue(0);
   const contextY = useSharedValue(0);
   const isDragging = useSharedValue(false);
+  const stickerScale = useSharedValue(1);
+
+  const triggerDragHaptic = () => {
+    try { require('react-native').Vibration?.vibrate?.(3); } catch {}
+  };
 
   const panGesture = Gesture.Pan()
     .onStart(() => {
       contextX.value = translateX.value;
       contextY.value = translateY.value;
       isDragging.value = true;
+      stickerScale.value = withSpring(1.08, { damping: 12, stiffness: 300 });
+      runOnJS(triggerDragHaptic)();
     })
     .onUpdate((event) => {
       translateX.value = contextX.value + event.translationX;
@@ -136,6 +143,7 @@ function DraggableSticker({
     })
     .onEnd(() => {
       isDragging.value = false;
+      stickerScale.value = withSpring(1, { damping: 15, stiffness: 200 });
     });
 
   const longPressGesture = Gesture.LongPress()
@@ -153,8 +161,14 @@ function DraggableSticker({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
-      { scale: isDragging.value ? sticker.scale * 1.05 : sticker.scale },
+      { scale: sticker.scale * stickerScale.value },
     ],
+    // Subtle shadow lift when dragging
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: isDragging.value ? 8 : 2 },
+    shadowOpacity: isDragging.value ? 0.3 : 0.1,
+    shadowRadius: isDragging.value ? 16 : 4,
+    elevation: isDragging.value ? 12 : 2,
   }));
 
   return (
@@ -231,6 +245,7 @@ export default function CreateStoryScreen() {
   const [addYoursPrompt, setAddYoursPrompt] = useState('');
   const [showGifSearch, setShowGifSearch] = useState(false);
   const [showLocationSearch, setShowLocationSearch] = useState(false);
+  const [stickerSearch, setStickerSearch] = useState('');
   const [musicDisplayMode, setMusicDisplayMode] = useState<'compact' | 'lyrics' | 'waveform'>('compact');
   const haptic = useContextualHaptic();
 
@@ -1109,16 +1124,28 @@ export default function CreateStoryScreen() {
             }}>
               <Icon name="search" size="sm" color={tc.text.tertiary} />
               <TextInput
+                value={stickerSearch}
+                onChangeText={setStickerSearch}
                 placeholder={t('stories.searchStickers')}
                 placeholderTextColor={tc.text.tertiary}
                 style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.base, fontFamily: fonts.body, paddingVertical: 0 }}
                 accessibilityLabel={t('stories.searchStickers')}
+                autoCapitalize="none"
               />
+              {stickerSearch.length > 0 && (
+                <Pressable onPress={() => setStickerSearch('')} hitSlop={8}>
+                  <Icon name="x" size="sm" color={tc.text.tertiary} />
+                </Pressable>
+              )}
             </View>
 
-            {/* 3-column grid — all 12 stickers, each 80px tall */}
+            {/* 3-column grid — filtered stickers */}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
-              {STICKER_TRAY_ITEMS.map((item, index) => {
+              {STICKER_TRAY_ITEMS.filter(item => {
+                if (!stickerSearch.trim()) return true;
+                const q = stickerSearch.toLowerCase();
+                return item.type.toLowerCase().includes(q) || t(item.labelKey).toLowerCase().includes(q);
+              }).map((item, index) => {
                 const cellWidth = (SCREEN_W - spacing.base * 2 - spacing.md * 2) / 3;
                 return (
                   <Animated.View

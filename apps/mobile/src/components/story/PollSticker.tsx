@@ -11,6 +11,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -56,7 +57,8 @@ function PollOptionRow({
 
   useEffect(() => {
     if (showResults) {
-      fillWidth.value = withTiming(percentage, { duration: 400 });
+      // Spring-based bar fill — overshoots slightly then settles (feels alive)
+      fillWidth.value = withSpring(percentage, { damping: 14, stiffness: 100, mass: 0.8 });
     }
   }, [showResults, percentage, fillWidth]);
 
