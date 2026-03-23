@@ -61,6 +61,7 @@ type EditSnapshot = {
   brightness: number; contrast: number; saturation: number; temperature: number;
   fadeIn: number; fadeOut: number;
   rotation: 0 | 90 | 180 | 270; sharpen: boolean; vignetteOn: boolean; grain: boolean;
+  audioPitch: number;
 };
 
 export default function VideoEditorScreen() {
@@ -115,6 +116,7 @@ export default function VideoEditorScreen() {
   const [sharpen, setSharpen] = useState(false);
   const [vignetteOn, setVignetteOn] = useState(false);
   const [grain, setGrain] = useState(false);
+  const [audioPitch, setAudioPitch] = useState(0); // -12 to +12 semitones
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -131,8 +133,8 @@ export default function VideoEditorScreen() {
     voiceEffect, stabilize, noiseReduce, freezeFrameAt,
     textStartTime, textEndTime, aspectRatio,
     brightness, contrast, saturation, temperature, fadeIn, fadeOut,
-    rotation, sharpen, vignetteOn, grain,
-  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain]);
+    rotation, sharpen, vignetteOn, grain, audioPitch,
+  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, audioPitch]);
 
   const applySnapshot = useCallback((s: EditSnapshot) => {
     setStartTime(s.startTime); setEndTime(s.endTime);
@@ -140,6 +142,7 @@ export default function VideoEditorScreen() {
     setBrightness(s.brightness); setContrast(s.contrast); setSaturation(s.saturation);
     setTemperature(s.temperature); setFadeIn(s.fadeIn); setFadeOut(s.fadeOut);
     setRotation(s.rotation); setSharpen(s.sharpen); setVignetteOn(s.vignetteOn); setGrain(s.grain);
+    setAudioPitch(s.audioPitch);
     setCaptionText(s.captionText); setOriginalVolume(s.originalVolume);
     setMusicVolume(s.musicVolume); setIsReversed(s.isReversed);
     setVoiceEffect(s.voiceEffect); setStabilize(s.stabilize);
@@ -434,6 +437,7 @@ export default function VideoEditorScreen() {
         sharpen: sharpen || undefined,
         vignette: vignetteOn || undefined,
         grain: grain || undefined,
+        audioPitch: audioPitch !== 0 ? audioPitch : undefined,
       };
 
       const result = await executeExport(editParams, (percent) => {
@@ -461,7 +465,7 @@ export default function VideoEditorScreen() {
     } finally {
       setIsExporting(false);
     }
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, audioPitch, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
 
   // Cancel export handler
   const handleCancelExport = useCallback(async () => {
@@ -1001,6 +1005,26 @@ export default function VideoEditorScreen() {
                 ))}
               </View>
             </ScrollView>
+
+            {/* Audio Pitch */}
+            <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.audioPitch')}</Text>
+            <View style={styles.adjustLabelRow}>
+              <Text style={styles.adjustLabel}>{t('videoEditor.pitchSemitones')}</Text>
+              <Text style={styles.adjustValue}>{audioPitch > 0 ? '+' : ''}{audioPitch}</Text>
+            </View>
+            <View style={styles.adjustPresetRow}>
+              {[-6, -3, 0, 3, 6].map(preset => (
+                <Pressable
+                  key={preset}
+                  style={[styles.adjustPreset, audioPitch === preset && styles.adjustPresetActive]}
+                  onPress={() => { pushUndo(); setAudioPitch(preset); haptic.tick(); }}
+                >
+                  <Text style={[styles.adjustPresetText, audioPitch === preset && styles.adjustPresetTextActive]}>
+                    {preset > 0 ? `+${preset}` : String(preset)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
 
             {/* Enhancement toggles */}
             <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.enhancements')}</Text>

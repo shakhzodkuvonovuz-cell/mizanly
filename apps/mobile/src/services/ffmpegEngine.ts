@@ -116,6 +116,7 @@ export interface EditParams {
   sharpen?: boolean;              // sharpen filter
   vignette?: boolean;             // standalone vignette effect
   grain?: boolean;                // film grain effect
+  audioPitch?: number;            // -12 to +12 semitones (0 = neutral)
 }
 
 export interface ExportResult {
@@ -439,6 +440,11 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   }
   const voiceEffectFilter = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
   if (voiceEffectFilter) origChain.push(voiceEffectFilter);
+  // Audio pitch adjustment (semitones → frequency ratio)
+  if (params.audioPitch && params.audioPitch !== 0) {
+    const ratio = Math.pow(2, params.audioPitch / 12).toFixed(4);
+    origChain.push(`asetrate=44100*${ratio},aresample=44100`);
+  }
   if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
   if (params.fadeIn && params.fadeIn > 0) origChain.push(`afade=t=in:st=0:d=${params.fadeIn.toFixed(2)}`);
   if (params.fadeOut && params.fadeOut > 0) {

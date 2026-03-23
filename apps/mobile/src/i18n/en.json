@@ -3363,6 +3363,8 @@
       "chipmunk": "Chipmunk",
       "telephone": "Telephone"
     },
+    "audioPitch": "Audio Pitch",
+    "pitchSemitones": "Semitones",
     "enhancements": "Enhancements",
     "noiseReduction": "Noise Reduction",
     "noiseReductionDesc": "Remove background noise and hum",
