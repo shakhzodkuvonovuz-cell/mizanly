@@ -261,13 +261,16 @@ export default function CreateReelScreen() {
   const countdownScale = useSharedValue(1);
   const countdownOpacity = useSharedValue(1);
 
-  const startCountdown = () => {
+  const startCountdown = (onComplete: () => void) => {
     setCountdown(3);
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev === null || prev <= 1) {
           clearInterval(interval);
-          setTimeout(() => setCountdown(null), 500);
+          setTimeout(() => {
+            setCountdown(null);
+            onComplete();
+          }, 500);
           return null;
         }
         return prev - 1;
@@ -508,6 +511,20 @@ export default function CreateReelScreen() {
                     style={styles.cameraFlipButton}
                   >
                     <Icon name="repeat" size="md" color="#fff" />
+                  </Pressable>
+
+                  {/* Timer/countdown button */}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('createReel.timerRecord')}
+                    onPress={() => {
+                      if (!isRecording) {
+                        startCountdown(() => handleCameraRecord());
+                      }
+                    }}
+                    style={styles.cameraFlipButton}
+                  >
+                    <Icon name="clock" size="md" color="#fff" />
                   </Pressable>
 
                   {/* Record button */}

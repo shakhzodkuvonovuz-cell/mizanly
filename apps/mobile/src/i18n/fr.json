@@ -2206,6 +2206,7 @@
     }
   },
   "createReel": {
+    "timerRecord": "Record with 3-second countdown",
     "selectThumbnail": "Select cover",
     "customThumbnail": "Custom",
     "normalizeAudio": "Normalize audio",

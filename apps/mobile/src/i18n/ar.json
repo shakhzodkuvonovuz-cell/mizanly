@@ -1982,6 +1982,7 @@
     }
   },
   "createReel": {
+    "timerRecord": "Record with 3-second countdown",
     "selectThumbnail": "اختر غلاف",
     "customThumbnail": "مخصص",
     "normalizeAudio": "تسوية الصوت",

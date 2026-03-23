@@ -2199,6 +2199,7 @@
     }
   },
   "createReel": {
+    "timerRecord": "Record with 3-second countdown",
     "selectThumbnail": "Küçük resim seçin",
     "customThumbnail": "Özel",
     "normalizeAudio": "Ses normalleştirme",
