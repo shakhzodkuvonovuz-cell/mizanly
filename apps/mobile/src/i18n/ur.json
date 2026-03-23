@@ -1543,7 +1543,9 @@
     "topicSports": "Sports",
     "topicBusiness": "Business",
     "topicArt": "Art",
-    "publishSettings": "Publish Settings"
+    "publishSettings": "Publish Settings",
+    "uploadCancelled": "Upload cancelled",
+    "uploadComplete": "Upload complete"
   },
   "community": {
     "fatwaQA": "Fatwa Q&A",

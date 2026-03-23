@@ -24,6 +24,8 @@ import { LocationPicker } from '@/components/ui/LocationPicker';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { AnimatedAccordion } from '@/components/ui/AnimatedAccordion';
+import { RichCaptionInput, type RichCaptionInputRef } from '@/components/ui/RichCaptionInput';
+import { UploadProgressBar, uploadWithProgress } from '@/components/ui/UploadProgressBar';
 import { colors, spacing, fontSize, radius, fontSizeExt, fonts } from '@/theme';
 import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
@@ -67,6 +69,8 @@ export default function CreatePostScreen() {
   const [circleId, setCircleId] = useState<string | undefined>();
   const [showCirclePicker, setShowCirclePicker] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const uploadAbortRef = useRef<(() => void) | null>(null);
 
   // Autocomplete state
   const [autocompleteType, setAutocompleteType] = useState<AutocompleteType>(null);
@@ -92,7 +96,7 @@ export default function CreatePostScreen() {
   const [remixAllowed, setRemixAllowed] = useState(true);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
 
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<RichCaptionInputRef>(null);
   const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
 
@@ -220,23 +224,34 @@ export default function CreatePostScreen() {
   const createMutation = useMutation({
     mutationFn: async () => {
       setUploading(media.length > 0);
+      setUploadProgress(0);
 
       const mediaUrls: string[] = [];
       const mediaTypes: string[] = [];
       let mediaWidth: number | undefined;
       let mediaHeight: number | undefined;
 
-      // Upload each media file
-      for (const item of media) {
+      // Upload each media file with real progress tracking
+      for (let i = 0; i < media.length; i++) {
+        const item = media[i];
         const ext = item.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
         const contentType = item.type === 'video' ? `video/${ext}` : `image/${ext}`;
         const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'posts');
 
-        // Fetch file and upload to presigned URL
         const fileRes = await fetch(item.uri);
         const blob = await fileRes.blob();
-        const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
-        if (!uploadRes.ok) throw new Error(`Upload failed (${uploadRes.status})`);
+
+        // Use XMLHttpRequest for real progress tracking
+        const baseProgress = (i / media.length) * 100;
+        const itemWeight = 100 / media.length;
+        const { promise, abort } = uploadWithProgress(
+          uploadUrl,
+          blob,
+          contentType,
+          (percent) => setUploadProgress(baseProgress + (percent / 100) * itemWeight),
+        );
+        uploadAbortRef.current = abort;
+        await promise;
 
         mediaUrls.push(publicUrl);
         mediaTypes.push(item.type);
@@ -246,6 +261,7 @@ export default function CreatePostScreen() {
         }
       }
 
+      uploadAbortRef.current = null;
       setUploading(false);
 
       const postType =
@@ -396,49 +412,27 @@ export default function CreatePostScreen() {
             </Pressable>
           )}
 
-          {/* Caption input */}
-          <TextInput
+          {/* Rich caption input — #hashtags emerald, @mentions blue, URLs gold */}
+          <RichCaptionInput
             ref={inputRef}
-            style={styles.input}
-            placeholder={t('compose.whatsOnYourMind')}
-            placeholderTextColor={tc.text.tertiary}
-            accessibilityLabel={t('accessibility.postContent')}
             value={content}
-            onChangeText={(text) => {
-              setContent(text);
-
-              // Detect if typing a hashtag or mention
-              const cursorPos = text.length;
-              const textBeforeCursor = text.slice(0, cursorPos);
-
-              // Check for hashtag pattern: #word
-              const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_\u0600-\u06FF]*)$/);
-              if (hashMatch) {
-                setAutocompleteType('hashtag');
-                setShowAutocomplete(true);
-                setAutocompleteQuery(hashMatch[1]);
-                return;
-              }
-
-              // Check for mention pattern: @word
-              const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\.]*)$/);
-              if (mentionMatch) {
-                setAutocompleteType('mention');
-                setShowAutocomplete(true);
-                setAutocompleteQuery(mentionMatch[1]);
-                return;
-              }
-
-              // If no pattern matched, hide autocomplete
+            onChangeText={setContent}
+            placeholder={t('compose.whatsOnYourMind')}
+            maxLength={2200}
+            autoFocus
+            accessibilityLabel={t('accessibility.postContent')}
+            onTriggerAutocomplete={(type, query) => {
+              setAutocompleteType(type);
+              setShowAutocomplete(true);
+              setAutocompleteQuery(query);
+            }}
+            onDismissAutocomplete={() => {
               if (showAutocomplete) {
                 setShowAutocomplete(false);
                 setAutocompleteType(null);
                 setAutocompleteQuery('');
               }
             }}
-            multiline
-            maxLength={2200}
-            autoFocus
           />
 
           {/* Premium glassmorphism media previews */}
@@ -844,13 +838,21 @@ export default function CreatePostScreen() {
           )}
         </BottomSheet>
 
-        {/* Upload progress overlay */}
-        {uploading && (
-          <View style={styles.uploadOverlay}>
-            <Skeleton.Circle size={48} />
-            <Text style={styles.uploadText}>{t('compose.uploadingMedia')}</Text>
-          </View>
-        )}
+        {/* Upload progress bar — non-blocking, shows real percentage */}
+        <UploadProgressBar
+          visible={uploading}
+          progress={uploadProgress}
+          label={media.length > 1 ? `${t('compose.uploadingMedia')} (${Math.ceil((uploadProgress / 100) * media.length)}/${media.length})` : undefined}
+          onCancel={() => {
+            if (uploadAbortRef.current) {
+              uploadAbortRef.current();
+              uploadAbortRef.current = null;
+              setUploading(false);
+              setUploadProgress(0);
+              showToast({ message: t('compose.uploadCancelled'), variant: 'info' });
+            }
+          }}
+        />
 
         {/* Location display */}
         {location && (
