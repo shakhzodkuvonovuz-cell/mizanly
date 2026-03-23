@@ -3321,6 +3321,11 @@
     "filterVivid": "Vivid",
     "filterDramatic": "Dramatic",
     "filterFade": "Fade",
+    "filterEmerald": "Emerald",
+    "filterGolden": "Golden",
+    "filterNight": "Night",
+    "filterSoft": "Soft",
+    "filterCinematic": "Cinematic",
     "font": {
       "default": "Default",
       "bold": "Bold",

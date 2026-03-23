@@ -16,7 +16,7 @@ import * as FileSystem from 'expo-file-system';
 
 // ── Types ──────────────────────────────────────────────────────────
 
-export type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade';
+export type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade' | 'emerald' | 'golden' | 'night' | 'soft' | 'cinematic';
 export type QualityPreset = '720p' | '1080p' | '4K';
 
 export interface EditParams {
@@ -55,6 +55,11 @@ const FILTER_MAP: Record<FilterName, string> = {
   vivid: 'eq=saturation=1.5:contrast=1.1',
   dramatic: 'eq=contrast=1.3:brightness=-0.05:saturation=1.2,vignette=PI/4',
   fade: 'eq=saturation=0.5:contrast=0.9:brightness=0.05',
+  emerald: "curves=r='0/0 0.5/0.3 1/0.7':g='0/0 0.5/0.6 1/1':b='0/0 0.5/0.35 1/0.75'",
+  golden: "curves=r='0/0 0.5/0.6 1/1':g='0/0 0.5/0.5 1/0.85':b='0/0 0.5/0.3 1/0.6',eq=brightness=0.03",
+  night: "eq=brightness=-0.1:contrast=1.2:saturation=0.7,curves=b='0/0 0.5/0.55 1/0.9'",
+  soft: "eq=saturation=0.8:contrast=0.9:brightness=0.06,gblur=sigma=0.5",
+  cinematic: "eq=contrast=1.15:saturation=0.9,curves=r='0/0.05 0.5/0.45 1/0.9':b='0/0 0.5/0.4 1/0.85',vignette=PI/5",
 };
 
 // ── Quality presets ────────────────────────────────────────────────

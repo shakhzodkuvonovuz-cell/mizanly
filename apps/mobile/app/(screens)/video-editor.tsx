@@ -25,7 +25,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 type ToolTab = 'trim' | 'speed' | 'filters' | 'text' | 'music' | 'volume';
 type SpeedOption = 0.25 | 0.5 | 1 | 1.5 | 2 | 3;
-type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade';
+type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade' | 'emerald' | 'golden' | 'night' | 'soft' | 'cinematic';
 type QualityOption = '720p' | '1080p' | '4K';
 
 const SPEED_OPTIONS: SpeedOption[] = [0.25, 0.5, 1, 1.5, 2, 3];
@@ -39,6 +39,11 @@ const FILTERS: { id: FilterName; labelKey: string; color: string }[] = [
   { id: 'vivid', labelKey: 'videoEditor.filterVivid', color: '#0A7B4F' },
   { id: 'dramatic', labelKey: 'videoEditor.filterDramatic', color: '#F85149' },
   { id: 'fade', labelKey: 'videoEditor.filterFade', color: '#6E7781' },
+  { id: 'emerald', labelKey: 'videoEditor.filterEmerald', color: '#0A7B4F' },
+  { id: 'golden', labelKey: 'videoEditor.filterGolden', color: '#C8963E' },
+  { id: 'night', labelKey: 'videoEditor.filterNight', color: '#1C2333' },
+  { id: 'soft', labelKey: 'videoEditor.filterSoft', color: '#E8D5B7' },
+  { id: 'cinematic', labelKey: 'videoEditor.filterCinematic', color: '#2D3548' },
 ];
 
 const FONT_OPTION_KEYS = ['default', 'bold', 'handwritten'];
@@ -239,6 +244,8 @@ export default function VideoEditorScreen() {
           captionColor: selectedTextColor,
           captionFont: selectedFont,
           volume: originalVolume,
+          musicVolume,
+          musicTrackId: selectedTrack?.id,
           quality: selectedQuality,
         };
 
@@ -294,6 +301,7 @@ export default function VideoEditorScreen() {
         captionFont: selectedFont,
         originalVolume,
         musicVolume,
+        musicUri: selectedTrack?.audioUrl,
         quality: selectedQuality,
       };
 
