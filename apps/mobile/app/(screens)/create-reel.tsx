@@ -670,7 +670,7 @@ export default function CreateReelScreen() {
                           setClipTransition(types[(idx + 1) % types.length]);
                         }}
                       >
-                        <Icon name="layers" size={12} color={clipTransition !== 'none' ? colors.emerald : '#fff'} />
+                        <Icon name="layers" size={12} color={clipTransition !== 'none' ? colors.emerald : colors.text.onColor} />
                         <Text style={[styles.clipCountText, clipTransition !== 'none' && { color: colors.emerald }]}>
                           {clipTransition === 'none' ? t('createReel.noTransition') : clipTransition}
                         </Text>
@@ -1168,7 +1168,7 @@ const styles = StyleSheet.create({
   },
   clipCountText: {
     fontSize: fontSize.sm,
-    color: '#fff',
+    color: colors.text.onColor,
     fontFamily: fonts.mono,
   },
   transitionBadge: {
@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
   clipDoneText: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text.onColor,
   },
   clipProgressBar: {
     height: 3,
@@ -1236,7 +1236,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   countdownText: {
-    color: '#fff',
+    color: colors.text.onColor,
     fontSize: 60,
     fontWeight: '700',
   },
@@ -1264,7 +1264,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   videoInfoText: {
-    color: '#fff',
+    color: colors.text.onColor,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
