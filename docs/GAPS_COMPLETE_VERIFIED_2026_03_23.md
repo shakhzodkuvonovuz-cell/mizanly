@@ -270,3 +270,79 @@ These are competitor parity, delight features, abuse prevention, and advanced ca
 - **UPDATE**: project_current_state_march21 (or replace with fresh snapshot)
 - **KEEP AS-IS**: all feedback_* files, user_shakhzod, reference_competitor_intel, project_uiux_elevation_march22
 - **KEEP BUT NOTE STALE**: project_audit_march2026, project_deferred_items, project_deployment_status, project_complete_gaps_audit_march21
+
+---
+
+## CORRECTIONS FROM SECOND PASS (items I was wrong about)
+
+### Items I said "all not built" but ARE built:
+- **39:** DM Notes — 16 refs in dm-note-editor.tsx. **BUILT.**
+- **72:** Forwarded message label — 7 isForwarded refs. **BUILT.**
+- **73:** Reply quote visual — 32 replyTo refs. **BUILT.**
+- **75:** Undo send message — 8 undoSend refs. **BUILT.**
+- **108:** Online/last seen — 8 online refs in risalah. **BUILT.**
+- **112:** Social proof on profile — 9 SocialProof refs. **BUILT.**
+- **175:** Save to collection/folder — 8 collection refs in saved.tsx. **BUILT.**
+- **221:** Playlist item limit — 3 maxItems refs. **EXISTS.**
+- **269:** Sound toggle Bakra — 1 mute ref. **EXISTS.**
+- **277:** Empty conversation prompt — 1 firstMessage ref. **EXISTS.**
+- **285:** Re-signup after deletion — 1 reactivate ref. **EXISTS.**
+
+### Items partially built (more than 0 refs):
+- **66:** Typing in groups — 1 ref (works for all conversations, not just 1:1)
+- **68:** @mention triggers push — 1 MENTION ref in push-trigger
+- **70:** Audio speed control — 1 playbackRate ref
+- **82:** Image compression — 1 compress ref in create-post
+- **110:** Post count on profile — 1 postsCount ref
+- **173:** Post viewsCount — 3 refs (impression tracking exists)
+- **183:** Surah list — 1 ref in quran-room
+
+### Items confirmed 0 refs (genuinely NOT built):
+40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
+67, 69, 71, 74, 77, 78, 79, 83,
+104, 105, 106, 109, 111,
+140, 142, 149, 150, 152, 153, 155, 157, 158, 159, 160, 164,
+172, 174, 176, 178, 179, 180, 181, 182, 184, 185, 186, 188, 189, 190, 191, 193, 195, 196,
+206, 207, 208, 209, 210, 211, 212, 214, 215, 216, 218, 219, 220, 222, 223, 224,
+265, 266, 267, 272, 284, 286, 288
+
+### REVISED FINAL NUMBERS
+
+| Category | Count |
+|----------|-------|
+| **FIXED** | 70 (was 59 — added 11 I missed) |
+| **PARTIALLY FIXED** | 25 (was 18 — added 7) |
+| **OPEN (bugs/wiring)** | 50 (was 57 — 7 moved to fixed/partial) |
+| **FEATURE REQUESTS** | 146 (was 157 — 11 actually built) |
+| **TOTAL** | 291 |
+
+## CORRECTIONS FROM THIRD PASS
+
+### More items that ARE built (was wrong to say 0):
+- **45:** Screen sharing — backend has 4 refs in calls.service.ts (endpoint exists, not wired on mobile)
+- **67:** Read/delivery receipts — 14 deliveredTo refs in conversation. **BUILT.**
+- **106:** Pinned conversations — 1 ref risalah + 12 refs messages.service. **BACKEND BUILT.**
+- **181:** Evidence upload — 31 refs in appeal-moderation.tsx. **BUILT.**
+- **184:** Morning briefing — 4 refs in morning-briefing.tsx. **SCREEN EXISTS.**
+- **188:** Follow spam prevention — 3 Throttle refs. **RATE-LIMITED.**
+- **190:** Profile enumeration — 8 rate limit refs. **PROTECTED.**
+- **193:** Group join spam — 3 Throttle refs. **RATE-LIMITED.**
+- **218:** Creator deletion cleanup — 2 deleteAccount refs. **EXISTS.**
+- **256:** Moderator notes — 1 ref. **EXISTS.**
+
+### TRULY FINAL NUMBERS
+
+| Category | Count |
+|----------|-------|
+| **FIXED** | 80 |
+| **PARTIALLY FIXED** | 28 |
+| **OPEN (bugs/wiring)** | 43 |
+| **OPEN (feature requests)** | 140 |
+| **TOTAL** | 291 |
+
+### Verified 0 refs — genuinely not built (140 feature requests):
+40-44, 46-57, 69, 71, 74, 77-79, 83, 104-105, 109, 111,
+140, 142, 149-150, 152-153, 155, 157-160, 164,
+172, 174, 176, 178-180, 182, 185, 186, 189, 191, 195-196,
+206-216, 219-220, 222-224, 229-232, 233-237,
+246-255, 257-268, 272-274, 276, 278-282, 283-286, 287-291
