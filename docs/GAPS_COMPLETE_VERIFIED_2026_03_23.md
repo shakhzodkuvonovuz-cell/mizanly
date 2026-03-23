@@ -514,3 +514,89 @@ These exist but were not line-by-line verified in this session:
 - docs/COMPETITOR_DEEP_AUDIT_2026.md
 
 These are large reference docs (some 1000+ lines). Their findings overlap heavily with the 291 gaps + 80 deferred items already verified. Reading them line-by-line would find additional items but with diminishing returns — most findings are already captured.
+
+---
+
+## DEPLOY_CHECKLIST.md VERIFICATION (105 lines, 46 items)
+
+### WRONG information in checklist:
+- Line 7: says "81 models" — actually 188
+- Line 23: webhook URL says `/auth/webhook` — actual is `/webhooks/clerk`
+- Line 57: webhook URL says `/payments/webhook` — actual is `/payments/webhooks/stripe`
+
+### Items DONE (credentials set this session):
+- 1a-c: Database (Neon) ✓
+- 4a,c,d: R2 bucket + credentials ✓
+- 5a: Stream token ✓
+- 6a: Redis ✓
+- 3c: Clerk webhook ✓
+- 8c: Stripe webhook ✓
+- 9a: Sentry ✓
+- 10a: Resend ✓
+- 11a: TURN ✓
+- 12a: eas.json ✓
+- 12b: EXPO_PUBLIC_API_URL ✓
+
+### Items NOT DONE (still need for production):
+- 1e: PgBouncer pooling — has pooler in URL but not verified
+- 2c: Custom domain api.mizanly.app — NOT configured
+- 3a: Production Clerk instance — STILL TEST keys
+- 3d: Social sign-in — NOT configured
+- 3e: Email templates — NOT configured
+- 4b: R2 CORS policy — NOT set on bucket
+- 4e: R2 lifecycle rules — NOT set
+- 5b: Stream upload limits — NOT set
+- 7: Meilisearch — NOT deployed
+- 8a: Stripe production — STILL TEST keys
+- 9b: Sentry source maps — NOT configured for EAS
+- 10b: Resend verified domain — NOT done
+- 12c-d: iOS/Android builds — NOT done
+- 12e: Push credentials in Expo — NOT configured
+- 13: Web deploy — NOT done
+- 14: DNS — NOT configured
+- 15: All pre-launch verification — NOT done
+
+## ALGORITHM_DEEP_AUDIT.md VERIFICATION (129 lines, 8 findings)
+
+| # | Finding | Status | Evidence |
+|---|---------|--------|----------|
+| 1 | SQL injection embeddings | **FIXED** | Enum validation |
+| 2 | Interest vector averaging | **OPEN** | 0 cluster/centroid refs |
+| 3 | No exploration budget | **OPEN** | 0 exploration refs |
+| 4 | Hardcoded scoring weights | **OPEN** | 0 configService/abTest refs |
+| 5 | Session signals in-memory | **OPEN** | 17 Map refs (should be Redis) |
+| 6 | Islamic boost hardcoded times | **PARTIAL** | boost exists, may use fixed hours |
+| 7 | Naive diversity reranking | **OPEN** | Only same-author prevention |
+| 8 | Trending window too wide | **OPEN** | 48-hour window, no time decay |
+
+## PRIORITY_FIXES.md VERIFICATION (74 lines, 12 items)
+
+| # | Finding | Status |
+|---|---------|--------|
+| P0-001 | Prayer times mock | **FIXED** (Aladhan API) |
+| P0-002 | Mosque finder mock | **FIXED** (Haversine) |
+| P0-003 | Image moderation | **FIXED** (Claude Vision) |
+| P1-001 | 93 dangling FKs | **FIXED** (311 onDelete rules) |
+| P1-002 | No TURN server | **FIXED** (Metered.ca credentials) |
+| P1-003 | Charity Int→Decimal | **FIXED** |
+| P2-001 | Mixed cuid/uuid | **OPEN** |
+| P2-002 | userId naming | **RESOLVED** (intentional) |
+| P2-003 | 41 String→Enum | **OPEN** |
+| P2-004 | Missing createdAt | **LIKELY FIXED** (212 createdAt refs) |
+| P3-001 | Boolean prefix | **OPEN** (convention) |
+
+## NEWLY DISCOVERED BUGS (from this full verification):
+
+1. **story-viewer.tsx:149** — uses old `useHaptic()` instead of `useContextualHaptic()`. Rule 17 violation.
+2. **live/[id].tsx:133** — `Math.random()` for emoji animation. Rule 23 violation.
+3. **ogApi.ts missing** — backend OG module exists, no mobile service.
+4. **expo-store-review not installed** — no app rating prompt.
+5. **Deploy checklist has WRONG webhook URLs** — will cause misconfiguration.
+6. **Clerk still uses TEST keys** — needs production instance before launch.
+7. **Stripe still uses TEST keys** — needs live keys before launch.
+8. **R2 CORS not configured** — uploads from mobile may fail in production.
+9. **Sentry source maps not configured** — crash reports won't have readable stack traces.
+10. **Resend domain not verified** — emails may go to spam.
+11. **Algorithm: session signals in-memory** — won't work across Railway instances.
+12. **Algorithm: no exploration mechanism** — new content can never surface.
+13. **Algorithm: interest vector averages into noise** — diverse users get bad recommendations.
