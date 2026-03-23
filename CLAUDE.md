@@ -122,47 +122,227 @@ npm install expo-screen-capture --legacy-peer-deps
 npm install expo-store-review --legacy-peer-deps
 ```
 
-## REMAINING TECHNICAL DEBT (verified 2026-03-23 final audit)
+## REMAINING WORK (verified 2026-03-23 final grep audit)
 
 **Session 2 stats:** 10 waves, 80 agents, ~220 fixes, 4,706 tests, 965 commits. MASTER_TODO: 179 done, 13 partial, 59 open + 140 competitor features.
 
-**Packages installed but NOT wired:**
-- react-native-shared-element — no SharedElement transitions in screens
-- react-native-maps — MosqueFinder doesn't use MapView
-- react-native-webrtc — RTCPeerConnection in call screen but no getUserMedia/ICE exchange
-- expo-location — installed but LocationPicker uses hardcoded mosques
-- Lottie — no .json animation files, no LottieView
-- Social auth Google/Apple — disabled buttons, needs Clerk dashboard config
-- Green screen — needs TFLite model
+### 13 PARTIAL ITEMS (started, not finished)
 
-**Payments:** donate, gift-shop, waqf, orders all wired to Stripe PaymentIntent. Cashout has withdrawal UI (backend endpoint TODO). Apple IAP not installed (needed for iOS monetization).
+1. **Payments** — donate/gift-shop/waqf/orders wired to Stripe. Cashout UI wired. Backend `/monetization/wallet/cashout` endpoint needs building.
+2. **Video editor** — uploads original with edit metadata. Real editing needs `ffmpeg-kit-react-native`.
+3. **Cashout withdrawal** — UI + requestCashout call wired. Backend endpoint TODO.
+4. **Islamic audio** — dhikr/dua/names-of-allah use Audio.Sound. Still no Quran recitation audio CDN.
+5. **Screenshot prevention** — code exists in 2fa-setup + verify-encryption, commented out. Needs `expo-screen-capture` install.
+6. **accessibilityLabel** — 241/~250 files done. ~9 remaining.
+7. **accessibilityRole** — 200/212 files done. ~12 remaining.
+8. **accessibilityHint** — 11 files. Should be ~50+ complex action files.
+9. **accessibilityState** — 50 files. Mostly done.
+10. **TwoFactorSecret encryption** — encryptedSecret column + encrypt/decrypt methods exist. Migration of existing secrets pending.
+11. **Socket notification delivery** — Redis publish exists. Gateway subscription to emit to socket rooms pending.
+12. **Widget support** — widgetData.ts + plugins/widgets/app.plugin.js exist. Native widget code not compiled/tested.
+13. **RTL left:/right:** — marginLeft/Right done (~429 replacements). Some left:/right: in components remain (~50 intentional skips for physical positions).
 
-**RTL:** COMPLETE — ~429 margin/padding/position replacements across ~134 files in 3 batches. ~28 intentional physical-position skips (editors, compass, canvas, centering tricks).
+### 59 OPEN ITEMS
 
-**Translations:** ur 14%, bn 14%, fr 15%, id 16%, ms 15% — needs human translator. ar 77%, tr 89%.
+**Blocked on external (16 — cannot code):**
+1. Apple IAP package not installed (App Store rejects coin purchases via Stripe)
+2. App icon 69-byte placeholder (build will crash)
+3. App splash 69-byte placeholder (build will crash)
+4. Apple Developer $99/yr enrollment
+5. Clerk still uses TEST keys (sk_test_)
+6. Stripe still uses TEST keys
+7. APP_URL still localhost:3000
+8. No custom domain (api.mizanly.app)
+9. No DNS configured
+10. Social auth Google/Apple — needs Clerk dashboard config
+11. 18 HIGH severity npm vulnerabilities
+12. R2 CORS not configured on bucket
+13. R2 lifecycle rules not set (temp uploads pile up)
+14. Sentry source maps not configured for EAS builds
+15. Resend domain not verified (emails may go to spam)
+16. Metro bundler version conflict (CI mobile build fails)
 
-**Schema remaining (deferred — risky migrations):**
-- P1-DANGLING: 8 FK fields still lack @relation (sourceReelId, commentId, answeredBy, etc.)
-- P1-FKARRAY: String[] arrays that should be join tables (3 models)
-- P2-001: Mixed cuid/uuid strategy (94+61) — leave as-is for now
-- C-02: Dual balance system (CoinBalance table + User.coinBalance) — needs consolidation
-- TOTP encryption + backup hash salt fields added with migration TODOs
+**Needs package install (5 — user at terminal):**
+17. react-native-shared-element — installed, no SharedElement in screens
+18. react-native-maps — installed, MosqueFinder doesn't use MapView
+19. expo-location — installed but LocationPicker uses hardcoded mosques
+20. Lottie — no .json animation files, no LottieView
+21. Green screen ML segmentation — needs TFLite model
 
-**Algorithm remaining:**
-- A/B testing framework for scoring weights (hardcoded currently)
-- Scoring weights not tunable without code deploy
+**Schema (4 — risky migrations, defer post-launch):**
+22. P1-DANGLING: 8 FK fields lack @relation (sourceReelId, commentId, answeredBy, answerId, completedBy, forwardedFromId ×2, targetChannelId)
+23. P1-FKARRAY: 3 String[] arrays should be join tables
+24. P2-001: Mixed cuid/uuid strategy (94 cuid + 61 uuid) — leave as-is
+25. C-02: Dual balance system (CoinBalance table + User.coinBalance coexist)
 
-**Still open (code-fixable, low priority):**
-- Old username links break (needs UsernameHistory schema model)
-- Status privacy in AsyncStorage only (needs backend persistence)
-- Video editor simulated (FFmpeg not installed)
-- Call screen facade (WebRTC not wired — Month 2 roadmap)
-- Zero Quran/Adhan audio on Islamic screens (has dhikr/dua audio)
-- Mosque Finder no map (react-native-maps installed, not wired)
+**Translations (7 — human translator needed):**
+26. Urdu (ur): 14%
+27. Bengali (bn): 14%
+28. French (fr): 15%
+29. Indonesian (id): 16%
+30. Malay (ms): 15%
+31. Arabic (ar): 77%
+32. Turkish (tr): 89%
 
-**Cannot fix via code:** PostGIS for nearby content, CDN image variants, virus scanning, AI caption generation, Meilisearch deployment
+**Infrastructure (5 — separate projects):**
+33. No landing page (mizanly.com)
+34. No analytics/attribution
+35. No admin dashboard web UI
+36. No moderation dashboard web UI
+37. No CI/CD pipeline for mobile builds
 
-**Deferred features:** AI dubbing, AI restyle, Friends Map, camera effects, TV app, Bakra "not interested" swipe, profile story highlights, data import, Expo Web PWA
+**Code-fixable, low priority (10):**
+38. WebRTC calls not wired (Month 2 roadmap)
+39. Call screen facade — no real audio/video
+40. Old username links break (needs UsernameHistory schema model)
+41. Status privacy in AsyncStorage only (needs backend persistence)
+42. Mosque Finder no map (react-native-maps installed, not wired)
+43. LocationPicker 100% mock (hardcoded locations)
+44. Quran recitation audio missing (other Islamic audio works)
+45. Small touch targets: 53 elements at 40px (below 44px WCAG minimum)
+46. F20: Safety numbers weak (SHA-256 truncation, needs Signal SAS)
+47. A/B testing framework for algorithm weights
+
+**Large file decomposition (4 — refactoring, not bugs):**
+48. conversation/[id].tsx — 2,429 lines
+49. create-story.tsx — 1,237 lines
+50. video/[id].tsx — 1,490 lines
+51. search.tsx — 997 lines
+
+**Tests (3):**
+52. Ralph test batch 3 (~1,050 planned, never executed)
+53. toBeDefined cleanup — 158 enhanced this session, some may remain
+54. string.length assertions — mostly fixed
+
+**Cannot fix via code (5):**
+55. PostGIS for nearby content
+56. CDN image variants (Cloudflare Image Resizing)
+57. Virus scanning (ClamAV or cloud service)
+58. AI caption generation for images
+59. Meilisearch deployment (search falls back to Prisma LIKE)
+
+### 140 COMPETITOR FEATURE REQUESTS (post-launch)
+
+**Instagram parity (15):**
+- In-app gallery grid with multi-select badges
+- In-app photo filters (not opacity fakes)
+- In-app camera capture in create post
+- Aspect ratio controls in create flow
+- Mixed-size masonry grid on Discover
+- Auto-playing video thumbnails on Discover
+- "View all X comments" inline preview
+- Skeleton→content crossfade animation
+- Like count tick-up animation
+- Post view count on feed
+- Seen-by list on stories (expandable)
+- "Add to Story" from post detail
+- Close friends star indicator on story ring
+- First-time creator onboarding flow
+- Brand partnership marketplace
+
+**TikTok parity (10):**
+- Camera recording with timer/speed/multi-clip
+- Following/For You swipe tab gesture
+- Single-tap to pause video
+- Creator info slide-up on pause
+- Audio waveform during recording
+- Sound page with "Use this sound" CTA
+- Interactive volume/speed sliders
+- Proactive cache warming (pre-fetch next page)
+- Anti-doom-scrolling break reminders
+- Frustration detection (rapid scrolling → suggest break)
+
+**X/Twitter parity (3):**
+- Poll results bar animation
+- "Show N new posts" real-time banner
+- Nested/indented reply threads
+
+**WhatsApp/Telegram parity (5):**
+- Voice message speed control (1x/1.5x/2x)
+- Disappearing messages timer icon on chat list
+- View-once screenshot detection + notification
+- Voice message transcription display
+- Background music selection for stories
+
+**YouTube parity (5):**
+- Video chapter ticks on scrubber
+- Video thumbnail hover/long-press preview
+- PiP transition animation
+- Subscription bell levels (None/Personalized/All)
+- Collaborative playlists
+
+**Islamic features (10):**
+- Full Quran text verse-by-verse reading
+- Tafsir comparison (multiple scholars)
+- Hadith chain of narration (isnad)
+- Prayer notification per-prayer customization
+- Mosque community event integration
+- Halal restaurant reviews with photos
+- Halal food barcode scanner
+- Quran verse of the day widget
+- Islamic greeting auto-suggestions
+- Mosque check-in social feature
+
+**Creator tools (8):**
+- Content calendar
+- Audience insights (demographics, peak times)
+- Hashtag performance analytics
+- Business profile type (contact, hours, location)
+- Verified organization badges
+- Multi-admin organization accounts
+- Branded content tools (partnership labels)
+- Promoted/sponsored content marketplace
+
+**Safety & moderation (8):**
+- Comment spam detection (repeated text)
+- Fake engagement detection (like farms)
+- Content warning system (CW tags)
+- Trigger warning filters (configurable)
+- Soft-ban shadow mode
+- Appeal status tracking timeline
+- Community guidelines quiz before first post
+- DSA compliance (EU Digital Services Act)
+
+**Infrastructure & scale (7):**
+- Read replica for heavy queries
+- CDN edge caching for media
+- Database connection pooling tuning
+- Horizontal Socket.io scaling (Redis adapter done, load test needed)
+- Investor metrics dashboard (DAU, MAU, retention)
+- Funnel analytics (signup → first post → D7)
+- Battery-aware video quality switching
+
+**UX polish (12):**
+- Colorblind-safe mode
+- Cookie consent banner (web)
+- Mood-based content recommendations
+- Time-of-day aware feed
+- Celebration moments (confetti on milestones)
+- Image resize before upload
+- Background app refresh for notifications
+- Audio equalizer for voice posts
+- Comment thread folding
+- Image alt text editor on upload
+- Scheduled post preview
+- Draft expiry (auto-delete 30 days)
+
+**Social & profiles (10):**
+- "New posts" shake-to-refresh
+- Activity status customization (Online/Away/DND)
+- Cross-post between spaces
+- Student/teacher mode
+- Parental activity summary email
+- Senior-friendly mode (large text)
+- Low-data mode
+- Account recovery without email (social recovery)
+- Login session management (see/revoke)
+- Profile verification application
+
+**Legal/compliance (4):**
+- DMCA takedown workflow
+- Age verification (13+)
+- Data processing agreement (DPA)
+- Trust score visible on profile
 
 ---
 
