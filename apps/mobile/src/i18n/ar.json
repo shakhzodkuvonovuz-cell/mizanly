@@ -2892,7 +2892,16 @@
     "countdownSecs": "Secs",
     "countdownTurnOff": "Turn off reminder",
     "countdownTurnOn": "Remind me about this event",
-    "filterEmerald": "Emerald"
+    "filterEmerald": "Emerald",
+    "poweredByGiphy": "Powered by GIPHY",
+    "gifCategoryTrending": "Trending",
+    "gifCategoryReactions": "Reactions",
+    "gifCategoryLove": "Love",
+    "gifCategoryHappy": "Happy",
+    "gifCategorySad": "Sad",
+    "gifCategoryCelebrate": "Celebrate",
+    "gifCategoryIslamic": "Islamic",
+    "gifCategoryFunny": "Funny"
   },
   "windDown": {
     "title": "حان وقت الراحة",

@@ -34,7 +34,8 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 **Real-time:** Socket.io on 4 screens (chat, calls, Quran rooms, conversation list) with Clerk JWT auth, reconnection, token refresh. Redis pub/sub for notification delivery to socket rooms.
 **Algorithm:** 3-stage ranking (pgvector KNN → weighted scoring → diversity reranking), k-means multi-cluster interest vectors (2-3 centroids), 15% exploration slots, hashtag diversity reranking, Islamic boost location-aware via prayer-calculator, session signals in Redis, trending 24h window with 12h decay, HNSW vector index, cursor-based keyset pagination.
 **Payments:** Stripe PaymentIntent wired on donate, gift-shop, waqf, orders, send-tip. 4 cashout wallet endpoints (balance, payment-methods, cashout, payout-history). Apple IAP not installed.
-**All credentials configured** (31/33 — only Meilisearch + APP_URL production). R2, Cloudflare Stream, Sentry, Resend, Stripe, TURN, Gemini, Whisper, Claude all SET.
+**All credentials configured** (32/34 — only Meilisearch + APP_URL production). R2, Cloudflare Stream, Sentry, Resend, Stripe, TURN, Gemini, Whisper, Claude, GIPHY all SET.
+**GIPHY SDK:** Beta key active (100 searches/hr). Production key requires app demo + approval — apply before launch when screens are ready. SDK gives GIF search + GIPHY Text (animated text stickers) + Stickers + Clips.
 **Schema:** 55 Prisma enums (all 41 String→Enum complete). 7/8 dangling FK relations fixed (1 unfixable — polymorphic). StarredMessage + WaqfDonation + VideoCommentLike + ScholarQuestionVote + HalalVerifyVote join tables. 25+ indexes. previousUsername for redirect. Privacy settings server-side. TOTP encryption + backup salt fields.
 **RTL:** Complete — ~430 margin/padding/position replacements across 134 files.
 **Security:** Pre-save moderation on all content types, AI prompt XML hardening, device fingerprint (5/device), nsfwjs client-side service ready, file size limits on uploads.
@@ -211,6 +212,7 @@ Full list in `~/.claude/projects/C--dev-mizanly/memory/project_session3_complete
 - [ ] Fix bugs from beta testers
 - [ ] App Store screenshots + description
 - [ ] Landing page at mizanly.app
+- [ ] GIPHY production key application (requires demo video of app screens showing GIF integration)
 
 ### Month 2: Post-Launch
 - [ ] WebRTC calls wiring (~500-800 lines, TURN credentials ready)

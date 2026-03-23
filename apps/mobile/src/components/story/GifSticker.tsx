@@ -6,7 +6,6 @@ import {
   TextInput,
   Pressable,
   FlatList,
-  ActivityIndicator,
   Dimensions,
   StyleProp,
   ViewStyle,
@@ -14,13 +13,11 @@ import {
 import Animated, {
   FadeIn,
   FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
-import { colors, spacing, fontSize, radius, animation, fonts } from '@/theme';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -60,16 +57,35 @@ const GIF_CATEGORIES = [
   { id: 'funny', label: 'Funny', icon: 'smile' as const },
 ];
 
-// ── Mock GIF data (real app would use GIPHY/Tenor API) ──
-function generateMockGifs(query: string, count: number = 12): GifItem[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `gif-${query}-${i}`,
-    url: `https://media.giphy.com/media/placeholder/giphy.gif`,
-    previewUrl: `https://media.giphy.com/media/placeholder/200w.gif`,
-    width: 200 + (i % 3) * 50,
-    height: 150 + (i % 4) * 30,
-    title: `${query} gif ${i + 1}`,
-  }));
+// ── GIPHY API integration ──
+const GIPHY_API_KEY = process.env.EXPO_PUBLIC_GIPHY_API_KEY || '';
+const GIPHY_BASE = 'https://api.giphy.com/v1/gifs';
+
+async function fetchGiphyGifs(query: string, limit: number = 20): Promise<GifItem[]> {
+  if (!GIPHY_API_KEY) return [];
+  try {
+    const endpoint = query && query !== 'trending'
+      ? `${GIPHY_BASE}/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=${limit}&rating=pg`
+      : `${GIPHY_BASE}/trending?api_key=${GIPHY_API_KEY}&limit=${limit}&rating=pg`;
+    const res = await fetch(endpoint);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.data || []).map((gif: Record<string, unknown>) => {
+      const images = gif.images as Record<string, Record<string, string>>;
+      const original = images?.original || {};
+      const preview = images?.fixed_width || images?.preview_gif || original;
+      return {
+        id: String(gif.id),
+        url: original.url || '',
+        previewUrl: preview.url || original.url || '',
+        width: parseInt(original.width || '200', 10),
+        height: parseInt(original.height || '200', 10),
+        title: String(gif.title || ''),
+      };
+    });
+  } catch {
+    return [];
+  }
 }
 
 interface GifSearchProps {
@@ -92,13 +108,11 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch GIFs on mount and when category/query changes
+  // Fetch GIFs from GIPHY API
   const fetchGifs = useCallback(async (searchTerm: string) => {
     setLoading(true);
-    // In production: call GIPHY API with `searchTerm`
-    // For now, generate mock data
-    await new Promise(r => setTimeout(r, 300));
-    setGifs(generateMockGifs(searchTerm || 'trending'));
+    const results = await fetchGiphyGifs(searchTerm || 'trending');
+    setGifs(results);
     setLoading(false);
   }, []);
 
@@ -211,7 +225,14 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
       {/* GIF grid */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator color={colors.emerald} size="large" />
+          <View style={{ flexDirection: 'row', gap: GIF_ITEM_GAP }}>
+            <Skeleton.Rect width={GIF_ITEM_WIDTH} height={120} />
+            <Skeleton.Rect width={GIF_ITEM_WIDTH} height={120} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: GIF_ITEM_GAP, marginTop: GIF_ITEM_GAP }}>
+            <Skeleton.Rect width={GIF_ITEM_WIDTH} height={90} />
+            <Skeleton.Rect width={GIF_ITEM_WIDTH} height={90} />
+          </View>
         </View>
       ) : (
         <FlatList
@@ -227,7 +248,7 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
 
       {/* GIPHY attribution */}
       <View style={styles.attribution}>
-        <Text style={styles.attributionText}>Powered by GIPHY</Text>
+        <Text style={styles.attributionText}>{t('stories.poweredByGiphy')}</Text>
       </View>
     </View>
   );

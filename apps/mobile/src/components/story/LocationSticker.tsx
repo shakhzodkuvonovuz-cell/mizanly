@@ -8,7 +8,6 @@ import {
   FlatList,
   StyleProp,
   ViewStyle,
-  ActivityIndicator,
 } from 'react-native';
 import Animated, {
   FadeIn,
