@@ -518,12 +518,20 @@ export default function CreatePostScreen() {
           )}
 
           {/* ═══════ Publish Settings ═══════ */}
-          <View style={{ marginTop: spacing.lg, gap: spacing.sm }}>
+          <Animated.View entering={FadeInUp.delay(200)} style={{ marginTop: spacing.xl, gap: spacing.md }}>
+            {/* Section header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs }}>
+              <View style={{ width: 3, height: 14, borderRadius: 2, backgroundColor: colors.emerald }} />
+              <Text style={{ color: tc.text.primary, fontSize: fontSize.base, fontFamily: 'DMSans_700Bold', fontWeight: '700' }}>
+                {t('compose.publishSettings')}
+              </Text>
+            </View>
+
             {/* ── Alt text (accessibility) ── */}
             {media.length > 0 && (
               <Pressable
                 onPress={() => setShowAltText(!showAltText)}
-                style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                 accessibilityRole="button"
                 accessibilityLabel={t('compose.altText')}
               >
@@ -789,7 +797,7 @@ export default function CreatePostScreen() {
                 )}
               </View>
             )}
-          </View>
+          </Animated.View>
         </ScrollView>
 
         {/* Discard confirmation */}

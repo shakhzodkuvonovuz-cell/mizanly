@@ -1535,7 +1535,8 @@
     "topicFashion": "Fashion",
     "topicSports": "Sports",
     "topicBusiness": "Business",
-    "topicArt": "Art"
+    "topicArt": "Art",
+    "publishSettings": "Publish Settings"
   },
   "community": {
     "fatwaQA": "Fetva Soru-Cevap",
