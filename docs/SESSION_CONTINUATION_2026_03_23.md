@@ -81,6 +81,7 @@ I need you to continue the deep audit and fix work from the previous session. Re
 - `docs/audit/UI_UX_DEEP_AUDIT_2026.md` — UI/UX audit findings
 - `docs/audit/SESSION_CONTINUATION_PROMPT.md` — context for continuing audit work
 - `docs/COMPETITOR_DEEP_AUDIT_2026.md` — 15-dimension competitor scoring
+- `docs/audit/2026-03-19-comprehensive-ui-ux-audit.md` — UI/UX audit from March 19
 - `docs/PRIORITY_FIXES_CHECKLIST.md` — 152 checkboxes, many done but not checked off
 
 **2. Stale memory files to update or delete:**
