@@ -19,6 +19,8 @@ import * as FileSystem from 'expo-file-system';
 export type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade' | 'emerald' | 'golden' | 'night' | 'soft' | 'cinematic';
 export type QualityPreset = '720p' | '1080p' | '4K';
 
+export type AspectRatio = '9:16' | '16:9' | '1:1' | '4:5';
+
 export interface EditParams {
   inputUri: string;
   startTime: number;       // seconds
@@ -33,6 +35,8 @@ export interface EditParams {
   musicVolume: number;     // 0–100
   musicUri?: string;       // optional background music
   quality: QualityPreset;
+  isReversed?: boolean;    // reverse playback
+  aspectRatio?: AspectRatio; // output aspect ratio
 }
 
 export interface ExportResult {
@@ -128,6 +132,11 @@ export function buildCommand(params: EditParams, outputPath: string): string {
 
   const vFilters: string[] = [];
 
+  // Reverse (must come before speed to get correct visual result)
+  if (params.isReversed) {
+    vFilters.push('reverse');
+  }
+
   // Speed adjustment
   if (speed !== 1) {
     vFilters.push(`setpts=${(1 / speed).toFixed(4)}*PTS`);
@@ -142,6 +151,17 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   // Scale (quality preset)
   if (qualityCfg.scale) {
     vFilters.push(qualityCfg.scale);
+  }
+
+  // Aspect ratio crop (center crop to target ratio)
+  if (params.aspectRatio && params.aspectRatio !== '9:16') {
+    const ratioMap: Record<string, string> = {
+      '16:9': 'crop=ih*16/9:ih',
+      '1:1': 'crop=min(iw\\,ih):min(iw\\,ih)',
+      '4:5': 'crop=ih*4/5:ih',
+    };
+    const cropFilter = ratioMap[params.aspectRatio];
+    if (cropFilter) vFilters.push(cropFilter);
   }
 
   // Text overlay
@@ -159,6 +179,11 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   // ── Audio filter chain ──────────────────────────────────
 
   const aFilters: string[] = [];
+
+  // Reverse audio
+  if (params.isReversed) {
+    aFilters.push('areverse');
+  }
 
   // Speed adjustment for audio
   if (speed !== 1) {

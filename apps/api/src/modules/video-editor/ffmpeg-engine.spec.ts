@@ -29,6 +29,8 @@ interface EditParams {
   musicVolume: number;
   musicUri?: string;
   quality: QualityPreset;
+  isReversed?: boolean;
+  aspectRatio?: '9:16' | '16:9' | '1:1' | '4:5';
 }
 
 const FILTER_MAP: Record<FilterName, string> = {
@@ -77,6 +79,9 @@ function buildCommand(params: EditParams, outputPath: string): string {
   }
 
   const vFilters: string[] = [];
+  if (params.isReversed) {
+    vFilters.push('reverse');
+  }
   if (speed !== 1) {
     vFilters.push(`setpts=${(1 / speed).toFixed(4)}*PTS`);
   }
@@ -86,6 +91,15 @@ function buildCommand(params: EditParams, outputPath: string): string {
   }
   if (qualityCfg.scale) {
     vFilters.push(qualityCfg.scale);
+  }
+  if (params.aspectRatio && params.aspectRatio !== '9:16') {
+    const ratioMap: Record<string, string> = {
+      '16:9': 'crop=ih*16/9:ih',
+      '1:1': 'crop=min(iw\\,ih):min(iw\\,ih)',
+      '4:5': 'crop=ih*4/5:ih',
+    };
+    const cropFilter = ratioMap[params.aspectRatio];
+    if (cropFilter) vFilters.push(cropFilter);
   }
   if (captionText.trim()) {
     const escaped = captionText.replace(/'/g, "'\\''").replace(/:/g, '\\:');
@@ -98,6 +112,9 @@ function buildCommand(params: EditParams, outputPath: string): string {
   }
 
   const aFilters: string[] = [];
+  if (params.isReversed) {
+    aFilters.push('areverse');
+  }
   if (speed !== 1) {
     if (speed >= 0.5 && speed <= 100) {
       aFilters.push(`atempo=${speed}`);
@@ -454,6 +471,60 @@ describe('FFmpeg Engine — Command Builder', () => {
       expect(cmd).not.toContain('-ss');
       expect(cmd).toContain('-c:v libx264');
       expect(cmd).toContain('-y');
+    });
+  });
+
+  describe('reverse', () => {
+    it('should add reverse filter when isReversed is true', () => {
+      const cmd = buildCommand(defaultParams({ isReversed: true }), outputPath);
+      expect(cmd).toContain('reverse');
+      expect(cmd).toContain('areverse');
+    });
+
+    it('should not add reverse when isReversed is false', () => {
+      const cmd = buildCommand(defaultParams({ isReversed: false }), outputPath);
+      expect(cmd).not.toContain('reverse');
+      expect(cmd).not.toContain('areverse');
+    });
+
+    it('should not add reverse by default', () => {
+      const cmd = buildCommand(defaultParams(), outputPath);
+      expect(cmd).not.toContain('reverse');
+    });
+
+    it('should combine reverse with speed', () => {
+      const cmd = buildCommand(defaultParams({ isReversed: true, speed: 2 }), outputPath);
+      const vf = cmd.match(/-vf "([^"]+)"/);
+      expect(vf).toBeTruthy();
+      expect(vf![1]).toContain('reverse');
+      expect(vf![1]).toContain('setpts');
+    });
+  });
+
+  describe('aspect ratio', () => {
+    it('should not crop for default 9:16', () => {
+      const cmd = buildCommand(defaultParams({ aspectRatio: '9:16' }), outputPath);
+      expect(cmd).not.toContain('crop=');
+    });
+
+    it('should crop for 16:9', () => {
+      const cmd = buildCommand(defaultParams({ aspectRatio: '16:9' }), outputPath);
+      expect(cmd).toContain('crop=ih*16/9:ih');
+    });
+
+    it('should crop for 1:1 (square)', () => {
+      const cmd = buildCommand(defaultParams({ aspectRatio: '1:1' }), outputPath);
+      expect(cmd).toContain('crop=min(iw');
+    });
+
+    it('should crop for 4:5', () => {
+      const cmd = buildCommand(defaultParams({ aspectRatio: '4:5' }), outputPath);
+      expect(cmd).toContain('crop=ih*4/5:ih');
+    });
+
+    it('should not crop when aspectRatio is undefined', () => {
+      const cmd = buildCommand(defaultParams(), outputPath);
+      expect(cmd).not.toContain('crop=');
     });
   });
 

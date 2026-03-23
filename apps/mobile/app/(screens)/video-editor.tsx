@@ -75,9 +75,53 @@ export default function VideoEditorScreen() {
   const [isRecordingVoiceover, setIsRecordingVoiceover] = useState(false);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
+  const [isReversed, setIsReversed] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('9:16');
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
+
+  // Undo/redo stack — snapshot key edit state
+  type EditSnapshot = { startTime: number; endTime: number; speed: SpeedOption; filter: FilterName; captionText: string; originalVolume: number; musicVolume: number; isReversed: boolean };
+  const [undoStack, setUndoStack] = useState<EditSnapshot[]>([]);
+  const [redoStack, setRedoStack] = useState<EditSnapshot[]>([]);
+
+  const pushUndo = useCallback(() => {
+    setUndoStack(prev => [...prev.slice(-19), { startTime, endTime, speed: playbackSpeed, filter: selectedFilter, captionText, originalVolume, musicVolume, isReversed }]);
+    setRedoStack([]);
+  }, [startTime, endTime, playbackSpeed, selectedFilter, captionText, originalVolume, musicVolume, isReversed]);
+
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0) return;
+    haptic.tick();
+    const prev = undoStack[undoStack.length - 1];
+    setRedoStack(r => [...r, { startTime, endTime, speed: playbackSpeed, filter: selectedFilter, captionText, originalVolume, musicVolume, isReversed }]);
+    setUndoStack(s => s.slice(0, -1));
+    setStartTime(prev.startTime);
+    setEndTime(prev.endTime);
+    setPlaybackSpeed(prev.speed);
+    setSelectedFilter(prev.filter);
+    setCaptionText(prev.captionText);
+    setOriginalVolume(prev.originalVolume);
+    setMusicVolume(prev.musicVolume);
+    setIsReversed(prev.isReversed);
+  }, [undoStack, startTime, endTime, playbackSpeed, selectedFilter, captionText, originalVolume, musicVolume, isReversed, haptic]);
+
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    haptic.tick();
+    const next = redoStack[redoStack.length - 1];
+    setUndoStack(s => [...s, { startTime, endTime, speed: playbackSpeed, filter: selectedFilter, captionText, originalVolume, musicVolume, isReversed }]);
+    setRedoStack(r => r.slice(0, -1));
+    setStartTime(next.startTime);
+    setEndTime(next.endTime);
+    setPlaybackSpeed(next.speed);
+    setSelectedFilter(next.filter);
+    setCaptionText(next.captionText);
+    setOriginalVolume(next.originalVolume);
+    setMusicVolume(next.musicVolume);
+    setIsReversed(next.isReversed);
+  }, [redoStack, startTime, endTime, playbackSpeed, selectedFilter, captionText, originalVolume, musicVolume, isReversed, haptic]);
   const videoUri = params.videoUri || params.uri || null;
 
   // Timeline width reference for gesture calculations
@@ -305,6 +349,8 @@ export default function VideoEditorScreen() {
         musicVolume,
         musicUri: selectedTrack?.audioUrl,
         quality: selectedQuality,
+        isReversed,
+        aspectRatio,
       };
 
       const result = await executeExport(editParams, (percent) => {
@@ -705,6 +751,51 @@ export default function VideoEditorScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader title={t('videoEditor.editVideo')} showBackButton />
 
+      {/* Quick action bar — undo/redo, reverse, aspect ratio, captions */}
+      <View style={styles.quickActions}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.undo')} onPress={handleUndo} style={[styles.quickActionBtn, undoStack.length === 0 && styles.quickActionDisabled]}>
+          <Icon name="arrow-left" size="sm" color={undoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.redo')} onPress={handleRedo} style={[styles.quickActionBtn, redoStack.length === 0 && styles.quickActionDisabled]}>
+          <Icon name="arrow-left" size="sm" color={redoStack.length > 0 ? tc.text.primary : tc.text.tertiary} style={{ transform: [{ scaleX: -1 }] }} />
+        </Pressable>
+        <View style={styles.quickActionDivider} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('videoEditor.reverse')}
+          onPress={() => { pushUndo(); setIsReversed(!isReversed); haptic.tick(); }}
+          style={[styles.quickActionBtn, isReversed && styles.quickActionActive]}
+        >
+          <Icon name="repeat" size="sm" color={isReversed ? colors.emerald : tc.text.secondary} />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('videoEditor.aspectRatio')}
+          onPress={() => {
+            haptic.tick();
+            const ratios: typeof aspectRatio[] = ['9:16', '16:9', '1:1', '4:5'];
+            const idx = ratios.indexOf(aspectRatio);
+            setAspectRatio(ratios[(idx + 1) % ratios.length]);
+          }}
+          style={styles.quickActionBtn}
+        >
+          <Icon name="layers" size="sm" color={tc.text.secondary} />
+          <Text style={styles.quickActionLabel}>{aspectRatio}</Text>
+        </Pressable>
+        <View style={styles.quickActionDivider} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('videoEditor.autoCaptions')}
+          onPress={() => {
+            if (videoUri) navigate('/(screens)/caption-editor', { videoUri });
+          }}
+          style={styles.quickActionBtn}
+        >
+          <Icon name="edit" size="sm" color={tc.text.secondary} />
+          <Text style={styles.quickActionLabel}>{t('videoEditor.autoCaptions')}</Text>
+        </Pressable>
+      </View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
       >
@@ -986,6 +1077,37 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   container: {
     flex: 1,
     backgroundColor: tc.bg,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
+    gap: spacing.xs,
+  },
+  quickActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  quickActionDisabled: {
+    opacity: 0.3,
+  },
+  quickActionActive: {
+    backgroundColor: 'rgba(10,123,79,0.15)',
+  },
+  quickActionLabel: {
+    fontSize: fontSize.xs,
+    color: tc.text.secondary,
+  },
+  quickActionDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: tc.border,
+    marginHorizontal: spacing.xs,
   },
   previewContainer: {
     marginHorizontal: spacing.base,
