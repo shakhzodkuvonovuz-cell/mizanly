@@ -112,6 +112,10 @@ export interface EditParams {
   temperature?: number;          // -100 to +100, 0 = neutral
   fadeIn?: number;               // seconds, 0 = no fade
   fadeOut?: number;               // seconds, 0 = no fade
+  rotation?: 0 | 90 | 180 | 270; // clockwise rotation
+  sharpen?: boolean;              // sharpen filter
+  vignette?: boolean;             // standalone vignette effect
+  grain?: boolean;                // film grain effect
 }
 
 export interface ExportResult {
@@ -375,6 +379,32 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   if (params.fadeOut && params.fadeOut > 0) {
     const fadeStart = Math.max(0, clipDuration - params.fadeOut);
     vFilters.push(`fade=t=out:st=${fadeStart.toFixed(2)}:d=${params.fadeOut.toFixed(2)}`);
+  }
+
+  // Rotation (clockwise: 90, 180, 270)
+  if (params.rotation && params.rotation !== 0) {
+    const rotMap: Record<number, string> = {
+      90: 'transpose=1',    // 90° clockwise
+      180: 'transpose=1,transpose=1', // 180°
+      270: 'transpose=2',   // 90° counter-clockwise (270° clockwise)
+    };
+    const rotFilter = rotMap[params.rotation];
+    if (rotFilter) vFilters.push(rotFilter);
+  }
+
+  // Sharpen (unsharp mask)
+  if (params.sharpen) {
+    vFilters.push('unsharp=5:5:1.0:5:5:0.0');
+  }
+
+  // Standalone vignette (separate from filter presets)
+  if (params.vignette) {
+    vFilters.push('vignette=PI/4');
+  }
+
+  // Film grain effect
+  if (params.grain) {
+    vFilters.push('noise=alls=20:allf=t');
   }
 
   // Freeze frame — hold the last frame for 2 seconds (fps-independent)

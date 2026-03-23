@@ -60,6 +60,7 @@ type EditSnapshot = {
   aspectRatio: '9:16' | '16:9' | '1:1' | '4:5';
   brightness: number; contrast: number; saturation: number; temperature: number;
   fadeIn: number; fadeOut: number;
+  rotation: 0 | 90 | 180 | 270; sharpen: boolean; vignetteOn: boolean; grain: boolean;
 };
 
 export default function VideoEditorScreen() {
@@ -110,6 +111,10 @@ export default function VideoEditorScreen() {
   const [stabilize, setStabilize] = useState(false);
   const [noiseReduce, setNoiseReduce] = useState(false);
   const [freezeFrameAt, setFreezeFrameAt] = useState<number | null>(null); // seconds, null = none
+  const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0);
+  const [sharpen, setSharpen] = useState(false);
+  const [vignetteOn, setVignetteOn] = useState(false);
+  const [grain, setGrain] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -126,13 +131,15 @@ export default function VideoEditorScreen() {
     voiceEffect, stabilize, noiseReduce, freezeFrameAt,
     textStartTime, textEndTime, aspectRatio,
     brightness, contrast, saturation, temperature, fadeIn, fadeOut,
-  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio, brightness, contrast, saturation, temperature, fadeIn, fadeOut]);
+    rotation, sharpen, vignetteOn, grain,
+  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain]);
 
   const applySnapshot = useCallback((s: EditSnapshot) => {
     setStartTime(s.startTime); setEndTime(s.endTime);
     setPlaybackSpeed(s.speed); setSpeedCurve(s.speedCurve); setSelectedFilter(s.filter);
     setBrightness(s.brightness); setContrast(s.contrast); setSaturation(s.saturation);
     setTemperature(s.temperature); setFadeIn(s.fadeIn); setFadeOut(s.fadeOut);
+    setRotation(s.rotation); setSharpen(s.sharpen); setVignetteOn(s.vignetteOn); setGrain(s.grain);
     setCaptionText(s.captionText); setOriginalVolume(s.originalVolume);
     setMusicVolume(s.musicVolume); setIsReversed(s.isReversed);
     setVoiceEffect(s.voiceEffect); setStabilize(s.stabilize);
@@ -423,6 +430,10 @@ export default function VideoEditorScreen() {
         temperature: temperature !== 0 ? temperature : undefined,
         fadeIn: fadeIn > 0 ? fadeIn : undefined,
         fadeOut: fadeOut > 0 ? fadeOut : undefined,
+        rotation: rotation !== 0 ? rotation : undefined,
+        sharpen: sharpen || undefined,
+        vignette: vignetteOn || undefined,
+        grain: grain || undefined,
       };
 
       const result = await executeExport(editParams, (percent) => {
@@ -450,7 +461,7 @@ export default function VideoEditorScreen() {
     } finally {
       setIsExporting(false);
     }
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, brightness, contrast, saturation, temperature, fadeIn, fadeOut, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, brightness, contrast, saturation, temperature, fadeIn, fadeOut, rotation, sharpen, vignetteOn, grain, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
 
   // Cancel export handler
   const handleCancelExport = useCallback(async () => {
@@ -1055,6 +1066,48 @@ export default function VideoEditorScreen() {
                     }
                   </Text>
                 </LinearGradient>
+              </Pressable>
+            </View>
+
+            {/* Visual effects toggles */}
+            <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.visualEffects')}</Text>
+
+            <View style={styles.effectToggleGrid}>
+              <Pressable
+                style={[styles.effectToggleItem, sharpen && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setSharpen(!sharpen); haptic.tick(); }}
+              >
+                <Icon name="eye" size="sm" color={sharpen ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, sharpen && styles.effectToggleTextActive]}>{t('videoEditor.sharpen')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, vignetteOn && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setVignetteOn(!vignetteOn); haptic.tick(); }}
+              >
+                <Icon name="circle-plus" size="sm" color={vignetteOn ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, vignetteOn && styles.effectToggleTextActive]}>{t('videoEditor.vignetteEffect')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, grain && styles.effectToggleActive]}
+                onPress={() => { pushUndo(); setGrain(!grain); haptic.tick(); }}
+              >
+                <Icon name="hash" size="sm" color={grain ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, grain && styles.effectToggleTextActive]}>{t('videoEditor.filmGrain')}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.effectToggleItem, rotation !== 0 && styles.effectToggleActive]}
+                onPress={() => {
+                  pushUndo();
+                  const rotations: (0 | 90 | 180 | 270)[] = [0, 90, 180, 270];
+                  const idx = rotations.indexOf(rotation);
+                  setRotation(rotations[(idx + 1) % rotations.length]);
+                  haptic.tick();
+                }}
+              >
+                <Icon name="repeat" size="sm" color={rotation !== 0 ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.effectToggleText, rotation !== 0 && styles.effectToggleTextActive]}>
+                  {rotation === 0 ? t('videoEditor.rotate') : `${rotation}°`}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -1984,6 +2037,34 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(248,81,73,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  effectToggleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  effectToggleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: tc.surface,
+    borderWidth: 1,
+    borderColor: tc.border,
+  },
+  effectToggleActive: {
+    borderColor: colors.emerald,
+    backgroundColor: 'rgba(10,123,79,0.1)',
+  },
+  effectToggleText: {
+    fontSize: fontSize.sm,
+    color: tc.text.secondary,
+  },
+  effectToggleTextActive: {
+    color: colors.emerald,
+    fontWeight: '600',
   },
   adjustRow: {
     marginBottom: spacing.md,
