@@ -77,6 +77,24 @@ export default function CreatePostScreen() {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [location, setLocation] = useState<{ name: string; latitude?: number; longitude?: number } | null>(null);
 
+  // ── Publish fields (Session 4 — Instagram parity) ──
+  const [altText, setAltText] = useState('');
+  const [showAltText, setShowAltText] = useState(false);
+  const [taggedUsers, setTaggedUsers] = useState<string[]>([]);
+  const [showTagPeople, setShowTagPeople] = useState(false);
+  const [tagSearchQuery, setTagSearchQuery] = useState('');
+  const [collaboratorUsername, setCollaboratorUsername] = useState('');
+  const [showCollaborator, setShowCollaborator] = useState(false);
+  const [commentControl, setCommentControl] = useState<'everyone' | 'followers' | 'nobody'>('everyone');
+  const [showCommentControl, setShowCommentControl] = useState(false);
+  const [shareToFeed, setShareToFeed] = useState(true);
+  const [brandedContent, setBrandedContent] = useState(false);
+  const [brandPartner, setBrandPartner] = useState('');
+  const [remixAllowed, setRemixAllowed] = useState(true);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [showTopics, setShowTopics] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+
   const inputRef = useRef<TextInput>(null);
   const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
@@ -249,6 +267,15 @@ export default function CreatePostScreen() {
         visibility,
         circleId: visibility === 'CIRCLE' ? circleId : undefined,
         locationName: location?.name,
+        altText: altText.trim() || undefined,
+        taggedUsers: taggedUsers.length > 0 ? taggedUsers : undefined,
+        collaboratorUsername: collaboratorUsername.trim() || undefined,
+        commentControl,
+        shareToFeed,
+        brandedContent,
+        brandPartner: brandedContent ? brandPartner.trim() || undefined : undefined,
+        remixAllowed,
+        topics: selectedTopics.length > 0 ? selectedTopics : undefined,
       });
     },
     onSuccess: async () => {
@@ -432,7 +459,7 @@ export default function CreatePostScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.mediaCardGradient}
                   >
-                    <ProgressiveImage uri={item.uri} width="100%" height={100} borderRadius={radius.md - 3} accessibilityLabel="Content image" />
+                    <ProgressiveImage uri={item.uri} width="100%" height={100} borderRadius={radius.md - 3} accessibilityLabel={altText || t('compose.contentImage')} />
                     {item.type === 'video' && (
                       <LinearGradient
                         colors={['rgba(0,0,0,0.6)', 'transparent']}
@@ -445,6 +472,8 @@ export default function CreatePostScreen() {
                       style={styles.removeMedia}
                       onPress={() => removeMedia(idx)}
                       hitSlop={4}
+                      accessibilityLabel={t('compose.removeMedia')}
+                      accessibilityRole="button"
                     >
                       <LinearGradient
                         colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
@@ -462,6 +491,8 @@ export default function CreatePostScreen() {
                         navigate(editorScreen, { uri: item.uri });
                       }}
                       hitSlop={4}
+                      accessibilityLabel={t('compose.editMedia')}
+                      accessibilityRole="button"
                     >
                       <LinearGradient
                         colors={['rgba(10,123,79,0.9)', 'rgba(10,123,79,0.7)']}
@@ -474,7 +505,7 @@ export default function CreatePostScreen() {
                 </Animated.View>
               ))}
               {media.length < 10 && (
-                <Pressable style={styles.addMoreMedia} onPress={pickMedia}>
+                <Pressable style={styles.addMoreMedia} onPress={pickMedia} accessibilityLabel={t('compose.addMoreMedia')} accessibilityRole="button">
                   <LinearGradient
                     colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
                     style={styles.addMoreMediaGradient}
@@ -485,6 +516,280 @@ export default function CreatePostScreen() {
               )}
             </ScrollView>
           )}
+
+          {/* ═══════ Publish Settings ═══════ */}
+          <View style={{ marginTop: spacing.lg, gap: spacing.sm }}>
+            {/* ── Alt text (accessibility) ── */}
+            {media.length > 0 && (
+              <Pressable
+                onPress={() => setShowAltText(!showAltText)}
+                style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('compose.altText')}
+              >
+                <Icon name="eye" size="sm" color={altText ? colors.emerald : tc.text.secondary} />
+                <Text style={{ flex: 1, color: altText ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                  {altText ? t('compose.altTextAdded') : t('compose.addAltText')}
+                </Text>
+                <Icon name={showAltText ? 'chevron-down' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
+              </Pressable>
+            )}
+            {showAltText && media.length > 0 && (
+              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}>
+                <TextInput
+                  value={altText}
+                  onChangeText={setAltText}
+                  placeholder={t('compose.describeForScreenReaders')}
+                  placeholderTextColor={tc.text.tertiary}
+                  multiline
+                  maxLength={1000}
+                  style={{ color: tc.text.primary, fontSize: fontSize.sm, minHeight: 60, textAlignVertical: 'top' }}
+                  accessibilityLabel={t('compose.altTextInput')}
+                />
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: spacing.xs }}>
+                  <CharCountRing current={altText.length} max={1000} size={20} />
+                </View>
+              </View>
+            )}
+
+            {/* ── Tag people ── */}
+            <Pressable
+              onPress={() => setShowTagPeople(!showTagPeople)}
+              style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('compose.tagPeople')}
+            >
+              <Icon name="users" size="sm" color={taggedUsers.length > 0 ? colors.emerald : tc.text.secondary} />
+              <Text style={{ flex: 1, color: taggedUsers.length > 0 ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                {taggedUsers.length > 0 ? `${taggedUsers.length} ${t('compose.peopleTagged')}` : t('compose.tagPeople')}
+              </Text>
+              <Icon name={showTagPeople ? 'chevron-down' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
+            </Pressable>
+            {showTagPeople && (
+              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}>
+                <TextInput
+                  value={tagSearchQuery}
+                  onChangeText={setTagSearchQuery}
+                  placeholder={t('compose.searchPeopleToTag')}
+                  placeholderTextColor={tc.text.tertiary}
+                  autoCapitalize="none"
+                  style={{ color: tc.text.primary, fontSize: fontSize.sm, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tc.border }}
+                  accessibilityLabel={t('compose.searchPeopleToTag')}
+                />
+                {taggedUsers.length > 0 && (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm }}>
+                    {taggedUsers.map((user, i) => (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.active.emerald10, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, gap: spacing.xs }}>
+                        <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>@{user}</Text>
+                        <Pressable onPress={() => setTaggedUsers(prev => prev.filter((_, idx) => idx !== i))} hitSlop={4} accessibilityRole="button" accessibilityLabel={t('common.remove')}>
+                          <Icon name="x" size={12} color={colors.emerald} />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* ── Invite collaborator ── */}
+            <Pressable
+              onPress={() => setShowCollaborator(!showCollaborator)}
+              style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('compose.inviteCollaborator')}
+            >
+              <Icon name="users" size="sm" color={collaboratorUsername ? colors.gold : tc.text.secondary} />
+              <Text style={{ flex: 1, color: collaboratorUsername ? colors.gold : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                {collaboratorUsername ? `${t('compose.collaborator')}: @${collaboratorUsername}` : t('compose.inviteCollaborator')}
+              </Text>
+              <Icon name={showCollaborator ? 'chevron-down' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
+            </Pressable>
+            {showCollaborator && (
+              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}>
+                <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, marginBottom: spacing.sm }}>
+                  {t('compose.collaboratorDescription')}
+                </Text>
+                <TextInput
+                  value={collaboratorUsername}
+                  onChangeText={setCollaboratorUsername}
+                  placeholder="@username"
+                  placeholderTextColor={tc.text.tertiary}
+                  autoCapitalize="none"
+                  style={{ color: tc.text.primary, fontSize: fontSize.sm, paddingVertical: spacing.sm }}
+                  accessibilityLabel={t('compose.collaboratorUsername')}
+                />
+              </View>
+            )}
+
+            {/* ── Who can comment ── */}
+            <Pressable
+              onPress={() => setShowCommentControl(!showCommentControl)}
+              style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('compose.whoCanComment')}
+            >
+              <Icon name="message-circle" size="sm" color={commentControl !== 'everyone' ? colors.emerald : tc.text.secondary} />
+              <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                {t('compose.whoCanComment')}
+              </Text>
+              <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, textTransform: 'capitalize' }}>
+                {t(`compose.comment${commentControl.charAt(0).toUpperCase() + commentControl.slice(1)}`)}
+              </Text>
+              <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+            </Pressable>
+            {showCommentControl && (
+              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, overflow: 'hidden' }}>
+                {(['everyone', 'followers', 'nobody'] as const).map(opt => (
+                  <Pressable
+                    key={opt}
+                    onPress={() => { setCommentControl(opt); setShowCommentControl(false); }}
+                    style={{ flexDirection: 'row', alignItems: 'center', padding: spacing.md, gap: spacing.md, backgroundColor: commentControl === opt ? colors.active.emerald10 : 'transparent' }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: commentControl === opt }}
+                    accessibilityLabel={t(`compose.comment${opt.charAt(0).toUpperCase() + opt.slice(1)}`)}
+                  >
+                    <Text style={{ flex: 1, color: commentControl === opt ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500', textTransform: 'capitalize' }}>
+                      {t(`compose.comment${opt.charAt(0).toUpperCase() + opt.slice(1)}`)}
+                    </Text>
+                    {commentControl === opt && <Icon name="check" size="sm" color={colors.emerald} />}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {/* ── Advanced settings toggle ── */}
+            <Pressable
+              onPress={() => setShowAdvancedSettings(!showAdvancedSettings)}
+              style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('compose.advancedSettings')}
+            >
+              <Icon name="settings" size="sm" color={tc.text.secondary} />
+              <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                {t('compose.advancedSettings')}
+              </Text>
+              <Icon name={showAdvancedSettings ? 'chevron-down' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
+            </Pressable>
+
+            {showAdvancedSettings && (
+              <View style={{ gap: spacing.sm }}>
+                {/* Share to feed toggle */}
+                <Pressable
+                  onPress={() => setShareToFeed(!shareToFeed)}
+                  style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: shareToFeed }}
+                  accessibilityLabel={t('compose.shareToFeed')}
+                >
+                  <Icon name="layers" size="sm" color={shareToFeed ? colors.emerald : tc.text.secondary} />
+                  <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                    {t('compose.shareToFeed')}
+                  </Text>
+                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: shareToFeed ? colors.emerald : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
+                    {shareToFeed && <Icon name="check" size={12} color="#fff" />}
+                  </View>
+                </Pressable>
+
+                {/* Remix allowed toggle */}
+                <Pressable
+                  onPress={() => setRemixAllowed(!remixAllowed)}
+                  style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: remixAllowed }}
+                  accessibilityLabel={t('compose.allowRemix')}
+                >
+                  <Icon name="repeat" size="sm" color={remixAllowed ? colors.emerald : tc.text.secondary} />
+                  <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                    {t('compose.allowRemix')}
+                  </Text>
+                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: remixAllowed ? colors.emerald : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
+                    {remixAllowed && <Icon name="check" size={12} color="#fff" />}
+                  </View>
+                </Pressable>
+
+                {/* Branded content */}
+                <Pressable
+                  onPress={() => setBrandedContent(!brandedContent)}
+                  style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: brandedContent }}
+                  accessibilityLabel={t('compose.brandedContent')}
+                >
+                  <Icon name="check-circle" size="sm" color={brandedContent ? colors.gold : tc.text.secondary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                      {t('compose.brandedContent')}
+                    </Text>
+                    <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs }}>
+                      {t('compose.brandedContentHint')}
+                    </Text>
+                  </View>
+                  <View style={{ width: 20, height: 20, borderRadius: radius.full, backgroundColor: brandedContent ? colors.gold : tc.surface, borderWidth: 1, borderColor: tc.border, justifyContent: 'center', alignItems: 'center' }}>
+                    {brandedContent && <Icon name="check" size={12} color="#fff" />}
+                  </View>
+                </Pressable>
+                {brandedContent && (
+                  <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}>
+                    <TextInput
+                      value={brandPartner}
+                      onChangeText={setBrandPartner}
+                      placeholder={t('compose.brandPartnerPlaceholder')}
+                      placeholderTextColor={tc.text.tertiary}
+                      autoCapitalize="none"
+                      style={{ color: tc.text.primary, fontSize: fontSize.sm }}
+                      accessibilityLabel={t('compose.brandPartner')}
+                    />
+                  </View>
+                )}
+
+                {/* Topics / categories */}
+                <Pressable
+                  onPress={() => setShowTopics(!showTopics)}
+                  style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('compose.addTopics')}
+                >
+                  <Icon name="hash" size="sm" color={selectedTopics.length > 0 ? colors.emerald : tc.text.secondary} />
+                  <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                    {selectedTopics.length > 0 ? `${selectedTopics.length} ${t('compose.topicsSelected')}` : t('compose.addTopics')}
+                  </Text>
+                  <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+                </Pressable>
+                {showTopics && (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, padding: spacing.sm }}>
+                    {['Islamic', 'Lifestyle', 'Education', 'Technology', 'Food', 'Travel', 'Fashion', 'Sports', 'Business', 'Art'].map(topic => {
+                      const isSelected = selectedTopics.includes(topic);
+                      return (
+                        <Pressable
+                          key={topic}
+                          onPress={() => {
+                            setSelectedTopics(prev =>
+                              isSelected ? prev.filter(t => t !== topic) : [...prev, topic].slice(0, 3)
+                            );
+                          }}
+                          style={{
+                            paddingHorizontal: spacing.md,
+                            paddingVertical: spacing.sm,
+                            borderRadius: radius.full,
+                            backgroundColor: isSelected ? colors.emerald : tc.bgElevated,
+                            borderWidth: 1,
+                            borderColor: isSelected ? colors.emerald : tc.border,
+                          }}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isSelected }}
+                          accessibilityLabel={topic}
+                        >
+                          <Text style={{ color: isSelected ? '#fff' : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                            {topic}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
         </ScrollView>
 
         {/* Discard confirmation */}
@@ -553,7 +858,11 @@ export default function CreatePostScreen() {
                 label={c.name}
                 icon={
                   <View style={styles.circleIconWrap}>
-                    <Text style={styles.circleEmoji}>{c.emoji ?? '●'}</Text>
+                    {c.emoji ? (
+                      <Text style={styles.circleEmoji}>{c.emoji}</Text>
+                    ) : (
+                      <Icon name="users" size="sm" color={colors.emerald} />
+                    )}
                   </View>
                 }
                 onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
@@ -1004,3 +1313,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
 });
+
+// Shared publish row style
+const publishRowStyle: import('react-native').ViewStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: spacing.md,
+  padding: spacing.md,
+  borderRadius: radius.md,
+};
