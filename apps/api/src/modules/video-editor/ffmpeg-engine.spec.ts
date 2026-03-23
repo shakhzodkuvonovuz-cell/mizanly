@@ -52,6 +52,14 @@ interface EditParams {
   grain?: boolean;
   audioPitch?: number;
   speedCurve?: string;
+  flipH?: boolean;
+  flipV?: boolean;
+  glitch?: boolean;
+  letterbox?: boolean;
+  boomerang?: boolean;
+  textSize?: number;
+  textBg?: boolean;
+  textShadow?: boolean;
 }
 
 const VOICE_EFFECT_MAP: Record<VoiceEffect, string> = {
@@ -177,8 +185,13 @@ function buildCommand(params: EditParams, outputPath: string): string {
     const txtStart = Math.max(0, rawTxtStart - startTime);
     const txtEnd = Math.min(clipDuration, rawTxtEnd - startTime);
     const enableExpr = `:enable='between(t,${txtStart.toFixed(2)},${txtEnd.toFixed(2)})'`;
+    const fontSize = params.textSize || 48;
+    const xExpr = 'x=(w-text_w)/2';
+    const yExpr = 'y=h-th-80';
+    const bgExpr = params.textBg ? ':box=1:boxcolor=black@0.6:boxborderw=12' : '';
+    const shadowExpr = params.textShadow ? ':shadowcolor=black@0.5:shadowx=3:shadowy=3' : '';
     vFilters.push(
-      `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5${enableExpr}`,
+      `drawtext=text='${escaped}':fontsize=${fontSize}:fontcolor=${captionColor}:${xExpr}:${yExpr}:borderw=2:bordercolor=black@0.5${bgExpr}${shadowExpr}${enableExpr}`,
     );
   }
   // Color grading
@@ -205,6 +218,10 @@ function buildCommand(params: EditParams, outputPath: string): string {
   if (params.sharpen) vFilters.push('unsharp=5:5:1.0:5:5:0.0');
   if (params.vignette) vFilters.push('vignette=PI/4');
   if (params.grain) vFilters.push('noise=alls=20:allf=t');
+  if (params.flipH) vFilters.push('hflip');
+  if (params.flipV) vFilters.push('vflip');
+  if (params.glitch) vFilters.push('rgbashift=rh=5:bh=-5:rv=-3:bv=3');
+  if (params.letterbox) vFilters.push('drawbox=x=0:y=0:w=iw:h=ih*0.12:color=black:t=fill,drawbox=x=0:y=ih*0.88:w=iw:h=ih*0.12:color=black:t=fill');
   if (params.freezeFrameAt !== null && params.freezeFrameAt !== undefined) {
     const freezeAt = params.freezeFrameAt - startTime;
     if (freezeAt > 0.1 && freezeAt < clipDuration - 0.1) {
@@ -903,6 +920,63 @@ describe('FFmpeg Engine — Command Builder', () => {
       const cmd = buildCommand(defaultParams({ speed: 2, speedCurve: 'hero' }), outputPath);
       // Speed curve should be used, not constant 0.5000*PTS
       expect(cmd).not.toContain('0.5000*PTS');
+    });
+  });
+
+  describe('flip', () => {
+    it('should add hflip for horizontal flip', () => {
+      const cmd = buildCommand(defaultParams({ flipH: true }), outputPath);
+      expect(cmd).toContain('hflip');
+    });
+
+    it('should add vflip for vertical flip', () => {
+      const cmd = buildCommand(defaultParams({ flipV: true }), outputPath);
+      expect(cmd).toContain('vflip');
+    });
+
+    it('should combine both flips', () => {
+      const cmd = buildCommand(defaultParams({ flipH: true, flipV: true }), outputPath);
+      expect(cmd).toContain('hflip');
+      expect(cmd).toContain('vflip');
+    });
+  });
+
+  describe('glitch', () => {
+    it('should add rgbashift for glitch effect', () => {
+      const cmd = buildCommand(defaultParams({ glitch: true }), outputPath);
+      expect(cmd).toContain('rgbashift');
+    });
+  });
+
+  describe('letterbox', () => {
+    it('should add drawbox black bars', () => {
+      const cmd = buildCommand(defaultParams({ letterbox: true }), outputPath);
+      expect(cmd).toContain('drawbox');
+      expect(cmd).toContain('color=black');
+    });
+  });
+
+  describe('text enhancements', () => {
+    it('should use custom text size', () => {
+      const cmd = buildCommand(defaultParams({ captionText: 'test', textSize: 72 }), outputPath);
+      expect(cmd).toContain('fontsize=72');
+    });
+
+    it('should add text background box', () => {
+      const cmd = buildCommand(defaultParams({ captionText: 'test', textBg: true }), outputPath);
+      expect(cmd).toContain('box=1');
+      expect(cmd).toContain('boxcolor=black');
+    });
+
+    it('should add text shadow', () => {
+      const cmd = buildCommand(defaultParams({ captionText: 'test', textShadow: true }), outputPath);
+      expect(cmd).toContain('shadowcolor');
+      expect(cmd).toContain('shadowx=3');
+    });
+
+    it('should default to fontsize 48 when no textSize specified', () => {
+      const cmd = buildCommand(defaultParams({ captionText: 'test' }), outputPath);
+      expect(cmd).toContain('fontsize=48');
     });
   });
 
