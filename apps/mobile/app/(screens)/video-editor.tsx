@@ -21,7 +21,7 @@ import { executeExport, cancelExport, isFFmpegAvailable, type EditParams } from 
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-type ToolTab = 'trim' | 'speed' | 'filters' | 'text' | 'music' | 'volume' | 'voiceover';
+type ToolTab = 'trim' | 'speed' | 'filters' | 'text' | 'music' | 'volume' | 'voiceover' | 'effects';
 type SpeedOption = 0.25 | 0.5 | 1 | 1.5 | 2 | 3;
 type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade' | 'emerald' | 'golden' | 'night' | 'soft' | 'cinematic';
 type QualityOption = '720p' | '1080p' | '4K';
@@ -76,6 +76,17 @@ export default function VideoEditorScreen() {
   const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
   const [isReversed, setIsReversed] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('9:16');
+
+  // Text timing — when the caption appears and disappears
+  const [textStartTime, setTextStartTime] = useState(0);
+  const [textEndTime, setTextEndTime] = useState(0); // 0 = full duration
+
+  // Effects: voice effect, stabilization, noise reduction, freeze frame
+  type VoiceEffect = 'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'telephone';
+  const [voiceEffect, setVoiceEffect] = useState<VoiceEffect>('none');
+  const [stabilize, setStabilize] = useState(false);
+  const [noiseReduce, setNoiseReduce] = useState(false);
+  const [freezeFrameAt, setFreezeFrameAt] = useState<number | null>(null); // seconds, null = none
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -367,6 +378,12 @@ export default function VideoEditorScreen() {
         quality: selectedQuality,
         isReversed,
         aspectRatio,
+        textStartTime,
+        textEndTime: textEndTime || undefined,
+        voiceEffect,
+        stabilize,
+        noiseReduce,
+        freezeFrameAt,
       };
 
       const result = await executeExport(editParams, (percent) => {
@@ -551,6 +568,36 @@ export default function VideoEditorScreen() {
               <Text style={styles.captionCharCount}>{captionText.length}/200</Text>
             )}
 
+            {/* Text timing — when caption appears/disappears */}
+            {captionText.length > 0 && (
+              <>
+                <Text style={styles.toolSubTitle}>{t('videoEditor.textTiming')}</Text>
+                <View style={styles.timeInputRow}>
+                  <View style={styles.timeInputContainer}>
+                    <Text style={styles.timeInputLabel}>{t('videoEditor.textAppears')}</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      style={styles.timeInput}
+                      onPress={() => { pushUndo(); setTextStartTime(currentTime); haptic.tick(); }}
+                    >
+                      <Text style={styles.timeInputValue}>{formatTime(textStartTime)}</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.timeInputContainer}>
+                    <Text style={styles.timeInputLabel}>{t('videoEditor.textDisappears')}</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      style={styles.timeInput}
+                      onPress={() => { pushUndo(); setTextEndTime(currentTime); haptic.tick(); }}
+                    >
+                      <Text style={styles.timeInputValue}>{formatTime(textEndTime || endTime)}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                <Text style={styles.textTimingHint}>{t('videoEditor.textTimingHint')}</Text>
+              </>
+            )}
+
             <Text style={styles.toolSubTitle}>{t('videoEditor.fontStyle')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fontScroll}>
               {FONT_OPTION_KEYS.map((font) => (
@@ -698,6 +745,108 @@ export default function VideoEditorScreen() {
                 <View style={[styles.sliderThumb, { left: `${musicVolume}%` }]} />
               </View>
             </GestureDetector>
+          </View>
+        );
+
+      case 'effects':
+        return (
+          <View style={styles.toolPanel}>
+            <Text style={styles.toolPanelTitle}>{t('videoEditor.audioEffects')}</Text>
+
+            {/* Voice effects */}
+            <Text style={styles.toolSubTitle}>{t('videoEditor.voiceEffect')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.effectsRow}>
+                {(['none', 'robot', 'echo', 'deep', 'chipmunk', 'telephone'] as VoiceEffect[]).map((effect) => (
+                  <Pressable
+                    key={effect}
+                    accessibilityRole="button"
+                    accessibilityLabel={t(`videoEditor.effect.${effect}`)}
+                    style={styles.effectChip}
+                    onPress={() => { pushUndo(); setVoiceEffect(effect); haptic.tick(); }}
+                  >
+                    <LinearGradient
+                      colors={voiceEffect === effect
+                        ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
+                        : colors.gradient.cardDark
+                      }
+                      style={styles.effectChipGradient}
+                    >
+                      <Text style={[styles.effectChipText, voiceEffect === effect && styles.effectChipTextActive]}>
+                        {t(`videoEditor.effect.${effect}`)}
+                      </Text>
+                    </LinearGradient>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Enhancement toggles */}
+            <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.enhancements')}</Text>
+
+            <Pressable
+              accessibilityRole="switch"
+              style={styles.toggleRow}
+              onPress={() => { pushUndo(); setNoiseReduce(!noiseReduce); haptic.tick(); }}
+            >
+              <View style={styles.toggleInfo}>
+                <Icon name="volume-x" size="sm" color={noiseReduce ? colors.emerald : tc.text.secondary} />
+                <View>
+                  <Text style={styles.toggleLabel}>{t('videoEditor.noiseReduction')}</Text>
+                  <Text style={styles.toggleDesc}>{t('videoEditor.noiseReductionDesc')}</Text>
+                </View>
+              </View>
+              <View style={[styles.toggleSwitch, noiseReduce && styles.toggleSwitchActive]}>
+                <View style={[styles.toggleThumb, noiseReduce && styles.toggleThumbActive]} />
+              </View>
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="switch"
+              style={styles.toggleRow}
+              onPress={() => { pushUndo(); setStabilize(!stabilize); haptic.tick(); }}
+            >
+              <View style={styles.toggleInfo}>
+                <Icon name="layers" size="sm" color={stabilize ? colors.emerald : tc.text.secondary} />
+                <View>
+                  <Text style={styles.toggleLabel}>{t('videoEditor.stabilization')}</Text>
+                  <Text style={styles.toggleDesc}>{t('videoEditor.stabilizationDesc')}</Text>
+                </View>
+              </View>
+              <View style={[styles.toggleSwitch, stabilize && styles.toggleSwitchActive]}>
+                <View style={[styles.toggleThumb, stabilize && styles.toggleThumbActive]} />
+              </View>
+            </Pressable>
+
+            {/* Freeze frame */}
+            <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.freezeFrame')}</Text>
+            <View style={styles.freezeRow}>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.freezeButton}
+                onPress={() => {
+                  pushUndo();
+                  haptic.tick();
+                  setFreezeFrameAt(freezeFrameAt === null ? currentTime : null);
+                }}
+              >
+                <LinearGradient
+                  colors={freezeFrameAt !== null
+                    ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
+                    : colors.gradient.cardDark
+                  }
+                  style={styles.freezeButtonGradient}
+                >
+                  <Icon name="pause" size="sm" color={freezeFrameAt !== null ? colors.emerald : tc.text.secondary} />
+                  <Text style={[styles.freezeButtonText, freezeFrameAt !== null && { color: colors.emerald }]}>
+                    {freezeFrameAt !== null
+                      ? `${t('videoEditor.frozenAt')} ${formatTime(freezeFrameAt)}`
+                      : t('videoEditor.freezeAtPlayhead')
+                    }
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+            </View>
           </View>
         );
 
@@ -994,6 +1143,7 @@ export default function VideoEditorScreen() {
               { id: 'text', icon: 'type' as IconName, label: t('videoEditor.text') },
               { id: 'music', icon: 'music' as IconName, label: t('videoEditor.music') },
               { id: 'volume', icon: 'volume-2' as IconName, label: t('videoEditor.volume') },
+              { id: 'effects', icon: 'sliders' as IconName, label: t('videoEditor.effects') },
               { id: 'voiceover', icon: 'mic' as IconName, label: t('videoEditor.voiceover') },
             ].map((tool) => (
               <Pressable accessibilityRole="button"
@@ -1607,6 +1757,98 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(248,81,73,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  textTimingHint: {
+    fontSize: fontSize.xs,
+    color: tc.text.tertiary,
+    fontStyle: 'italic',
+  },
+  timeInputValue: {
+    fontSize: fontSize.base,
+    color: tc.text.primary,
+    fontFamily: fonts.mono,
+    textAlign: 'center',
+  },
+  effectsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  effectChip: {
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  effectChipGradient: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  effectChipText: {
+    fontSize: fontSize.sm,
+    color: tc.text.secondary,
+  },
+  effectChipTextActive: {
+    color: colors.emerald,
+    fontWeight: '600',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+  },
+  toggleInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  toggleLabel: {
+    fontSize: fontSize.base,
+    color: tc.text.primary,
+  },
+  toggleDesc: {
+    fontSize: fontSize.xs,
+    color: tc.text.tertiary,
+  },
+  toggleSwitch: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: tc.surface,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleSwitchActive: {
+    backgroundColor: colors.emerald,
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: tc.text.tertiary,
+  },
+  toggleThumbActive: {
+    backgroundColor: '#FFF',
+    alignSelf: 'flex-end',
+  },
+  freezeRow: {
+    marginTop: spacing.xs,
+  },
+  freezeButton: {
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  freezeButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+  },
+  freezeButtonText: {
+    fontSize: fontSize.base,
+    color: tc.text.secondary,
   },
   voiceoverHint: {
     fontSize: fontSize.sm,

@@ -15,6 +15,8 @@
 type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade' | 'emerald' | 'golden' | 'night' | 'soft' | 'cinematic';
 type QualityPreset = '720p' | '1080p' | '4K';
 
+type VoiceEffect = 'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'telephone';
+
 interface EditParams {
   inputUri: string;
   startTime: number;
@@ -25,13 +27,28 @@ interface EditParams {
   captionText: string;
   captionColor: string;
   captionFont: string;
+  textStartTime?: number;
+  textEndTime?: number;
   originalVolume: number;
   musicVolume: number;
   musicUri?: string;
   quality: QualityPreset;
   isReversed?: boolean;
   aspectRatio?: '9:16' | '16:9' | '1:1' | '4:5';
+  voiceEffect?: VoiceEffect;
+  stabilize?: boolean;
+  noiseReduce?: boolean;
+  freezeFrameAt?: number | null;
 }
+
+const VOICE_EFFECT_MAP: Record<VoiceEffect, string> = {
+  none: '',
+  robot: 'asetrate=44100*0.8,aresample=44100,atempo=1.25',
+  echo: 'aecho=0.8:0.88:60:0.4',
+  deep: 'asetrate=44100*0.75,aresample=44100,atempo=1.333',
+  chipmunk: 'asetrate=44100*1.5,aresample=44100,atempo=0.667',
+  telephone: 'highpass=f=300,lowpass=f=3400',
+};
 
 const FILTER_MAP: Record<FilterName, string> = {
   original: '',
@@ -126,9 +143,19 @@ function buildCommand(params: EditParams, outputPath: string): string {
       .replace(/%/g, '%%')
       .replace(/\[/g, '\\[')
       .replace(/\]/g, '\\]');
+    const txtStart = params.textStartTime ?? 0;
+    const txtEnd = params.textEndTime && params.textEndTime > 0 ? params.textEndTime : clipDuration;
+    const enableExpr = `:enable='between(t,${txtStart.toFixed(2)},${txtEnd.toFixed(2)})'`;
     vFilters.push(
-      `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5`,
+      `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5${enableExpr}`,
     );
+  }
+  if (params.stabilize) vFilters.push('deshake=rx=32:ry=32');
+  if (params.freezeFrameAt !== null && params.freezeFrameAt !== undefined) {
+    const freezeAt = params.freezeFrameAt - startTime;
+    if (freezeAt > 0 && freezeAt < clipDuration) {
+      vFilters.push(`tpad=stop_mode=clone:stop_duration=2:stop=${Math.floor(freezeAt * 25)}`);
+    }
   }
   if (vFilters.length > 0) {
     parts.push(`-vf "${vFilters.join(',')}"`);
@@ -143,6 +170,9 @@ function buildCommand(params: EditParams, outputPath: string): string {
     }
     if (params.isReversed && clipDuration <= 300) origChain.push('areverse');
     if (speed !== 1) origChain.push(buildAtempoChain(speed));
+    const voiceFilterMix = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
+    if (voiceFilterMix) origChain.push(voiceFilterMix);
+    if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
     parts.push(
       `-filter_complex "[0:a]${origChain.join(',')}[a0];[1:a]volume=${musicVol}[a1];[a0][a1]amix=inputs=2:duration=first[aout]"`,
       '-map 0:v',
@@ -156,6 +186,9 @@ function buildCommand(params: EditParams, outputPath: string): string {
     if (params.isReversed && clipDuration <= 300) aFilters.push('areverse');
     if (speed !== 1) aFilters.push(buildAtempoChain(speed));
     if (originalVolume !== 100) aFilters.push(`volume=${(originalVolume / 100).toFixed(2)}`);
+    const voiceFilter = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
+    if (voiceFilter) aFilters.push(voiceFilter);
+    if (params.noiseReduce) aFilters.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
     if (aFilters.length > 0) parts.push(`-af "${aFilters.join(',')}"`);
   }
 
@@ -575,6 +608,100 @@ describe('FFmpeg Engine — Command Builder', () => {
     it('should not crop when aspectRatio is undefined', () => {
       const cmd = buildCommand(defaultParams(), outputPath);
       expect(cmd).not.toContain('crop=');
+    });
+  });
+
+  describe('text timing', () => {
+    it('should add enable between() for timed text', () => {
+      const cmd = buildCommand(defaultParams({ captionText: 'Hello', textStartTime: 2, textEndTime: 8 }), outputPath);
+      expect(cmd).toContain("enable='between(t,2.00,8.00)'");
+    });
+
+    it('should default to full clip duration when textEndTime is 0', () => {
+      const cmd = buildCommand(defaultParams({ captionText: 'Hello', textStartTime: 1, textEndTime: 0 }), outputPath);
+      expect(cmd).toContain("enable='between(t,1.00,30.00)'");
+    });
+
+    it('should default textStartTime to 0', () => {
+      const cmd = buildCommand(defaultParams({ captionText: 'Hello' }), outputPath);
+      expect(cmd).toContain("enable='between(t,0.00,30.00)'");
+    });
+  });
+
+  describe('voice effects', () => {
+    it('should add robot voice effect', () => {
+      const cmd = buildCommand(defaultParams({ voiceEffect: 'robot' }), outputPath);
+      expect(cmd).toContain('asetrate=44100*0.8');
+    });
+
+    it('should add echo voice effect', () => {
+      const cmd = buildCommand(defaultParams({ voiceEffect: 'echo' }), outputPath);
+      expect(cmd).toContain('aecho=0.8:0.88:60:0.4');
+    });
+
+    it('should add deep voice effect', () => {
+      const cmd = buildCommand(defaultParams({ voiceEffect: 'deep' }), outputPath);
+      expect(cmd).toContain('asetrate=44100*0.75');
+    });
+
+    it('should add chipmunk voice effect', () => {
+      const cmd = buildCommand(defaultParams({ voiceEffect: 'chipmunk' }), outputPath);
+      expect(cmd).toContain('asetrate=44100*1.5');
+    });
+
+    it('should add telephone voice effect', () => {
+      const cmd = buildCommand(defaultParams({ voiceEffect: 'telephone' }), outputPath);
+      expect(cmd).toContain('highpass=f=300');
+      expect(cmd).toContain('lowpass=f=3400');
+    });
+
+    it('should not add voice effect for none', () => {
+      const cmd = buildCommand(defaultParams({ voiceEffect: 'none' }), outputPath);
+      expect(cmd).not.toContain('asetrate');
+      expect(cmd).not.toContain('aecho');
+    });
+  });
+
+  describe('noise reduction', () => {
+    it('should add noise reduction filters', () => {
+      const cmd = buildCommand(defaultParams({ noiseReduce: true }), outputPath);
+      expect(cmd).toContain('highpass=f=80');
+      expect(cmd).toContain('lowpass=f=12000');
+      expect(cmd).toContain('afftdn=nf=-20');
+    });
+
+    it('should not add noise reduction when false', () => {
+      const cmd = buildCommand(defaultParams({ noiseReduce: false }), outputPath);
+      expect(cmd).not.toContain('afftdn');
+    });
+  });
+
+  describe('stabilization', () => {
+    it('should add deshake filter', () => {
+      const cmd = buildCommand(defaultParams({ stabilize: true }), outputPath);
+      expect(cmd).toContain('deshake=rx=32:ry=32');
+    });
+
+    it('should not add deshake when false', () => {
+      const cmd = buildCommand(defaultParams({ stabilize: false }), outputPath);
+      expect(cmd).not.toContain('deshake');
+    });
+  });
+
+  describe('freeze frame', () => {
+    it('should add tpad for freeze frame', () => {
+      const cmd = buildCommand(defaultParams({ freezeFrameAt: 10 }), outputPath);
+      expect(cmd).toContain('tpad=stop_mode=clone');
+    });
+
+    it('should not add freeze frame when null', () => {
+      const cmd = buildCommand(defaultParams({ freezeFrameAt: null }), outputPath);
+      expect(cmd).not.toContain('tpad');
+    });
+
+    it('should not add freeze frame at 0 (start of clip)', () => {
+      const cmd = buildCommand(defaultParams({ freezeFrameAt: 0 }), outputPath);
+      expect(cmd).not.toContain('tpad');
     });
   });
 

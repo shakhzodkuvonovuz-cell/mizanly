@@ -26,6 +26,8 @@ export type AspectRatio = '9:16' | '16:9' | '1:1' | '4:5';
 /** Max clip duration (seconds) for reverse — prevents OOM on long videos */
 const MAX_REVERSE_DURATION = 300; // 5 minutes
 
+export type VoiceEffect = 'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'telephone';
+
 export interface EditParams {
   inputUri: string;
   startTime: number;       // seconds
@@ -36,12 +38,18 @@ export interface EditParams {
   captionText: string;
   captionColor: string;
   captionFont: string;
+  textStartTime?: number;  // when caption appears (seconds)
+  textEndTime?: number;    // when caption disappears (0 = end of clip)
   originalVolume: number;  // 0–100
   musicVolume: number;     // 0–100
   musicUri?: string;       // optional background music
   quality: QualityPreset;
   isReversed?: boolean;    // reverse playback
   aspectRatio?: AspectRatio; // output aspect ratio
+  voiceEffect?: VoiceEffect; // audio voice effect
+  stabilize?: boolean;     // video stabilization (vidstab)
+  noiseReduce?: boolean;   // audio noise reduction
+  freezeFrameAt?: number | null; // seconds to freeze, null = none
 }
 
 export interface ExportResult {
@@ -72,6 +80,17 @@ const FILTER_MAP: Record<FilterName, string> = {
 };
 
 // ── Quality presets ────────────────────────────────────────────────
+
+// ── Voice effects map ──────────────────────────────────────────────
+
+const VOICE_EFFECT_MAP: Record<VoiceEffect, string> = {
+  none: '',
+  robot: 'asetrate=44100*0.8,aresample=44100,atempo=1.25',
+  echo: 'aecho=0.8:0.88:60:0.4',
+  deep: 'asetrate=44100*0.75,aresample=44100,atempo=1.333',
+  chipmunk: 'asetrate=44100*1.5,aresample=44100,atempo=0.667',
+  telephone: 'highpass=f=300,lowpass=f=3400',
+};
 
 interface QualityConfig {
   scale: string;      // FFmpeg scale filter (empty = keep original)
@@ -212,9 +231,8 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     if (cropFilter) vFilters.push(cropFilter);
   }
 
-  // Text overlay — use FFmpeg-native escaping
+  // Text overlay — use FFmpeg-native escaping + optional timing
   if (captionText.trim()) {
-    // FFmpeg drawtext escaping: \ : ' must be escaped with backslash
     const escaped = captionText
       .replace(/\\/g, '\\\\\\\\')  // backslash
       .replace(/'/g, "'\\\\\\''")   // single quote
@@ -222,9 +240,28 @@ export function buildCommand(params: EditParams, outputPath: string): string {
       .replace(/%/g, '%%')          // percent (FFmpeg time code)
       .replace(/\[/g, '\\[')        // brackets
       .replace(/\]/g, '\\]');
+    // Text timing: enable only between textStartTime and textEndTime
+    const txtStart = params.textStartTime ?? 0;
+    const txtEnd = params.textEndTime && params.textEndTime > 0 ? params.textEndTime : clipDuration;
+    const enableExpr = `:enable='between(t,${txtStart.toFixed(2)},${txtEnd.toFixed(2)})'`;
     vFilters.push(
-      `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5`
+      `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5${enableExpr}`
     );
+  }
+
+  // Video stabilization (2-pass: vidstabdetect then vidstabtransform)
+  // NOTE: vidstab requires 2-pass which can't be done in a single command.
+  // Use a lightweight approach: deshake filter (single-pass, less accurate but works)
+  if (params.stabilize) {
+    vFilters.push('deshake=rx=32:ry=32');
+  }
+
+  // Freeze frame at specific time (tpad extends the frame)
+  if (params.freezeFrameAt !== null && params.freezeFrameAt !== undefined) {
+    const freezeAt = params.freezeFrameAt - startTime; // relative to trimmed clip
+    if (freezeAt > 0 && freezeAt < clipDuration) {
+      vFilters.push(`tpad=stop_mode=clone:stop_duration=2:stop=${Math.floor(freezeAt * 25)}`);
+    }
   }
 
   if (vFilters.length > 0) {
@@ -249,6 +286,9 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     if (speed !== 1) {
       origChain.push(buildAtempoChain(speed));
     }
+    const voiceFilterMix = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
+    if (voiceFilterMix) origChain.push(voiceFilterMix);
+    if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
 
     parts.push(
       `-filter_complex "[0:a]${origChain.join(',')}[a0];[1:a]volume=${musicVol}[a1];[a0][a1]amix=inputs=2:duration=first[aout]"`,
@@ -277,6 +317,17 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     // Volume adjustment
     if (originalVolume !== 100) {
       aFilters.push(`volume=${(originalVolume / 100).toFixed(2)}`);
+    }
+
+    // Voice effect
+    const voiceFilter = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
+    if (voiceFilter) {
+      aFilters.push(voiceFilter);
+    }
+
+    // Noise reduction (highpass + lowpass to remove hum/hiss)
+    if (params.noiseReduce) {
+      aFilters.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
     }
 
     if (aFilters.length > 0) {
