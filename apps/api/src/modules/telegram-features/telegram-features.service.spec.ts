@@ -15,7 +15,7 @@ describe('TelegramFeaturesService', () => {
 
   const mockFolder = {
     id: 'f-1', userId: 'user-1', name: 'Work', position: 0,
-    conversationIds: ['conv-1'], filterType: 'include',
+    conversationIds: ['conv-1'], filterType: 'INCLUDE',
     includeGroups: false, includeChannels: false, includeBots: false,
   };
 
@@ -54,7 +54,7 @@ describe('TelegramFeaturesService', () => {
               findMany: jest.fn().mockResolvedValue([{ conversationId: 'conv-1' }]),
             },
             adminLog: {
-              create: jest.fn().mockResolvedValue({ id: 'log-1', action: 'slow_mode_changed' }),
+              create: jest.fn().mockResolvedValue({ id: 'log-1', action: 'SLOW_MODE_CHANGED' }),
               findMany: jest.fn().mockResolvedValue([]),
             },
             groupTopic: {
@@ -118,13 +118,13 @@ describe('TelegramFeaturesService', () => {
 
     it('should throw BadRequestException when forwardedFromType set without forwardedFromId', async () => {
       await expect(
-        service.saveMessage('user-1', { content: 'test', forwardedFromType: 'post' }),
+        service.saveMessage('user-1', { content: 'test', forwardedFromType: 'FWD_POST' }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should accept forwardedFromType with forwardedFromId', async () => {
       await service.saveMessage('user-1', {
-        content: 'test', forwardedFromType: 'post', forwardedFromId: 'post-1',
+        content: 'test', forwardedFromType: 'FWD_POST', forwardedFromId: 'post-1',
       });
       expect(prisma.savedMessage.create).toHaveBeenCalled();
     });
@@ -224,13 +224,13 @@ describe('TelegramFeaturesService', () => {
     });
 
     it('should include filterType and includeBots in create', async () => {
-      prisma.chatFolder.create.mockResolvedValue({ ...mockFolder, filterType: 'exclude', includeBots: true });
+      prisma.chatFolder.create.mockResolvedValue({ ...mockFolder, filterType: 'EXCLUDE', includeBots: true });
       await service.createChatFolder('user-1', {
-        name: 'Test', filterType: 'exclude', includeBots: true,
+        name: 'Test', filterType: 'EXCLUDE', includeBots: true,
       });
       expect(prisma.chatFolder.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ filterType: 'exclude', includeBots: true }),
+          data: expect.objectContaining({ filterType: 'EXCLUDE', includeBots: true }),
         }),
       );
     });
@@ -363,7 +363,7 @@ describe('TelegramFeaturesService', () => {
       expect(prisma.adminLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            action: 'slow_mode_changed',
+            action: 'SLOW_MODE_CHANGED',
             groupId: 'conv-1',
             adminId: 'user-1',
           }),
@@ -404,7 +404,7 @@ describe('TelegramFeaturesService', () => {
       await service.createTopic('conv-1', 'user-1', { name: 'General' });
       expect(prisma.adminLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ action: 'topic_created' }),
+          data: expect.objectContaining({ action: 'TOPIC_CREATED' }),
         }),
       );
     });
@@ -440,7 +440,7 @@ describe('TelegramFeaturesService', () => {
       await service.updateTopic('topic-1', 'user-1', { name: 'Updated', isPinned: true });
       expect(prisma.adminLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ action: 'topic_updated' }),
+          data: expect.objectContaining({ action: 'TOPIC_UPDATED' }),
         }),
       );
     });
@@ -466,7 +466,7 @@ describe('TelegramFeaturesService', () => {
       await service.deleteTopic('topic-1', 'user-1');
       expect(prisma.adminLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ action: 'topic_deleted' }),
+          data: expect.objectContaining({ action: 'TOPIC_DELETED' }),
         }),
       );
     });
@@ -625,12 +625,12 @@ describe('TelegramFeaturesService', () => {
 
   describe('Admin Log', () => {
     it('should log admin action with valid action type', async () => {
-      prisma.adminLog.create.mockResolvedValue({ id: 'log-1', action: 'member_removed' });
-      await service.logAdminAction('conv-1', 'user-1', 'member_removed', 'user-2', 'Kicked from group');
+      prisma.adminLog.create.mockResolvedValue({ id: 'log-1', action: 'MEMBER_REMOVED' });
+      await service.logAdminAction('conv-1', 'user-1', 'MEMBER_REMOVED', 'user-2', 'Kicked from group');
       expect(prisma.adminLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: {
-            groupId: 'conv-1', adminId: 'user-1', action: 'member_removed',
+            groupId: 'conv-1', adminId: 'user-1', action: 'MEMBER_REMOVED',
             targetId: 'user-2', details: 'Kicked from group',
           },
         }),
@@ -645,7 +645,7 @@ describe('TelegramFeaturesService', () => {
 
     it('should get admin log entries for admin user', async () => {
       prisma.conversationMember.findUnique.mockResolvedValueOnce({ userId: 'user-1', role: 'owner' });
-      prisma.adminLog.findMany.mockResolvedValue([{ id: 'log-1', action: 'slow_mode_changed' }]);
+      prisma.adminLog.findMany.mockResolvedValue([{ id: 'log-1', action: 'SLOW_MODE_CHANGED' }]);
       const result = await service.getAdminLog('conv-1', 'user-1');
       expect(result.data).toHaveLength(1);
     });

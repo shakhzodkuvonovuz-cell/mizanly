@@ -196,7 +196,8 @@
     "discardChanges": "Discard changes?",
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
     "saved": "Saved",
-    "rateLimited": "Slow down! Try again in {{seconds}} seconds"
+    "rateLimited": "Slow down! Try again in {{seconds}} seconds",
+    "views": "vues"
   },
   "tabs": {
     "saf": "Saf",
@@ -403,7 +404,8 @@
     "qiblaDirectionDegrees": "{{degrees}}° from North",
     "openCompass": "Open Compass",
     "calculating": "Calculating...",
-    "adhanNotification": "{{prayer}} notification"
+    "adhanNotification": "{{prayer}} notification",
+    "deviceHeading": "Direction de l'appareil"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1561,7 +1563,15 @@
     "hostedBy": "Hosted by {{name}}",
     "watchingCount": "{{count}} watching",
     "joinParty": "Join Party",
-    "start": "Start"
+    "start": "Start",
+    "watchPartyCreated": "Soirée de visionnage créée !",
+    "selectVideo": "Sélectionner une vidéo",
+    "changeVideo": "Changer de vidéo",
+    "searchVideos": "Rechercher des vidéos...",
+    "noVideosFound": "Aucune vidéo trouvée",
+    "tryDifferentSearch": "Essayez un autre terme de recherche",
+    "sharePartyLink": "Partager le lien de la soirée",
+    "joinMyWatchParty": "Rejoignez ma soirée de visionnage"
   },
   "discover": {
     "title": "Discover",
@@ -2159,17 +2169,17 @@
     },
     "banned": {
       "title": "Compte suspendu",
-      "subtitle": "Votre compte a \u00e9t\u00e9 suspendu pour violation de nos r\u00e8gles communautaires.",
+      "subtitle": "Votre compte a été suspendu pour violation de nos règles communautaires.",
       "appealButton": "Faire appel",
-      "signOut": "Se d\u00e9connecter",
+      "signOut": "Se déconnecter",
       "contactSupport": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez faire appel ou contacter le support."
     },
     "maintenance": {
-      "title": "Nous revenons bient\u00f4t",
-      "subtitle": "Mizanly est en cours de maintenance planifi\u00e9e. Nous travaillons \u00e0 am\u00e9liorer votre exp\u00e9rience.",
-      "retryButton": "R\u00e9essayer",
-      "stillDown": "Le serveur est toujours en maintenance. Veuillez r\u00e9essayer dans quelques instants.",
-      "hint": "Cela ne prend g\u00e9n\u00e9ralement que quelques minutes. Merci de votre patience."
+      "title": "Nous revenons bientôt",
+      "subtitle": "Mizanly est en cours de maintenance planifiée. Nous travaillons à améliorer votre expérience.",
+      "retryButton": "Réessayer",
+      "stillDown": "Le serveur est toujours en maintenance. Veuillez réessayer dans quelques instants.",
+      "hint": "Cela ne prend généralement que quelques minutes. Merci de votre patience."
     }
   },
   "createReel": {
@@ -3787,5 +3797,12 @@
     "newFollowers": "nouveaux abonnes",
     "noGrowthData": "Pas encore de donnees de croissance",
     "noGrowthDataSubtitle": "Les donnees de croissance des abonnes apparaitront a mesure que votre audience grandit"
+  },
+  "chat": {
+    "inviteLink": "Lien d'invitation",
+    "inviteLinkHint": "Partagez ce lien pour inviter des personnes au groupe",
+    "joinGroupVia": "Rejoignez mon groupe sur Mizanly",
+    "linkCopied": "Lien copié dans le presse-papiers",
+    "copyLink": "Copier le lien"
   }
 }

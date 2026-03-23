@@ -35,7 +35,7 @@ export class UpdateProductDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(200) location?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(1000) shippingInfo?: string;
   @ApiPropertyOptional() @IsOptional() @IsUrl() halalCertUrl?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['active', 'draft', 'archived']) status?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['ACTIVE', 'DRAFT', 'SOLD_OUT', 'REMOVED']) status?: string;
 }
 
 export class ReviewDto {
@@ -51,7 +51,7 @@ export class CreateOrderDto {
 }
 
 export class UpdateOrderStatusDto {
-  @ApiProperty() @IsString() @IsIn(['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded']) status: string;
+  @ApiProperty() @IsString() @IsIn(['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']) status: string;
 }
 
 // ── Halal Business Directory ────────────────────────────
@@ -92,7 +92,7 @@ export class CreateZakatFundDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiProperty() @IsString() @MaxLength(2000) description: string;
   @ApiProperty() @IsNumber() @Min(1) @Max(10_000_000) goalAmount: number;
-  @ApiProperty() @IsString() @IsIn(['individual', 'mosque', 'school', 'disaster', 'orphan', 'other']) @MaxLength(50) category: string;
+  @ApiProperty() @IsString() @IsIn(['INDIVIDUAL', 'MOSQUE', 'SCHOOL', 'DISASTER', 'ORPHAN', 'OTHER']) @MaxLength(50) category: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['USD', 'EUR', 'GBP', 'SAR', 'AED', 'MYR', 'IDR', 'TRY', 'BDT', 'PKR']) currency?: string;
 }
 

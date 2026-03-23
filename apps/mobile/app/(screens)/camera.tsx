@@ -351,8 +351,8 @@ const styles = StyleSheet.create({
     position: 'absolute' as const,
     top: screenHeight / 3,
     height: screenHeight / 3,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     borderTopWidth: 0.5,
     borderBottomWidth: 0.5,
     borderColor: 'rgba(255,255,255,0.15)',
@@ -362,8 +362,8 @@ const styles = StyleSheet.create({
   topControls: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     zIndex: 10,
   },
   topControlsRow: {
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: radius.full,
     backgroundColor: colors.error,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   timerText: {
     color: '#fff',
@@ -416,8 +416,8 @@ const styles = StyleSheet.create({
   bottomControls: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     paddingBottom: spacing.xl,
   },
 

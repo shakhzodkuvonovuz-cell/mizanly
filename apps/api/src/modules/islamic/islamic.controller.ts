@@ -41,16 +41,16 @@ import { IsBoolean, IsDateString, MaxLength } from 'class-validator';
 class LogFastDto {
   @IsDateString() date: string;
   @IsBoolean() isFasting: boolean;
-  @IsOptional() @IsString() @IsIn(['obligatory', 'sunnah', 'voluntary', 'makeup']) fastType?: string;
+  @IsOptional() @IsString() @IsIn(['RAMADAN', 'MONDAY', 'THURSDAY', 'AYYAM_AL_BID', 'ARAFAT', 'ASHURA', 'QADA', 'NAFL', 'OBLIGATORY', 'SUNNAH', 'VOLUNTARY', 'MAKEUP']) fastType?: string;
   @IsOptional() @IsString() @MaxLength(500) reason?: string;
 }
 
 class UpdateHifzStatusDto {
-  @IsString() @IsIn(['not_started', 'in_progress', 'memorized', 'needs_review']) status: string;
+  @IsString() @IsIn(['NOT_STARTED', 'IN_PROGRESS', 'MEMORIZED', 'NEEDS_REVIEW']) status: string;
 }
 
 class CompleteDailyTaskDto {
-  @IsString() @IsIn(['dhikr', 'quran', 'reflection', 'dua', 'charity']) taskType: string;
+  @IsString() @IsIn(['DHIKR', 'QURAN', 'REFLECTION']) taskType: string;
 }
 
 class PrayerTimesQueryDto {

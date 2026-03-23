@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   durationBadge: {
     position: 'absolute',
     bottom: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
     backgroundColor: 'rgba(0,0,0,0.7)',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,

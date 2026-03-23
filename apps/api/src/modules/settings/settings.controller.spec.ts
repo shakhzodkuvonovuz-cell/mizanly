@@ -68,11 +68,11 @@ describe('SettingsController', () => {
 
   describe('updateAutoPlay', () => {
     it('should call settingsService.updateAutoPlaySetting with userId and setting', async () => {
-      service.updateAutoPlaySetting.mockResolvedValue({ autoPlaySetting: 'wifi' } as any);
+      service.updateAutoPlaySetting.mockResolvedValue({ autoPlaySetting: 'WIFI' } as any);
 
-      await controller.updateAutoPlay(userId, { autoPlaySetting: 'wifi' });
+      await controller.updateAutoPlay(userId, { autoPlaySetting: 'WIFI' });
 
-      expect(service.updateAutoPlaySetting).toHaveBeenCalledWith(userId, 'wifi');
+      expect(service.updateAutoPlaySetting).toHaveBeenCalledWith(userId, 'WIFI');
     });
   });
 

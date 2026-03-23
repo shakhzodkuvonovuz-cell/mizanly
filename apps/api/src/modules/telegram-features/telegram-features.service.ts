@@ -5,14 +5,15 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { ForwardedFromType, ChatFolderFilterType, AdminLogAction } from '@prisma/client';
 
 const VALID_ADMIN_ACTIONS = [
-  'member_added', 'member_removed', 'member_banned',
-  'title_changed', 'photo_changed', 'pin_message', 'unpin_message',
-  'slow_mode_changed', 'permissions_changed',
-  'topic_created', 'topic_updated', 'topic_deleted',
-  'emoji_pack_created', 'emoji_pack_updated', 'emoji_pack_deleted',
-  'emoji_added', 'emoji_removed',
+  'MEMBER_ADDED', 'MEMBER_REMOVED', 'MEMBER_BANNED',
+  'TITLE_CHANGED', 'PHOTO_CHANGED', 'PIN_MESSAGE', 'UNPIN_MESSAGE',
+  'SLOW_MODE_CHANGED', 'PERMISSIONS_CHANGED',
+  'TOPIC_CREATED', 'TOPIC_UPDATED', 'TOPIC_DELETED',
+  'EMOJI_PACK_CREATED', 'EMOJI_PACK_UPDATED', 'EMOJI_PACK_DELETED',
+  'EMOJI_ADDED', 'EMOJI_REMOVED',
 ] as const;
 
 @Injectable()
@@ -48,7 +49,7 @@ export class TelegramFeaturesService {
     if (dto.content && dto.content.length > 10000) {
       throw new BadRequestException('Content must be 10,000 characters or less');
     }
-    if (dto.forwardedFromType && !['post', 'thread', 'reel', 'video', 'message'].includes(dto.forwardedFromType)) {
+    if (dto.forwardedFromType && !['FWD_POST', 'FWD_THREAD', 'FWD_REEL', 'FWD_VIDEO', 'FWD_MESSAGE'].includes(dto.forwardedFromType)) {
       throw new BadRequestException('Invalid forwardedFromType');
     }
 
@@ -58,7 +59,7 @@ export class TelegramFeaturesService {
     }
 
     return this.prisma.savedMessage.create({
-      data: { userId, ...dto },
+      data: { userId, ...dto, forwardedFromType: dto.forwardedFromType as ForwardedFromType | undefined },
     });
   }
 
@@ -122,7 +123,7 @@ export class TelegramFeaturesService {
 
     // Apply folder filters
     if (folder.conversationIds.length > 0) {
-      if (folder.filterType === 'exclude') {
+      if (folder.filterType === 'EXCLUDE') {
         where.id = { notIn: folder.conversationIds };
       } else {
         where.id = { in: folder.conversationIds };
@@ -194,7 +195,7 @@ export class TelegramFeaturesService {
         conversationIds: dto.conversationIds || [],
         includeGroups: dto.includeGroups || false,
         includeChannels: dto.includeChannels || false,
-        filterType: dto.filterType || 'include',
+        filterType: (dto.filterType || 'INCLUDE') as ChatFolderFilterType,
         includeBots: dto.includeBots || false,
       },
     });
@@ -228,7 +229,7 @@ export class TelegramFeaturesService {
       }
     }
 
-    return this.prisma.chatFolder.update({ where: { id: folderId }, data: dto });
+    return this.prisma.chatFolder.update({ where: { id: folderId }, data: { ...dto, filterType: dto.filterType as ChatFolderFilterType | undefined } });
   }
 
   async deleteChatFolder(userId: string, folderId: string) {
@@ -309,7 +310,7 @@ export class TelegramFeaturesService {
     });
 
     // Log admin action
-    await this.logAdminAction(conversationId, adminId, 'slow_mode_changed', undefined, `Slow mode set to ${seconds}s`);
+    await this.logAdminAction(conversationId, adminId, 'SLOW_MODE_CHANGED', undefined, `Slow mode set to ${seconds}s`);
 
     return { success: true, slowModeSeconds: seconds };
   }
@@ -355,7 +356,7 @@ export class TelegramFeaturesService {
     }
 
     return this.prisma.adminLog.create({
-      data: { groupId, adminId, action, targetId, details },
+      data: { groupId, adminId, action: action as AdminLogAction, targetId, details },
     });
   }
 
@@ -382,7 +383,7 @@ export class TelegramFeaturesService {
     });
 
     // Log admin action for topic creation (Finding 12)
-    await this.logAdminAction(conversationId, userId, 'topic_created', topic.id, `Topic "${dto.name.trim()}" created`);
+    await this.logAdminAction(conversationId, userId, 'TOPIC_CREATED', topic.id, `Topic "${dto.name.trim()}" created`);
 
     return topic;
   }
@@ -429,7 +430,7 @@ export class TelegramFeaturesService {
     if (dto.isPinned !== undefined) changes.push(`isPinned=${dto.isPinned}`);
     if (dto.isClosed !== undefined) changes.push(`isClosed=${dto.isClosed}`);
     if (dto.iconColor) changes.push(`iconColor=${dto.iconColor}`);
-    await this.logAdminAction(topic.conversationId, userId, 'topic_updated', topicId, changes.join(', '));
+    await this.logAdminAction(topic.conversationId, userId, 'TOPIC_UPDATED', topicId, changes.join(', '));
 
     return updated;
   }
@@ -451,7 +452,7 @@ export class TelegramFeaturesService {
     const deleted = await this.prisma.groupTopic.delete({ where: { id: topicId } });
 
     // Log admin action for topic deletion (Finding 12)
-    await this.logAdminAction(topic.conversationId, userId, 'topic_deleted', topicId, `Topic "${topic.name}" deleted`);
+    await this.logAdminAction(topic.conversationId, userId, 'TOPIC_DELETED', topicId, `Topic "${topic.name}" deleted`);
 
     return deleted;
   }

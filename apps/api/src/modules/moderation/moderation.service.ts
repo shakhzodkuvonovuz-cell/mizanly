@@ -31,6 +31,22 @@ export class SubmitAppealDto {
   @IsString() @MaxLength(2000) details: string;
 }
 
+/**
+ * ModerationService — Report management, moderation queue, admin review workflows.
+ *
+ * Responsibility boundary:
+ * - This service: user reports, moderation queue, admin review actions, appeals,
+ *   auto-flag via word-filter (checkText), image moderation via AiService (checkImage),
+ *   moderation stats.
+ * - ContentSafetyService: AI-based text analysis (Islamic-context NLP), keyword blocking,
+ *   forward limits, kindness reminders, auto-remove pipeline, viral content throttling.
+ *
+ * Key difference: This service is the controller-facing service exposed via REST endpoints.
+ * ContentSafetyService is the inline pipeline service injected into Posts/Threads/Channels/Videos
+ * for automated content moderation during creation.
+ *
+ * @see ContentSafetyService for AI text moderation and automated safety pipeline
+ */
 @Injectable()
 export class ModerationService {
   private readonly logger = new Logger(ModerationService.name);
@@ -40,6 +56,14 @@ export class ModerationService {
     private aiService: AiService,
   ) {}
 
+  /**
+   * Check text using the local word-filter (synchronous, fast, no API call).
+   * For AI-based Islamic-context NLP moderation, see ContentSafetyService.moderateText().
+   * Both are complementary: this catches obvious keyword violations immediately,
+   * while ContentSafetyService.moderateText() handles nuanced context analysis.
+   *
+   * @see ContentSafetyService.moderateText for AI-based text moderation
+   */
   async checkText(userId: string, dto: CheckTextDto): Promise<TextCheckResult> {
     // Run word filter
     const result = checkText(dto.text);
@@ -66,6 +90,16 @@ export class ModerationService {
     return result;
   }
 
+  /**
+   * Check image using AiService.moderateImage() (Claude Vision API).
+   * This is the controller-facing endpoint. Other services (Posts, Reels, Threads, Stories, Videos)
+   * call AiService.moderateImage() directly for inline moderation during content creation.
+   *
+   * Note: ContentSafetyService also has a moderateImage() method, but it is unused and deprecated.
+   * All image moderation goes through AiService.moderateImage().
+   *
+   * @see AiService.moderateImage for the underlying image moderation implementation
+   */
   async checkImage(userId: string, dto: CheckImageDto): Promise<{
     safe: boolean;
     classification: 'SAFE' | 'WARNING' | 'BLOCK';

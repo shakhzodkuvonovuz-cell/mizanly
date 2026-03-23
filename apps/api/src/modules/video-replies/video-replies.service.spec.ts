@@ -31,39 +31,39 @@ describe('VideoRepliesService', () => {
   describe('create', () => {
     it('should create video reply for post comment', async () => {
       prisma.videoReply.create.mockResolvedValue({ id: 'vr1', commentId: 'c1', mediaUrl: 'https://cdn.test/v.mp4' });
-      const result = await service.create('u1', { commentId: 'c1', commentType: 'post', mediaUrl: 'https://cdn.test/v.mp4' });
+      const result = await service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'https://cdn.test/v.mp4' });
       expect(result.id).toBe('vr1');
     });
 
     it('should create video reply for reel comment', async () => {
       prisma.videoReply.create.mockResolvedValue({ id: 'vr2' });
-      const result = await service.create('u1', { commentId: 'rc1', commentType: 'reel', mediaUrl: 'https://cdn.test/v.mp4' });
+      const result = await service.create('u1', { commentId: 'rc1', commentType: 'REEL', mediaUrl: 'https://cdn.test/v.mp4' });
       expect(result).toBeDefined();
     });
 
     it('should throw for invalid commentType', async () => {
-      await expect(service.create('u1', { commentId: 'c1', commentType: 'invalid' as any, mediaUrl: 'https://cdn.test/v.mp4' }))
+      await expect(service.create('u1', { commentId: 'c1', commentType: 'INVALID' as any, mediaUrl: 'https://cdn.test/v.mp4' }))
         .rejects.toThrow(BadRequestException);
     });
 
     it('should throw for empty mediaUrl', async () => {
-      await expect(service.create('u1', { commentId: 'c1', commentType: 'post', mediaUrl: '' }))
+      await expect(service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: '' }))
         .rejects.toThrow(BadRequestException);
     });
 
     it('should throw for invalid URL', async () => {
-      await expect(service.create('u1', { commentId: 'c1', commentType: 'post', mediaUrl: 'not-a-url' }))
+      await expect(service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'not-a-url' }))
         .rejects.toThrow(BadRequestException);
     });
 
     it('should throw if duration out of range', async () => {
-      await expect(service.create('u1', { commentId: 'c1', commentType: 'post', mediaUrl: 'https://cdn.test/v.mp4', duration: 500 }))
+      await expect(service.create('u1', { commentId: 'c1', commentType: 'POST', mediaUrl: 'https://cdn.test/v.mp4', duration: 500 }))
         .rejects.toThrow(BadRequestException);
     });
 
     it('should throw if comment not found', async () => {
       prisma.comment.findUnique.mockResolvedValue(null);
-      await expect(service.create('u1', { commentId: 'missing', commentType: 'post', mediaUrl: 'https://cdn.test/v.mp4' }))
+      await expect(service.create('u1', { commentId: 'missing', commentType: 'POST', mediaUrl: 'https://cdn.test/v.mp4' }))
         .rejects.toThrow(NotFoundException);
     });
   });

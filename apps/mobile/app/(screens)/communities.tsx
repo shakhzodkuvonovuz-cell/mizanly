@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   unreadBadge: {
     position: 'absolute',
     top: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
   },
   unreadBadgeGradient: {
     minWidth: 24,
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginTop: -28,
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
     zIndex: 10,
   },
   iconBg: {
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: spacing.xl,
-    right: spacing.base,
+    end: spacing.base,
     zIndex: 100,
   },
   fabGradient: {

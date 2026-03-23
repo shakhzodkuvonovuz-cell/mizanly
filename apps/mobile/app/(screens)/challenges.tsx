@@ -542,14 +542,14 @@ const styles = StyleSheet.create({
   coverOverlay: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 60,
   },
   categoryBadge: {
     position: 'absolute',
     top: spacing.md,
-    right: spacing.md,
+    end: spacing.md,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.full,
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: spacing['2xl'],
-    right: spacing.lg,
+    end: spacing.lg,
   },
   fabGradient: {
     width: 56,

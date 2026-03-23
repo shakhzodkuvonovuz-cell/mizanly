@@ -196,7 +196,8 @@
     "discardChanges": "Discard changes?",
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
     "saved": "Saved",
-    "rateLimited": "Slow down! Try again in {{seconds}} seconds"
+    "rateLimited": "Slow down! Try again in {{seconds}} seconds",
+    "views": "views"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1073,7 +1074,8 @@
     "prayerLocation": "Prayer Location",
     "openCompass": "Open Compass",
     "calculating": "Calculating...",
-    "adhanNotification": "{{prayer}} notification"
+    "adhanNotification": "{{prayer}} notification",
+    "deviceHeading": "Device heading"
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",
@@ -1560,7 +1562,15 @@
     "hostedBy": "Hosted by {{name}}",
     "watchingCount": "{{count}} watching",
     "joinParty": "Join Party",
-    "start": "Start"
+    "start": "Start",
+    "watchPartyCreated": "Watch party created!",
+    "selectVideo": "Select a Video",
+    "changeVideo": "Change Video",
+    "searchVideos": "Search videos...",
+    "noVideosFound": "No videos found",
+    "tryDifferentSearch": "Try a different search term",
+    "sharePartyLink": "Share Party Link",
+    "joinMyWatchParty": "Join my watch party"
   },
   "discover": {
     "title": "Discover",
@@ -3786,5 +3796,12 @@
     "newFollowers": "new followers",
     "noGrowthData": "No growth data yet",
     "noGrowthDataSubtitle": "Follower growth data will appear as your audience grows"
+  },
+  "chat": {
+    "inviteLink": "Invite Link",
+    "inviteLinkHint": "Share this link to invite people to the group",
+    "joinGroupVia": "Join my group on Mizanly",
+    "linkCopied": "Link copied to clipboard",
+    "copyLink": "Copy Link"
   }
 }

@@ -196,7 +196,8 @@
     "discardChanges": "تجاهل التغييرات؟",
     "unsavedChangesMessage": "لديك تغييرات غير محفوظة. ماذا تريد أن تفعل؟",
     "saved": "Saved",
-    "rateLimited": "تمهّل! حاول مرة أخرى بعد {{seconds}} ثانية"
+    "rateLimited": "تمهّل! حاول مرة أخرى بعد {{seconds}} ثانية",
+    "views": "مشاهدات"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -1028,12 +1029,6 @@
     "dhikr": "عداد الذكر",
     "zakat": "حاسبة الزكاة",
     "mosque": "المساجد القريبة",
-    "duaCollection": "مجموعة الأدعية",
-    "fastingTracker": "متتبع الصيام",
-    "halalFinder": "البحث عن حلال",
-    "hifzTracker": "متتبع الحفظ",
-    "morningBriefing": "إحاطة الصباح",
-    "namesOfAllah": "أسماء الله الحسنى",
     "ramadan": "رمضان",
     "quran": "القرآن",
     "surah": "سورة",
@@ -1073,7 +1068,8 @@
     "qiblaDirectionDegrees": "{{degrees}}° من الشمال",
     "openCompass": "افتح البوصلة",
     "calculating": "جاري الحساب...",
-    "adhanNotification": "إشعار {{prayer}}"
+    "adhanNotification": "إشعار {{prayer}}",
+    "deviceHeading": "اتجاه الجهاز"
   },
   "prayerNotifications": {
     "settings": "إعدادات الصلاة",
@@ -1949,18 +1945,18 @@
       }
     },
     "banned": {
-      "title": "\u062a\u0645 \u062a\u0639\u0644\u064a\u0642 \u0627\u0644\u062d\u0633\u0627\u0628",
-      "subtitle": "\u062a\u0645 \u062a\u0639\u0644\u064a\u0642 \u062d\u0633\u0627\u0628\u0643 \u0628\u0633\u0628\u0628 \u0627\u0646\u062a\u0647\u0627\u0643 \u0625\u0631\u0634\u0627\u062f\u0627\u062a \u0627\u0644\u0645\u062c\u062a\u0645\u0639.",
-      "appealButton": "\u0627\u0633\u062a\u0626\u0646\u0627\u0641 \u0627\u0644\u0642\u0631\u0627\u0631",
-      "signOut": "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c",
-      "contactSupport": "\u0625\u0630\u0627 \u0643\u0646\u062a \u062a\u0639\u062a\u0642\u062f \u0623\u0646 \u0647\u0630\u0627 \u062e\u0637\u0623\u060c \u064a\u0645\u0643\u0646\u0643 \u0627\u0633\u062a\u0626\u0646\u0627\u0641 \u0627\u0644\u0642\u0631\u0627\u0631 \u0623\u0648 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u062f\u0639\u0645."
+      "title": "تم تعليق الحساب",
+      "subtitle": "تم تعليق حسابك بسبب انتهاك إرشادات المجتمع.",
+      "appealButton": "استئناف القرار",
+      "signOut": "تسجيل الخروج",
+      "contactSupport": "إذا كنت تعتقد أن هذا خطأ، يمكنك استئناف القرار أو التواصل مع الدعم."
     },
     "maintenance": {
-      "title": "\u0633\u0646\u0639\u0648\u062f \u0642\u0631\u064a\u0628\u064b\u0627",
-      "subtitle": "\u064a\u062e\u0636\u0639 \u0645\u064a\u0632\u0627\u0646\u0644\u064a \u0644\u0635\u064a\u0627\u0646\u0629 \u0645\u062c\u062f\u0648\u0644\u0629. \u0646\u0639\u0645\u0644 \u0639\u0644\u0649 \u062a\u062d\u0633\u064a\u0646 \u062a\u062c\u0631\u0628\u062a\u0643.",
-      "retryButton": "\u062d\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649",
-      "stillDown": "\u0644\u0627 \u064a\u0632\u0627\u0644 \u0627\u0644\u062e\u0627\u062f\u0645 \u0642\u064a\u062f \u0627\u0644\u0635\u064a\u0627\u0646\u0629. \u064a\u0631\u062c\u0649 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649 \u0642\u0631\u064a\u0628\u064b\u0627.",
-      "hint": "\u0639\u0627\u062f\u0629\u064b \u0645\u0627 \u064a\u0633\u062a\u063a\u0631\u0642 \u0647\u0630\u0627 \u0628\u0636\u0639 \u062f\u0642\u0627\u0626\u0642 \u0641\u0642\u0637. \u0634\u0643\u0631\u064b\u0627 \u0644\u0635\u0628\u0631\u0643."
+      "title": "سنعود قريبًا",
+      "subtitle": "يخضع ميزانلي لصيانة مجدولة. نعمل على تحسين تجربتك.",
+      "retryButton": "حاول مرة أخرى",
+      "stillDown": "لا يزال الخادم قيد الصيانة. يرجى المحاولة مرة أخرى قريبًا.",
+      "hint": "عادةً ما يستغرق هذا بضع دقائق فقط. شكرًا لصبرك."
     }
   },
   "createReel": {
@@ -2954,7 +2950,15 @@
     "hostedBy": "Hosted by {{name}}",
     "watchingCount": "{{count}} watching",
     "joinParty": "Join Party",
-    "start": "Start"
+    "start": "Start",
+    "watchPartyCreated": "تم إنشاء حفلة المشاهدة!",
+    "selectVideo": "اختر فيديو",
+    "changeVideo": "تغيير الفيديو",
+    "searchVideos": "البحث عن فيديوهات...",
+    "noVideosFound": "لم يتم العثور على فيديوهات",
+    "tryDifferentSearch": "جرب كلمة بحث مختلفة",
+    "sharePartyLink": "مشاركة رابط الحفلة",
+    "joinMyWatchParty": "انضم إلى حفلة المشاهدة"
   },
   "discover": {
     "title": "اكتشف",
@@ -3317,13 +3321,7 @@
     "myMosques": "مساجدي",
     "nearbyMosques": "المساجد القريبة",
     "madhab": "المذهب",
-    "createMosque": "إنشاء صفحة مسجد",
-    "duaCollection": "مجموعة الأدعية",
-    "fastingTracker": "متتبع الصيام",
-    "halalFinder": "البحث عن حلال",
-    "hifzTracker": "متتبع الحفظ",
-    "morningBriefing": "إحاطة الصباح",
-    "namesOfAllah": "أسماء الله الحسنى"
+    "createMosque": "إنشاء صفحة مسجد"
   },
   "prayer": {
     "timeFor": "حان وقت {{prayer}}",
@@ -3792,5 +3790,12 @@
     "newFollowers": "متابعون جدد",
     "noGrowthData": "لا توجد بيانات نمو بعد",
     "noGrowthDataSubtitle": "ستظهر بيانات نمو المتابعين مع نمو جمهورك"
+  },
+  "chat": {
+    "inviteLink": "رابط الدعوة",
+    "inviteLinkHint": "شارك هذا الرابط لدعوة الأشخاص إلى المجموعة",
+    "joinGroupVia": "انضم إلى مجموعتي على ميزانلي",
+    "linkCopied": "تم نسخ الرابط",
+    "copyLink": "نسخ الرابط"
   }
 }

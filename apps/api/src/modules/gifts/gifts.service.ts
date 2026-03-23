@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { CoinTransactionType } from '@prisma/client';
 
 export interface GiftCatalogItem {
   type: string;
@@ -81,7 +82,7 @@ export class GiftsService {
     const transaction = await this.prisma.coinTransaction.create({
       data: {
         userId,
-        type: 'purchase',
+        type: 'PURCHASE',
         amount,
         description: `Coin purchase pending payment (${amount} coins)`,
       },
@@ -156,7 +157,7 @@ export class GiftsService {
       this.prisma.coinTransaction.create({
         data: {
           userId: senderId,
-          type: 'gift_sent',
+          type: 'GIFT_SENT',
           amount: -catalogItem.coins,
           description: `Sent ${catalogItem.name} to user`,
         },
@@ -164,7 +165,7 @@ export class GiftsService {
       this.prisma.coinTransaction.create({
         data: {
           userId: receiverId,
-          type: 'gift_received',
+          type: 'GIFT_RECEIVED',
           amount: diamondsEarned,
           description: `Received ${catalogItem.name} (+${diamondsEarned} diamonds)`,
         },
@@ -213,7 +214,7 @@ export class GiftsService {
       this.prisma.coinTransaction.findMany({
         where: {
           userId,
-          type: { in: ['purchase', 'cashout'] },
+          type: { in: ['PURCHASE', 'CASHOUT'] },
         },
         take: limit + 1,
         ...(cursor
@@ -299,7 +300,7 @@ export class GiftsService {
     await this.prisma.coinTransaction.create({
       data: {
         userId,
-        type: 'cashout',
+        type: 'CASHOUT',
         amount: -diamonds,
         description: `Cashed out ${diamonds} diamonds for $${usdAmount.toFixed(2)}`,
       },

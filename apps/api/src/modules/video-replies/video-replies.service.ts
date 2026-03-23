@@ -9,7 +9,7 @@ import { PrismaService } from '../../config/prisma.service';
 
 interface CreateVideoReplyData {
   commentId: string;
-  commentType: 'post' | 'reel';
+  commentType: 'POST' | 'REEL';
   mediaUrl: string;
   thumbnailUrl?: string;
   duration?: number;
@@ -37,8 +37,8 @@ export class VideoRepliesService {
   async create(userId: string, data: CreateVideoReplyData) {
     const { commentId, commentType, mediaUrl, thumbnailUrl, duration } = data;
 
-    if (commentType !== 'post' && commentType !== 'reel') {
-      throw new BadRequestException('commentType must be "post" or "reel"');
+    if (commentType !== 'POST' && commentType !== 'REEL') {
+      throw new BadRequestException('commentType must be "POST" or "REEL"');
     }
 
     if (!mediaUrl || !mediaUrl.trim()) {
@@ -57,7 +57,7 @@ export class VideoRepliesService {
     }
 
     // Verify the target comment exists
-    if (commentType === 'post') {
+    if (commentType === 'POST') {
       const comment = await this.prisma.comment.findUnique({
         where: { id: commentId },
         select: { id: true },

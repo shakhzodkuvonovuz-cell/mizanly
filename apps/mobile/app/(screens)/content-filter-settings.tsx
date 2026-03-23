@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: spacing.sm,
-    paddingLeft: spacing.xs,
+    paddingStart: spacing.xs,
   },
   levelCard: {
     borderRadius: radius.lg,

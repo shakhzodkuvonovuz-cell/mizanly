@@ -22,7 +22,7 @@ describe('DiscordFeaturesService', () => {
 
   const mockStage = {
     id: 'stage-1', circleId: 'circle-1', hostId: 'user-1',
-    title: 'Live Q&A', status: 'scheduled', speakerIds: ['user-1'],
+    title: 'Live Q&A', status: 'STAGE_SCHEDULED', speakerIds: ['user-1'],
     audienceCount: 0,
   };
 
@@ -583,7 +583,7 @@ describe('DiscordFeaturesService', () => {
       prisma.stageSession.findUnique.mockResolvedValue(mockStage);
       await service.startStageSession('stage-1', 'user-1');
       expect(prisma.stageSession.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'live' }) }),
+        expect.objectContaining({ data: expect.objectContaining({ status: 'STAGE_LIVE' }) }),
       );
     });
 
@@ -598,12 +598,12 @@ describe('DiscordFeaturesService', () => {
     });
 
     it('should reject starting an already ended session', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'ended' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_ENDED' });
       await expect(service.startStageSession('stage-1', 'user-1')).rejects.toThrow(BadRequestException);
     });
 
     it('should reject starting an already live session', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'live' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       await expect(service.startStageSession('stage-1', 'user-1')).rejects.toThrow(BadRequestException);
     });
   });
@@ -612,10 +612,10 @@ describe('DiscordFeaturesService', () => {
 
   describe('endStageSession', () => {
     it('should end a live stage session', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'live' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       await service.endStageSession('stage-1', 'user-1');
       expect(prisma.stageSession.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'ended' }) }),
+        expect.objectContaining({ data: expect.objectContaining({ status: 'STAGE_ENDED' }) }),
       );
     });
 
@@ -625,12 +625,12 @@ describe('DiscordFeaturesService', () => {
     });
 
     it('should throw ForbiddenException when non-host tries to end', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'live' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       await expect(service.endStageSession('stage-1', 'user-2')).rejects.toThrow(ForbiddenException);
     });
 
     it('should reject ending an already ended session', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'ended' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_ENDED' });
       await expect(service.endStageSession('stage-1', 'user-1')).rejects.toThrow(BadRequestException);
     });
   });
@@ -639,7 +639,7 @@ describe('DiscordFeaturesService', () => {
 
   describe('inviteSpeaker', () => {
     it('should invite speaker to a live stage', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'live' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       prisma.user.findUnique.mockResolvedValue({ id: 'user-2' });
       await service.inviteSpeaker('stage-1', 'user-1', 'user-2');
       expect(prisma.stageSession.update).toHaveBeenCalledWith(
@@ -656,19 +656,19 @@ describe('DiscordFeaturesService', () => {
     });
 
     it('should throw ForbiddenException when non-host invites', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'live' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       await expect(service.inviteSpeaker('stage-1', 'user-3', 'user-2'))
         .rejects.toThrow(ForbiddenException);
     });
 
     it('should reject inviting to non-live session', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'ended' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_ENDED' });
       await expect(service.inviteSpeaker('stage-1', 'user-1', 'user-2'))
         .rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException for non-existent speaker', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'live' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       prisma.user.findUnique.mockResolvedValue(null);
       await expect(service.inviteSpeaker('stage-1', 'user-1', 'ghost'))
         .rejects.toThrow(NotFoundException);
@@ -677,7 +677,7 @@ describe('DiscordFeaturesService', () => {
     it('should reject when speaker cap reached', async () => {
       const fullSpeakers = Array.from({ length: 20 }, (_, i) => `speaker-${i}`);
       prisma.stageSession.findUnique.mockResolvedValue({
-        ...mockStage, status: 'live', speakerIds: fullSpeakers,
+        ...mockStage, status: 'STAGE_LIVE', speakerIds: fullSpeakers,
       });
       prisma.user.findUnique.mockResolvedValue({ id: 'user-new' });
       await expect(service.inviteSpeaker('stage-1', 'user-1', 'user-new'))
@@ -685,7 +685,7 @@ describe('DiscordFeaturesService', () => {
     });
 
     it('should deduplicate speaker IDs', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'live' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       prisma.user.findUnique.mockResolvedValue({ id: 'user-1' });
       await service.inviteSpeaker('stage-1', 'user-1', 'user-1');
       expect(prisma.stageSession.update).toHaveBeenCalledWith(
@@ -730,7 +730,7 @@ describe('DiscordFeaturesService', () => {
 
   describe('joinStageAsListener', () => {
     it('should increment audienceCount for live session', async () => {
-      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'live' });
+      prisma.stageSession.findUnique.mockResolvedValue({ ...mockStage, status: 'STAGE_LIVE' });
       const result = await service.joinStageAsListener('stage-1', 'user-2');
       expect(result.success).toBe(true);
       expect(prisma.stageSession.update).toHaveBeenCalledWith(
@@ -786,7 +786,7 @@ describe('DiscordFeaturesService', () => {
       await service.getActiveStageSessions('circle-1');
       expect(prisma.stageSession.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ status: 'live', circleId: 'circle-1' }),
+          where: expect.objectContaining({ status: 'STAGE_LIVE', circleId: 'circle-1' }),
         }),
       );
     });
@@ -796,7 +796,7 @@ describe('DiscordFeaturesService', () => {
       expect(prisma.stageSession.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            status: 'live',
+            status: 'STAGE_LIVE',
             circle: { privacy: 'PUBLIC' },
           }),
         }),

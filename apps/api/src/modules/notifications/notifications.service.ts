@@ -28,6 +28,11 @@ export class NotificationsService {
       where.actor = { isVerified: true };
     }
 
+    // Build conditional relation includes based on filter to avoid unnecessary JOINs.
+    // For 'mentions' filter, only post/thread relations are relevant (MENTION, REPLY, THREAD_REPLY).
+    // For 'all'/'verified', include all content relations since mixed types appear.
+    const contentIncludes = this.buildContentIncludes(filter);
+
     const notifications = await this.prisma.notification.findMany({
       where,
       include: {
@@ -40,11 +45,7 @@ export class NotificationsService {
             isVerified: true,
           },
         },
-        // Prisma returns null for unmatched optional relations — single SQL query, minimal overhead
-        post: { select: { id: true, thumbnailUrl: true, mediaUrls: true } },
-        reel: { select: { id: true, thumbnailUrl: true } },
-        thread: { select: { id: true, mediaUrls: true } },
-        video: { select: { id: true, thumbnailUrl: true } },
+        ...contentIncludes,
       },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -274,6 +275,34 @@ export class NotificationsService {
     })).catch((e) => this.logger.debug('Redis notification publish failed', e));
 
     return notification;
+  }
+
+  /**
+   * Build conditional content relation includes based on notification filter.
+   * For 'mentions' filter: only post/thread (MENTION/REPLY/THREAD_REPLY never have reel/video).
+   * For 'all'/'verified': include all content relations since mixed types appear.
+   */
+  private buildContentIncludes(filter?: 'all' | 'mentions' | 'verified'): Record<string, unknown> {
+    const postSelect = { select: { id: true, thumbnailUrl: true, mediaUrls: true } };
+    const reelSelect = { select: { id: true, thumbnailUrl: true } };
+    const threadSelect = { select: { id: true, mediaUrls: true } };
+    const videoSelect = { select: { id: true, thumbnailUrl: true } };
+
+    if (filter === 'mentions') {
+      // MENTION, REPLY, THREAD_REPLY — only post and thread are relevant
+      return {
+        post: postSelect,
+        thread: threadSelect,
+      };
+    }
+
+    // For 'all', 'verified', or undefined — include all content relations
+    return {
+      post: postSelect,
+      reel: reelSelect,
+      thread: threadSelect,
+      video: videoSelect,
+    };
   }
 
   /**

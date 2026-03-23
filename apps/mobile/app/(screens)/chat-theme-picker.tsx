@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
   patternCheck: {
     position: 'absolute',
     top: spacing.xs,
-    right: spacing.xs,
+    end: spacing.xs,
     width: 20,
     height: 20,
     borderRadius: radius.full,
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
   },
   uploadPlus: {
     position: 'absolute',
-    right: '35%',
+    end: '35%',
     top: '30%',
   },
   uploadText: {
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   photoCheck: {
     position: 'absolute',
     top: spacing.xs,
-    right: spacing.xs,
+    end: spacing.xs,
     width: 20,
     height: 20,
     borderRadius: radius.full,
@@ -802,8 +802,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

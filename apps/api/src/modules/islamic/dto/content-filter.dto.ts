@@ -4,7 +4,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class UpdateContentFilterDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsIn(['relaxed', 'moderate', 'strict', 'family'])
+  @IsIn(['RELAXED', 'MODERATE', 'STRICT', 'FAMILY'])
   strictnessLevel?: string;
 
   @ApiPropertyOptional()

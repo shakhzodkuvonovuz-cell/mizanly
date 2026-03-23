@@ -290,7 +290,7 @@ describe('GamificationService', () => {
 
       const result = await service.createChallenge('user-1', {
         title: '7 Day Streak', description: 'Post 7 days in a row',
-        challengeType: 'daily', category: 'fitness', targetCount: 7, xpReward: 200,
+        challengeType: 'DAILY', category: 'fitness', targetCount: 7, xpReward: 200,
         startDate: '2026-03-20', endDate: '2026-03-27',
       });
       expect(result.title).toBe('7 Day Streak');
@@ -305,6 +305,118 @@ describe('GamificationService', () => {
 
       const result = await service.getMyChallenges('user-1');
       expect(result).toHaveLength(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // updateChallengeProgress — server-side validation
+  // ═══════════════════════════════════════════════════════
+
+  describe('updateChallengeProgress', () => {
+    const mockParticipant = {
+      challengeId: 'ch-1',
+      userId: 'user-1',
+      progress: 3,
+      completed: false,
+      completedAt: null,
+      challenge: {
+        id: 'ch-1',
+        title: 'Post Daily',
+        targetCount: 7,
+        xpReward: 100,
+        createdById: 'creator-1',
+        endDate: new Date(Date.now() + 86400000), // tomorrow
+      },
+    };
+
+    it('should increment progress by 1', async () => {
+      prisma.challengeParticipant.findUnique.mockResolvedValue(mockParticipant);
+      prisma.challengeParticipant.update.mockResolvedValue({ ...mockParticipant, progress: 4 });
+
+      const result = await service.updateChallengeProgress('user-1', 'ch-1', 1);
+      expect(prisma.challengeParticipant.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ progress: 4 }),
+        }),
+      );
+      expect(result.progress).toBe(4);
+    });
+
+    it('should reject negative progress', async () => {
+      prisma.challengeParticipant.findUnique.mockResolvedValue(mockParticipant);
+      await expect(service.updateChallengeProgress('user-1', 'ch-1', -1))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject progress increment greater than 1', async () => {
+      prisma.challengeParticipant.findUnique.mockResolvedValue(mockParticipant);
+      await expect(service.updateChallengeProgress('user-1', 'ch-1', 5))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject if challenge already completed', async () => {
+      prisma.challengeParticipant.findUnique.mockResolvedValue({
+        ...mockParticipant,
+        completed: true,
+      });
+      await expect(service.updateChallengeProgress('user-1', 'ch-1', 1))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject if challenge has ended', async () => {
+      prisma.challengeParticipant.findUnique.mockResolvedValue({
+        ...mockParticipant,
+        challenge: {
+          ...mockParticipant.challenge,
+          endDate: new Date(Date.now() - 86400000), // yesterday
+        },
+      });
+      await expect(service.updateChallengeProgress('user-1', 'ch-1', 1))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should cap progress at targetCount', async () => {
+      const almostDone = { ...mockParticipant, progress: 6 };
+      prisma.challengeParticipant.findUnique.mockResolvedValue(almostDone);
+      prisma.challengeParticipant.update.mockResolvedValue({ ...almostDone, progress: 7, completed: true });
+      prisma.userXP.upsert.mockResolvedValue({ totalXP: 100 });
+      prisma.xPHistory.create.mockResolvedValue({});
+
+      await service.updateChallengeProgress('user-1', 'ch-1', 1);
+      expect(prisma.challengeParticipant.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ progress: 7, completed: true }),
+        }),
+      );
+    });
+
+    it('should award XP on challenge completion', async () => {
+      const almostDone = { ...mockParticipant, progress: 6 };
+      prisma.challengeParticipant.findUnique.mockResolvedValue(almostDone);
+      prisma.challengeParticipant.update.mockResolvedValue({ ...almostDone, progress: 7, completed: true });
+      prisma.userXP.upsert.mockResolvedValue({ id: 'xp-1', totalXP: 150, level: 2 });
+      prisma.xPHistory.create.mockResolvedValue({});
+
+      await service.updateChallengeProgress('user-1', 'ch-1', 1);
+      expect(prisma.userXP.upsert).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if not participating', async () => {
+      prisma.challengeParticipant.findUnique.mockResolvedValue(null);
+      await expect(service.updateChallengeProgress('user-1', 'ch-1', 1))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should accept 0 progress (no-op increment)', async () => {
+      prisma.challengeParticipant.findUnique.mockResolvedValue(mockParticipant);
+      prisma.challengeParticipant.update.mockResolvedValue({ ...mockParticipant, progress: 3 });
+
+      const result = await service.updateChallengeProgress('user-1', 'ch-1', 0);
+      expect(prisma.challengeParticipant.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ progress: 3 }),
+        }),
+      );
     });
   });
 

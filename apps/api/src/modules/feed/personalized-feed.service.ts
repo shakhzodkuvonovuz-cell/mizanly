@@ -3,6 +3,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { EmbeddingContentType, PostVisibility, ReelStatus } from '@prisma/client';
 import Redis from 'ioredis';
+import { calculatePrayerTimes } from '../islamic/prayer-calculator';
 
 export interface FeedItem {
   id: string;
@@ -151,9 +152,11 @@ export class PersonalizedFeedService {
   // ── Islamic-aware algorithm boost (72.8) ──────────────────
 
   /**
-   * Calculate Islamic content boost based on time context
+   * Calculate Islamic content boost based on time context.
+   * When userLat/userLng are provided, uses the prayer-calculator for
+   * location-aware prayer windows instead of hardcoded hour ranges.
    */
-  getIslamicBoost(hashtags: string[]): number {
+  getIslamicBoost(hashtags: string[], userLat?: number, userLng?: number): number {
     const hasIslamicContent = hashtags.some(tag =>
       ISLAMIC_HASHTAGS.has(tag.toLowerCase().replace('#', '')),
     );
@@ -162,7 +165,8 @@ export class PersonalizedFeedService {
     const now = new Date();
     const dayOfWeek = now.getDay(); // 0=Sunday
     const hour = now.getHours();
-    const month = now.getMonth(); // Note: Ramadan detection would need Hijri calendar
+    const minute = now.getMinutes();
+    const currentTimeInHours = hour + minute / 60;
 
     let boost = 0.1; // Base 10% boost for Islamic content
 
@@ -172,24 +176,41 @@ export class PersonalizedFeedService {
       if (hour >= 11 && hour <= 14) boost += 0.1; // Extra during Jummah prayer window
     }
 
-    // Prayer time windows (approximate, general — a real implementation would use location-based prayer times)
-    // Fajr (~5-6am), Dhuhr (~12-1pm), Asr (~3-4pm), Maghrib (~6-7pm), Isha (~8-9pm)
-    const prayerWindows = [
-      { start: 4, end: 6 },   // Fajr
-      { start: 12, end: 13 }, // Dhuhr
-      { start: 15, end: 16 }, // Asr
-      { start: 18, end: 19 }, // Maghrib
-      { start: 20, end: 21 }, // Isha
-    ];
-    const inPrayerWindow = prayerWindows.some(w => hour >= w.start && hour <= w.end);
-    if (inPrayerWindow) boost += 0.1;
+    // Prayer time window boost — location-aware when coordinates available
+    if (userLat !== undefined && userLng !== undefined) {
+      // Use prayer-calculator for accurate, location-based prayer windows
+      const times = calculatePrayerTimes(now, userLat, userLng);
+      const prayerTimeStrings = [times.fajr, times.dhuhr, times.asr, times.maghrib, times.isha];
+      const inPrayerWindow = prayerTimeStrings.some(timeStr => {
+        const prayerHour = this.parseTimeToHours(timeStr);
+        // +-30 minute window around each prayer time
+        return Math.abs(currentTimeInHours - prayerHour) <= 0.5;
+      });
+      if (inPrayerWindow) boost += 0.1;
+    } else {
+      // Fallback: hardcoded approximate windows (server timezone)
+      const prayerWindows = [
+        { start: 4, end: 6 },   // Fajr
+        { start: 12, end: 13 }, // Dhuhr
+        { start: 15, end: 16 }, // Asr
+        { start: 18, end: 19 }, // Maghrib
+        { start: 20, end: 21 }, // Isha
+      ];
+      const inPrayerWindow = prayerWindows.some(w => hour >= w.start && hour <= w.end);
+      if (inPrayerWindow) boost += 0.1;
+    }
 
-    // Ramadan approximation (March-April 2027 estimate; real app would use Hijri calendar)
-    // For now, use a config-driven approach
+    // Ramadan detection using Hijri calendar (via prayer-calculator utility)
     const isRamadan = this.isRamadanPeriod(now);
     if (isRamadan) boost += 0.2;
 
     return Math.min(boost, 0.5); // Cap at 50% boost
+  }
+
+  /** Parse "HH:MM" time string to fractional hours (e.g., "05:30" → 5.5) */
+  private parseTimeToHours(timeStr: string): number {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h + (m || 0) / 60;
   }
 
   private isRamadanPeriod(date: Date): boolean {
@@ -232,6 +253,8 @@ export class PersonalizedFeedService {
     space: 'saf' | 'bakra' | 'majlis' | 'minbar',
     cursor?: string,
     limit = 20,
+    userLat?: number,
+    userLng?: number,
   ): Promise<{ data: FeedItem[]; meta: { cursor?: string; hasMore: boolean } }> {
     // For unauthenticated or cold-start users, serve trending
     if (!userId) {
@@ -298,7 +321,7 @@ export class PersonalizedFeedService {
       score += recencyScore * 0.15;
 
       // Islamic boost
-      const islamicBoost = this.getIslamicBoost(meta.hashtags || []);
+      const islamicBoost = this.getIslamicBoost(meta.hashtags || [], userLat, userLng);
       score += islamicBoost * 0.15;
       if (islamicBoost > 0.1) reasons.push('Islamic content boost');
 
@@ -473,7 +496,8 @@ export class PersonalizedFeedService {
     limit = 20,
     excludedUserIds: string[] = [],
   ): Promise<{ data: FeedItem[]; meta: { cursor?: string; hasMore: boolean } }> {
-    const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    // 24-hour window prevents "popular-get-more-popular" loop (was 48h)
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const userFilter = excludedUserIds.length > 0 ? { id: { notIn: excludedUserIds } } : {};
 
     if (space === 'saf') {
@@ -486,17 +510,20 @@ export class PersonalizedFeedService {
           user: { isDeactivated: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
-        select: { id: true, hashtags: true },
+        select: { id: true, hashtags: true, createdAt: true, likesCount: true },
         orderBy: [{ likesCount: 'desc' }, { createdAt: 'desc' }],
-        take: limit + 1,
+        take: (limit + 1) * 2, // Fetch extra to account for re-ranking after decay
       });
-      const hasMore = posts.length > limit;
-      const data = posts.slice(0, limit).map(p => ({
+      const scored = posts.map(p => ({
         id: p.id,
         type: 'post' as const,
-        score: 1,
-        reasons: ['Trending'],
+        score: this.applyTrendingDecay(p.likesCount, p.createdAt),
+        reasons: ['Trending'] as string[],
       }));
+      scored.sort((a, b) => b.score - a.score);
+      const trimmed = scored.slice(0, limit + 1);
+      const hasMore = trimmed.length > limit;
+      const data = trimmed.slice(0, limit);
       return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
@@ -510,17 +537,20 @@ export class PersonalizedFeedService {
           user: { isDeactivated: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
-        select: { id: true, hashtags: true },
+        select: { id: true, hashtags: true, createdAt: true, viewsCount: true },
         orderBy: [{ viewsCount: 'desc' }, { createdAt: 'desc' }],
-        take: limit + 1,
+        take: (limit + 1) * 2,
       });
-      const hasMore = reels.length > limit;
-      const data = reels.slice(0, limit).map(r => ({
+      const scored = reels.map(r => ({
         id: r.id,
         type: 'reel' as const,
-        score: 1,
-        reasons: ['Trending'],
+        score: this.applyTrendingDecay(r.viewsCount, r.createdAt),
+        reasons: ['Trending'] as string[],
       }));
+      scored.sort((a, b) => b.score - a.score);
+      const trimmed = scored.slice(0, limit + 1);
+      const hasMore = trimmed.length > limit;
+      const data = trimmed.slice(0, limit);
       return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
@@ -532,17 +562,20 @@ export class PersonalizedFeedService {
           user: { isDeactivated: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
-        select: { id: true, tags: true },
+        select: { id: true, tags: true, createdAt: true, viewsCount: true },
         orderBy: [{ viewsCount: 'desc' }, { createdAt: 'desc' }],
-        take: limit + 1,
+        take: (limit + 1) * 2,
       });
-      const hasMore = videos.length > limit;
-      const data = videos.slice(0, limit).map(v => ({
+      const scored = videos.map(v => ({
         id: v.id,
         type: 'video' as const,
-        score: 1,
-        reasons: ['Trending'],
+        score: this.applyTrendingDecay(v.viewsCount, v.createdAt),
+        reasons: ['Trending'] as string[],
       }));
+      scored.sort((a, b) => b.score - a.score);
+      const trimmed = scored.slice(0, limit + 1);
+      const hasMore = trimmed.length > limit;
+      const data = trimmed.slice(0, limit);
       return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
@@ -556,18 +589,35 @@ export class PersonalizedFeedService {
         user: { isDeactivated: false, ...userFilter },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
-      select: { id: true, hashtags: true },
+      select: { id: true, hashtags: true, createdAt: true, likesCount: true },
       orderBy: [{ likesCount: 'desc' }, { createdAt: 'desc' }],
-      take: limit + 1,
+      take: (limit + 1) * 2,
     });
-    const hasMore = threads.length > limit;
-    const data = threads.slice(0, limit).map(t => ({
+    const scored = threads.map(t => ({
       id: t.id,
       type: 'thread' as const,
-      score: 1,
-      reasons: ['Trending'],
+      score: this.applyTrendingDecay(t.likesCount, t.createdAt),
+      reasons: ['Trending'] as string[],
     }));
+    scored.sort((a, b) => b.score - a.score);
+    const trimmed = scored.slice(0, limit + 1);
+    const hasMore = trimmed.length > limit;
+    const data = trimmed.slice(0, limit);
     return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
+  }
+
+  /**
+   * Apply time-based decay to trending scores.
+   * Posts older than 12 hours get progressively lower scores,
+   * ensuring fresher content surfaces above stale viral posts.
+   */
+  private applyTrendingDecay(engagementCount: number, createdAt: Date): number {
+    const ageHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+    // Normalize engagement to 0-1 range (log scale to dampen outliers)
+    const engagementScore = Math.log10(Math.max(engagementCount, 1) + 1) / 5;
+    // After 12 hours, decay linearly: at 24h the decay factor is 0.5
+    const decayFactor = ageHours <= 12 ? 1.0 : Math.max(0.5, 1.0 - (ageHours - 12) / 24);
+    return engagementScore * decayFactor;
   }
 
   // ── Helpers ───────────────────────────────────────────────

@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   videoBadge: {
     position: 'absolute',
     bottom: spacing.xs,
-    right: spacing.xs,
+    end: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.6)',
     borderRadius: radius.full,
     padding: spacing.xs,
@@ -277,8 +277,8 @@ const styles = StyleSheet.create({
   skeletonPlayOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',

@@ -3,6 +3,6 @@ import { IsDateString, IsBoolean, IsOptional, IsIn, IsUrl } from 'class-validato
 export class CreatePremiereDto {
   @IsDateString() scheduledAt: string;
   @IsOptional() @IsBoolean() chatEnabled?: boolean;
-  @IsOptional() @IsIn(['emerald', 'gold', 'cosmic']) countdownTheme?: string;
+  @IsOptional() @IsIn(['EMERALD', 'GOLD', 'COSMIC']) countdownTheme?: string;
   @IsOptional() @IsUrl() trailerUrl?: string;
 }

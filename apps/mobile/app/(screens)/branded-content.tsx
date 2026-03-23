@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   toggleInfo: {
     flex: 1,
-    marginRight: spacing.base,
+    marginEnd: spacing.base,
     gap: spacing.xs,
   },
   toggleLabel: {

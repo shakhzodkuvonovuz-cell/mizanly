@@ -325,7 +325,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
   describe('ThreadsService — final coverage', () => {
     let service: ThreadsService;
     let prisma: any;
-    const mockThread = { id: 't-1', userId: 'owner', isRemoved: false, isChainHead: true, visibility: 'PUBLIC', mentions: [], user: { id: 'owner', username: 'owner' }, replyPermission: 'everyone' };
+    const mockThread = { id: 't-1', userId: 'owner', isRemoved: false, isChainHead: true, visibility: 'PUBLIC', mentions: [], user: { id: 'owner', username: 'owner' }, replyPermission: 'EVERYONE' };
 
     beforeEach(async () => {
       const module = await Test.createTestingModule({
@@ -416,21 +416,21 @@ describe('Final Coverage Push — 3800+ tests', () => {
     });
 
     it('canReply following — not following returns false', async () => {
-      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'following' });
+      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'FOLLOWING' });
       prisma.follow.findUnique.mockResolvedValue(null);
       const result = await service.canReply('t-1', 'stranger');
       expect(result.canReply).toBe(false);
     });
 
     it('canReply mentioned — not mentioned returns false', async () => {
-      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'mentioned', mentions: ['otheruser'] });
+      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'MENTIONED', mentions: ['otheruser'] });
       prisma.user.findUnique.mockResolvedValue({ username: 'stranger' });
       const result = await service.canReply('t-1', 'stranger');
       expect(result.canReply).toBe(false);
     });
 
     it('canReply — unauthenticated for following-only', async () => {
-      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'following' });
+      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'FOLLOWING' });
       const result = await service.canReply('t-1');
       expect(result.canReply).toBe(false);
     });

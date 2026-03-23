@@ -4,19 +4,27 @@ import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 
 /**
- * Content safety & moderation service.
- * Handles AI moderation, forward limits, kindness reminders,
- * auto-removal, appeals, and viral content rate limiting.
+ * ContentSafetyService — Automated content safety pipeline (AI analysis, rate limiting, auto-removal).
  *
- * NOTE: This service overlaps with ModerationService (moderation.service.ts).
- * ContentSafetyService handles automated pipeline moderation (auto-remove, appeals, forward limits).
- * ModerationService handles admin/moderator queue, manual review, and user-facing moderation checks.
- * Future consolidation: merge into a single ModerationService when moderation pipeline is refactored.
+ * Responsibility boundary:
+ * - This service: AI-based text moderation (Islamic-context NLP via Claude), kindness reminders,
+ *   forward limit enforcement, auto-remove pipeline, viral content throttling.
+ * - ModerationService: user reports, admin/moderator queue, manual review actions, appeals,
+ *   word-filter-based text checks, controller-facing REST endpoints.
  *
- * TODO: [WIRING] This service is currently not injected by any consumer. Wire it into:
- * - PostsService / ReelsService / ThreadsService for auto-moderation on content creation
- * - MessagesService for forward limit enforcement (checkForwardLimit/incrementForwardCount)
- * - FeedService for viral content throttling (checkViralThrottle/trackShare)
+ * Consumer wiring:
+ * - moderateText() is used by PostsService, ThreadsService, ChannelsService, VideosService
+ *   for inline content moderation during creation.
+ * - checkForwardLimit/incrementForwardCount: available for MessagesService forward limiting.
+ * - checkViralThrottle/trackShare: available for FeedService viral content throttling.
+ * - autoRemoveContent: used for automated content removal with audit logging.
+ *
+ * Note on image moderation: moderateImage() in this service is DEPRECATED and unused.
+ * All image moderation goes through AiService.moderateImage(), which is used by
+ * ModerationService.checkImage() and directly by Posts/Reels/Threads/Stories/Videos services.
+ *
+ * @see ModerationService for report management, admin queue, and word-filter text checks
+ * @see AiService.moderateImage for the canonical image moderation implementation
  */
 @Injectable()
 export class ContentSafetyService {
@@ -60,7 +68,13 @@ export class ContentSafetyService {
   }
 
   /**
+   * @deprecated Use AiService.moderateImage() instead — it is used by all consumers
+   * (ModerationService.checkImage, PostsService, ReelsService, ThreadsService,
+   * StoriesService, VideosService). This method is not called anywhere.
+   *
    * Check image for NSFW content using Claude Vision API.
+   *
+   * @see AiService.moderateImage for the canonical implementation
    */
   async moderateImage(imageUrl: string): Promise<{
     safe: boolean;
@@ -105,7 +119,10 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
         signal: AbortSignal.timeout(30000),
       });
 
-      if (!response.ok) return { safe: false, confidence: 0, flags: ['api_error'], action: 'flag' };
+      if (!response.ok) {
+        this.logger.error(`Image moderation API error: ${response.status}`);
+        return { safe: false, confidence: 0, flags: ['api_error'], action: 'flag' };
+      }
       const data: { content?: Array<{ text?: string }> } = await response.json();
       const text = data.content?.[0]?.text || '';
       try {
@@ -117,9 +134,11 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
           action: ['allow', 'flag', 'remove'].includes(parsed.action) ? parsed.action : 'flag',
         };
       } catch {
+        this.logger.error('Failed to parse image moderation response');
         return { safe: false, confidence: 0, flags: ['parse_error'], action: 'flag' };
       }
-    } catch {
+    } catch (err) {
+      this.logger.error(`Image moderation failed: ${err instanceof Error ? err.message : 'unknown'}`);
       return { safe: false, confidence: 0, flags: ['moderation_error'], action: 'flag' };
     }
   }
@@ -127,7 +146,18 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
   // ── 82.2: Islamic-context NLP moderation ───────────────────
 
   /**
-   * Check text for hate speech, Islamophobia, sectarian content.
+   * Check text for hate speech, Islamophobia, sectarian content using Claude AI.
+   * This is the AI-based counterpart to ModerationService.checkText() (word-filter).
+   * Both are complementary: word-filter catches obvious keyword violations,
+   * this method handles nuanced Islamic-context analysis.
+   *
+   * Fail-closed: returns { safe: false } on any error (API failure, parse error, missing key).
+   * XML delimiter injection protection: user content is wrapped in <user_content> tags
+   * with explicit instructions to treat it as data only.
+   *
+   * Used by: PostsService, ThreadsService, ChannelsService, VideosService
+   *
+   * @see ModerationService.checkText for word-filter-based text moderation
    */
   async moderateText(text: string): Promise<{
     safe: boolean;
@@ -161,7 +191,10 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
         signal: AbortSignal.timeout(30000),
       });
 
-      if (!response.ok) return { safe: false, flags: ['api_error'] };
+      if (!response.ok) {
+        this.logger.error(`Text moderation API error: ${response.status}`);
+        return { safe: false, flags: ['api_error'] };
+      }
       const data: { content?: Array<{ text?: string }> } = await response.json();
       try {
         const parsed = JSON.parse(data.content?.[0]?.text || '{}');
@@ -171,9 +204,11 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
           suggestion: parsed.suggestion,
         };
       } catch {
+        this.logger.error('Failed to parse text moderation response');
         return { safe: false, flags: ['parse_error'] };
       }
-    } catch {
+    } catch (err) {
+      this.logger.error(`Text moderation failed: ${err instanceof Error ? err.message : 'unknown'}`);
       return { safe: false, flags: ['moderation_error'] };
     }
   }
@@ -210,6 +245,8 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
 
   /**
    * Detect if a comment is potentially angry/harmful and suggest rephrasing.
+   * Uses a quick heuristic check first, then delegates to moderateText() for AI analysis.
+   * Fail-closed: returns { isAngry: true } if heuristic triggers but API is unavailable.
    */
   async checkKindness(text: string): Promise<{
     isAngry: boolean;
@@ -241,7 +278,12 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
 
   /**
    * Auto-remove content that clearly violates guidelines.
-   * Creates a moderation log entry and notifies the user.
+   * Creates a moderation log entry with moderatorId='system' for audit trail.
+   *
+   * This is the automated counterpart to ModerationService.review() which handles
+   * admin-driven content removal with richer report tracking.
+   *
+   * @see ModerationService.review for admin-driven content removal
    */
   async autoRemoveContent(
     contentId: string,

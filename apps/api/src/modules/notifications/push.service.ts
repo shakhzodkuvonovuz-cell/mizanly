@@ -5,6 +5,46 @@ import { PrismaService } from '../../config/prisma.service';
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const MAX_BATCH_SIZE = 100;
 
+// Access token for authenticated Expo push requests (prevents abuse/rate-limiting)
+const EXPO_ACCESS_TOKEN = process.env.EXPO_ACCESS_TOKEN || '';
+
+// ── Push notification i18n templates ────────────────────────────
+// TODO: User model has no `locale` field yet. When added (e.g. `locale String @default("en")`),
+// fetch user.locale before constructing notifications and use these templates.
+// For now, templates are defined and ready; the lookup falls back to 'en'.
+const NOTIFICATION_TEMPLATES: Record<string, Record<string, { title: string; body: string }>> = {
+  LIKE: {
+    en: { title: 'New Like', body: '{{actor}} liked your post' },
+    ar: { title: '\u0625\u0639\u062C\u0627\u0628 \u062C\u062F\u064A\u062F', body: '{{actor}} \u0623\u0639\u062C\u0628 \u0628\u0645\u0646\u0634\u0648\u0631\u0643' },
+    tr: { title: 'Yeni Be\u011Feni', body: '{{actor}} g\u00F6nderini be\u011Fendi' },
+  },
+  COMMENT: {
+    en: { title: 'New Comment', body: '{{actor}} commented: {{preview}}' },
+    ar: { title: '\u062A\u0639\u0644\u064A\u0642 \u062C\u062F\u064A\u062F', body: '{{actor}} \u0639\u0644\u0651\u0642: {{preview}}' },
+    tr: { title: 'Yeni Yorum', body: '{{actor}} yorum yapt\u0131: {{preview}}' },
+  },
+  FOLLOW: {
+    en: { title: 'New Follower', body: '{{actor}} started following you' },
+    ar: { title: '\u0645\u062A\u0627\u0628\u0639 \u062C\u062F\u064A\u062F', body: '{{actor}} \u0628\u062F\u0623 \u0645\u062A\u0627\u0628\u0639\u062A\u0643' },
+    tr: { title: 'Yeni Takip\u00E7i', body: '{{actor}} seni takip etmeye ba\u015Flad\u0131' },
+  },
+  MESSAGE: {
+    en: { title: 'New Message', body: '{{actor}}: {{preview}}' },
+    ar: { title: '\u0631\u0633\u0627\u0644\u0629 \u062C\u062F\u064A\u062F\u0629', body: '{{actor}}: {{preview}}' },
+    tr: { title: 'Yeni Mesaj', body: '{{actor}}: {{preview}}' },
+  },
+  MENTION: {
+    en: { title: 'You Were Mentioned', body: '{{actor}} mentioned you in a {{targetType}}' },
+    ar: { title: '\u062A\u0645\u062A \u0627\u0644\u0625\u0634\u0627\u0631\u0629 \u0625\u0644\u064A\u0643', body: '{{actor}} \u0623\u0634\u0627\u0631 \u0625\u0644\u064A\u0643 \u0641\u064A {{targetType}}' },
+    tr: { title: 'Bahsedildiniz', body: '{{actor}} bir {{targetType}} i\u00E7inde senden bahsetti' },
+  },
+  PRAYER: {
+    en: { title: 'Prayer Time', body: "It's time for {{prayerName}}" },
+    ar: { title: '\u0648\u0642\u062A \u0627\u0644\u0635\u0644\u0627\u0629', body: '\u062D\u0627\u0646 \u0648\u0642\u062A \u0635\u0644\u0627\u0629 {{prayerName}}' },
+    tr: { title: 'Namaz Vakti', body: '{{prayerName}} namaz\u0131 vakti geldi' },
+  },
+};
+
 interface ExpoPushMessage {
   to: string;          // ExpoPushToken
   title: string;
@@ -81,12 +121,18 @@ export class PushService {
     const allTickets: ExpoPushTicket[] = [];
     for (const batch of batches) {
       try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        };
+        // Include Expo access token for authenticated push requests
+        // (reduces rate-limiting risk and prevents token abuse)
+        if (EXPO_ACCESS_TOKEN) {
+          headers['Authorization'] = `Bearer ${EXPO_ACCESS_TOKEN}`;
+        }
         const response = await fetch(EXPO_PUSH_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
+          headers,
           body: JSON.stringify(batch),
         });
         if (!response.ok) {
@@ -170,6 +216,28 @@ export class PushService {
     } catch {
       return 0;
     }
+  }
+
+  // ── i18n template resolution ─────────────────────────────────
+  // Resolves a localized notification template, falling back to 'en'.
+  // TODO: Once User model has `locale` field, pass user locale here.
+  getLocalizedTemplate(
+    type: string,
+    locale: string,
+    vars: Record<string, string>,
+  ): { title: string; body: string } | null {
+    const templates = NOTIFICATION_TEMPLATES[type];
+    if (!templates) return null;
+
+    const tpl = templates[locale] || templates['en'];
+    if (!tpl) return null;
+
+    let { title, body } = tpl;
+    for (const [key, value] of Object.entries(vars)) {
+      title = title.replace(`{{${key}}}`, value);
+      body = body.replace(`{{${key}}}`, value);
+    }
+    return { title, body };
   }
 
   // Build notification for different types

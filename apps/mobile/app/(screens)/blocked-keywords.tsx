@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   inputIcon: {
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   input: {
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   keywordIconBg: {
     width: 28, height: 28, borderRadius: radius.sm,
     alignItems: 'center', justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   keywordText: { color: colors.text.primary, fontSize: fontSize.base, flex: 1 },
   deleteBtnBg: {

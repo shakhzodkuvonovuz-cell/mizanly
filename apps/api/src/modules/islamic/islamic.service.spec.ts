@@ -921,7 +921,7 @@ describe('IslamicService', () => {
 
   describe('logFast', () => {
     it('should upsert a fasting log entry', async () => {
-      const mockLog = { id: 'fl-1', userId: 'user-1', date: new Date('2026-03-15'), isFasting: true, fastType: 'ramadan', reason: null };
+      const mockLog = { id: 'fl-1', userId: 'user-1', date: new Date('2026-03-15'), isFasting: true, fastType: 'RAMADAN', reason: null };
       prisma.fastingLog.upsert.mockResolvedValue(mockLog);
 
       const result = await service.logFast('user-1', { date: '2026-03-15', isFasting: true });
@@ -932,21 +932,21 @@ describe('IslamicService', () => {
     });
 
     it('should use default fast type ramadan', async () => {
-      prisma.fastingLog.upsert.mockResolvedValue({ id: 'fl-1', fastType: 'ramadan' });
+      prisma.fastingLog.upsert.mockResolvedValue({ id: 'fl-1', fastType: 'RAMADAN' });
       await service.logFast('user-1', { date: '2026-03-15', isFasting: true });
       expect(prisma.fastingLog.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          create: expect.objectContaining({ fastType: 'ramadan' }),
+          create: expect.objectContaining({ fastType: 'RAMADAN' }),
         }),
       );
     });
 
     it('should accept custom fast type and reason', async () => {
-      prisma.fastingLog.upsert.mockResolvedValue({ id: 'fl-1', fastType: 'sunnah', reason: 'Monday fast' });
-      await service.logFast('user-1', { date: '2026-03-15', isFasting: true, fastType: 'sunnah', reason: 'Monday fast' });
+      prisma.fastingLog.upsert.mockResolvedValue({ id: 'fl-1', fastType: 'SUNNAH', reason: 'Monday fast' });
+      await service.logFast('user-1', { date: '2026-03-15', isFasting: true, fastType: 'SUNNAH', reason: 'Monday fast' });
       expect(prisma.fastingLog.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          create: expect.objectContaining({ fastType: 'sunnah', reason: 'Monday fast' }),
+          create: expect.objectContaining({ fastType: 'SUNNAH', reason: 'Monday fast' }),
         }),
       );
     });
@@ -955,8 +955,8 @@ describe('IslamicService', () => {
   describe('getFastingLog', () => {
     it('should return fasting entries for given month', async () => {
       const logs = [
-        { id: 'fl-1', date: new Date('2026-03-01'), isFasting: true, fastType: 'ramadan' },
-        { id: 'fl-2', date: new Date('2026-03-02'), isFasting: false, fastType: 'ramadan', reason: 'sick' },
+        { id: 'fl-1', date: new Date('2026-03-01'), isFasting: true, fastType: 'RAMADAN' },
+        { id: 'fl-2', date: new Date('2026-03-02'), isFasting: false, fastType: 'RAMADAN', reason: 'sick' },
       ];
       prisma.fastingLog.findMany.mockResolvedValue(logs);
 
@@ -984,8 +984,8 @@ describe('IslamicService', () => {
 
       // Must be ordered ASC (as the real query does) so reverse() in the code produces [today, yesterday]
       prisma.fastingLog.findMany.mockResolvedValue([
-        { date: yesterday, isFasting: true, fastType: 'ramadan' },
-        { date: today, isFasting: true, fastType: 'ramadan' },
+        { date: yesterday, isFasting: true, fastType: 'RAMADAN' },
+        { date: today, isFasting: true, fastType: 'RAMADAN' },
       ]);
 
       const result = await service.getFastingStats('user-1');
@@ -996,8 +996,8 @@ describe('IslamicService', () => {
 
     it('should count missed Ramadan days for makeup', async () => {
       prisma.fastingLog.findMany.mockResolvedValue([
-        { date: new Date(), isFasting: false, fastType: 'ramadan' },
-        { date: new Date(), isFasting: false, fastType: 'ramadan' },
+        { date: new Date(), isFasting: false, fastType: 'RAMADAN' },
+        { date: new Date(), isFasting: false, fastType: 'RAMADAN' },
       ]);
 
       const result = await service.getFastingStats('user-1');
@@ -1058,18 +1058,18 @@ describe('IslamicService', () => {
   describe('getHifzProgress', () => {
     it('should return 114 surahs with progress for tracked user', async () => {
       prisma.hifzProgress.findMany.mockResolvedValue([
-        { surahNum: 1, status: 'memorized', lastReviewedAt: new Date() },
-        { surahNum: 114, status: 'in_progress', lastReviewedAt: null },
+        { surahNum: 1, status: 'MEMORIZED', lastReviewedAt: new Date() },
+        { surahNum: 114, status: 'IN_PROGRESS', lastReviewedAt: null },
       ]);
 
       const result = await service.getHifzProgress('user-1');
       expect(result).toHaveLength(114);
       expect(result[0].surahNum).toBe(1);
-      expect(result[0].status).toBe('memorized');
+      expect(result[0].status).toBe('MEMORIZED');
       expect(result[113].surahNum).toBe(114);
-      expect(result[113].status).toBe('in_progress');
-      // Surahs without progress should be 'not_started'
-      expect(result[1].status).toBe('not_started');
+      expect(result[113].status).toBe('IN_PROGRESS');
+      // Surahs without progress should be 'NOT_STARTED'
+      expect(result[1].status).toBe('NOT_STARTED');
     });
 
     it('should return all not_started for new user', async () => {
@@ -1077,16 +1077,16 @@ describe('IslamicService', () => {
 
       const result = await service.getHifzProgress('user-new');
       expect(result).toHaveLength(114);
-      result.forEach(s => expect(s.status).toBe('not_started'));
+      result.forEach(s => expect(s.status).toBe('NOT_STARTED'));
     });
   });
 
   describe('updateHifzProgress', () => {
     it('should upsert progress for valid surah and status', async () => {
-      prisma.hifzProgress.upsert.mockResolvedValue({ surahNum: 1, status: 'memorized', userId: 'user-1' });
+      prisma.hifzProgress.upsert.mockResolvedValue({ surahNum: 1, status: 'MEMORIZED', userId: 'user-1' });
 
-      const result = await service.updateHifzProgress('user-1', 1, 'memorized');
-      expect(result.status).toBe('memorized');
+      const result = await service.updateHifzProgress('user-1', 1, 'MEMORIZED');
+      expect(result.status).toBe('MEMORIZED');
       expect(prisma.hifzProgress.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId_surahNum: { userId: 'user-1', surahNum: 1 } },
@@ -1095,11 +1095,11 @@ describe('IslamicService', () => {
     });
 
     it('should throw BadRequestException for surah 0', async () => {
-      await expect(service.updateHifzProgress('user-1', 0, 'memorized')).rejects.toThrow(BadRequestException);
+      await expect(service.updateHifzProgress('user-1', 0, 'MEMORIZED')).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for surah 115', async () => {
-      await expect(service.updateHifzProgress('user-1', 115, 'memorized')).rejects.toThrow(BadRequestException);
+      await expect(service.updateHifzProgress('user-1', 115, 'MEMORIZED')).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for invalid status', async () => {
@@ -1107,9 +1107,9 @@ describe('IslamicService', () => {
     });
 
     it('should accept all valid statuses', async () => {
-      prisma.hifzProgress.upsert.mockResolvedValue({ surahNum: 1, status: 'needs_review', userId: 'user-1' });
+      prisma.hifzProgress.upsert.mockResolvedValue({ surahNum: 1, status: 'NEEDS_REVIEW', userId: 'user-1' });
 
-      for (const status of ['not_started', 'in_progress', 'memorized', 'needs_review']) {
+      for (const status of ['NOT_STARTED', 'IN_PROGRESS', 'MEMORIZED', 'NEEDS_REVIEW']) {
         await expect(service.updateHifzProgress('user-1', 1, status)).resolves.toBeDefined();
       }
     });
@@ -1118,10 +1118,10 @@ describe('IslamicService', () => {
   describe('getHifzStats', () => {
     it('should return correct stats', async () => {
       prisma.hifzProgress.findMany.mockResolvedValue([
-        { status: 'memorized' },
-        { status: 'memorized' },
-        { status: 'in_progress' },
-        { status: 'needs_review' },
+        { status: 'MEMORIZED' },
+        { status: 'MEMORIZED' },
+        { status: 'IN_PROGRESS' },
+        { status: 'NEEDS_REVIEW' },
       ]);
 
       const result = await service.getHifzStats('user-1');
@@ -1147,8 +1147,8 @@ describe('IslamicService', () => {
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 14);
       prisma.hifzProgress.findMany.mockResolvedValue([
-        { surahNum: 1, status: 'memorized', lastReviewedAt: oldDate },
-        { surahNum: 112, status: 'needs_review', lastReviewedAt: null },
+        { surahNum: 1, status: 'MEMORIZED', lastReviewedAt: oldDate },
+        { surahNum: 112, status: 'NEEDS_REVIEW', lastReviewedAt: null },
       ]);
 
       const result = await service.getHifzReviewSchedule('user-1');
@@ -1204,13 +1204,13 @@ describe('IslamicService', () => {
     it('should include completed tasks', async () => {
       prisma.dhikrSession.findMany.mockResolvedValue([]);
       prisma.dailyTaskCompletion.findMany.mockResolvedValue([
-        { taskType: 'dhikr' },
-        { taskType: 'quran' },
+        { taskType: 'DHIKR' },
+        { taskType: 'QURAN' },
       ]);
 
       const result = await service.getDailyBriefing('user-1');
       expect(result.tasksCompleted).toBe(2);
-      expect(result.completedTasks).toEqual(['dhikr', 'quran']);
+      expect(result.completedTasks).toEqual(['DHIKR', 'QURAN']);
     });
   });
 
@@ -1220,24 +1220,24 @@ describe('IslamicService', () => {
 
   describe('completeDailyTask', () => {
     it('should mark task as complete', async () => {
-      prisma.dailyTaskCompletion.upsert.mockResolvedValue({ taskType: 'dhikr' });
-      prisma.dailyTaskCompletion.findMany.mockResolvedValue([{ taskType: 'dhikr' }]);
+      prisma.dailyTaskCompletion.upsert.mockResolvedValue({ taskType: 'DHIKR' });
+      prisma.dailyTaskCompletion.findMany.mockResolvedValue([{ taskType: 'DHIKR' }]);
 
-      const result = await service.completeDailyTask('user-1', 'dhikr');
-      expect(result.taskType).toBe('dhikr');
+      const result = await service.completeDailyTask('user-1', 'DHIKR');
+      expect(result.taskType).toBe('DHIKR');
       expect(result.completed).toBe(true);
       expect(result.allTasksComplete).toBe(false);
     });
 
     it('should detect when all 3 tasks are complete', async () => {
-      prisma.dailyTaskCompletion.upsert.mockResolvedValue({ taskType: 'reflection' });
+      prisma.dailyTaskCompletion.upsert.mockResolvedValue({ taskType: 'REFLECTION' });
       prisma.dailyTaskCompletion.findMany.mockResolvedValue([
-        { taskType: 'dhikr' },
-        { taskType: 'quran' },
-        { taskType: 'reflection' },
+        { taskType: 'DHIKR' },
+        { taskType: 'QURAN' },
+        { taskType: 'REFLECTION' },
       ]);
 
-      const result = await service.completeDailyTask('user-1', 'reflection');
+      const result = await service.completeDailyTask('user-1', 'REFLECTION');
       expect(result.allTasksComplete).toBe(true);
       expect(result.bonusXPAwarded).toBe(true);
     });
@@ -1247,10 +1247,10 @@ describe('IslamicService', () => {
     });
 
     it('should handle duplicate completion (upsert idempotent)', async () => {
-      prisma.dailyTaskCompletion.upsert.mockResolvedValue({ taskType: 'dhikr' });
-      prisma.dailyTaskCompletion.findMany.mockResolvedValue([{ taskType: 'dhikr' }]);
+      prisma.dailyTaskCompletion.upsert.mockResolvedValue({ taskType: 'DHIKR' });
+      prisma.dailyTaskCompletion.findMany.mockResolvedValue([{ taskType: 'DHIKR' }]);
 
-      const result = await service.completeDailyTask('user-1', 'dhikr');
+      const result = await service.completeDailyTask('user-1', 'DHIKR');
       expect(result.completed).toBe(true);
     });
   });
@@ -1258,7 +1258,7 @@ describe('IslamicService', () => {
   describe('getDailyTasksToday', () => {
     it('should return all task statuses', async () => {
       prisma.dailyTaskCompletion.findMany.mockResolvedValue([
-        { taskType: 'dhikr' },
+        { taskType: 'DHIKR' },
       ]);
 
       const result = await service.getDailyTasksToday('user-1');
@@ -1272,9 +1272,9 @@ describe('IslamicService', () => {
 
     it('should mark all complete when 3 tasks done', async () => {
       prisma.dailyTaskCompletion.findMany.mockResolvedValue([
-        { taskType: 'dhikr' },
-        { taskType: 'quran' },
-        { taskType: 'reflection' },
+        { taskType: 'DHIKR' },
+        { taskType: 'QURAN' },
+        { taskType: 'REFLECTION' },
       ]);
 
       const result = await service.getDailyTasksToday('user-1');

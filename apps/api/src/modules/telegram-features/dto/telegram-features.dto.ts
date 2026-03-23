@@ -8,7 +8,7 @@ export class SaveMessageDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(10000) content?: string;
   @ApiPropertyOptional() @IsOptional() @IsUrl() mediaUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['image', 'video', 'audio', 'document', 'voice']) mediaType?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['post', 'thread', 'reel', 'video', 'message']) forwardedFromType?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['FWD_POST', 'FWD_THREAD', 'FWD_REEL', 'FWD_VIDEO', 'FWD_MESSAGE']) forwardedFromType?: string;
   @ApiPropertyOptional()
   @ValidateIf((o) => o.forwardedFromType !== undefined)
   @IsString()
@@ -25,7 +25,7 @@ export class CreateChatFolderDto {
   @ApiPropertyOptional() @IsOptional() @IsArray() @ArrayMaxSize(200) @IsString({ each: true }) conversationIds?: string[];
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeGroups?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeChannels?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['include', 'exclude']) filterType?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['INCLUDE', 'EXCLUDE']) filterType?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeBots?: boolean;
 }
 
@@ -35,7 +35,7 @@ export class UpdateChatFolderDto {
   @ApiPropertyOptional() @IsOptional() @IsArray() @ArrayMaxSize(200) @IsString({ each: true }) conversationIds?: string[];
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeGroups?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeChannels?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['include', 'exclude']) filterType?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @IsIn(['INCLUDE', 'EXCLUDE']) filterType?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeBots?: boolean;
 }
 

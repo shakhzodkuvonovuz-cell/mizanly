@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 40,
     justifyContent: 'center',
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   waveform: {
     flexDirection: 'row',
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   },
   trackInfo: {
     flex: 1,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   trackTitle: {
     color: colors.text.primary,
@@ -578,8 +578,8 @@ const styles = StyleSheet.create({
   nowPlayingBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
   },
   nowPlayingGradient: {
     paddingHorizontal: spacing.base,
@@ -655,13 +655,13 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontSize: fontSize.base,
     marginTop: spacing.xs,
-    marginLeft: 32 + spacing.sm,
+    marginStart: 32 + spacing.sm,
   },
   selectedTrackMeta: {
     flexDirection: 'row',
     gap: spacing.md,
     marginTop: spacing.md,
-    marginLeft: 32 + spacing.sm,
+    marginStart: 32 + spacing.sm,
     marginBottom: spacing.lg,
   },
   selectedTrackMetaText: {

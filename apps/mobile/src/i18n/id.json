@@ -196,7 +196,8 @@
     "discardChanges": "Discard changes?",
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
     "saved": "Saved",
-    "rateLimited": "Slow down! Try again in {{seconds}} seconds"
+    "rateLimited": "Slow down! Try again in {{seconds}} seconds",
+    "views": "tayangan"
   },
   "tabs": {
     "saf": "Saf",
@@ -403,7 +404,8 @@
     "qiblaDirectionDegrees": "{{degrees}}° from North",
     "openCompass": "Open Compass",
     "calculating": "Calculating...",
-    "adhanNotification": "{{prayer}} notification"
+    "adhanNotification": "{{prayer}} notification",
+    "deviceHeading": "Arah perangkat"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1561,7 +1563,15 @@
     "hostedBy": "Hosted by {{name}}",
     "watchingCount": "{{count}} watching",
     "joinParty": "Join Party",
-    "start": "Start"
+    "start": "Start",
+    "watchPartyCreated": "Pesta nonton dibuat!",
+    "selectVideo": "Pilih Video",
+    "changeVideo": "Ganti Video",
+    "searchVideos": "Cari video...",
+    "noVideosFound": "Tidak ada video ditemukan",
+    "tryDifferentSearch": "Coba kata kunci pencarian lain",
+    "sharePartyLink": "Bagikan Tautan Pesta",
+    "joinMyWatchParty": "Bergabung dengan pesta nonton saya"
   },
   "discover": {
     "title": "Discover",
@@ -3787,5 +3797,12 @@
     "newFollowers": "pengikut baru",
     "noGrowthData": "Belum ada data pertumbuhan",
     "noGrowthDataSubtitle": "Data pertumbuhan pengikut akan muncul seiring bertambahnya audiens Anda"
+  },
+  "chat": {
+    "inviteLink": "Tautan Undangan",
+    "inviteLinkHint": "Bagikan tautan ini untuk mengundang orang ke grup",
+    "joinGroupVia": "Bergabung dengan grup saya di Mizanly",
+    "linkCopied": "Tautan disalin ke clipboard",
+    "copyLink": "Salin Tautan"
   }
 }

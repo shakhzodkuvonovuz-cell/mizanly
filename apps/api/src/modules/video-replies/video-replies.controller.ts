@@ -30,7 +30,7 @@ export class VideoRepliesController {
     @Body()
     body: {
       commentId: string;
-      commentType: 'post' | 'reel';
+      commentType: 'POST' | 'REEL';
       mediaUrl: string;
       thumbnailUrl?: string;
       duration?: number;

@@ -16,7 +16,7 @@ describe('Integration: Thread Lifecycle', () => {
   const mockThread = {
     id: 'thread-1', userId: 'user-1', content: 'Thread content', likesCount: 0,
     repostsCount: 0, repliesCount: 0, isChainHead: true, createdAt: new Date(),
-    user: mockUser, replyPermission: 'everyone', isRemoved: false,
+    user: mockUser, replyPermission: 'EVERYONE', isRemoved: false,
   };
   const mockReply = {
     id: 'reply-1', threadId: 'thread-1', userId: 'user-1', content: 'Reply text',

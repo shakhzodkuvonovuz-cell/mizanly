@@ -196,7 +196,8 @@
     "discardChanges": "Discard changes?",
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
     "saved": "Saved",
-    "rateLimited": "Slow down! Try again in {{seconds}} seconds"
+    "rateLimited": "Slow down! Try again in {{seconds}} seconds",
+    "views": "views"
   },
   "tabs": {
     "saf": "সাফ",
@@ -292,7 +293,8 @@
     "qiblaDirectionDegrees": "{{degrees}}° from North",
     "openCompass": "Open Compass",
     "calculating": "Calculating...",
-    "adhanNotification": "{{prayer}} notification"
+    "adhanNotification": "{{prayer}} notification",
+    "deviceHeading": "Device heading"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1560,7 +1562,15 @@
     "hostedBy": "Hosted by {{name}}",
     "watchingCount": "{{count}} watching",
     "joinParty": "Join Party",
-    "start": "Start"
+    "start": "Start",
+    "watchPartyCreated": "Watch party created!",
+    "selectVideo": "Select a Video",
+    "changeVideo": "Change Video",
+    "searchVideos": "Search videos...",
+    "noVideosFound": "No videos found",
+    "tryDifferentSearch": "Try a different search term",
+    "sharePartyLink": "Share Party Link",
+    "joinMyWatchParty": "Join my watch party"
   },
   "discover": {
     "title": "Discover",
@@ -2157,18 +2167,18 @@
       }
     },
     "banned": {
-      "title": "\u0985\u09cd\u09af\u09be\u0995\u09be\u0989\u09a8\u09cd\u099f \u09b8\u09cd\u09a5\u0997\u09bf\u09a4",
-      "subtitle": "\u0995\u09ae\u09bf\u0989\u09a8\u09bf\u099f\u09bf \u09a8\u09c0\u09a4\u09bf\u09ae\u09be\u09b2\u09be \u09b2\u0999\u09cd\u0998\u09a8\u09c7\u09b0 \u0995\u09be\u09b0\u09a3\u09c7 \u0986\u09aa\u09a8\u09be\u09b0 \u0985\u09cd\u09af\u09be\u0995\u09be\u0989\u09a8\u09cd\u099f \u09b8\u09cd\u09a5\u0997\u09bf\u09a4 \u0995\u09b0\u09be \u09b9\u09df\u09c7\u099b\u09c7\u0964",
-      "appealButton": "\u09b8\u09bf\u09a6\u09cd\u09a7\u09be\u09a8\u09cd\u09a4\u09c7\u09b0 \u09ac\u09bf\u09b0\u09c1\u09a6\u09cd\u09a7\u09c7 \u0986\u09aa\u09bf\u09b2",
-      "signOut": "\u09b8\u09be\u0987\u09a8 \u0986\u0989\u099f",
-      "contactSupport": "\u0986\u09aa\u09a8\u09bf \u09af\u09a6\u09bf \u09ae\u09a8\u09c7 \u0995\u09b0\u09c7\u09a8 \u098f\u099f\u09bf \u09ad\u09c1\u09b2, \u09a4\u09be\u09b9\u09b2\u09c7 \u09b8\u09bf\u09a6\u09cd\u09a7\u09be\u09a8\u09cd\u09a4\u09c7\u09b0 \u09ac\u09bf\u09b0\u09c1\u09a6\u09cd\u09a7\u09c7 \u0986\u09aa\u09bf\u09b2 \u0995\u09b0\u09a4\u09c7 \u09aa\u09be\u09b0\u09c7\u09a8 \u09ac\u09be \u09b8\u09be\u09aa\u09cb\u09b0\u09cd\u099f\u09c7 \u09af\u09cb\u0997\u09be\u09af\u09cb\u0997 \u0995\u09b0\u09a4\u09c7 \u09aa\u09be\u09b0\u09c7\u09a8\u0964"
+      "title": "অ্যাকাউন্ট স্থগিত",
+      "subtitle": "কমিউনিটি নীতিমালা লঙ্ঘনের কারণে আপনার অ্যাকাউন্ট স্থগিত করা হয়েছে।",
+      "appealButton": "সিদ্ধান্তের বিরুদ্ধে আপিল",
+      "signOut": "সাইন আউট",
+      "contactSupport": "আপনি যদি মনে করেন এটি ভুল, তাহলে সিদ্ধান্তের বিরুদ্ধে আপিল করতে পারেন বা সাপোর্টে যোগাযোগ করতে পারেন।"
     },
     "maintenance": {
-      "title": "\u0986\u09ae\u09b0\u09be \u09b6\u09c0\u0998\u09cd\u09b0\u0987 \u09ab\u09bf\u09b0\u09c7 \u0986\u09b8\u09ac",
-      "subtitle": "\u09ae\u09bf\u099c\u09be\u09a8\u09b2\u09bf \u09a8\u09bf\u09b0\u09cd\u09a7\u09be\u09b0\u09bf\u09a4 \u09b0\u0995\u09cd\u09b7\u09a3\u09be\u09ac\u09c7\u0995\u09cd\u09b7\u09a3\u09c7\u09b0 \u09ae\u09a7\u09cd\u09af\u09c7 \u0986\u099b\u09c7\u0964 \u0986\u09ae\u09b0\u09be \u0986\u09aa\u09a8\u09be\u09b0 \u0985\u09ad\u09bf\u099c\u09cd\u099e\u09a4\u09be \u0989\u09a8\u09cd\u09a8\u09a4 \u0995\u09b0\u09a4\u09c7 \u0995\u09be\u099c \u0995\u09b0\u099b\u09bf\u0964",
-      "retryButton": "\u0986\u09ac\u09be\u09b0 \u099a\u09c7\u09b7\u09cd\u099f\u09be \u0995\u09b0\u09c1\u09a8",
-      "stillDown": "\u09b8\u09be\u09b0\u09cd\u09ad\u09be\u09b0 \u098f\u0996\u09a8\u0993 \u09b0\u0995\u09cd\u09b7\u09a3\u09be\u09ac\u09c7\u0995\u09cd\u09b7\u09a3\u09c7 \u0986\u099b\u09c7\u0964 \u0985\u09a8\u09c1\u0997\u09cd\u09b0\u09b9 \u0995\u09b0\u09c7 \u0995\u09bf\u099b\u09c1\u0995\u09cd\u09b7\u09a3 \u09aa\u09b0\u09c7 \u0986\u09ac\u09be\u09b0 \u099a\u09c7\u09b7\u09cd\u099f\u09be \u0995\u09b0\u09c1\u09a8\u0964",
-      "hint": "\u098f\u099f\u09bf \u09b8\u09be\u09a7\u09be\u09b0\u09a3\u09a4 \u09ae\u09be\u09a4\u09cd\u09b0 \u0995\u09df\u09c7\u0995 \u09ae\u09bf\u09a8\u09bf\u099f \u09b8\u09ae\u09df \u09a8\u09c7\u09df\u0964 \u0986\u09aa\u09a8\u09be\u09b0 \u09a7\u09c8\u09b0\u09cd\u09af\u09c7\u09b0 \u099c\u09a8\u09cd\u09af \u09a7\u09a8\u09cd\u09af\u09ac\u09be\u09a6\u0964"
+      "title": "আমরা শীঘ্রই ফিরে আসব",
+      "subtitle": "মিজানলি নির্ধারিত রক্ষণাবেক্ষণের মধ্যে আছে। আমরা আপনার অভিজ্ঞতা উন্নত করতে কাজ করছি।",
+      "retryButton": "আবার চেষ্টা করুন",
+      "stillDown": "সার্ভার এখনও রক্ষণাবেক্ষণে আছে। অনুগ্রহ করে কিছুক্ষণ পরে আবার চেষ্টা করুন।",
+      "hint": "এটি সাধারণত মাত্র কয়েক মিনিট সময় নেয়। আপনার ধৈর্যের জন্য ধন্যবাদ।"
     }
   },
   "createReel": {
@@ -3786,5 +3796,12 @@
     "newFollowers": "new followers",
     "noGrowthData": "No growth data yet",
     "noGrowthDataSubtitle": "Follower growth data will appear as your audience grows"
+  },
+  "chat": {
+    "inviteLink": "Invite Link",
+    "inviteLinkHint": "Share this link to invite people to the group",
+    "joinGroupVia": "Join my group on Mizanly",
+    "linkCopied": "Link copied to clipboard",
+    "copyLink": "Copy Link"
   }
 }

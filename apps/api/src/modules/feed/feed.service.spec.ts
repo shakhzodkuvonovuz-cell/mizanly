@@ -335,6 +335,97 @@ describe('FeedService', () => {
     });
   });
 
+  describe('getTrendingFeed — cursor-based pagination', () => {
+    const makePost = (id: string, likes: number, comments: number, shares: number, saves: number, minutesAgo: number) => ({
+      id,
+      postType: 'IMAGE',
+      content: `Post ${id}`,
+      visibility: 'PUBLIC',
+      mediaUrls: [],
+      mediaTypes: [],
+      thumbnailUrl: null,
+      mediaWidth: null,
+      mediaHeight: null,
+      hashtags: [],
+      mentions: [],
+      locationName: null,
+      likesCount: likes,
+      commentsCount: comments,
+      sharesCount: shares,
+      savesCount: saves,
+      viewsCount: 0,
+      hideLikesCount: false,
+      commentsDisabled: false,
+      isSensitive: false,
+      isFeatured: false,
+      blurhash: null,
+      isRemoved: false,
+      createdAt: new Date(Date.now() - minutesAgo * 60000),
+      updatedAt: new Date(),
+      user: { id: 'u1', username: 'user1', displayName: 'User 1', avatarUrl: null, isVerified: false },
+      circle: null,
+    });
+
+    beforeEach(() => {
+      (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).contentFilterSetting = { findUnique: jest.fn().mockResolvedValue(null) };
+    });
+
+    it('should return keyset cursor (score:id:ts) instead of offset', async () => {
+      const posts = [
+        makePost('p1', 100, 50, 20, 10, 60),  // High engagement, 1hr old
+        makePost('p2', 10, 5, 2, 1, 30),       // Lower engagement, 30min old
+        makePost('p3', 5, 2, 1, 0, 120),       // Low engagement, 2hr old
+      ];
+      (prisma as any).post.findMany.mockResolvedValue(posts);
+
+      const result = await service.getTrendingFeed(undefined, 2);
+
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(2);
+      // Cursor should be score:id:timestamp format
+      expect(result.meta.cursor).toMatch(/^[\d.]+:.+:\d+$/);
+    });
+
+    it('should paginate using score:id cursor without refetching previous items', async () => {
+      const posts = [
+        makePost('p1', 100, 50, 20, 10, 60),
+        makePost('p2', 50, 25, 10, 5, 120),
+        makePost('p3', 10, 5, 2, 1, 30),
+      ];
+      (prisma as any).post.findMany.mockResolvedValue(posts);
+
+      // Get first page
+      const page1 = await service.getTrendingFeed(undefined, 2);
+      expect(page1.data).toHaveLength(2);
+      expect(page1.meta.cursor).toBeDefined();
+
+      // Get second page using cursor
+      const page2 = await service.getTrendingFeed(page1.meta.cursor, 2);
+      expect(page2.data).toHaveLength(1);
+      expect(page2.meta.hasMore).toBe(false);
+
+      // No duplicate items between pages
+      const page1Ids = page1.data.map((p: any) => p.id);
+      const page2Ids = page2.data.map((p: any) => p.id);
+      expect(page1Ids.filter((id: string) => page2Ids.includes(id))).toHaveLength(0);
+    });
+
+    it('should return empty result for cursor past end', async () => {
+      (prisma as any).post.findMany.mockResolvedValue([
+        makePost('p1', 10, 5, 2, 1, 60),
+      ]);
+
+      // Use a very low score cursor to skip all items
+      const result = await service.getTrendingFeed('0.00001:zzz:1711180800000', 20);
+      expect(result.data).toHaveLength(0);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
   describe('getTrendingFeed — Redis cache', () => {
     beforeEach(() => {
       (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
@@ -345,7 +436,7 @@ describe('FeedService', () => {
     });
 
     it('should return cached result for unauthenticated requests', async () => {
-      const cachedResult = { data: [{ id: 'cached-1' }], meta: { hasMore: false, minScore: 0 } };
+      const cachedResult = { data: [{ id: 'cached-1' }], meta: { hasMore: false } };
       redis.get.mockResolvedValue(JSON.stringify(cachedResult));
 
       const result = await service.getTrendingFeed(undefined, 20);
@@ -360,7 +451,7 @@ describe('FeedService', () => {
       await service.getTrendingFeed(undefined, 20);
 
       expect(redis.set).toHaveBeenCalledWith(
-        'trending_feed:0:20',
+        'trending_feed:first:20',
         expect.any(String),
         'EX',
         300,
@@ -380,11 +471,11 @@ describe('FeedService', () => {
       redis.get.mockResolvedValue(null);
       (prisma as any).post.findMany.mockResolvedValue([]);
 
-      await service.getTrendingFeed('20', 20);
+      await service.getTrendingFeed('5.5:p1:1711180800000', 20);
 
-      expect(redis.get).toHaveBeenCalledWith('trending_feed:20:20');
+      expect(redis.get).toHaveBeenCalledWith('trending_feed:5.5:p1:1711180800000:20');
       expect(redis.set).toHaveBeenCalledWith(
-        'trending_feed:20:20',
+        'trending_feed:5.5:p1:1711180800000:20',
         expect.any(String),
         'EX',
         300,

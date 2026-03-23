@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
     color: colors.emerald,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   customInput: {
     flex: 1,

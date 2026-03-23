@@ -384,14 +384,14 @@ const styles = StyleSheet.create({
     borderColor: colors.dark.border,
   },
   searchIcon: {
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   searchInput: {
     flex: 1,
     color: colors.text.primary,
     fontSize: fontSize.base,
     paddingVertical: spacing.sm,
-    paddingRight: spacing.sm,
+    paddingEnd: spacing.sm,
   },
   clearButton: {
     padding: spacing.xs,

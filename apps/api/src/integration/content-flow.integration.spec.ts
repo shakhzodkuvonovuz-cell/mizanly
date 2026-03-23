@@ -121,7 +121,7 @@ describe('Integration: Content Flow', () => {
     isPinned: false,
     isSensitive: false,
     isRemoved: false,
-    replyPermission: 'everyone',
+    replyPermission: 'EVERYONE',
     createdAt: now,
     updatedAt: now,
     user: {

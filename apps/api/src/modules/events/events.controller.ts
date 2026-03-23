@@ -66,15 +66,15 @@ export class CreateEventDto {
   @IsUrl()
   onlineUrl?: string;
 
-  @ApiProperty({ description: 'Event type', enum: ['in_person', 'online', 'hybrid'], default: 'in_person', required: false })
+  @ApiProperty({ description: 'Event type', enum: ['IN_PERSON', 'ONLINE', 'HYBRID'], default: 'IN_PERSON', required: false })
   @IsOptional()
-  @IsEnum(['in_person', 'online', 'hybrid'])
-  eventType?: string = 'in_person';
+  @IsEnum(['IN_PERSON', 'ONLINE', 'HYBRID'])
+  eventType?: string = 'IN_PERSON';
 
-  @ApiProperty({ description: 'Privacy level', enum: ['public', 'private', 'community'], default: 'public', required: false })
+  @ApiProperty({ description: 'Privacy level', enum: ['EVENT_PUBLIC', 'EVENT_PRIVATE'], default: 'EVENT_PUBLIC', required: false })
   @IsOptional()
-  @IsEnum(['public', 'private', 'community'])
-  privacy?: string = 'public';
+  @IsEnum(['EVENT_PUBLIC', 'EVENT_PRIVATE'])
+  privacy?: string = 'EVENT_PUBLIC';
 
   @ApiProperty({ description: 'Community ID if event belongs to a community', required: false })
   @IsOptional()

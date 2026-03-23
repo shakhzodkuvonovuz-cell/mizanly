@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { AutoPlaySetting } from '@prisma/client';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';
 import { UpdateNotificationsDto } from './dto/update-notifications.dto';
 import { UpdateAccessibilityDto } from './dto/update-accessibility.dto';
@@ -183,18 +184,18 @@ export class SettingsService {
       where: { userId },
       select: { autoPlaySetting: true },
     });
-    return { autoPlaySetting: settings?.autoPlaySetting ?? 'wifi' };
+    return { autoPlaySetting: settings?.autoPlaySetting ?? 'WIFI' };
   }
 
   async updateAutoPlaySetting(userId: string, autoPlaySetting: string) {
-    const valid = ['wifi', 'always', 'never'];
+    const valid = ['WIFI', 'ALWAYS', 'NEVER'];
     if (!valid.includes(autoPlaySetting)) {
-      throw new BadRequestException('Invalid auto-play setting. Must be: wifi, always, or never');
+      throw new BadRequestException('Invalid auto-play setting. Must be: WIFI, ALWAYS, or NEVER');
     }
     return this.prisma.userSettings.upsert({
       where: { userId },
-      create: { userId, autoPlaySetting },
-      update: { autoPlaySetting },
+      create: { userId, autoPlaySetting: autoPlaySetting as AutoPlaySetting },
+      update: { autoPlaySetting: autoPlaySetting as AutoPlaySetting },
     });
   }
 }

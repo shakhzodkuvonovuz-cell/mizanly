@@ -101,6 +101,7 @@ describe('NotificationsService', () => {
               isVerified: true,
             },
           },
+          // Conditional content includes — all 4 relations for unfiltered queries
           post: { select: { id: true, thumbnailUrl: true, mediaUrls: true } },
           reel: { select: { id: true, thumbnailUrl: true } },
           thread: { select: { id: true, mediaUrls: true } },
@@ -165,6 +166,45 @@ describe('NotificationsService', () => {
         take: 31,
         orderBy: { createdAt: 'desc' },
       });
+    });
+
+    it('should only include post/thread relations for mentions filter (no reel/video)', async () => {
+      const userId = 'user-123';
+      prisma.notification.findMany.mockResolvedValue([]);
+
+      await service.getNotifications(userId, 'mentions');
+
+      const callArgs = prisma.notification.findMany.mock.calls[0][0];
+      expect(callArgs.include.post).toBeDefined();
+      expect(callArgs.include.thread).toBeDefined();
+      expect(callArgs.include.reel).toBeUndefined();
+      expect(callArgs.include.video).toBeUndefined();
+    });
+
+    it('should include all content relations for "all" filter', async () => {
+      const userId = 'user-123';
+      prisma.notification.findMany.mockResolvedValue([]);
+
+      await service.getNotifications(userId, 'all');
+
+      const callArgs = prisma.notification.findMany.mock.calls[0][0];
+      expect(callArgs.include.post).toBeDefined();
+      expect(callArgs.include.thread).toBeDefined();
+      expect(callArgs.include.reel).toBeDefined();
+      expect(callArgs.include.video).toBeDefined();
+    });
+
+    it('should include all content relations for "verified" filter', async () => {
+      const userId = 'user-123';
+      prisma.notification.findMany.mockResolvedValue([]);
+
+      await service.getNotifications(userId, 'verified');
+
+      const callArgs = prisma.notification.findMany.mock.calls[0][0];
+      expect(callArgs.include.post).toBeDefined();
+      expect(callArgs.include.thread).toBeDefined();
+      expect(callArgs.include.reel).toBeDefined();
+      expect(callArgs.include.video).toBeDefined();
     });
 
     it('should apply verified filter', async () => {

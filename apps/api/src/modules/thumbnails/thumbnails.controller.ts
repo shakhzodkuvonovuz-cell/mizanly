@@ -40,7 +40,7 @@ export class ThumbnailsController {
   @ApiOperation({ summary: 'Upload thumbnail variants for A/B testing (2-3 variants)' })
   async createVariants(@CurrentUser('id') userId: string, @Body() dto: CreateVariantsDto) {
     return this.thumbnails.createVariants(
-      dto.contentType as 'post' | 'reel' | 'video',
+      dto.contentType as 'POST' | 'REEL' | 'VIDEO',
       dto.contentId,
       dto.thumbnailUrls,
       userId,
@@ -56,7 +56,7 @@ export class ThumbnailsController {
     @Param('contentType') contentType: string,
     @Param('contentId') contentId: string,
   ) {
-    return this.thumbnails.getVariants(contentType as 'post' | 'reel' | 'video', contentId, userId);
+    return this.thumbnails.getVariants(contentType as 'POST' | 'REEL' | 'VIDEO', contentId, userId);
   }
 
   @Get('serve/:contentType/:contentId')
@@ -66,7 +66,7 @@ export class ThumbnailsController {
     @Param('contentType') contentType: string,
     @Param('contentId') contentId: string,
   ) {
-    const url = await this.thumbnails.serveThumbnail(contentType as 'post' | 'reel' | 'video', contentId);
+    const url = await this.thumbnails.serveThumbnail(contentType as 'POST' | 'REEL' | 'VIDEO', contentId);
     return { thumbnailUrl: url };
   }
 

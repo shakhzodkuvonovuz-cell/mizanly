@@ -8,6 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { CountdownTheme, EndScreenType } from '@prisma/client';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { Prisma, VideoStatus, VideoCategory, ReportReason } from '@prisma/client';
@@ -841,7 +842,7 @@ export class VideosService {
         videoId,
         scheduledAt: new Date(dto.scheduledAt),
         chatEnabled: dto.chatEnabled ?? true,
-        countdownTheme: dto.countdownTheme || 'emerald',
+        countdownTheme: (dto.countdownTheme || 'EMERALD') as CountdownTheme,
         trailerUrl: dto.trailerUrl,
       },
     });
@@ -929,7 +930,7 @@ export class VideosService {
         this.prisma.endScreen.create({
           data: {
             videoId,
-            type: item.type,
+            type: item.type as EndScreenType,
             targetId: item.targetId,
             label: item.label,
             url: item.url,

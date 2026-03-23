@@ -1,7 +1,8 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { ThumbnailContentType } from '@prisma/client';
 
-type ContentType = 'post' | 'reel' | 'video';
+type ContentType = 'POST' | 'REEL' | 'VIDEO';
 
 const MAX_VARIANTS = 3;
 const WINNER_THRESHOLD = 1000; // impressions before declaring winner
@@ -147,7 +148,7 @@ export class ThumbnailsService {
    */
   private async checkForWinner(contentType: string, contentId: string) {
     const variants = await this.prisma.thumbnailVariant.findMany({
-      where: { contentType, contentId },
+      where: { contentType: contentType as ThumbnailContentType, contentId },
       take: 10,
     });
 
@@ -182,13 +183,13 @@ export class ThumbnailsService {
    */
   private async verifyContentOwnership(contentType: ContentType, contentId: string, userId: string) {
     let ownerId: string | null = null;
-    if (contentType === 'post') {
+    if (contentType === 'POST') {
       const post = await this.prisma.post.findUnique({ where: { id: contentId }, select: { userId: true } });
       ownerId = post?.userId ?? null;
-    } else if (contentType === 'reel') {
+    } else if (contentType === 'REEL') {
       const reel = await this.prisma.reel.findUnique({ where: { id: contentId }, select: { userId: true } });
       ownerId = reel?.userId ?? null;
-    } else if (contentType === 'video') {
+    } else if (contentType === 'VIDEO') {
       const video = await this.prisma.video.findUnique({ where: { id: contentId }, select: { userId: true } });
       ownerId = video?.userId ?? null;
     }

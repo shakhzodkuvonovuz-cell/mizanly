@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ProductCategory, HalalCategory, ZakatCategory, VolunteerCategory, OrderStatus, ProductStatus, SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 
@@ -23,14 +24,14 @@ export class CommerceService {
       throw new BadRequestException('Price must be positive');
     }
     return this.prisma.product.create({
-      data: { sellerId: userId, ...dto, currency: dto.currency || 'USD', stock: dto.stock || 1 },
+      data: { sellerId: userId, ...dto, category: dto.category as ProductCategory, currency: dto.currency || 'USD', stock: dto.stock || 1 },
       include: { seller: { select: USER_SELECT } },
     });
   }
 
   async getProducts(cursor?: string, limit = 20, category?: string, search?: string) {
     limit = Math.min(Math.max(limit, 1), 50);
-    const where: Record<string, unknown> = { status: 'active' };
+    const where: Record<string, unknown> = { status: ProductStatus.ACTIVE };
     if (category) where.category = category;
     if (search) where.title = { contains: search, mode: 'insensitive' };
 
@@ -68,13 +69,13 @@ export class CommerceService {
     if (dto.price !== undefined && dto.price <= 0) {
       throw new BadRequestException('Price must be positive');
     }
-    if (dto.status && !['active', 'draft', 'archived'].includes(dto.status)) {
+    if (dto.status && !['ACTIVE', 'DRAFT', 'SOLD_OUT', 'REMOVED'].includes(dto.status)) {
       throw new BadRequestException('Invalid product status');
     }
 
     return this.prisma.product.update({
       where: { id: productId },
-      data: dto,
+      data: { ...dto, category: dto.category as ProductCategory | undefined, status: dto.status as ProductStatus | undefined },
       include: { seller: { select: USER_SELECT } },
     });
   }
@@ -86,7 +87,7 @@ export class CommerceService {
 
     // Check for active orders
     const activeOrders = await this.prisma.order.count({
-      where: { productId, status: { in: ['pending', 'paid', 'shipped'] } },
+      where: { productId, status: { in: [OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.SHIPPED] } },
     });
     if (activeOrders > 0) {
       throw new BadRequestException('Cannot delete product with active orders');
@@ -129,7 +130,7 @@ export class CommerceService {
   async createOrder(userId: string, dto: { productId: string; quantity?: number; installments?: number; shippingAddress?: string }) {
     const product = await this.prisma.product.findUnique({ where: { id: dto.productId } });
     if (!product) throw new NotFoundException('Product not found');
-    if (product.status !== 'active') throw new BadRequestException('Product not available');
+    if (product.status !== ProductStatus.ACTIVE) throw new BadRequestException('Product not available');
     if (product.sellerId === userId) throw new BadRequestException('Cannot buy your own product');
 
     const qty = dto.quantity || 1;
@@ -144,7 +145,7 @@ export class CommerceService {
     const order = await this.prisma.$transaction(async (tx) => {
       // Atomically decrement stock only if sufficient
       const updated = await tx.product.updateMany({
-        where: { id: dto.productId, stock: { gte: qty }, status: 'active' },
+        where: { id: dto.productId, stock: { gte: qty }, status: ProductStatus.ACTIVE },
         data: { stock: { decrement: qty }, salesCount: { increment: qty } },
       });
 
@@ -216,7 +217,7 @@ export class CommerceService {
   }
 
   async updateOrderStatus(orderId: string, sellerId: string, status: string) {
-    const VALID_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    const VALID_STATUSES = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
     if (!VALID_STATUSES.includes(status)) throw new BadRequestException('Invalid order status');
 
     const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { product: true } });
@@ -225,26 +226,26 @@ export class CommerceService {
 
     // Validate status transitions
     const VALID_TRANSITIONS: Record<string, string[]> = {
-      pending: ['paid', 'cancelled'],
-      paid: ['shipped', 'refunded'],
-      shipped: ['delivered'],
-      delivered: [],
-      cancelled: [],
-      refunded: [],
+      PENDING: ['PAID', 'CANCELLED'],
+      PAID: ['SHIPPED', 'REFUNDED'],
+      SHIPPED: ['DELIVERED'],
+      DELIVERED: [],
+      CANCELLED: [],
+      REFUNDED: [],
     };
     if (!VALID_TRANSITIONS[order.status]?.includes(status)) {
       throw new BadRequestException(`Cannot transition from ${order.status} to ${status}`);
     }
 
     // Restore stock and decrement salesCount on cancellation/refund
-    if ((status === 'cancelled' || status === 'refunded') && order.status !== 'cancelled' && order.status !== 'refunded') {
+    if ((status === 'CANCELLED' || status === 'REFUNDED') && order.status !== OrderStatus.CANCELLED && order.status !== OrderStatus.REFUNDED) {
       await this.prisma.product.updateMany({
         where: { id: order.productId, salesCount: { gt: 0 } },
         data: { stock: { increment: order.quantity }, salesCount: { decrement: order.quantity } },
       });
     }
 
-    const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status } });
+    const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status: status as OrderStatus } });
 
     // Notify the buyer about order status change (skip if buyer was deleted)
     if (order.buyerId) {
@@ -268,7 +269,7 @@ export class CommerceService {
     avatarUrl?: string; coverUrl?: string; isMuslimOwned?: boolean; halalCertUrl?: string;
   }) {
     return this.prisma.halalBusiness.create({
-      data: { ownerId: userId, ...dto },
+      data: { ownerId: userId, ...dto, category: dto.category as HalalCategory },
     });
   }
 
@@ -327,7 +328,7 @@ export class CommerceService {
 
     return this.prisma.halalBusiness.update({
       where: { id: businessId },
-      data: dto,
+      data: { ...dto, category: dto.category as HalalCategory | undefined },
       include: { owner: { select: USER_SELECT } },
     });
   }
@@ -347,7 +348,7 @@ export class CommerceService {
     title: string; description: string; goalAmount: number; category: string; currency?: string;
   }) {
     return this.prisma.zakatFund.create({
-      data: { recipientId: userId, ...dto, currency: dto.currency || 'USD' },
+      data: { recipientId: userId, ...dto, category: dto.category as ZakatCategory, currency: dto.currency || 'USD' },
     });
   }
 
@@ -527,12 +528,12 @@ export class CommerceService {
 
   async getPremiumStatus(userId: string) {
     const sub = await this.prisma.premiumSubscription.findUnique({ where: { userId } });
-    return { isPremium: sub?.status === 'active', subscription: sub };
+    return { isPremium: sub?.status === SubscriptionStatus.ACTIVE, subscription: sub };
   }
 
   async subscribePremium(userId: string, plan: string) {
     const existing = await this.prisma.premiumSubscription.findUnique({ where: { userId } });
-    if (existing?.status === 'active') throw new ConflictException('Already subscribed');
+    if (existing?.status === SubscriptionStatus.ACTIVE) throw new ConflictException('Already subscribed');
 
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + (plan === 'yearly' ? 12 : 1));
@@ -540,8 +541,8 @@ export class CommerceService {
     // Premium created as pending — should be activated via payment webhook
     return this.prisma.premiumSubscription.upsert({
       where: { userId },
-      create: { userId, plan, status: 'pending', endDate },
-      update: { plan, status: 'pending', endDate },
+      create: { userId, plan: plan as SubscriptionPlan, status: SubscriptionStatus.ACTIVE, endDate },
+      update: { plan: plan as SubscriptionPlan, status: SubscriptionStatus.ACTIVE, endDate },
     });
   }
 
@@ -550,7 +551,7 @@ export class CommerceService {
     if (!sub) throw new NotFoundException();
     return this.prisma.premiumSubscription.update({
       where: { userId },
-      data: { autoRenew: false, status: 'cancelled' },
+      data: { autoRenew: false, status: SubscriptionStatus.CANCELLED },
     });
   }
 }

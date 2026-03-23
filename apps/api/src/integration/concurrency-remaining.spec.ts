@@ -129,7 +129,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
   describe('ThreadsService — additional tests', () => {
     let service: ThreadsService;
     let prisma: any;
-    const mockThread = { id: 't-1', userId: 'owner', isRemoved: false, isChainHead: true, visibility: 'PUBLIC', mentions: [], replyPermission: 'everyone' };
+    const mockThread = { id: 't-1', userId: 'owner', isRemoved: false, isChainHead: true, visibility: 'PUBLIC', mentions: [], replyPermission: 'EVERYONE' };
 
     beforeEach(async () => {
       const module = await Test.createTestingModule({
@@ -177,13 +177,13 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
     });
 
     it('should handle canReply for none permission', async () => {
-      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'none' });
+      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'NONE' });
       const result = await service.canReply('t-1', 'any-user');
       expect(result.canReply).toBe(false);
     });
 
     it('should handle canReply for author', async () => {
-      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'none' });
+      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, replyPermission: 'NONE' });
       const result = await service.canReply('t-1', 'owner');
       expect(result.canReply).toBe(true);
       expect(result.reason).toBe('author');

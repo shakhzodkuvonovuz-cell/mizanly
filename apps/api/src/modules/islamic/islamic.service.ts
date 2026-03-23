@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
+import { FastingType, HifzStatus, DailyTaskType, AdhanStyle, ContentStrictnessLevel, MadhhabType as MType } from '@prisma/client';
 import { UpdatePrayerNotificationDto } from './dto/prayer-notification.dto';
 import { CreateQuranPlanDto, UpdateQuranPlanDto } from './dto/quran-plan.dto';
 import { CreateCampaignDto, CreateDonationDto } from './dto/charity.dto';
@@ -541,10 +542,11 @@ export class IslamicService {
   }
 
   async updatePrayerNotificationSettings(userId: string, dto: UpdatePrayerNotificationDto) {
+    const data = { ...dto, adhanStyle: dto.adhanStyle as AdhanStyle | undefined };
     return this.prisma.prayerNotificationSetting.upsert({
       where: { userId },
-      update: dto,
-      create: { userId, ...dto },
+      update: data,
+      create: { userId, ...data },
     });
   }
 
@@ -745,7 +747,7 @@ export class IslamicService {
     const existing = await this.prisma.scholarVerification.findUnique({ where: { userId } });
     if (existing) throw new BadRequestException('Application already submitted');
     return this.prisma.scholarVerification.create({
-      data: { userId, ...dto },
+      data: { userId, ...dto, madhab: dto.madhab as MType | undefined },
     });
   }
 
@@ -764,10 +766,11 @@ export class IslamicService {
   }
 
   async updateContentFilterSettings(userId: string, dto: UpdateContentFilterDto) {
+    const data = { ...dto, strictnessLevel: dto.strictnessLevel as ContentStrictnessLevel | undefined };
     return this.prisma.contentFilterSetting.upsert({
       where: { userId },
-      update: dto,
-      create: { userId, ...dto },
+      update: data,
+      create: { userId, ...data },
     });
   }
 
@@ -1411,18 +1414,19 @@ export class IslamicService {
 
   async logFast(userId: string, data: { date: string; isFasting: boolean; fastType?: string; reason?: string }) {
     const dateObj = new Date(data.date);
+    const ft = (data.fastType ?? 'RAMADAN') as FastingType;
     return this.prisma.fastingLog.upsert({
       where: { userId_date: { userId, date: dateObj } },
       update: {
         isFasting: data.isFasting,
-        fastType: data.fastType ?? 'ramadan',
+        fastType: ft,
         reason: data.reason,
       },
       create: {
         userId,
         date: dateObj,
         isFasting: data.isFasting,
-        fastType: data.fastType ?? 'ramadan',
+        fastType: ft,
         reason: data.reason,
       },
     });
@@ -1454,7 +1458,7 @@ export class IslamicService {
     });
 
     const totalFasts = logs.filter((l) => l.isFasting).length;
-    const missedRamadan = logs.filter((l) => !l.isFasting && l.fastType === 'ramadan').length;
+    const missedRamadan = logs.filter((l) => !l.isFasting && l.fastType === 'RAMADAN').length;
 
     // Calculate current streak
     let streak = 0;
@@ -1575,7 +1579,7 @@ export class IslamicService {
       const existing = progressMap.get(i);
       allSurahs.push({
         surahNum: i,
-        status: existing?.status ?? 'not_started',
+        status: existing?.status ?? 'NOT_STARTED',
         lastReviewedAt: existing?.lastReviewedAt ?? null,
       });
     }
@@ -1586,22 +1590,23 @@ export class IslamicService {
     if (surahNum < 1 || surahNum > 114) {
       throw new BadRequestException('Surah number must be 1-114');
     }
-    const validStatuses = ['not_started', 'in_progress', 'memorized', 'needs_review'];
+    const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'MEMORIZED', 'NEEDS_REVIEW'];
     if (!validStatuses.includes(status)) {
       throw new BadRequestException(`Status must be one of: ${validStatuses.join(', ')}`);
     }
 
+    const hs = status as HifzStatus;
     return this.prisma.hifzProgress.upsert({
       where: { userId_surahNum: { userId, surahNum } },
       update: {
-        status,
-        lastReviewedAt: status === 'memorized' || status === 'needs_review' ? new Date() : undefined,
+        status: hs,
+        lastReviewedAt: hs === 'MEMORIZED' || hs === 'NEEDS_REVIEW' ? new Date() : undefined,
       },
       create: {
         userId,
         surahNum,
-        status,
-        lastReviewedAt: status === 'memorized' ? new Date() : null,
+        status: hs,
+        lastReviewedAt: hs === 'MEMORIZED' ? new Date() : null,
       },
     });
   }
@@ -1612,9 +1617,9 @@ export class IslamicService {
       take: 120,
     });
 
-    const memorized = progress.filter((p) => p.status === 'memorized').length;
-    const inProgress = progress.filter((p) => p.status === 'in_progress').length;
-    const needsReview = progress.filter((p) => p.status === 'needs_review').length;
+    const memorized = progress.filter((p) => p.status === 'MEMORIZED').length;
+    const inProgress = progress.filter((p) => p.status === 'IN_PROGRESS').length;
+    const needsReview = progress.filter((p) => p.status === 'NEEDS_REVIEW').length;
 
     return {
       memorized,
@@ -1709,7 +1714,7 @@ export class IslamicService {
   }
 
   async completeDailyTask(userId: string, taskType: string) {
-    const validTypes = ['dhikr', 'quran', 'reflection'];
+    const validTypes = ['DHIKR', 'QURAN', 'REFLECTION'];
     if (!validTypes.includes(taskType)) {
       throw new BadRequestException(`Invalid task type. Must be one of: ${validTypes.join(', ')}`);
     }
@@ -1718,11 +1723,12 @@ export class IslamicService {
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
     // Upsert to handle duplicate completion attempts
+    const tt = taskType as DailyTaskType;
     const completion = await this.prisma.dailyTaskCompletion.upsert({
       where: {
-        userId_date_taskType: { userId, date: todayDate, taskType },
+        userId_date_taskType: { userId, date: todayDate, taskType: tt },
       },
-      create: { userId, date: todayDate, taskType },
+      create: { userId, date: todayDate, taskType: tt },
       update: {},
     });
 
@@ -1753,9 +1759,9 @@ export class IslamicService {
 
     return {
       tasks: [
-        { type: 'dhikr', completed: completions.some((c) => c.taskType === 'dhikr') },
-        { type: 'quran', completed: completions.some((c) => c.taskType === 'quran') },
-        { type: 'reflection', completed: completions.some((c) => c.taskType === 'reflection') },
+        { type: 'dhikr', completed: completions.some((c) => c.taskType === 'DHIKR') },
+        { type: 'quran', completed: completions.some((c) => c.taskType === 'QURAN') },
+        { type: 'reflection', completed: completions.some((c) => c.taskType === 'REFLECTION') },
       ],
       totalCompleted: completions.length,
       allComplete: completions.length >= 3,
@@ -1821,7 +1827,7 @@ export class IslamicService {
     return this.prisma.hifzProgress.findMany({
       where: {
         userId,
-        status: { in: ['memorized', 'needs_review'] },
+        status: { in: ['MEMORIZED', 'NEEDS_REVIEW'] },
         OR: [
           { lastReviewedAt: null },
           { lastReviewedAt: { lt: sevenDaysAgo } },

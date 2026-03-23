@@ -147,29 +147,35 @@ export class StoryChainsService {
       throw new BadRequestException('Story does not belong to you');
     }
 
-    // Upsert to handle duplicate entries gracefully
-    const entry = await this.prisma.storyChainEntry.upsert({
-      where: {
-        chainId_userId: { chainId, userId },
-      },
-      create: {
-        chainId,
-        storyId,
-        userId,
-      },
-      update: {
-        storyId,
-      },
-    });
-
-    // Only increment if this is a new entry (createdAt matches now)
-    const isNew = entry.createdAt.getTime() > Date.now() - 1000;
-    if (isNew) {
-      await this.prisma.storyChain.update({
-        where: { id: chainId },
-        data: { participantCount: { increment: 1 } },
+    // Wrap upsert + participant count increment in a transaction
+    // to prevent race conditions where concurrent joins could
+    // produce an incorrect participantCount
+    const entry = await this.prisma.$transaction(async (tx) => {
+      const upserted = await tx.storyChainEntry.upsert({
+        where: {
+          chainId_userId: { chainId, userId },
+        },
+        create: {
+          chainId,
+          storyId,
+          userId,
+        },
+        update: {
+          storyId,
+        },
       });
-    }
+
+      // Only increment if this is a new entry (createdAt matches now)
+      const isNew = upserted.createdAt.getTime() > Date.now() - 1000;
+      if (isNew) {
+        await tx.storyChain.update({
+          where: { id: chainId },
+          data: { participantCount: { increment: 1 } },
+        });
+      }
+
+      return upserted;
+    });
 
     return entry;
   }

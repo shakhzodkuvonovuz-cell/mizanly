@@ -24,7 +24,7 @@ describe('CommunityNotesService', () => {
             },
             communityNoteRating: {
               findUnique: jest.fn().mockResolvedValue(null),
-              create: jest.fn().mockResolvedValue({ noteId: 'cn-1', userId: 'u1', rating: 'helpful' }),
+              create: jest.fn().mockResolvedValue({ noteId: 'cn-1', userId: 'u1', rating: 'NOTE_HELPFUL' }),
               upsert: jest.fn().mockResolvedValue({}),
             },
             post: { findUnique: jest.fn().mockResolvedValue({ id: 'p1' }) },
@@ -56,7 +56,7 @@ describe('CommunityNotesService', () => {
 
   it('should rate a note', async () => {
     prisma.communityNote.update.mockResolvedValue({ id: 'cn-1', helpfulVotes: 6, notHelpfulVotes: 2 });
-    const result = await service.rateNote('u1', 'cn-1', 'helpful');
+    const result = await service.rateNote('u1', 'cn-1', 'NOTE_HELPFUL');
     expect(prisma.communityNoteRating.create).toHaveBeenCalled();
     expect(result).toHaveProperty('rated', true);
   });
@@ -67,33 +67,33 @@ describe('CommunityNotesService', () => {
 
   it('should throw NotFoundException for missing note when rating', async () => {
     prisma.communityNote.findUnique.mockResolvedValueOnce(null);
-    await expect(service.rateNote('u1', 'invalid', 'helpful')).rejects.toThrow(NotFoundException);
+    await expect(service.rateNote('u1', 'invalid', 'NOTE_HELPFUL')).rejects.toThrow(NotFoundException);
   });
 
   it('should throw ConflictException when note already rated by user', async () => {
     prisma.communityNote.findUnique.mockResolvedValue({ id: 'cn-1', helpfulVotes: 5, notHelpfulVotes: 2 });
-    prisma.communityNoteRating.findUnique.mockResolvedValueOnce({ noteId: 'cn-1', userId: 'u1', rating: 'helpful' });
-    await expect(service.rateNote('u1', 'cn-1', 'not_helpful')).rejects.toThrow(ConflictException);
+    prisma.communityNoteRating.findUnique.mockResolvedValueOnce({ noteId: 'cn-1', userId: 'u1', rating: 'NOTE_HELPFUL' });
+    await expect(service.rateNote('u1', 'cn-1', 'NOTE_NOT_HELPFUL')).rejects.toThrow(ConflictException);
   });
 
   it('should create note for thread content type', async () => {
-    prisma.communityNote.create.mockResolvedValue({ id: 'cn-2', contentType: 'thread', note: 'Context' });
+    prisma.communityNote.create.mockResolvedValue({ id: 'cn-2', contentType: 'THREAD', note: 'Context' });
     const result = await service.createNote('u1', 'thread', 't1', 'Context');
-    expect(result.contentType).toBe('thread');
+    expect(result.contentType).toBe('THREAD');
   });
 
   it('should create note for reel content type', async () => {
-    prisma.communityNote.create.mockResolvedValue({ id: 'cn-3', contentType: 'reel', note: 'Source' });
+    prisma.communityNote.create.mockResolvedValue({ id: 'cn-3', contentType: 'REEL', note: 'Source' });
     const result = await service.createNote('u1', 'reel', 'r1', 'Source');
-    expect(result.contentType).toBe('reel');
+    expect(result.contentType).toBe('REEL');
   });
 
   it('should get helpful notes only', async () => {
-    prisma.communityNote.findMany.mockResolvedValue([{ id: 'cn-1', status: 'helpful' }]);
+    prisma.communityNote.findMany.mockResolvedValue([{ id: 'cn-1', status: 'HELPFUL' }]);
     const result = await service.getHelpfulNotes('post', 'p1');
     expect(result).toHaveLength(1);
     expect(prisma.communityNote.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { contentType: 'post', contentId: 'p1', status: 'helpful' },
+      where: { contentType: 'post', contentId: 'p1', status: 'HELPFUL' },
     }));
   });
 
@@ -103,7 +103,7 @@ describe('CommunityNotesService', () => {
     prisma.communityNoteRating.create.mockResolvedValue({});
     prisma.communityNote.update.mockResolvedValue({ id: 'cn-1', helpfulVotes: 4, notHelpfulVotes: 1 });
 
-    await service.rateNote('u2', 'cn-1', 'helpful');
+    await service.rateNote('u2', 'cn-1', 'NOTE_HELPFUL');
 
     expect(prisma.communityNote.update).toHaveBeenCalledWith(expect.objectContaining({
       data: { helpfulVotes: { increment: 1 } },
@@ -116,7 +116,7 @@ describe('CommunityNotesService', () => {
     prisma.communityNoteRating.create.mockResolvedValue({});
     prisma.communityNote.update.mockResolvedValue({ id: 'cn-1', helpfulVotes: 3, notHelpfulVotes: 2 });
 
-    await service.rateNote('u2', 'cn-1', 'not_helpful');
+    await service.rateNote('u2', 'cn-1', 'NOTE_NOT_HELPFUL');
 
     expect(prisma.communityNote.update).toHaveBeenCalledWith(expect.objectContaining({
       data: { notHelpfulVotes: { increment: 1 } },

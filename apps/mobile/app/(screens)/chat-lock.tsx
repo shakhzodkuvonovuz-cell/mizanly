@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   },
   toggleTextContainer: {
     flex: 1,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   toggleLabel: {
     fontFamily: fonts.bodySemiBold,

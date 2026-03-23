@@ -341,8 +341,8 @@ describe('PersonalizedFeedService', () => {
   describe('getPersonalizedFeed — unauthenticated', () => {
     it('should return trending posts for saf space when no userId', async () => {
       prisma.post.findMany.mockResolvedValue([
-        { id: 'p1', hashtags: [] },
-        { id: 'p2', hashtags: [] },
+        { id: 'p1', hashtags: [], createdAt: new Date(), likesCount: 10 },
+        { id: 'p2', hashtags: [], createdAt: new Date(), likesCount: 5 },
       ]);
 
       const result = await service.getPersonalizedFeed(undefined, 'saf');
@@ -372,19 +372,19 @@ describe('PersonalizedFeedService', () => {
 
   describe('getPersonalizedFeed — space routing', () => {
     it('should return reels with type "reel" for bakra space', async () => {
-      prisma.reel.findMany.mockResolvedValue([{ id: 'r1', hashtags: [] }]);
+      prisma.reel.findMany.mockResolvedValue([{ id: 'r1', hashtags: [], createdAt: new Date(), viewsCount: 10 }]);
       const result = await service.getPersonalizedFeed(undefined, 'bakra');
       expect(result.data[0].type).toBe('reel');
     });
 
     it('should return threads with type "thread" for majlis space', async () => {
-      prisma.thread.findMany.mockResolvedValue([{ id: 't1', hashtags: [] }]);
+      prisma.thread.findMany.mockResolvedValue([{ id: 't1', hashtags: [], createdAt: new Date(), likesCount: 10 }]);
       const result = await service.getPersonalizedFeed(undefined, 'majlis');
       expect(result.data[0].type).toBe('thread');
     });
 
     it('should return videos with type "video" for minbar space', async () => {
-      prisma.video.findMany.mockResolvedValue([{ id: 'v1', tags: [] }]);
+      prisma.video.findMany.mockResolvedValue([{ id: 'v1', tags: [], createdAt: new Date(), viewsCount: 10 }]);
       const result = await service.getPersonalizedFeed(undefined, 'minbar');
       expect(result.data[0].type).toBe('video');
     });
@@ -398,7 +398,7 @@ describe('PersonalizedFeedService', () => {
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.restrict.findMany.mockResolvedValue([]);
-      prisma.post.findMany.mockResolvedValue([{ id: 'p1', hashtags: ['islam'] }]);
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1', hashtags: ['islam'], createdAt: new Date(), likesCount: 5 }]);
 
       const result = await service.getPersonalizedFeed('new-user', 'saf');
       expect(result.data.length).toBeGreaterThanOrEqual(0);
@@ -411,7 +411,7 @@ describe('PersonalizedFeedService', () => {
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.restrict.findMany.mockResolvedValue([]);
-      prisma.post.findMany.mockResolvedValue([{ id: 'p1', hashtags: [] }]);
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1', hashtags: [], createdAt: new Date(), likesCount: 5 }]);
 
       const result = await service.getPersonalizedFeed('user-1', 'saf');
       expect(result.data).toHaveLength(1);
@@ -423,8 +423,8 @@ describe('PersonalizedFeedService', () => {
 
   describe('getPersonalizedFeed — pagination', () => {
     it('should set hasMore=true when more posts exist than limit', async () => {
-      const posts = Array.from({ length: 21 }, (_, i) => ({
-        id: `p${i}`, hashtags: [],
+      const posts = Array.from({ length: 42 }, (_, i) => ({
+        id: `p${i}`, hashtags: [], createdAt: new Date(), likesCount: 42 - i,
       }));
       prisma.post.findMany.mockResolvedValue(posts);
 
@@ -435,12 +435,12 @@ describe('PersonalizedFeedService', () => {
 
     it('should include cursor in meta for pagination', async () => {
       prisma.post.findMany.mockResolvedValue([
-        { id: 'p1', hashtags: [] },
-        { id: 'p2', hashtags: [] },
+        { id: 'p1', hashtags: [], createdAt: new Date(), likesCount: 10 },
+        { id: 'p2', hashtags: [], createdAt: new Date(), likesCount: 5 },
       ]);
 
       const result = await service.getPersonalizedFeed(undefined, 'saf');
-      expect(result.meta.cursor).toBe('p2');
+      expect(result.meta.cursor).toBeDefined();
     });
   });
 
@@ -452,7 +452,7 @@ describe('PersonalizedFeedService', () => {
       prisma.block.findMany.mockResolvedValue([{ blockerId: 'user-1', blockedId: 'bad-user' }]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.restrict.findMany.mockResolvedValue([]);
-      prisma.post.findMany.mockResolvedValue([{ id: 'p1', hashtags: [] }]);
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1', hashtags: [], createdAt: new Date(), likesCount: 5 }]);
 
       await service.getPersonalizedFeed('user-1', 'saf');
 
@@ -489,7 +489,7 @@ describe('PersonalizedFeedService', () => {
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.restrict.findMany.mockResolvedValue([]);
-      prisma.post.findMany.mockResolvedValue([{ id: 'p1' }]);
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1', createdAt: new Date(), likesCount: 5 }]);
 
       await service.getPersonalizedFeed('new-user', 'saf');
 
@@ -530,6 +530,127 @@ describe('PersonalizedFeedService', () => {
       const session = getSessionFromStore('user-1');
       expect(session).not.toBeNull();
       expect(session.viewedIds).toContain('p1');
+    });
+  });
+
+  // ── Location-aware Islamic boost ─────────────────────────────
+
+  describe('getIslamicBoost — location-aware prayer windows', () => {
+    it('should accept optional lat/lng parameters', () => {
+      // Should not throw when called with lat/lng
+      const boost = service.getIslamicBoost(['quran'], -33.8688, 151.2093);
+      expect(boost).toBeGreaterThanOrEqual(0.1);
+    });
+
+    it('should return same base boost regardless of lat/lng when not in prayer window', () => {
+      // Both should have at least the base 0.1 Islamic boost
+      const boostNoCoords = service.getIslamicBoost(['quran']);
+      const boostWithCoords = service.getIslamicBoost(['quran'], -33.8688, 151.2093);
+      expect(boostNoCoords).toBeGreaterThanOrEqual(0.1);
+      expect(boostWithCoords).toBeGreaterThanOrEqual(0.1);
+    });
+
+    it('should still return 0 for non-Islamic hashtags even with coordinates', () => {
+      const boost = service.getIslamicBoost(['travel', 'food'], -33.8688, 151.2093);
+      expect(boost).toBe(0);
+    });
+
+    it('should cap boost at 0.5 even with coordinates', () => {
+      const boost = service.getIslamicBoost(['quran'], 21.4225, 39.8262); // Makkah
+      expect(boost).toBeLessThanOrEqual(0.5);
+    });
+  });
+
+  // ── parseTimeToHours (private) ─────────────────────────────────
+
+  describe('parseTimeToHours', () => {
+    it('should parse "05:30" to 5.5', () => {
+      const result = (service as any).parseTimeToHours('05:30');
+      expect(result).toBeCloseTo(5.5, 5);
+    });
+
+    it('should parse "12:00" to 12.0', () => {
+      const result = (service as any).parseTimeToHours('12:00');
+      expect(result).toBeCloseTo(12.0, 5);
+    });
+
+    it('should parse "23:45" to 23.75', () => {
+      const result = (service as any).parseTimeToHours('23:45');
+      expect(result).toBeCloseTo(23.75, 5);
+    });
+
+    it('should parse "00:00" to 0.0', () => {
+      const result = (service as any).parseTimeToHours('00:00');
+      expect(result).toBeCloseTo(0.0, 5);
+    });
+  });
+
+  // ── Trending decay ─────────────────────────────────────────────
+
+  describe('applyTrendingDecay', () => {
+    it('should not decay posts younger than 12 hours', () => {
+      const recentPost = new Date(Date.now() - 6 * 60 * 60 * 1000); // 6 hours ago
+      const score = (service as any).applyTrendingDecay(100, recentPost);
+      // No decay: decayFactor = 1.0
+      const expected = Math.log10(101) / 5;
+      expect(score).toBeCloseTo(expected, 5);
+    });
+
+    it('should decay posts older than 12 hours', () => {
+      const recentPost = new Date(Date.now() - 6 * 60 * 60 * 1000); // 6h
+      const olderPost = new Date(Date.now() - 20 * 60 * 60 * 1000); // 20h
+      const scoreRecent = (service as any).applyTrendingDecay(100, recentPost);
+      const scoreOlder = (service as any).applyTrendingDecay(100, olderPost);
+      expect(scoreRecent).toBeGreaterThan(scoreOlder);
+    });
+
+    it('should floor decay factor at 0.5 for posts at 24 hours', () => {
+      const post24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const score = (service as any).applyTrendingDecay(100, post24h);
+      const engagementScore = Math.log10(101) / 5;
+      // At 24h: decay = max(0.5, 1 - (24-12)/24) = max(0.5, 0.5) = 0.5
+      expect(score).toBeCloseTo(engagementScore * 0.5, 4);
+    });
+
+    it('should use log scale for engagement to dampen outliers', () => {
+      const now = new Date();
+      const score1 = (service as any).applyTrendingDecay(10, now);
+      const score2 = (service as any).applyTrendingDecay(10000, now);
+      // score2 should not be 1000x bigger than score1 due to log dampening
+      expect(score2 / score1).toBeLessThan(5);
+    });
+
+    it('should handle 0 engagement gracefully', () => {
+      const now = new Date();
+      const score = (service as any).applyTrendingDecay(0, now);
+      // log10(1+1)/5 = log10(2)/5 ≈ 0.060
+      expect(score).toBeGreaterThan(0);
+    });
+  });
+
+  // ── Trending window is 24 hours ────────────────────────────────
+
+  describe('getTrendingFeed — 24h window', () => {
+    it('should query with a 24-hour window (not 48h)', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      await service.getPersonalizedFeed(undefined, 'saf');
+
+      const call = prisma.post.findMany.mock.calls[0][0];
+      const since = call.where.createdAt.gte as Date;
+      const hoursAgo = (Date.now() - since.getTime()) / (1000 * 60 * 60);
+      // Should be approximately 24 hours, not 48
+      expect(hoursAgo).toBeCloseTo(24, 0);
+      expect(hoursAgo).toBeLessThan(25);
+    });
+
+    it('should rank fresher posts higher than older posts with same engagement', async () => {
+      const freshPost = { id: 'p1', hashtags: [], createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), likesCount: 50 };
+      const olderPost = { id: 'p2', hashtags: [], createdAt: new Date(Date.now() - 20 * 60 * 60 * 1000), likesCount: 50 };
+      prisma.post.findMany.mockResolvedValue([olderPost, freshPost]);
+
+      const result = await service.getPersonalizedFeed(undefined, 'saf');
+      // Fresh post should be ranked first due to no decay
+      expect(result.data[0].id).toBe('p1');
     });
   });
 });

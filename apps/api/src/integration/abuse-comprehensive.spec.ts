@@ -117,7 +117,7 @@ describe('Comprehensive Abuse Vector Tests', () => {
   describe('ThreadsService — interaction abuse', () => {
     let service: ThreadsService;
     let prisma: any;
-    const mockThread = { id: 't-1', userId: 'owner', isRemoved: false, isChainHead: true, visibility: 'PUBLIC', mentions: [], replyPermission: 'everyone' };
+    const mockThread = { id: 't-1', userId: 'owner', isRemoved: false, isChainHead: true, visibility: 'PUBLIC', mentions: [], replyPermission: 'EVERYONE' };
 
     beforeEach(async () => {
       const module = await Test.createTestingModule({

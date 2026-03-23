@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { StreakType, ChallengeType, ChallengeCategory, SeriesCategory, ProfileLayout, ProfileBioFont } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 
 // XP rewards for different actions
@@ -58,18 +59,18 @@ export class GamificationService {
     });
   }
 
-  async updateStreak(userId: string, streakType: string) {
+  async updateStreak(userId: string, streakType: string | StreakType) {
     // Use UTC date string for timezone-safe comparison
     const todayStr = new Date().toISOString().slice(0, 10);
     const today = new Date(todayStr + 'T00:00:00.000Z');
 
     const streak = await this.prisma.userStreak.findUnique({
-      where: { userId_streakType: { userId, streakType } },
+      where: { userId_streakType: { userId, streakType: streakType as StreakType } },
     });
 
     if (!streak) {
       return this.prisma.userStreak.create({
-        data: { userId, streakType, currentDays: 1, longestDays: 1, lastActiveDate: today },
+        data: { userId, streakType: streakType as StreakType, currentDays: 1, longestDays: 1, lastActiveDate: today },
       });
     }
 
@@ -93,7 +94,7 @@ export class GamificationService {
           WHERE "userId" = ${userId} AND "streakType" = ${streakType}
         `;
         return tx.userStreak.findUnique({
-          where: { userId_streakType: { userId, streakType } },
+          where: { userId_streakType: { userId, streakType: streakType as StreakType } },
         });
       });
       if (!updated) return streak;
@@ -108,7 +109,7 @@ export class GamificationService {
 
     // Streak broken — reset
     return this.prisma.userStreak.update({
-      where: { userId_streakType: { userId, streakType } },
+      where: { userId_streakType: { userId, streakType: streakType as StreakType } },
       data: { currentDays: 1, lastActiveDate: today },
     });
   }
@@ -241,7 +242,7 @@ export class GamificationService {
 
     if (type === 'streaks') {
       return this.prisma.userStreak.findMany({
-        where: { streakType: 'posting' },
+        where: { streakType: 'POSTING' },
         orderBy: { currentDays: 'desc' },
         take: safeLim,
         include: {
@@ -314,6 +315,8 @@ export class GamificationService {
     return this.prisma.challenge.create({
       data: {
         ...dto,
+        challengeType: dto.challengeType as ChallengeType,
+        category: dto.category as ChallengeCategory,
         startDate: new Date(dto.startDate),
         endDate: new Date(dto.endDate),
         xpReward: dto.xpReward || 100,
@@ -367,7 +370,25 @@ export class GamificationService {
     });
     if (!participant) throw new NotFoundException('Not participating');
 
-    const newProgress = Math.min(progress, participant.challenge.targetCount);
+    if (participant.completed) {
+      throw new BadRequestException('Challenge already completed');
+    }
+
+    if (participant.challenge.endDate < new Date()) {
+      throw new BadRequestException('Challenge has ended');
+    }
+
+    // Server-side validation: treat progress as an increment, not an absolute value.
+    // Max increment per request is 1 to prevent arbitrary progress jumps.
+    const MAX_INCREMENT = 1;
+    if (progress < 0) {
+      throw new BadRequestException('Progress cannot be negative');
+    }
+    if (progress > MAX_INCREMENT) {
+      throw new BadRequestException(`Progress increment cannot exceed ${MAX_INCREMENT} per request`);
+    }
+
+    const newProgress = Math.min(participant.progress + progress, participant.challenge.targetCount);
     const completed = newProgress >= participant.challenge.targetCount;
 
     const updated = await this.prisma.challengeParticipant.update({
@@ -375,12 +396,12 @@ export class GamificationService {
       data: {
         progress: newProgress,
         completed,
-        completedAt: completed && !participant.completed ? new Date() : participant.completedAt,
+        completedAt: completed ? new Date() : participant.completedAt,
       },
     });
 
     // Award XP on completion and notify challenge creator
-    if (completed && !participant.completed) {
+    if (completed) {
       await this.awardXP(userId, 'challenge_completed', participant.challenge.xpReward);
 
       // Notify the challenge creator that someone completed their challenge
@@ -450,7 +471,7 @@ export class GamificationService {
     title: string; description?: string; coverUrl?: string; category: string;
   }) {
     return this.prisma.series.create({
-      data: { ...dto, userId },
+      data: { ...dto, category: dto.category as SeriesCategory, userId },
     });
   }
 
@@ -667,10 +688,11 @@ export class GamificationService {
     backgroundMusic?: string; showBadges?: boolean; showLevel?: boolean;
     showStreak?: boolean; bioFont?: string;
   }) {
+    const data = { ...dto, layoutStyle: dto.layoutStyle as ProfileLayout | undefined, bioFont: dto.bioFont as ProfileBioFont | undefined };
     return this.prisma.profileCustomization.upsert({
       where: { userId },
-      create: { userId, ...dto },
-      update: dto,
+      create: { userId, ...data },
+      update: data,
     });
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { StageSessionStatus } from '@prisma/client';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 const MAX_STAGE_SPEAKERS = 20;
@@ -281,11 +282,11 @@ export class DiscordFeaturesService {
     const session = await this.prisma.stageSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new NotFoundException('Stage session not found');
     if (session.hostId !== userId) throw new ForbiddenException('Only the host can start the session');
-    if (session.status === 'live') throw new BadRequestException('Session is already live');
-    if (session.status === 'ended') throw new BadRequestException('Cannot start an ended session');
+    if (session.status === 'STAGE_LIVE') throw new BadRequestException('Session is already live');
+    if (session.status === 'STAGE_ENDED') throw new BadRequestException('Cannot start an ended session');
     return this.prisma.stageSession.update({
       where: { id: sessionId },
-      data: { status: 'live', startedAt: new Date() },
+      data: { status: 'STAGE_LIVE', startedAt: new Date() },
     });
   }
 
@@ -293,10 +294,10 @@ export class DiscordFeaturesService {
     const session = await this.prisma.stageSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new NotFoundException('Stage session not found');
     if (session.hostId !== userId) throw new ForbiddenException('Only the host can end the session');
-    if (session.status === 'ended') throw new BadRequestException('Session is already ended');
+    if (session.status === 'STAGE_ENDED') throw new BadRequestException('Session is already ended');
     return this.prisma.stageSession.update({
       where: { id: sessionId },
-      data: { status: 'ended', endedAt: new Date() },
+      data: { status: 'STAGE_ENDED', endedAt: new Date() },
     });
   }
 
@@ -304,7 +305,7 @@ export class DiscordFeaturesService {
     const session = await this.prisma.stageSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new NotFoundException('Stage session not found');
     if (session.hostId !== hostId) throw new ForbiddenException('Only the host can invite speakers');
-    if (session.status !== 'live') throw new BadRequestException('Can only invite speakers to a live session');
+    if (session.status !== StageSessionStatus.STAGE_LIVE) throw new BadRequestException('Can only invite speakers to a live session');
 
     // Validate speaker exists
     const speaker = await this.prisma.user.findUnique({ where: { id: speakerId }, select: { id: true } });
@@ -337,7 +338,7 @@ export class DiscordFeaturesService {
   async joinStageAsListener(sessionId: string, userId: string) {
     const session = await this.prisma.stageSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new NotFoundException();
-    if (session.status !== 'live') throw new BadRequestException('Stage session is not live');
+    if (session.status !== StageSessionStatus.STAGE_LIVE) throw new BadRequestException('Stage session is not live');
 
     await this.prisma.stageSession.update({
       where: { id: sessionId },
@@ -363,7 +364,7 @@ export class DiscordFeaturesService {
   }
 
   async getActiveStageSessions(circleId?: string) {
-    const where: Record<string, unknown> = { status: 'live' };
+    const where: Record<string, unknown> = { status: 'STAGE_LIVE' };
     if (circleId) {
       where.circleId = circleId;
     } else {

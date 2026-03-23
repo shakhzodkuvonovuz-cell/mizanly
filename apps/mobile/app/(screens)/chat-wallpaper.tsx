@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   previewOverlay: {
     position: 'absolute',
     bottom: spacing.sm,
-    left: spacing.sm,
+    start: spacing.sm,
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
   patternCheck: {
     position: 'absolute',
     top: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
   },
   // Custom
   customSection: {
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   customRemove: {
     position: 'absolute',
     top: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
     width: 32,
     height: 32,
     borderRadius: radius.full,

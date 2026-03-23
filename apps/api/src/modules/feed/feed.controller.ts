@@ -107,20 +107,28 @@ export class FeedController {
   @ApiQuery({ name: 'space', required: true, enum: ['saf', 'bakra', 'majlis', 'minbar'] })
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'lat', required: false, type: Number, description: 'User latitude for location-aware Islamic boost' })
+  @ApiQuery({ name: 'lng', required: false, type: Number, description: 'User longitude for location-aware Islamic boost' })
   async getPersonalized(
     @CurrentUser('id') userId: string | undefined,
     @Query('space') space: 'saf' | 'bakra' | 'majlis',
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
   ) {
     const validSpaces = ['saf', 'bakra', 'majlis', 'minbar'] as const;
     const safeSpace = validSpaces.includes(space as typeof validSpaces[number]) ? space : 'saf';
     const parsedLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) : 20), 50);
+    const userLat = lat ? parseFloat(lat) : undefined;
+    const userLng = lng ? parseFloat(lng) : undefined;
     return this.personalizedFeed.getPersonalizedFeed(
       userId,
       safeSpace as 'saf' | 'bakra' | 'majlis',
       cursor,
       parsedLimit,
+      !isNaN(userLat as number) ? userLat : undefined,
+      !isNaN(userLng as number) ? userLng : undefined,
     );
   }
 

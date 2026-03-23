@@ -127,4 +127,50 @@ describe('ChatExportService', () => {
       expect(result.text).toContain('Direct Message');
     });
   });
+
+  describe('generateExport — chunked loading', () => {
+    it('should fetch messages in chunks of 500', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: false, groupName: null, createdAt: new Date() });
+      // First chunk: 500 messages, second chunk: 100 messages (less than chunk size = done)
+      const chunk1 = Array.from({ length: 500 }, (_, i) => ({
+        id: `m${i}`, content: `msg ${i}`, messageType: 'TEXT', createdAt: new Date(),
+        sender: { username: 'u1', displayName: 'User 1' },
+      }));
+      const chunk2 = Array.from({ length: 100 }, (_, i) => ({
+        id: `m${500 + i}`, content: `msg ${500 + i}`, messageType: 'TEXT', createdAt: new Date(),
+        sender: { username: 'u1', displayName: 'User 1' },
+      }));
+      prisma.message.findMany
+        .mockResolvedValueOnce(chunk1)
+        .mockResolvedValueOnce(chunk2);
+
+      const result = await service.generateExport('c1', 'u1', 'json', false) as any;
+      expect(result.messages).toHaveLength(600);
+      expect(prisma.message.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('should stop at MAX_EXPORT_MESSAGES (10000)', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: false, groupName: null, createdAt: new Date() });
+      // Return 500 messages each time — will need 20 chunks to hit 10,000
+      const makeChunk = (offset: number) => Array.from({ length: 500 }, (_, i) => ({
+        id: `m${offset + i}`, content: `msg ${offset + i}`, messageType: 'TEXT', createdAt: new Date(),
+        sender: { username: 'u1', displayName: 'User 1' },
+      }));
+      for (let i = 0; i < 20; i++) {
+        prisma.message.findMany.mockResolvedValueOnce(makeChunk(i * 500));
+      }
+
+      const result = await service.generateExport('c1', 'u1', 'json', false) as any;
+      expect(result.messages).toHaveLength(10000);
+    });
+
+    it('should handle deleted user sender gracefully', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: false, groupName: null, createdAt: new Date() });
+      prisma.message.findMany.mockResolvedValue([
+        { id: 'm1', content: 'orphaned msg', messageType: 'TEXT', createdAt: new Date(), sender: null },
+      ]);
+      const result = await service.generateExport('c1', 'u1', 'json', false) as any;
+      expect(result.messages[0].sender).toBe('Deleted User');
+    });
+  });
 });

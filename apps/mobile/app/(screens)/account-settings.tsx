@@ -469,12 +469,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
   },
-  rowText: { flex: 1, marginRight: spacing.md },
+  rowText: { flex: 1, marginEnd: spacing.md },
   rowLabel: { color: colors.text.primary, fontSize: fontSize.base },
   rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
   rowValue: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
   destructive: { color: colors.error },
-  divider: { height: 0.5, backgroundColor: colors.active.white6, marginLeft: spacing.md },
+  divider: { height: 0.5, backgroundColor: colors.active.white6, marginStart: spacing.md },
 
   versionCard: {
     marginHorizontal: spacing.base,

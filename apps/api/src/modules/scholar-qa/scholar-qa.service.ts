@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { ScholarQACategory, ScholarQAStatus, ScholarVerificationStatus as SVStatus } from '@prisma/client';
 
 @Injectable()
 export class ScholarQAService {
@@ -14,7 +15,7 @@ export class ScholarQAService {
   }) {
     // Verify the user is an approved scholar
     const verification = await this.prisma.scholarVerification.findFirst({
-      where: { userId: scholarId, status: 'approved' },
+      where: { userId: scholarId, status: 'VERIFICATION_PENDING' },
     });
     if (!verification) {
       throw new ForbiddenException('Only verified scholars can schedule Q&A sessions');
@@ -30,7 +31,7 @@ export class ScholarQAService {
         scholarId,
         title: data.title,
         description: data.description,
-        category: data.category,
+        category: data.category as ScholarQACategory,
         language: data.language ?? 'en',
         scheduledAt: new Date(data.scheduledAt),
       },
@@ -40,7 +41,7 @@ export class ScholarQAService {
   async getUpcoming() {
     return this.prisma.scholarQA.findMany({
       where: {
-        status: { in: ['scheduled', 'live'] },
+        status: { in: ['QA_SCHEDULED', 'QA_LIVE'] },
         scheduledAt: { gte: new Date() },
       },
       orderBy: { scheduledAt: 'asc' },
@@ -92,7 +93,7 @@ export class ScholarQAService {
 
     return this.prisma.scholarQA.update({
       where: { id: qaId },
-      data: { status: 'live', startedAt: new Date() },
+      data: { status: 'QA_LIVE', startedAt: new Date() },
     });
   }
 
@@ -103,7 +104,7 @@ export class ScholarQAService {
 
     return this.prisma.scholarQA.update({
       where: { id: qaId },
-      data: { status: 'ended', endedAt: new Date() },
+      data: { status: 'QA_ENDED', endedAt: new Date() },
     });
   }
 
@@ -123,7 +124,7 @@ export class ScholarQAService {
 
   async getRecordings() {
     return this.prisma.scholarQA.findMany({
-      where: { status: 'ended', recordingUrl: { not: null } },
+      where: { status: 'QA_ENDED', recordingUrl: { not: null } },
       orderBy: { endedAt: 'desc' },
       take: 50,
     });

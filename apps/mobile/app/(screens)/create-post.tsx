@@ -408,7 +408,7 @@ export default function CreatePostScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.mediaRow}
-              contentContainerStyle={{ gap: spacing.sm, paddingRight: spacing.base }}
+              contentContainerStyle={{ gap: spacing.sm, paddingEnd: spacing.base }}
             >
               {media.map((item, idx) => (
                 <Animated.View key={idx} entering={FadeInUp.delay(idx * 50)} style={styles.mediaCard}>
@@ -843,22 +843,22 @@ const styles = StyleSheet.create({
   videoBadgeGradient: {
     position: 'absolute',
     bottom: 6,
-    left: 6,
-    right: 6,
+    start: 6,
+    end: 6,
     top: '50%',
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   videoBadge: {
-    position: 'absolute', bottom: 6, left: 6,
+    position: 'absolute', bottom: 6, start: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.md,
     paddingHorizontal: 6, paddingVertical: 2,
   },
   removeMedia: {
     position: 'absolute',
     top: spacing.xs,
-    right: spacing.xs,
+    end: spacing.xs,
     borderRadius: radius.md,
     overflow: 'hidden',
   },
@@ -948,8 +948,8 @@ const styles = StyleSheet.create({
   toolbarGradient: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     paddingTop: spacing.xl,
   },
   toolbarBtnGradient: {
@@ -966,7 +966,7 @@ const styles = StyleSheet.create({
   mediaBadge: {
     position: 'absolute',
     top: -4,
-    right: -4,
+    end: -4,
     backgroundColor: colors.emerald,
     borderRadius: radius.md,
     minWidth: 18,

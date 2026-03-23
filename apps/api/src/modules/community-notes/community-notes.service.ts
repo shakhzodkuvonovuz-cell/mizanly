@@ -1,3 +1,4 @@
+import { EmbeddingContentType, NoteRating, CommunityNoteStatus } from '@prisma/client';
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
@@ -23,20 +24,20 @@ export class CommunityNotesService {
     if (!contentExists) throw new NotFoundException('Content not found');
 
     return this.prisma.communityNote.create({
-      data: { contentType, contentId, authorId, note },
+      data: { contentType: contentType as EmbeddingContentType, contentId, authorId, note },
     });
   }
 
   async getNotesForContent(contentType: string, contentId: string) {
     return this.prisma.communityNote.findMany({
-      where: { contentType, contentId },
+      where: { contentType: contentType as EmbeddingContentType, contentId },
       orderBy: { helpfulVotes: 'desc' },
       take: 10,
     });
   }
 
   async rateNote(userId: string, noteId: string, rating: string) {
-    const validRatings = ['helpful', 'somewhat_helpful', 'not_helpful'];
+    const validRatings = ['NOTE_HELPFUL', 'NOTE_SOMEWHAT_HELPFUL', 'NOTE_NOT_HELPFUL'];
     if (!validRatings.includes(rating)) {
       throw new BadRequestException(`Rating must be one of: ${validRatings.join(', ')}`);
     }
@@ -54,12 +55,12 @@ export class CommunityNotesService {
     if (existing) throw new ConflictException('Already rated this note');
 
     await this.prisma.communityNoteRating.create({
-      data: { noteId, userId, rating },
+      data: { noteId, userId, rating: rating as NoteRating },
     });
 
     // Update vote counts
     // Only fully 'helpful' ratings count toward helpfulVotes; 'somewhat_helpful' is neutral
-    const incrementField = rating === 'helpful' ? 'helpfulVotes' : rating === 'not_helpful' ? 'notHelpfulVotes' : null;
+    const incrementField = rating === 'NOTE_HELPFUL' ? 'helpfulVotes' : rating === 'NOTE_NOT_HELPFUL' ? 'notHelpfulVotes' : null;
     const updated = incrementField
       ? await this.prisma.communityNote.update({
           where: { id: noteId },
@@ -73,7 +74,7 @@ export class CommunityNotesService {
     const totalVotes = updated.helpfulVotes + updated.notHelpfulVotes;
     if (totalVotes >= 5) {
       const helpfulRatio = updated.helpfulVotes / totalVotes;
-      const newStatus = helpfulRatio >= 0.6 ? 'helpful' : 'not_helpful';
+      const newStatus = helpfulRatio >= 0.6 ? CommunityNoteStatus.HELPFUL : CommunityNoteStatus.NOT_HELPFUL;
       await this.prisma.communityNote.update({
         where: { id: noteId },
         data: { status: newStatus },
@@ -85,7 +86,7 @@ export class CommunityNotesService {
 
   async getHelpfulNotes(contentType: string, contentId: string) {
     return this.prisma.communityNote.findMany({
-      where: { contentType, contentId, status: 'helpful' },
+      where: { contentType: contentType as EmbeddingContentType, contentId, status: CommunityNoteStatus.HELPFUL },
       orderBy: { helpfulVotes: 'desc' },
       take: 3,
     });

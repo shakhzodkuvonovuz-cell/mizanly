@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { FatwaTopicType, IslamicEventType, ReputationTier, ScholarTopicType, MadhhabType, VolunteerCategory, MentorshipStatus, FatwaStatus, ScholarVerificationStatus } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -45,7 +46,7 @@ export class CommunityService {
 
     try {
       const mentorship = await this.prisma.mentorship.create({
-        data: { menteeId, mentorId: dto.mentorId, topic: dto.topic, notes: dto.notes },
+        data: { menteeId, mentorId: dto.mentorId, topic: dto.topic as FatwaTopicType, notes: dto.notes },
       });
 
       // Notify the mentor about the new mentorship request
@@ -69,10 +70,10 @@ export class CommunityService {
   async respondMentorship(mentorId: string, menteeId: string, accept: boolean) {
     const m = await this.prisma.mentorship.findUnique({ where: { mentorId_menteeId: { mentorId, menteeId } } });
     if (!m) throw new NotFoundException('Mentorship request not found');
-    if (m.status !== 'pending') throw new BadRequestException('Mentorship request is no longer pending');
+    if (m.status !== MentorshipStatus.MENTORSHIP_PENDING) throw new BadRequestException('Mentorship request is no longer pending');
     return this.prisma.mentorship.update({
       where: { mentorId_menteeId: { mentorId, menteeId } },
-      data: { status: accept ? 'active' : 'cancelled', startedAt: accept ? new Date() : undefined },
+      data: { status: accept ? MentorshipStatus.MENTORSHIP_ACTIVE : MentorshipStatus.MENTORSHIP_CANCELLED, startedAt: accept ? new Date() : undefined },
     });
   }
 
@@ -91,7 +92,7 @@ export class CommunityService {
   // ── Study Circles ───────────────────────────────────────
 
   async createStudyCircle(userId: string, dto: { title: string; description?: string; topic: string; schedule?: string; isOnline?: boolean; maxMembers?: number }) {
-    return this.prisma.studyCircle.create({ data: { leaderId: userId, ...dto } });
+    return this.prisma.studyCircle.create({ data: { leaderId: userId, ...dto, topic: dto.topic as ScholarTopicType } });
   }
 
   async getStudyCircles(topic?: string, cursor?: string, limit = 20) {
@@ -112,7 +113,7 @@ export class CommunityService {
 
   async askFatwa(userId: string, dto: { question: string; madhab?: string; language?: string }) {
     return this.prisma.fatwaQuestion.create({
-      data: { askerId: userId, ...dto },
+      data: { askerId: userId, ...dto, madhab: dto.madhab as MadhhabType | undefined },
     });
   }
 
@@ -134,16 +135,16 @@ export class CommunityService {
   async answerFatwa(scholarId: string, questionId: string, answer: string) {
     // Verify the user is an approved scholar
     const verification = await this.prisma.scholarVerification.findFirst({
-      where: { userId: scholarId, status: 'APPROVED' },
+      where: { userId: scholarId, status: 'VERIFICATION_APPROVED' },
     });
     if (!verification) throw new ForbiddenException('Only verified scholars can answer fatwa questions');
 
     const q = await this.prisma.fatwaQuestion.findUnique({ where: { id: questionId } });
     if (!q) throw new NotFoundException('Fatwa question not found');
-    if (q.status === 'answered') throw new ConflictException('Question already answered');
+    if (q.status === 'FATWA_ANSWERED') throw new ConflictException('Question already answered');
     const updated = await this.prisma.fatwaQuestion.update({
       where: { id: questionId },
-      data: { status: 'answered', answerId: answer, answeredBy: scholarId, answeredAt: new Date() },
+      data: { status: 'FATWA_ANSWERED', answerId: answer, answeredBy: scholarId, answeredAt: new Date() },
     });
 
     // Notify the asker that their question was answered
@@ -165,7 +166,7 @@ export class CommunityService {
     location?: string; lat?: number; lng?: number; date?: string; spotsTotal?: number;
   }) {
     return this.prisma.volunteerOpportunity.create({
-      data: { organizerId: userId, ...dto, date: dto.date ? new Date(dto.date) : undefined },
+      data: { organizerId: userId, ...dto, category: dto.category as VolunteerCategory, date: dto.date ? new Date(dto.date) : undefined },
     });
   }
 
@@ -191,7 +192,7 @@ export class CommunityService {
     endDate?: string; isOnline?: boolean; streamUrl?: string; coverUrl?: string;
   }) {
     return this.prisma.islamicEvent.create({
-      data: { organizerId: userId, ...dto, startDate: new Date(dto.startDate), endDate: dto.endDate ? new Date(dto.endDate) : undefined },
+      data: { organizerId: userId, ...dto, eventType: dto.eventType as IslamicEventType, startDate: new Date(dto.startDate), endDate: dto.endDate ? new Date(dto.endDate) : undefined },
     });
   }
 
@@ -234,13 +235,13 @@ export class CommunityService {
     }
 
     // Update tier
-    let tier = 'newcomer';
-    if (rep.score >= 1000) tier = 'elder';
-    else if (rep.score >= 500) tier = 'guardian';
-    else if (rep.score >= 200) tier = 'trusted';
-    else if (rep.score >= 50) tier = 'member';
+    let tier = 'NEWCOMER';
+    if (rep.score >= 1000) tier = 'ELDER';
+    else if (rep.score >= 500) tier = 'GUARDIAN';
+    else if (rep.score >= 200) tier = 'TRUSTED';
+    else if (rep.score >= 50) tier = 'MEMBER';
 
-    return this.prisma.userReputation.update({ where: { userId }, data: { tier } });
+    return this.prisma.userReputation.update({ where: { userId }, data: { tier: tier as ReputationTier } });
   }
 
   // ── Voice Posts ─────────────────────────────────────────

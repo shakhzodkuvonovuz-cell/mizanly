@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: radius.full,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   actions: {
     flexDirection: 'row',

@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { EventTypeEnum, EventPrivacy } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { CreateEventDto, UpdateEventDto } from './events.controller';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -29,8 +30,8 @@ export class EventsService {
       locationUrl: dto.locationUrl,
       isOnline: dto.isOnline ?? false,
       onlineUrl: dto.onlineUrl,
-      eventType: dto.eventType ?? 'in_person',
-      privacy: dto.privacy ?? 'public',
+      eventType: (dto.eventType ?? 'IN_PERSON') as EventTypeEnum,
+      privacy: (dto.privacy ?? 'EVENT_PUBLIC') as EventPrivacy,
       user: { connect: { id: userId } },
     };
     if (dto.communityId) {
@@ -77,13 +78,13 @@ export class EventsService {
 
     // Privacy filter — default to public for all users unless explicitly requesting private
     if (privacy) {
-      where.privacy = privacy;
+      where.privacy = privacy as EventPrivacy;
     } else {
-      where.privacy = 'public';
+      where.privacy = EventPrivacy.EVENT_PUBLIC;
     }
 
     if (eventType) {
-      where.eventType = eventType;
+      where.eventType = eventType as EventTypeEnum;
     }
 
     const events = await this.prisma.event.findMany({
@@ -175,7 +176,7 @@ export class EventsService {
     }
 
     // Check privacy: if private and user not owner, not allowed
-    if (event.privacy === 'private' && event.userId !== userId) {
+    if (event.privacy === 'EVENT_PRIVATE' && event.userId !== userId) {
       throw new ForbiddenException('You do not have permission to view this event');
     }
 
@@ -229,8 +230,8 @@ export class EventsService {
     if (dto.locationUrl !== undefined) data.locationUrl = dto.locationUrl;
     if (dto.isOnline !== undefined) data.isOnline = dto.isOnline;
     if (dto.onlineUrl !== undefined) data.onlineUrl = dto.onlineUrl;
-    if (dto.eventType !== undefined) data.eventType = dto.eventType;
-    if (dto.privacy !== undefined) data.privacy = dto.privacy;
+    if (dto.eventType !== undefined) data.eventType = dto.eventType as EventTypeEnum;
+    if (dto.privacy !== undefined) data.privacy = dto.privacy as EventPrivacy;
     if (dto.communityId !== undefined) {
       data.community = dto.communityId
         ? { connect: { id: dto.communityId } }
@@ -310,7 +311,7 @@ export class EventsService {
     }
 
     // If private event, only owner and possibly invited users can RSVP
-    if (event.privacy === 'private' && event.userId !== userId) {
+    if (event.privacy === 'EVENT_PRIVATE' && event.userId !== userId) {
       throw new ForbiddenException('You are not invited to this private event');
     }
 

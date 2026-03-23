@@ -692,8 +692,8 @@ const styles = StyleSheet.create({
   },
   captionOverlay: {
     position: 'absolute',
-    left: spacing.base,
-    right: spacing.base,
+    start: spacing.base,
+    end: spacing.base,
     alignItems: 'center',
   },
   captionBackground: {
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
   timestampBadge: {
     position: 'absolute',
     top: spacing.md,
-    right: spacing.md,
+    end: spacing.md,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -910,8 +910,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
   },
   bottomBarGradient: {
     flexDirection: 'row',

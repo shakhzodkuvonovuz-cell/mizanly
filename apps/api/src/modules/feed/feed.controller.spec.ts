@@ -100,7 +100,7 @@ describe('FeedController', () => {
     it('should call personalizedFeed.getPersonalizedFeed', async () => {
       mockPersonalizedFeed.getPersonalizedFeed.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } });
       const result = await controller.getPersonalized(undefined, 'saf');
-      expect(mockPersonalizedFeed.getPersonalizedFeed).toHaveBeenCalledWith(undefined, 'saf', undefined, 20);
+      expect(mockPersonalizedFeed.getPersonalizedFeed).toHaveBeenCalledWith(undefined, 'saf', undefined, 20, undefined, undefined);
       expect(result.data).toEqual([]);
     });
   });
@@ -177,7 +177,7 @@ describe('FeedController', () => {
     it('should default to saf for invalid space', async () => {
       mockPersonalizedFeed.getPersonalizedFeed.mockResolvedValue({ data: [], meta: { hasMore: false } });
       await controller.getPersonalized(undefined, 'invalid' as any);
-      expect(mockPersonalizedFeed.getPersonalizedFeed).toHaveBeenCalledWith(undefined, 'saf', undefined, 20);
+      expect(mockPersonalizedFeed.getPersonalizedFeed).toHaveBeenCalledWith(undefined, 'saf', undefined, 20, undefined, undefined);
     });
   });
 });

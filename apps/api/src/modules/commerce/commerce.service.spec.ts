@@ -10,7 +10,7 @@ describe('CommerceService', () => {
 
   const mockProduct = {
     id: 'prod-1', sellerId: 'seller-1', title: 'Halal Snacks', price: 15.99,
-    currency: 'USD', status: 'active', stock: 10, rating: 4.5,
+    currency: 'USD', status: 'ACTIVE', stock: 10, rating: 4.5,
   };
 
   beforeEach(async () => {
@@ -100,7 +100,7 @@ describe('CommerceService', () => {
 
   describe('premiumSubscription', () => {
     it('should return premium status', async () => {
-      prisma.premiumSubscription.findUnique.mockResolvedValue({ status: 'active' });
+      prisma.premiumSubscription.findUnique.mockResolvedValue({ status: 'ACTIVE' });
       const result = await service.getPremiumStatus('user-1');
       expect(result.isPremium).toBe(true);
     });
@@ -112,7 +112,7 @@ describe('CommerceService', () => {
     });
 
     it('should throw ConflictException when already subscribed', async () => {
-      prisma.premiumSubscription.findUnique.mockResolvedValue({ status: 'active' });
+      prisma.premiumSubscription.findUnique.mockResolvedValue({ status: 'ACTIVE' });
       await expect(service.subscribePremium('user-1', 'monthly'))
         .rejects.toThrow(ConflictException);
     });
@@ -197,10 +197,10 @@ describe('CommerceService', () => {
 
   describe('cancelPremium', () => {
     it('should cancel premium subscription', async () => {
-      prisma.premiumSubscription.findUnique.mockResolvedValue({ id: 'ps-1', userId: 'user-1', status: 'active' });
-      prisma.premiumSubscription.update.mockResolvedValue({ status: 'cancelled' });
+      prisma.premiumSubscription.findUnique.mockResolvedValue({ id: 'ps-1', userId: 'user-1', status: 'ACTIVE' });
+      prisma.premiumSubscription.update.mockResolvedValue({ status: 'CANCELLED' });
       const result = await service.cancelPremium('user-1');
-      expect(result.status).toBe('cancelled');
+      expect(result.status).toBe('CANCELLED');
     });
 
     it('should throw NotFoundException when no subscription', async () => {

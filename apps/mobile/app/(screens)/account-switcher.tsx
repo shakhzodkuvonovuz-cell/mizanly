@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   heroBorder: {
     position: 'absolute',
-    left: 0,
+    start: 0,
     top: 0,
     bottom: 0,
     width: 4,
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   onlineRing: {
     position: 'absolute',
     bottom: 0,
-    right: 0,
+    end: 0,
     width: 18,
     height: 18,
     borderRadius: radius.full,
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   accountTypeContainer: {
     position: 'absolute',
     top: spacing.lg,
-    right: spacing.lg,
+    end: spacing.lg,
     borderRadius: radius.full,
     overflow: 'hidden',
   },

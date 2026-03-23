@@ -48,10 +48,10 @@ describe('CommunityService', () => {
     it('should create a mentorship request', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'mentor-1' });
       prisma.mentorship.create.mockResolvedValue({
-        mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'pending', topic: 'quran',
+        mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'MENTORSHIP_PENDING', topic: 'quran',
       });
       const result = await service.requestMentorship('mentee-1', { mentorId: 'mentor-1', topic: 'quran' });
-      expect(result.status).toBe('pending');
+      expect(result.status).toBe('MENTORSHIP_PENDING');
     });
 
     it('should throw BadRequestException when mentoring self', async () => {
@@ -62,15 +62,15 @@ describe('CommunityService', () => {
 
   describe('respondMentorship', () => {
     it('should accept mentorship', async () => {
-      prisma.mentorship.findUnique.mockResolvedValue({ mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'pending' });
-      prisma.mentorship.update.mockResolvedValue({ status: 'active', startedAt: new Date() });
+      prisma.mentorship.findUnique.mockResolvedValue({ mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'MENTORSHIP_PENDING' });
+      prisma.mentorship.update.mockResolvedValue({ status: 'MENTORSHIP_ACTIVE', startedAt: new Date() });
 
       const result = await service.respondMentorship('mentor-1', 'mentee-1', true);
-      expect(result.status).toBe('active');
+      expect(result.status).toBe('MENTORSHIP_ACTIVE');
     });
 
     it('should decline mentorship', async () => {
-      prisma.mentorship.findUnique.mockResolvedValue({ mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'pending' });
+      prisma.mentorship.findUnique.mockResolvedValue({ mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'MENTORSHIP_PENDING' });
       prisma.mentorship.update.mockResolvedValue({ status: 'cancelled' });
 
       const result = await service.respondMentorship('mentor-1', 'mentee-1', false);
@@ -81,18 +81,18 @@ describe('CommunityService', () => {
   describe('reputation', () => {
     it('should create default reputation', async () => {
       prisma.userReputation.findUnique.mockResolvedValue(null);
-      prisma.userReputation.create.mockResolvedValue({ userId: 'user-1', score: 0, tier: 'newcomer' });
+      prisma.userReputation.create.mockResolvedValue({ userId: 'user-1', score: 0, tier: 'NEWCOMER' });
 
       const result = await service.getReputation('user-1');
-      expect(result.tier).toBe('newcomer');
+      expect(result.tier).toBe('NEWCOMER');
     });
 
     it('should update tier based on score', async () => {
       prisma.userReputation.upsert.mockResolvedValue({ score: 250 });
-      prisma.userReputation.update.mockResolvedValue({ score: 250, tier: 'trusted' });
+      prisma.userReputation.update.mockResolvedValue({ score: 250, tier: 'TRUSTED' });
 
       const result = await service.updateReputation('user-1', 50, 'helpful_comment');
-      expect(result.tier).toBe('trusted');
+      expect(result.tier).toBe('TRUSTED');
     });
   });
 
@@ -140,14 +140,14 @@ describe('CommunityService', () => {
   describe('createEvent', () => {
     it('should create an Islamic event', async () => {
       prisma.islamicEvent.create.mockResolvedValue({
-        id: 'ev-1', title: 'Eid Prayer', eventType: 'eid_prayer',
+        id: 'ev-1', title: 'Eid Prayer', eventType: 'EID_PRAYER',
       });
 
       const result = await service.createEvent('user-1', {
-        title: 'Eid Prayer', eventType: 'eid_prayer',
+        title: 'Eid Prayer', eventType: 'EID_PRAYER',
         startDate: '2026-03-30T06:00:00Z',
       });
-      expect(result.eventType).toBe('eid_prayer');
+      expect(result.eventType).toBe('EID_PRAYER');
     });
   });
 
@@ -240,7 +240,7 @@ describe('CommunityService', () => {
     });
 
     it('should throw BadRequestException when not pending', async () => {
-      prisma.mentorship.findUnique.mockResolvedValue({ status: 'active' });
+      prisma.mentorship.findUnique.mockResolvedValue({ status: 'MENTORSHIP_ACTIVE' });
       await expect(service.respondMentorship('m1', 'e1', true)).rejects.toThrow(BadRequestException);
     });
   });
@@ -260,11 +260,11 @@ describe('CommunityService', () => {
 
   describe('answerFatwa', () => {
     it('should answer a pending fatwa question for verified scholar', async () => {
-      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'APPROVED' });
-      prisma.fatwaQuestion.findUnique.mockResolvedValue({ id: 'fq-1', status: 'pending' });
-      prisma.fatwaQuestion.update.mockResolvedValue({ id: 'fq-1', status: 'answered' });
+      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'VERIFICATION_APPROVED' });
+      prisma.fatwaQuestion.findUnique.mockResolvedValue({ id: 'fq-1', status: 'MENTORSHIP_PENDING' });
+      prisma.fatwaQuestion.update.mockResolvedValue({ id: 'fq-1', status: 'FATWA_ANSWERED' });
       const result = await service.answerFatwa('scholar-1', 'fq-1', 'It is permissible.');
-      expect(result.status).toBe('answered');
+      expect(result.status).toBe('FATWA_ANSWERED');
     });
 
     it('should throw ForbiddenException for non-verified scholar', async () => {
@@ -273,14 +273,14 @@ describe('CommunityService', () => {
     });
 
     it('should throw NotFoundException for missing question', async () => {
-      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'APPROVED' });
+      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'VERIFICATION_APPROVED' });
       prisma.fatwaQuestion.findUnique.mockResolvedValue(null);
       await expect(service.answerFatwa('scholar-1', 'fq-1', 'answer')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException if already answered', async () => {
-      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'APPROVED' });
-      prisma.fatwaQuestion.findUnique.mockResolvedValue({ id: 'fq-1', status: 'answered' });
+      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'VERIFICATION_APPROVED' });
+      prisma.fatwaQuestion.findUnique.mockResolvedValue({ id: 'fq-1', status: 'FATWA_ANSWERED' });
       await expect(service.answerFatwa('scholar-1', 'fq-1', 'answer')).rejects.toThrow(ConflictException);
     });
   });

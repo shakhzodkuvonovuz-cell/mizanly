@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   },
   mediaPreviewContent: {
     gap: spacing.sm,
-    paddingRight: spacing.base,
+    paddingEnd: spacing.base,
   },
   mediaPreviewItem: {
     width: 120,
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
   mediaPreviewClose: {
     position: 'absolute',
     top: 4,
-    right: 4,
+    end: 4,
     backgroundColor: 'rgba(0,0,0,0.6)',
     borderRadius: radius.full,
     padding: 2,
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
   videoBadge: {
     position: 'absolute',
     bottom: 4,
-    left: 4,
+    start: 4,
     backgroundColor: 'rgba(0,0,0,0.6)',
     borderRadius: radius.sm,
     padding: 2,
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     color: colors.text.primary,
     fontSize: fontSize.base,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   composeButton: {
     width: 40,
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   postUserInfo: {
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
     flex: 1,
   },
   postUserName: {
@@ -644,12 +644,12 @@ const styles = StyleSheet.create({
   postAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: spacing.xl,
+    marginEnd: spacing.xl,
   },
   postActionCount: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   likedCount: {
     color: colors.error,

@@ -107,6 +107,15 @@ describe('LiveService', () => {
       const result = await service.getScheduled();
       expect(result.data).toEqual([]);
     });
+
+    it('uses select-based query excluding credentials', async () => {
+      prisma.liveSession.findMany.mockResolvedValue([]);
+      await service.getScheduled();
+      const callArgs = prisma.liveSession.findMany.mock.calls[0][0];
+      expect(callArgs.select).toBeDefined();
+      expect(callArgs.select.streamKey).toBeUndefined();
+      expect(callArgs.select.host.select.id).toBe(true);
+    });
   });
 
   describe('getActive', () => {
@@ -117,6 +126,21 @@ describe('LiveService', () => {
       const result = await service.getActive();
       expect(result.data).toHaveLength(1);
       expect(result.data[0].id).toBe('live1');
+    });
+
+    it('uses select with host relation instead of include for lightweight queries', async () => {
+      prisma.liveSession.findMany.mockResolvedValue([]);
+      await service.getActive();
+      const callArgs = prisma.liveSession.findMany.mock.calls[0][0];
+      // Should use select (not include) for lightweight list view
+      expect(callArgs.select).toBeDefined();
+      expect(callArgs.include).toBeUndefined();
+      // Host should use selective fields
+      expect(callArgs.select.host).toEqual({
+        select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+      });
+      // streamKey should NOT be selected (it's a credential)
+      expect(callArgs.select.streamKey).toBeUndefined();
     });
   });
 
@@ -134,6 +158,15 @@ describe('LiveService', () => {
       const result = await service.getHostSessions('user1');
       expect(result.data).toEqual([]);
       expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('uses select-based query with host relation', async () => {
+      prisma.liveSession.findMany.mockResolvedValue([]);
+      await service.getHostSessions('user1');
+      const callArgs = prisma.liveSession.findMany.mock.calls[0][0];
+      expect(callArgs.select).toBeDefined();
+      expect(callArgs.select.host).toBeDefined();
+      expect(callArgs.select.streamKey).toBeUndefined();
     });
   });
 
@@ -212,28 +245,28 @@ describe('LiveService', () => {
   describe('raiseHand', () => {
     it('should update participant role to raised_hand', async () => {
       prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE' });
-      prisma.liveParticipant.findUnique.mockResolvedValue({ sessionId: 'live1', userId: 'user1', role: 'viewer' });
-      prisma.liveParticipant.update.mockResolvedValue({ role: 'raised_hand' });
+      prisma.liveParticipant.findUnique.mockResolvedValue({ sessionId: 'live1', userId: 'user1', role: 'VIEWER' });
+      prisma.liveParticipant.update.mockResolvedValue({ role: 'RAISED_HAND' });
       const result = await service.raiseHand('live1', 'user1');
-      expect(result.role).toBe('raised_hand');
+      expect(result.role).toBe('RAISED_HAND');
     });
   });
 
   describe('promoteToSpeaker', () => {
     it('should promote participant to speaker', async () => {
       prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1' });
-      prisma.liveParticipant.update.mockResolvedValue({ role: 'speaker' });
+      prisma.liveParticipant.update.mockResolvedValue({ role: 'SPEAKER' });
       const result = await service.promoteToSpeaker('live1', 'host1', 'user1');
-      expect(result.role).toBe('speaker');
+      expect(result.role).toBe('SPEAKER');
     });
   });
 
   describe('demoteToViewer', () => {
     it('should demote participant to viewer', async () => {
       prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1' });
-      prisma.liveParticipant.update.mockResolvedValue({ role: 'viewer' });
+      prisma.liveParticipant.update.mockResolvedValue({ role: 'VIEWER' });
       const result = await service.demoteToViewer('live1', 'host1', 'user1');
-      expect(result.role).toBe('viewer');
+      expect(result.role).toBe('VIEWER');
     });
   });
 

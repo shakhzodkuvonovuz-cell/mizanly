@@ -27,7 +27,7 @@ class AddKeywordDto {
 }
 
 class AutoPlayDto {
-  @IsString() @IsIn(['wifi', 'always', 'never']) autoPlaySetting: string;
+  @IsString() @IsIn(['WIFI', 'ALWAYS', 'NEVER']) autoPlaySetting: string;
 }
 
 class LogScreenTimeDto {

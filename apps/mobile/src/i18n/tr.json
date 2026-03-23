@@ -196,7 +196,8 @@
     "discardChanges": "Değişiklikleri sil?",
     "unsavedChangesMessage": "Kaydedilmemiş değişiklikleriniz var. Ne yapmak istersiniz?",
     "saved": "Saved",
-    "rateLimited": "Yavaşla! {{seconds}} saniye sonra tekrar dene"
+    "rateLimited": "Yavaşla! {{seconds}} saniye sonra tekrar dene",
+    "views": "görüntüleme"
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -1028,12 +1029,6 @@
     "dhikr": "Zikir Sayacı",
     "zakat": "Zekât Hesaplayıcı",
     "mosque": "Yakındaki Camiler",
-    "duaCollection": "Dua Koleksiyonu",
-    "fastingTracker": "Oruç Takipçisi",
-    "halalFinder": "Helal Bulucu",
-    "hifzTracker": "Hıfz Takipçisi",
-    "morningBriefing": "Sabah Brifing",
-    "namesOfAllah": "Esmaül Hüsna",
     "ramadan": "Ramazan",
     "quran": "Kur'an",
     "surah": "Sure",
@@ -1073,7 +1068,8 @@
     "qiblaDirectionDegrees": "Kuzeyden {{degrees}}°",
     "openCompass": "Pusula Ac",
     "calculating": "Hesaplaniyor...",
-    "adhanNotification": "{{prayer}} bildirimi"
+    "adhanNotification": "{{prayer}} bildirimi",
+    "deviceHeading": "Cihaz yönü"
   },
   "prayerNotifications": {
     "settings": "Namaz Bildirimleri Ayarları",
@@ -1560,7 +1556,15 @@
     "hostedBy": "Hosted by {{name}}",
     "watchingCount": "{{count}} watching",
     "joinParty": "Join Party",
-    "start": "Start"
+    "start": "Start",
+    "watchPartyCreated": "İzleme partisi oluşturuldu!",
+    "selectVideo": "Video Seç",
+    "changeVideo": "Videoyu Değiştir",
+    "searchVideos": "Video ara...",
+    "noVideosFound": "Video bulunamadı",
+    "tryDifferentSearch": "Farklı bir arama terimi deneyin",
+    "sharePartyLink": "Parti Bağlantısını Paylaş",
+    "joinMyWatchParty": "İzleme partime katıl"
   },
   "discover": {
     "title": "Keşfet",
@@ -2157,18 +2161,18 @@
       }
     },
     "banned": {
-      "title": "Hesap Ask\u0131ya Al\u0131nd\u0131",
-      "subtitle": "Hesab\u0131n\u0131z topluluk kurallar\u0131n\u0131 ihlal etti\u011fi i\u00e7in ask\u0131ya al\u0131nd\u0131.",
-      "appealButton": "\u0130tiraz Et",
-      "signOut": "\u00c7\u0131k\u0131\u015f Yap",
-      "contactSupport": "Bunun bir hata oldu\u011funu d\u00fc\u015f\u00fcn\u00fcyorsan\u0131z, karara itiraz edebilir veya destekle ileti\u015fime ge\u00e7ebilirsiniz."
+      "title": "Hesap Askıya Alındı",
+      "subtitle": "Hesabınız topluluk kurallarını ihlal ettiği için askıya alındı.",
+      "appealButton": "İtiraz Et",
+      "signOut": "Çıkış Yap",
+      "contactSupport": "Bunun bir hata olduğunu düşünüyorsanız, karara itiraz edebilir veya destekle iletişime geçebilirsiniz."
     },
     "maintenance": {
-      "title": "K\u0131sa S\u00fcre \u0130\u00e7inde D\u00f6nece\u011fiz",
-      "subtitle": "Mizanly planl\u0131 bak\u0131m \u00e7al\u0131\u015fmas\u0131 yap\u0131yor. Deneyiminizi iyile\u015ftirmek i\u00e7in \u00e7al\u0131\u015f\u0131yoruz.",
+      "title": "Kısa Süre İçinde Döneceğiz",
+      "subtitle": "Mizanly planlı bakım çalışması yapıyor. Deneyiminizi iyileştirmek için çalışıyoruz.",
       "retryButton": "Tekrar Dene",
-      "stillDown": "Sunucu hala bak\u0131m alt\u0131nda. L\u00fctfen k\u0131sa bir s\u00fcre sonra tekrar deneyin.",
-      "hint": "Bu genellikle sadece birka\u00e7 dakika s\u00fcrer. Sabr\u0131n\u0131z i\u00e7in te\u015fekk\u00fcr ederiz."
+      "stillDown": "Sunucu hala bakım altında. Lütfen kısa bir süre sonra tekrar deneyin.",
+      "hint": "Bu genellikle sadece birkaç dakika sürer. Sabrınız için teşekkür ederiz."
     }
   },
   "createReel": {
@@ -3317,13 +3321,7 @@
     "myMosques": "Camilerim",
     "nearbyMosques": "Yakındaki Camiler",
     "madhab": "Mezhep",
-    "createMosque": "Cami Sayfası Oluştur",
-    "duaCollection": "Dua Koleksiyonu",
-    "fastingTracker": "Oruç Takipçisi",
-    "halalFinder": "Helal Bulucu",
-    "hifzTracker": "Hıfz Takipçisi",
-    "morningBriefing": "Sabah Brifing",
-    "namesOfAllah": "Esmaül Hüsna"
+    "createMosque": "Cami Sayfası Oluştur"
   },
   "prayer": {
     "timeFor": "{{prayer}} vakti geldi",
@@ -3792,5 +3790,12 @@
     "newFollowers": "yeni takipci",
     "noGrowthData": "Henuz buyume verisi yok",
     "noGrowthDataSubtitle": "Kitleniz buyudukce takipci buyume verileri gorunecektir"
+  },
+  "chat": {
+    "inviteLink": "Davet Bağlantısı",
+    "inviteLinkHint": "Gruba davet etmek için bu bağlantıyı paylaşın",
+    "joinGroupVia": "Mizanly'deki grubuma katıl",
+    "linkCopied": "Bağlantı panoya kopyalandı",
+    "copyLink": "Bağlantıyı Kopyala"
   }
 }

@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { ThumbnailContentType, DownloadQuality } from '@prisma/client';
 import { CreateDownloadDto } from './dto/create-download.dto';
 
 @Injectable()
@@ -25,16 +26,16 @@ export class DownloadsService {
     const download = await this.prisma.offlineDownload.upsert({
       where: { userId_contentId: { userId, contentId: dto.contentId } },
       update: {
-        status: 'pending',
+        status: 'PENDING',
         progress: 0,
-        quality: dto.quality ?? 'auto',
+        quality: (dto.quality as DownloadQuality) ?? 'auto',
       },
       create: {
         userId,
-        contentType: dto.contentType,
+        contentType: dto.contentType as ThumbnailContentType,
         contentId: dto.contentId,
-        quality: dto.quality ?? 'auto',
-        status: 'pending',
+        quality: (dto.quality as DownloadQuality) ?? 'auto',
+        status: 'PENDING',
         progress: 0,
       },
     });
@@ -115,7 +116,7 @@ export class DownloadsService {
   /** Aggregate fileSize for all complete downloads of a user */
   async getStorageUsed(userId: string) {
     const result = await this.prisma.offlineDownload.aggregate({
-      where: { userId, status: 'complete' },
+      where: { userId, status: 'COMPLETE' },
       _sum: { fileSize: true },
       _count: true,
     });

@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
   removeVideoButton: {
     position: 'absolute',
     top: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
     backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: radius.full,
     width: 32,
@@ -947,8 +947,8 @@ const styles = StyleSheet.create({
   countdownOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     zIndex: 100,
     alignItems: 'center',
@@ -989,7 +989,7 @@ const styles = StyleSheet.create({
   videoInfoBadge: {
     position: 'absolute',
     bottom: spacing.sm,
-    left: spacing.sm,
+    start: spacing.sm,
   },
   videoInfoGradient: {
     flexDirection: 'row',
@@ -1211,8 +1211,8 @@ const styles = StyleSheet.create({
   cameraTimerOverlay: {
     position: 'absolute' as const,
     top: spacing.md,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     alignItems: 'center' as const,
   },
   cameraTimerBadge: {
@@ -1238,8 +1238,8 @@ const styles = StyleSheet.create({
   cameraControls: {
     position: 'absolute' as const,
     bottom: spacing.lg,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,

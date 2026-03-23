@@ -281,12 +281,12 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   ringWrap: {
-    paddingLeft: spacing.sm,
+    paddingStart: spacing.sm,
   },
   ringWrapBottom: {
     position: 'absolute',
     bottom: spacing.xs,
-    right: spacing.sm,
+    end: spacing.sm,
   },
   toggleRow: {
     flexDirection: 'row',
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     borderColor: colors.active.white6,
   },
   toggleIconBg: {
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   toggleIconGradient: {
     width: 40,

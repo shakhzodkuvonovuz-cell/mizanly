@@ -55,7 +55,7 @@ describe('EventsService', () => {
       endDate: '2026-03-20T12:00:00Z',
       location: 'Test Location',
       isOnline: false,
-      eventType: 'in_person',
+      eventType: 'IN_PERSON',
     };
     const baseEvent = {
       id: 'event1',
@@ -69,8 +69,8 @@ describe('EventsService', () => {
       locationUrl: 'https://maps.example.com',
       isOnline: false,
       onlineUrl: undefined,
-      eventType: 'in_person',
-      privacy: 'public',
+      eventType: 'IN_PERSON',
+      privacy: 'EVENT_PUBLIC',
       createdAt: new Date(),
       updatedAt: new Date(),
       user: {
@@ -148,7 +148,7 @@ describe('EventsService', () => {
       expect(result.meta).toEqual({ cursor: null, hasMore: false });
       expect(mockPrismaService.event.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { privacy: 'public' },
+          where: { privacy: 'EVENT_PUBLIC' },
           take: 21,
           orderBy: { startDate: 'desc' },
         }),
@@ -174,11 +174,11 @@ describe('EventsService', () => {
       mockPrismaService.event.findMany.mockResolvedValue([]);
       mockPrismaService.eventRSVP.groupBy.mockResolvedValue([]);
 
-      await service.listEvents('user1', undefined, 20, 'public', 'in_person');
+      await service.listEvents('user1', undefined, 20, 'EVENT_PUBLIC', 'IN_PERSON');
 
       expect(mockPrismaService.event.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { privacy: 'public', eventType: 'in_person' },
+          where: { privacy: 'EVENT_PUBLIC', eventType: 'IN_PERSON' },
         }),
       );
     });
@@ -191,7 +191,7 @@ describe('EventsService', () => {
 
       expect(mockPrismaService.event.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { privacy: 'public' },
+          where: { privacy: 'EVENT_PUBLIC' },
         }),
       );
     });
@@ -204,7 +204,7 @@ describe('EventsService', () => {
       const mockEvent = {
         id: eventId,
         userId: 'user2',
-        privacy: 'public',
+        privacy: 'EVENT_PUBLIC',
         title: 'Test Event',
         user: { id: 'user2', username: 'user2' },
         community: null,
@@ -242,7 +242,7 @@ describe('EventsService', () => {
       const mockEvent = {
         id: 'event1',
         userId: 'owner',
-        privacy: 'private',
+        privacy: 'EVENT_PRIVATE',
         user: {},
         community: null,
         _count: { rsvps: 0 },
@@ -256,7 +256,7 @@ describe('EventsService', () => {
       const mockEvent = {
         id: 'event1',
         userId: 'owner',
-        privacy: 'private',
+        privacy: 'EVENT_PRIVATE',
         user: {},
         community: null,
         _count: { rsvps: 0 },
@@ -348,7 +348,7 @@ describe('EventsService', () => {
 
   describe('rsvpToEvent', () => {
     const futureEvent = {
-      id: 'event1', privacy: 'public', userId: 'owner',
+      id: 'event1', privacy: 'EVENT_PUBLIC', userId: 'owner',
       startDate: '2027-12-01T00:00:00Z', endDate: '2027-12-02T00:00:00Z',
     };
 
@@ -378,14 +378,14 @@ describe('EventsService', () => {
     });
 
     it('should throw ForbiddenException for private event when user not owner', async () => {
-      const privateEvent = { ...futureEvent, privacy: 'private' };
+      const privateEvent = { ...futureEvent, privacy: 'EVENT_PRIVATE' };
       mockPrismaService.event.findUnique.mockResolvedValue(privateEvent);
 
       await expect(service.rsvpToEvent('other-user', 'event1', 'going')).rejects.toThrow(ForbiddenException);
     });
 
     it('should allow owner to RSVP to private event', async () => {
-      const privateEvent = { ...futureEvent, privacy: 'private' };
+      const privateEvent = { ...futureEvent, privacy: 'EVENT_PRIVATE' };
       mockPrismaService.event.findUnique.mockResolvedValue(privateEvent);
       mockPrismaService.eventRSVP.upsert.mockResolvedValue({ status: 'going' });
 

@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   methodContent: {
     flex: 1,
@@ -818,8 +818,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['2xl'],
     paddingTop: spacing.base,

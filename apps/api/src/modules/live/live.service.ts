@@ -1,7 +1,31 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { LiveRole } from '@prisma/client';
 import { LiveStatus, LiveType, Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
+
+/** Lightweight select for list views — excludes streamKey (credential), playbackUrl, streamId, recordingUrl */
+const LIVE_SESSION_LIST_SELECT = {
+  id: true,
+  hostId: true,
+  title: true,
+  description: true,
+  thumbnailUrl: true,
+  liveType: true,
+  status: true,
+  currentViewers: true,
+  totalViews: true,
+  peakViewers: true,
+  isRecorded: true,
+  isRehearsal: true,
+  isSubscribersOnly: true,
+  scheduledAt: true,
+  startedAt: true,
+  endedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+};
 
 @Injectable()
 export class LiveService {
@@ -80,8 +104,9 @@ export class LiveService {
 
     const sessions = await this.prisma.liveSession.findMany({
       where,
-      // Host is always required — lightweight scalar select, no N+1
-      include: { host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
+      // Select only fields needed for list views — excludes streamKey (credential)
+      // and other heavy fields not needed in listings
+      select: LIVE_SESSION_LIST_SELECT,
       orderBy: { currentViewers: 'desc' },
       take: limit + 1,
     });
@@ -93,7 +118,7 @@ export class LiveService {
   async getScheduled(cursor?: string, limit = 20) {
     const sessions = await this.prisma.liveSession.findMany({
       where: { status: LiveStatus.SCHEDULED, scheduledAt: { gte: new Date() }, ...(cursor ? { id: { lt: cursor } } : {}) },
-      include: { host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
+      select: LIVE_SESSION_LIST_SELECT,
       orderBy: { scheduledAt: 'asc' },
       take: limit + 1,
     });
@@ -138,7 +163,7 @@ export class LiveService {
     });
   }
 
-  async join(sessionId: string, userId: string, role = 'viewer') {
+  async join(sessionId: string, userId: string, role = 'VIEWER') {
     const session = await this.getById(sessionId);
     if (session.status !== LiveStatus.LIVE) throw new BadRequestException('Session is not live');
 
@@ -166,7 +191,7 @@ export class LiveService {
       // Re-joining after leaving — only increment currentViewers, NOT totalViews
       await this.prisma.liveParticipant.update({
         where: { sessionId_userId: { sessionId, userId } },
-        data: { leftAt: null, joinedAt: new Date(), role },
+        data: { leftAt: null, joinedAt: new Date(), role: role as LiveRole },
       });
       await this.prisma.$executeRaw`
         UPDATE "LiveSession"
@@ -177,7 +202,7 @@ export class LiveService {
     } else {
       // First join — increment both currentViewers and totalViews
       await this.prisma.liveParticipant.create({
-        data: { sessionId, userId, role },
+        data: { sessionId, userId, role: role as LiveRole },
       });
       await this.prisma.$executeRaw`
         UPDATE "LiveSession"
@@ -224,11 +249,11 @@ export class LiveService {
     });
     if (!participant) throw new NotFoundException('Not a participant in this session');
     // Only viewers can raise their hand — speakers and hosts should not
-    if (participant.role !== 'viewer') throw new BadRequestException('Only viewers can raise their hand');
+    if (participant.role !== LiveRole.VIEWER) throw new BadRequestException('Only viewers can raise their hand');
 
     return this.prisma.liveParticipant.update({
       where: { sessionId_userId: { sessionId, userId } },
-      data: { role: 'raised_hand' },
+      data: { role: 'RAISED_HAND' },
     });
   }
 
@@ -236,7 +261,7 @@ export class LiveService {
     await this.requireHost(sessionId, hostId);
     return this.prisma.liveParticipant.update({
       where: { sessionId_userId: { sessionId, userId: targetUserId } },
-      data: { role: 'speaker' },
+      data: { role: 'SPEAKER' },
     });
   }
 
@@ -244,7 +269,7 @@ export class LiveService {
     await this.requireHost(sessionId, hostId);
     return this.prisma.liveParticipant.update({
       where: { sessionId_userId: { sessionId, userId: targetUserId } },
-      data: { role: 'viewer' },
+      data: { role: 'VIEWER' },
     });
   }
 
@@ -259,6 +284,7 @@ export class LiveService {
   async getHostSessions(userId: string, cursor?: string, limit = 20) {
     const sessions = await this.prisma.liveSession.findMany({
       where: { hostId: userId, ...(cursor ? { id: { lt: cursor } } : {}) },
+      select: LIVE_SESSION_LIST_SELECT,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
     });

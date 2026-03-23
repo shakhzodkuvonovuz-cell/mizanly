@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Alert,
-  TextInput, FlatList, Switch,
+  TextInput, FlatList, Switch, Share,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -293,6 +294,69 @@ export default function ConversationInfoScreen() {
               )}
             </LinearGradient>
           </Animated.View>
+
+          {/* Group Invite Link */}
+          {isGroup && (
+            <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+              <LinearGradient
+                colors={colors.gradient.cardDark}
+                style={styles.optionsCardGlass}
+              >
+                <Pressable
+                  style={[styles.actionRow, { borderBottomColor: tc.border }]}
+                  onPress={async () => {
+                    haptic.tick();
+                    const link = `mizanly://group/${id}/invite`;
+                    try {
+                      await Share.share({
+                        message: `${t('chat.joinGroupVia')}\n${link}`,
+                        url: link,
+                      });
+                    } catch {
+                      // User cancelled share
+                    }
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('chat.inviteLink')}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.actionIconBg}
+                    >
+                      <Icon name="link" size="xs" color={colors.emerald} />
+                    </LinearGradient>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.actionText}>{t('chat.inviteLink')}</Text>
+                      <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 1 }}>{t('chat.inviteLinkHint')}</Text>
+                    </View>
+                    <Icon name="share" size="xs" color={tc.text.tertiary} />
+                  </View>
+                </Pressable>
+                <Pressable
+                  style={styles.actionRow}
+                  onPress={async () => {
+                    haptic.tick();
+                    const link = `mizanly://group/${id}/invite`;
+                    await Clipboard.setStringAsync(link);
+                    showToast({ message: t('chat.linkCopied'), variant: 'success' });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('chat.copyLink')}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <LinearGradient
+                      colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.actionIconBg}
+                    >
+                      <Icon name="layers" size="xs" color={colors.gold} />
+                    </LinearGradient>
+                    <Text style={styles.actionText}>{t('chat.copyLink')}</Text>
+                  </View>
+                </Pressable>
+              </LinearGradient>
+            </Animated.View>
+          )}
 
           {/* Quick actions */}
           {!isGroup && otherMember && (
@@ -863,12 +927,12 @@ const styles = StyleSheet.create({
 
   // Admin styles
   avatarOverlay: {
-    position: 'absolute', bottom: 0, right: 0,
+    position: 'absolute', bottom: 0, end: 0,
     width: 32, height: 32, borderRadius: radius.full,
     backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center',
   },
   avatarOverlayGradient: {
-    position: 'absolute', bottom: 0, right: 0,
+    position: 'absolute', bottom: 0, end: 0,
     width: 32, height: 32, borderRadius: radius.full,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -942,7 +1006,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary, fontSize: fontSize.xs, fontWeight: '500',
     flexShrink: 1,
   },
-  chipRemove: { marginLeft: 'auto' },
+  chipRemove: { marginStart: 'auto' },
 
   // Search styles
   searchWrap: {

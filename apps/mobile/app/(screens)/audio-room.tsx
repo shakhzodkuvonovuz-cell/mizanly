@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   countBadge: {
-    marginLeft: 'auto',
+    marginStart: 'auto',
     backgroundColor: colors.dark.surface,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -763,8 +763,8 @@ const styles = StyleSheet.create({
   speakingRing: {
     position: 'absolute',
     top: -4,
-    left: -4,
-    right: -4,
+    start: -4,
+    end: -4,
     bottom: -4,
     borderRadius: radius.full,
   },
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
   mutedBadge: {
     position: 'absolute',
     bottom: 0,
-    right: 0,
+    end: 0,
     width: 20,
     height: 20,
     borderRadius: radius.full,
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
   speakerHostBadge: {
     position: 'absolute',
     top: 0,
-    right: 0,
+    end: 0,
     width: 20,
     height: 20,
     borderRadius: radius.full,
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
   },
   raisedHandInfo: {
     flex: 1,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   raisedHandName: {
     fontSize: fontSize.base,
@@ -877,8 +877,8 @@ const styles = StyleSheet.create({
   controlsContainer: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     padding: spacing.base,
     backgroundColor: colors.dark.bg,
     borderTopWidth: 1,

@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { ReplyPermission } from '@prisma/client';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { sanitizeText } from '@/common/utils/sanitize';
@@ -739,15 +740,15 @@ export class ThreadsService {
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
 
     // Enforce reply permission
-    if (thread.replyPermission && thread.replyPermission !== 'everyone' && thread.userId !== userId) {
-      if (thread.replyPermission === 'following' && thread.userId) {
+    if (thread.replyPermission && thread.replyPermission !== 'EVERYONE' && thread.userId !== userId) {
+      if (thread.replyPermission === 'FOLLOWING' && thread.userId) {
         const isFollowing = await this.prisma.follow.findUnique({
           where: { followerId_followingId: { followerId: thread.userId, followingId: userId } },
         });
         if (!isFollowing) throw new ForbiddenException('Only users followed by the author can reply');
-      } else if (thread.replyPermission === 'mentioned') {
+      } else if (thread.replyPermission === 'MENTIONED') {
         throw new ForbiddenException('Only mentioned users can reply to this thread');
-      } else if (thread.replyPermission === 'none') {
+      } else if (thread.replyPermission === 'NONE') {
         throw new ForbiddenException('Replies are disabled for this thread');
       }
     }
@@ -909,7 +910,7 @@ export class ThreadsService {
 
     await this.prisma.thread.update({
       where: { id: threadId },
-      data: { replyPermission: permission },
+      data: { replyPermission: permission as ReplyPermission },
     });
     return { updated: true, permission };
   }
@@ -924,12 +925,12 @@ export class ThreadsService {
     // Author can always reply (if authenticated)
     if (userId && thread.userId === userId) return { canReply: true, reason: 'author' };
 
-    const permission = thread.replyPermission ?? 'everyone';
-    if (permission === 'none') return { canReply: false, reason: 'none' };
-    if (permission === 'everyone') return { canReply: true, reason: 'everyone' };
+    const permission = thread.replyPermission ?? 'EVERYONE';
+    if (permission === 'NONE') return { canReply: false, reason: 'none' };
+    if (permission === 'EVERYONE') return { canReply: true, reason: 'everyone' };
 
     // Following check requires authenticated user
-    if (permission === 'following') {
+    if (permission === 'FOLLOWING') {
       if (!userId || !thread.userId) return { canReply: false, reason: 'not_following' };
       const follow = await this.prisma.follow.findUnique({
         where: { followerId_followingId: { followerId: userId, followingId: thread.userId } },
@@ -939,7 +940,7 @@ export class ThreadsService {
     }
 
     // Mentioned check requires authenticated user
-    if (permission === 'mentioned') {
+    if (permission === 'MENTIONED') {
       if (!userId) return { canReply: false, reason: 'not_mentioned' };
       const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
       if (user && thread.mentions.includes(user.username)) {

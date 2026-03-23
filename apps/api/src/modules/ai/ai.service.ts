@@ -1,6 +1,7 @@
 import { Injectable, Logger, BadRequestException, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
+import { TranslationContentType, AiCaptionStatus, AvatarStyle } from '@prisma/client';
 import Redis from 'ioredis';
 
 // AI response interfaces
@@ -261,7 +262,7 @@ Translate only the content between the tags.`;
       await this.prisma.aiTranslation.upsert({
         where: { contentId_targetLanguage: { contentId, targetLanguage } },
         create: {
-          contentType,
+          contentType: contentType as TranslationContentType,
           contentId,
           sourceLanguage: 'auto',
           targetLanguage,
@@ -389,8 +390,8 @@ Summarize only the content between the tags. Only respond with the summary, noth
       this.logger.warn('OPENAI_API_KEY not set — video captions unavailable');
       await this.prisma.aiCaption.upsert({
         where: { videoId_language: { videoId, language } },
-        create: { videoId, language, srtContent: '', status: 'failed' },
-        update: { status: 'failed' },
+        create: { videoId, language, srtContent: '', status: AiCaptionStatus.CAPTION_FAILED },
+        update: { status: AiCaptionStatus.CAPTION_FAILED },
       });
       return '';
     }
@@ -398,8 +399,8 @@ Summarize only the content between the tags. Only respond with the summary, noth
     // Mark as processing
     await this.prisma.aiCaption.upsert({
       where: { videoId_language: { videoId, language } },
-      create: { videoId, language, srtContent: '', status: 'processing' },
-      update: { status: 'processing' },
+      create: { videoId, language, srtContent: '', status: AiCaptionStatus.CAPTION_PROCESSING },
+      update: { status: AiCaptionStatus.CAPTION_PROCESSING },
     });
 
     try {
@@ -427,7 +428,7 @@ Summarize only the content between the tags. Only respond with the summary, noth
 
       await this.prisma.aiCaption.update({
         where: { videoId_language: { videoId, language } },
-        data: { srtContent, status: 'complete' },
+        data: { srtContent, status: AiCaptionStatus.CAPTION_COMPLETE },
       });
 
       return srtContent;
@@ -435,7 +436,7 @@ Summarize only the content between the tags. Only respond with the summary, noth
       this.logger.error('Whisper transcription failed', error);
       await this.prisma.aiCaption.update({
         where: { videoId_language: { videoId, language } },
-        data: { status: 'failed' },
+        data: { status: AiCaptionStatus.CAPTION_FAILED },
       });
       return '';
     }
@@ -518,7 +519,7 @@ Summarize only the content between the tags. Only respond with the summary, noth
         userId,
         sourceUrl,
         avatarUrl: sourceUrl, // Placeholder — would be replaced by generated image
-        style,
+        style: style as AvatarStyle,
       },
     });
 

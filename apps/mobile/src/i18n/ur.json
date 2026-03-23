@@ -196,7 +196,8 @@
     "discardChanges": "Discard changes?",
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
     "saved": "Saved",
-    "rateLimited": "Slow down! Try again in {{seconds}} seconds"
+    "rateLimited": "Slow down! Try again in {{seconds}} seconds",
+    "views": "views"
   },
   "tabs": {
     "saf": "صف",
@@ -904,7 +905,8 @@
     "qiblaDirectionDegrees": "{{degrees}}° from North",
     "openCompass": "Open Compass",
     "calculating": "Calculating...",
-    "adhanNotification": "{{prayer}} notification"
+    "adhanNotification": "{{prayer}} notification",
+    "deviceHeading": "Device heading"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1561,7 +1563,15 @@
     "hostedBy": "Hosted by {{name}}",
     "watchingCount": "{{count}} watching",
     "joinParty": "Join Party",
-    "start": "Start"
+    "start": "Start",
+    "watchPartyCreated": "Watch party created!",
+    "selectVideo": "Select a Video",
+    "changeVideo": "Change Video",
+    "searchVideos": "Search videos...",
+    "noVideosFound": "No videos found",
+    "tryDifferentSearch": "Try a different search term",
+    "sharePartyLink": "Share Party Link",
+    "joinMyWatchParty": "Join my watch party"
   },
   "discover": {
     "title": "Discover",
@@ -2158,18 +2168,18 @@
       }
     },
     "banned": {
-      "title": "\u0627\u06a9\u0627\u0624\u0646\u0679 \u0645\u0639\u0637\u0644",
-      "subtitle": "\u06a9\u0645\u06cc\u0648\u0646\u0679\u06cc \u06af\u0627\u0626\u06cc\u0688 \u0644\u0627\u0626\u0646\u0632 \u06a9\u06cc \u062e\u0644\u0627\u0641 \u0648\u0631\u0632\u06cc \u06a9\u06cc \u0648\u062c\u06c1 \u0633\u06d2 \u0622\u067e \u06a9\u0627 \u0627\u06a9\u0627\u0624\u0646\u0679 \u0645\u0639\u0637\u0644 \u06a9\u0631 \u062f\u06cc\u0627 \u06af\u06cc\u0627 \u06c1\u06d2\u06d4",
-      "appealButton": "\u0641\u06cc\u0635\u0644\u06d2 \u06a9\u06d2 \u062e\u0644\u0627\u0641 \u0627\u067e\u06cc\u0644",
-      "signOut": "\u0633\u0627\u0626\u0646 \u0622\u0624\u0679",
-      "contactSupport": "\u0627\u06af\u0631 \u0622\u067e \u06a9\u0648 \u0644\u06af\u062a\u0627 \u06c1\u06d2 \u06a9\u06c1 \u06cc\u06c1 \u063a\u0644\u0637\u06cc \u06c1\u06d2\u060c \u062a\u0648 \u0622\u067e \u0641\u06cc\u0635\u0644\u06d2 \u06a9\u06d2 \u062e\u0644\u0627\u0641 \u0627\u067e\u06cc\u0644 \u06cc\u0627 \u0633\u067e\u0648\u0631\u0679 \u0633\u06d2 \u0631\u0627\u0628\u0637\u06c1 \u06a9\u0631 \u0633\u06a9\u062a\u06d2 \u06c1\u06cc\u06ba\u06d4"
+      "title": "اکاؤنٹ معطل",
+      "subtitle": "کمیونٹی گائیڈ لائنز کی خلاف ورزی کی وجہ سے آپ کا اکاؤنٹ معطل کر دیا گیا ہے۔",
+      "appealButton": "فیصلے کے خلاف اپیل",
+      "signOut": "سائن آؤٹ",
+      "contactSupport": "اگر آپ کو لگتا ہے کہ یہ غلطی ہے، تو آپ فیصلے کے خلاف اپیل یا سپورٹ سے رابطہ کر سکتے ہیں۔"
     },
     "maintenance": {
-      "title": "\u06c1\u0645 \u062c\u0644\u062f \u0648\u0627\u067e\u0633 \u0622\u0626\u06cc\u06ba \u06af\u06d2",
-      "subtitle": "\u0645\u06cc\u0632\u0627\u0646\u0644\u06cc \u0645\u0646\u0635\u0648\u0628\u06c1 \u0628\u0646\u062f \u062f\u06cc\u06a9\u06be \u0628\u06be\u0627\u0644 \u0633\u06d2 \u06af\u0632\u0631 \u0631\u06c1\u0627 \u06c1\u06d2\u06d4 \u06c1\u0645 \u0622\u067e \u06a9\u06d2 \u062a\u062c\u0631\u0628\u06d2 \u06a9\u0648 \u0628\u06c1\u062a\u0631 \u0628\u0646\u0627\u0646\u06d2 \u06a9\u06d2 \u0644\u06cc\u06d2 \u06a9\u0627\u0645 \u06a9\u0631 \u0631\u06c1\u06d2 \u06c1\u06cc\u06ba\u06d4",
-      "retryButton": "\u062f\u0648\u0628\u0627\u0631\u06c1 \u06a9\u0648\u0634\u0634 \u06a9\u0631\u06cc\u06ba",
-      "stillDown": "\u0633\u0631\u0648\u0631 \u0627\u0628\u06be\u06cc \u0628\u06be\u06cc \u062f\u06cc\u06a9\u06be \u0628\u06be\u0627\u0644 \u0645\u06cc\u06ba \u06c1\u06d2\u06d4 \u0628\u0631\u0627\u06c1 \u06a9\u0631\u0645 \u062a\u06be\u0648\u0691\u06cc \u062f\u06cc\u0631 \u0628\u0639\u062f \u062f\u0648\u0628\u0627\u0631\u06c1 \u06a9\u0648\u0634\u0634 \u06a9\u0631\u06cc\u06ba\u06d4",
-      "hint": "\u06cc\u06c1 \u0639\u0627\u0645 \u0637\u0648\u0631 \u067e\u0631 \u0635\u0631\u0641 \u0686\u0646\u062f \u0645\u0646\u0679 \u0644\u06cc\u062a\u0627 \u06c1\u06d2\u06d4 \u0622\u067e \u06a9\u06d2 \u0635\u0628\u0631 \u06a9\u0627 \u0634\u06a9\u0631\u06cc\u06c1\u06d4"
+      "title": "ہم جلد واپس آئیں گے",
+      "subtitle": "میزانلی منصوبہ بند دیکھ بھال سے گزر رہا ہے۔ ہم آپ کے تجربے کو بہتر بنانے کے لیے کام کر رہے ہیں۔",
+      "retryButton": "دوبارہ کوشش کریں",
+      "stillDown": "سرور ابھی بھی دیکھ بھال میں ہے۔ براہ کرم تھوڑی دیر بعد دوبارہ کوشش کریں۔",
+      "hint": "یہ عام طور پر صرف چند منٹ لیتا ہے۔ آپ کے صبر کا شکریہ۔"
     }
   },
   "createReel": {
@@ -3793,5 +3803,12 @@
     "newFollowers": "new followers",
     "noGrowthData": "No growth data yet",
     "noGrowthDataSubtitle": "Follower growth data will appear as your audience grows"
+  },
+  "chat": {
+    "inviteLink": "Invite Link",
+    "inviteLinkHint": "Share this link to invite people to the group",
+    "joinGroupVia": "Join my group on Mizanly",
+    "linkCopied": "Link copied to clipboard",
+    "copyLink": "Copy Link"
   }
 }

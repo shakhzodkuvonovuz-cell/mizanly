@@ -301,6 +301,7 @@ enum CoinTransactionType {
   TIP_RECEIVED
   REWARD
   REFUND
+  CASHOUT
 }
 
 enum HalalCategory {
@@ -384,6 +385,262 @@ enum AvatarStyle {
   ANIME
   WATERCOLOR
   ISLAMIC_ART
+}
+
+enum IslamicEventType {
+  EID_PRAYER
+  IFTAR
+  LECTURE
+  QURAN_COMPETITION
+  FUNDRAISER
+  SOCIAL
+  OTHER
+}
+
+enum DailyTaskType {
+  DHIKR
+  QURAN
+  REFLECTION
+}
+
+enum AdminLogAction {
+  MEMBER_ADDED
+  MEMBER_REMOVED
+  MEMBER_BANNED
+  TITLE_CHANGED
+  PHOTO_CHANGED
+  PIN_MESSAGE
+  UNPIN_MESSAGE
+  SLOW_MODE_CHANGED
+  PERMISSIONS_CHANGED
+  TOPIC_CREATED
+  TOPIC_UPDATED
+  TOPIC_DELETED
+  EMOJI_PACK_CREATED
+  EMOJI_PACK_UPDATED
+  EMOJI_PACK_DELETED
+  EMOJI_ADDED
+  EMOJI_REMOVED
+}
+
+enum ThumbnailContentType {
+  POST
+  REEL
+  VIDEO
+}
+
+enum FastingType {
+  RAMADAN
+  MONDAY
+  THURSDAY
+  AYYAM_AL_BID
+  ARAFAT
+  ASHURA
+  QADA
+  NAFL
+  OBLIGATORY
+  SUNNAH
+  VOLUNTARY
+  MAKEUP
+}
+
+enum HifzStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  MEMORIZED
+  NEEDS_REVIEW
+}
+
+enum ChallengeType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum ReplyPermission {
+  EVERYONE
+  FOLLOWING
+  MENTIONED
+  NONE
+}
+
+enum AutoPlaySetting {
+  WIFI
+  ALWAYS
+  NEVER
+}
+
+enum ChatFolderFilterType {
+  INCLUDE
+  EXCLUDE
+}
+
+enum CommentTargetType {
+  POST
+  REEL
+}
+
+enum ContentStrictnessLevel {
+  RELAXED
+  MODERATE
+  STRICT
+  FAMILY
+}
+
+enum AdhanStyle {
+  MAKKAH
+  MISHARY
+  ABDULBASIT
+  MAHER
+  SUDAIS
+  HUSARY
+  MINSHAWI
+}
+
+enum CountdownTheme {
+  EMERALD
+  GOLD
+  COSMIC
+}
+
+enum EventPrivacy {
+  EVENT_PUBLIC
+  EVENT_PRIVATE
+}
+
+enum EventTypeEnum {
+  IN_PERSON
+  ONLINE
+  HYBRID
+}
+
+enum MadhhabType {
+  HANAFI
+  MALIKI
+  SHAFII
+  HANBALI
+  ANY
+}
+
+enum ForwardedFromType {
+  FWD_POST
+  FWD_THREAD
+  FWD_REEL
+  FWD_VIDEO
+  FWD_MESSAGE
+}
+
+enum AchievementCategory {
+  CONTENT
+  SOCIAL_ACH
+  ISLAMIC
+  MILESTONE
+  SPECIAL
+}
+
+enum AchievementRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum SeriesCategory {
+  DRAMA
+  DOCUMENTARY
+  TUTORIAL
+  COMEDY
+  ISLAMIC_SERIES
+}
+
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
+
+enum TranslationContentType {
+  TRANS_POST
+  TRANS_THREAD
+  TRANS_COMMENT
+  TRANS_VIDEO_DESCRIPTION
+}
+
+enum AiCaptionStatus {
+  CAPTION_PENDING
+  CAPTION_PROCESSING
+  CAPTION_COMPLETE
+  CAPTION_FAILED
+}
+
+enum ScholarQACategory {
+  FIQH
+  AQEEDAH
+  TAFSIR
+  SEERAH
+  FAMILY
+  YOUTH
+  WOMEN
+  CONVERTS
+}
+
+enum ScholarQAStatus {
+  QA_SCHEDULED
+  QA_LIVE
+  QA_ENDED
+}
+
+enum FatwaStatus {
+  FATWA_PENDING
+  FATWA_ANSWERED
+  FATWA_CLOSED
+}
+
+enum StageSessionStatus {
+  STAGE_SCHEDULED
+  STAGE_LIVE
+  STAGE_ENDED
+}
+
+enum MentorshipStatus {
+  MENTORSHIP_PENDING
+  MENTORSHIP_ACTIVE
+  MENTORSHIP_COMPLETED
+  MENTORSHIP_CANCELLED
+}
+
+enum ScholarVerificationStatus {
+  VERIFICATION_PENDING
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+}
+
+enum NoteRating {
+  NOTE_HELPFUL
+  NOTE_SOMEWHAT_HELPFUL
+  NOTE_NOT_HELPFUL
+}
+
+enum ProductCategory {
+  FOOD
+  CLOTHING
+  BOOKS
+  ART
+  ELECTRONICS
+  SERVICES
+  PRODUCT_OTHER
+}
+
+enum CommunityNoteStatus {
+  PROPOSED
+  HELPFUL
+  NOT_HELPFUL
+}
+
+enum CollabInviteStatus {
+  COLLAB_PENDING
+  COLLAB_ACCEPTED
+  COLLAB_DECLINED
 }
 
 // ============================================================
@@ -650,6 +907,13 @@ model User {
   callScreenShares         CallSession[]               @relation("callScreenShare")
   playlistCollabsAdded     PlaylistCollaborator[]      @relation("playlistCollabAdder")
   zakatFundsVerified       ZakatFund[]                 @relation("zakatFundVerifier")
+
+  // Batch 5: Dangling FK fixes
+  waqfDonations            WaqfDonation[]              @relation("waqfDonations")
+  videoCommentLikes        VideoCommentLike[]           @relation("videoCommentLikes")
+  scholarQuestionVotes     ScholarQuestionVote[]        @relation("scholarQuestionVotes")
+  halalVerifyVotes         HalalVerifyVote[]            @relation("halalVerifyVotes")
+  starredMessageRecords    StarredMessage[]             @relation("starredMessages")
 
   @@index([username])
   @@index([clerkId])
@@ -949,7 +1213,7 @@ model Thread {
   scheduledAt     DateTime?
   hideLikesCount  Boolean          @default(false)
   isRemoved       Boolean          @default(false)
-  replyPermission String           @default("everyone")
+  replyPermission ReplyPermission  @default(EVERYONE)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   reactions       ThreadReaction[]
@@ -1118,11 +1382,12 @@ model VideoComment {
   parentId   String?
   parent     VideoComment?  @relation("VideoCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
   replies    VideoComment[] @relation("VideoCommentThread")
-  content    String         @db.VarChar(2000)
-  likesCount Int            @default(0)
+  content    String             @db.VarChar(2000)
+  likesCount Int                @default(0)
   timestamp  Float?
-  isPinned   Boolean        @default(false)
-  createdAt  DateTime       @default(now())
+  isPinned   Boolean            @default(false)
+  createdAt  DateTime           @default(now())
+  likes      VideoCommentLike[] @relation("videoCommentLikes")
 
   @@index([videoId, createdAt])
   @@index([parentId])
@@ -1358,6 +1623,7 @@ model Message {
   moderationLogs  ModerationLog[]   @relation("ModMessageTarget")
   reactions       MessageReaction[]
   reportedReports Report[]          @relation("reportedMessages")
+  starredRecords  StarredMessage[]  @relation("starredMessages")
 
   @@index([conversationId, createdAt(sort: Desc)])
   @@index([senderId])
@@ -2202,7 +2468,7 @@ model UserSettings {
   // Screen Time & Playback
   screenTimeLimitMinutes Int?
   undoSendSeconds        Int      @default(5)
-  autoPlaySetting        String   @default("wifi")
+  autoPlaySetting        AutoPlaySetting @default(WIFI)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
@@ -2295,8 +2561,8 @@ model Event {
   locationUrl String?
   isOnline    Boolean     @default(false)
   onlineUrl   String?
-  eventType   String      @default("in_person") @db.VarChar(20)
-  privacy     String      @default("public") @db.VarChar(20)
+  eventType   EventTypeEnum @default(IN_PERSON)
+  privacy     EventPrivacy  @default(EVENT_PUBLIC)
   userId      String
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   communityId String?
@@ -2492,7 +2758,7 @@ model VideoReply {
   userId       String
   user         User     @relation("videoReplies", fields: [userId], references: [id], onDelete: Cascade)
   commentId    String
-  commentType  String   @db.VarChar(10) // 'post' or 'reel'
+  commentType  CommentTargetType
   mediaUrl     String
   thumbnailUrl String?
   duration     Float?
@@ -2682,7 +2948,7 @@ model DailyTaskCompletion {
   userId    String
   user      User     @relation("dailyTaskCompletions", fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
-  taskType  String   @db.VarChar(20) // dhikr | quran | reflection
+  taskType  DailyTaskType
   createdAt DateTime @default(now())
 
   @@unique([userId, date, taskType])
@@ -2784,7 +3050,7 @@ model PrayerNotificationSetting {
   user            User     @relation("prayerNotifications", fields: [userId], references: [id], onDelete: Cascade)
   dndDuringPrayer Boolean  @default(false)
   adhanEnabled    Boolean  @default(false)
-  adhanStyle      String   @default("makkah")
+  adhanStyle      AdhanStyle @default(MAKKAH)
   reminderMinutes Int      @default(15)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -2796,7 +3062,7 @@ model ContentFilterSetting {
   id              String   @id @default(uuid())
   userId          String   @unique
   user            User     @relation("contentFilter", fields: [userId], references: [id], onDelete: Cascade)
-  strictnessLevel String   @default("moderate")
+  strictnessLevel ContentStrictnessLevel @default(MODERATE)
   blurHaram       Boolean  @default(true)
   hideMusic       Boolean  @default(false)
   hideMixedGender Boolean  @default(false)
@@ -2812,9 +3078,9 @@ model ScholarVerification {
   user           User      @relation("scholarVerification", fields: [userId], references: [id], onDelete: Cascade)
   institution    String
   specialization String?
-  madhab         String?
+  madhab         MadhhabType?
   verifiedAt     DateTime?
-  status         String    @default("pending")
+  status         ScholarVerificationStatus @default(VERIFICATION_PENDING)
   documentUrls   String[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -2888,7 +3154,7 @@ model QuietModeSetting {
 model OfflineDownload {
   id          String          @id @default(uuid())
   userId      String
-  contentType String // post | video | reel
+  contentType ThumbnailContentType
   contentId   String
   quality     DownloadQuality @default(AUTO)
   fileSize    Int             @default(0)
@@ -2913,7 +3179,7 @@ model VideoPremiere {
   chatEnabled    Boolean            @default(true)
   reminderCount  Int                @default(0)
   viewerCount    Int                @default(0)
-  countdownTheme String             @default("emerald")
+  countdownTheme CountdownTheme     @default(EMERALD)
   trailerUrl     String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
@@ -3016,7 +3282,7 @@ model ParentalControl {
 
 model AiTranslation {
   id             String   @id @default(uuid())
-  contentType    String // post | thread | comment | video_description
+  contentType    TranslationContentType
   contentId      String
   sourceLanguage String
   targetLanguage String
@@ -3033,7 +3299,7 @@ model AiCaption {
   videoId    String
   language   String
   srtContent String   @db.Text
-  status     String   @default("pending") // pending | processing | complete | failed
+  status     AiCaptionStatus @default(CAPTION_PENDING)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
@@ -3078,9 +3344,9 @@ model Achievement {
   name        String            @db.VarChar(100)
   description String            @db.VarChar(300)
   iconUrl     String?
-  category    String // content | social | islamic | milestone | special
-  xpReward    Int               @default(0)
-  rarity      String            @default("common") // common | rare | epic | legendary
+  category    AchievementCategory
+  xpReward    Int                 @default(0)
+  rarity      AchievementRarity   @default(COMMON)
   criteria    String            @db.Text // JSON criteria for unlocking
   createdAt   DateTime          @default(now())
   unlocks     UserAchievement[]
@@ -3129,7 +3395,7 @@ model Challenge {
   title            String                 @db.VarChar(200)
   description      String                 @db.VarChar(1000)
   coverUrl         String?
-  challengeType    String // daily | weekly | monthly | custom
+  challengeType    ChallengeType
   category         ChallengeCategory
   targetCount      Int                    @default(1)
   xpReward         Int                    @default(100)
@@ -3167,7 +3433,7 @@ model Series {
   title          String           @db.VarChar(200)
   description    String?          @db.VarChar(1000)
   coverUrl       String?
-  category       String // drama | documentary | tutorial | comedy | islamic
+  category       SeriesCategory
   episodeCount   Int              @default(0)
   followersCount Int              @default(0)
   isComplete     Boolean          @default(false)
@@ -3219,7 +3485,7 @@ model SeriesFollower {
 
 model ThumbnailVariant {
   id           String   @id @default(cuid())
-  contentType  String // 'post' | 'reel' | 'video'
+  contentType  ThumbnailContentType
   contentId    String
   thumbnailUrl String
   impressions  Int      @default(0)
@@ -3274,7 +3540,7 @@ model Product {
   price         Decimal          @db.Decimal(12, 2)
   currency      String           @default("USD")
   images        String[] // array of image URLs
-  category      String // food | clothing | books | art | electronics | services | other
+  category      ProductCategory
   isHalal       Boolean          @default(true)
   halalCertUrl  String?
   isMuslimOwned Boolean          @default(false)
@@ -3368,8 +3634,9 @@ model HalalBusiness {
   openingHours  String?          @db.VarChar(500) // JSON
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  owner         User             @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner         User              @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   reviews       BusinessReview[]
+  verifyVotes   HalalVerifyVote[] @relation("halalVerifyVotes")
 
   @@index([category])
   @@index([lat, lng])
@@ -3506,7 +3773,7 @@ model Mentorship {
   id          String    @id @default(uuid())
   mentorId    String
   menteeId    String
-  status      String    @default("pending") // pending | active | completed | cancelled
+  status      MentorshipStatus @default(MENTORSHIP_PENDING)
   topic       FatwaTopicType
   notes       String?   @db.VarChar(1000)
   startedAt   DateTime?
@@ -3544,9 +3811,9 @@ model FatwaQuestion {
   id         String    @id @default(uuid())
   askerId    String
   question   String    @db.VarChar(2000)
-  madhab     String? // hanafi | maliki | shafii | hanbali | any
-  language   String    @default("en")
-  status     String    @default("pending") // pending | answered | closed
+  madhab     MadhhabType?
+  language   String      @default("en")
+  status     FatwaStatus @default(FATWA_PENDING)
   answerId   String?
   answeredBy String?
   answeredAt DateTime?
@@ -3584,7 +3851,7 @@ model IslamicEvent {
   organizerId   String
   title         String    @db.VarChar(200)
   description   String?   @db.VarChar(2000)
-  eventType     String // eid_prayer | iftar | lecture | quran_competition | fundraiser | social | other
+  eventType     IslamicEventType
   location      String?
   lat           Float?
   lng           Float?
@@ -3675,9 +3942,10 @@ model WaqfFund {
   goalAmount   Decimal  @db.Decimal(12, 2)
   raisedAmount Decimal  @default(0) @db.Decimal(12, 2)
   createdById  String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  creator      User     @relation("WaqfCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  creator      User           @relation("WaqfCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  donations    WaqfDonation[]
 
   @@index([createdById])
   @@map("waqf_funds")
@@ -3686,7 +3954,9 @@ model WaqfFund {
 model WaqfDonation {
   id        String   @id @default(cuid())
   fundId    String
-  userId    String
+  fund      WaqfFund @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation("waqfDonations", fields: [userId], references: [id], onDelete: SetNull)
   amount    Decimal  @db.Decimal(12, 2)
   createdAt DateTime @default(now())
 
@@ -3704,7 +3974,7 @@ model SavedMessage {
   content           String?  @db.Text
   mediaUrl          String?
   mediaType         String?
-  forwardedFromType String? // post | thread | reel | video | message
+  forwardedFromType ForwardedFromType?
   forwardedFromId   String?
   isPinned          Boolean  @default(false)
   createdAt         DateTime @default(now())
@@ -3720,7 +3990,7 @@ model ChatFolder {
   name            String   @db.VarChar(50)
   icon            String? // emoji or icon name
   position        Int      @default(0)
-  filterType      String   @default("include") // include | exclude
+  filterType      ChatFolderFilterType @default(INCLUDE)
   conversationIds String[] // array of conversation IDs
   includeGroups   Boolean  @default(false)
   includeChannels Boolean  @default(false)
@@ -3739,7 +4009,7 @@ model AdminLog {
   group     Conversation @relation(fields: [groupId], references: [id], onDelete: Cascade)
   adminId   String
   admin     User         @relation("adminLogs", fields: [adminId], references: [id], onDelete: Cascade)
-  action    String // member_added | member_removed | member_banned | title_changed | photo_changed | pin_message | unpin_message | slow_mode_changed | permissions_changed
+  action    AdminLogAction
   targetId  String? // userId or messageId affected
   target    User?        @relation("adminLogTargets", fields: [targetId], references: [id], onDelete: SetNull)
   details   String?      @db.VarChar(500)
@@ -3863,7 +4133,7 @@ model StageSession {
   circle        Circle    @relation("stageSessions", fields: [circleId], references: [id], onDelete: Cascade)
   title         String    @db.VarChar(200)
   hostId        String
-  status        String    @default("scheduled") // scheduled | live | ended
+  status        StageSessionStatus @default(STAGE_SCHEDULED)
   speakerIds    String[]
   audienceCount Int       @default(0)
   scheduledAt   DateTime?
@@ -3997,7 +4267,7 @@ model HifzProgress {
   userId         String
   user           User      @relation("hifzProgressRecords", fields: [userId], references: [id], onDelete: Cascade)
   surahNum       Int // 1-114
-  status         String    @default("not_started") // not_started, in_progress, memorized, needs_review
+  status         HifzStatus @default(NOT_STARTED)
   lastReviewedAt DateTime?
   updatedAt      DateTime  @updatedAt
 
@@ -4075,13 +4345,13 @@ model ScholarQA {
   scholar      User      @relation("scholarQAs", fields: [scholarId], references: [id], onDelete: Cascade)
   title        String
   description  String?
-  category     String // fiqh, aqeedah, tafsir, seerah, family, youth, women, converts
-  language     String    @default("en")
+  category     ScholarQACategory
+  language     String         @default("en")
   scheduledAt  DateTime
   startedAt    DateTime?
   endedAt      DateTime?
   recordingUrl String?
-  status       String    @default("scheduled") // scheduled, live, ended
+  status       ScholarQAStatus @default(QA_SCHEDULED)
   createdAt    DateTime  @default(now())
 
   questions ScholarQuestion[]
@@ -4098,10 +4368,11 @@ model ScholarQuestion {
   userId     String
   user       User      @relation("scholarQuestions", fields: [userId], references: [id], onDelete: Cascade)
   question   String
-  votes      Int       @default(0)
-  isAnswered Boolean   @default(false)
+  votes      Int                    @default(0)
+  isAnswered Boolean                @default(false)
   answeredAt DateTime?
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime               @default(now())
+  voteRecords ScholarQuestionVote[] @relation("scholarQuestionVotes")
 
   @@index([qaId, votes(sort: Desc)])
   @@map("scholar_questions")
@@ -4129,12 +4400,12 @@ model DuaBookmark {
 
 model CommunityNote {
   id              String   @id @default(cuid())
-  contentType     String   @db.VarChar(20) // post, thread, reel
+  contentType     EmbeddingContentType
   contentId       String
   authorId        String
   author          User     @relation("communityNotes", fields: [authorId], references: [id], onDelete: Cascade)
   note            String
-  status          String   @default("proposed") // proposed, helpful, not_helpful
+  status          CommunityNoteStatus @default(PROPOSED)
   helpfulVotes    Int      @default(0)
   notHelpfulVotes Int      @default(0)
   createdAt       DateTime @default(now())
@@ -4152,7 +4423,7 @@ model CommunityNoteRating {
   note      CommunityNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
   userId    String
   user      User          @relation("communityNoteRatings", fields: [userId], references: [id], onDelete: Cascade)
-  rating    String // helpful, somewhat_helpful, not_helpful
+  rating    NoteRating
   createdAt DateTime      @default(now())
 
   @@unique([noteId, userId])
@@ -4172,7 +4443,7 @@ model CollabInvite {
   inviter   User     @relation("collabInvitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
   inviteeId String
   invitee   User     @relation("collabInvitesReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
-  status    String   @default("pending") // pending, accepted, declined
+  status    CollabInviteStatus @default(COLLAB_PENDING)
   createdAt DateTime @default(now())
 
   @@unique([postId, inviteeId])
@@ -4222,7 +4493,7 @@ model FastingLog {
   user      User     @relation("fastingLogs", fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
   isFasting Boolean
-  fastType  String   @default("ramadan") // ramadan, monday, thursday, ayyam-al-bid, arafat, ashura, qada, nafl
+  fastType  FastingType @default(RAMADAN)
   reason    String? // if not fasting: travel, illness, menstruation, other
   createdAt DateTime @default(now())
 
@@ -4284,10 +4555,12 @@ model HalalRestaurantReview {
 // ============================================================
 
 model VideoCommentLike {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   userId    String
+  user      User         @relation("videoCommentLikes", fields: [userId], references: [id], onDelete: Cascade)
   commentId String
-  createdAt DateTime @default(now())
+  comment   VideoComment @relation("videoCommentLikes", fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
 
   @@unique([userId, commentId])
   @@index([commentId])
@@ -4299,11 +4572,13 @@ model VideoCommentLike {
 // ============================================================
 
 model ScholarQuestionVote {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   userId     String
+  user       User            @relation("scholarQuestionVotes", fields: [userId], references: [id], onDelete: Cascade)
   questionId String
-  voteType   String // 'upvote' or 'downvote'
-  createdAt  DateTime @default(now())
+  question   ScholarQuestion @relation("scholarQuestionVotes", fields: [questionId], references: [id], onDelete: Cascade)
+  voteType   VoteType
+  createdAt  DateTime        @default(now())
 
   @@unique([userId, questionId])
   @@index([questionId])
@@ -4315,11 +4590,13 @@ model ScholarQuestionVote {
 // ============================================================
 
 model HalalVerifyVote {
-  id         String   @id @default(cuid())
+  id         String        @id @default(cuid())
   userId     String
+  user       User          @relation("halalVerifyVotes", fields: [userId], references: [id], onDelete: Cascade)
   businessId String
-  isVerified Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  business   HalalBusiness @relation("halalVerifyVotes", fields: [businessId], references: [id], onDelete: Cascade)
+  isVerified Boolean       @default(true)
+  createdAt  DateTime      @default(now())
 
   @@unique([userId, businessId])
   @@index([businessId])
@@ -4334,7 +4611,9 @@ model HalalVerifyVote {
 model StarredMessage {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation("starredMessages", fields: [userId], references: [id], onDelete: Cascade)
   messageId String
+  message   Message  @relation("starredMessages", fields: [messageId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([userId, messageId])

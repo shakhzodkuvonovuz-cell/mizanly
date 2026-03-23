@@ -300,12 +300,12 @@ describe('TelegramFeaturesService — edge cases', () => {
 
   it('should accept all valid admin action types', async () => {
     const validActions = [
-      'member_added', 'member_removed', 'member_banned',
-      'title_changed', 'photo_changed', 'pin_message', 'unpin_message',
-      'slow_mode_changed', 'permissions_changed',
-      'topic_created', 'topic_updated', 'topic_deleted',
-      'emoji_pack_created', 'emoji_pack_updated', 'emoji_pack_deleted',
-      'emoji_added', 'emoji_removed',
+      'MEMBER_ADDED', 'MEMBER_REMOVED', 'MEMBER_BANNED',
+      'TITLE_CHANGED', 'PHOTO_CHANGED', 'PIN_MESSAGE', 'UNPIN_MESSAGE',
+      'SLOW_MODE_CHANGED', 'PERMISSIONS_CHANGED',
+      'TOPIC_CREATED', 'TOPIC_UPDATED', 'TOPIC_DELETED',
+      'EMOJI_PACK_CREATED', 'EMOJI_PACK_UPDATED', 'EMOJI_PACK_DELETED',
+      'EMOJI_ADDED', 'EMOJI_REMOVED',
     ];
     for (const action of validActions) {
       await service.logAdminAction('conv-1', userId, action);

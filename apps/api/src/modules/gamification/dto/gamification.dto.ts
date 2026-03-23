@@ -8,7 +8,7 @@ export class CreateChallengeDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiProperty() @IsString() @MaxLength(1000) description: string;
   @ApiPropertyOptional() @IsOptional() @IsUrl() coverUrl?: string;
-  @ApiProperty() @IsString() @IsIn(['daily', 'weekly', 'monthly', 'custom']) challengeType: string;
+  @ApiProperty() @IsString() @IsIn(['DAILY', 'WEEKLY', 'MONTHLY', 'CUSTOM']) challengeType: string;
   @ApiProperty() @IsString() @IsIn(['quran', 'dhikr', 'photography', 'fitness', 'charity', 'community', 'learning', 'custom']) category: string;
   @ApiProperty() @IsInt() @Min(1) @Max(10000) targetCount: number;
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) @Max(500) xpReward?: number;
@@ -17,7 +17,8 @@ export class CreateChallengeDto {
 }
 
 export class UpdateProgressDto {
-  @ApiProperty() @IsInt() @Min(0) @Max(100000) progress: number;
+  @ApiProperty({ description: 'Progress increment (0 or 1). Treated as an increment, not an absolute value.' })
+  @IsInt() @Min(0) @Max(1) progress: number;
 }
 
 export class CreateSeriesDto {

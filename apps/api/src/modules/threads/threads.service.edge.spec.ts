@@ -36,7 +36,7 @@ describe('ThreadsService — edge cases', () => {
     isPinned: false,
     isSensitive: false,
     isRemoved: false,
-    replyPermission: 'everyone',
+    replyPermission: 'EVERYONE',
     createdAt: new Date(),
     updatedAt: new Date(),
     user: { id: userId, username: 'testuser', displayName: 'Test', avatarUrl: null, isVerified: false },

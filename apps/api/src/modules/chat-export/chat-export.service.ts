@@ -75,13 +75,16 @@ export class ChatExportService {
       throw new NotFoundException('Conversation not found');
     }
 
-    // 3. Fetch messages in batches of 100 (capped at 10,000 to prevent OOM)
+    // 3. Fetch messages in chunks (capped at MAX_EXPORT_MESSAGES to prevent OOM)
+    const CHUNK_SIZE = 500;
     const MAX_EXPORT_MESSAGES = 10_000;
     const allMessages: ExportedMessage[] = [];
     let cursor: string | undefined;
-    let hasMore = true;
 
-    while (hasMore && allMessages.length < MAX_EXPORT_MESSAGES) {
+    do {
+      const remaining = MAX_EXPORT_MESSAGES - allMessages.length;
+      const takeSize = Math.min(CHUNK_SIZE, remaining);
+
       const messages = await this.prisma.message.findMany({
         where: { conversationId, isDeleted: false },
         select: {
@@ -92,15 +95,12 @@ export class ChatExportService {
           createdAt: true,
           sender: { select: { username: true, displayName: true } },
         },
-        take: 101,
+        take: takeSize,
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
         orderBy: { createdAt: 'asc' },
       });
 
-      hasMore = messages.length > 100;
-      const batch = hasMore ? messages.slice(0, 100) : messages;
-
-      for (const msg of batch) {
+      for (const msg of messages) {
         allMessages.push({
           id: msg.id,
           content: msg.content,
@@ -111,12 +111,10 @@ export class ChatExportService {
         });
       }
 
-      if (batch.length > 0) {
-        cursor = batch[batch.length - 1].id;
-      } else {
-        hasMore = false;
-      }
-    }
+      cursor = messages.length === takeSize && messages.length > 0
+        ? messages[messages.length - 1].id
+        : undefined;
+    } while (cursor && allMessages.length < MAX_EXPORT_MESSAGES);
 
     // 4. Format output
     if (format === 'json') {

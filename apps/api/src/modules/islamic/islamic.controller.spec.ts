@@ -343,9 +343,9 @@ describe('IslamicController', () => {
     it('should call islamicService.completeDailyTask with userId and taskType', async () => {
       service.completeDailyTask.mockResolvedValue({ completed: true } as any);
 
-      await controller.completeDailyTask(userId, { taskType: 'dhikr' });
+      await controller.completeDailyTask(userId, { taskType: 'DHIKR' });
 
-      expect(service.completeDailyTask).toHaveBeenCalledWith(userId, 'dhikr');
+      expect(service.completeDailyTask).toHaveBeenCalledWith(userId, 'DHIKR');
     });
   });
 
@@ -365,7 +365,7 @@ describe('IslamicController', () => {
 
   describe('logFast', () => {
     it('should call islamicService.logFast with userId and body', async () => {
-      const body = { date: '2026-03-01', isFasting: true, fastType: 'ramadan' };
+      const body = { date: '2026-03-01', isFasting: true, fastType: 'RAMADAN' };
       service.logFast.mockResolvedValue({ logged: true } as any);
 
       await controller.logFast(userId, body as any);

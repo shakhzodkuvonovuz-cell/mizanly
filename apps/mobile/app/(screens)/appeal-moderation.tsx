@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   },
   actionContent: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
   },
   actionTitle: {
     fontSize: fontSize.md,
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   radioCircleSelected: {
     borderColor: colors.emerald,
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
   evidencePlus: {
     position: 'absolute',
     top: '40%',
-    right: '35%',
+    end: '35%',
   },
   evidenceButtonText: {
     fontSize: fontSize.sm,
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   evidenceThumbnailRemove: {
     position: 'absolute',
     top: 2,
-    right: 2,
+    end: 2,
     width: 20,
     height: 20,
     borderRadius: radius.full,
@@ -824,8 +824,8 @@ const styles = StyleSheet.create({
   timelineDotPulse: {
     position: 'absolute',
     top: -4,
-    left: -4,
-    right: -4,
+    start: -4,
+    end: -4,
     bottom: -4,
     borderRadius: radius.full,
     opacity: 0.3,
@@ -833,8 +833,8 @@ const styles = StyleSheet.create({
   timelineLine: {
     position: 'absolute',
     top: 7,
-    left: '50%',
-    right: '-50%',
+    start: '50%',
+    end: '-50%',
     height: 2,
     zIndex: 1,
   },
@@ -870,7 +870,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.emerald,
     marginTop: 6,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   noteText: {
     flex: 1,
@@ -884,8 +884,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

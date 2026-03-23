@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
   slugInput: {
     flex: 1,
     borderBottomWidth: 0,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
 
   // Note

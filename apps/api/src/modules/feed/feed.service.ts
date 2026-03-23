@@ -166,7 +166,7 @@ export class FeedService {
       where.audioTrackId = null;
     }
 
-    if (contentFilter.strictnessLevel === 'strict' || contentFilter.strictnessLevel === 'family') {
+    if (contentFilter.strictnessLevel === 'STRICT' || contentFilter.strictnessLevel === 'FAMILY') {
       // Exclude posts with content warnings
       where.contentWarning = null;
     }
@@ -207,16 +207,14 @@ export class FeedService {
     return [...excluded];
   }
 
-  // PERF TODO: Offset pagination with in-app scoring refetches all rows per page.
-  // Fix: Move scoring to SQL (ORDER BY engagement_score DESC, id), use keyset cursor.
-  // Impact: O(n) per page → O(log n). Priority: when daily active users > 10K.
   /**
    * Trending feed — posts from last 7 days scored by engagement rate.
+   * Uses cursor-based pagination with (score, id) keyset to avoid refetching rows.
    * Works without auth (for anonymous browsing + new user cold start).
    */
   async getTrendingFeed(cursor?: string, limit = 20, userId?: string) {
     // Redis cache for unauthenticated trending feed (personalized feeds bypass cache)
-    const cacheKey = !userId ? `trending_feed:${cursor || '0'}:${limit}` : null;
+    const cacheKey = !userId ? `trending_feed:${cursor || 'first'}:${limit}` : null;
     if (cacheKey) {
       const cached = await this.redis.get(cacheKey);
       if (cached) {
@@ -241,8 +239,25 @@ export class FeedService {
       contentFilter = await this.buildContentFilterWhere(userId) as Record<string, unknown>;
     }
 
-    // Parse cursor as page offset for score-sorted feeds
-    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+    // Parse cursor: "score:id:ts" keyset for score-sorted pagination.
+    // The timestamp (ts) ensures scores are computed at the same reference point
+    // across pages, preventing items from drifting across page boundaries.
+    let cursorScore: number | null = null;
+    let cursorId: string | null = null;
+    let scoreTimestamp: number = Date.now();
+    if (cursor) {
+      const parts = cursor.split(':');
+      if (parts.length >= 2) {
+        cursorScore = parseFloat(parts[0]);
+        cursorId = parts[1];
+        if (parts.length >= 3) {
+          const parsedTs = parseInt(parts[2], 10);
+          if (!isNaN(parsedTs) && parsedTs > 0) {
+            scoreTimestamp = parsedTs;
+          }
+        }
+      }
+    }
 
     const posts = await this.prisma.post.findMany({
       where: {
@@ -255,26 +270,16 @@ export class FeedService {
       },
       select: FEED_POST_SELECT,
       orderBy: { createdAt: 'desc' },
-      take: Math.min(offset + limit + 1, 100),
+      // Fetch a reasonable candidate pool for scoring.
+      // No offset — we filter by score/id cursor below.
+      take: 200,
     });
 
     // Scoring formula: engagementRate = engagementTotal / ageHours
     // where engagementTotal = likes*1 + comments*2 + shares*3 + saves*2
     // This is a simple time-decay engagement rate that favors fresh viral content.
-    //
-    // CURSOR NOTE (Audit 21 F18-20): This feed uses offset-based pagination (not
-    // createdAt cursor) because the sort order is by engagement score, not time.
-    // Using a createdAt cursor with score-sorted results would produce duplicates
-    // and missed items. The offset cursor (string-encoded integer) correctly paginates
-    // through the score-sorted result set.
-    //
-    // PERFORMANCE NOTE: At scale, this should be computed in SQL:
-    //   ORDER BY ("likesCount" + "commentsCount" * 2 + "sharesCount" * 3 + "savesCount" * 2)
-    //            / POWER(GREATEST(EXTRACT(EPOCH FROM NOW() - "createdAt") / 3600, 1), 1.5)
-    //            DESC LIMIT $limit
-    // This eliminates the need to fetch 100 rows and sort in JS.
     const scored = posts.map((post) => {
-      const ageHours = Math.max(1, (Date.now() - post.createdAt.getTime()) / 3600000);
+      const ageHours = Math.max(1, (scoreTimestamp - post.createdAt.getTime()) / 3600000);
       const engagementTotal =
         post.likesCount +
         post.commentsCount * 2 +
@@ -284,28 +289,40 @@ export class FeedService {
       return { ...post, _score: engagementRate };
     });
 
-    scored.sort((a, b) => b._score - a._score);
+    scored.sort((a, b) => b._score - a._score || a.id.localeCompare(b.id));
 
-    // Offset-based pagination for score-sorted results
-    const page = scored.slice(offset, offset + limit + 1);
+    // Cursor-based keyset filtering: skip items at or above the cursor position.
+    // Uses epsilon tolerance (1e-9) for float comparison since scores involve division
+    // and Date.now() shifts between page requests cause minor score drift.
+    let filtered = scored;
+    if (cursorScore !== null && cursorId !== null) {
+      const eps = 1e-9;
+      const startIdx = scored.findIndex(
+        (item) =>
+          item._score < cursorScore! - eps ||
+          (Math.abs(item._score - cursorScore!) < eps && item.id > cursorId!),
+      );
+      filtered = startIdx >= 0 ? scored.slice(startIdx) : [];
+    }
+
+    const page = filtered.slice(0, limit + 1);
     const hasMore = page.length > limit;
     const pageItems = hasMore ? page.slice(0, limit) : page;
 
-    // Include score threshold in meta for score-based cursor support:
-    // clients can optionally use minScore as a fallback cursor to skip
-    // items below this engagement rate on subsequent pages.
-    const minScore = pageItems.length > 0
-      ? Math.round(pageItems[pageItems.length - 1]._score * 1000) / 1000
-      : 0;
-
     const data = pageItems.map(({ _score, ...post }) => post);
+
+    // Build keyset cursor from last item's score + id + timestamp
+    // Timestamp ensures consistent scoring across page requests
+    const lastItem = pageItems[pageItems.length - 1];
+    const nextCursor = hasMore && lastItem
+      ? `${lastItem._score}:${lastItem.id}:${scoreTimestamp}`
+      : undefined;
 
     const result = {
       data,
       meta: {
         hasMore,
-        cursor: hasMore ? String(offset + limit) : undefined,
-        minScore,
+        cursor: nextCursor,
       },
     };
 

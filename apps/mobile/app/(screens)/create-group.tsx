@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard, alignItems: 'center', justifyContent: 'center',
   },
   avatarOverlay: {
-    position: 'absolute', bottom: 0, right: 0,
+    position: 'absolute', bottom: 0, end: 0,
     width: 32, height: 32, borderRadius: radius.full,
     backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center',
   },
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary, fontSize: fontSize.xs, fontWeight: '500',
     flexShrink: 1,
   },
-  chipRemove: { marginLeft: 'auto' },
+  chipRemove: { marginStart: 'auto' },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,

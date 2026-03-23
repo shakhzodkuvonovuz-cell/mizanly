@@ -15,6 +15,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, fonts, fontSizeExt, lineHeight, letterSpacing } from '@/theme';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Magnetometer } from 'expo-sensors';
 import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo, PrayerNotificationSetting } from '@/types/islamic';
 import * as Location from 'expo-location';
@@ -301,6 +302,36 @@ export default function PrayerTimesScreen() {
   }, [userLocation]);
   const [currentPrayerIndex, setCurrentPrayerIndex] = useState(0);
   const [prayerMethods, setPrayerMethods] = useState<PrayerMethodInfo[]>([]);
+  const [deviceHeading, setDeviceHeading] = useState(0);
+
+  // Subscribe to magnetometer for live Qibla compass rotation
+  useEffect(() => {
+    let subscription: ReturnType<typeof Magnetometer.addListener> | null = null;
+    const subscribe = async () => {
+      try {
+        const isAvailable = await Magnetometer.isAvailableAsync();
+        if (!isAvailable) return;
+        Magnetometer.setUpdateInterval(100);
+        subscription = Magnetometer.addListener(({ x, y }) => {
+          // Calculate heading from magnetometer x/y
+          const heading = Math.atan2(y, x) * (180 / Math.PI);
+          const normalizedHeading = (heading + 360) % 360;
+          setDeviceHeading(normalizedHeading);
+        });
+      } catch {
+        // Magnetometer not available on this device
+      }
+    };
+    subscribe();
+    return () => {
+      if (subscription) subscription.remove();
+    };
+  }, []);
+
+  // Compass rotation: rotate Qibla arrow relative to device heading
+  const compassRotation = useMemo(() => {
+    return (qiblaDirection - deviceHeading + 360) % 360;
+  }, [qiblaDirection, deviceHeading]);
 
   const { data: notifSettings } = useQuery({
     queryKey: ['prayer-notification-settings'],
@@ -556,14 +587,17 @@ export default function PrayerTimesScreen() {
             </LinearGradient>
           </Animated.View>
 
-          {/* Compact Qibla Direction Card */}
+          {/* Compact Qibla Direction Card with live compass */}
           <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.qiblaCompactCard}>
             <LinearGradient
               colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
               style={styles.qiblaCompactGradient}
             >
               <View style={styles.qiblaCompactRow}>
-                <Icon name="map-pin" size="sm" color={colors.gold} />
+                {/* Live rotating compass arrow */}
+                <View style={[styles.qiblaArrowContainer, { transform: [{ rotate: `${compassRotation}deg` }] }]}>
+                  <Icon name="map-pin" size="sm" color={colors.gold} />
+                </View>
                 <View style={styles.qiblaCompactTextContainer}>
                   <Text style={[styles.qiblaCompactLabel, { color: tc.text.secondary }]}>
                     {t('islamic.qiblaDirection')}
@@ -573,6 +607,11 @@ export default function PrayerTimesScreen() {
                       ? `${qiblaDirection}\u00B0 ${getCompassDirection(qiblaDirection)}`
                       : t('islamic.calculating')}
                   </Text>
+                  {deviceHeading > 0 && (
+                    <Text style={[styles.qiblaCompactHeading, { color: tc.text.tertiary }]}>
+                      {t('islamic.deviceHeading')}: {Math.round(deviceHeading)}{'\u00B0'}
+                    </Text>
+                  )}
                 </View>
                 <Pressable
                   onPress={() => navigate('/(screens)/qibla-compass')}
@@ -913,12 +952,24 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   qiblaCompactTextContainer: {
     flex: 1,
   },
+  qiblaArrowContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(200,150,62,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   qiblaCompactLabel: {
     fontSize: fontSize.xs,
   },
   qiblaCompactValue: {
     fontSize: fontSize.base,
     fontFamily: fonts.bodyBold,
+  },
+  qiblaCompactHeading: {
+    fontSize: fontSize.xs,
+    marginTop: 1,
   },
 
   // Prayer List
