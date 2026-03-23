@@ -243,8 +243,14 @@ function buildAtempoChain(speed: number): string {
 
 // ── Command builder ────────────────────────────────────────────────
 
+// Normalize file:// URIs to raw paths for FFmpeg (Android requires raw paths)
+function normalizeUri(uri: string): string {
+  return uri.startsWith('file://') ? uri.replace('file://', '') : uri;
+}
+
 export function buildCommand(params: EditParams, outputPath: string): string {
-  const { inputUri, startTime, endTime, totalDuration, speed, filter, captionText, captionColor, originalVolume, quality } = params;
+  const { inputUri: rawInputUri, startTime, endTime, totalDuration, speed, filter, captionText, captionColor, originalVolume, quality } = params;
+  const inputUri = normalizeUri(rawInputUri);
   const qualityCfg = QUALITY_MAP[quality];
   const clipDuration = endTime - startTime;
 
@@ -262,12 +268,12 @@ export function buildCommand(params: EditParams, outputPath: string): string {
 
   // Music input (if any)
   if (params.musicUri) {
-    parts.push(`-i "${params.musicUri}"`);
+    parts.push(`-i "${normalizeUri(params.musicUri)}"`);
   }
 
   // Voiceover input (if any)
   if (params.voiceoverUri) {
-    parts.push(`-i "${params.voiceoverUri}"`);
+    parts.push(`-i "${normalizeUri(params.voiceoverUri)}"`);
   }
 
   // ── Video filter chain ──────────────────────────────────

@@ -187,6 +187,18 @@ export default function VideoEditorScreen() {
   }, [redoStack, captureSnapshot, applySnapshot, haptic]);
   const videoUri = params.videoUri || params.uri || null;
 
+  // Cleanup: stop voiceover recording and TTS on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+        recordingRef.current = null;
+      }
+      Speech.stop();
+      Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
+    };
+  }, []);
+
   // Timeline width reference for gesture calculations
   const timelineWidth = useRef(0);
   const MIN_TRIM_GAP = 1; // minimum 1 second between handles
@@ -365,14 +377,42 @@ export default function VideoEditorScreen() {
           trimStart: startTime,
           trimEnd: endTime,
           speed: playbackSpeed,
+          speedCurve: speedCurve !== 'none' ? speedCurve : undefined,
           filter: selectedFilter,
           caption: captionText,
           captionColor: selectedTextColor,
           captionFont: selectedFont,
+          textStartTime,
+          textEndTime: textEndTime || undefined,
+          textSize: textSize !== 48 ? textSize : undefined,
+          textBg: textBg || undefined,
+          textShadow: textShadow || undefined,
           volume: originalVolume,
           musicVolume,
           musicTrackId: selectedTrack?.id,
+          voiceEffect: voiceEffect !== 'none' ? voiceEffect : undefined,
+          audioPitch: audioPitch !== 0 ? audioPitch : undefined,
+          noiseReduce: noiseReduce || undefined,
           quality: selectedQuality,
+          isReversed: isReversed || undefined,
+          aspectRatio: aspectRatio !== '9:16' ? aspectRatio : undefined,
+          stabilize: stabilize || undefined,
+          brightness: brightness !== 0 ? brightness : undefined,
+          contrast: contrast !== 0 ? contrast : undefined,
+          saturation: saturation !== 0 ? saturation : undefined,
+          temperature: temperature !== 0 ? temperature : undefined,
+          fadeIn: fadeIn > 0 ? fadeIn : undefined,
+          fadeOut: fadeOut > 0 ? fadeOut : undefined,
+          rotation: rotation !== 0 ? rotation : undefined,
+          sharpen: sharpen || undefined,
+          vignette: vignetteOn || undefined,
+          grain: grain || undefined,
+          flipH: flipH || undefined,
+          flipV: flipV || undefined,
+          glitch: glitch || undefined,
+          letterbox: letterbox || undefined,
+          boomerang: boomerang || undefined,
+          freezeFrameAt,
         };
 
         setExportProgress(5);
