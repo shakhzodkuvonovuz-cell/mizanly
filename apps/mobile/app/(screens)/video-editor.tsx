@@ -47,6 +47,15 @@ const FILTERS: { id: FilterName; labelKey: string; color: string }[] = [
 const FONT_OPTION_KEYS = ['default', 'bold', 'handwritten'];
 const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', colors.extended.blue];
 
+type VoiceEffect = 'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'telephone';
+type EditSnapshot = {
+  startTime: number; endTime: number; speed: SpeedOption; filter: FilterName;
+  captionText: string; originalVolume: number; musicVolume: number; isReversed: boolean;
+  voiceEffect: VoiceEffect; stabilize: boolean; noiseReduce: boolean;
+  freezeFrameAt: number | null; textStartTime: number; textEndTime: number;
+  aspectRatio: '9:16' | '16:9' | '1:1' | '4:5';
+};
+
 export default function VideoEditorScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
@@ -82,7 +91,6 @@ export default function VideoEditorScreen() {
   const [textEndTime, setTextEndTime] = useState(0); // 0 = full duration
 
   // Effects: voice effect, stabilization, noise reduction, freeze frame
-  type VoiceEffect = 'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'telephone';
   const [voiceEffect, setVoiceEffect] = useState<VoiceEffect>('none');
   const [stabilize, setStabilize] = useState(false);
   const [noiseReduce, setNoiseReduce] = useState(false);
@@ -91,47 +99,50 @@ export default function VideoEditorScreen() {
   const [exportProgress, setExportProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
-  // Undo/redo stack — snapshot key edit state
-  type EditSnapshot = { startTime: number; endTime: number; speed: SpeedOption; filter: FilterName; captionText: string; originalVolume: number; musicVolume: number; isReversed: boolean };
+  // Undo/redo stack — snapshot ALL edit state
   const [undoStack, setUndoStack] = useState<EditSnapshot[]>([]);
   const [redoStack, setRedoStack] = useState<EditSnapshot[]>([]);
 
+  const captureSnapshot = useCallback((): EditSnapshot => ({
+    startTime, endTime, speed: playbackSpeed, filter: selectedFilter,
+    captionText, originalVolume, musicVolume, isReversed,
+    voiceEffect, stabilize, noiseReduce, freezeFrameAt,
+    textStartTime, textEndTime, aspectRatio,
+  }), [startTime, endTime, playbackSpeed, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio]);
+
+  const applySnapshot = useCallback((s: EditSnapshot) => {
+    setStartTime(s.startTime); setEndTime(s.endTime);
+    setPlaybackSpeed(s.speed); setSelectedFilter(s.filter);
+    setCaptionText(s.captionText); setOriginalVolume(s.originalVolume);
+    setMusicVolume(s.musicVolume); setIsReversed(s.isReversed);
+    setVoiceEffect(s.voiceEffect); setStabilize(s.stabilize);
+    setNoiseReduce(s.noiseReduce); setFreezeFrameAt(s.freezeFrameAt);
+    setTextStartTime(s.textStartTime); setTextEndTime(s.textEndTime);
+    setAspectRatio(s.aspectRatio);
+  }, []);
+
   const pushUndo = useCallback(() => {
-    setUndoStack(prev => [...prev.slice(-19), { startTime, endTime, speed: playbackSpeed, filter: selectedFilter, captionText, originalVolume, musicVolume, isReversed }]);
+    setUndoStack(prev => [...prev.slice(-19), captureSnapshot()]);
     setRedoStack([]);
-  }, [startTime, endTime, playbackSpeed, selectedFilter, captionText, originalVolume, musicVolume, isReversed]);
+  }, [captureSnapshot]);
 
   const handleUndo = useCallback(() => {
     if (undoStack.length === 0) return;
     haptic.tick();
     const prev = undoStack[undoStack.length - 1];
-    setRedoStack(r => [...r, { startTime, endTime, speed: playbackSpeed, filter: selectedFilter, captionText, originalVolume, musicVolume, isReversed }]);
+    setRedoStack(r => [...r, captureSnapshot()]);
     setUndoStack(s => s.slice(0, -1));
-    setStartTime(prev.startTime);
-    setEndTime(prev.endTime);
-    setPlaybackSpeed(prev.speed);
-    setSelectedFilter(prev.filter);
-    setCaptionText(prev.captionText);
-    setOriginalVolume(prev.originalVolume);
-    setMusicVolume(prev.musicVolume);
-    setIsReversed(prev.isReversed);
-  }, [undoStack, startTime, endTime, playbackSpeed, selectedFilter, captionText, originalVolume, musicVolume, isReversed, haptic]);
+    applySnapshot(prev);
+  }, [undoStack, captureSnapshot, applySnapshot, haptic]);
 
   const handleRedo = useCallback(() => {
     if (redoStack.length === 0) return;
     haptic.tick();
     const next = redoStack[redoStack.length - 1];
-    setUndoStack(s => [...s, { startTime, endTime, speed: playbackSpeed, filter: selectedFilter, captionText, originalVolume, musicVolume, isReversed }]);
+    setUndoStack(s => [...s, captureSnapshot()]);
     setRedoStack(r => r.slice(0, -1));
-    setStartTime(next.startTime);
-    setEndTime(next.endTime);
-    setPlaybackSpeed(next.speed);
-    setSelectedFilter(next.filter);
-    setCaptionText(next.captionText);
-    setOriginalVolume(next.originalVolume);
-    setMusicVolume(next.musicVolume);
-    setIsReversed(next.isReversed);
-  }, [redoStack, startTime, endTime, playbackSpeed, selectedFilter, captionText, originalVolume, musicVolume, isReversed, haptic]);
+    applySnapshot(next);
+  }, [redoStack, captureSnapshot, applySnapshot, haptic]);
   const videoUri = params.videoUri || params.uri || null;
 
   // Timeline width reference for gesture calculations

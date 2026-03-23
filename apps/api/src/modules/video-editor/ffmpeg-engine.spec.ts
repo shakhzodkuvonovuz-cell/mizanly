@@ -81,12 +81,14 @@ const QUALITY_MAP: Record<QualityPreset, QualityConfig> = {
 
 function buildAtempoChain(speed: number): string {
   if (speed >= 0.5 && speed <= 100) return `atempo=${speed}`;
-  if (speed < 0.5 && speed >= 0.25) return 'atempo=0.5,atempo=0.5';
-  const chains: string[] = [];
-  let remaining = speed;
-  while (remaining < 0.5) { chains.push('atempo=0.5'); remaining *= 2; }
-  if (remaining !== 1) chains.push(`atempo=${remaining}`);
-  return chains.join(',');
+  if (speed < 0.5 && speed > 0) {
+    const chains: string[] = [];
+    let remaining = speed;
+    while (remaining < 0.5) { chains.push('atempo=0.5'); remaining *= 2; }
+    if (Math.abs(remaining - 1.0) > 0.001) chains.push(`atempo=${remaining.toFixed(4)}`);
+    return chains.join(',');
+  }
+  return `atempo=${speed}`;
 }
 
 function buildCommand(params: EditParams, outputPath: string): string {
@@ -143,8 +145,10 @@ function buildCommand(params: EditParams, outputPath: string): string {
       .replace(/%/g, '%%')
       .replace(/\[/g, '\\[')
       .replace(/\]/g, '\\]');
-    const txtStart = params.textStartTime ?? 0;
-    const txtEnd = params.textEndTime && params.textEndTime > 0 ? params.textEndTime : clipDuration;
+    const rawTxtStart = params.textStartTime ?? 0;
+    const rawTxtEnd = params.textEndTime && params.textEndTime > 0 ? params.textEndTime : endTime;
+    const txtStart = Math.max(0, rawTxtStart - startTime);
+    const txtEnd = Math.min(clipDuration, rawTxtEnd - startTime);
     const enableExpr = `:enable='between(t,${txtStart.toFixed(2)},${txtEnd.toFixed(2)})'`;
     vFilters.push(
       `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5${enableExpr}`,
@@ -153,8 +157,8 @@ function buildCommand(params: EditParams, outputPath: string): string {
   if (params.stabilize) vFilters.push('deshake=rx=32:ry=32');
   if (params.freezeFrameAt !== null && params.freezeFrameAt !== undefined) {
     const freezeAt = params.freezeFrameAt - startTime;
-    if (freezeAt > 0 && freezeAt < clipDuration) {
-      vFilters.push(`tpad=stop_mode=clone:stop_duration=2:stop=${Math.floor(freezeAt * 25)}`);
+    if (freezeAt > 0.1 && freezeAt < clipDuration - 0.1) {
+      vFilters.push('tpad=stop_mode=clone:stop_duration=2');
     }
   }
   if (vFilters.length > 0) {

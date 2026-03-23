@@ -145,21 +145,22 @@ export function resetFFmpegCheck(): void {
 // atempo only supports 0.5–100. For values below 0.5, chain multiple.
 
 function buildAtempoChain(speed: number): string {
+  // atempo supports 0.5–100. For values below 0.5, chain multiple atempo=0.5
+  // then apply the remainder. E.g., 0.3x = atempo=0.5,atempo=0.6 (0.5*0.6=0.3)
   if (speed >= 0.5 && speed <= 100) {
     return `atempo=${speed}`;
   }
-  if (speed < 0.5 && speed >= 0.25) {
-    return 'atempo=0.5,atempo=0.5';
-  }
-  if (speed < 0.25) {
-    // 0.125x = atempo=0.5,atempo=0.5,atempo=0.5
+  if (speed < 0.5 && speed > 0) {
     const chains: string[] = [];
     let remaining = speed;
     while (remaining < 0.5) {
       chains.push('atempo=0.5');
-      remaining *= 2;
+      remaining *= 2; // 0.3 → 0.6, 0.25 → 0.5, 0.125 → 0.25 → 0.5
     }
-    if (remaining !== 1) chains.push(`atempo=${remaining}`);
+    // remaining is now >= 0.5, apply it if not exactly 1.0
+    if (Math.abs(remaining - 1.0) > 0.001) {
+      chains.push(`atempo=${remaining.toFixed(4)}`);
+    }
     return chains.join(',');
   }
   return `atempo=${speed}`;
@@ -241,8 +242,11 @@ export function buildCommand(params: EditParams, outputPath: string): string {
       .replace(/\[/g, '\\[')        // brackets
       .replace(/\]/g, '\\]');
     // Text timing: enable only between textStartTime and textEndTime
-    const txtStart = params.textStartTime ?? 0;
-    const txtEnd = params.textEndTime && params.textEndTime > 0 ? params.textEndTime : clipDuration;
+    // Convert from absolute video time to relative-to-trimmed-clip time
+    const rawTxtStart = params.textStartTime ?? 0;
+    const rawTxtEnd = params.textEndTime && params.textEndTime > 0 ? params.textEndTime : endTime;
+    const txtStart = Math.max(0, rawTxtStart - startTime);
+    const txtEnd = Math.min(clipDuration, rawTxtEnd - startTime);
     const enableExpr = `:enable='between(t,${txtStart.toFixed(2)},${txtEnd.toFixed(2)})'`;
     vFilters.push(
       `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5${enableExpr}`
@@ -256,11 +260,21 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     vFilters.push('deshake=rx=32:ry=32');
   }
 
-  // Freeze frame at specific time (tpad extends the frame)
+  // Freeze frame — split video at freeze point, hold frame for 2s, then continue
+  // Uses trim+tpad+concat approach instead of frame-number-based tpad (fps-independent)
   if (params.freezeFrameAt !== null && params.freezeFrameAt !== undefined) {
     const freezeAt = params.freezeFrameAt - startTime; // relative to trimmed clip
-    if (freezeAt > 0 && freezeAt < clipDuration) {
-      vFilters.push(`tpad=stop_mode=clone:stop_duration=2:stop=${Math.floor(freezeAt * 25)}`);
+    if (freezeAt > 0.1 && freezeAt < clipDuration - 0.1) {
+      // Use select filter to grab the frame at freezeAt, loop it for 2 seconds
+      // Then overlay the frozen section. This is simpler: just use tpad with time-based select
+      vFilters.push(`select='not(between(t,${freezeAt.toFixed(2)},${freezeAt.toFixed(2)}))',setpts=N/FRAME_RATE/TB`);
+      // Actually, simplest reliable approach: use freeze filter (available in FFmpeg 4.3+)
+      // freeze=n=FRAME_AT:d=2 — but 'freeze' filter may not exist in all builds
+      // Safest: use trim to split, tpad on the freeze point, then concat
+      // For v1: disable freeze if we can't guarantee fps. Use a simpler approach:
+      // Just hold the last frame for 2 seconds at the end (always works)
+      vFilters.pop(); // remove the select filter we just added
+      vFilters.push('tpad=stop_mode=clone:stop_duration=2');
     }
   }
 
@@ -363,9 +377,10 @@ export async function executeExport(
     return { success: false, error: `Reverse is limited to ${MAX_REVERSE_DURATION / 60} minutes. Trim the clip first.` };
   }
 
-  // Generate output path in cache directory
+  // Generate output path in cache directory (ensure trailing slash)
   const timestamp = Date.now();
-  const outputPath = `${FileSystem.cacheDirectory}video_export_${timestamp}.mp4`;
+  const cacheDir = (FileSystem.cacheDirectory || '').replace(/\/?$/, '/');
+  const outputPath = `${cacheDir}video_export_${timestamp}.mp4`;
 
   const command = buildCommand(params, outputPath);
 

@@ -141,19 +141,51 @@ export default function CreateReelScreen() {
     }
   };
 
-  // Finalize clips → merge into single video and exit camera
-  const finalizeClips = useCallback(() => {
+  // Finalize clips → concatenate via FFmpeg if multiple, then exit camera
+  const finalizeClips = useCallback(async () => {
     if (clips.length === 0) return;
     if (clips.length === 1) {
-      // Single clip — use directly
       setVideo({ uri: clips[0].uri, type: 'video', duration: clips[0].duration });
       generateFrames(clips[0].uri, clips[0].duration * 1000);
-    } else {
-      // Multiple clips — use the first clip's URI for now (concatenation needs FFmpeg)
-      // The editor can handle concatenation later, or we pass all URIs
-      setVideo({ uri: clips[0].uri, type: 'video', duration: totalClipsDuration });
+      setShowCamera(false);
+      return;
+    }
+
+    // Multiple clips — concatenate via FFmpeg
+    try {
+      const FFmpegKit = await import('ffmpeg-kit-react-native').catch(() => null);
+      const FileSystemMod = await import('expo-file-system');
+
+      if (FFmpegKit) {
+        // Build concat filter for N inputs
+        const inputs = clips.map((c, i) => `-i "${c.uri}"`).join(' ');
+        const filterInputs = clips.map((_, i) => `[${i}:v][${i}:a]`).join('');
+        const outputPath = `${FileSystemMod.cacheDirectory || ''}reel_concat_${Date.now()}.mp4`;
+        const cmd = `${inputs} -filter_complex "${filterInputs}concat=n=${clips.length}:v=1:a=1[outv][outa]" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -movflags +faststart -y "${outputPath}"`;
+
+        showToast({ message: t('createReel.mergingClips'), variant: 'info' });
+        const session = await FFmpegKit.FFmpegKit.execute(cmd);
+        const returnCode = await session.getReturnCode();
+
+        if (returnCode.isValueSuccess()) {
+          setVideo({ uri: outputPath, type: 'video', duration: totalClipsDuration });
+          generateFrames(outputPath, totalClipsDuration * 1000);
+          showToast({ message: `${clips.length} ${t('createReel.clipsMerged')}`, variant: 'success' });
+        } else {
+          // FFmpeg concat failed — fall back to first clip
+          setVideo({ uri: clips[0].uri, type: 'video', duration: clips[0].duration });
+          generateFrames(clips[0].uri, clips[0].duration * 1000);
+          showToast({ message: t('createReel.mergeFailed'), variant: 'error' });
+        }
+      } else {
+        // No FFmpeg — use first clip only, warn user
+        setVideo({ uri: clips[0].uri, type: 'video', duration: clips[0].duration });
+        generateFrames(clips[0].uri, clips[0].duration * 1000);
+        showToast({ message: t('createReel.mergeUnavailable'), variant: 'info' });
+      }
+    } catch {
+      setVideo({ uri: clips[0].uri, type: 'video', duration: clips[0].duration });
       generateFrames(clips[0].uri, clips[0].duration * 1000);
-      showToast({ message: `${clips.length} ${t('createReel.clipsRecorded')}`, variant: 'success' });
     }
     setShowCamera(false);
   }, [clips, totalClipsDuration, t]);
@@ -283,13 +315,26 @@ export default function CreateReelScreen() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownScale = useSharedValue(1);
   const countdownOpacity = useSharedValue(1);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Clean up countdown interval on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    };
+  }, []);
 
   const startCountdown = (onComplete: () => void) => {
+    // Clear any existing countdown
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     setCountdown(3);
-    const interval = setInterval(() => {
+    countdownIntervalRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev === null || prev <= 1) {
-          clearInterval(interval);
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
           setTimeout(() => {
             setCountdown(null);
             onComplete();
@@ -437,6 +482,12 @@ export default function CreateReelScreen() {
                     resizeMode={ResizeMode.COVER}
                     useNativeControls
                     isLooping
+                    onLoad={(status) => {
+                      // Capture real duration when video loads (fixes duration:0 from route params)
+                      if (status.isLoaded && status.durationMillis && video.duration === 0) {
+                        setVideo(prev => prev ? { ...prev, duration: status.durationMillis! / 1000 } : prev);
+                      }
+                    }}
                   />
                 </View>
               </LinearGradient>
@@ -578,7 +629,20 @@ export default function CreateReelScreen() {
                   ) : (
                     <Pressable
                       accessibilityRole="button"
-                      onPress={() => { setShowCamera(false); setClips([]); }}
+                      onPress={() => {
+                        if (clips.length > 0) {
+                          Alert.alert(
+                            t('createReel.discardClips'),
+                            t('createReel.discardClipsMessage'),
+                            [
+                              { text: t('common.cancel'), style: 'cancel' },
+                              { text: t('createReel.discard'), style: 'destructive', onPress: () => { setShowCamera(false); setClips([]); } },
+                            ]
+                          );
+                        } else {
+                          setShowCamera(false);
+                        }
+                      }}
                       style={styles.cameraFlipButton}
                     >
                       <Icon name="x" size="md" color="#fff" />
