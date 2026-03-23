@@ -1,4 +1,4 @@
-# MASTER TODO — Every Single Finding (Updated 2026-03-23 Session 2, Waves 5+6+7 verification)
+# MASTER TODO — Every Single Finding (Updated 2026-03-23 Session 2, Waves 5+6+7 complete)
 
 > Consolidated from: 291 gaps audit, 80 DEFERRED_FIXES, 29-dimension audit, deploy checklist,
 > algorithm audit, UI/UX deep audit (March 19 + March 22), comprehensive audit (60-dim),
@@ -34,7 +34,7 @@
 - [x] ogApi.ts missing on mobile — FIXED (Wave 4 — ogApi.ts created)
 - [x] altProfileApi.ts exists but 0 screens import it — FIXED (Wave 5 — flipside.tsx screen created)
 - [x] communityNotesApi.ts exists but 0 screens import it — FIXED (Wave 5 — wired into post/[id].tsx)
-- [~] Payments mostly unused — PARTIALLY FIXED (Wave 7 — donate/gift-shop/waqf wiring in progress)
+- [~] Payments mostly unused — PARTIALLY FIXED (Wave 7 — donate, gift-shop, waqf all wired to Stripe PaymentIntent)
 - [x] Chat lock PIN visible — N/A (no TextInput exists, uses biometric)
 - [x] DM from non-followers unrestricted — FIXED (Wave 4 — private accounts block non-follower DMs)
 - [x] No file size limit on image upload — FIXED (Wave 4 — 20MB image, 100MB reel, 500MB video)
@@ -82,18 +82,18 @@
 - [x] No story quick-reactions — ALREADY EXISTED (Wave 6 — enhanced styling)
 - [ ] No emoji picker component
 - [x] @mention not highlighted in RichText — already fixed
-- [ ] No bidi text handling in RichText (Arabic in English post renders wrong)
+- [x] No bidi text handling in RichText (Arabic in English post renders wrong) — FIXED (Wave 7 — RTL detection + writingDirection)
 - [x] Link preview not used in PostCard — ALREADY WIRED (verified Wave 5)
 - [x] No double-tap like on Saf posts — ALREADY DONE (verified Wave 2)
-- [ ] Tab bar haptic missing
+- [x] Tab bar haptic missing — ALREADY DONE (verified Wave 7 — haptic.tick on all tabs)
 - [x] Avatar fontWeight hardcoded — FIXED (Wave 2)
 - [x] GradientButton loading layout shift — FIXED (Wave 2)
-- [ ] EmptyState paddingTop:80 hardcoded — should be responsive/spacing token
+- [x] EmptyState paddingTop:80 hardcoded — ALREADY DONE (verified Wave 7 — uses spacing token)
 - [x] Skeleton shimmer direction LTR — already fixed
 - [x] No shimmer stagger wave — N/A (Skeleton shimmer RTL already fixed, stagger is a design choice)
-- [ ] Typing indicator text-only ("typing...") — should be animated dots like WhatsApp
+- [x] Typing indicator text-only ("typing...") — FIXED (Wave 7 — TypingIndicator component with animated dots)
 - [ ] No voice message waveform visualization in chat bubbles
-- [ ] BottomSheet setTimeout race condition — setTimeout(onClose, 250) races with unmount
+- [x] BottomSheet setTimeout race condition — ALREADY DONE (verified Wave 7 — uses runOnJS, no setTimeout)
 - [ ] ImageLightbox/ImageGallery 85% duplicated — 600+ lines near-identical code
 - [ ] LocationPicker is 100% mock — hardcoded locations, fake API delay
 - [x] Marketplace star rating uses heart icons — FIXED (Wave 2)
@@ -104,9 +104,9 @@
 ### Screens & Navigation
 - [x] Follower count not refreshed after follow/unfollow — FIXED (Wave 3 — optimistic update)
 - [x] Feed doesn't remember scroll position — FIXED (Wave 5 — Zustand store + useFocusEffect on 3 tabs)
-- [ ] No grid/list view toggle on profile
+- [x] No grid/list view toggle on profile — FIXED (Wave 7 — postViewMode toggle)
 - [x] No "Edited" label on edited posts — FIXED (Wave 5 — isEdited check with 60s threshold)
-- [ ] No repost attribution (reposted by who?)
+- [x] No repost attribution (reposted by who?) — FIXED (Wave 7 — "Reposted by @username" with repeat icon)
 - [x] No unfollow confirmation dialog — FIXED (Wave 6 — Alert.alert destructive dialog)
 - [x] No force update check — FIXED (Wave 6 — ForceUpdateModal + version check)
 - [x] No maintenance mode screen — FIXED (Wave 5 — maintenance.tsx created)
@@ -117,16 +117,16 @@
 - [x] Missing "Resend code" on sign-up verification — FIXED (Wave 2)
 - [ ] Inconsistent progress indicators in onboarding (bar vs dots)
 - [ ] Static Dimensions.get('window') in bakra — won't update on rotation/split view
-- [ ] Chat folders have no filter rules — empty named containers
-- [ ] New conversation has no contact list — empty screen with search box
-- [ ] Playlist can't be played — no Play All, Shuffle, reorder, or remove
+- [x] Chat folders have no filter rules — FIXED (Wave 7 — FilterKey with archived + filterType)
+- [x] New conversation has no contact list — FIXED (Wave 7 — SectionList with Recent Contacts)
+- [x] Playlist can't be played — FIXED (Wave 7 — Play All + Shuffle with seeded shuffle)
 - [ ] Watch Party non-functional — requires typing raw video IDs, no sync
 - [ ] No seller analytics in creator dashboard
 - [x] No payout history in cashout screen — FIXED (Wave 6 — payout history section added)
 - [x] No follower growth chart in analytics — FIXED (Wave 6 — FollowerGrowthChart bar chart)
-- [~] Account Settings dead link — FIXING (Wave 7 — storage-management screen in progress)
-- [~] Data export shares raw JSON — FIXING (Wave 7 — App Store data portability formatting in progress)
-- [ ] Status privacy stored in AsyncStorage only — resets on app reinstall
+- [x] Account Settings dead link — FIXED (Wave 7 — inline cache info with clear)
+- [x] Data export shares raw JSON — FIXED (Wave 7 — formatted text + JSON picker)
+- [ ] Status privacy stored in AsyncStorage only — resets on app reinstall (TODO added Wave 7)
 
 ### Video Player
 - [x] VideoPlayer no SafeArea — FIXED (Wave 2)
@@ -152,11 +152,11 @@
 - [ ] Qibla compass static — no magnetometer integration, arrow doesn't rotate with device
 
 ### Backend/API
-- [ ] Scheduled posts no timezone handling
-- [ ] No trending feed cache (query runs every request)
-- [ ] No device fingerprinting (1000 accounts per phone)
-- [ ] No screenshot prevention on 2FA/encryption screens
-- [ ] SEC-M3: Redis cache invalidation catch in posts.service.ts line 644
+- [x] Scheduled posts no timezone handling — FIXED (Wave 7 — UTC normalization + timezone field)
+- [x] No trending feed cache (query runs every request) — FIXED (Wave 7 — Redis 5min TTL)
+- [x] No device fingerprinting (1000 accounts per phone) — FIXED (Wave 7 — Redis 5 accounts/device limit)
+- [ ] No screenshot prevention on 2FA/encryption screens (TODO added Wave 7 — expo-screen-capture not installed)
+- [x] SEC-M3: Redis cache invalidation catch in posts.service.ts line 644 — ALREADY DONE (verified Wave 7 — all catches log properly)
 
 ### External Services
 - [ ] R2 CORS not configured on bucket
@@ -219,11 +219,11 @@
 ## ALGORITHM — Feed/Recommendation Issues (7)
 
 - [ ] Interest vector averages into noise (diverse users get bad recs)
-- [ ] No exploration mechanism (new content with 0 views never surfaces)
+- [x] No exploration mechanism (new content with 0 views never surfaces) — FIXED (Wave 7 — 15% fresh content slots)
 - [ ] Scoring weights hardcoded (no A/B testing)
-- [ ] Session signals in-memory only (resets on restart, won't scale)
+- [x] Session signals in-memory only (resets on restart, won't scale) — FIXED (Wave 7 — migrated to Redis hashes)
 - [ ] Islamic boost uses hardcoded prayer hours (not location-aware)
-- [ ] Diversity reranking too naive (only same-author prevention)
+- [x] Diversity reranking too naive (only same-author prevention) — FIXED (Wave 7 — hashtag diversity 2-pass pipeline)
 - [ ] Trending window 48 hours (popular-get-more-popular loop)
 
 ---
@@ -235,7 +235,7 @@
 - [ ] C-15: Orders no Stripe PaymentIntent integration
 - [x] m-02: CoinTransactionType enum missing — FIXED (Wave 6)
 - [x] m-03: CoinTransaction currency field missing — FIXED (Wave 6)
-- [ ] m-18/19/20: Transaction/order/donation indexes missing
+- [x] m-18/19/20: Transaction/order/donation indexes missing — FIXED (Wave 7 — 5 new indexes)
 - [x] m-25: Tip @@unique — FIXED (Wave 3)
 - [x] m-28: WaqfDonation model — FIXED (Wave 4)
 - [ ] F3: TOTP secret stored plaintext (needs encrypted column)
@@ -256,7 +256,7 @@
 - [ ] P1-MONEY-01-04: Float to Decimal remaining fields (CoinBalance.balance, Product.price)
 - [ ] P1-DESIGN-01-04: Notification polymorphic table, TwoFactorSecret encryption
 - [ ] P2-001: Mixed cuid/uuid ID strategy (94 cuid + 61 uuid)
-- [ ] P2-003: 41 String fields should be enums — PARTIALLY FIXED (Wave 6 — 10 of 41 converted)
+- [ ] P2-003: 41 String fields should be enums — PARTIALLY FIXED (Wave 6+7 — 20 of 41 converted)
 
 ---
 
@@ -321,12 +321,12 @@
 - [x] personalized-feed.spec shallow — FIXED (Wave 3 — 21->42 tests)
 - [x] content-safety.spec if-typeof — FIXED (Wave 3 — 14->36 tests)
 - [x] recommendations.spec 0 error paths — FIXED (Wave 3 — 15->29 tests)
-- [ ] 10 instances of `expect(service).toBeDefined()` as sole assertion across specs
+- [x] 10 instances of `expect(service).toBeDefined()` as sole assertion across specs — VERIFIED N/A (Wave 7 — all paired with toBeInstanceOf)
 - [ ] 8 instances of `expect(string.length).toBeGreaterThan(0)` (tests constants, not logic)
-- [ ] 4 files with conditional `if typeof` test guards that hide regressions
+- [x] 4 files with conditional `if typeof` test guards that hide regressions — VERIFIED N/A (Wave 7 — all legitimate $transaction mock patterns)
 - [ ] 296+ `toBeDefined()` assertions across codebase (~29.5% of tests test existence not correctness)
-- [ ] Search tests — 19 tests with 0 error checks
-- [ ] Embeddings tests — 17 tests with 0 error checks
+- [x] Search tests — 19 tests with 0 error checks — FIXED (Wave 7 — +12 error path tests)
+- [x] Embeddings tests — 17 tests with 0 error checks — FIXED (Wave 7 — +15 error path tests)
 
 ---
 
@@ -377,28 +377,28 @@ Not listed individually here — see GAPS_COMPLETE_VERIFIED_2026_03_23.md sectio
 | Critical (launch blockers) | 12 | 0 | 12 |
 | High (broken features) | 24 | 19 | 5 |
 | High (rule violations/bugs) | 15 | 15 | 0 |
-| Medium (UI/UX quality) | 74 | 37 | 37 |
+| Medium (UI/UX quality) | 74 | 53 | 21 |
 | Medium (accessibility) | 5 | 0 | 5 |
 | Medium (RTL) | 3 | 1 | 2 |
 | Medium (performance) | 8 | 2 | 6 |
 | Medium (i18n gaps) | 3 | 2 | 1 |
 | Medium (stale docs) | 6 | 6 | 0 |
-| Algorithm | 7 | 0 | 7 |
-| Schema migrations | 27 | 13 | 14 |
+| Algorithm | 7 | 3 | 4 |
+| Schema migrations | 27 | 14 | 13 |
 | Code fixes deferred | 31 | 25 | 6 |
 | Installed not wired | 6 | 0 | 6 |
-| Tests incomplete | 10 | 3 | 7 |
+| Tests incomplete | 10 | 7 | 3 |
 | Translations | 7 | 0 | 7 |
 | Infrastructure | 8 | 0 | 8 |
 | Large file decomposition | 4 | 0 | 4 |
 | Competitor features | 140 | 0 | 140 |
-| **TOTAL** | **389** | **123** | **266** |
+| **TOTAL** | **389** | **147** | **242** |
 
 ---
 
 ## SESSION 2 PROGRESS (2026-03-23)
 
-**133 fixes applied across 6 waves, 123 verified done in this file (includes 6 items verified already-fixed by Wave 3/4 agents).**
+**147 items verified done across 7 waves (includes items verified already-fixed).**
 
 | Wave | Focus | Key Fixes |
 |------|-------|-----------|
@@ -408,5 +408,6 @@ Not listed individually here — see GAPS_COMPLETE_VERIFIED_2026_03_23.md sectio
 | Wave 4 | Features + notifications + Quran | Report FK fields, Tip stripePaymentId, Embedding FKs, WaqfDonation model, zakat-calculator API, islamic-calendar API, ogApi.ts, banned.tsx, file size limits, DM privacy, translation cache invalidation, sticker count atomic, scheduled message auto-send, Quran room management, 8 notification emissions wired, notification cleanup cron, circle invite notifications |
 | Wave 5 | Dead APIs + security + UX gaps | altProfileApi→flipside.tsx, communityNotesApi→post/[id].tsx, BlurHash in PostCard chain, "Edited" label, feed scroll position restore, maintenance.tsx, Meilisearch index cleanup, BullMQ dead letter queue, AI prompt injection hardening (7 prompts), StarredMessage join table, 35 accessibility labels |
 | Wave 6 | Engagement + safety + schema | ReactionPicker component, ForceUpdateModal, app rating prompt, share reel to DM, unfollow confirmation, read receipt toggle, payout history, FollowerGrowthChart, rate limit 429 retry, token refresh 401 recovery, AI cost controls (per-user daily quota), Meilisearch enhanced indexes, ban session invalidation (Clerk SDK), 2FA login flow, CoinTransactionType enum, CoinTransaction currency, 10 String→Enum schema conversions |
+| Wave 7 | Algorithm + chat + tests + polish | RTL bidi text in RichText, TypingIndicator animated dots, profile grid/list toggle, repost attribution, chat folder filter rules, new conversation contact list, playlist Play All + Shuffle, scheduled posts timezone, trending feed Redis cache, device fingerprinting, exploration mechanism (15% fresh slots), session signals→Redis, diversity reranking (hashtag 2-pass), 5 schema indexes (m-18/19/20), 10 more String→Enum (20/41 total), search tests +12 error paths, embeddings tests +15 error paths, data export formatted text + JSON, account settings cache info, donate/gift-shop/waqf Stripe wiring |
 
 **Test suite: 4,552+ tests passing, 0 failures, 0 TypeScript errors.**
