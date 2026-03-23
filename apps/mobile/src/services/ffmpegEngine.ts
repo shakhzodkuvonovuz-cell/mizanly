@@ -106,6 +106,12 @@ export interface EditParams {
   stabilize?: boolean;     // video stabilization (vidstab)
   noiseReduce?: boolean;   // audio noise reduction
   freezeFrameAt?: number | null; // seconds to freeze, null = none
+  brightness?: number;           // -100 to +100, 0 = neutral
+  contrast?: number;             // -100 to +100, 0 = neutral
+  saturation?: number;           // -100 to +100, 0 = neutral
+  temperature?: number;          // -100 to +100, 0 = neutral
+  fadeIn?: number;               // seconds, 0 = no fade
+  fadeOut?: number;               // seconds, 0 = no fade
 }
 
 export interface ExportResult {
@@ -332,11 +338,43 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     );
   }
 
-  // Video stabilization (2-pass: vidstabdetect then vidstabtransform)
-  // NOTE: vidstab requires 2-pass which can't be done in a single command.
-  // Use a lightweight approach: deshake filter (single-pass, less accurate but works)
+  // Color grading adjustments (eq filter)
+  const eqParts: string[] = [];
+  if (params.brightness && params.brightness !== 0) {
+    // FFmpeg eq brightness: -1.0 to 1.0 (we map -100..+100 to -0.3..+0.3)
+    eqParts.push(`brightness=${(params.brightness / 333).toFixed(3)}`);
+  }
+  if (params.contrast && params.contrast !== 0) {
+    // FFmpeg eq contrast: 0.0 to 2.0 (default 1.0; we map -100..+100 to 0.5..1.5)
+    eqParts.push(`contrast=${(1 + params.contrast / 200).toFixed(3)}`);
+  }
+  if (params.saturation && params.saturation !== 0) {
+    // FFmpeg eq saturation: 0.0 to 3.0 (default 1.0; we map -100..+100 to 0.0..2.0)
+    eqParts.push(`saturation=${Math.max(0, 1 + params.saturation / 100).toFixed(3)}`);
+  }
+  if (eqParts.length > 0) {
+    vFilters.push(`eq=${eqParts.join(':')}`);
+  }
+
+  // Temperature (warm/cool shift via colorbalance)
+  if (params.temperature && params.temperature !== 0) {
+    const shift = (params.temperature / 200).toFixed(3); // -0.5 to +0.5
+    const negShift = (-params.temperature / 200).toFixed(3);
+    vFilters.push(`colorbalance=rs=${shift}:gs=0:bs=${negShift}:rm=${shift}:gm=0:bm=${negShift}`);
+  }
+
+  // Video stabilization
   if (params.stabilize) {
     vFilters.push('deshake=rx=32:ry=32');
+  }
+
+  // Video fade in/out
+  if (params.fadeIn && params.fadeIn > 0) {
+    vFilters.push(`fade=t=in:st=0:d=${params.fadeIn.toFixed(2)}`);
+  }
+  if (params.fadeOut && params.fadeOut > 0) {
+    const fadeStart = Math.max(0, clipDuration - params.fadeOut);
+    vFilters.push(`fade=t=out:st=${fadeStart.toFixed(2)}:d=${params.fadeOut.toFixed(2)}`);
   }
 
   // Freeze frame — hold the last frame for 2 seconds (fps-independent)
@@ -372,6 +410,11 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   const voiceEffectFilter = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
   if (voiceEffectFilter) origChain.push(voiceEffectFilter);
   if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
+  if (params.fadeIn && params.fadeIn > 0) origChain.push(`afade=t=in:st=0:d=${params.fadeIn.toFixed(2)}`);
+  if (params.fadeOut && params.fadeOut > 0) {
+    const aFadeStart = Math.max(0, clipDuration - params.fadeOut);
+    origChain.push(`afade=t=out:st=${aFadeStart.toFixed(2)}:d=${params.fadeOut.toFixed(2)}`);
+  }
 
   const hasMusic = !!params.musicUri;
   const hasVoiceover = !!params.voiceoverUri;

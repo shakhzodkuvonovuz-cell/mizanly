@@ -23,7 +23,7 @@ import { EmojiPicker } from '@/components/ui/EmojiPicker';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-type ToolTab = 'trim' | 'speed' | 'filters' | 'text' | 'music' | 'volume' | 'voiceover' | 'effects';
+type ToolTab = 'trim' | 'speed' | 'filters' | 'adjust' | 'text' | 'music' | 'volume' | 'voiceover' | 'effects';
 type SpeedOption = 0.25 | 0.5 | 1 | 1.5 | 2 | 3;
 type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivid' | 'dramatic' | 'fade' | 'emerald' | 'golden' | 'night' | 'soft' | 'cinematic';
 type QualityOption = '720p' | '1080p' | '4K';
@@ -58,6 +58,8 @@ type EditSnapshot = {
   voiceEffect: VoiceEffect; stabilize: boolean; noiseReduce: boolean;
   freezeFrameAt: number | null; textStartTime: number; textEndTime: number;
   aspectRatio: '9:16' | '16:9' | '1:1' | '4:5';
+  brightness: number; contrast: number; saturation: number; temperature: number;
+  fadeIn: number; fadeOut: number;
 };
 
 export default function VideoEditorScreen() {
@@ -89,6 +91,14 @@ export default function VideoEditorScreen() {
   const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
   const [isReversed, setIsReversed] = useState(false);
   const [speedCurve, setSpeedCurve] = useState<SpeedCurve>('none');
+
+  // Color grading adjustments (-100 to +100, 0 = neutral)
+  const [brightness, setBrightness] = useState(0);
+  const [contrast, setContrast] = useState(0);
+  const [saturation, setSaturation] = useState(0);
+  const [temperature, setTemperature] = useState(0);
+  const [fadeIn, setFadeIn] = useState(0);   // seconds, 0 = no fade
+  const [fadeOut, setFadeOut] = useState(0);  // seconds, 0 = no fade
   const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('9:16');
 
   // Text timing — when the caption appears and disappears
@@ -115,11 +125,14 @@ export default function VideoEditorScreen() {
     captionText, originalVolume, musicVolume, isReversed,
     voiceEffect, stabilize, noiseReduce, freezeFrameAt,
     textStartTime, textEndTime, aspectRatio,
-  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio]);
+    brightness, contrast, saturation, temperature, fadeIn, fadeOut,
+  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio, brightness, contrast, saturation, temperature, fadeIn, fadeOut]);
 
   const applySnapshot = useCallback((s: EditSnapshot) => {
     setStartTime(s.startTime); setEndTime(s.endTime);
     setPlaybackSpeed(s.speed); setSpeedCurve(s.speedCurve); setSelectedFilter(s.filter);
+    setBrightness(s.brightness); setContrast(s.contrast); setSaturation(s.saturation);
+    setTemperature(s.temperature); setFadeIn(s.fadeIn); setFadeOut(s.fadeOut);
     setCaptionText(s.captionText); setOriginalVolume(s.originalVolume);
     setMusicVolume(s.musicVolume); setIsReversed(s.isReversed);
     setVoiceEffect(s.voiceEffect); setStabilize(s.stabilize);
@@ -404,6 +417,12 @@ export default function VideoEditorScreen() {
         stabilize,
         noiseReduce,
         freezeFrameAt,
+        brightness: brightness !== 0 ? brightness : undefined,
+        contrast: contrast !== 0 ? contrast : undefined,
+        saturation: saturation !== 0 ? saturation : undefined,
+        temperature: temperature !== 0 ? temperature : undefined,
+        fadeIn: fadeIn > 0 ? fadeIn : undefined,
+        fadeOut: fadeOut > 0 ? fadeOut : undefined,
       };
 
       const result = await executeExport(editParams, (percent) => {
@@ -431,7 +450,7 @@ export default function VideoEditorScreen() {
     } finally {
       setIsExporting(false);
     }
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, brightness, contrast, saturation, temperature, fadeIn, fadeOut, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
 
   // Cancel export handler
   const handleCancelExport = useCallback(async () => {
@@ -600,6 +619,90 @@ export default function VideoEditorScreen() {
                   </Pressable>
                 </Animated.View>
               ))}
+            </View>
+          </View>
+        );
+
+      case 'adjust':
+        return (
+          <View style={styles.toolPanel}>
+            <Text style={styles.toolPanelTitle}>{t('videoEditor.adjust')}</Text>
+            {[
+              { label: t('videoEditor.brightness'), value: brightness, setter: setBrightness, icon: 'sun' as IconName },
+              { label: t('videoEditor.contrast'), value: contrast, setter: setContrast, icon: 'circle-plus' as IconName },
+              { label: t('videoEditor.saturation'), value: saturation, setter: setSaturation, icon: 'layers' as IconName },
+              { label: t('videoEditor.temperature'), value: temperature, setter: setTemperature, icon: 'hash' as IconName },
+            ].map(({ label, value, setter, icon }) => (
+              <View key={label} style={styles.adjustRow}>
+                <View style={styles.adjustLabelRow}>
+                  <Icon name={icon} size={14} color={value !== 0 ? colors.emerald : tc.text.secondary} />
+                  <Text style={styles.adjustLabel}>{label}</Text>
+                  <Text style={styles.adjustValue}>{value > 0 ? '+' : ''}{value}</Text>
+                </View>
+                <View style={styles.adjustSliderTrack}>
+                  <View style={[styles.adjustSliderCenter]} />
+                  <View style={[
+                    styles.adjustSliderFill,
+                    value >= 0
+                      ? { left: '50%', width: `${Math.abs(value) / 2}%` }
+                      : { right: '50%', width: `${Math.abs(value) / 2}%` }
+                  ]} />
+                  <Pressable
+                    style={[styles.adjustSliderThumb, { left: `${50 + value / 2}%` }]}
+                    onPress={() => { pushUndo(); setter(0); haptic.tick(); }}
+                  />
+                </View>
+                <View style={styles.adjustPresetRow}>
+                  {[-50, -25, 0, 25, 50].map(preset => (
+                    <Pressable
+                      key={preset}
+                      style={[styles.adjustPreset, value === preset && styles.adjustPresetActive]}
+                      onPress={() => { pushUndo(); setter(preset); haptic.tick(); }}
+                    >
+                      <Text style={[styles.adjustPresetText, value === preset && styles.adjustPresetTextActive]}>
+                        {preset > 0 ? `+${preset}` : String(preset)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ))}
+
+            {/* Video Fade In/Out */}
+            <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.videoFade')}</Text>
+            <View style={styles.fadeRow}>
+              <View style={styles.fadeItem}>
+                <Text style={styles.fadeLabel}>{t('videoEditor.fadeIn')}</Text>
+                <View style={styles.fadeButtons}>
+                  {[0, 0.5, 1, 2].map(sec => (
+                    <Pressable
+                      key={sec}
+                      style={[styles.fadeButton, fadeIn === sec && styles.fadeButtonActive]}
+                      onPress={() => { pushUndo(); setFadeIn(sec); haptic.tick(); }}
+                    >
+                      <Text style={[styles.fadeButtonText, fadeIn === sec && styles.fadeButtonTextActive]}>
+                        {sec === 0 ? t('videoEditor.off') : `${sec}s`}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+              <View style={styles.fadeItem}>
+                <Text style={styles.fadeLabel}>{t('videoEditor.fadeOut')}</Text>
+                <View style={styles.fadeButtons}>
+                  {[0, 0.5, 1, 2].map(sec => (
+                    <Pressable
+                      key={sec}
+                      style={[styles.fadeButton, fadeOut === sec && styles.fadeButtonActive]}
+                      onPress={() => { pushUndo(); setFadeOut(sec); haptic.tick(); }}
+                    >
+                      <Text style={[styles.fadeButtonText, fadeOut === sec && styles.fadeButtonTextActive]}>
+                        {sec === 0 ? t('videoEditor.off') : `${sec}s`}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
             </View>
           </View>
         );
@@ -1252,6 +1355,7 @@ export default function VideoEditorScreen() {
               { id: 'trim', icon: 'scissors' as IconName, label: t('videoEditor.trim') },
               { id: 'speed', icon: 'fast-forward' as IconName, label: t('videoEditor.speed') },
               { id: 'filters', icon: 'sliders' as IconName, label: t('videoEditor.filters') },
+              { id: 'adjust', icon: 'sun' as IconName, label: t('videoEditor.adjust') },
               { id: 'text', icon: 'type' as IconName, label: t('videoEditor.text') },
               { id: 'music', icon: 'music' as IconName, label: t('videoEditor.music') },
               { id: 'volume', icon: 'volume-2' as IconName, label: t('videoEditor.volume') },
@@ -1880,6 +1984,110 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(248,81,73,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  adjustRow: {
+    marginBottom: spacing.md,
+  },
+  adjustLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  adjustLabel: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: tc.text.primary,
+  },
+  adjustValue: {
+    fontSize: fontSize.xs,
+    color: tc.text.tertiary,
+    fontFamily: fonts.mono,
+    minWidth: 30,
+    textAlign: 'right',
+  },
+  adjustSliderTrack: {
+    height: 4,
+    backgroundColor: tc.surface,
+    borderRadius: radius.full,
+    position: 'relative',
+    marginBottom: spacing.xs,
+  },
+  adjustSliderCenter: {
+    position: 'absolute',
+    left: '50%',
+    width: 1,
+    height: '100%',
+    backgroundColor: tc.border,
+  },
+  adjustSliderFill: {
+    position: 'absolute',
+    height: '100%',
+    backgroundColor: colors.emerald,
+    borderRadius: radius.full,
+  },
+  adjustSliderThumb: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.gold,
+    top: -5,
+    marginStart: -7,
+  },
+  adjustPresetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  adjustPreset: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+  },
+  adjustPresetActive: {
+    backgroundColor: 'rgba(10,123,79,0.15)',
+  },
+  adjustPresetText: {
+    fontSize: fontSize.xs,
+    color: tc.text.tertiary,
+  },
+  adjustPresetTextActive: {
+    color: colors.emerald,
+    fontWeight: '600',
+  },
+  fadeRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  fadeItem: {
+    flex: 1,
+  },
+  fadeLabel: {
+    fontSize: fontSize.sm,
+    color: tc.text.secondary,
+    marginBottom: spacing.xs,
+  },
+  fadeButtons: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  fadeButton: {
+    flex: 1,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    backgroundColor: tc.surface,
+    alignItems: 'center',
+  },
+  fadeButtonActive: {
+    backgroundColor: 'rgba(10,123,79,0.2)',
+  },
+  fadeButtonText: {
+    fontSize: fontSize.xs,
+    color: tc.text.tertiary,
+  },
+  fadeButtonTextActive: {
+    color: colors.emerald,
+    fontWeight: '600',
   },
   ttsRow: {
     flexDirection: 'row',
