@@ -16,6 +16,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -104,6 +105,40 @@ export function LocationSearch({ onSelect, onClose, style }: LocationSearchProps
 
   return (
     <View style={[styles.searchContainer, style]}>
+      {/* Use current location button */}
+      <Pressable
+        onPress={() => {
+          haptic.navigate();
+          // In production: use expo-location to get real coordinates
+          // For now, use a mock "current location" entry
+          onSelect({
+            id: 'current',
+            name: 'Current Location',
+            address: 'Using your location',
+            category: 'Current',
+          });
+        }}
+        style={({ pressed }) => [
+          styles.currentLocationBtn,
+          { backgroundColor: pressed ? colors.active.emerald20 : colors.active.emerald10, transform: [{ scale: pressed ? 0.97 : 1 }] },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={t('stories.useCurrentLocation')}
+      >
+        <View style={styles.currentLocationIcon}>
+          <Icon name="map-pin" size="md" color={colors.emerald} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colors.emerald, fontSize: fontSize.base, fontFamily: fonts.bodyBold, fontWeight: '700' }}>
+            {t('stories.useCurrentLocation')}
+          </Text>
+          <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs, fontFamily: fonts.body, marginTop: 1 }}>
+            {t('stories.shareWhereYouAre')}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="sm" color={colors.emerald} />
+      </Pressable>
+
       {/* Search input */}
       <View style={[styles.searchBar, { backgroundColor: tc.bgElevated, borderColor: tc.borderLight }]}>
         <Icon name="search" size="sm" color={tc.text.tertiary} />
@@ -143,7 +178,7 @@ export function LocationSearch({ onSelect, onClose, style }: LocationSearchProps
           <Animated.View entering={FadeInDown.delay(index * 40).duration(200)}>
             <Pressable
               onPress={() => handleSelect(item)}
-              style={[styles.locationItem, { backgroundColor: tc.bgElevated }]}
+              style={({ pressed }) => [styles.locationItem, { backgroundColor: pressed ? colors.active.emerald10 : tc.bgElevated, transform: [{ scale: pressed ? 0.97 : 1 }] }]}
               accessibilityLabel={`${item.name}, ${item.address}`}
               accessibilityRole="button"
             >
@@ -234,7 +269,7 @@ export function LocationStickerDisplay({
     );
   }
 
-  // ── Pill variant (default) ──
+  // ── Pill variant (default) — glassmorphic with gradient ──
   return (
     <Animated.View entering={FadeIn.duration(300)} style={[animatedStyle, style]}>
       <Pressable
@@ -245,7 +280,13 @@ export function LocationStickerDisplay({
         accessibilityLabel={`Location: ${data.locationName}`}
         accessibilityRole="button"
       >
-        <Icon name="map-pin" size={14} color="#fff" />
+        <LinearGradient
+          colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.85)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <Icon name="map-pin" size={14} color={colors.text.onColor} />
         <Text style={styles.pillText} numberOfLines={1}>
           {data.locationName}
         </Text>
@@ -259,6 +300,24 @@ const styles = StyleSheet.create({
   searchContainer: {
     flex: 1,
     maxHeight: 500,
+  },
+  currentLocationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.emerald,
+  },
+  currentLocationIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.active.emerald20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBar: {
     flexDirection: 'row',
@@ -347,12 +406,18 @@ const styles = StyleSheet.create({
   pillContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(10, 123, 79, 0.85)',
+    overflow: 'hidden',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
     gap: spacing.xs,
     maxWidth: 240,
+    // Shadow for depth
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
   pillText: {
     color: '#fff',
