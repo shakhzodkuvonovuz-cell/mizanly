@@ -468,8 +468,8 @@ export default function CreateThreadScreen() {
         <View style={[styles.visBar, { borderBottomColor: tc.border }]}>
           <Pressable
             accessibilityRole="button"
-            style={[styles.visPill, { backgroundColor: tc.bgElevated }]}
-            onPress={() => setShowVisibility((v) => !v)}
+            style={({ pressed }) => [styles.visPill, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
+            onPress={() => { haptic.tick(); setShowVisibility((v) => !v); }}
           >
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
@@ -529,7 +529,11 @@ export default function CreateThreadScreen() {
                 label={c.name}
                 icon={
                   <View style={styles.circleIconWrap}>
-                    <Text style={styles.circleEmoji}>{c.emoji ?? '●'}</Text>
+                    {c.emoji ? (
+                      <Text style={styles.circleEmoji}>{c.emoji}</Text>
+                    ) : (
+                      <Icon name="users" size="sm" color={colors.emerald} />
+                    )}
                   </View>
                 }
                 onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
@@ -680,7 +684,7 @@ export default function CreateThreadScreen() {
 
           {/* Premium Add thread part */}
           {parts.length < 10 && (
-            <Pressable style={styles.addPartBtn} onPress={addPart} accessibilityRole="button" accessibilityLabel={t('compose.addToThread')}>
+            <Pressable style={({ pressed }) => [styles.addPartBtn, { transform: [{ scale: pressed ? 0.96 : 1 }] }]} onPress={() => { haptic.tick(); addPart(); }} accessibilityRole="button" accessibilityLabel={t('compose.addToThread')}>
               <LinearGradient
                 colors={[colors.active.emerald20, 'transparent']}
                 start={{ x: 0, y: 0 }}

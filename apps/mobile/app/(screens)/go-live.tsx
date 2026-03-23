@@ -118,7 +118,7 @@ export default function GoLiveScreen() {
 
   const handleGoLive = () => {
     if (!canGoLive) return;
-    // WebRTC not yet installed — only scheduled streams are supported
+    haptic.send();
     if (!isScheduled) {
       showToast({ message: t('live.liveNotAvailable'), variant: 'info' });
       return;
@@ -128,6 +128,7 @@ export default function GoLiveScreen() {
 
   const handleRehearsal = () => {
     if (!canGoLive) return;
+    haptic.tick();
     rehearseMutation.mutate();
   };
 
@@ -138,7 +139,7 @@ export default function GoLiveScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
         <GlassHeader
           title={t('live.goLive')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
 
         <ScrollView
