@@ -16,10 +16,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { liveApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 
@@ -36,6 +37,8 @@ export default function GoLiveScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const { t } = useTranslation();
+  const tc = useThemeColors();
+  const haptic = useContextualHaptic();
   const LIVE_TYPE_OPTIONS = useMemo(() => [
     { value: 'VIDEO' as LiveType, label: t('live.videoStream'), iconName: 'video' as React.ComponentProps<typeof Icon>['name'] },
     { value: 'AUDIO' as LiveType, label: t('live.audioSpace'), iconName: 'mic' as React.ComponentProps<typeof Icon>['name'] },
@@ -66,13 +69,14 @@ export default function GoLiveScreen() {
       return liveApi.create(payload);
     },
     onSuccess: (live) => {
+      haptic.success();
       setUploading(false);
       showToast({ message: t('live.streamStarted'), variant: 'success' });
       router.back();
-      // Navigate to live viewer screen
       router.push(`/(screens)/live/${live.id}`);
     },
     onError: (err: Error) => {
+      haptic.error();
       setUploading(false);
       showToast({ message: err.message || t('live.failedToStartStream'), variant: 'error' });
     },

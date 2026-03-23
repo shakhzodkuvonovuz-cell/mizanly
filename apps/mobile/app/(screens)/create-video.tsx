@@ -19,10 +19,12 @@ import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { channelsApi, videosApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
@@ -50,6 +52,7 @@ export default function CreateVideoScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
 
   // Video state
   const [video, setVideo] = useState<PickedVideo | null>(null);
@@ -290,16 +293,15 @@ export default function CreateVideoScreen() {
       });
     },
     onSuccess: (video) => {
-      // Clear draft
+      haptic.success();
       AsyncStorage.removeItem('video-draft').catch(() => {});
-      // Invalidate feeds
       queryClient.invalidateQueries({ queryKey: ['videos-feed'] });
       queryClient.invalidateQueries({ queryKey: ['channel-videos'] });
       showToast({ message: t('createVideo.videoUploaded'), variant: 'success' });
-      // Navigate to video page
       router.replace(`/(screens)/video/${video.id}`);
     },
     onError: (error: Error) => {
+      haptic.error();
       showToast({ message: error.message || t('createVideo.pleaseTryAgain'), variant: 'error' });
     },
     onSettled: () => {

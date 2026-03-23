@@ -21,11 +21,12 @@ import { Autocomplete } from '@/components/ui/Autocomplete';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { showToast } from '@/components/ui/Toast';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { Circle } from '@/types';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
@@ -263,6 +264,7 @@ export default function CreateThreadScreen() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const tc = useThemeColors();
+  const haptic = useContextualHaptic();
 
   const [parts, setParts] = useState<ChainPart[]>([{ content: '', media: [] }]);
   const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
@@ -421,12 +423,14 @@ export default function CreateThreadScreen() {
       }
     },
     onSuccess: () => {
+      haptic.success();
       queryClient.invalidateQueries({ queryKey: ['majlis-feed'] });
       AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
       showToast({ message: t('compose.threadPosted'), variant: 'success' });
       router.back();
     },
     onError: (err: Error) => {
+      haptic.error();
       showToast({ message: err.message || t('compose.failedToPostThread'), variant: 'error' });
     },
   });

@@ -29,6 +29,7 @@ import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
@@ -57,6 +58,7 @@ export default function CreatePostScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
 
   const [content, setContent] = useState('');
   const [media, setMedia] = useState<PickedMedia[]>([]);
@@ -274,15 +276,16 @@ export default function CreatePostScreen() {
       });
     },
     onSuccess: async () => {
+      haptic.success();
       queryClient.invalidateQueries({ queryKey: ['saf-feed'] });
       try {
         await AsyncStorage.removeItem('post-draft');
-      } catch (err) {
-      }
+      } catch {}
       showToast({ message: t('compose.postPublished'), variant: 'success' });
       router.back();
     },
     onError: (err: Error) => {
+      haptic.error();
       setUploading(false);
       showToast({ message: err.message || t('compose.failedToCreatePost'), variant: 'error' });
     },
