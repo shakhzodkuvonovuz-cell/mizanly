@@ -438,6 +438,16 @@ export default function RootLayout() {
     checkVersion();
   }, [currentVersion]);
 
+  // Pre-load NSFW model for client-side content screening (non-blocking)
+  useEffect(() => {
+    try {
+      const { initNSFWModel } = require('@/services/nsfwCheck');
+      initNSFWModel().catch(() => {}); // Silent — model loads in background
+    } catch {
+      // nsfwjs packages not installed yet — graceful degradation
+    }
+  }, []);
+
   // App rating prompt — after 7+ sessions, prompt for store review
   useEffect(() => {
     const trackSessionAndPromptRating = async () => {

@@ -1974,14 +1974,16 @@
     "audioLibrary": "مكتبة الصوت",
     "gallery": "المعرض",
     "record": "تسجيل",
-    "videoTooLarge": "الفيديو كبير جداً. الحد الأقصى {{max}}."
+    "videoTooLarge": "الفيديو كبير جداً. الحد الأقصى {{max}}.",
+    "contentBlocked": "هذه الصورة لا تتوافق مع معايير مجتمعنا. يرجى اختيار صورة أخرى."
   },
   "createVideo": {
     "selectThumbnail": "اختر صورة مصغرة",
     "customThumbnail": "مخصص",
     "normalizeAudio": "تسوية الصوت",
     "normalizeAudioDesc": "مستويات صوت متسقة",
-    "videoTooLarge": "الفيديو كبير جداً. الحد الأقصى {{max}}."
+    "videoTooLarge": "الفيديو كبير جداً. الحد الأقصى {{max}}.",
+    "contentBlocked": "هذه الصورة لا تتوافق مع معايير مجتمعنا. يرجى اختيار صورة أخرى."
   },
   "qibla": {
     "title": "اتجاه القبلة",
@@ -2883,6 +2885,7 @@
     "mediaLimit": "يمكنك إضافة حتى ١٠ صور أو فيديوهات.",
     "fileTooLarge": "الملف كبير جداً. الحد الأقصى {{max}}.",
     "videoTooLarge": "الفيديو كبير جداً. الحد الأقصى {{max}}.",
+    "contentBlocked": "هذه الصورة لا تتوافق مع معايير مجتمعنا. يرجى اختيار صورة أخرى.",
     "saved": "تم الحفظ",
     "draftSavedToAccount": "تم حفظ المسودة في حسابك",
     "failedToSaveDraft": "فشل حفظ المسودة",

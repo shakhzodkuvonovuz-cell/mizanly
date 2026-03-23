@@ -1489,6 +1489,7 @@
     "mediaLimit": "En fazla 10 fotoğraf veya video ekleyebilirsiniz.",
     "fileTooLarge": "Dosya çok büyük. Maksimum boyut {{max}}.",
     "videoTooLarge": "Video çok büyük. Maksimum boyut {{max}}.",
+    "contentBlocked": "Bu görsel topluluk kurallarımıza uymuyor. Lütfen farklı bir fotoğraf seçin.",
     "saved": "Kaydedildi",
     "draftSavedToAccount": "Taslak hesabınıza kaydedildi",
     "failedToSaveDraft": "Taslak kaydedilemedi",
@@ -2190,14 +2191,16 @@
     "audioLibrary": "Ses Kütüphanesi",
     "gallery": "Galeri",
     "record": "Kaydet",
-    "videoTooLarge": "Video çok büyük. Maksimum boyut {{max}}."
+    "videoTooLarge": "Video çok büyük. Maksimum boyut {{max}}.",
+    "contentBlocked": "Bu görsel topluluk kurallarımıza uymuyor. Lütfen farklı bir fotoğraf seçin."
   },
   "createVideo": {
     "selectThumbnail": "Küçük resim seçin",
     "customThumbnail": "Özel",
     "normalizeAudio": "Ses normalleştirme",
     "normalizeAudioDesc": "Tutarlı ses seviyeleri",
-    "videoTooLarge": "Video çok büyük. Maksimum boyut {{max}}."
+    "videoTooLarge": "Video çok büyük. Maksimum boyut {{max}}.",
+    "contentBlocked": "Bu görsel topluluk kurallarımıza uymuyor. Lütfen farklı bir fotoğraf seçin."
   },
   "qibla": {
     "title": "Kıble Yönü",

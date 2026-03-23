@@ -177,7 +177,21 @@ export default function CreatePostScreen() {
           height: a.height,
         });
       }
+      // Client-side NSFW screening — blocks before upload (zero API cost)
       if (validAssets.length > 0) {
+        const imageUris = validAssets.filter(a => a.type === 'image').map(a => a.uri);
+        if (imageUris.length > 0) {
+          try {
+            const { checkImages } = require('@/services/nsfwCheck');
+            const nsfwResult = await checkImages(imageUris);
+            if (!nsfwResult.safe) {
+              showToast({ message: t('compose.contentBlocked') || 'This image violates community guidelines', variant: 'error' });
+              return;
+            }
+          } catch {
+            // nsfwCheck not available — server-side moderation is the fallback
+          }
+        }
         setMedia((prev) => [...prev, ...validAssets].slice(0, 10));
       }
     }

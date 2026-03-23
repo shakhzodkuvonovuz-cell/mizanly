@@ -1496,6 +1496,7 @@
     "mediaLimit": "You can add up to 10 photos or videos.",
     "fileTooLarge": "File too large. Maximum size is {{max}}.",
     "videoTooLarge": "Video too large. Maximum size is {{max}}.",
+    "contentBlocked": "This image doesn't meet our community guidelines. Please choose a different photo.",
     "saved": "Saved",
     "draftSavedToAccount": "Draft saved to your account",
     "failedToSaveDraft": "Failed to save draft",
@@ -2197,14 +2198,16 @@
     "audioLibrary": "Audio Library",
     "gallery": "Galeri",
     "record": "Rekam",
-    "videoTooLarge": "Video too large. Maximum size is {{max}}."
+    "videoTooLarge": "Video too large. Maximum size is {{max}}.",
+    "contentBlocked": "This image doesn't meet our community guidelines. Please choose a different photo."
   },
   "createVideo": {
     "selectThumbnail": "Select thumbnail",
     "customThumbnail": "Custom",
     "normalizeAudio": "Normalize audio",
     "normalizeAudioDesc": "Consistent volume levels",
-    "videoTooLarge": "Video too large. Maximum size is {{max}}."
+    "videoTooLarge": "Video too large. Maximum size is {{max}}.",
+    "contentBlocked": "This image doesn't meet our community guidelines. Please choose a different photo."
   },
   "qibla": {
     "title": "Qibla Direction",
