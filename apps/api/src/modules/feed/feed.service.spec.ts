@@ -6,10 +6,19 @@ import { globalMockProviders } from '../../common/test/mock-providers';
 describe('FeedService', () => {
   let service: FeedService;
   let prisma: Record<string, any>;
+  let redis: Record<string, any>;
   beforeEach(async () => {
     prisma = { feedInteraction: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, feedDismissal: { upsert: jest.fn(), findMany: jest.fn(), delete: jest.fn() }, $queryRawUnsafe: jest.fn().mockResolvedValue([]) };
+    redis = {
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn().mockResolvedValue('OK'),
+      del: jest.fn().mockResolvedValue(1),
+      hgetall: jest.fn().mockResolvedValue({}),
+      hset: jest.fn().mockResolvedValue(1),
+      expire: jest.fn().mockResolvedValue(1),
+    };
     const module = await Test.createTestingModule({ providers: [
-        ...globalMockProviders,FeedService, { provide: PrismaService, useValue: prisma }] }).compile();
+        ...globalMockProviders,FeedService, { provide: PrismaService, useValue: prisma }, { provide: 'REDIS', useValue: redis }] }).compile();
     service = module.get(FeedService);
   });
   it('logs interaction', async () => {
@@ -323,6 +332,73 @@ describe('FeedService', () => {
 
       const result = await service.getFrequentCreators('u1');
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('getTrendingFeed — Redis cache', () => {
+    beforeEach(() => {
+      (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).block = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).mute = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
+      (prisma as any).contentFilterSetting = { findUnique: jest.fn().mockResolvedValue(null) };
+    });
+
+    it('should return cached result for unauthenticated requests', async () => {
+      const cachedResult = { data: [{ id: 'cached-1' }], meta: { hasMore: false, minScore: 0 } };
+      redis.get.mockResolvedValue(JSON.stringify(cachedResult));
+
+      const result = await service.getTrendingFeed(undefined, 20);
+      expect(result).toEqual(cachedResult);
+      expect((prisma as any).post.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should write to cache after computing trending feed for unauthenticated users', async () => {
+      redis.get.mockResolvedValue(null);
+      (prisma as any).post.findMany.mockResolvedValue([]);
+
+      await service.getTrendingFeed(undefined, 20);
+
+      expect(redis.set).toHaveBeenCalledWith(
+        'trending_feed:0:20',
+        expect.any(String),
+        'EX',
+        300,
+      );
+    });
+
+    it('should NOT cache trending feed for authenticated users', async () => {
+      (prisma as any).post.findMany.mockResolvedValue([]);
+
+      await service.getTrendingFeed(undefined, 20, 'u1');
+
+      expect(redis.get).not.toHaveBeenCalled();
+      expect(redis.set).not.toHaveBeenCalled();
+    });
+
+    it('should include cursor in cache key', async () => {
+      redis.get.mockResolvedValue(null);
+      (prisma as any).post.findMany.mockResolvedValue([]);
+
+      await service.getTrendingFeed('20', 20);
+
+      expect(redis.get).toHaveBeenCalledWith('trending_feed:20:20');
+      expect(redis.set).toHaveBeenCalledWith(
+        'trending_feed:20:20',
+        expect.any(String),
+        'EX',
+        300,
+      );
+    });
+
+    it('should fall through to recompute on corrupted cache', async () => {
+      redis.get.mockResolvedValue('not-valid-json{');
+      (prisma as any).post.findMany.mockResolvedValue([]);
+
+      const result = await service.getTrendingFeed(undefined, 20);
+      expect(result).toBeDefined();
+      expect(result.data).toEqual([]);
+      expect((prisma as any).post.findMany).toHaveBeenCalled();
     });
   });
 });

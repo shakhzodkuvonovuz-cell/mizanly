@@ -178,9 +178,9 @@ export default function VoicePostCreateScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={isRecording ? t('voicePost.tapToStop') : recordingUri ? t('voicePost.tapToReRecord') : t('voicePost.tapToRecord')}
+              accessibilityState={{ busy: isRecording }}
               style={[styles.recordButton, isRecording && styles.recordButtonActive]}
               onPress={isRecording ? stopRecording : startRecording}
-
             >
               <LinearGradient
                 colors={isRecording ? ['#F85149', '#E11D48'] : [colors.emerald, '#0D9B63']}
@@ -200,6 +200,7 @@ export default function VoicePostCreateScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('voicePost.postVoice')}
+                accessibilityState={{ disabled: postMutation.isPending }}
                 style={[styles.postBtn, postMutation.isPending && { opacity: 0.5 }]}
                 onPress={() => postMutation.mutate()}
                 disabled={postMutation.isPending}

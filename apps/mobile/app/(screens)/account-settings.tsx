@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  ScrollView, Alert,
+  ScrollView, Alert, Share,
 } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -85,6 +86,53 @@ export default function AccountSettingsScreen() {
   const { t } = useTranslation();
   const tc = useThemeColors();
 
+  const [cacheSize, setCacheSize] = useState<string>('');
+
+  const loadCacheSize = useCallback(async () => {
+    try {
+      if (FileSystem.cacheDirectory) {
+        const info = await FileSystem.getInfoAsync(FileSystem.cacheDirectory);
+        if (info.exists && 'size' in info && typeof info.size === 'number') {
+          const mb = (info.size / (1024 * 1024)).toFixed(1);
+          setCacheSize(`${mb} MB`);
+        } else {
+          setCacheSize('0 MB');
+        }
+      }
+    } catch {
+      setCacheSize('--');
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCacheSize();
+  }, [loadCacheSize]);
+
+  const handleClearCache = () => {
+    Alert.alert(
+      t('manageData.clearCache'),
+      t('accountSettings.cacheSize'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.clearButton'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (FileSystem.cacheDirectory) {
+                await FileSystem.deleteAsync(FileSystem.cacheDirectory, { idempotent: true });
+              }
+              setCacheSize('0 MB');
+              showToast({ message: t('manageData.cacheCleared'), variant: 'success' });
+            } catch {
+              showToast({ message: t('common.error'), variant: 'error' });
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const userQuery = useQuery({
     queryKey: ['user', 'me'],
     queryFn: () => usersApi.getMe(),
@@ -116,12 +164,60 @@ export default function AccountSettingsScreen() {
     onError: (err: Error) => showToast({ message: err.message, variant: 'error' }),
   });
 
+  const formatExportAsText = useCallback((data: Record<string, unknown>): string => {
+    let text = '=== Your Mizanly Data Export ===\n';
+    text += `Exported: ${new Date().toLocaleString()}\n\n`;
+
+    if (data.profile && typeof data.profile === 'object') {
+      const profile = data.profile as Record<string, unknown>;
+      text += '--- Profile ---\n';
+      if (profile.username) text += `Username: ${profile.username}\n`;
+      if (profile.displayName) text += `Display Name: ${profile.displayName}\n`;
+      if (profile.email) text += `Email: ${profile.email}\n`;
+      if (profile.bio) text += `Bio: ${profile.bio}\n`;
+      if (profile.language) text += `Language: ${profile.language}\n`;
+      if (profile.createdAt) text += `Joined: ${new Date(profile.createdAt as string).toLocaleDateString()}\n`;
+      text += '\n';
+    }
+
+    const appendItems = (label: string, items: unknown[]) => {
+      text += `--- ${label} (${items.length}) ---\n`;
+      items.slice(0, 50).forEach((item) => {
+        const record = item as Record<string, unknown>;
+        const date = record.createdAt ? new Date(record.createdAt as string).toLocaleDateString() : '';
+        const content = (record.content || record.caption || record.title || '') as string;
+        text += `  ${date}: ${content.slice(0, 120)}${content.length > 120 ? '...' : ''}\n`;
+      });
+      if (items.length > 50) text += `  ... and ${items.length - 50} more\n`;
+      text += '\n';
+    };
+
+    if (Array.isArray(data.posts)) appendItems('Posts', data.posts);
+    if (Array.isArray(data.threads)) appendItems('Threads', data.threads);
+    if (Array.isArray(data.threadReplies)) appendItems('Thread Replies', data.threadReplies);
+    if (Array.isArray(data.comments)) appendItems('Comments', data.comments);
+    if (Array.isArray(data.reels)) appendItems('Reels', data.reels);
+    if (Array.isArray(data.videos)) appendItems('Videos', data.videos);
+    if (Array.isArray(data.stories)) text += `--- Stories (${data.stories.length}) ---\n\n`;
+
+    if (data.messages && typeof data.messages === 'object') {
+      const msgs = data.messages as { count?: number };
+      text += `--- Messages (${msgs.count ?? 0}) ---\n`;
+      text += '  [Message content omitted for privacy]\n\n';
+    }
+
+    if (Array.isArray(data.following)) text += `--- Following (${data.following.length}) ---\n\n`;
+    if (Array.isArray(data.bookmarks)) text += `--- Bookmarks (${data.bookmarks.length}) ---\n\n`;
+
+    return text;
+  }, []);
+
   const exportDataMutation = useMutation({
     mutationFn: () => usersApi.exportData(),
     onSuccess: async (data) => {
       try {
-        const { Share } = await import('react-native');
-        await Share.share({ message: JSON.stringify(data, null, 2), title: 'Mizanly Data Export' });
+        const formatted = formatExportAsText(data as Record<string, unknown>);
+        await Share.share({ message: formatted, title: 'Mizanly Data Export' });
       } catch {
         showToast({ message: t('accountSettings.dataReadyMessage'), variant: 'success' });
       }
@@ -302,9 +398,9 @@ export default function AccountSettingsScreen() {
               />
               <View style={styles.divider} />
               <Row
-                label={t('accountSettings.manageData')}
-                hint={t('accountSettings.manageDataHint')}
-                onPress={() => router.push('/(screens)/storage-management')}
+                label={t('accountSettings.storage')}
+                hint={cacheSize ? `${t('accountSettings.cacheSize')}: ${cacheSize}` : t('accountSettings.manageDataHint')}
+                onPress={handleClearCache}
               />
             </LinearGradient>
           </Animated.View>

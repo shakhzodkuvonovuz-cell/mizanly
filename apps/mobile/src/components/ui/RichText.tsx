@@ -12,9 +12,16 @@ interface Props {
   onPostPress?: () => void;
 }
 
+// Detect if text contains RTL characters (Arabic, Persian, Urdu, etc.)
+const RTL_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+function detectWritingDirection(text: string): 'rtl' | 'ltr' {
+  return RTL_RE.test(text) ? 'rtl' : 'ltr';
+}
+
 export const RichText = memo(function RichText({ text, style, numberOfLines, onPostPress }: Props) {
   const router = useRouter();
   const haptic = useContextualHaptic();
+  const writingDirection = detectWritingDirection(text);
 
   const segments: { type: 'text' | 'hashtag' | 'mention' | 'url' | 'phone' | 'email'; value: string }[] = [];
   const TOKEN_RE = /(https?:\/\/[^\s]+|#[\w\u0600-\u06FF]+|@[\w.]+|\+?\d{1,4}[-.\s]?\(?\d{1,3}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
@@ -49,7 +56,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
 
   return (
     <View>
-      <Text style={[styles.base, style]} numberOfLines={numberOfLines} onPress={onPostPress}>
+      <Text style={[styles.base, { writingDirection, textAlign: writingDirection === 'rtl' ? 'right' : 'left' }, style]} numberOfLines={numberOfLines} onPress={onPostPress}>
       {segments.map((seg, i) => {
         if (seg.type === 'url') {
           return (

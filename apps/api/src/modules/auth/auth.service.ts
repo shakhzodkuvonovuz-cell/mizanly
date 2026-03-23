@@ -61,6 +61,15 @@ export class AuthService {
       throw new ForbiddenException('Too many registration attempts. Try again in 15 minutes.');
     }
 
+    // Device fingerprint abuse prevention — limit accounts per physical device
+    if (dto.deviceId) {
+      const deviceKey = `device_accounts:${dto.deviceId}`;
+      const count = parseInt(await this.redis.get(deviceKey) || '0');
+      if (count >= 5) {
+        throw new BadRequestException('Too many accounts created from this device');
+      }
+    }
+
     // COPPA/GDPR Age Verification (Finding 1, 15)
     const age = this.calculateAge(dto.dateOfBirth);
     if (age < MINIMUM_AGE) {
@@ -135,6 +144,12 @@ export class AuthService {
 
     if (isMinor) {
       this.logger.log(`Minor registered (age ${age}): user ${user.id} — child protections active`);
+    }
+
+    // Increment device account counter after successful registration (permanent limit)
+    if (dto.deviceId) {
+      const deviceKey = `device_accounts:${dto.deviceId}`;
+      await this.redis.incr(deviceKey);
     }
 
     // Clear attempt counter on successful registration

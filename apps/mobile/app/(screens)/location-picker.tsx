@@ -176,6 +176,7 @@ function LocationPickerContent() {
                 onSubmitEditing={handleSearchAddress}
                 returnKeyType="search"
                 autoCorrect={false}
+                accessibilityLabel={t('location.searchPlaceholder', 'Search for an address')}
               />
               {searching ? (
                 <Skeleton.Circle size={20} />
@@ -271,6 +272,7 @@ function LocationPickerContent() {
                   onChangeText={setManualLat}
                   keyboardType="numeric"
                   returnKeyType="next"
+                  accessibilityLabel={t('location.latitude', 'Latitude')}
                 />
               </View>
               <View style={styles.coordInputWrapper}>
@@ -284,6 +286,7 @@ function LocationPickerContent() {
                   keyboardType="numeric"
                   returnKeyType="done"
                   onSubmitEditing={handleManualCoordinates}
+                  accessibilityLabel={t('location.longitude', 'Longitude')}
                 />
               </View>
             </View>

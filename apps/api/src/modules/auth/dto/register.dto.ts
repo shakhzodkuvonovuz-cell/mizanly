@@ -38,4 +38,10 @@ export class RegisterDto {
   @ApiProperty({ description: 'User must actively accept Terms of Service and Privacy Policy (GDPR Art 7)' })
   @IsBoolean()
   acceptedTerms: boolean;
+
+  @ApiProperty({ description: 'Device fingerprint for abuse prevention (limits accounts per device)', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  deviceId?: string;
 }

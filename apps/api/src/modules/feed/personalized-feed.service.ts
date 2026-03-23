@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { EmbeddingContentType, PostVisibility, ReelStatus } from '@prisma/client';
+import Redis from 'ioredis';
 
 export interface FeedItem {
   id: string;
@@ -9,6 +10,13 @@ export interface FeedItem {
   score: number;
   reasons: string[];
   content?: Record<string, unknown>;
+}
+
+interface SessionData {
+  likedCategories: Record<string, number>;
+  viewedIds: string[];
+  sessionStart: number;
+  scrollDepth: number;
 }
 
 // Islamic content hashtags for boosting
@@ -23,21 +31,37 @@ const ISLAMIC_HASHTAGS = new Set([
 export class PersonalizedFeedService {
   private readonly logger = new Logger(PersonalizedFeedService.name);
 
-  // In-memory session signal store (per-user, resets on service restart)
-  // Capped at 10,000 sessions to prevent unbounded memory growth
-  private static readonly MAX_SESSIONS = 10000;
   private static readonly MAX_VIEWED_IDS = 1000;
-  private sessionSignals = new Map<string, {
-    likedCategories: Map<string, number>;
-    viewedIds: Set<string>;
-    sessionStart: number;
-    scrollDepth: number;
-  }>();
+  private static readonly SESSION_TTL = 1800; // 30 min in seconds
 
   constructor(
     private prisma: PrismaService,
     private embeddingsService: EmbeddingsService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
+
+  // ── Redis-backed session storage ──────────────────────────
+
+  private sessionKey(userId: string): string {
+    return `session:${userId}`;
+  }
+
+  private async getSession(userId: string): Promise<SessionData | null> {
+    const key = this.sessionKey(userId);
+    const data = await this.redis.hgetall(key);
+    if (!data || !Object.keys(data).length) return null;
+    try {
+      return JSON.parse(data.json) as SessionData;
+    } catch {
+      return null;
+    }
+  }
+
+  private async saveSession(userId: string, session: SessionData): Promise<void> {
+    const key = this.sessionKey(userId);
+    await this.redis.hset(key, 'json', JSON.stringify(session));
+    await this.redis.expire(key, PersonalizedFeedService.SESSION_TTL);
+  }
 
   /** Get user IDs to exclude from feeds (blocked in both directions + muted + restricted) */
   private async getExcludedUserIds(userId: string): Promise<string[]> {
@@ -75,53 +99,50 @@ export class PersonalizedFeedService {
   // ── Session-aware adaptation (72.7) ───────────────────────
 
   /**
-   * Track in-session signals and adapt recommendations mid-scroll
+   * Track in-session signals and adapt recommendations mid-scroll.
+   * Session data is stored in Redis with a 30-minute TTL (auto-expires on inactivity).
    */
-  trackSessionSignal(userId: string, signal: {
+  async trackSessionSignal(userId: string, signal: {
     contentId: string;
     action: 'view' | 'like' | 'save' | 'share' | 'skip';
     hashtags?: string[];
     scrollPosition?: number;
-  }): void {
-    let session = this.sessionSignals.get(userId);
+  }): Promise<void> {
+    let session = await this.getSession(userId);
     if (!session || Date.now() - session.sessionStart > 30 * 60 * 1000) {
-      // New session after 30 min inactivity
+      // New session after 30 min inactivity (Redis TTL also handles expiry)
       session = {
-        likedCategories: new Map(),
-        viewedIds: new Set(),
+        likedCategories: {},
+        viewedIds: [],
         sessionStart: Date.now(),
         scrollDepth: 0,
       };
-      // Evict oldest sessions if at capacity
-      if (this.sessionSignals.size >= PersonalizedFeedService.MAX_SESSIONS) {
-        const oldestKey = this.sessionSignals.keys().next().value;
-        if (oldestKey) this.sessionSignals.delete(oldestKey);
-      }
-      this.sessionSignals.set(userId, session);
     }
 
     // Cap viewedIds to prevent unbounded growth within a session
-    if (session.viewedIds.size < PersonalizedFeedService.MAX_VIEWED_IDS) {
-      session.viewedIds.add(signal.contentId);
+    if (session.viewedIds.length < PersonalizedFeedService.MAX_VIEWED_IDS) {
+      if (!session.viewedIds.includes(signal.contentId)) {
+        session.viewedIds.push(signal.contentId);
+      }
     }
     if (signal.scrollPosition) session.scrollDepth = signal.scrollPosition;
 
     // Boost categories from liked/saved content
     if (signal.action === 'like' || signal.action === 'save') {
       for (const tag of signal.hashtags || []) {
-        const current = session.likedCategories.get(tag) || 0;
-        session.likedCategories.set(tag, current + 1);
+        session.likedCategories[tag] = (session.likedCategories[tag] || 0) + 1;
       }
     }
+
+    await this.saveSession(userId, session);
   }
 
-  private getSessionBoost(userId: string, hashtags: string[]): number {
-    const session = this.sessionSignals.get(userId);
+  private getSessionBoostFromData(session: SessionData | null, hashtags: string[]): number {
     if (!session) return 0;
 
     let boost = 0;
     for (const tag of hashtags) {
-      const count = session.likedCategories.get(tag) || 0;
+      const count = session.likedCategories[tag] || 0;
       boost += count * 0.05; // 5% boost per in-session like of same category
     }
     return Math.min(boost, 0.3); // Cap at 30% boost
@@ -234,9 +255,9 @@ export class PersonalizedFeedService {
       return this.getTrendingFeed(space, cursor, limit, excludedUserIds);
     }
 
-    // Get session-viewed IDs to exclude
-    const session = this.sessionSignals.get(userId);
-    const sessionViewedIds = session ? [...session.viewedIds] : [];
+    // Get session-viewed IDs to exclude (from Redis)
+    const session = await this.getSession(userId);
+    const sessionViewedIds = session ? session.viewedIds : [];
 
     // Stage 1: pgvector KNN — top 500 candidates
     const candidates = await this.embeddingsService.findSimilarByVector(
@@ -282,7 +303,7 @@ export class PersonalizedFeedService {
       if (islamicBoost > 0.1) reasons.push('Islamic content boost');
 
       // Session adaptation boost
-      const sessionBoost = this.getSessionBoost(userId, meta.hashtags || []);
+      const sessionBoost = this.getSessionBoostFromData(session, meta.hashtags || []);
       score += sessionBoost * 0.1;
       if (sessionBoost > 0) reasons.push('Trending in your session');
 
@@ -330,10 +351,13 @@ export class PersonalizedFeedService {
     // Mark served items as viewed in session to prevent re-serving on next page
     if (session) {
       for (const item of diversified) {
-        if (session.viewedIds.size < PersonalizedFeedService.MAX_VIEWED_IDS) {
-          session.viewedIds.add(item.id);
+        if (session.viewedIds.length < PersonalizedFeedService.MAX_VIEWED_IDS) {
+          if (!session.viewedIds.includes(item.id)) {
+            session.viewedIds.push(item.id);
+          }
         }
       }
+      await this.saveSession(userId, session);
     }
 
     // Hydrate feed items with actual content data

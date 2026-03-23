@@ -877,4 +877,109 @@ describe('SearchService', () => {
       expect(result.hashtags).toEqual([]);
     });
   });
+
+  describe('error paths', () => {
+    it('should throw BadRequestException for empty query', async () => {
+      await expect(service.search('')).rejects.toThrow('Search query is required');
+    });
+
+    it('should throw BadRequestException for whitespace-only query', async () => {
+      await expect(service.search('   ')).rejects.toThrow('Search query is required');
+    });
+
+    it('should throw BadRequestException for query exceeding 200 chars', async () => {
+      const longQuery = 'a'.repeat(201);
+      await expect(service.search(longQuery)).rejects.toThrow('Search query must be under 200 characters');
+    });
+
+    it('should return empty results for people search with no matches', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      const result = await service.search('nonexistent_user_xyz', 'people');
+      expect(result).toEqual({ people: [] });
+    });
+
+    it('should return empty results for tags search with no matches', async () => {
+      prisma.hashtag.findMany.mockResolvedValue([]);
+      const result = await service.search('nonexistent_tag_xyz', 'tags');
+      expect(result).toEqual({ hashtags: [] });
+    });
+
+    it('should filter banned/deleted users from people search via where clause', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      await service.search('john', 'people');
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isBanned: false,
+            isDeactivated: false,
+            isDeleted: false,
+          }),
+        }),
+      );
+    });
+
+    it('should filter isRemoved content from posts search', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      await service.search('test', 'posts');
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isRemoved: false,
+            visibility: 'PUBLIC',
+          }),
+        }),
+      );
+    });
+
+    it('should filter isRemoved content from threads search', async () => {
+      prisma.thread.findMany.mockResolvedValue([]);
+      await service.search('test', 'threads');
+      expect(prisma.thread.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isRemoved: false,
+            visibility: 'PUBLIC',
+            isChainHead: true,
+          }),
+        }),
+      );
+    });
+
+    it('should fall through to Prisma when Meilisearch is unavailable', async () => {
+      // Meilisearch mock is set to isAvailable=false by default in the test setup
+      prisma.post.findMany.mockResolvedValue([
+        { id: 'post-1', content: 'fallback result' },
+      ]);
+
+      const result = await service.search('fallback', 'posts');
+      expect(result).toHaveProperty('data');
+      expect(prisma.post.findMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('getSuggestions error paths', () => {
+    it('should return empty arrays for empty suggestion query', async () => {
+      const result = await service.getSuggestions('');
+      expect(result).toEqual({ users: [], hashtags: [] });
+      expect(prisma.user.findMany).not.toHaveBeenCalled();
+      expect(prisma.hashtag.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should return empty arrays for whitespace-only suggestion query', async () => {
+      const result = await service.getSuggestions('   ');
+      expect(result).toEqual({ users: [], hashtags: [] });
+    });
+  });
+
+  describe('getHashtagPosts error paths', () => {
+    it('should return null hashtag when tag does not exist', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue(null);
+      prisma.post.findMany.mockResolvedValue([]);
+
+      const result = await service.getHashtagPosts('nonexistenttag');
+      expect(result.hashtag).toBeNull();
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList,
@@ -20,7 +20,31 @@ import { playlistsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { PlaylistItem } from '@/types';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+
+/**
+ * Deterministic shuffle using a seed derived from the playlist ID.
+ * Avoids Math.random() (rule 23) by using a simple hash-based PRNG.
+ */
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  const result = [...arr];
+  // Simple hash from string
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  // Fisher-Yates with seeded PRNG
+  const nextRand = () => {
+    hash = (hash * 1664525 + 1013904223) | 0;
+    return ((hash >>> 0) / 4294967296);
+  };
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(nextRand() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
 const formatDuration = (sec: number) => {
   const m = Math.floor(sec / 60);
@@ -35,6 +59,7 @@ export default function PlaylistDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const tc = useThemeColors();
 
+  const haptic = useContextualHaptic();
   const insets = useSafeAreaInsets();
   const playlistId = Array.isArray(params.id) ? params.id[0] : params.id;
 
@@ -53,6 +78,23 @@ export default function PlaylistDetailScreen() {
   });
 
   const items: PlaylistItem[] = itemsQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
+
+  const shuffledItems = useMemo(
+    () => seededShuffle(items, playlistId ?? ''),
+    [items, playlistId],
+  );
+
+  const handlePlayAll = useCallback(() => {
+    if (items.length === 0) return;
+    haptic.navigate();
+    router.push(`/(screens)/video/${items[0].video.id}?playlistId=${playlistId}`);
+  }, [items, playlistId, haptic, router]);
+
+  const handleShuffle = useCallback(() => {
+    if (shuffledItems.length === 0) return;
+    haptic.navigate();
+    router.push(`/(screens)/video/${shuffledItems[0].video.id}?playlistId=${playlistId}&shuffle=1`);
+  }, [shuffledItems, playlistId, haptic, router]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -147,6 +189,30 @@ export default function PlaylistDetailScreen() {
           {playlist?.videosCount ?? items.length} {(playlist?.videosCount ?? items.length) !== 1 ? t('screens.playlist.videosPlural') : t('screens.playlist.videos')}
         </Text>
       </LinearGradient>
+
+      {/* Play All + Shuffle buttons */}
+      {items.length > 0 && (
+        <View style={styles.playActions}>
+          <Pressable
+            style={styles.playAllBtn}
+            onPress={handlePlayAll}
+            accessibilityLabel={t('screens.playlist.playAll')}
+            accessibilityRole="button"
+          >
+            <Icon name="play" size="sm" color="#fff" />
+            <Text style={styles.playAllText}>{t('screens.playlist.playAll')}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.shuffleBtn}
+            onPress={handleShuffle}
+            accessibilityLabel={t('screens.playlist.shuffle')}
+            accessibilityRole="button"
+          >
+            <Icon name="repeat" size="sm" color={colors.emerald} />
+            <Text style={styles.shuffleText}>{t('screens.playlist.shuffle')}</Text>
+          </Pressable>
+        </View>
+      )}
     </Animated.View>
   );
 
@@ -305,4 +371,41 @@ const styles = StyleSheet.create({
   },
   channelName: { color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' },
   skeletonWrap: { padding: spacing.base, gap: spacing.md },
+  playActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  playAllBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.emerald,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+  },
+  playAllText: {
+    color: '#fff',
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+  },
+  shuffleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(10,123,79,0.15)',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(10,123,79,0.3)',
+  },
+  shuffleText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+  },
 });

@@ -37,6 +37,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, animation, fontSizeExt, lineHeight, letterSpacing } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
+import { PostCard } from '@/components/saf/PostCard';
 import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useStore } from '@/store';
@@ -216,6 +217,7 @@ export default function ProfileScreen() {
     { key: 'reels', label: t('profile.reels') },
   ];
   const [activeTab, setActiveTab] = useState<Tab>('posts');
+  const [postViewMode, setPostViewMode] = useState<'grid' | 'list'>('grid');
   const isOwnProfile = clerkUser?.username === username;
   const [showMenu, setShowMenu] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
@@ -497,6 +499,9 @@ export default function ProfileScreen() {
     );
   }
 
+  // TODO: Handle old username redirects when UsernameHistory model is added.
+  // When a username is not found, check if there's a previous username that matches
+  // and redirect to the user's current profile.
   if (!profile) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -781,14 +786,35 @@ export default function ProfileScreen() {
         onLayout={(e) => { tabBarY.value = e.nativeEvent.layout.y; }}
         style={[styles.tabBarBg, { backgroundColor: tc.bg }]}
       >
-        <TabSelector
-          tabs={isOwnProfile ? [
-            ...PROFILE_TABS,
-            { key: 'liked', label: t('profile.liked') },
-          ] : PROFILE_TABS}
-          activeKey={activeTab}
-          onTabChange={(key) => { haptic.tick(); setActiveTab(key as Tab); }}
-        />
+        <View style={styles.tabBarRow}>
+          <View style={{ flex: 1 }}>
+            <TabSelector
+              tabs={isOwnProfile ? [
+                ...PROFILE_TABS,
+                { key: 'liked', label: t('profile.liked') },
+              ] : PROFILE_TABS}
+              activeKey={activeTab}
+              onTabChange={(key) => { haptic.tick(); setActiveTab(key as Tab); }}
+            />
+          </View>
+          {(activeTab === 'posts' || activeTab === 'liked') && (
+            <Pressable
+              onPress={() => {
+                haptic.tick();
+                setPostViewMode((prev) => prev === 'grid' ? 'list' : 'grid');
+              }}
+              style={styles.viewToggleBtn}
+              accessibilityLabel={postViewMode === 'grid' ? t('profile.listView') : t('profile.gridView')}
+              accessibilityRole="button"
+            >
+              <Icon
+                name={postViewMode === 'grid' ? 'layout' : 'layers'}
+                size="sm"
+                color={tc.text.secondary}
+              />
+            </Pressable>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -860,6 +886,17 @@ export default function ProfileScreen() {
       );
     }
 
+    // Posts/liked: list view shows full PostCard, grid view shows GridItem
+    if (postViewMode === 'list') {
+      return (
+        <PostCard
+          post={item as Post}
+          viewerId={clerkUser?.id}
+          isOwn={isOwnProfile}
+        />
+      );
+    }
+
     return (
       <GridItem
         post={item as Post}
@@ -896,14 +933,14 @@ export default function ProfileScreen() {
       </Animated.View>
 
       <Animated.FlatList
-        key={activeTab === 'threads' ? 'list' : 'grid'}
+        key={activeTab === 'threads' ? 'list' : (activeTab === 'posts' || activeTab === 'liked') && postViewMode === 'list' ? `${activeTab}-list` : 'grid'}
         removeClippedSubviews={true}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         data={currentData}
         keyExtractor={(item: { id: string }) => item.id}
-        numColumns={activeTab === 'threads' ? 1 : 3}
-        columnWrapperStyle={activeTab === 'threads' ? undefined : styles.gridRow}
+        numColumns={activeTab === 'threads' || ((activeTab === 'posts' || activeTab === 'liked') && postViewMode === 'list') ? 1 : 3}
+        columnWrapperStyle={activeTab === 'threads' || ((activeTab === 'posts' || activeTab === 'liked') && postViewMode === 'list') ? undefined : styles.gridRow}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.4}
         ListHeaderComponent={ListHeader}
@@ -1105,6 +1142,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     padding: 4,
   },
   tabBarBg: { },
+  tabBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewToggleBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   stickyTabBar: {
     position: 'absolute',
     top: 44,

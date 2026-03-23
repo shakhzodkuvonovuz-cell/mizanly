@@ -312,4 +312,55 @@ describe('SchedulingService', () => {
       );
     });
   });
+
+  describe('updateSchedule — timezone handling', () => {
+    it('should accept timezone-offset ISO strings and store as UTC', async () => {
+      const userId = 'user-123';
+      const type = 'post' as const;
+      const id = 'post-1';
+      // ISO string with +05:00 offset (e.g. Tashkent timezone)
+      // new Date() converts this to UTC internally
+      const scheduledAt = new Date('2027-06-15T14:00:00+05:00');
+      const expectedUtc = new Date('2027-06-15T09:00:00Z');
+
+      prisma.post.findUnique.mockResolvedValue({ userId });
+      prisma.post.update.mockResolvedValue({ id, userId, scheduledAt: expectedUtc });
+
+      const result = await service.updateSchedule(userId, type, id, scheduledAt);
+
+      expect(prisma.post.update).toHaveBeenCalledWith({
+        where: { id },
+        data: { scheduledAt: expect.any(Date) },
+      });
+      // The stored date should be UTC equivalent
+      const storedDate = prisma.post.update.mock.calls[0][0].data.scheduledAt;
+      expect(storedDate.getTime()).toBe(expectedUtc.getTime());
+    });
+
+    it('should reject invalid Date objects', async () => {
+      const userId = 'user-123';
+      const type = 'post' as const;
+      const id = 'post-1';
+      const invalidDate = new Date('not-a-date');
+
+      await expect(service.updateSchedule(userId, type, id, invalidDate)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should handle UTC ISO strings correctly', async () => {
+      const userId = 'user-123';
+      const type = 'post' as const;
+      const id = 'post-1';
+      const scheduledAt = new Date('2027-06-15T14:00:00Z');
+
+      prisma.post.findUnique.mockResolvedValue({ userId });
+      prisma.post.update.mockResolvedValue({ id, userId, scheduledAt });
+
+      await service.updateSchedule(userId, type, id, scheduledAt);
+
+      const storedDate = prisma.post.update.mock.calls[0][0].data.scheduledAt;
+      expect(storedDate.getTime()).toBe(scheduledAt.getTime());
+    });
+  });
 });

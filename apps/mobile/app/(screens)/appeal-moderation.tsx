@@ -209,15 +209,15 @@ export default function AppealModerationScreen() {
             <Text style={[styles.reasonLabel, { color: tc.text.primary }]}>{t('appealModeration.reasonLabel')}</Text>
             {APPEAL_REASONS.map((reason, index) => (
               <Pressable
-                accessibilityRole="button"
+                accessibilityRole="radio"
                 accessibilityLabel={reason.label}
+                accessibilityState={{ selected: selectedReason === reason.id }}
                 key={reason.id}
                 style={[
                   styles.reasonRow,
                   index < APPEAL_REASONS.length - 1 && [styles.reasonRowBorder, { borderBottomColor: tc.border }],
                 ]}
                 onPress={() => setSelectedReason(reason.id)}
-
               >
                 <View
                   style={[
@@ -258,6 +258,7 @@ export default function AppealModerationScreen() {
                   numberOfLines={5}
                   maxLength={1000}
                   textAlignVertical="top"
+                  accessibilityLabel={t('appealModeration.detailsPlaceholder')}
                 />
                 <View style={styles.charCountContainer}>
                   <CharCountRing current={details.length} max={1000} size={28} />
@@ -335,6 +336,7 @@ export default function AppealModerationScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={t('common.remove')}
                       style={styles.evidenceThumbnailRemove}
+                      hitSlop={12}
                       onPress={() => setEvidenceImages(prev => prev.filter((_, i) => i !== idx))}
                     >
                       <Icon name="x" size="xs" color="#FFF" />
@@ -476,8 +478,8 @@ export default function AppealModerationScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('appealModeration.submitAppeal')}
+          accessibilityState={{ disabled: isSubmitDisabled || submitAppealMutation.isPending }}
           disabled={isSubmitDisabled || submitAppealMutation.isPending}
-
           onPress={() => submitAppealMutation.mutate()}
         >
           <LinearGradient

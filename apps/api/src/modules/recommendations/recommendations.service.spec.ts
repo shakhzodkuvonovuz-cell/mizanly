@@ -153,6 +153,7 @@ describe('RecommendationsService', () => {
 
       const result = await service.suggestedPosts(undefined, 20);
 
+      // mainCount = 20 - ceil(20*0.15) = 20 - 3 = 17
       expect(prisma.post.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           isRemoved: false,
@@ -166,8 +167,9 @@ describe('RecommendationsService', () => {
           { sharesCount: 'desc' },
           { createdAt: 'desc' },
         ],
-        take: 20,
+        take: 17,
       }));
+      // Result includes main posts (exploration returns [] from mock)
       expect(result).toEqual(mockPosts);
     });
 
@@ -227,8 +229,78 @@ describe('RecommendationsService', () => {
 
       const result = await service.suggestedPosts(userId, 20);
 
-      // Falls back because getUserInterestVector returns null
+      // Falls back because getUserInterestVector returns null; includes main + exploration (empty)
       expect(result).toEqual([{ id: 'p1' }]);
+    });
+
+    it('should reserve 15% of slots for exploration and use mainCount for primary query', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      await service.suggestedPosts(undefined, 20);
+
+      // First call is the main query, mainCount = 20 - ceil(20*0.15) = 17
+      const mainCall = prisma.post.findMany.mock.calls[0][0];
+      expect(mainCall.take).toBe(17);
+
+      // Second call is exploration query
+      const explorationCall = prisma.post.findMany.mock.calls[1][0];
+      expect(explorationCall.take).toBe(3); // ceil(20 * 0.15) = 3
+      expect(explorationCall.where.viewsCount).toEqual({ lt: 100 });
+      expect(explorationCall.where.createdAt.gte).toBeInstanceOf(Date);
+    });
+
+    it('should query exploration posts with <100 views and <6 hours old', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      await service.suggestedPosts(undefined, 20);
+
+      // Second call is the exploration query
+      const explorationCall = prisma.post.findMany.mock.calls[1][0];
+      expect(explorationCall.where.viewsCount).toEqual({ lt: 100 });
+      expect(explorationCall.where.isRemoved).toBe(false);
+      expect(explorationCall.where.visibility).toBe(PostVisibility.PUBLIC);
+      expect(explorationCall.orderBy).toEqual({ createdAt: 'desc' });
+
+      // Verify the freshCutoff is approximately 6 hours ago
+      const cutoff = explorationCall.where.createdAt.gte as Date;
+      const ageHours = (Date.now() - cutoff.getTime()) / (1000 * 60 * 60);
+      expect(ageHours).toBeGreaterThan(5.9);
+      expect(ageHours).toBeLessThan(6.1);
+    });
+
+    it('should interleave exploration posts at every ~7th position', async () => {
+      const mainPosts = Array.from({ length: 17 }, (_, i) => ({ id: `main-${i}` }));
+      const explorationPosts = [{ id: 'explore-0' }, { id: 'explore-1' }, { id: 'explore-2' }];
+
+      prisma.post.findMany
+        .mockResolvedValueOnce(mainPosts) // main query
+        .mockResolvedValueOnce(explorationPosts); // exploration query
+
+      const result = await service.suggestedPosts(undefined, 20);
+
+      // Total = 17 main + 3 exploration = 20
+      expect(result.length).toBe(20);
+      // explore-0 inserted at min((0+1)*7, 17) = 7
+      expect(result[7]).toEqual({ id: 'explore-0' });
+      // explore-1 inserted at min((1+1)*7, 18) = 14
+      expect(result[14]).toEqual({ id: 'explore-1' });
+      // explore-2 inserted at min((2+1)*7, 19) = 19
+      expect(result[19]).toEqual({ id: 'explore-2' });
+    });
+
+    it('should not duplicate exploration posts already in main results', async () => {
+      const mainPosts = [{ id: 'shared-id' }, { id: 'main-1' }];
+      const explorationPosts = [{ id: 'shared-id' }, { id: 'explore-unique' }];
+
+      prisma.post.findMany
+        .mockResolvedValueOnce(mainPosts)
+        .mockResolvedValueOnce(explorationPosts);
+
+      const result = await service.suggestedPosts(undefined, 20);
+
+      // shared-id should only appear once
+      const sharedCount = result.filter((p: any) => p.id === 'shared-id').length;
+      expect(sharedCount).toBe(1);
+      // explore-unique should be present
+      expect(result.some((p: any) => p.id === 'explore-unique')).toBe(true);
     });
   });
 
@@ -247,6 +319,7 @@ describe('RecommendationsService', () => {
 
       const result = await service.suggestedReels(undefined, 20);
 
+      // mainCount = 20 - ceil(20*0.15) = 17
       expect(prisma.reel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           isRemoved: false,
@@ -260,7 +333,7 @@ describe('RecommendationsService', () => {
           { commentsCount: 'desc' },
           { createdAt: 'desc' },
         ],
-        take: 20,
+        take: 17,
       }));
       expect(result).toEqual(mockReels);
     });
@@ -298,6 +371,21 @@ describe('RecommendationsService', () => {
       // Should be approximately 72 hours (with small tolerance for test execution time)
       expect(ageHours).toBeGreaterThan(71.9);
       expect(ageHours).toBeLessThan(72.1);
+    });
+
+    it('should reserve 15% of slots for reel exploration', async () => {
+      prisma.reel.findMany.mockResolvedValue([]);
+      await service.suggestedReels(undefined, 20);
+
+      // First call is the main reel query, mainCount = 17
+      const mainCall = prisma.reel.findMany.mock.calls[0][0];
+      expect(mainCall.take).toBe(17);
+
+      // Second call is exploration reel query
+      const explorationCall = prisma.reel.findMany.mock.calls[1][0];
+      expect(explorationCall.take).toBe(3);
+      expect(explorationCall.where.viewsCount).toEqual({ lt: 100 });
+      expect(explorationCall.where.status).toBe(ReelStatus.READY);
     });
   });
 
@@ -369,6 +457,7 @@ describe('RecommendationsService', () => {
 
       const result = await service.suggestedThreads(undefined, 20);
 
+      // mainCount = 20 - ceil(20*0.15) = 17
       expect(prisma.thread.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           isRemoved: false,
@@ -382,7 +471,7 @@ describe('RecommendationsService', () => {
           { repliesCount: 'desc' },
           { createdAt: 'desc' },
         ],
-        take: 20,
+        take: 17,
       }));
       expect(result).toEqual(mockThreads);
     });
@@ -414,6 +503,21 @@ describe('RecommendationsService', () => {
       const result = await service.suggestedThreads(undefined, 20);
       expect(result).toEqual([]);
     });
+
+    it('should reserve 15% of slots for thread exploration', async () => {
+      prisma.thread.findMany.mockResolvedValue([]);
+      await service.suggestedThreads(undefined, 20);
+
+      // First call is the main thread query, mainCount = 17
+      const mainCall = prisma.thread.findMany.mock.calls[0][0];
+      expect(mainCall.take).toBe(17);
+
+      // Second call is exploration thread query
+      const explorationCall = prisma.thread.findMany.mock.calls[1][0];
+      expect(explorationCall.take).toBe(3);
+      expect(explorationCall.where.viewsCount).toEqual({ lt: 100 });
+      expect(explorationCall.where.isChainHead).toBe(true);
+    });
   });
 
   // ── multiStageRank (tested indirectly via public methods) ───
@@ -431,7 +535,7 @@ describe('RecommendationsService', () => {
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.feedInteraction.findMany.mockResolvedValue([]);
-      // Engagement scores query
+      // Engagement scores query, author map query, hashtag map query, hydration query, exploration query
       prisma.post.findMany
         .mockResolvedValueOnce([
           { id: 'p1', likesCount: 100, commentsCount: 10, sharesCount: 5, savesCount: 3, viewsCount: 500, createdAt: new Date() },
@@ -442,11 +546,18 @@ describe('RecommendationsService', () => {
           { id: 'p1', userId: 'author1' },
           { id: 'p2', userId: 'author2' },
         ])
+        // Hashtag map query
+        .mockResolvedValueOnce([
+          { id: 'p1', hashtags: ['islam', 'quran'] },
+          { id: 'p2', hashtags: ['cooking', 'recipe'] },
+        ])
         // Final hydration query
         .mockResolvedValueOnce([
           { id: 'p1', content: 'post 1' },
           { id: 'p2', content: 'post 2' },
-        ]);
+        ])
+        // Exploration query
+        .mockResolvedValueOnce([]);
 
       const result = await service.suggestedPosts(userId, 20);
 
@@ -478,6 +589,118 @@ describe('RecommendationsService', () => {
         expect.any(Array),
         expect.arrayContaining(['seen-1', 'seen-2']),
       );
+    });
+
+    it('should fetch hashtag map alongside author map for diversity reranking', async () => {
+      const userId = 'user1';
+      mockEmbeddingsService.getUserInterestVector.mockResolvedValue([0.1, 0.2, 0.3]);
+      mockEmbeddingsService.findSimilarByVector.mockResolvedValue([
+        { contentId: 'p1', similarity: 0.9 },
+        { contentId: 'p2', similarity: 0.8 },
+        { contentId: 'p3', similarity: 0.7 },
+      ]);
+
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.feedInteraction.findMany.mockResolvedValue([]);
+      prisma.post.findMany
+        // Engagement scores
+        .mockResolvedValueOnce([
+          { id: 'p1', likesCount: 10, commentsCount: 1, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
+          { id: 'p2', likesCount: 10, commentsCount: 1, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
+          { id: 'p3', likesCount: 10, commentsCount: 1, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
+        ])
+        // Author map
+        .mockResolvedValueOnce([
+          { id: 'p1', userId: 'a1' },
+          { id: 'p2', userId: 'a2' },
+          { id: 'p3', userId: 'a3' },
+        ])
+        // Hashtag map — this is the new query
+        .mockResolvedValueOnce([
+          { id: 'p1', hashtags: ['islam', 'quran'] },
+          { id: 'p2', hashtags: ['islam', 'quran'] },
+          { id: 'p3', hashtags: ['cooking'] },
+        ])
+        // Hydration
+        .mockResolvedValueOnce([
+          { id: 'p1', content: 'p1' },
+          { id: 'p2', content: 'p2' },
+          { id: 'p3', content: 'p3' },
+        ])
+        // Exploration
+        .mockResolvedValueOnce([]);
+
+      const result = await service.suggestedPosts(userId, 20);
+
+      // Hashtag map query should have been called (3rd post.findMany call)
+      expect(prisma.post.findMany).toHaveBeenCalledTimes(5);
+      // The hashtag query selects id + hashtags
+      const hashtagCall = prisma.post.findMany.mock.calls[2][0];
+      expect(hashtagCall.select).toEqual({ id: true, hashtags: true });
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should defer posts with 2+ overlapping hashtags in recent window', async () => {
+      const userId = 'user1';
+      mockEmbeddingsService.getUserInterestVector.mockResolvedValue([0.1, 0.2, 0.3]);
+      // 4 candidates: p1, p2, p3 share "islam"+"quran" tags, p4 is different
+      mockEmbeddingsService.findSimilarByVector.mockResolvedValue([
+        { contentId: 'p1', similarity: 0.95 },
+        { contentId: 'p2', similarity: 0.90 },
+        { contentId: 'p3', similarity: 0.85 },
+        { contentId: 'p4', similarity: 0.80 },
+      ]);
+
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.feedInteraction.findMany.mockResolvedValue([]);
+      prisma.post.findMany
+        // Engagement scores
+        .mockResolvedValueOnce([
+          { id: 'p1', likesCount: 10, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
+          { id: 'p2', likesCount: 10, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
+          { id: 'p3', likesCount: 10, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
+          { id: 'p4', likesCount: 10, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
+        ])
+        // Author map — all different authors
+        .mockResolvedValueOnce([
+          { id: 'p1', userId: 'a1' },
+          { id: 'p2', userId: 'a2' },
+          { id: 'p3', userId: 'a3' },
+          { id: 'p4', userId: 'a4' },
+        ])
+        // Hashtag map — p1, p2, p3 share same tags, p4 is different
+        .mockResolvedValueOnce([
+          { id: 'p1', hashtags: ['islam', 'quran'] },
+          { id: 'p2', hashtags: ['islam', 'quran'] },
+          { id: 'p3', hashtags: ['islam', 'quran'] },
+          { id: 'p4', hashtags: ['cooking', 'recipe'] },
+        ])
+        // Hydration
+        .mockResolvedValueOnce([
+          { id: 'p1', content: 'p1' },
+          { id: 'p2', content: 'p2' },
+          { id: 'p3', content: 'p3' },
+          { id: 'p4', content: 'p4' },
+        ])
+        // Exploration
+        .mockResolvedValueOnce([]);
+
+      const result = await service.suggestedPosts(userId, 20);
+
+      // All 4 should still be in results (deferred, not removed)
+      expect(result.length).toBe(4);
+      // p4 (different hashtags) should appear before p3 (deferred due to hashtag overlap)
+      const ids = result.map((r: any) => r.id);
+      expect(ids).toContain('p1');
+      expect(ids).toContain('p2');
+      expect(ids).toContain('p3');
+      expect(ids).toContain('p4');
+      // p4 should appear before p3 since p3 gets deferred (islam+quran overlap >= 2 with recent)
+      const p4Idx = ids.indexOf('p4');
+      const p3Idx = ids.indexOf('p3');
+      expect(p4Idx).toBeLessThan(p3Idx);
     });
   });
 
@@ -522,8 +745,9 @@ describe('RecommendationsService', () => {
       prisma.post.findMany.mockResolvedValue([]);
       await service.suggestedPosts(undefined);
 
+      // mainCount = 20 - ceil(20*0.15) = 17
       expect(prisma.post.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        take: 20,
+        take: 17,
       }));
     });
 

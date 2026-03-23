@@ -8,10 +8,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withRepeat,
-  withSequence,
   withTiming,
-  Easing,
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
@@ -49,6 +46,7 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { RichText } from '@/components/ui/RichText';
 import { navigate } from '@/utils/navigation';
+import { TypingIndicator } from '@/components/risalah/TypingIndicator';
 
 interface TenorGifResult {
   id: string;
@@ -112,44 +110,7 @@ function highlightSearchText(text: string, query: string) {
   return segments;
 }
 
-function TypingDots() {
-  const dot1 = useSharedValue(0);
-  const dot2 = useSharedValue(0);
-  const dot3 = useSharedValue(0);
-  const fadeIn = useSharedValue(0);
-
-  useEffect(() => {
-    fadeIn.value = withTiming(1, { duration: 200 });
-    const bounce = (delay: number) =>
-      withRepeat(
-        withSequence(
-          withTiming(0, { duration: delay }),
-          withTiming(-4, { duration: 300, easing: Easing.out(Easing.ease) }),
-          withTiming(0, { duration: 300, easing: Easing.in(Easing.ease) }),
-        ),
-        -1,
-      );
-    dot1.value = bounce(0);
-    dot2.value = bounce(150);
-    dot3.value = bounce(300);
-    return () => {
-      fadeIn.value = 0;
-    };
-  }, [dot1, dot2, dot3, fadeIn]);
-
-  const s1 = useAnimatedStyle(() => ({ transform: [{ translateY: dot1.value }] }));
-  const s2 = useAnimatedStyle(() => ({ transform: [{ translateY: dot2.value }] }));
-  const s3 = useAnimatedStyle(() => ({ transform: [{ translateY: dot3.value }] }));
-  const containerStyle = useAnimatedStyle(() => ({ opacity: fadeIn.value }));
-
-  return (
-    <Animated.View style={[styles.typingDots, containerStyle]}>
-      <Animated.View style={[styles.dot, s1]} />
-      <Animated.View style={[styles.dot, s2]} />
-      <Animated.View style={[styles.dot, s3]} />
-    </Animated.View>
-  );
-}
+// TypingDots removed — now using shared <TypingIndicator /> from @/components/risalah
 
 // ── Message list with grouping + date separators ──────────────────────────
 const GROUP_GAP_MS = 2 * 60 * 1000; // 2 min gap breaks a group
@@ -1459,10 +1420,7 @@ export default function ConversationScreen() {
               <View>
                 <Text style={[styles.headerName, { color: tc.text.primary }]} numberOfLines={1}>{name}</Text>
                 {otherTyping && (
-                  <View style={styles.typingRow}>
-                    <Text style={styles.typingText}>{t('messages.typing')}</Text>
-                    <TypingDots />
-                  </View>
+                  <TypingIndicator label={t('messages.typing')} dotSize={5} variant="bubble" />
                 )}
               </View>
             </Pressable>
@@ -2081,10 +2039,7 @@ const styles = StyleSheet.create({
     color: colors.emerald, fontSize: fontSize.base, fontWeight: '600',
   },
 
-  typingDots: { flexDirection: 'row', gap: 3, paddingTop: 2 },
-  dot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.emerald },
-  typingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  typingText: { color: colors.emerald, fontSize: fontSize.xs, fontStyle: 'italic' },
+  // Typing styles moved to shared <TypingIndicator /> component
 
   loaderWrap: { flex: 1, padding: spacing.base, justifyContent: 'center' },
   messageList: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, flexGrow: 1 },

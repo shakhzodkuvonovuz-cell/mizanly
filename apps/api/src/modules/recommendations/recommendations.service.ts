@@ -248,19 +248,54 @@ export class RecommendationsService {
     // Sort by final score
     scored.sort((a, b) => b.finalScore - a.finalScore);
 
-    // Stage 3: Diversity injection — ensure no same-author back-to-back
-    const authorMap = await this.getAuthorMap(scored.slice(0, limit * 3).map(s => s.contentId), contentType);
-    const diversified: string[] = [];
+    // Stage 3: Diversity injection — no same-author back-to-back + hashtag cluster diversity
+    const topCandidateIds = scored.slice(0, limit * 3).map(s => s.contentId);
+    const [authorMap, hashtagMap] = await Promise.all([
+      this.getAuthorMap(topCandidateIds, contentType),
+      this.getHashtagMap(topCandidateIds, contentType),
+    ]);
+
+    // Pass 1: Author dedup — no same author back-to-back
+    const authorDeduped: ScoredCandidate[] = [];
     let lastAuthor = '';
+    const skippedByAuthor: ScoredCandidate[] = [];
 
     for (const item of scored) {
-      if (diversified.length >= limit) break;
       const author = authorMap.get(item.contentId) || '';
-      // Skip if same author as last item (unless we're running out)
-      if (author === lastAuthor && diversified.length < scored.length - 1) continue;
       if (excludedIds.includes(author)) continue;
-      diversified.push(item.contentId);
+      if (author === lastAuthor && authorDeduped.length < scored.length - 1) {
+        skippedByAuthor.push(item);
+        continue;
+      }
+      authorDeduped.push(item);
       lastAuthor = author;
+    }
+    // Append skipped items at the end so they are not lost
+    authorDeduped.push(...skippedByAuthor);
+
+    // Pass 2: Hashtag diversity — prevent same hashtag cluster 3+ times in a row
+    const diversified: string[] = [];
+    const recentHashtags: string[] = [];
+    const deferredByHashtag: ScoredCandidate[] = [];
+
+    for (const item of authorDeduped) {
+      if (diversified.length >= limit) break;
+      const postTags = hashtagMap.get(item.contentId) || [];
+      const recentWindow = recentHashtags.slice(-6);
+      const tagOverlap = postTags.filter(t => recentWindow.includes(t)).length;
+
+      if (tagOverlap >= 2 && diversified.length > 0) {
+        deferredByHashtag.push(item);
+        continue;
+      }
+      diversified.push(item.contentId);
+      recentHashtags.push(...postTags);
+    }
+
+    // Fill remaining slots with deferred hashtag items
+    for (const item of deferredByHashtag) {
+      if (diversified.length >= limit) break;
+      diversified.push(item.contentId);
     }
 
     return diversified;
@@ -337,6 +372,137 @@ export class RecommendationsService {
     }
 
     return map;
+  }
+
+  private async getHashtagMap(contentIds: string[], contentType: EmbeddingContentType): Promise<Map<string, string[]>> {
+    const map = new Map<string, string[]>();
+    if (contentIds.length === 0) return map;
+
+    if (contentType === EmbeddingContentType.POST) {
+      const items = await this.prisma.post.findMany({ where: { id: { in: contentIds } }, select: { id: true, hashtags: true }, take: 500 });
+      items.forEach(i => map.set(i.id, i.hashtags));
+    } else if (contentType === EmbeddingContentType.REEL) {
+      const items = await this.prisma.reel.findMany({ where: { id: { in: contentIds } }, select: { id: true, hashtags: true }, take: 500 });
+      items.forEach(i => map.set(i.id, i.hashtags));
+    } else if (contentType === EmbeddingContentType.THREAD) {
+      const items = await this.prisma.thread.findMany({ where: { id: { in: contentIds } }, select: { id: true, hashtags: true }, take: 500 });
+      items.forEach(i => map.set(i.id, i.hashtags));
+    }
+
+    return map;
+  }
+
+  // ── Exploration helpers ──────────────────────────────────
+
+  /**
+   * Fetch fresh posts with low view counts for exploration slots.
+   * These give new creators a chance to surface and prevent filter bubbles.
+   */
+  private async getExplorationPosts(
+    excludedUserIds: string[],
+    userId: string | undefined,
+    count: number,
+  ) {
+    if (count <= 0) return [];
+    const freshCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000); // 6 hours
+    const where: Prisma.PostWhereInput = {
+      createdAt: { gte: freshCutoff },
+      viewsCount: { lt: 100 },
+      isRemoved: false,
+      visibility: PostVisibility.PUBLIC,
+      scheduledAt: null,
+      user: { isDeactivated: false, isPrivate: false },
+    };
+    if (userId) {
+      where.userId = { not: userId, notIn: excludedUserIds };
+    }
+    return this.prisma.post.findMany({
+      where,
+      select: POST_SELECT,
+      take: count,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * Fetch fresh reels with low view counts for exploration slots.
+   */
+  private async getExplorationReels(
+    excludedUserIds: string[],
+    userId: string | undefined,
+    count: number,
+  ) {
+    if (count <= 0) return [];
+    const freshCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const where: Prisma.ReelWhereInput = {
+      createdAt: { gte: freshCutoff },
+      viewsCount: { lt: 100 },
+      isRemoved: false,
+      status: ReelStatus.READY,
+      scheduledAt: null,
+      user: { isDeactivated: false, isPrivate: false },
+    };
+    if (userId) {
+      where.userId = { not: userId, notIn: excludedUserIds };
+    }
+    return this.prisma.reel.findMany({
+      where,
+      select: REEL_SELECT,
+      take: count,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * Fetch fresh threads with low view counts for exploration slots.
+   */
+  private async getExplorationThreads(
+    excludedUserIds: string[],
+    userId: string | undefined,
+    count: number,
+  ) {
+    if (count <= 0) return [];
+    const freshCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const where: Prisma.ThreadWhereInput = {
+      createdAt: { gte: freshCutoff },
+      viewsCount: { lt: 100 },
+      isRemoved: false,
+      visibility: 'PUBLIC',
+      isChainHead: true,
+      user: { isDeactivated: false },
+    };
+    if (userId) {
+      where.userId = { not: userId, notIn: excludedUserIds };
+    }
+    return this.prisma.thread.findMany({
+      where,
+      select: THREAD_SELECT,
+      take: count,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * Interleave exploration items into main results.
+   * Every ~7th position gets an exploration item to keep discovery natural.
+   */
+  private interleaveExploration<T extends { id: string }>(
+    mainResults: T[],
+    explorationItems: T[],
+  ): T[] {
+    if (explorationItems.length === 0) return mainResults;
+
+    // Deduplicate: remove any exploration items already in main results
+    const mainIds = new Set(mainResults.map(r => r.id));
+    const uniqueExploration = explorationItems.filter(e => !mainIds.has(e.id));
+    if (uniqueExploration.length === 0) return mainResults;
+
+    const result = [...mainResults];
+    uniqueExploration.forEach((item, i) => {
+      const insertAt = Math.min((i + 1) * 7, result.length);
+      result.splice(insertAt, 0, item);
+    });
+    return result;
   }
 
   // ── Public recommendation methods ─────────────────────────
@@ -420,18 +586,26 @@ export class RecommendationsService {
     // Fetch excluded IDs once (avoids duplicate query in multiStageRank + fallback)
     const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
 
+    // Reserve 15% of slots for exploration content (fresh, low-view posts)
+    const explorationCount = Math.ceil(limit * 0.15);
+    const mainCount = limit - explorationCount;
+
     // Try pgvector multi-stage ranking for authenticated users
     if (userId) {
-      const rankedIds = await this.multiStageRank(userId, EmbeddingContentType.POST, limit);
+      const rankedIds = await this.multiStageRank(userId, EmbeddingContentType.POST, mainCount);
       if (rankedIds.length > 0) {
-        const posts = await this.prisma.post.findMany({
-          where: { id: { in: rankedIds }, isRemoved: false },
-          select: POST_SELECT,
-          take: 50,
-        });
+        const [posts, explorationPosts] = await Promise.all([
+          this.prisma.post.findMany({
+            where: { id: { in: rankedIds }, isRemoved: false },
+            select: POST_SELECT,
+            take: 50,
+          }),
+          this.getExplorationPosts(excludedIds, userId, explorationCount),
+        ]);
         // Re-order to match ranked order
         const postMap = new Map(posts.map(p => [p.id, p]));
-        return rankedIds.map(id => postMap.get(id)).filter(Boolean);
+        const mainResults = rankedIds.map(id => postMap.get(id)).filter((p): p is NonNullable<typeof p> => !!p);
+        return this.interleaveExploration(mainResults, explorationPosts);
       }
     }
 
@@ -450,7 +624,7 @@ export class RecommendationsService {
       }
     }
 
-    return this.prisma.post.findMany({
+    const mainPosts = await this.prisma.post.findMany({
       where,
       select: POST_SELECT,
       orderBy: [
@@ -459,25 +633,37 @@ export class RecommendationsService {
         { sharesCount: 'desc' },
         { createdAt: 'desc' },
       ],
-      take: limit,
+      take: mainCount,
     });
+
+    // Add exploration posts for fallback path too
+    const explorationPosts = await this.getExplorationPosts(excludedIds, userId, explorationCount);
+    return this.interleaveExploration(mainPosts, explorationPosts);
   }
 
   async suggestedReels(userId?: string, limit = 20) {
     // Fetch excluded IDs once
     const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
 
+    // Reserve 15% of slots for exploration content
+    const explorationCount = Math.ceil(limit * 0.15);
+    const mainCount = limit - explorationCount;
+
     // Try pgvector multi-stage ranking for authenticated users
     if (userId) {
-      const rankedIds = await this.multiStageRank(userId, EmbeddingContentType.REEL, limit);
+      const rankedIds = await this.multiStageRank(userId, EmbeddingContentType.REEL, mainCount);
       if (rankedIds.length > 0) {
-        const reels = await this.prisma.reel.findMany({
-          where: { id: { in: rankedIds }, isRemoved: false, status: ReelStatus.READY },
-          select: REEL_SELECT,
-          take: 50,
-        });
+        const [reels, explorationReels] = await Promise.all([
+          this.prisma.reel.findMany({
+            where: { id: { in: rankedIds }, isRemoved: false, status: ReelStatus.READY },
+            select: REEL_SELECT,
+            take: 50,
+          }),
+          this.getExplorationReels(excludedIds, userId, explorationCount),
+        ]);
         const reelMap = new Map(reels.map(r => [r.id, r]));
-        return rankedIds.map(id => reelMap.get(id)).filter(Boolean);
+        const mainResults = rankedIds.map(id => reelMap.get(id)).filter(Boolean);
+        return this.interleaveExploration(mainResults as Array<{ id: string }>, explorationReels);
       }
     }
 
@@ -496,7 +682,7 @@ export class RecommendationsService {
       }
     }
 
-    return this.prisma.reel.findMany({
+    const mainReels = await this.prisma.reel.findMany({
       where,
       select: REEL_SELECT,
       orderBy: [
@@ -505,8 +691,11 @@ export class RecommendationsService {
         { commentsCount: 'desc' },
         { createdAt: 'desc' },
       ],
-      take: limit,
+      take: mainCount,
     });
+
+    const explorationReels = await this.getExplorationReels(excludedIds, userId, explorationCount);
+    return this.interleaveExploration(mainReels, explorationReels);
   }
 
   async suggestedChannels(userId?: string, limit = 20) {
@@ -538,21 +727,31 @@ export class RecommendationsService {
    * Suggested threads with pgvector ranking
    */
   async suggestedThreads(userId?: string, limit = 20) {
+    const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
+
+    // Reserve 15% of slots for exploration content
+    const explorationCount = Math.ceil(limit * 0.15);
+    const mainCount = limit - explorationCount;
+
     if (userId) {
-      const rankedIds = await this.multiStageRank(userId, EmbeddingContentType.THREAD, limit);
+      const rankedIds = await this.multiStageRank(userId, EmbeddingContentType.THREAD, mainCount);
       if (rankedIds.length > 0) {
-        const threads = await this.prisma.thread.findMany({
-          where: { id: { in: rankedIds }, isRemoved: false },
-          select: THREAD_SELECT,
-          take: 50,
-        });
+        const [threads, explorationThreads] = await Promise.all([
+          this.prisma.thread.findMany({
+            where: { id: { in: rankedIds }, isRemoved: false },
+            select: THREAD_SELECT,
+            take: 50,
+          }),
+          this.getExplorationThreads(excludedIds, userId, explorationCount),
+        ]);
         const threadMap = new Map(threads.map(t => [t.id, t]));
-        return rankedIds.map(id => threadMap.get(id)).filter(Boolean);
+        const mainResults = rankedIds.map(id => threadMap.get(id)).filter(Boolean);
+        return this.interleaveExploration(mainResults as Array<{ id: string }>, explorationThreads);
       }
     }
 
     // Fallback
-    return this.prisma.thread.findMany({
+    const mainThreads = await this.prisma.thread.findMany({
       where: {
         isRemoved: false,
         visibility: 'PUBLIC',
@@ -566,7 +765,10 @@ export class RecommendationsService {
         { repliesCount: 'desc' },
         { createdAt: 'desc' },
       ],
-      take: limit,
+      take: mainCount,
     });
+
+    const explorationThreads = await this.getExplorationThreads(excludedIds, userId, explorationCount);
+    return this.interleaveExploration(mainThreads, explorationThreads);
   }
 }

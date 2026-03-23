@@ -7,6 +7,16 @@ export class PrivacyService {
 
   constructor(private prisma: PrismaService) {}
 
+  // TODO: [PRIVACY] Status privacy settings (read receipts, typing indicators, last seen visibility)
+  // are currently stored client-side in AsyncStorage (status-privacy.tsx) because the UserSettings
+  // schema only has `activityStatus` (boolean). Only activityStatus is synced to the backend via
+  // settingsService.updatePrivacy(). Critical privacy settings like read receipts and typing
+  // indicators should be server-side to enforce across all clients. Required schema additions:
+  //   - readReceipts: Boolean @default(true)
+  //   - typingIndicators: Boolean @default(true)
+  //   - lastSeenVisibility: String @default("everyone") // "everyone" | "contacts" | "nobody"
+  // Then wire status-privacy.tsx to use settingsApi.updatePrivacy() for all fields.
+
   /**
    * GDPR Article 20 — Data Portability.
    * Export ALL user personal data without caps.

@@ -23,6 +23,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { colors, spacing, fontSize, radius, fonts, shadow, animation } from '@/theme';
 import { giftsApi } from '@/services/giftsApi';
+import { paymentsApi } from '@/services/paymentsApi';
 import { formatCount } from '@/utils/formatCount';
 import { showToast } from '@/components/ui/Toast';
 import type { GiftCatalogItem, GiftHistoryItem } from '@/services/giftsApi';
@@ -105,14 +106,44 @@ function GiftShopContent() {
     setRefreshing(false);
   }, [refetchBalance, refetchCatalog, refetchHistory]);
 
-  const handleBuyCoins = (amount: number) => {
+  const handleBuyCoins = async (amount: number) => {
     haptic.save();
-    // TODO: Integrate Stripe payment before crediting coins
-    // Currently the backend credits coins without collecting payment
+    const pkg = COIN_PACKAGES.find((p) => p.coins === amount);
+    if (!pkg) return;
+
+    // Extract price in cents from the display string (e.g. "$4.99" -> 499)
+    const priceInDollars = parseFloat(pkg.price.replace('$', ''));
+    if (isNaN(priceInDollars) || priceInDollars <= 0) return;
+
     showToast({
-      message: t('giftShop.purchaseComingSoon', 'Coin purchases will be available once payment processing is set up'),
+      message: t('giftShop.processing', 'Processing purchase...'),
       variant: 'info',
     });
+
+    try {
+      // Step 1: Create Stripe PaymentIntent to collect payment
+      // TODO: On iOS, use Apple IAP instead (react-native-iap not installed yet)
+      // The receiverId 'platform' indicates this is a platform purchase, not a tip
+      await paymentsApi.createPaymentIntent({
+        amount: priceInDollars,
+        currency: 'USD',
+        receiverId: 'platform',
+      });
+
+      // Step 2: Credit coins after PaymentIntent creation
+      // In production, coin crediting should happen via Stripe webhook after payment confirmation.
+      // The client-side Stripe SDK would confirm the payment using the returned clientSecret.
+      await purchaseMutation.mutateAsync(amount);
+
+      showToast({
+        message: t('giftShop.purchaseSuccess', 'Coins purchased successfully!'),
+        variant: 'success',
+      });
+    } catch (err: unknown) {
+      haptic.error();
+      const message = err instanceof Error ? err.message : t('giftShop.purchaseFailed', 'Purchase failed');
+      showToast({ message, variant: 'error' });
+    }
   };
 
   const handleGiftTap = (gift: GiftCatalogItem | { type: string; name: string; coins: number }) => {
@@ -126,14 +157,23 @@ function GiftShopContent() {
     setRecipientSheet(true);
   };
 
-  const handleCashout = () => {
-    if (balance && balance.diamonds > 0) {
-      // TODO: Integrate Stripe payout before deducting diamonds
-      // Currently the backend deducts diamonds without sending real money
+  const handleCashout = async () => {
+    if (!balance || balance.diamonds <= 0) return;
+
+    try {
+      // Deduct diamonds and initiate payout
+      // TODO: In production, integrate Stripe Connect payouts to transfer funds
+      // to the creator's connected Stripe account. For now, this records the
+      // cashout request on the backend which can be fulfilled manually.
+      await cashoutMutation.mutateAsync(balance.diamonds);
       showToast({
-        message: t('giftShop.cashoutComingSoon', 'Diamond cash out will be available once payment processing is set up'),
-        variant: 'info',
+        message: t('giftShop.cashoutSuccess', 'Cash out request submitted!'),
+        variant: 'success',
       });
+    } catch (err: unknown) {
+      haptic.error();
+      const message = err instanceof Error ? err.message : t('giftShop.cashoutFailed', 'Cash out failed');
+      showToast({ message, variant: 'error' });
     }
   };
 

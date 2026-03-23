@@ -71,6 +71,7 @@ describe('AuthService', () => {
             incr: jest.fn().mockResolvedValue(1),
             expire: jest.fn().mockResolvedValue(1),
             del: jest.fn().mockResolvedValue(1),
+            get: jest.fn().mockResolvedValue(null),
           },
         },
       ],
@@ -463,6 +464,69 @@ describe('AuthService', () => {
       expect(prisma.user.upsert).toHaveBeenCalledWith(expect.objectContaining({
         create: expect.objectContaining({ username: 'myuser' }),
       }));
+    });
+
+    it('should reject registration when device has 5+ accounts', async () => {
+      const redis = { incr: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn().mockResolvedValue('5') } as any;
+      // Access the private redis field to override it for this test
+      (service as any).redis = redis;
+
+      await expect(
+        service.register('clerk-abc', {
+          username: 'test',
+          displayName: 'Test',
+          dateOfBirth: '2000-01-01',
+          acceptedTerms: true,
+          deviceId: 'device-123',
+        } as any),
+      ).rejects.toThrow(BadRequestException);
+      expect(redis.get).toHaveBeenCalledWith('device_accounts:device-123');
+    });
+
+    it('should allow registration when device has fewer than 5 accounts', async () => {
+      const clerkId = 'clerk-new';
+      const redis = { incr: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn().mockResolvedValue('3') } as any;
+      (service as any).redis = redis;
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'new@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.upsert.mockResolvedValue({ id: 'user-new', clerkId });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      const result = await service.register(clerkId, {
+        username: 'newuser',
+        displayName: 'New User',
+        dateOfBirth: '2000-01-01',
+        acceptedTerms: true,
+        deviceId: 'device-456',
+      } as any);
+
+      expect(result.id).toBe('user-new');
+      // Should increment device counter after successful registration
+      expect(redis.incr).toHaveBeenCalledWith('device_accounts:device-456');
+    });
+
+    it('should skip device check when deviceId is not provided', async () => {
+      const clerkId = 'clerk-no-device';
+      const redis = { incr: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn() } as any;
+      (service as any).redis = redis;
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'nodevice@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.upsert.mockResolvedValue({ id: 'user-nd', clerkId });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      await service.register(clerkId, {
+        username: 'nodevice',
+        displayName: 'No Device',
+        dateOfBirth: '2000-01-01',
+        acceptedTerms: true,
+      } as any);
+
+      // redis.get should not be called for device_accounts when no deviceId
+      expect(redis.get).not.toHaveBeenCalledWith(expect.stringContaining('device_accounts:'));
     });
   });
 });

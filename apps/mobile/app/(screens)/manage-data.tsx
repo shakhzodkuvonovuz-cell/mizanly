@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   Alert,
+  Share,
 } from 'react-native';
 import { showToast } from '@/components/ui/Toast';
 import { useRouter } from 'expo-router';
@@ -108,6 +109,96 @@ export default function ManageDataScreen() {
 
   // No async data to load — content is rendered immediately
 
+  const formatExportAsText = (data: Record<string, unknown>): string => {
+    let text = '=== Your Mizanly Data Export ===\n';
+    text += `Exported: ${new Date().toLocaleString()}\n\n`;
+
+    if (data.profile && typeof data.profile === 'object') {
+      const profile = data.profile as Record<string, unknown>;
+      text += '--- Profile ---\n';
+      if (profile.username) text += `Username: ${profile.username}\n`;
+      if (profile.displayName) text += `Display Name: ${profile.displayName}\n`;
+      if (profile.email) text += `Email: ${profile.email}\n`;
+      if (profile.bio) text += `Bio: ${profile.bio}\n`;
+      if (profile.language) text += `Language: ${profile.language}\n`;
+      if (profile.createdAt) text += `Joined: ${new Date(profile.createdAt as string).toLocaleDateString()}\n`;
+      text += '\n';
+    }
+
+    const appendItems = (label: string, items: unknown[]) => {
+      text += `--- ${label} (${items.length}) ---\n`;
+      items.slice(0, 50).forEach((item) => {
+        const record = item as Record<string, unknown>;
+        const date = record.createdAt ? new Date(record.createdAt as string).toLocaleDateString() : '';
+        const content = (record.content || record.caption || record.title || '') as string;
+        text += `  ${date}: ${content.slice(0, 120)}${content.length > 120 ? '...' : ''}\n`;
+      });
+      if (items.length > 50) text += `  ... and ${items.length - 50} more\n`;
+      text += '\n';
+    };
+
+    if (Array.isArray(data.posts)) appendItems('Posts', data.posts);
+    if (Array.isArray(data.threads)) appendItems('Threads', data.threads);
+    if (Array.isArray(data.threadReplies)) appendItems('Thread Replies', data.threadReplies);
+    if (Array.isArray(data.comments)) appendItems('Comments', data.comments);
+    if (Array.isArray(data.reels)) appendItems('Reels', data.reels);
+    if (Array.isArray(data.videos)) appendItems('Videos', data.videos);
+    if (Array.isArray(data.stories)) text += `--- Stories (${data.stories.length}) ---\n\n`;
+
+    if (data.messages && typeof data.messages === 'object') {
+      const msgs = data.messages as { count?: number };
+      text += `--- Messages (${msgs.count ?? 0}) ---\n`;
+      text += '  [Message content omitted for privacy]\n\n';
+    }
+
+    if (Array.isArray(data.following)) {
+      text += `--- Following (${data.following.length}) ---\n\n`;
+    }
+
+    if (Array.isArray(data.bookmarks)) {
+      text += `--- Bookmarks (${data.bookmarks.length}) ---\n\n`;
+    }
+
+    return text;
+  };
+
+  const exportDataMutation = useMutation({
+    mutationFn: () => accountApi.requestDataExport(),
+    onSuccess: (data: Record<string, unknown>) => {
+      Alert.alert(
+        t('manageData.exportTitle'),
+        t('manageData.exportDescription'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('manageData.exportAsText'),
+            onPress: async () => {
+              try {
+                const formatted = formatExportAsText(data);
+                await Share.share({ message: formatted, title: 'Mizanly Data Export' });
+              } catch {
+                showToast({ message: t('manageData.exportReady'), variant: 'success' });
+              }
+            },
+          },
+          {
+            text: t('manageData.exportAsJson'),
+            onPress: async () => {
+              try {
+                await Share.share({ message: JSON.stringify(data, null, 2), title: 'Mizanly Data Export (JSON)' });
+              } catch {
+                showToast({ message: t('manageData.exportReady'), variant: 'success' });
+              }
+            },
+          },
+        ],
+      );
+    },
+    onError: (err: Error) => {
+      showToast({ message: err.message, variant: 'error' });
+    },
+  });
+
   const clearWatchHistoryMutation = useMutation({
     mutationFn: () => usersApi.clearWatchHistory(),
     onSuccess: () => {
@@ -134,14 +225,7 @@ export default function ManageDataScreen() {
         { text: t('common.cancel'), style: 'cancel' },
         {
           text: t('settings.requestButton'),
-          onPress: async () => {
-            try {
-              await accountApi.requestDataExport();
-              showToast({ message: t('settings.requestSentMessage'), variant: 'success' });
-            } catch {
-              showToast({ message: t('settings.requestDataExportFailed'), variant: 'error' });
-            }
-          },
+          onPress: () => exportDataMutation.mutate(),
         },
       ],
     );

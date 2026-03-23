@@ -258,6 +258,21 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   return (
     <Pressable onLongPress={handleLongPress} delayLongPress={400} disabled={!onLongPress}>
     <Animated.View style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }]}>
+      {/* Repost attribution */}
+      {post.sharedPost && (
+        <Pressable
+          style={styles.repostAttribution}
+          onPress={() => router.push(`/(screens)/profile/${post.sharedPost!.user.username}`)}
+          accessibilityLabel={tr('saf.repostedBy', { username: post.sharedPost.user.username })}
+          accessibilityRole="button"
+        >
+          <Icon name="repeat" size={12} color={colors.text.tertiary} />
+          <Text style={styles.repostText}>
+            {tr('saf.repostedBy', { username: post.sharedPost.user.username })}
+          </Text>
+        </Pressable>
+      )}
+
       {/* Header */}
       <View style={styles.header}>
         <Pressable
@@ -520,6 +535,18 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 });
 
 const styles = StyleSheet.create({
+  repostAttribution: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+  },
+  repostText: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    fontWeight: '500',
+  },
   card: {
     backgroundColor: colors.dark.bgCard,
     marginBottom: spacing.md,

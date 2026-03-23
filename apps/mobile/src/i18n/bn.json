@@ -470,6 +470,7 @@
       "title": "Your feed is empty",
       "subtitle": "Follow people to see their posts here"
     },
+    "repostedBy": "Reposted by @{{username}}",
     "crossPost": "Cross-post",
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
@@ -1070,7 +1071,9 @@
     "reels": "Reels",
     "unfollowTitle": "Unfollow?",
     "unfollowMessage": "You'll stop seeing {{username}}'s posts in your feed",
-    "unfollow": "Unfollow"
+    "unfollow": "Unfollow",
+    "gridView": "Grid view",
+    "listView": "List view"
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",
@@ -1526,6 +1529,9 @@
     "waqfGoalOf": "of ${{amount}}",
     "waqfDescription": "Waqf is an Islamic endowment — a permanent charitable fund where the principal is preserved and only the returns are used for good causes.",
     "waqfContributeComingSoon": "Waqf contributions will be available once payment processing is set up",
+    "waqfContributeSuccess": "Contribution successful! JazakAllahu Khairan.",
+    "waqfContributeFailed": "Contribution failed",
+    "waqfProcessing": "Processing contribution...",
     "browse": "Browse",
     "ask": "Ask",
     "answered": "Answered",
@@ -1689,7 +1695,9 @@
       "errorAction": "Go back",
       "loadErrorTitle": "Could not load videos",
       "loadErrorSubtitle": "Please pull to refresh",
-      "urlPlaceholder": "URL (https://...)"
+      "urlPlaceholder": "URL (https://...)",
+      "playAll": "Play All",
+      "shuffle": "Shuffle"
     },
     "bookmarkFolders": {
       "title": "Bookmark Folders",
@@ -2285,7 +2293,17 @@
     "success": "JazakAllahu Khairan",
     "successMessage": "Your donation has been received",
     "createCampaign": "Create Campaign",
-    "currencyAmount": "${{amount}}"
+    "currencyAmount": "${{amount}}",
+    "donateSuccess": "Donation successful!",
+    "donateFailed": "Donation failed",
+    "processing": "Processing donation..."
+  },
+  "giftShop": {
+    "purchaseSuccess": "Coins purchased successfully!",
+    "purchaseFailed": "Purchase failed",
+    "processing": "Processing purchase...",
+    "cashoutSuccess": "Cash out request submitted!",
+    "cashoutFailed": "Cash out failed"
   },
   "tafsir": {
     "title": "Tafsir",
@@ -3034,7 +3052,15 @@
     "deleteAccount": "আমার অ্যাকাউন্ট মুছুন",
     "deleteWarning": "এটি 30 দিন পরে আপনার অ্যাকাউন্ট এবং সমস্ত ডেটা স্থায়ীভাবে মুছে ফেলবে",
     "deleteConfirm": "আমি বুঝেছি, আমার অ্যাকাউন্ট মুছুন",
-    "deleteGracePeriod": "মন পরিবর্তন করতে আপনার 30 দিন আছে"
+    "deleteGracePeriod": "মন পরিবর্তন করতে আপনার 30 দিন আছে",
+    "exportAsText": "টেক্সট হিসাবে ডাউনলোড করুন",
+    "exportAsJson": "JSON হিসাবে ডাউনলোড করুন",
+    "clearCache": "ক্যাশ পরিষ্কার করুন",
+    "cacheCleared": "ক্যাশ সফলভাবে পরিষ্কার হয়েছে"
+  },
+  "accountSettings": {
+    "storage": "স্টোরেজ এবং ক্যাশ",
+    "cacheSize": "ক্যাশ আকার"
   },
   "network": {
     "offline": "আপনি অফলাইন",
@@ -3133,7 +3159,26 @@
     "transcription": "প্রতিলিপি",
     "transcribing": "প্রতিলিপি হচ্ছে...",
     "showMore": "আরও দেখুন",
-    "showLess": "কম দেখুন"
+    "showLess": "কম দেখুন",
+    "newMessage": "নতুন বার্তা",
+    "suggestions": "পরামর্শ",
+    "chatWith": "{{name}} এর সাথে চ্যাট",
+    "noUsersFound": "\"{{query}}\" এর জন্য কোনো ব্যবহারকারী পাওয়া যায়নি",
+    "searchByNameOrUsername": "নাম বা ব্যবহারকারীর নাম দিয়ে খুঁজুন",
+    "couldNotStartConversation": "কথোপকথন শুরু করা যায়নি",
+    "searchFailed": "অনুসন্ধান ব্যর্থ"
+  },
+  "newConversation": {
+    "recentContacts": "সাম্প্রতিক পরিচিতি",
+    "noContacts": "এখনো কোনো পরিচিতি নেই"
+  },
+  "chatFolders": {
+    "unread": "অপঠিত",
+    "groups": "গ্রুপ",
+    "archived": "সংরক্ষিত",
+    "allChats": "{{count}} কথোপকথন",
+    "noArchivedChats": "কোনো সংরক্ষিত চ্যাট নেই",
+    "noArchivedChatsSubtitle": "সংরক্ষিত কথোপকথন এখানে দেখা যাবে"
   },
   "stickers": {
     "createSticker": "স্টিকার তৈরি করুন",

@@ -146,6 +146,7 @@ export default function CreateGroupScreen() {
                 placeholderTextColor={tc.text.tertiary}
                 autoFocus
                 maxLength={MAX_GROUP_NAME}
+                accessibilityLabel={t('groups.groupName')}
               />
               <CharCountRing
                 current={groupName.length}
@@ -198,7 +199,7 @@ export default function CreateGroupScreen() {
                     </Text>
                     <Pressable
                       onPress={() => handleRemoveMember(member.id)}
-                      hitSlop={4}
+                      hitSlop={8}
                       style={styles.chipRemove}
                       accessibilityLabel={t('groups.removeMember', { name: member.displayName })}
                       accessibilityRole="button"
@@ -224,6 +225,7 @@ export default function CreateGroupScreen() {
                 placeholderTextColor={tc.text.tertiary}
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel={t('common.searchPeople')}
               />
               {query.length > 0 && (
                 <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')} accessibilityRole="button">

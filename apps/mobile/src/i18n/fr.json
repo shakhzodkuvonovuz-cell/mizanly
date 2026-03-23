@@ -338,6 +338,7 @@
       "title": "Your feed is empty",
       "subtitle": "Follow people to see their posts here"
     },
+    "repostedBy": "Repartagé par @{{username}}",
     "crossPost": "Cross-post",
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
@@ -1071,7 +1072,9 @@
     "reels": "Reels",
     "unfollowTitle": "Unfollow?",
     "unfollowMessage": "You'll stop seeing {{username}}'s posts in your feed",
-    "unfollow": "Unfollow"
+    "unfollow": "Unfollow",
+    "gridView": "Vue grille",
+    "listView": "Vue liste"
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",
@@ -1527,6 +1530,9 @@
     "waqfGoalOf": "of ${{amount}}",
     "waqfDescription": "Waqf is an Islamic endowment — a permanent charitable fund where the principal is preserved and only the returns are used for good causes.",
     "waqfContributeComingSoon": "Waqf contributions will be available once payment processing is set up",
+    "waqfContributeSuccess": "Contribution reussie ! JazakAllahu Khairan.",
+    "waqfContributeFailed": "Echec de la contribution",
+    "waqfProcessing": "Traitement de la contribution en cours...",
     "browse": "Browse",
     "ask": "Ask",
     "answered": "Answered",
@@ -1690,7 +1696,9 @@
       "errorAction": "Go back",
       "loadErrorTitle": "Could not load videos",
       "loadErrorSubtitle": "Please pull to refresh",
-      "urlPlaceholder": "URL (https://...)"
+      "urlPlaceholder": "URL (https://...)",
+      "playAll": "Tout lire",
+      "shuffle": "Lecture aléatoire"
     },
     "bookmarkFolders": {
       "title": "Bookmark Folders",
@@ -2286,7 +2294,17 @@
     "success": "JazakAllahu Khairan",
     "successMessage": "Your donation has been received",
     "createCampaign": "Create Campaign",
-    "currencyAmount": "{{amount}} $"
+    "currencyAmount": "{{amount}} $",
+    "donateSuccess": "Don effectue avec succes !",
+    "donateFailed": "Echec du don",
+    "processing": "Traitement du don en cours..."
+  },
+  "giftShop": {
+    "purchaseSuccess": "Pieces achetees avec succes !",
+    "purchaseFailed": "Echec de l'achat",
+    "processing": "Traitement de l'achat en cours...",
+    "cashoutSuccess": "Demande de retrait soumise !",
+    "cashoutFailed": "Echec du retrait"
   },
   "tafsir": {
     "title": "Tafsir",
@@ -3035,7 +3053,15 @@
     "deleteAccount": "Supprimer mon compte",
     "deleteWarning": "Cela supprimera définitivement votre compte et toutes les données après 30 jours",
     "deleteConfirm": "Je comprends, supprimer mon compte",
-    "deleteGracePeriod": "Vous avez 30 jours pour changer d'avis"
+    "deleteGracePeriod": "Vous avez 30 jours pour changer d'avis",
+    "exportAsText": "Telecharger en texte",
+    "exportAsJson": "Telecharger en JSON",
+    "clearCache": "Vider le cache",
+    "cacheCleared": "Cache vide avec succes"
+  },
+  "accountSettings": {
+    "storage": "Stockage et cache",
+    "cacheSize": "Taille du cache"
   },
   "network": {
     "offline": "Vous êtes hors ligne",
@@ -3134,7 +3160,26 @@
     "transcription": "Transcription",
     "transcribing": "Transcription en cours...",
     "showMore": "Voir plus",
-    "showLess": "Voir moins"
+    "showLess": "Voir moins",
+    "newMessage": "Nouveau message",
+    "suggestions": "Suggestions",
+    "chatWith": "Discuter avec {{name}}",
+    "noUsersFound": "Aucun utilisateur trouvé pour \"{{query}}\"",
+    "searchByNameOrUsername": "Rechercher par nom ou pseudo",
+    "couldNotStartConversation": "Impossible de démarrer la conversation",
+    "searchFailed": "Échec de la recherche"
+  },
+  "newConversation": {
+    "recentContacts": "Contacts récents",
+    "noContacts": "Aucun contact pour le moment"
+  },
+  "chatFolders": {
+    "unread": "Non lus",
+    "groups": "Groupes",
+    "archived": "Archivés",
+    "allChats": "{{count}} conversations",
+    "noArchivedChats": "Aucune conversation archivée",
+    "noArchivedChatsSubtitle": "Les conversations archivées apparaîtront ici"
   },
   "stickers": {
     "createSticker": "Créer un autocollant",

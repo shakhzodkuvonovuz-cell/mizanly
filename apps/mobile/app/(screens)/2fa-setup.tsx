@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   Image,
+  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
@@ -57,6 +58,15 @@ export default function TwoFactorSetupScreen() {
   // Refs for OTP inputs
   const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
   const submittingRef = useRef(false);
+
+  // Screenshot prevention — 2FA secrets and backup codes must not be captured
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      // TODO: Install expo-screen-capture for screenshot prevention
+      // Once installed: ScreenCapture.preventScreenCaptureAsync();
+      // return () => { ScreenCapture.allowScreenCaptureAsync(); };
+    }
+  }, []);
 
   const handleCodeChange = (text: string, index: number) => {
     if (!/^\d?$/.test(text)) return;

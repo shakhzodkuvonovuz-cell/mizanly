@@ -303,6 +303,89 @@ enum CoinTransactionType {
   REFUND
 }
 
+enum HalalCategory {
+  RESTAURANT
+  GROCERY
+  SERVICES
+  EDUCATION
+  MOSQUE
+  OTHER
+}
+
+enum ZakatCategory {
+  INDIVIDUAL
+  MOSQUE
+  SCHOOL
+  DISASTER
+  ORPHAN
+  OTHER
+}
+
+enum VolunteerCategory {
+  DISASTER_RELIEF
+  MOSQUE
+  EDUCATION
+  FOOD_BANK
+  CLEANUP
+  OTHER
+}
+
+enum ChallengeCategory {
+  QURAN
+  DHIKR
+  PHOTOGRAPHY
+  FITNESS
+  COOKING
+  LEARNING
+}
+
+enum FatwaTopicType {
+  NEW_MUSLIM
+  QURAN
+  ARABIC
+  FIQH
+  GENERAL
+}
+
+enum ScholarTopicType {
+  QURAN
+  HADITH
+  FIQH
+  SEERAH
+  ARABIC
+  TAFSIR
+}
+
+enum LiveRole {
+  VIEWER
+  HOST
+  SPEAKER
+  MODERATOR
+  RAISED_HAND
+}
+
+enum EarningType {
+  CASHOUT
+  TIP
+  GIFT
+  SUBSCRIPTION
+}
+
+enum ReputationTier {
+  NEWCOMER
+  MEMBER
+  TRUSTED
+  GUARDIAN
+  ELDER
+}
+
+enum AvatarStyle {
+  DEFAULT
+  ANIME
+  WATERCOLOR
+  ISLAMIC_ART
+}
+
 // ============================================================
 // USER & PROFILE
 // ============================================================
@@ -1375,7 +1458,7 @@ model LiveSession {
 model LiveParticipant {
   sessionId String
   userId    String
-  role      String      @default("viewer")
+  role      LiveRole    @default(VIEWER)
   joinedAt  DateTime    @default(now())
   leftAt    DateTime?
   session   LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -2259,6 +2342,8 @@ model Tip {
   @@unique([senderId, receiverId, createdAt])
   @@index([senderId])
   @@index([receiverId])
+  @@index([senderId, createdAt(sort: Desc)])
+  @@index([receiverId, createdAt(sort: Desc)])
   @@map("tips")
 }
 
@@ -2962,7 +3047,7 @@ model AiAvatar {
   userId    String
   sourceUrl String
   avatarUrl String
-  style     String   @default("default") // default | anime | watercolor | islamic_art
+  style     AvatarStyle @default(DEFAULT)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -3045,7 +3130,7 @@ model Challenge {
   description      String                 @db.VarChar(1000)
   coverUrl         String?
   challengeType    String // daily | weekly | monthly | custom
-  category         String // quran | dhikr | photography | fitness | cooking | learning
+  category         ChallengeCategory
   targetCount      Int                    @default(1)
   xpReward         Int                    @default(100)
   startDate        DateTime
@@ -3267,7 +3352,7 @@ model HalalBusiness {
   ownerId       String
   name          String           @db.VarChar(200)
   description   String?          @db.VarChar(1000)
-  category      String // restaurant | grocery | services | education | mosque | other
+  category      HalalCategory
   address       String?          @db.VarChar(500)
   lat           Float?
   lng           Float?
@@ -3313,7 +3398,7 @@ model ZakatFund {
   goalAmount   Decimal         @db.Decimal(12, 2)
   raisedAmount Decimal         @default(0) @db.Decimal(12, 2)
   currency     String          @default("USD")
-  category     String // individual | mosque | school | disaster | orphan | other
+  category     ZakatCategory
   isVerified   Boolean         @default(false)
   verifiedById String?
   verifiedBy   User?           @relation("zakatFundVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
@@ -3340,6 +3425,7 @@ model ZakatDonation {
 
   @@index([fundId])
   @@index([donorId])
+  @@index([donorId, createdAt(sort: Desc)])
   @@map("zakat_donations")
 }
 
@@ -3375,6 +3461,7 @@ model TreasuryContribution {
 
   @@index([treasuryId])
   @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("treasury_contributions")
 }
 
@@ -3420,7 +3507,7 @@ model Mentorship {
   mentorId    String
   menteeId    String
   status      String    @default("pending") // pending | active | completed | cancelled
-  topic       String // new_muslim | quran | arabic | fiqh | general
+  topic       FatwaTopicType
   notes       String?   @db.VarChar(1000)
   startedAt   DateTime?
   completedAt DateTime?
@@ -3439,7 +3526,7 @@ model StudyCircle {
   leaderId     String
   title        String   @db.VarChar(200)
   description  String?  @db.VarChar(1000)
-  topic        String // quran | hadith | fiqh | seerah | arabic | tafsir
+  topic        ScholarTopicType
   schedule     String?  @db.VarChar(200) // "Every Sunday 7 PM"
   isOnline     Boolean  @default(true)
   maxMembers   Int      @default(20)
@@ -3476,7 +3563,7 @@ model VolunteerOpportunity {
   organizerId String
   title       String    @db.VarChar(200)
   description String    @db.VarChar(2000)
-  category    String // disaster_relief | mosque | education | food_bank | cleanup | other
+  category    VolunteerCategory
   location    String?
   lat         Float?
   lng         Float?
@@ -3522,7 +3609,7 @@ model UserReputation {
   helpfulCount  Int      @default(0)
   reportedCount Int      @default(0)
   warningCount  Int      @default(0)
-  tier          String   @default("newcomer") // newcomer | member | trusted | guardian | elder
+  tier          ReputationTier @default(NEWCOMER)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -3605,6 +3692,7 @@ model WaqfDonation {
 
   @@index([fundId])
   @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("waqf_donations")
 }
 
@@ -3827,7 +3915,7 @@ model CreatorEarning {
   userId    String?
   amount    Decimal  @db.Decimal(12, 2)
   currency  String   @default("USD") @db.VarChar(3)
-  type      String   @db.VarChar(50) // cashout | tip | gift | subscription
+  type      EarningType
   diamonds  Int      @default(0)
   year      Int
   createdAt DateTime @default(now())

@@ -12,7 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { IsISO8601, IsNotEmpty } from 'class-validator';
+import { IsISO8601, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { SchedulingService } from './scheduling.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -22,6 +23,19 @@ class UpdateScheduleDto {
   @IsISO8601()
   @IsNotEmpty()
   scheduledAt: string;
+
+  /**
+   * Optional IANA timezone identifier (e.g. "America/New_York", "Asia/Tashkent").
+   * Currently for documentation/logging purposes — the scheduledAt ISO string
+   * is already parsed to UTC by the server. If the client sends a timezone-aware
+   * ISO string (e.g. "2026-03-25T14:00:00+05:00"), it is automatically converted
+   * to UTC. This field can be used in the future for display purposes or
+   * timezone-aware scheduling features.
+   */
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional({ description: 'IANA timezone (e.g. "Asia/Tashkent"). For future timezone-aware features.' })
+  timezone?: string;
 }
 
 @ApiTags('Scheduling')

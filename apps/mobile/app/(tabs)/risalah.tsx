@@ -13,10 +13,7 @@ import { io, Socket } from 'socket.io-client';
 import Animated, {
   useAnimatedStyle,
   withSpring,
-  withRepeat,
-  withSequence,
   withTiming,
-  withDelay,
   useSharedValue,
   FadeInUp,
 } from 'react-native-reanimated';
@@ -37,44 +34,13 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart, rtlMargin, rtlAbsoluteEnd, rtlChevron } from '@/utils/rtl';
+import { TypingIndicator } from '@/components/risalah/TypingIndicator';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type TabKey = 'chats' | 'groups';
 
-function TypingDots() {
-  const dot1 = useSharedValue(0.3);
-  const dot2 = useSharedValue(0.3);
-  const dot3 = useSharedValue(0.3);
-
-  useEffect(() => {
-    const pulse = (sv: Animated.SharedValue<number>, delay: number) => {
-      sv.value = withDelay(delay, withRepeat(
-        withSequence(
-          withTiming(1, { duration: 400 }),
-          withTiming(0.3, { duration: 400 }),
-        ),
-        -1,
-        false,
-      ));
-    };
-    pulse(dot1, 0);
-    pulse(dot2, 150);
-    pulse(dot3, 300);
-  }, [dot1, dot2, dot3]);
-
-  const s1 = useAnimatedStyle(() => ({ opacity: dot1.value }));
-  const s2 = useAnimatedStyle(() => ({ opacity: dot2.value }));
-  const s3 = useAnimatedStyle(() => ({ opacity: dot3.value }));
-
-  return (
-    <View style={styles.typingDots}>
-      <Animated.View style={[styles.typingDot, s1]} />
-      <Animated.View style={[styles.typingDot, s2]} />
-      <Animated.View style={[styles.typingDot, s3]} />
-    </View>
-  );
-}
+// TypingDots removed — now using shared <TypingIndicator /> from @/components/risalah
 
 
 
@@ -139,10 +105,7 @@ const ConversationRow = memo(function ConversationRow({
         </View>
         <View style={[styles.chatBottomRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           {isTyping ? (
-            <View style={styles.typingContainer}>
-              <Text style={styles.typingText}>{t('risalah.typing')}</Text>
-              <TypingDots />
-            </View>
+            <TypingIndicator label={t('risalah.typing')} dotSize={4} variant="inline" />
           ) : (
             <Text
               style={[styles.chatPreview, hasUnread && styles.chatPreviewUnread]}
@@ -583,28 +546,7 @@ const styles = StyleSheet.create({
   },
   chatPreview: { color: colors.text.tertiary, fontSize: fontSize.sm, flex: 1 },
   chatPreviewUnread: { color: colors.text.secondary },
-  typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    flex: 1,
-  },
-  typingText: {
-    color: colors.emerald,
-    fontSize: fontSize.sm,
-    fontStyle: 'italic',
-  },
-  typingDots: {
-    flexDirection: 'row',
-    gap: 3,
-    alignItems: 'center',
-  },
-  typingDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.emerald,
-  },
+  // Typing styles moved to shared <TypingIndicator /> component
   filterChipRow: {
     flexDirection: 'row',
     paddingHorizontal: spacing.base,

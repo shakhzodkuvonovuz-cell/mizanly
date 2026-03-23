@@ -470,6 +470,7 @@
       "title": "Your feed is empty",
       "subtitle": "Follow people to see their posts here"
     },
+    "repostedBy": "Dikongsi semula oleh @{{username}}",
     "crossPost": "Cross-post",
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
@@ -1070,7 +1071,9 @@
     "reels": "Reels",
     "unfollowTitle": "Unfollow?",
     "unfollowMessage": "You'll stop seeing {{username}}'s posts in your feed",
-    "unfollow": "Unfollow"
+    "unfollow": "Unfollow",
+    "gridView": "Paparan grid",
+    "listView": "Paparan senarai"
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",
@@ -1526,6 +1529,9 @@
     "waqfGoalOf": "of ${{amount}}",
     "waqfDescription": "Waqf is an Islamic endowment — a permanent charitable fund where the principal is preserved and only the returns are used for good causes.",
     "waqfContributeComingSoon": "Waqf contributions will be available once payment processing is set up",
+    "waqfContributeSuccess": "Contribution successful! JazakAllahu Khairan.",
+    "waqfContributeFailed": "Contribution failed",
+    "waqfProcessing": "Processing contribution...",
     "browse": "Browse",
     "ask": "Ask",
     "answered": "Answered",
@@ -1689,7 +1695,9 @@
       "errorAction": "Go back",
       "loadErrorTitle": "Could not load videos",
       "loadErrorSubtitle": "Please pull to refresh",
-      "urlPlaceholder": "URL (https://...)"
+      "urlPlaceholder": "URL (https://...)",
+      "playAll": "Main Semua",
+      "shuffle": "Kocak"
     },
     "bookmarkFolders": {
       "title": "Bookmark Folders",
@@ -2285,7 +2293,17 @@
     "success": "JazakAllahu Khairan",
     "successMessage": "Your donation has been received",
     "createCampaign": "Create Campaign",
-    "currencyAmount": "RM{{amount}}"
+    "currencyAmount": "RM{{amount}}",
+    "donateSuccess": "Donation successful!",
+    "donateFailed": "Donation failed",
+    "processing": "Processing donation..."
+  },
+  "giftShop": {
+    "purchaseSuccess": "Coins purchased successfully!",
+    "purchaseFailed": "Purchase failed",
+    "processing": "Processing purchase...",
+    "cashoutSuccess": "Cash out request submitted!",
+    "cashoutFailed": "Cash out failed"
   },
   "tafsir": {
     "title": "Tafsir",
@@ -3034,7 +3052,15 @@
     "deleteAccount": "Padam Akaun Saya",
     "deleteWarning": "Ini akan memadamkan akaun anda dan semua data secara kekal selepas 30 hari",
     "deleteConfirm": "Saya faham, padam akaun saya",
-    "deleteGracePeriod": "Anda ada 30 hari untuk berubah fikiran"
+    "deleteGracePeriod": "Anda ada 30 hari untuk berubah fikiran",
+    "exportAsText": "Muat turun sebagai Teks",
+    "exportAsJson": "Muat turun sebagai JSON",
+    "clearCache": "Kosongkan Cache",
+    "cacheCleared": "Cache berjaya dikosongkan"
+  },
+  "accountSettings": {
+    "storage": "Storan & Cache",
+    "cacheSize": "Saiz cache"
   },
   "network": {
     "offline": "Anda sedang luar talian",
@@ -3133,7 +3159,26 @@
     "transcription": "Transkripsi",
     "transcribing": "Mentranskripsi...",
     "showMore": "Tunjuk lebih",
-    "showLess": "Tunjuk kurang"
+    "showLess": "Tunjuk kurang",
+    "newMessage": "Mesej Baharu",
+    "suggestions": "Cadangan",
+    "chatWith": "Sembang dengan {{name}}",
+    "noUsersFound": "Tiada pengguna dijumpai untuk \"{{query}}\"",
+    "searchByNameOrUsername": "Cari dengan nama atau nama pengguna",
+    "couldNotStartConversation": "Tidak dapat memulakan perbualan",
+    "searchFailed": "Carian gagal"
+  },
+  "newConversation": {
+    "recentContacts": "Kenalan Terbaru",
+    "noContacts": "Belum ada kenalan"
+  },
+  "chatFolders": {
+    "unread": "Belum Dibaca",
+    "groups": "Kumpulan",
+    "archived": "Diarkibkan",
+    "allChats": "{{count}} perbualan",
+    "noArchivedChats": "Tiada sembang yang diarkibkan",
+    "noArchivedChatsSubtitle": "Perbualan yang diarkibkan akan muncul di sini"
   },
   "stickers": {
     "createSticker": "Cipta Pelekat",

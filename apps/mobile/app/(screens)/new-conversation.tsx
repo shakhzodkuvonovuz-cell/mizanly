@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  TextInput, FlatList,
+  TextInput, FlatList, SectionList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,15 +20,44 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { searchApi, messagesApi, followsApi } from '@/services/api';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
-import type { User } from '@/types';
+import type { User, Conversation } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
+
+/** Extract the "other user" from a 1:1 conversation */
+function extractContact(convo: Conversation, myId?: string): User | null {
+  if (convo.isGroup) return null;
+  if (convo.otherUser) {
+    return {
+      id: convo.otherUser.id,
+      username: convo.otherUser.username,
+      displayName: convo.otherUser.displayName ?? convo.otherUser.username,
+      avatarUrl: convo.otherUser.avatarUrl,
+    } as User;
+  }
+  const other = convo.members?.find((m) => m.user?.id !== myId);
+  if (!other?.user) return null;
+  return {
+    id: other.user.id,
+    username: other.user.username,
+    displayName: other.user.displayName ?? other.user.username,
+    avatarUrl: other.user.avatarUrl,
+    isVerified: other.user.isVerified,
+  } as User;
+}
+
+interface RecentContact extends User {
+  lastMessageText?: string;
+  lastMessageAt?: string;
+  conversationId: string;
+}
 
 export default function NewConversationScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const router = useRouter();
   const { t } = useTranslation();
+  const { user } = useUser();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -48,6 +78,12 @@ export default function NewConversationScreen() {
     enabled: debouncedQuery.trim().length >= 2,
   });
 
+  // Fetch recent conversations to show contacts the user has chatted with
+  const recentConversationsQuery = useQuery({
+    queryKey: ['recent-conversations'],
+    queryFn: () => messagesApi.getConversations(),
+  });
+
   const suggestionsQuery = useQuery({
     queryKey: ['dm-suggestions'],
     queryFn: () => followsApi.suggestions(),
@@ -58,6 +94,46 @@ export default function NewConversationScreen() {
   const people: User[] = searchQuery.data?.people ?? [];
   const suggestions: User[] = suggestionsQuery.data ?? [];
 
+  // Extract recent contacts from conversations (deduped, sorted by most recent message)
+  const recentContacts: RecentContact[] = useMemo(() => {
+    const conversations = recentConversationsQuery.data ?? [];
+    const contacts: RecentContact[] = [];
+    const seenIds = new Set<string>();
+    for (const convo of conversations) {
+      const contact = extractContact(convo, user?.id);
+      if (contact && !seenIds.has(contact.id)) {
+        seenIds.add(contact.id);
+        contacts.push({
+          ...contact,
+          lastMessageText: convo.lastMessageText,
+          lastMessageAt: convo.lastMessageAt,
+          conversationId: convo.id,
+        });
+      }
+    }
+    return contacts;
+  }, [recentConversationsQuery.data, user?.id]);
+
+  // When not searching, filter recent contacts and suggestions by typed text for instant filtering
+  const filteredRecentContacts = useMemo(() => {
+    if (isSearching) return [];
+    if (!query.trim()) return recentContacts;
+    const q = query.trim().toLowerCase();
+    return recentContacts.filter(
+      (c) => c.displayName?.toLowerCase().includes(q) || c.username?.toLowerCase().includes(q),
+    );
+  }, [recentContacts, query, isSearching]);
+
+  const filteredSuggestions = useMemo(() => {
+    if (isSearching) return [];
+    if (!query.trim()) return suggestions;
+    const q = query.trim().toLowerCase();
+    return suggestions.filter(
+      (s) =>
+        s.displayName?.toLowerCase().includes(q) || s.username?.toLowerCase().includes(q),
+    );
+  }, [suggestions, query, isSearching]);
+
   const dmMutation = useMutation({
     mutationFn: (targetUserId: string) => messagesApi.createDM(targetUserId),
     onSuccess: (convo) => {
@@ -66,20 +142,95 @@ export default function NewConversationScreen() {
     onError: (err: Error) => showToast({ message: err.message || t('messages.couldNotStartConversation'), variant: 'error' }),
   });
 
+  const handleContactPress = (contactItem: RecentContact) => {
+    router.push(`/(screens)/conversation/${contactItem.conversationId}`);
+  };
+
+  const isLoading = isSearching
+    ? searchQuery.isLoading
+    : recentConversationsQuery.isLoading && suggestionsQuery.isLoading;
+
+  // Build sections for non-search mode
+  const sections = useMemo(() => {
+    if (isSearching) return [];
+    const result: Array<{ title: string; data: Array<RecentContact | User>; type: 'recent' | 'suggestions' }> = [];
+    if (filteredRecentContacts.length > 0) {
+      result.push({
+        title: t('newConversation.recentContacts'),
+        data: filteredRecentContacts,
+        type: 'recent',
+      });
+    }
+    // Filter out suggestions that are already shown in recent contacts
+    const recentIds = new Set(filteredRecentContacts.map((c) => c.id));
+    const uniqueSuggestions = filteredSuggestions.filter((s) => !recentIds.has(s.id));
+    if (uniqueSuggestions.length > 0) {
+      result.push({
+        title: t('messages.suggestions'),
+        data: uniqueSuggestions,
+        type: 'suggestions',
+      });
+    }
+    return result;
+  }, [isSearching, filteredRecentContacts, filteredSuggestions, t]);
+
+  const renderUserRow = (item: User | RecentContact, index: number) => {
+    const isRecent = 'conversationId' in item;
+    return (
+      <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
+        <Pressable
+          style={styles.userRow}
+          onPress={() =>
+            isRecent ? handleContactPress(item as RecentContact) : dmMutation.mutate(item.id)
+          }
+          disabled={dmMutation.isPending}
+          accessibilityLabel={t('messages.chatWith', { name: item.displayName })}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: dmMutation.isPending }}
+        >
+          <Avatar uri={item.avatarUrl} name={item.displayName ?? ''} size="md" />
+          <View style={styles.userInfo}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{item.displayName}</Text>
+              {item.isVerified && <VerifiedBadge size={13} />}
+            </View>
+            {isRecent && (item as RecentContact).lastMessageText ? (
+              <Text style={styles.handle} numberOfLines={1}>
+                {(item as RecentContact).lastMessageText}
+              </Text>
+            ) : (
+              <Text style={styles.handle}>@{item.username}</Text>
+            )}
+          </View>
+          {dmMutation.isPending && dmMutation.variables === item.id ? (
+            <Skeleton.Circle size={36} />
+          ) : (
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.mailIconBg}
+            >
+              <Icon name={isRecent ? 'message-circle' : 'mail'} size="xs" color={colors.emerald} />
+            </LinearGradient>
+          )}
+        </Pressable>
+      </Animated.View>
+    );
+  };
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top']}>
         {/* Header */}
         <GlassHeader
           title={t('messages.newMessage')}
-          leftAction={{ 
-            icon: 'arrow-left', 
+          leftAction={{
+            icon: 'arrow-left',
             onPress: () => router.back(),
             accessibilityLabel: t('common.back')
           }}
         />
 
-        {/* Search box — Glassmorphism wrapper */}
+        {/* Search box */}
         <Animated.View entering={FadeInUp.delay(0).duration(400)}>
           <LinearGradient
             colors={colors.gradient.cardDark}
@@ -115,7 +266,7 @@ export default function NewConversationScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {(isSearching ? searchQuery.isLoading : suggestionsQuery.isLoading) ? (
+        {isLoading ? (
           <View style={styles.skeletonList}>
             {Array.from({ length: 5 }).map((_, i) => (
               <View key={i} style={styles.skeletonRow}>
@@ -135,69 +286,53 @@ export default function NewConversationScreen() {
             actionLabel={t('common.retry')}
             onAction={() => searchQuery.refetch()}
           />
-        ) : (
+        ) : isSearching ? (
           <FlatList
             removeClippedSubviews={true}
-            data={isSearching ? people : suggestions}
+            data={people}
             keyExtractor={(item) => item.id}
             refreshControl={
               <BrandedRefreshControl
                 refreshing={false}
-                onRefresh={() => isSearching ? searchQuery.refetch() : suggestionsQuery.refetch()}
+                onRefresh={() => searchQuery.refetch()}
               />
             }
-            ListHeaderComponent={
-              !isSearching && suggestions.length > 0 ? (
-                <Text style={styles.suggestionsLabel}>{t('messages.suggestions')}</Text>
-              ) : null
-            }
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
-                <Pressable
-                  style={styles.userRow}
-                  onPress={() => dmMutation.mutate(item.id)}
-                  disabled={dmMutation.isPending}
-                  accessibilityLabel={t('messages.chatWith', { name: item.displayName })}
-                  accessibilityRole="button"
-                >
-                  <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
-                  <View style={styles.userInfo}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.name}>{item.displayName}</Text>
-                      {item.isVerified && <VerifiedBadge size={13} />}
-                    </View>
-                    <Text style={styles.handle}>@{item.username}</Text>
-                  </View>
-                  {dmMutation.isPending && dmMutation.variables === item.id ? (
-                    <Skeleton.Circle size={36} />
-                  ) : (
-                    <LinearGradient
-                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                      style={styles.mailIconBg}
-                    >
-                      <Icon name="mail" size="xs" color={colors.emerald} />
-                    </LinearGradient>
-                  )}
-                </Pressable>
-              </Animated.View>
+            renderItem={({ item, index }) => renderUserRow(item, index)}
+            ListEmptyComponent={() => (
+              <EmptyState
+                icon="search"
+                title={t('messages.noUsersFound', { query: debouncedQuery })}
+              />
             )}
-            ListEmptyComponent={() =>
-              isSearching ? (
-                <EmptyState
-                  icon="search"
-                  title={t('messages.noUsersFound', { query: debouncedQuery })}
-                />
-              ) : (
-                <EmptyState
-                  icon="user"
-                  title={t('messages.searchByNameOrUsername')}
-                />
-              )
+          />
+        ) : (
+          <SectionList
+            sections={sections}
+            keyExtractor={(item) => item.id}
+            refreshControl={
+              <BrandedRefreshControl
+                refreshing={false}
+                onRefresh={() => {
+                  recentConversationsQuery.refetch();
+                  suggestionsQuery.refetch();
+                }}
+              />
             }
+            renderSectionHeader={({ section }) => (
+              <Text style={styles.sectionLabel}>{section.title}</Text>
+            )}
+            renderItem={({ item, index }) => renderUserRow(item, index)}
+            stickySectionHeadersEnabled={false}
+            ListEmptyComponent={() => (
+              <EmptyState
+                icon="user"
+                title={t('newConversation.noContacts')}
+                subtitle={t('messages.searchByNameOrUsername')}
+              />
+            )}
           />
         )}
       </SafeAreaView>
-  
     </ScreenErrorBoundary>
   );
 }
@@ -245,6 +380,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center', justifyContent: 'center',
   },
 
+  sectionLabel: {
+    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
+    textTransform: 'uppercase' as const, letterSpacing: 0.5,
+    paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm,
+  },
   suggestionsLabel: {
     color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600',
     textTransform: 'uppercase' as const, letterSpacing: 0.5,

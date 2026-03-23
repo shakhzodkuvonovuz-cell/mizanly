@@ -89,6 +89,7 @@ export default function AiAvatarScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('ai.avatar.setProfile')}
+          accessibilityState={{ disabled: setProfileMutation.isPending }}
           style={styles.setProfileBtn}
           onPress={() => {
             setProfileMutation.mutate(item.avatarUrl);
@@ -128,8 +129,9 @@ export default function AiAvatarScreen() {
             <View style={styles.styleGrid}>
               {STYLES.map((style) => (
                 <Pressable
-                  accessibilityRole="button"
+                  accessibilityRole="radio"
                   accessibilityLabel={t(style.label)}
+                  accessibilityState={{ selected: selectedStyle === style.id }}
                   key={style.id}
                   onPress={() => { setSelectedStyle(style.id); haptic.tick(); }}
                   style={[styles.styleCard, { borderColor: tc.border, backgroundColor: tc.bgCard }, selectedStyle === style.id && { borderColor: style.color }]}
@@ -153,6 +155,7 @@ export default function AiAvatarScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('ai.avatar.generate')}
+              accessibilityState={{ disabled: generateMutation.isPending || !user?.avatarUrl }}
               onPress={() => generateMutation.mutate()}
               disabled={generateMutation.isPending || !user?.avatarUrl}
               style={[styles.generateBtn, (generateMutation.isPending || !user?.avatarUrl) && { opacity: 0.5 }]}

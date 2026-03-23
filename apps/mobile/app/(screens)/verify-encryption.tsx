@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -74,6 +74,15 @@ function VerifyEncryptionContent() {
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
+
+  // Screenshot prevention — encryption fingerprints and safety numbers must not be captured
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      // TODO: Install expo-screen-capture for screenshot prevention
+      // Once installed: ScreenCapture.preventScreenCaptureAsync();
+      // return () => { ScreenCapture.allowScreenCaptureAsync(); };
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

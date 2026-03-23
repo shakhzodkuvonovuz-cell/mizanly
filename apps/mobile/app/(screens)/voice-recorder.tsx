@@ -244,6 +244,7 @@ export default function VoiceRecorderScreen() {
                         ? t('screens.voiceRecorder.tapToListen')
                         : t('screens.voiceRecorder.tapToStart')
                 }
+                accessibilityState={{ busy: isRecording || isPlaying }}
                 style={s.recordButtonWrap}
                 onPress={isRecording ? stop : isPlaying ? stopPlay : isRecorded ? play : start}
               >

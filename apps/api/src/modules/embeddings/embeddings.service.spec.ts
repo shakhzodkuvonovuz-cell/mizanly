@@ -268,4 +268,139 @@ describe('EmbeddingsService', () => {
       expect(result).toEqual([0.1, 0.2, 0.3]);
     });
   });
+
+  describe('error paths — generateEmbedding', () => {
+    it('should return null when API response has malformed JSON', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => { throw new SyntaxError('Unexpected token'); },
+      });
+
+      const result = await service.generateEmbedding('test text');
+      expect(result).toBeNull();
+    });
+
+    it('should return null on 429 rate limit error', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false, status: 429, statusText: 'Too Many Requests' });
+
+      const result = await service.generateEmbedding('test');
+      expect(result).toBeNull();
+    });
+
+    it('should return null on timeout / AbortError', async () => {
+      mockFetch.mockRejectedValueOnce(new DOMException('The operation was aborted', 'AbortError'));
+
+      const result = await service.generateEmbedding('test');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('error paths — embedPost', () => {
+    it('should return false when post content yields empty text', async () => {
+      prisma.post.findUnique.mockResolvedValue({
+        id: 'post-empty', content: null, hashtags: [], mentions: [], locationName: null,
+      });
+
+      const result = await service.embedPost('post-empty');
+      expect(result).toBe(false);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should return false when embedding generation fails', async () => {
+      prisma.post.findUnique.mockResolvedValue({
+        id: 'post-fail', content: 'Valid content', hashtags: ['test'], mentions: [], locationName: null,
+      });
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await service.embedPost('post-fail');
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('error paths — findSimilar', () => {
+    it('should return empty array when pgvector query returns no rows', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      const result = await service.findSimilar('nonexistent-id', 'POST' as any);
+      expect(result).toEqual([]);
+    });
+
+    it('should handle pgvector query failure gracefully', async () => {
+      prisma.$queryRawUnsafe.mockRejectedValue(new Error('pgvector extension not installed'));
+
+      await expect(service.findSimilar('p1', 'POST' as any)).rejects.toThrow('pgvector extension not installed');
+    });
+  });
+
+  describe('error paths — findSimilarByVector', () => {
+    it('should return empty array when no similar vectors found', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      const result = await service.findSimilarByVector([0.1, 0.2, 0.3], 10);
+      expect(result).toEqual([]);
+    });
+
+    it('should handle pgvector query failure in findSimilarByVector', async () => {
+      prisma.$queryRawUnsafe.mockRejectedValue(new Error('connection timeout'));
+
+      await expect(service.findSimilarByVector([0.1], 5)).rejects.toThrow('connection timeout');
+    });
+  });
+
+  describe('error paths — getUserInterestVector', () => {
+    it('should return null when pgvector avg returns null avg_vector', async () => {
+      prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([{ avg_vector: null }]);
+
+      const result = await service.getUserInterestVector('user-1');
+      expect(result).toBeNull();
+    });
+
+    it('should return null when pgvector avg returns empty result', async () => {
+      prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      const result = await service.getUserInterestVector('user-1');
+      expect(result).toBeNull();
+    });
+
+    it('should replace NaN values with 0 in parsed avg vector', async () => {
+      prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([{ avg_vector: '[0.1,NaN,0.3]' }]);
+
+      const result = await service.getUserInterestVector('user-1');
+      expect(result).toEqual([0.1, 0, 0.3]);
+    });
+  });
+
+  describe('error paths — generateBatchEmbeddings', () => {
+    it('should return null array on network failure', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('DNS resolution failed'));
+
+      const result = await service.generateBatchEmbeddings(['text1', 'text2', 'text3']);
+      expect(result).toEqual([null, null, null]);
+    });
+  });
+
+  describe('buildContentText edge cases', () => {
+    it('should handle text with only whitespace', () => {
+      const result = service.buildContentText({ text: '   ' });
+      expect(result).toBe('');
+    });
+
+    it('should combine all fields when present', () => {
+      const result = service.buildContentText({
+        text: 'Main text',
+        hashtags: ['#tag1', '#tag2'],
+        mentions: ['@user1'],
+        locationName: 'Dubai',
+        category: 'Travel',
+      });
+      expect(result).toContain('Main text');
+      expect(result).toContain('#tag1');
+      expect(result).toContain('#tag2');
+      expect(result).toContain('Dubai');
+      expect(result).toContain('Travel');
+    });
+  });
 });

@@ -392,6 +392,7 @@ function DisposableCameraScreen() {
             disabled={isCapturing}
             accessibilityRole="button"
             accessibilityLabel={t('disposable.capture')}
+            accessibilityState={{ disabled: isCapturing }}
           >
             <LinearGradient
               colors={[colors.emerald, colors.emeraldDark]}

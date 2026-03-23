@@ -117,14 +117,38 @@ export class SchedulingService {
     );
   }
 
+  /**
+   * Update the scheduled publish time for a content item.
+   *
+   * TIMEZONE HANDLING:
+   * The `scheduledAt` Date is expected to already be in UTC. The mobile client
+   * sends an ISO 8601 string (e.g. "2026-03-25T14:00:00Z") which the controller
+   * parses via `new Date(dto.scheduledAt)`. If the client sends a timezone-aware
+   * string (e.g. "2026-03-25T14:00:00+05:00"), `new Date()` automatically
+   * converts it to UTC — so the stored value is always UTC.
+   *
+   * The `publishOverdueContent` cron compares `scheduledAt <= new Date()` which
+   * also uses UTC, so the comparison is timezone-consistent.
+   *
+   * If a `timezone` field is added to the DTO in the future, convert via:
+   *   const utcMs = scheduledAt.getTime();
+   *   // No adjustment needed — JS Date is always UTC internally.
+   *   // The timezone would only be used for display purposes on the client.
+   */
   async updateSchedule(
     userId: string,
     type: 'post' | 'thread' | 'reel' | 'video',
     id: string,
     scheduledAt: Date,
   ): Promise<ScheduledContent> {
+    // Normalize to UTC — ensure the Date is valid and in UTC
+    const utcScheduledAt = new Date(scheduledAt.getTime());
+    if (isNaN(utcScheduledAt.getTime())) {
+      throw new BadRequestException('Invalid scheduledAt date');
+    }
+
     const minTime = new Date(Date.now() + 15 * 60 * 1000);
-    if (scheduledAt < minTime) {
+    if (utcScheduledAt < minTime) {
       throw new BadRequestException(
         'Scheduled time must be at least 15 minutes from now',
       );
@@ -140,7 +164,7 @@ export class SchedulingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    return this.updateContent(model, id, { scheduledAt });
+    return this.updateContent(model, id, { scheduledAt: utcScheduledAt });
   }
 
   async cancelSchedule(
@@ -216,6 +240,10 @@ export class SchedulingService {
    * Auto-publish all content whose scheduledAt has passed.
    * Runs every minute via @nestjs/schedule cron.
    * Sets scheduledAt to null (= published) for all overdue items.
+   *
+   * TIMEZONE NOTE: Both `scheduledAt` (stored as UTC in Postgres) and `new Date()`
+   * (UTC) are compared here, so the comparison is timezone-consistent regardless
+   * of the server's local timezone. No timezone conversion is needed.
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async publishOverdueContent(): Promise<{ posts: number; threads: number; reels: number; videos: number }> {

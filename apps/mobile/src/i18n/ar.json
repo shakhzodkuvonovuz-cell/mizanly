@@ -417,6 +417,7 @@
       "title": "خلاصتك فارغة",
       "subtitle": "تابع أشخاصاً لرؤية منشوراتهم هنا"
     },
+    "repostedBy": "أعاد النشر بواسطة @{{username}}",
     "crossPost": "نشر متعدد",
     "boostPost": "ترويج المنشور",
     "postInsights": "إحصائيات المنشور",
@@ -1017,7 +1018,9 @@
     "reels": "Reels",
     "unfollowTitle": "إلغاء المتابعة؟",
     "unfollowMessage": "ستتوقف عن رؤية منشورات {{username}} في خلاصتك",
-    "unfollow": "إلغاء المتابعة"
+    "unfollow": "إلغاء المتابعة",
+    "gridView": "عرض الشبكة",
+    "listView": "عرض القائمة"
   },
   "islamic": {
     "prayerTimes": "أوقات الصلاة",
@@ -1484,7 +1487,9 @@
       "loadErrorTitle": "تعذر تحميل الفيديوهات",
       "loadErrorSubtitle": "يرجى السحب للتحديث",
       "mayBeDeleted": "ربما تم حذف هذا العنصر.",
-      "urlPlaceholder": "الرابط (https://...)"
+      "urlPlaceholder": "الرابط (https://...)",
+      "playAll": "تشغيل الكل",
+      "shuffle": "خلط"
     },
     "bookmarkFolders": {
       "title": "Bookmark Folders",
@@ -2080,7 +2085,17 @@
     "nearbyMosques": "المساجد القريبة",
     "locationCoords": "خط العرض: {{lat}}، خط الطول: {{lng}}",
     "detectingLocation": "جارٍ تحديد الموقع...",
-    "currencyAmount": "{{amount}}$"
+    "currencyAmount": "{{amount}}$",
+    "donateSuccess": "!تم التبرع بنجاح",
+    "donateFailed": "فشل التبرع",
+    "processing": "...جارٍ معالجة التبرع"
+  },
+  "giftShop": {
+    "purchaseSuccess": "!تم شراء العملات بنجاح",
+    "purchaseFailed": "فشل الشراء",
+    "processing": "...جارٍ معالجة الشراء",
+    "cashoutSuccess": "!تم تقديم طلب السحب",
+    "cashoutFailed": "فشل السحب"
   },
   "tafsir": {
     "title": "تفسير",
@@ -2908,6 +2923,9 @@
     "waqfGoalOf": "of ${{amount}}",
     "waqfDescription": "Waqf is an Islamic endowment — a permanent charitable fund where the principal is preserved and only the returns are used for good causes.",
     "waqfContributeComingSoon": "Waqf contributions will be available once payment processing is set up",
+    "waqfContributeSuccess": ".مساهمة ناجحة! جزاك الله خيراً",
+    "waqfContributeFailed": "فشلت المساهمة",
+    "waqfProcessing": "...جارٍ معالجة المساهمة",
     "browse": "Browse",
     "ask": "Ask",
     "answered": "Answered",
@@ -3034,7 +3052,15 @@
     "deleteAccount": "حذف حسابي",
     "deleteWarning": "سيؤدي هذا إلى حذف حسابك وجميع البيانات نهائياً بعد 30 يوماً",
     "deleteConfirm": "أفهم، احذف حسابي",
-    "deleteGracePeriod": "لديك 30 يوماً لتغيير رأيك"
+    "deleteGracePeriod": "لديك 30 يوماً لتغيير رأيك",
+    "exportAsText": "تحميل كنص",
+    "exportAsJson": "تحميل كـ JSON",
+    "clearCache": "مسح ذاكرة التخزين المؤقت",
+    "cacheCleared": "تم مسح ذاكرة التخزين المؤقت بنجاح"
+  },
+  "accountSettings": {
+    "storage": "التخزين وذاكرة التخزين المؤقت",
+    "cacheSize": "حجم ذاكرة التخزين المؤقت"
   },
   "network": {
     "offline": "أنت غير متصل",
@@ -3133,7 +3159,26 @@
     "transcription": "نسخ صوتي",
     "transcribing": "جاري النسخ...",
     "showMore": "عرض المزيد",
-    "showLess": "عرض أقل"
+    "showLess": "عرض أقل",
+    "newMessage": "رسالة جديدة",
+    "suggestions": "اقتراحات",
+    "chatWith": "محادثة مع {{name}}",
+    "noUsersFound": "لم يتم العثور على مستخدمين لـ \"{{query}}\"",
+    "searchByNameOrUsername": "البحث بالاسم أو اسم المستخدم",
+    "couldNotStartConversation": "تعذر بدء المحادثة",
+    "searchFailed": "فشل البحث"
+  },
+  "newConversation": {
+    "recentContacts": "جهات الاتصال الأخيرة",
+    "noContacts": "لا توجد جهات اتصال بعد"
+  },
+  "chatFolders": {
+    "unread": "غير مقروءة",
+    "groups": "المجموعات",
+    "archived": "المؤرشفة",
+    "allChats": "{{count}} محادثة",
+    "noArchivedChats": "لا توجد محادثات مؤرشفة",
+    "noArchivedChatsSubtitle": "ستظهر المحادثات المؤرشفة هنا"
   },
   "stickers": {
     "createSticker": "إنشاء ملصق",

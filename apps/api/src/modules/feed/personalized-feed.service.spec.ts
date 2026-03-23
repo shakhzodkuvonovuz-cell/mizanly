@@ -7,8 +7,29 @@ describe('PersonalizedFeedService', () => {
   let service: PersonalizedFeedService;
   let prisma: any;
   let embeddings: any;
+  let redis: any;
+
+  // Track Redis session store in-memory for test assertions
+  const redisStore = new Map<string, Record<string, string>>();
 
   beforeEach(async () => {
+    redisStore.clear();
+
+    redis = {
+      hgetall: jest.fn().mockImplementation((key: string) => {
+        return Promise.resolve(redisStore.get(key) || {});
+      }),
+      hset: jest.fn().mockImplementation((key: string, field: string, value: string) => {
+        if (!redisStore.has(key)) redisStore.set(key, {});
+        redisStore.get(key)![field] = value;
+        return Promise.resolve(1);
+      }),
+      expire: jest.fn().mockResolvedValue(1),
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn().mockResolvedValue('OK'),
+      del: jest.fn().mockResolvedValue(1),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PersonalizedFeedService,
@@ -36,6 +57,10 @@ describe('PersonalizedFeedService', () => {
             findSimilarByVector: jest.fn().mockResolvedValue([]),
           },
         },
+        {
+          provide: 'REDIS',
+          useValue: redis,
+        },
       ],
     }).compile();
 
@@ -43,6 +68,13 @@ describe('PersonalizedFeedService', () => {
     prisma = module.get(PrismaService) as any;
     embeddings = module.get(EmbeddingsService) as any;
   });
+
+  // ── Helper: get session data from Redis store ─────────────────
+  function getSessionFromStore(userId: string) {
+    const stored = redisStore.get(`session:${userId}`);
+    if (!stored || !stored.json) return null;
+    return JSON.parse(stored.json);
+  }
 
   // ── getIslamicBoost ─────────────────────────────────────────
 
@@ -120,115 +152,130 @@ describe('PersonalizedFeedService', () => {
     });
   });
 
-  // ── trackSessionSignal ──────────────────────────────────────
+  // ── trackSessionSignal (Redis-backed) ─────────────────────────
 
   describe('trackSessionSignal', () => {
-    it('should create a session entry for a new user', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
-      const sessions = (service as any).sessionSignals;
-      expect(sessions.has('user-1')).toBe(true);
-      const session = sessions.get('user-1');
-      expect(session.viewedIds.has('p1')).toBe(true);
+    it('should create a session entry for a new user in Redis', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
+      expect(redis.hset).toHaveBeenCalledWith('session:user-1', 'json', expect.any(String));
+      expect(redis.expire).toHaveBeenCalledWith('session:user-1', 1800);
+
+      const session = getSessionFromStore('user-1');
+      expect(session).not.toBeNull();
+      expect(session.viewedIds).toContain('p1');
     });
 
-    it('should track liked categories from hashtags on like action', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'like', hashtags: ['quran', 'islam'] });
-      const session = (service as any).sessionSignals.get('user-1');
-      expect(session.likedCategories.get('quran')).toBe(1);
-      expect(session.likedCategories.get('islam')).toBe(1);
+    it('should track liked categories from hashtags on like action', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'like', hashtags: ['quran', 'islam'] });
+      const session = getSessionFromStore('user-1');
+      expect(session.likedCategories.quran).toBe(1);
+      expect(session.likedCategories.islam).toBe(1);
     });
 
-    it('should track liked categories on save action', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'save', hashtags: ['dawah'] });
-      const session = (service as any).sessionSignals.get('user-1');
-      expect(session.likedCategories.get('dawah')).toBe(1);
+    it('should track liked categories on save action', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'save', hashtags: ['dawah'] });
+      const session = getSessionFromStore('user-1');
+      expect(session.likedCategories.dawah).toBe(1);
     });
 
-    it('should NOT track categories on view action', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view', hashtags: ['quran'] });
-      const session = (service as any).sessionSignals.get('user-1');
-      expect(session.likedCategories.size).toBe(0);
+    it('should NOT track categories on view action', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view', hashtags: ['quran'] });
+      const session = getSessionFromStore('user-1');
+      expect(Object.keys(session.likedCategories)).toHaveLength(0);
     });
 
-    it('should accumulate category counts across multiple signals', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'like', hashtags: ['quran'] });
-      service.trackSessionSignal('user-1', { contentId: 'p2', action: 'save', hashtags: ['quran'] });
-      const session = (service as any).sessionSignals.get('user-1');
-      expect(session.likedCategories.get('quran')).toBe(2);
+    it('should accumulate category counts across multiple signals', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'like', hashtags: ['quran'] });
+      await service.trackSessionSignal('user-1', { contentId: 'p2', action: 'save', hashtags: ['quran'] });
+      const session = getSessionFromStore('user-1');
+      expect(session.likedCategories.quran).toBe(2);
     });
 
-    it('should start a new session after 30 min inactivity', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'like', hashtags: ['islam'] });
-      const sessions = (service as any).sessionSignals;
-      // Artificially age the session
-      sessions.get('user-1').sessionStart = Date.now() - 31 * 60 * 1000;
+    it('should start a new session after 30 min inactivity', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'like', hashtags: ['islam'] });
+      // Artificially age the session in the Redis store
+      const stored = redisStore.get('session:user-1')!;
+      const sessionData = JSON.parse(stored.json);
+      sessionData.sessionStart = Date.now() - 31 * 60 * 1000;
+      stored.json = JSON.stringify(sessionData);
 
-      service.trackSessionSignal('user-1', { contentId: 'p2', action: 'view' });
-      const session = sessions.get('user-1');
-      expect(session.likedCategories.size).toBe(0);
-      expect(session.viewedIds.has('p2')).toBe(true);
-      expect(session.viewedIds.has('p1')).toBe(false);
+      await service.trackSessionSignal('user-1', { contentId: 'p2', action: 'view' });
+      const session = getSessionFromStore('user-1');
+      expect(Object.keys(session.likedCategories)).toHaveLength(0);
+      expect(session.viewedIds).toContain('p2');
+      expect(session.viewedIds).not.toContain('p1');
     });
 
-    it('should track scroll position', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view', scrollPosition: 500 });
-      const session = (service as any).sessionSignals.get('user-1');
+    it('should track scroll position', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view', scrollPosition: 500 });
+      const session = getSessionFromStore('user-1');
       expect(session.scrollDepth).toBe(500);
     });
 
-    it('should cap viewedIds at MAX_VIEWED_IDS (1000)', () => {
-      for (let i = 0; i < 1050; i++) {
-        service.trackSessionSignal('user-cap', { contentId: `c${i}`, action: 'view' });
-      }
-      const session = (service as any).sessionSignals.get('user-cap');
-      expect(session.viewedIds.size).toBeLessThanOrEqual(1000);
+    it('should cap viewedIds at MAX_VIEWED_IDS (1000)', async () => {
+      // Pre-seed a session with 999 viewed IDs
+      const preSession = {
+        likedCategories: {},
+        viewedIds: Array.from({ length: 999 }, (_, i) => `c${i}`),
+        sessionStart: Date.now(),
+        scrollDepth: 0,
+      };
+      redisStore.set('session:user-cap', { json: JSON.stringify(preSession) });
+
+      // Add 2 more — only 1 should go through (hitting 1000 cap)
+      await service.trackSessionSignal('user-cap', { contentId: 'c999', action: 'view' });
+      await service.trackSessionSignal('user-cap', { contentId: 'c1000', action: 'view' });
+      const session = getSessionFromStore('user-cap');
+      expect(session.viewedIds.length).toBeLessThanOrEqual(1000);
     });
 
-    it('should evict oldest session when MAX_SESSIONS reached', () => {
-      // MAX_SESSIONS is 10000 — create enough to trigger eviction
-      const sessions = (service as any).sessionSignals as Map<string, unknown>;
-      // Pre-fill with 10000 entries
-      for (let i = 0; i < 10000; i++) {
-        sessions.set(`filler-${i}`, {
-          likedCategories: new Map(),
-          viewedIds: new Set(),
-          sessionStart: Date.now(),
-          scrollDepth: 0,
-        });
-      }
-      expect(sessions.size).toBe(10000);
+    it('should not add duplicate viewedIds', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
+      const session = getSessionFromStore('user-1');
+      const p1Count = session.viewedIds.filter((id: string) => id === 'p1').length;
+      expect(p1Count).toBe(1);
+    });
 
-      // Adding one more should evict the oldest
-      service.trackSessionSignal('new-user', { contentId: 'p1', action: 'view' });
-      expect(sessions.size).toBe(10000); // Still capped
-      expect(sessions.has('new-user')).toBe(true);
-      expect(sessions.has('filler-0')).toBe(false); // Oldest evicted
+    it('should set Redis TTL of 1800 seconds on each save', async () => {
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
+      expect(redis.expire).toHaveBeenCalledWith('session:user-1', 1800);
     });
   });
 
-  // ── getSessionBoost (private) ───────────────────────────────
+  // ── getSessionBoostFromData (private) ─────────────────────────
 
-  describe('getSessionBoost', () => {
-    it('should return 0 for user with no session', () => {
-      const boost = (service as any).getSessionBoost('no-session-user', ['quran']);
+  describe('getSessionBoostFromData', () => {
+    it('should return 0 for null session', () => {
+      const boost = (service as any).getSessionBoostFromData(null, ['quran']);
       expect(boost).toBe(0);
     });
 
     it('should return boost proportional to liked category count', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'like', hashtags: ['quran'] });
-      service.trackSessionSignal('user-1', { contentId: 'p2', action: 'like', hashtags: ['quran'] });
-      const boost = (service as any).getSessionBoost('user-1', ['quran']);
-      // 2 likes * 0.05 = 0.1
+      const session = { likedCategories: { quran: 2 }, viewedIds: [], sessionStart: Date.now(), scrollDepth: 0 };
+      const boost = (service as any).getSessionBoostFromData(session, ['quran']);
+      // 2 * 0.05 = 0.1
       expect(boost).toBeCloseTo(0.1, 5);
     });
 
     it('should cap session boost at 0.3', () => {
-      // Like same category 10 times: 10 * 0.05 = 0.5, but capped at 0.3
-      for (let i = 0; i < 10; i++) {
-        service.trackSessionSignal('user-1', { contentId: `p${i}`, action: 'like', hashtags: ['quran'] });
-      }
-      const boost = (service as any).getSessionBoost('user-1', ['quran']);
+      const session = { likedCategories: { quran: 10 }, viewedIds: [], sessionStart: Date.now(), scrollDepth: 0 };
+      const boost = (service as any).getSessionBoostFromData(session, ['quran']);
+      // 10 * 0.05 = 0.5, capped at 0.3
       expect(boost).toBe(0.3);
+    });
+
+    it('should sum boosts across multiple matching hashtags', () => {
+      const session = { likedCategories: { quran: 1, hadith: 1 }, viewedIds: [], sessionStart: Date.now(), scrollDepth: 0 };
+      const boost = (service as any).getSessionBoostFromData(session, ['quran', 'hadith']);
+      // 1*0.05 + 1*0.05 = 0.1
+      expect(boost).toBeCloseTo(0.1, 5);
+    });
+
+    it('should return 0 for hashtags not in session categories', () => {
+      const session = { likedCategories: { quran: 3 }, viewedIds: [], sessionStart: Date.now(), scrollDepth: 0 };
+      const boost = (service as any).getSessionBoostFromData(session, ['travel']);
+      expect(boost).toBe(0);
     });
   });
 
@@ -454,6 +501,35 @@ describe('PersonalizedFeedService', () => {
       // The editorial call must exist and include all 29 Islamic hashtags
       expect(editorialCall).toBeDefined();
       expect(editorialCall[0].where.hashtags.hasSome.length).toBe(29);
+    });
+  });
+
+  // ── Redis session integration ─────────────────────────────────
+
+  describe('Redis session integration', () => {
+    it('should call getSession from Redis during getPersonalizedFeed', async () => {
+      prisma.feedInteraction.count.mockResolvedValue(50);
+      embeddings.getUserInterestVector.mockResolvedValue([0.1, 0.2, 0.3]);
+      embeddings.findSimilarByVector.mockResolvedValue([]);
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+
+      await service.getPersonalizedFeed('user-1', 'saf');
+
+      // Should have queried Redis for session data
+      expect(redis.hgetall).toHaveBeenCalledWith('session:user-1');
+    });
+
+    it('should handle corrupted Redis session data gracefully', async () => {
+      // Store invalid JSON
+      redisStore.set('session:user-1', { json: 'not-valid-json{' });
+
+      await service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
+      // Should create a fresh session despite corrupted data
+      const session = getSessionFromStore('user-1');
+      expect(session).not.toBeNull();
+      expect(session.viewedIds).toContain('p1');
     });
   });
 });

@@ -1,6 +1,7 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ContentSpace, PostVisibility, Prisma } from '@prisma/client';
+import Redis from 'ioredis';
 
 const FEED_POST_SELECT = {
   id: true,
@@ -42,7 +43,10 @@ const FEED_POST_SELECT = {
 
 @Injectable()
 export class FeedService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
+  ) {}
 
   async logInteraction(userId: string, data: { postId: string; space: string; viewed?: boolean; viewDurationMs?: number; completionRate?: number | null; liked?: boolean; commented?: boolean; shared?: boolean; saved?: boolean }) {
     // Build only defined update fields to avoid overwriting with undefined
@@ -211,6 +215,19 @@ export class FeedService {
    * Works without auth (for anonymous browsing + new user cold start).
    */
   async getTrendingFeed(cursor?: string, limit = 20, userId?: string) {
+    // Redis cache for unauthenticated trending feed (personalized feeds bypass cache)
+    const cacheKey = !userId ? `trending_feed:${cursor || '0'}:${limit}` : null;
+    if (cacheKey) {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          // Corrupted cache entry — fall through to recompute
+        }
+      }
+    }
+
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     // Build block/mute filter + content filter when authenticated
@@ -283,7 +300,7 @@ export class FeedService {
 
     const data = pageItems.map(({ _score, ...post }) => post);
 
-    return {
+    const result = {
       data,
       meta: {
         hasMore,
@@ -291,6 +308,13 @@ export class FeedService {
         minScore,
       },
     };
+
+    // Cache unauthenticated trending feed for 5 minutes
+    if (cacheKey) {
+      await this.redis.set(cacheKey, JSON.stringify(result), 'EX', 300);
+    }
+
+    return result;
   }
 
   /**

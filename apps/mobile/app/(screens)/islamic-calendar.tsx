@@ -427,7 +427,7 @@ export default function IslamicCalendarScreen() {
             >
               {/* Month Header */}
               <View style={styles.monthHeader}>
-                <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.previousMonth')} onPress={handlePrevMonth} style={styles.monthNavButton}>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.previousMonth')} onPress={handlePrevMonth} style={styles.monthNavButton} hitSlop={8}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.monthNavGradient}
@@ -441,7 +441,7 @@ export default function IslamicCalendarScreen() {
                   <Text style={[styles.monthTitle, { color: tc.text.secondary }]}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
                 </View>
 
-                <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.nextMonth')} onPress={handleNextMonth} style={styles.monthNavButton}>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('accessibility.nextMonth')} onPress={handleNextMonth} style={styles.monthNavButton} hitSlop={8}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.monthNavGradient}
@@ -548,6 +548,7 @@ export default function IslamicCalendarScreen() {
                   <Pressable
                     key={event.id}
                     accessibilityRole="button"
+                    accessibilityLabel={event.title}
                     onPress={() => navigate(`/(screens)/event-detail?id=${event.id}`)}
                   >
                     <CommunityEventCard event={event} index={index} t={t} />

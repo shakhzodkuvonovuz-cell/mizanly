@@ -417,6 +417,7 @@
       "title": "Your feed is empty",
       "subtitle": "Follow people to see their posts here"
     },
+    "repostedBy": "Reposted by @{{username}}",
     "crossPost": "Cross-post",
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
@@ -1017,7 +1018,9 @@
     "reels": "Reels",
     "unfollowTitle": "Unfollow?",
     "unfollowMessage": "You'll stop seeing {{username}}'s posts in your feed",
-    "unfollow": "Unfollow"
+    "unfollow": "Unfollow",
+    "gridView": "Grid view",
+    "listView": "List view"
   },
   "islamic": {
     "prayerTimes": "Prayer Times",
@@ -1519,6 +1522,9 @@
     "waqfGoalOf": "of ${{amount}}",
     "waqfDescription": "Waqf is an Islamic endowment — a permanent charitable fund where the principal is preserved and only the returns are used for good causes.",
     "waqfContributeComingSoon": "Waqf contributions will be available once payment processing is set up",
+    "waqfContributeSuccess": "Contribution successful! JazakAllahu Khairan.",
+    "waqfContributeFailed": "Contribution failed",
+    "waqfProcessing": "Processing contribution...",
     "watchParties": "Watch Parties",
     "noWatchParties": "No watch parties",
     "watchPartyHint": "Start a watch party to watch videos together",
@@ -1689,7 +1695,9 @@
       "errorAction": "Go back",
       "loadErrorTitle": "Could not load videos",
       "loadErrorSubtitle": "Please pull to refresh",
-      "urlPlaceholder": "URL (https://...)"
+      "urlPlaceholder": "URL (https://...)",
+      "playAll": "Play All",
+      "shuffle": "Shuffle"
     },
     "bookmarkFolders": {
       "title": "Bookmark Folders",
@@ -2285,7 +2293,17 @@
     "success": "JazakAllahu Khairan",
     "successMessage": "Your donation has been received",
     "createCampaign": "Create Campaign",
-    "currencyAmount": "${{amount}}"
+    "currencyAmount": "${{amount}}",
+    "donateSuccess": "Donation successful!",
+    "donateFailed": "Donation failed",
+    "processing": "Processing donation..."
+  },
+  "giftShop": {
+    "purchaseSuccess": "Coins purchased successfully!",
+    "purchaseFailed": "Purchase failed",
+    "processing": "Processing purchase...",
+    "cashoutSuccess": "Cash out request submitted!",
+    "cashoutFailed": "Cash out failed"
   },
   "audioLibrary": {
     "title": "Audio Library",
@@ -3085,7 +3103,15 @@
     "deleteAccount": "Delete My Account",
     "deleteWarning": "This will permanently delete your account and all data after 30 days",
     "deleteConfirm": "I understand, delete my account",
-    "deleteGracePeriod": "You have 30 days to change your mind"
+    "deleteGracePeriod": "You have 30 days to change your mind",
+    "exportAsText": "Download as Text",
+    "exportAsJson": "Download as JSON",
+    "clearCache": "Clear Cache",
+    "cacheCleared": "Cache cleared successfully"
+  },
+  "accountSettings": {
+    "storage": "Storage & Cache",
+    "cacheSize": "Cache size"
   },
   "network": {
     "offline": "You're offline",
@@ -3184,7 +3210,26 @@
     "transcription": "Transcription",
     "transcribing": "Transcribing...",
     "showMore": "Show more",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "newMessage": "New Message",
+    "suggestions": "Suggestions",
+    "chatWith": "Chat with {{name}}",
+    "noUsersFound": "No users found for \"{{query}}\"",
+    "searchByNameOrUsername": "Search by name or username",
+    "couldNotStartConversation": "Could not start conversation",
+    "searchFailed": "Search failed"
+  },
+  "newConversation": {
+    "recentContacts": "Recent Contacts",
+    "noContacts": "No contacts yet"
+  },
+  "chatFolders": {
+    "unread": "Unread",
+    "groups": "Groups",
+    "archived": "Archived",
+    "allChats": "{{count}} conversations",
+    "noArchivedChats": "No archived chats",
+    "noArchivedChatsSubtitle": "Archived conversations will appear here"
   },
   "stickers": {
     "createSticker": "Create Sticker",

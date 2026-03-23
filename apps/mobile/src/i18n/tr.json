@@ -417,6 +417,7 @@
       "title": "Akışınız boş",
       "subtitle": "Gönderilerini görmek için insanları takip edin"
     },
+    "repostedBy": "@{{username}} tarafından yeniden paylaşıldı",
     "crossPost": "Çapraz paylaş",
     "boostPost": "Gönderiyi Öne Çıkar",
     "postInsights": "Gönderi İstatistikleri",
@@ -1017,7 +1018,9 @@
     "reels": "Reels",
     "unfollowTitle": "Takibi Bırak?",
     "unfollowMessage": "{{username}} kullanıcısının gönderilerini akışınızda görmeyeceksiniz",
-    "unfollow": "Takibi Bırak"
+    "unfollow": "Takibi Bırak",
+    "gridView": "Izgara görünümü",
+    "listView": "Liste görünümü"
   },
   "islamic": {
     "prayerTimes": "Namaz Vakitleri",
@@ -1526,6 +1529,9 @@
     "waqfGoalOf": "of ${{amount}}",
     "waqfDescription": "Waqf is an Islamic endowment — a permanent charitable fund where the principal is preserved and only the returns are used for good causes.",
     "waqfContributeComingSoon": "Waqf contributions will be available once payment processing is set up",
+    "waqfContributeSuccess": "Katki basarili! JazakAllahu Khairan.",
+    "waqfContributeFailed": "Katki basarisiz oldu",
+    "waqfProcessing": "Katki isleniyor...",
     "browse": "Browse",
     "ask": "Ask",
     "answered": "Answered",
@@ -1689,7 +1695,9 @@
       "errorAction": "Geri dön",
       "loadErrorTitle": "Videolar yüklenemedi",
       "loadErrorSubtitle": "Yenilemek için çekin",
-      "urlPlaceholder": "URL (https://...)"
+      "urlPlaceholder": "URL (https://...)",
+      "playAll": "Tümünü Oynat",
+      "shuffle": "Karıştır"
     },
     "bookmarkFolders": {
       "title": "Bookmark Folders",
@@ -2285,7 +2293,17 @@
     "success": "JazakAllahu Khairan",
     "successMessage": "Bağışınız alındı",
     "createCampaign": "Kampanya Oluştur",
-    "currencyAmount": "${{amount}}"
+    "currencyAmount": "${{amount}}",
+    "donateSuccess": "Bağış başarılı!",
+    "donateFailed": "Bağış başarısız oldu",
+    "processing": "Bağış işleniyor..."
+  },
+  "giftShop": {
+    "purchaseSuccess": "Jeton satın alındı!",
+    "purchaseFailed": "Satın alma başarısız oldu",
+    "processing": "Satın alma işleniyor...",
+    "cashoutSuccess": "Nakit çekim talebi gönderildi!",
+    "cashoutFailed": "Nakit çekim başarısız oldu"
   },
   "tafsir": {
     "title": "Tefsir",
@@ -3034,7 +3052,15 @@
     "deleteAccount": "Hesabımı Sil",
     "deleteWarning": "Bu, 30 gün sonra hesabınızı ve tüm verileri kalıcı olarak silecektir",
     "deleteConfirm": "Anlıyorum, hesabımı sil",
-    "deleteGracePeriod": "Fikrinizi değiştirmek için 30 gününüz var"
+    "deleteGracePeriod": "Fikrinizi değiştirmek için 30 gününüz var",
+    "exportAsText": "Metin olarak indir",
+    "exportAsJson": "JSON olarak indir",
+    "clearCache": "Onbellegi temizle",
+    "cacheCleared": "Onbellek basariyla temizlendi"
+  },
+  "accountSettings": {
+    "storage": "Depolama ve Onbellek",
+    "cacheSize": "Onbellek boyutu"
   },
   "network": {
     "offline": "Çevrimdışısınız",
@@ -3133,7 +3159,26 @@
     "transcription": "Transkripsiyon",
     "transcribing": "Yazıya dönüştürülüyor...",
     "showMore": "Daha fazla göster",
-    "showLess": "Daha az göster"
+    "showLess": "Daha az göster",
+    "newMessage": "Yeni Mesaj",
+    "suggestions": "Öneriler",
+    "chatWith": "{{name}} ile sohbet et",
+    "noUsersFound": "\"{{query}}\" için kullanıcı bulunamadı",
+    "searchByNameOrUsername": "İsim veya kullanıcı adı ile ara",
+    "couldNotStartConversation": "Sohbet başlatılamadı",
+    "searchFailed": "Arama başarısız"
+  },
+  "newConversation": {
+    "recentContacts": "Son Kişiler",
+    "noContacts": "Henüz kişi yok"
+  },
+  "chatFolders": {
+    "unread": "Okunmamış",
+    "groups": "Gruplar",
+    "archived": "Arşivlenmiş",
+    "allChats": "{{count}} sohbet",
+    "noArchivedChats": "Arşivlenmiş sohbet yok",
+    "noArchivedChatsSubtitle": "Arşivlenen sohbetler burada görünecek"
   },
   "stickers": {
     "createSticker": "Çıkartma Oluştur",
