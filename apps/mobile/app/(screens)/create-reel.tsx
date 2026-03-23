@@ -160,7 +160,8 @@ export default function CreateReelScreen() {
         // Build concat filter for N inputs
         const inputs = clips.map((c, i) => `-i "${c.uri}"`).join(' ');
         const filterInputs = clips.map((_, i) => `[${i}:v][${i}:a]`).join('');
-        const outputPath = `${FileSystemMod.cacheDirectory || ''}reel_concat_${Date.now()}.mp4`;
+        const cacheDir = (FileSystemMod.cacheDirectory || '').replace(/\/?$/, '/');
+        const outputPath = `${cacheDir}reel_concat_${Date.now()}.mp4`;
         const cmd = `${inputs} -filter_complex "${filterInputs}concat=n=${clips.length}:v=1:a=1[outv][outa]" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -movflags +faststart -y "${outputPath}"`;
 
         showToast({ message: t('createReel.mergingClips'), variant: 'info' });

@@ -43,6 +43,7 @@ export interface EditParams {
   originalVolume: number;  // 0–100
   musicVolume: number;     // 0–100
   musicUri?: string;       // optional background music
+  voiceoverUri?: string;   // optional voiceover recording to mix in
   quality: QualityPreset;
   isReversed?: boolean;    // reverse playback
   aspectRatio?: AspectRatio; // output aspect ratio
@@ -190,6 +191,11 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     parts.push(`-i "${params.musicUri}"`);
   }
 
+  // Voiceover input (if any)
+  if (params.voiceoverUri) {
+    parts.push(`-i "${params.voiceoverUri}"`);
+  }
+
   // ── Video filter chain ──────────────────────────────────
 
   const vFilters: string[] = [];
@@ -260,20 +266,13 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     vFilters.push('deshake=rx=32:ry=32');
   }
 
-  // Freeze frame — split video at freeze point, hold frame for 2s, then continue
-  // Uses trim+tpad+concat approach instead of frame-number-based tpad (fps-independent)
+  // Freeze frame — hold the last frame for 2 seconds (fps-independent)
+  // Uses tpad=stop_mode=clone which clones the final frame for stop_duration seconds.
+  // This effectively adds a 2-second freeze at the end of the clip.
+  // A mid-clip freeze would require splitting the video (complex filter graph) — deferred to v2.
   if (params.freezeFrameAt !== null && params.freezeFrameAt !== undefined) {
     const freezeAt = params.freezeFrameAt - startTime; // relative to trimmed clip
     if (freezeAt > 0.1 && freezeAt < clipDuration - 0.1) {
-      // Use select filter to grab the frame at freezeAt, loop it for 2 seconds
-      // Then overlay the frozen section. This is simpler: just use tpad with time-based select
-      vFilters.push(`select='not(between(t,${freezeAt.toFixed(2)},${freezeAt.toFixed(2)}))',setpts=N/FRAME_RATE/TB`);
-      // Actually, simplest reliable approach: use freeze filter (available in FFmpeg 4.3+)
-      // freeze=n=FRAME_AT:d=2 — but 'freeze' filter may not exist in all builds
-      // Safest: use trim to split, tpad on the freeze point, then concat
-      // For v1: disable freeze if we can't guarantee fps. Use a simpler approach:
-      // Just hold the last frame for 2 seconds at the end (always works)
-      vFilters.pop(); // remove the select filter we just added
       vFilters.push('tpad=stop_mode=clone:stop_duration=2');
     }
   }
@@ -283,70 +282,60 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   }
 
   // ── Audio filter chain ──────────────────────────────────
+  // Build original audio processing chain (shared across all paths)
+  const origChain: string[] = [];
+  if (params.isReversed && needsTrim) {
+    origChain.push(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
+  }
+  if (params.isReversed && clipDuration <= MAX_REVERSE_DURATION) {
+    origChain.push('areverse');
+  }
+  if (speed !== 1) {
+    origChain.push(buildAtempoChain(speed));
+  }
+  if (originalVolume !== 100) {
+    origChain.push(`volume=${(originalVolume / 100).toFixed(2)}`);
+  }
+  const voiceEffectFilter = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
+  if (voiceEffectFilter) origChain.push(voiceEffectFilter);
+  if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
 
-  if (params.musicUri) {
-    // Complex audio filter for mixing original + music
-    // Handles: reverse, speed, volume for original audio + volume for music
+  const hasMusic = !!params.musicUri;
+  const hasVoiceover = !!params.voiceoverUri;
+  const needsComplexAudio = hasMusic || hasVoiceover;
+
+  if (needsComplexAudio) {
+    // Complex filter_complex: mix original + optional music + optional voiceover
+    // Input indices: 0=video, 1=music (if present), next=voiceover (if present)
+    const musicIdx = hasMusic ? 1 : -1;
+    const voiceoverIdx = hasMusic ? (hasVoiceover ? 2 : -1) : (hasVoiceover ? 1 : -1);
     const musicVol = (params.musicVolume / 100).toFixed(2);
-    const origVol = (originalVolume / 100).toFixed(2);
 
-    const origChain: string[] = [`volume=${origVol}`];
-    if (params.isReversed && needsTrim) {
-      origChain.unshift(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
-    }
-    if (params.isReversed && clipDuration <= MAX_REVERSE_DURATION) {
-      origChain.push('areverse');
-    }
-    if (speed !== 1) {
-      origChain.push(buildAtempoChain(speed));
-    }
-    const voiceFilterMix = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
-    if (voiceFilterMix) origChain.push(voiceFilterMix);
-    if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
+    const origLabel = origChain.length > 0 ? `[0:a]${origChain.join(',')}[a0]` : '[0:a]anull[a0]';
+    const chains = [origLabel];
+    const mixInputs = ['[a0]'];
+    let mixCount = 1;
 
+    if (hasMusic) {
+      chains.push(`[${musicIdx}:a]volume=${musicVol}[amusic]`);
+      mixInputs.push('[amusic]');
+      mixCount++;
+    }
+    if (hasVoiceover) {
+      chains.push(`[${voiceoverIdx}:a]volume=1.0[avoice]`);
+      mixInputs.push('[avoice]');
+      mixCount++;
+    }
+
+    const mixExpr = `${mixInputs.join('')}amix=inputs=${mixCount}:duration=first[aout]`;
     parts.push(
-      `-filter_complex "[0:a]${origChain.join(',')}[a0];[1:a]volume=${musicVol}[a1];[a0][a1]amix=inputs=2:duration=first[aout]"`,
+      `-filter_complex "${chains.join(';')};${mixExpr}"`,
       '-map 0:v',
       '-map "[aout]"'
     );
-  } else {
-    // Simple audio filter chain (no music mixing)
-    const aFilters: string[] = [];
-
-    // Trim audio when reversing (since we can't use -ss)
-    if (params.isReversed && needsTrim) {
-      aFilters.push(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
-    }
-
-    // Reverse audio
-    if (params.isReversed && clipDuration <= MAX_REVERSE_DURATION) {
-      aFilters.push('areverse');
-    }
-
-    // Speed adjustment for audio
-    if (speed !== 1) {
-      aFilters.push(buildAtempoChain(speed));
-    }
-
-    // Volume adjustment
-    if (originalVolume !== 100) {
-      aFilters.push(`volume=${(originalVolume / 100).toFixed(2)}`);
-    }
-
-    // Voice effect
-    const voiceFilter = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
-    if (voiceFilter) {
-      aFilters.push(voiceFilter);
-    }
-
-    // Noise reduction (highpass + lowpass to remove hum/hiss)
-    if (params.noiseReduce) {
-      aFilters.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
-    }
-
-    if (aFilters.length > 0) {
-      parts.push(`-af "${aFilters.join(',')}"`);
-    }
+  } else if (origChain.length > 0) {
+    // Simple -af chain (no mixing needed)
+    parts.push(`-af "${origChain.join(',')}"`);
   }
 
   // ── Encoding settings ───────────────────────────────────

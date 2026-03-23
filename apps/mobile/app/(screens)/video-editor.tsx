@@ -386,6 +386,7 @@ export default function VideoEditorScreen() {
         originalVolume,
         musicVolume,
         musicUri: selectedTrack?.audioUrl,
+        voiceoverUri: voiceoverUri || undefined,
         quality: selectedQuality,
         isReversed,
         aspectRatio,
@@ -422,7 +423,7 @@ export default function VideoEditorScreen() {
     } finally {
       setIsExporting(false);
     }
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, isReversed, aspectRatio, exportProgressAnim, t, router, params.returnTo]);
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
 
   // Cancel export handler
   const handleCancelExport = useCallback(async () => {
@@ -885,6 +886,11 @@ export default function VideoEditorScreen() {
                       await recordingRef.current.stopAndUnloadAsync();
                       const uri = recordingRef.current.getURI();
                       recordingRef.current = null;
+                      // Reset audio mode so video playback works again (iOS mutes playback during recording)
+                      await Audio.setAudioModeAsync({
+                        allowsRecordingIOS: false,
+                        playsInSilentModeIOS: true,
+                      });
                       if (uri) {
                         setVoiceoverUri(uri);
                         showToast({ message: t('videoEditor.voiceoverSaved'), variant: 'success' });

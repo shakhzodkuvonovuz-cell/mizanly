@@ -32,6 +32,7 @@ interface EditParams {
   originalVolume: number;
   musicVolume: number;
   musicUri?: string;
+  voiceoverUri?: string;
   quality: QualityPreset;
   isReversed?: boolean;
   aspectRatio?: '9:16' | '16:9' | '1:1' | '4:5';
@@ -108,6 +109,9 @@ function buildCommand(params: EditParams, outputPath: string): string {
   if (params.musicUri) {
     parts.push(`-i "${params.musicUri}"`);
   }
+  if (params.voiceoverUri) {
+    parts.push(`-i "${params.voiceoverUri}"`);
+  }
 
   const vFilters: string[] = [];
 
@@ -165,35 +169,34 @@ function buildCommand(params: EditParams, outputPath: string): string {
     parts.push(`-vf "${vFilters.join(',')}"`);
   }
 
-  if (params.musicUri) {
+  // Build original audio processing chain
+  const origChain: string[] = [];
+  if (params.isReversed && needsTrim) {
+    origChain.push(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
+  }
+  if (params.isReversed && clipDuration <= 300) origChain.push('areverse');
+  if (speed !== 1) origChain.push(buildAtempoChain(speed));
+  if (originalVolume !== 100) origChain.push(`volume=${(originalVolume / 100).toFixed(2)}`);
+  const voiceEffectF = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
+  if (voiceEffectF) origChain.push(voiceEffectF);
+  if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
+
+  const hasMusic = !!params.musicUri;
+  const hasVoiceover = !!params.voiceoverUri;
+  if (hasMusic || hasVoiceover) {
+    const musicIdx = hasMusic ? 1 : -1;
+    const voiceoverIdx = hasMusic ? (hasVoiceover ? 2 : -1) : (hasVoiceover ? 1 : -1);
     const musicVol = (params.musicVolume / 100).toFixed(2);
-    const origVol = (originalVolume / 100).toFixed(2);
-    const origChain: string[] = [`volume=${origVol}`];
-    if (params.isReversed && needsTrim) {
-      origChain.unshift(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
-    }
-    if (params.isReversed && clipDuration <= 300) origChain.push('areverse');
-    if (speed !== 1) origChain.push(buildAtempoChain(speed));
-    const voiceFilterMix = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
-    if (voiceFilterMix) origChain.push(voiceFilterMix);
-    if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
-    parts.push(
-      `-filter_complex "[0:a]${origChain.join(',')}[a0];[1:a]volume=${musicVol}[a1];[a0][a1]amix=inputs=2:duration=first[aout]"`,
-      '-map 0:v',
-      '-map "[aout]"',
-    );
-  } else {
-    const aFilters: string[] = [];
-    if (params.isReversed && needsTrim) {
-      aFilters.push(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
-    }
-    if (params.isReversed && clipDuration <= 300) aFilters.push('areverse');
-    if (speed !== 1) aFilters.push(buildAtempoChain(speed));
-    if (originalVolume !== 100) aFilters.push(`volume=${(originalVolume / 100).toFixed(2)}`);
-    const voiceFilter = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
-    if (voiceFilter) aFilters.push(voiceFilter);
-    if (params.noiseReduce) aFilters.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
-    if (aFilters.length > 0) parts.push(`-af "${aFilters.join(',')}"`);
+    const origLabel = origChain.length > 0 ? `[0:a]${origChain.join(',')}[a0]` : '[0:a]anull[a0]';
+    const chains = [origLabel];
+    const mixInputs = ['[a0]'];
+    let mixCount = 1;
+    if (hasMusic) { chains.push(`[${musicIdx}:a]volume=${musicVol}[amusic]`); mixInputs.push('[amusic]'); mixCount++; }
+    if (hasVoiceover) { chains.push(`[${voiceoverIdx}:a]volume=1.0[avoice]`); mixInputs.push('[avoice]'); mixCount++; }
+    const mixExpr = `${mixInputs.join('')}amix=inputs=${mixCount}:duration=first[aout]`;
+    parts.push(`-filter_complex "${chains.join(';')};${mixExpr}"`, '-map 0:v', '-map "[aout]"');
+  } else if (origChain.length > 0) {
+    parts.push(`-af "${origChain.join(',')}"`);
   }
 
   parts.push(`-c:v libx264 -preset ${qualityCfg.preset} -crf ${qualityCfg.crf}`);
@@ -494,6 +497,29 @@ describe('FFmpeg Engine — Command Builder', () => {
 
     it('should not use -af when music is present (uses filter_complex instead)', () => {
       const cmd = buildCommand(defaultParams({ musicUri: '/tmp/music.mp3', speed: 2 }), outputPath);
+      expect(cmd).not.toContain('-af');
+      expect(cmd).toContain('-filter_complex');
+    });
+  });
+
+  describe('voiceover mixing', () => {
+    it('should add voiceover input and mix via filter_complex', () => {
+      const cmd = buildCommand(defaultParams({ voiceoverUri: '/tmp/voice.m4a' }), outputPath);
+      expect(cmd).toContain('-i "/tmp/voice.m4a"');
+      expect(cmd).toContain('-filter_complex');
+      expect(cmd).toContain('avoice');
+      expect(cmd).toContain('amix');
+    });
+
+    it('should mix all 3 sources: original + music + voiceover', () => {
+      const cmd = buildCommand(defaultParams({ musicUri: '/tmp/music.mp3', voiceoverUri: '/tmp/voice.m4a' }), outputPath);
+      expect(cmd).toContain('amix=inputs=3');
+      expect(cmd).toContain('amusic');
+      expect(cmd).toContain('avoice');
+    });
+
+    it('should not use -af when voiceover is present', () => {
+      const cmd = buildCommand(defaultParams({ voiceoverUri: '/tmp/voice.m4a', originalVolume: 50 }), outputPath);
       expect(cmd).not.toContain('-af');
       expect(cmd).toContain('-filter_complex');
     });
