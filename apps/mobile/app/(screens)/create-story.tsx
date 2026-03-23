@@ -18,16 +18,19 @@ import { DrawingCanvas } from '@/components/story/DrawingCanvas';
 import type { DrawPath } from '@/components/story/DrawingCanvas';
 import { TextEffects } from '@/components/story/TextEffects';
 import type { TextEffect } from '@/components/story/TextEffects';
+import { GifSearch, type GifItem } from '@/components/story/GifSticker';
+import { LocationSearch, type LocationData } from '@/components/story/LocationSticker';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
+import { colors, spacing, fontSize, radius, fontSizeExt, fonts, animation } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
@@ -73,8 +76,8 @@ const BG_GRADIENTS: [string, string][] = [
   ['#F85149', '#9B2C2C'],
 ];
 
-// ── Sticker types ──
-type StickerType = 'poll' | 'question' | 'countdown' | 'quiz' | 'location' | 'mention' | 'hashtag' | 'slider';
+// ── Sticker types (all 10 interactive types + mention/hashtag) ──
+type StickerType = 'poll' | 'question' | 'countdown' | 'quiz' | 'location' | 'mention' | 'hashtag' | 'slider' | 'gif' | 'link' | 'addYours' | 'music';
 
 interface Sticker {
   id: string;
@@ -84,6 +87,22 @@ interface Sticker {
   scale: number;
   data: Record<string, unknown>;
 }
+
+// ── Sticker tray items (all 10 + mention/hashtag) ──
+const STICKER_TRAY_ITEMS: Array<{ type: StickerType; icon: string; labelKey: string; color: string }> = [
+  { type: 'poll', icon: 'bar-chart-2', labelKey: 'stories.poll', color: colors.emerald },
+  { type: 'quiz', icon: 'check-circle', labelKey: 'stories.quiz', color: colors.extended.purple },
+  { type: 'question', icon: 'at-sign', labelKey: 'stories.question', color: colors.extended.blue },
+  { type: 'countdown', icon: 'clock', labelKey: 'stories.countdown', color: colors.gold },
+  { type: 'slider', icon: 'trending-up', labelKey: 'stories.slider', color: colors.extended.orange },
+  { type: 'location', icon: 'map-pin', labelKey: 'common.location', color: colors.extended.greenBright },
+  { type: 'link', icon: 'link', labelKey: 'stories.link', color: colors.extended.blue },
+  { type: 'addYours', icon: 'circle-plus', labelKey: 'stories.addYours', color: colors.emerald },
+  { type: 'gif', icon: 'image', labelKey: 'stories.gif', color: colors.extended.purple },
+  { type: 'music', icon: 'volume-x', labelKey: 'stories.musicSticker', color: colors.extended.orangeLight },
+  { type: 'mention', icon: 'at-sign', labelKey: 'stories.mention', color: colors.emeraldLight },
+  { type: 'hashtag', icon: 'hash', labelKey: 'stories.hashtag', color: colors.gold },
+];
 
 // ── Draggable sticker wrapper — extracted to avoid Rules of Hooks in .map() ──
 function DraggableSticker({
@@ -200,9 +219,18 @@ export default function CreateStoryScreen() {
   const [mentionUsername, setMentionUsername] = useState('');
   const [hashtagText, setHashtagText] = useState('');
   const [sliderQuestion, setSliderQuestion] = useState('');
-  const [sliderEmoji, setSliderEmoji] = useState('📊');
+  const [sliderEmoji, setSliderEmoji] = useState('');
   const [sliderMin, setSliderMin] = useState('0');
   const [sliderMax, setSliderMax] = useState('100');
+
+  // ── New sticker editor state ──
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkTitle, setLinkTitle] = useState('');
+  const [addYoursPrompt, setAddYoursPrompt] = useState('');
+  const [showGifSearch, setShowGifSearch] = useState(false);
+  const [showLocationSearch, setShowLocationSearch] = useState(false);
+  const [musicDisplayMode, setMusicDisplayMode] = useState<'compact' | 'lyrics' | 'waveform'>('compact');
+  const haptic = useContextualHaptic();
 
   // ── Close friends / Subscribers (mutually exclusive) ──
   const [closeFriendsOnly, setCloseFriendsOnly] = useState(false);
@@ -354,15 +382,67 @@ export default function CreateStoryScreen() {
     const max = parseInt(sliderMax) || 100;
     if (min >= max) return;
     addSticker('slider', {
-      emoji: sliderEmoji.trim() || '📊',
+      emoji: sliderEmoji.trim() || '',
       question: sliderQuestion.trim(),
       minValue: min,
       maxValue: max,
     });
     setSliderQuestion('');
-    setSliderEmoji('📊');
+    setSliderEmoji('');
     setSliderMin('0');
     setSliderMax('100');
+  };
+
+  const submitLink = () => {
+    if (!linkUrl.trim()) return;
+    addSticker('link', {
+      url: linkUrl.trim(),
+      title: linkTitle.trim() || undefined,
+    });
+    setLinkUrl('');
+    setLinkTitle('');
+  };
+
+  const submitAddYours = () => {
+    if (!addYoursPrompt.trim()) return;
+    addSticker('addYours', {
+      prompt: addYoursPrompt.trim(),
+    });
+    setAddYoursPrompt('');
+  };
+
+  const handleGifSelect = (gif: GifItem) => {
+    addSticker('gif', {
+      gifUrl: gif.url,
+      gifPreviewUrl: gif.previewUrl,
+      gifWidth: gif.width,
+      gifHeight: gif.height,
+      gifTitle: gif.title,
+    });
+    setShowGifSearch(false);
+  };
+
+  const handleLocationSelect = (location: LocationData) => {
+    addSticker('location', {
+      locationId: location.id,
+      locationName: location.name,
+      locationAddress: location.address,
+      locationCity: location.city,
+    });
+    setShowLocationSearch(false);
+  };
+
+  const handleMusicStickerAdd = () => {
+    if (!selectedTrack) {
+      setShowMusicPicker(true);
+      return;
+    }
+    addSticker('music', {
+      trackId: selectedTrack.id,
+      title: selectedTrack.title,
+      artist: selectedTrack.artist,
+      displayMode: musicDisplayMode,
+    });
   };
 
   // ── Upload mutation ──
@@ -404,14 +484,18 @@ export default function CreateStoryScreen() {
 
   // ── Render sticker on canvas ──
   const stickerStylesMap: Record<StickerType, ViewStyle> = {
-    poll: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
-    question: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
-    countdown: { backgroundColor: tc.bgCard, borderRadius: radius.md, padding: spacing.md, minWidth: 160 },
-    quiz: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
-    location: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+    poll: { backgroundColor: 'rgba(13,17,23,0.88)', borderRadius: radius.lg, padding: spacing.md, minWidth: 220, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+    question: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.lg, padding: spacing.md, minWidth: 220, borderWidth: 1, borderColor: 'rgba(10,123,79,0.3)' },
+    countdown: { backgroundColor: 'rgba(13,17,23,0.88)', borderRadius: radius.lg, padding: spacing.md, minWidth: 180, borderWidth: 2, borderColor: colors.gold },
+    quiz: { backgroundColor: 'rgba(13,17,23,0.88)', borderRadius: radius.lg, padding: spacing.md, minWidth: 220, borderWidth: 1, borderColor: 'rgba(163,113,247,0.3)' },
+    location: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
     mention: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
     hashtag: { backgroundColor: 'rgba(200,150,62,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-    slider: { backgroundColor: tc.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
+    slider: { backgroundColor: 'rgba(13,17,23,0.88)', borderRadius: radius.lg, padding: spacing.md, minWidth: 220, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+    gif: { borderRadius: radius.md, overflow: 'hidden' as const },
+    link: { backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.md, padding: spacing.md, minWidth: 200, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+    addYours: { backgroundColor: 'rgba(13,17,23,0.88)', borderRadius: radius.lg, padding: spacing.md, minWidth: 220, borderWidth: 1, borderColor: 'rgba(10,123,79,0.3)' },
+    music: { borderRadius: radius.full, overflow: 'hidden' as const },
   };
 
   const renderStickerContent = (sticker: Sticker) => {
@@ -502,12 +586,68 @@ export default function CreateStoryScreen() {
       case 'slider':
         return (
           <View>
-            <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: spacing.sm }}>
-              {String(sticker.data.emoji)} {String(sticker.data.question)}
-            </Text>
-            <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm }}>
+              <Icon name="trending-up" size="sm" color={colors.extended.orange} />
+              <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '700', flex: 1 }}>
+                {String(sticker.data.question)}
+              </Text>
+            </View>
+            <View style={{ height: 6, backgroundColor: tc.surface, borderRadius: radius.full, overflow: 'hidden' }}>
+              <View style={{ width: '50%', height: '100%', backgroundColor: colors.emerald, borderRadius: radius.full }} />
+            </View>
+            <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.xs }}>
               {String(sticker.data.minValue || 0)} – {String(sticker.data.maxValue || 100)}
             </Text>
+          </View>
+        );
+      case 'gif':
+        return (
+          <View style={{ alignItems: 'center' }}>
+            <Image source={{ uri: String(sticker.data.gifPreviewUrl) }} style={{ width: 120, height: 90, borderRadius: radius.sm }} contentFit="cover" />
+          </View>
+        );
+      case 'link':
+        return (
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs }}>
+              <Icon name="link" size="sm" color={colors.extended.blue} />
+              <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, flex: 1 }} numberOfLines={1}>
+                {String(sticker.data.url)}
+              </Text>
+            </View>
+            {sticker.data.title && (
+              <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '600' }} numberOfLines={2}>
+                {String(sticker.data.title)}
+              </Text>
+            )}
+          </View>
+        );
+      case 'addYours':
+        return (
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm }}>
+              <Icon name="circle-plus" size="sm" color={colors.emerald} />
+              <Text style={{ color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' }}>
+                {t('stories.addYours')}
+              </Text>
+            </View>
+            <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '600', fontStyle: 'italic', textAlign: 'center' }}>
+              {String(sticker.data.prompt)}
+            </Text>
+          </View>
+        );
+      case 'music':
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(10,123,79,0.85)', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, gap: spacing.sm }}>
+            <Icon name="volume-x" size="sm" color="#fff" />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#fff', fontSize: fontSize.sm, fontWeight: '700' }} numberOfLines={1}>
+                {String(sticker.data.title)}
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: fontSizeExt.tiny }} numberOfLines={1}>
+                {String(sticker.data.artist)}
+              </Text>
+            </View>
           </View>
         );
       default:
@@ -923,33 +1063,54 @@ export default function CreateStoryScreen() {
           </ScrollView>
         )}
 
-        {/* ── Sticker tool ── */}
+        {/* ── Sticker tray — 12 types in a beautiful grid ── */}
         {activeTool === 'sticker' && !activeStickerEditor && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            {[
-              { type: 'poll' as StickerType, icon: 'bar-chart-2' as const, label: t('stories.poll') },
-              { type: 'question' as StickerType, icon: 'at-sign' as const, label: t('stories.question') },
-              { type: 'countdown' as StickerType, icon: 'clock' as const, label: t('stories.countdown') },
-              { type: 'quiz' as StickerType, icon: 'check-circle' as const, label: t('stories.quiz') },
-              { type: 'slider' as StickerType, icon: 'trending-up' as const, label: t('stories.slider') },
-              { type: 'mention' as StickerType, icon: 'at-sign' as const, label: t('stories.mention') },
-              { type: 'hashtag' as StickerType, icon: 'hash' as const, label: t('stories.hashtag') },
-              { type: 'location' as StickerType, icon: 'map-pin' as const, label: t('common.location') },
-            ].map(item => (
-              <Pressable key={item.type} accessibilityRole="button" accessibilityLabel={item.label} onPress={() => {
-                if (item.type === 'location') {
-                  addSticker('location', {});
-                } else {
-                  setActiveStickerEditor(item.type);
-                }
-              }} style={{
-                backgroundColor: tc.bgElevated, borderRadius: radius.md,
-                padding: spacing.md, alignItems: 'center', width: (SCREEN_W - spacing.base * 2 - spacing.sm * 2) / 3 - 1,
-              }}>
-                <Icon name={item.icon} size="md" color={colors.emerald} />
-                <Text style={{ color: tc.text.primary, fontSize: fontSize.xs, marginTop: spacing.xs }}>{item.label}</Text>
-              </Pressable>
-            ))}
+          <View>
+            <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.bodyMedium, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.md }}>
+              {t('stories.interactiveStickers')}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              {STICKER_TRAY_ITEMS.map(item => (
+                <Pressable
+                  key={item.type}
+                  accessibilityRole="button"
+                  accessibilityLabel={t(item.labelKey)}
+                  onPress={() => {
+                    haptic.tick();
+                    if (item.type === 'location') {
+                      setShowLocationSearch(true);
+                    } else if (item.type === 'gif') {
+                      setShowGifSearch(true);
+                    } else if (item.type === 'music') {
+                      handleMusicStickerAdd();
+                    } else {
+                      setActiveStickerEditor(item.type);
+                    }
+                  }}
+                  style={({ pressed }) => ({
+                    backgroundColor: pressed ? colors.active.white10 : tc.bgElevated,
+                    borderRadius: radius.md,
+                    padding: spacing.md,
+                    alignItems: 'center',
+                    width: (SCREEN_W - spacing.base * 2 - spacing.sm * 3) / 4 - 1,
+                    borderWidth: 1,
+                    borderColor: tc.border,
+                  })}
+                >
+                  <View style={{
+                    width: 44, height: 44, borderRadius: radius.full,
+                    backgroundColor: `${item.color}15`,
+                    alignItems: 'center', justifyContent: 'center',
+                    marginBottom: spacing.xs,
+                  }}>
+                    <Icon name={item.icon as never} size="md" color={item.color} />
+                  </View>
+                  <Text style={{ color: tc.text.primary, fontSize: fontSizeExt.tiny, fontFamily: fonts.bodyMedium, fontWeight: '500', textAlign: 'center' }} numberOfLines={1}>
+                    {t(item.labelKey)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
         )}
 
@@ -1088,8 +1249,6 @@ export default function CreateStoryScreen() {
             <Text style={editorTitle}>{t('stories.createSlider')}</Text>
             <TextInput value={sliderQuestion} onChangeText={setSliderQuestion} placeholder={t('stories.askAQuestion')}
               placeholderTextColor={tc.text.tertiary} maxLength={100} style={editorInput} />
-            <TextInput value={sliderEmoji} onChangeText={setSliderEmoji} placeholder={t('stories.emojiOptional')}
-              placeholderTextColor={tc.text.tertiary} maxLength={2} style={[editorInput, { marginTop: spacing.sm }]} />
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
               <TextInput value={sliderMin} onChangeText={setSliderMin} placeholder={t('common.min')}
                 placeholderTextColor={tc.text.tertiary} keyboardType="numeric"
@@ -1099,11 +1258,137 @@ export default function CreateStoryScreen() {
                 style={[editorInput, { flex: 1 }]} />
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
-                <Text style={{ color: tc.text.primary}}>{t('common.cancel')}</Text>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
+                <Text style={{ color: tc.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={submitSlider} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
+              <Pressable onPress={submitSlider} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]} accessibilityRole="button" accessibilityLabel={t('stories.addSlider')}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addSlider')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {/* ── Link sticker editor ── */}
+        {activeStickerEditor === 'link' && (
+          <View>
+            <Text style={editorTitle}>{t('stories.addLink')}</Text>
+            <TextInput
+              value={linkUrl}
+              onChangeText={setLinkUrl}
+              placeholder="https://..."
+              placeholderTextColor={tc.text.tertiary}
+              autoCapitalize="none"
+              keyboardType="url"
+              style={editorInput}
+              accessibilityLabel={t('stories.linkUrl')}
+            />
+            <TextInput
+              value={linkTitle}
+              onChangeText={setLinkTitle}
+              placeholder={t('stories.linkTitleOptional')}
+              placeholderTextColor={tc.text.tertiary}
+              maxLength={60}
+              style={[editorInput, { marginTop: spacing.sm }]}
+              accessibilityLabel={t('stories.linkTitle')}
+            />
+            <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
+                <Text style={{ color: tc.text.primary }}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Pressable onPress={submitLink} style={[editorBtn, { backgroundColor: colors.extended.blue, flex: 1 }]} accessibilityRole="button" accessibilityLabel={t('stories.addLink')}>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addLink')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {/* ── Add Yours sticker editor ── */}
+        {activeStickerEditor === 'addYours' && (
+          <View>
+            <Text style={editorTitle}>{t('stories.createAddYours')}</Text>
+            <TextInput
+              value={addYoursPrompt}
+              onChangeText={setAddYoursPrompt}
+              placeholder={t('stories.addYoursPromptPlaceholder')}
+              placeholderTextColor={tc.text.tertiary}
+              maxLength={200}
+              multiline
+              style={[editorInput, { minHeight: 60 }]}
+              accessibilityLabel={t('stories.addYoursPrompt')}
+            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm }}>
+              <CharCountRing current={addYoursPrompt.length} max={200} size={22} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
+                <Text style={{ color: tc.text.primary }}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Pressable onPress={submitAddYours} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]} accessibilityRole="button" accessibilityLabel={t('stories.addYoursAdd')}>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addYoursAdd')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {/* ── Music sticker mode selector ── */}
+        {activeStickerEditor === 'music' && (
+          <View>
+            <Text style={editorTitle}>{t('stories.musicStickerStyle')}</Text>
+            {selectedTrack ? (
+              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md }}>
+                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '600' }} numberOfLines={1}>
+                  {selectedTrack.title} — {selectedTrack.artist}
+                </Text>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => setShowMusicPicker(true)}
+                style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.lg, alignItems: 'center', marginBottom: spacing.md }}
+                accessibilityRole="button"
+                accessibilityLabel={t('stories.pickATrack')}
+              >
+                <Icon name="volume-x" size="lg" color={colors.emerald} />
+                <Text style={{ color: tc.text.secondary, fontSize: fontSize.sm, marginTop: spacing.sm }}>
+                  {t('stories.pickATrack')}
+                </Text>
+              </Pressable>
+            )}
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
+              {(['compact', 'waveform', 'lyrics'] as const).map(mode => (
+                <Pressable
+                  key={mode}
+                  onPress={() => setMusicDisplayMode(mode)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing.sm,
+                    borderRadius: radius.md,
+                    backgroundColor: musicDisplayMode === mode ? colors.emerald : tc.bgElevated,
+                    alignItems: 'center',
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: musicDisplayMode === mode }}
+                  accessibilityLabel={mode}
+                >
+                  <Text style={{ color: musicDisplayMode === mode ? '#fff' : tc.text.secondary, fontSize: fontSize.sm, fontWeight: '600', textTransform: 'capitalize' }}>
+                    {mode}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing.md }}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]} accessibilityRole="button" accessibilityLabel={t('common.cancel')}>
+                <Text style={{ color: tc.text.primary }}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleMusicStickerAdd}
+                style={[editorBtn, { backgroundColor: selectedTrack ? colors.emerald : tc.surface, flex: 1 }]}
+                disabled={!selectedTrack}
+                accessibilityRole="button"
+                accessibilityLabel={t('stories.addMusicSticker')}
+              >
+                <Text style={{ color: selectedTrack ? '#fff' : tc.text.tertiary, fontWeight: '600' }}>
+                  {t('stories.addMusicSticker')}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -1208,6 +1493,30 @@ export default function CreateStoryScreen() {
             onPress={() => { setEidFrameOccasion(occ.id); setShowEidFramePicker(false); }}
           />
         ))}
+      </View>
+    </BottomSheet>
+    {/* ── GIF search BottomSheet ── */}
+    <BottomSheet visible={showGifSearch} onClose={() => setShowGifSearch(false)}>
+      <View style={{ padding: spacing.base, minHeight: 400 }}>
+        <Text style={{ color: tc.text.primary, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md }}>
+          {t('stories.searchGifs')}
+        </Text>
+        <GifSearch
+          onSelect={handleGifSelect}
+          onClose={() => setShowGifSearch(false)}
+        />
+      </View>
+    </BottomSheet>
+    {/* ── Location search BottomSheet ── */}
+    <BottomSheet visible={showLocationSearch} onClose={() => setShowLocationSearch(false)}>
+      <View style={{ padding: spacing.base, minHeight: 400 }}>
+        <Text style={{ color: tc.text.primary, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md }}>
+          {t('stories.addLocation')}
+        </Text>
+        <LocationSearch
+          onSelect={handleLocationSelect}
+          onClose={() => setShowLocationSearch(false)}
+        />
       </View>
     </BottomSheet>
     </ScreenErrorBoundary>

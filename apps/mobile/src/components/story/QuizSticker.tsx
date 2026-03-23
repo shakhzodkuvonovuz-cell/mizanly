@@ -13,10 +13,70 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
+  withDelay,
+  Easing,
+  FadeIn,
 } from 'react-native-reanimated';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { Icon } from '@/components/ui/Icon';
+
+// ── Confetti particle (animated dot that bursts outward) ──
+function ConfettiParticle({ index, isActive }: { index: number; isActive: boolean }) {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0);
+
+  const angle = (index / 12) * Math.PI * 2;
+  const distance = 60 + (index % 3) * 20;
+  const particleColors = [colors.emerald, colors.gold, colors.extended.blue, colors.extended.purple, '#FF7B72', '#3FB950'];
+  const color = particleColors[index % particleColors.length];
+
+  useEffect(() => {
+    if (isActive) {
+      const delay = index * 30;
+      opacity.value = withDelay(delay, withSequence(
+        withTiming(1, { duration: 100 }),
+        withDelay(400, withTiming(0, { duration: 300 })),
+      ));
+      scale.value = withDelay(delay, withSequence(
+        withSpring(1.5, animation.spring.bouncy),
+        withTiming(0.3, { duration: 400 }),
+      ));
+      translateX.value = withDelay(delay, withSpring(
+        Math.cos(angle) * distance, { damping: 8, stiffness: 200 }
+      ));
+      translateY.value = withDelay(delay, withSpring(
+        Math.sin(angle) * distance - 20, { damping: 8, stiffness: 200 }
+      ));
+    }
+  }, [isActive, index, angle, distance, opacity, scale, translateX, translateY]);
+
+  const particleStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View style={[confettiStyles.particle, { backgroundColor: color }, particleStyle]} />
+  );
+}
+
+const confettiStyles = StyleSheet.create({
+  particle: {
+    position: 'absolute',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+});
 
 export interface QuizOption {
   id: string;
@@ -41,9 +101,12 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function QuizSticker({ data, onResponse, isCreator = false, style }: QuizStickerProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const correctOptionId = data.options.find(opt => opt.isCorrect)?.id;
   const isCorrect = selectedOptionId === correctOptionId;
 
@@ -56,7 +119,7 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
   }, [isCreator, correctOptionId]);
 
   const shake = useSharedValue(0);
-  const confetti = useSharedValue(0);
+  const feedbackScale = useSharedValue(0);
 
   const handleOptionPress = (optionId: string) => {
     if (hasAnswered || isCreator) return;
@@ -66,18 +129,20 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
 
     const correct = optionId === correctOptionId;
     if (!correct) {
+      haptic.error();
       // Shake animation for wrong answer
       shake.value = withSequence(
-        withTiming(10, { duration: 100 }),
-        withTiming(-10, { duration: 100 }),
-        withTiming(10, { duration: 100 }),
-        withTiming(0, { duration: 100 }),
+        withTiming(10, { duration: 80 }),
+        withTiming(-10, { duration: 80 }),
+        withTiming(8, { duration: 70 }),
+        withTiming(-8, { duration: 70 }),
+        withTiming(0, { duration: 60 }),
       );
     } else {
-      // Confetti placeholder animation (scale up)
-      confetti.value = withSpring(1.2, animation.spring.bouncy, () => {
-        confetti.value = withSpring(1, animation.spring.gentle);
-      });
+      haptic.success();
+      setShowConfetti(true);
+      // Scale bounce on correct
+      feedbackScale.value = withSpring(1, animation.spring.bouncy);
     }
 
     // Notify parent
@@ -90,8 +155,8 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
     transform: [{ translateX: shake.value }],
   }));
 
-  const confettiStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: confetti.value }],
+  const feedbackStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: feedbackScale.value }],
   }));
 
   const renderOption = (option: QuizOption) => {
@@ -139,21 +204,48 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
       </View>
 
       {hasAnswered && (
-        <Animated.View style={[styles.feedbackContainer, { backgroundColor: tc.bgCard }, confettiStyle]}>
-          <Text style={isCorrect ? styles.correctText : styles.wrongText}>
-            {isCorrect ? 'Correct! 🎉' : 'Not quite!'}
-          </Text>
+        <Animated.View style={[styles.feedbackContainer, { backgroundColor: tc.bgCard }]}>
+          {/* Confetti particles burst on correct answer */}
+          {showConfetti && (
+            <View style={styles.confettiContainer}>
+              {Array.from({ length: 12 }, (_, i) => (
+                <ConfettiParticle key={i} index={i} isActive={showConfetti} />
+              ))}
+            </View>
+          )}
+          <Animated.View style={feedbackStyle}>
+            <View style={styles.feedbackRow}>
+              <Icon
+                name={isCorrect ? 'check-circle' : 'x'}
+                size="md"
+                color={isCorrect ? colors.success : colors.error}
+              />
+              <Text style={isCorrect ? styles.correctText : styles.wrongText}>
+                {isCorrect
+                  ? t('stories.quizCorrect', { defaultValue: 'Correct!' })
+                  : t('stories.quizWrong', { defaultValue: 'Not quite!' })}
+              </Text>
+            </View>
+          </Animated.View>
           {data.explanation && (
-            <Pressable onPress={() => setShowExplanation(!showExplanation)}>
+            <Pressable
+              onPress={() => setShowExplanation(!showExplanation)}
+              accessibilityRole="button"
+              accessibilityLabel={showExplanation
+                ? t('stories.hideExplanation', { defaultValue: 'Hide explanation' })
+                : t('stories.showExplanation', { defaultValue: 'Show explanation' })}
+            >
               <Text style={styles.explanationToggle}>
-                {showExplanation ? 'Hide explanation' : 'Show explanation'}
+                {showExplanation
+                  ? t('stories.hideExplanation', { defaultValue: 'Hide explanation' })
+                  : t('stories.showExplanation', { defaultValue: 'Show explanation' })}
               </Text>
             </Pressable>
           )}
           {showExplanation && data.explanation && (
-            <Text style={styles.explanation}>
+            <Animated.Text entering={FadeIn.duration(200)} style={styles.explanation}>
               {data.explanation}
-            </Text>
+            </Animated.Text>
           )}
         </Animated.View>
       )}
@@ -161,7 +253,9 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
       {isCreator && (
         <View style={styles.creatorBadge}>
           <Icon name="eye" size="xs" color={colors.text.secondary} />
-          <Text style={styles.creatorText}>Creator view</Text>
+          <Text style={styles.creatorText}>
+            {t('stories.creatorView', { defaultValue: 'Creator view' })}
+          </Text>
         </View>
       )}
     </View>
@@ -228,18 +322,33 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.md,
     alignItems: 'center',
+    overflow: 'visible',
+  },
+  confettiContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 0,
+    height: 0,
+    zIndex: 10,
+  },
+  feedbackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
   correctText: {
     color: colors.success,
     fontSize: fontSize.md,
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    marginBottom: spacing.xs,
   },
   wrongText: {
     color: colors.error,
     fontSize: fontSize.md,
+    fontFamily: fonts.bodyBold,
     fontWeight: '700',
-    marginBottom: spacing.xs,
   },
   explanationToggle: {
     color: colors.emerald,

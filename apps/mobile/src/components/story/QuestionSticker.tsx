@@ -50,7 +50,6 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
   const [submittedQuestions, setSubmittedQuestions] = useState<SubmittedQuestion[]>(
     data.submittedQuestions || []
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showInput, setShowInput] = useState(!isCreator);
 
   const scale = useSharedValue(1);
@@ -71,21 +70,16 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
       userId: 'current-user',
     };
 
-    setIsSubmitting(true);
+    // Immediate optimistic update — no fake setTimeout
     scale.value = withSpring(0.95, animation.spring.snappy);
+    setSubmittedQuestions(prev => [newQuestion, ...prev]);
+    setInputText('');
+    Keyboard.dismiss();
+    scale.value = withSpring(1, animation.spring.snappy);
 
-    // Simulate submission delay
-    setTimeout(() => {
-      setSubmittedQuestions(prev => [newQuestion, ...prev]);
-      setInputText('');
-      setIsSubmitting(false);
-      scale.value = withSpring(1, animation.spring.snappy);
-      Keyboard.dismiss();
-
-      if (onResponse) {
-        onResponse(newQuestion.text);
-      }
-    }, 300);
+    if (onResponse) {
+      onResponse(newQuestion.text);
+    }
   };
 
   const handleReply = (questionId: string) => {
@@ -130,7 +124,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
             onChangeText={setInputText}
             multiline
             maxLength={200}
-            editable={!isSubmitting}
+            editable
             accessibilityLabel={t('accessibility.questionInput')}
             accessibilityHint="Type your question for the story creator"
           />
@@ -142,7 +136,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
                 inputText.trim().length === 0 && styles.submitButtonDisabled,
               ]}
               onPress={handleSubmit}
-              disabled={inputText.trim().length === 0 || isSubmitting}
+              disabled={inputText.trim().length === 0}
               accessibilityLabel={t('common.submit')}
               accessibilityRole="button"
             >

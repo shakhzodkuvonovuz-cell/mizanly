@@ -3,3 +3,8 @@ export { QuizSticker, type QuizStickerData, type QuizOption } from './QuizSticke
 export { QuestionSticker, type QuestionStickerData, type SubmittedQuestion } from './QuestionSticker';
 export { CountdownSticker, type CountdownStickerData } from './CountdownSticker';
 export { SliderSticker, type SliderStickerData } from './SliderSticker';
+export { AddYoursSticker } from './AddYoursSticker';
+export { LinkSticker } from './LinkSticker';
+export { GifSearch, GifStickerDisplay, type GifStickerData, type GifItem } from './GifSticker';
+export { MusicSticker, type MusicStickerData } from './MusicSticker';
+export { LocationSearch, LocationStickerDisplay, type LocationStickerData, type LocationData } from './LocationSticker';

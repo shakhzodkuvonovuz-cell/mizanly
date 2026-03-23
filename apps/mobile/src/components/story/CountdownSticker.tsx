@@ -129,7 +129,8 @@ export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, st
 
       {hasEnded ? (
         <View style={styles.endedContainer}>
-          <Text style={styles.endedTitle}>🎉 Event started!</Text>
+          <Icon name="check-circle" size="xl" color={colors.gold} />
+          <Text style={styles.endedTitle}>Event started!</Text>
           <Text style={styles.endedSubtitle}>
             The countdown is over. Enjoy the event!
           </Text>

@@ -29,6 +29,12 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi } from '@/services/api';
 import { showToast } from '@/components/ui/Toast';
 import { PollSticker, QuizSticker, QuestionSticker, CountdownSticker, SliderSticker } from '@/components/story';
+import { GifStickerDisplay } from '@/components/story/GifSticker';
+import { LocationStickerDisplay } from '@/components/story/LocationSticker';
+import { MusicSticker } from '@/components/story/MusicSticker';
+import { AddYoursSticker } from '@/components/story/AddYoursSticker';
+import { LinkSticker } from '@/components/story/LinkSticker';
+import * as Linking from 'expo-linking';
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
@@ -40,7 +46,7 @@ import { useStore } from '@/store';
 
 type Sticker = {
   id: string;
-  type: 'poll' | 'quiz' | 'question' | 'countdown' | 'slider' | 'location' | 'mention' | 'hashtag';
+  type: 'poll' | 'quiz' | 'question' | 'countdown' | 'slider' | 'location' | 'mention' | 'hashtag' | 'gif' | 'link' | 'addYours' | 'music';
   data: Record<string, unknown>;
   x: number;
   y: number;
@@ -323,11 +329,84 @@ const StoryGroupPage = memo(function StoryGroupPage({
           />
         );
       }
+      case 'gif': {
+        return (
+          <GifStickerDisplay
+            key={id}
+            data={{
+              gifUrl: String(data.gifUrl ?? ''),
+              gifPreviewUrl: String(data.gifPreviewUrl ?? ''),
+              gifWidth: typeof data.gifWidth === 'number' ? data.gifWidth : 200,
+              gifHeight: typeof data.gifHeight === 'number' ? data.gifHeight : 150,
+              gifTitle: String(data.gifTitle ?? ''),
+            }}
+            style={stickerStyle}
+          />
+        );
+      }
+      case 'link': {
+        return (
+          <LinkSticker
+            key={id}
+            url={String(data.url ?? '')}
+            title={data.title ? String(data.title) : undefined}
+            onPress={() => {
+              const url = String(data.url ?? '');
+              if (url) Linking.openURL(url).catch(() => {});
+            }}
+            style={stickerStyle}
+          />
+        );
+      }
+      case 'addYours': {
+        return (
+          <AddYoursSticker
+            key={id}
+            chainId={String(data.chainId ?? id)}
+            prompt={String(data.prompt ?? '')}
+            participantCount={typeof data.participantCount === 'number' ? data.participantCount : 0}
+            isCreator={isOwnStory}
+            onAddYours={() => handleStickerResponse(id, { action: 'addYours' })}
+            onViewResponses={isOwnStory ? () => handleStickerResponse(id, { action: 'viewResponses' }) : undefined}
+            style={stickerStyle}
+          />
+        );
+      }
+      case 'music': {
+        return (
+          <MusicSticker
+            key={id}
+            data={{
+              trackId: String(data.trackId ?? ''),
+              title: String(data.title ?? ''),
+              artist: String(data.artist ?? ''),
+              displayMode: (data.displayMode as 'compact' | 'lyrics' | 'waveform') || 'compact',
+              lyrics: Array.isArray(data.lyrics) ? data.lyrics as string[] : undefined,
+            }}
+            style={stickerStyle}
+          />
+        );
+      }
+      case 'location': {
+        return (
+          <LocationStickerDisplay
+            key={id}
+            data={{
+              locationId: String(data.locationId ?? ''),
+              locationName: String(data.locationName ?? data.name ?? ''),
+              locationAddress: data.locationAddress ? String(data.locationAddress) : undefined,
+              locationCity: data.locationCity ? String(data.locationCity) : undefined,
+            }}
+            onPress={() => handleStickerResponse(id, { action: 'viewLocation' })}
+            style={stickerStyle}
+          />
+        );
+      }
       default:
         return (
-          <View key={id} style={[stickerStyle, { backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: radius.md }]}>
-            <Text style={{ color: '#fff', fontSize: fontSize.sm }}>
-              {type === 'location' ? `\uD83D\uDCCD ${String(data.name ?? '')}` : type === 'mention' ? `@${String(data.username ?? '')}` : `#${String(data.tag ?? '')}`}
+          <View key={id} style={[stickerStyle, { backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full }]}>
+            <Text style={{ color: '#fff', fontSize: fontSize.sm, fontWeight: '600' }}>
+              {type === 'mention' ? `@${String(data.username ?? '')}` : `#${String(data.tag ?? '')}`}
             </Text>
           </View>
         );
