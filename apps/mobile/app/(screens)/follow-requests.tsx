@@ -65,7 +65,7 @@ function RequestRow({
             <Skeleton.Circle size={32} />
           ) : (
             <>
-              <Pressable accessibilityRole="button" onPress={onAccept}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('screens.followRequests.confirm')} onPress={onAccept}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
                   style={styles.acceptBtn}
@@ -73,7 +73,7 @@ function RequestRow({
                   <Text style={styles.acceptText}>{t('screens.followRequests.confirm')}</Text>
                 </LinearGradient>
               </Pressable>
-              <Pressable accessibilityRole="button" onPress={onDecline}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('common.delete')} onPress={onDecline}>
                 <LinearGradient
                   colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
                   style={styles.declineBtn}

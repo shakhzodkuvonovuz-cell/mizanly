@@ -428,7 +428,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderColor: tc.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   radioSelected: {
     borderColor: colors.emerald,
@@ -466,7 +466,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.active.white5,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   playButtonActive: {
     backgroundColor: colors.active.emerald10,
@@ -474,7 +474,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   playButtonSpacer: {
     width: 36,
     height: 36,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   // Separator
   separator: {
@@ -484,8 +484,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   saveBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.md,
     backgroundColor: 'rgba(13, 17, 23, 0.95)',

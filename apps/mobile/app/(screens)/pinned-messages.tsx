@@ -205,7 +205,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   messageContent: {
     flex: 1,
@@ -221,7 +221,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
   },
   unpinButton: {
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   senderName: {
     fontSize: fontSize.sm,
@@ -246,7 +246,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.sm,
   },
   mediaText: {
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
     fontSize: fontSize.sm,
     color: colors.text.secondary,
   },

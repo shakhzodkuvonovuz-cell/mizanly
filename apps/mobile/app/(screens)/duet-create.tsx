@@ -733,7 +733,7 @@ const styles = StyleSheet.create({
   reactYourPanel: {
     position: 'absolute',
     bottom: spacing.md,
-    right: spacing.md,
+    end: spacing.md,
     width: 100,
     height: 140,
   },
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
   panelLabelContainer: {
     position: 'absolute',
     top: spacing.sm,
-    left: spacing.sm,
+    start: spacing.sm,
     zIndex: 1,
     borderRadius: radius.sm,
     overflow: 'hidden',
@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
   panelUsername: {
     position: 'absolute',
     bottom: spacing.sm,
-    left: spacing.sm,
+    start: spacing.sm,
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
   },

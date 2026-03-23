@@ -249,6 +249,8 @@ function DonateScreenContent() {
               <Animated.View key={amt} entering={FadeInUp.delay(200 + index * 60).duration(350).springify()}>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={formatAmount(amt, currency)}
+                  accessibilityState={{ selected: isActive }}
                   style={[
                     styles.amountChip, { backgroundColor: tc.bgCard, borderColor: tc.border },
                     isActive && styles.amountChipActive,
@@ -299,7 +301,9 @@ function DonateScreenContent() {
         <View style={styles.currencyRow}>
           {CURRENCIES.map((cur) => (
             <Pressable
-              accessibilityRole="button"
+              accessibilityRole="radio"
+              accessibilityState={{ selected: currency === cur }}
+              accessibilityLabel={cur.toUpperCase()}
               key={cur}
               style={[styles.currencyPill, { backgroundColor: tc.bgCard, borderColor: tc.border }, currency === cur && styles.currencyPillActive]}
               onPress={() => setCurrency(cur)}
@@ -499,7 +503,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontSize: fontSize.md,
     fontWeight: '600',
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   customInput: {
     flex: 1,

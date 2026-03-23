@@ -142,7 +142,7 @@ export default function HashtagExploreScreen() {
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('common.clear')} hitSlop={8} onPress={() => setSearchQuery('')}>
                 <Icon name="x" size="xs" color={tc.text.secondary} />
               </Pressable>
             )}
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   info: {
     flex: 1,

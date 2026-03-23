@@ -69,7 +69,7 @@ function TrendingHashtagsSkeleton() {
       <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('discover.trendingNow')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trendingList}>
         {chips.map((i) => (
-          <Skeleton.Rect key={i} width={80} height={32} borderRadius={radius.full} style={{ marginRight: spacing.sm }} />
+          <Skeleton.Rect key={i} width={80} height={32} borderRadius={radius.full} style={{ marginEnd: spacing.sm }} />
         ))}
       </ScrollView>
     </View>
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   categoriesList: {
-    paddingRight: spacing.base,
+    paddingEnd: spacing.base,
     gap: spacing.sm,
   },
   categoryPill: {
@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   featuredList: {
-    paddingRight: spacing.base,
+    paddingEnd: spacing.base,
     gap: spacing.md,
   },
   featuredCard: {
@@ -678,14 +678,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   trendingList: {
-    paddingRight: spacing.base,
+    paddingEnd: spacing.base,
   },
   hashtagChip: {
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.dark.border,
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
     borderWidth: 0.5,
     borderColor: colors.gold,
   },
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
   videoIndicator: {
     position: 'absolute',
     bottom: spacing.xs,
-    right: spacing.xs,
+    end: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: radius.full,
     padding: spacing.xs,

@@ -628,15 +628,15 @@ const styles = StyleSheet.create({
   cameraOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     borderRadius: radius.lg,
   },
   recordOverlayButton: {
     position: 'absolute',
     bottom: spacing.lg,
-    right: spacing.lg,
+    end: spacing.lg,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -844,7 +844,7 @@ const styles = StyleSheet.create({
   plusBadge: {
     position: 'absolute',
     bottom: -4,
-    right: -4,
+    end: -4,
     width: 18,
     height: 18,
     borderRadius: radius.full,
@@ -925,8 +925,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
   },
   bottomBarGradient: {
     flexDirection: 'row',

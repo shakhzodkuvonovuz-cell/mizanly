@@ -99,7 +99,7 @@ export default function MajlisListsScreen() {
 
   const renderItem = ({ item, index }: { item: MajlisList; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-      <Pressable onPress={() => navigate(`/(screens)/majlis-list/${item.id}`)}>
+      <Pressable accessibilityRole="button" accessibilityLabel={item.name} onPress={() => navigate(`/(screens)/majlis-list/${item.id}`)}>
         <LinearGradient
           colors={colors.gradient.cardDark}
           style={styles.card}
@@ -132,6 +132,7 @@ export default function MajlisListsScreen() {
           </View>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={`${t('common.delete')} ${item.name}`}
             hitSlop={8}
             onPress={() => confirmDelete(item.id, item.name)}
           >
@@ -242,11 +243,14 @@ export default function MajlisListsScreen() {
                 <Text style={[styles.toggleTitle, { color: tc.text.primary }]}>{t('screens.majlis-lists.publicList')}</Text>
                 <Text style={[styles.toggleDesc, { color: tc.text.secondary }]}>{t('screens.majlis-lists.publicListDesc')}</Text>
               </View>
-              <Switch 
+              <Switch
                 value={isPublic}
                 onValueChange={setIsPublic}
                 trackColor={{ false: tc.surface, true: colors.emerald }}
                 thumbColor={tc.text.primary}
+                accessibilityRole="switch"
+                accessibilityLabel={t('screens.majlis-lists.publicList')}
+                accessibilityState={{ checked: isPublic }}
               />
             </View>
 

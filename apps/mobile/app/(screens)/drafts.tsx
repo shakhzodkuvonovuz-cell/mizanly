@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   draftIcon: {
     width: 40, height: 40, borderRadius: radius.md,
     alignItems: 'center', justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   draftContent: { flex: 1 },
   draftType: {
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   draftPreview: { color: colors.text.primary, fontSize: fontSize.base, marginTop: 2 },
   draftTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
-  draftDeleteBtn: { marginLeft: spacing.sm },
+  draftDeleteBtn: { marginStart: spacing.sm },
   deleteBtnGradient: {
     width: 32, height: 32, borderRadius: radius.md,
     alignItems: 'center', justifyContent: 'center',

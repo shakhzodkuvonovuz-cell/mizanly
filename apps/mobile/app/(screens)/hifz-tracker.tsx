@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
-    marginLeft: 28,
+    marginStart: 28,
   },
   sheetDot: {
     width: 16,

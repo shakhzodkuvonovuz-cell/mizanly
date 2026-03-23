@@ -250,7 +250,7 @@ export default function LinkChildAccountScreen() {
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('common.clear')} onPress={() => setSearchQuery('')} hitSlop={8}>
                 <Icon name="x" size="sm" color={tc.text.tertiary} />
               </Pressable>
             )}
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md, paddingHorizontal: spacing.sm,
     borderBottomWidth: 1, borderBottomColor: colors.dark.border,
   },
-  userInfo: { flex: 1, marginLeft: spacing.md },
+  userInfo: { flex: 1, marginStart: spacing.md },
   userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   userHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
 

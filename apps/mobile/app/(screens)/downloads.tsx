@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   typeBadge: {
     position: 'absolute',
     bottom: spacing.xs,
-    left: spacing.xs,
+    start: spacing.xs,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.xs,
     paddingVertical: 1,

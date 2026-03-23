@@ -146,16 +146,38 @@ function CashoutContent() {
     setAmountText(String(balance.diamonds));
   }, [balance, haptic]);
 
+  const MIN_WITHDRAWAL_DIAMONDS = Math.ceil(10 / DIAMOND_TO_USD); // $10 minimum
+
   const handleConfirm = useCallback(async () => {
     if (!selectedMethodId || amount <= 0 || !balance) return;
     if (amount > balance.diamonds) {
       showToast({ message: t('cashout.insufficientBalance', 'Amount exceeds available balance'), variant: 'error' });
       return;
     }
-    // Cash out requires Stripe payout integration.
-    // Show honest status instead of misleading "Coming Soon".
-    showToast({ message: t('cashout.payoutPendingMessage', 'Cash out requires payment processing to be configured. Your balance is tracked and will be available for withdrawal once payouts are enabled.'), variant: 'info' });
-  }, [amount, balance, selectedMethodId, haptic, t]);
+    if (amount < MIN_WITHDRAWAL_DIAMONDS) {
+      showToast({
+        message: t('cashout.minimumNotMet', 'Minimum withdrawal is $10.00 ({{diamonds}} diamonds)', { diamonds: String(MIN_WITHDRAWAL_DIAMONDS) }),
+        variant: 'error',
+      });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await walletApi.requestCashout({
+        amount,
+        payoutSpeed,
+        paymentMethodId: selectedMethodId,
+      });
+      haptic.success();
+      setSuccess(true);
+      showToast({ message: t('cashout.requestSubmitted', 'Cashout request submitted successfully'), variant: 'success' });
+    } catch {
+      haptic.error();
+      showToast({ message: t('cashout.requestFailed', 'Failed to process cashout. Please try again.'), variant: 'error' });
+    } finally {
+      setSubmitting(false);
+    }
+  }, [amount, balance, selectedMethodId, haptic, t, payoutSpeed, MIN_WITHDRAWAL_DIAMONDS]);
 
   if (success) {
     return (
@@ -311,6 +333,9 @@ function CashoutContent() {
               {fee > 0 && ` (${t('cashout.fee', 'fee')}: -$${fee.toFixed(2)})`}
             </Text>
           )}
+          <Text style={[styles.minimumText, { color: tc.text.tertiary }]}>
+            {t('cashout.minimumWithdrawal', 'Minimum withdrawal: $10.00')}
+          </Text>
         </Animated.View>
 
         {/* Payout Speed Selector */}
@@ -654,6 +679,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
     marginTop: spacing.sm,
+  },
+  minimumText: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
   },
 
   // Payout speed

@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   badgeRow: {
     position: 'absolute',
     top: spacing.xs,
-    left: spacing.xs,
+    start: spacing.xs,
     flexDirection: 'row',
     gap: spacing.xs,
   },
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     fontFamily: fonts.body,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   sellerRow: {
     flexDirection: 'row',

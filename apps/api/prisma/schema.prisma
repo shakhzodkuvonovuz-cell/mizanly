@@ -2688,15 +2688,19 @@ model AudioRoomParticipant {
 }
 
 model TwoFactorSecret {
-  id          String    @id @default(cuid())
-  userId      String    @unique
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  secret      String
-  isEnabled   Boolean   @default(false)
-  backupCodes String[]  @default([])
-  verifiedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secret          String
+  encryptedSecret String?
+  // TODO: Migrate existing secrets to encrypted column, then make secret nullable
+  isEnabled       Boolean   @default(false)
+  backupCodes     String[]  @default([])
+  backupSalt      String?
+  // TODO: Migrate existing SHA-256 hashes to HMAC-SHA256 with this salt
+  verifiedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@map("two_factor_secrets")
 }
@@ -2800,6 +2804,10 @@ model ConversationKeyEnvelope {
   version        Int          @default(1)
   createdAt      DateTime     @default(now())
 
+  // Race condition prevention: this unique constraint prevents duplicate envelopes
+  // for the same (conversation, user, version) tuple. First-message key exchange
+  // races are caught by the version=1 duplicate; application should handle the
+  // unique violation with a retry/upsert pattern rather than a bare create.
   @@unique([conversationId, userId, version])
   @@index([conversationId])
   @@index([userId])

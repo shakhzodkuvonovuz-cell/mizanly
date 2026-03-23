@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   miniCameraWrapper: {
     position: 'absolute',
     top: spacing.md,
-    right: spacing.md,
+    end: spacing.md,
     width: MINI_CAM_SIZE,
     height: MINI_CAM_SIZE,
     borderRadius: radius.full,
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   photoLabel: {
     position: 'absolute',
     bottom: spacing.sm,
-    left: spacing.sm,
+    start: spacing.sm,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,

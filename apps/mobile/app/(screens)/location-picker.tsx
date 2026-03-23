@@ -414,10 +414,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   coordLabelRight: {
-    marginLeft: spacing.base,
+    marginStart: spacing.base,
   },
   coordValue: {
     fontFamily: fonts.mono,

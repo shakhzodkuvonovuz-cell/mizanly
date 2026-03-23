@@ -751,8 +751,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   bottomOverlay: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.lg,
   },
@@ -901,7 +901,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   avatarWrap: {
     alignItems: 'center',
-    marginRight: spacing.lg,
+    marginEnd: spacing.lg,
   },
   avatarName: {
     color: colors.text.secondary,
@@ -937,7 +937,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   participantInfo: {
     flex: 1,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   participantName: {
     color: colors.text.primary,
@@ -985,14 +985,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
     maxHeight: 100,
   },
 
   // LIVE badge styles
   liveBadgeContainer: {
     position: 'absolute',
-    left: spacing.base,
+    start: spacing.base,
     zIndex: 100,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1038,8 +1038,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   floatingReactionsOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     zIndex: 50,
     pointerEvents: 'none',
@@ -1059,7 +1059,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   hostCrownBadgeLarge: {
     position: 'absolute',
     bottom: -4,
-    right: -4,
+    end: -4,
     width: 24,
     height: 24,
     borderRadius: radius.md,
@@ -1114,7 +1114,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   hostCrownBadge: {
     position: 'absolute',
     bottom: -2,
-    right: -2,
+    end: -2,
     width: 18,
     height: 18,
     borderRadius: radius.md,
@@ -1210,8 +1210,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   chatHeaderGlow: {
     position: 'absolute',
     bottom: -20,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 40,
     backgroundColor: colors.active.emerald10,
     borderRadius: radius.lg,

@@ -1,4 +1,4 @@
-# MASTER TODO — Every Single Finding (Updated 2026-03-23 Session 2, Waves 5+6+7 complete)
+# MASTER TODO — Every Single Finding (Updated 2026-03-23 Session 2, Waves 5+6+7+8 complete)
 
 > Consolidated from: 291 gaps audit, 80 DEFERRED_FIXES, 29-dimension audit, deploy checklist,
 > algorithm audit, UI/UX deep audit (March 19 + March 22), comprehensive audit (60-dim),
@@ -80,7 +80,7 @@
 - [x] BlurHash NOT in PostCard — FIXED (Wave 5 — blurhash threaded through PostCard→PostMedia→ProgressiveImage)
 - [x] No reaction picker on posts — FIXED (Wave 6 — ReactionPicker component created + wired)
 - [x] No story quick-reactions — ALREADY EXISTED (Wave 6 — enhanced styling)
-- [ ] No emoji picker component
+- [x] No emoji picker component — FIXED (Wave 8 — EmojiPicker.tsx)
 - [x] @mention not highlighted in RichText — already fixed
 - [x] No bidi text handling in RichText (Arabic in English post renders wrong) — FIXED (Wave 7 — RTL detection + writingDirection)
 - [x] Link preview not used in PostCard — ALREADY WIRED (verified Wave 5)
@@ -92,7 +92,7 @@
 - [x] Skeleton shimmer direction LTR — already fixed
 - [x] No shimmer stagger wave — N/A (Skeleton shimmer RTL already fixed, stagger is a design choice)
 - [x] Typing indicator text-only ("typing...") — FIXED (Wave 7 — TypingIndicator component with animated dots)
-- [ ] No voice message waveform visualization in chat bubbles
+- [x] No voice message waveform visualization in chat bubbles — FIXED (Wave 8 — VoiceWaveform.tsx)
 - [x] BottomSheet setTimeout race condition — ALREADY DONE (verified Wave 7 — uses runOnJS, no setTimeout)
 - [ ] ImageLightbox/ImageGallery 85% duplicated — 600+ lines near-identical code
 - [ ] LocationPicker is 100% mock — hardcoded locations, fake API delay
@@ -120,7 +120,7 @@
 - [x] Chat folders have no filter rules — FIXED (Wave 7 — FilterKey with archived + filterType)
 - [x] New conversation has no contact list — FIXED (Wave 7 — SectionList with Recent Contacts)
 - [x] Playlist can't be played — FIXED (Wave 7 — Play All + Shuffle with seeded shuffle)
-- [ ] Watch Party non-functional — requires typing raw video IDs, no sync
+- [x] Watch Party non-functional — FIXED (Wave 8 — video picker + share link)
 - [ ] No seller analytics in creator dashboard
 - [x] No payout history in cashout screen — FIXED (Wave 6 — payout history section added)
 - [x] No follower growth chart in analytics — FIXED (Wave 6 — FollowerGrowthChart bar chart)
@@ -136,12 +136,12 @@
 - [x] Mini player shows no video — FIXED (Wave 2)
 
 ### Chat & Messaging
-- [ ] No group invite link
+- [x] No group invite link — FIXED (Wave 8 — Share.share deep link)
 - [x] No read receipt toggle in settings — FIXED (Wave 6 — settings Privacy section)
 - [x] Can't share reel to DM — FIXED (Wave 6 — BottomSheet conversation picker)
 - [x] Images in chat not tappable — FIXED (Wave 3 — ImageLightbox)
 - [x] URLs in messages not linkified — FIXED (Wave 3 — RichText)
-- [ ] No mention autocomplete in post comments
+- [x] No mention autocomplete in post comments — FIXED (Wave 8 — MentionAutocomplete.tsx)
 
 ### Islamic Features
 - [x] No Arabic font on Quran/Hadith screens — ALREADY CORRECT (verified Wave 1)
@@ -149,7 +149,7 @@
 - [ ] Zero audio on any Islamic screen — no Quran recitation, Adhan, Dhikr beads, Dua audio
 - [x] Prayer location hardcoded — already dynamic
 - [x] Qibla direction hardcoded — already calculated
-- [ ] Qibla compass static — no magnetometer integration, arrow doesn't rotate with device
+- [x] Qibla compass static — FIXED (Wave 8 — Magnetometer integration)
 
 ### Backend/API
 - [x] Scheduled posts no timezone handling — FIXED (Wave 7 — UTC normalization + timezone field)
@@ -178,7 +178,7 @@
 
 ## MEDIUM — RTL Support (3)
 
-- [ ] ~202 instances of marginLeft/marginRight should be marginStart/marginEnd
+- [~] ~202 instances of marginLeft/marginRight should be marginStart/marginEnd — PARTIALLY FIXED (Wave 8 — 114 in 33 files converted)
 - [ ] ~314 CSS left:/right: properties should be start:/end:
 - [x] Skeleton shimmer direction not RTL-aware — already fixed
 
@@ -187,12 +187,12 @@
 ## MEDIUM — Performance (8)
 
 - [x] GDPR export take:10000 — FIXED (Wave 2 — reduced to 5000)
-- [ ] Trending feed: offset pagination + in-app scoring (refetches all rows per page)
-- [ ] "For you" feed: same offset + re-score pattern
-- [ ] live.service.ts list queries include full host object (heavy relation loads)
-- [ ] notifications.service.ts includes 4 optional relations regardless of notification type
-- [ ] No pgvector HNSW index on embeddings (needs raw SQL migration)
-- [ ] Trending sort in JS instead of SQL (needs raw SQL ORDER BY scoring)
+- [x] Trending feed: offset pagination + in-app scoring — FIXED (Wave 8 — cursor-based keyset pagination)
+- [x] "For you" feed: same offset + re-score pattern — ALREADY cursor-based (verified Wave 8)
+- [x] live.service.ts list queries include full host object — FIXED (Wave 8 — lightweight select)
+- [x] notifications.service.ts includes 4 optional relations regardless of notification type — FIXED (Wave 8 — buildContentIncludes)
+- [x] No pgvector HNSW index on embeddings — FIXED (Wave 8 — migration.sql)
+- [x] Trending sort in JS instead of SQL — FIXED (Wave 8 — decay scoring)
 - [x] risalah.tsx keyExtractor — already has
 
 ---
@@ -200,7 +200,7 @@
 ## MEDIUM — Hardcoded Strings / i18n Gaps (3)
 
 - [x] ~50+ hardcoded English strings — FIXED (Wave 2 — search 28 keys, edit-profile 1 key, thread/[id] 4 keys; minbar/achievements/marketplace/discover already use t())
-- [ ] ar.json and tr.json have 6 extra keys not in en.json
+- [x] ar.json and tr.json have 6 extra keys not in en.json — FIXED (Wave 8 — orphaned keys removed)
 - [x] FlashList estimatedItemSize — already has on all FlashLists
 
 ---
@@ -222,9 +222,9 @@
 - [x] No exploration mechanism (new content with 0 views never surfaces) — FIXED (Wave 7 — 15% fresh content slots)
 - [ ] Scoring weights hardcoded (no A/B testing)
 - [x] Session signals in-memory only (resets on restart, won't scale) — FIXED (Wave 7 — migrated to Redis hashes)
-- [ ] Islamic boost uses hardcoded prayer hours (not location-aware)
+- [x] Islamic boost uses hardcoded prayer hours — FIXED (Wave 8 — prayer-calculator)
 - [x] Diversity reranking too naive (only same-author prevention) — FIXED (Wave 7 — hashtag diversity 2-pass pipeline)
-- [ ] Trending window 48 hours (popular-get-more-popular loop)
+- [x] Trending window 48 hours — FIXED (Wave 8 — 24h with decay)
 
 ---
 
@@ -250,13 +250,13 @@
 - [x] F11: ScholarQuestionVote — FIXED (Wave 3)
 - [x] F12: HalalVerifyVote — FIXED (Wave 3)
 - [ ] P1-CASCADE-10/11: Report reporter/reportedUser SetNull
-- [ ] P1-DANGLING-01-08: 8 dangling FK references
+- [~] P1-DANGLING-01-08: 8 dangling FK references — PARTIALLY FIXED (Wave 8 — 5 of 8)
 - [ ] P1-FKARRAY-01-03: String[] arrays to join tables
 - [x] P1-INDEX-06-08: Missing indexes — FIXED (Wave 3 — CallSession, Embedding, Order)
 - [ ] P1-MONEY-01-04: Float to Decimal remaining fields (CoinBalance.balance, Product.price)
 - [ ] P1-DESIGN-01-04: Notification polymorphic table, TwoFactorSecret encryption
 - [ ] P2-001: Mixed cuid/uuid ID strategy (94 cuid + 61 uuid)
-- [ ] P2-003: 41 String fields should be enums — PARTIALLY FIXED (Wave 6+7 — 20 of 41 converted)
+- [x] P2-003: 41 String fields should be enums — COMPLETE (Wave 8 — all 41 done, 55 total enums)
 
 ---
 
@@ -264,7 +264,7 @@
 
 ### Security & Auth
 - [x] [03] F16: 2FA disconnected from login flow — FIXED (Wave 6 — twoFactorEnabled flag in getMe)
-- [ ] [03] F28: Hardcoded English in push notifications (needs backend i18n with user locale)
+- [x] [03] F28: Hardcoded English in push notifications — FIXED (Wave 8 — template map with i18n)
 - [x] [03] F33: updateControls no PIN re-verification — ALREADY IMPLEMENTED (verified Wave 6)
 - [x] [13] F24: Ban doesn't invalidate Clerk session — FIXED (Wave 6 — Clerk banUser/unbanUser SDK)
 
@@ -276,11 +276,11 @@
 - [x] [10] F8/9/10: Prompt injection — FIXED (Wave 5 — 7 prompts hardened with XML delimiters + DATA ONLY)
 - [x] [10] F16/17/18: AI cost controls — FIXED (Wave 6 — per-user daily quota, 429 status)
 - [x] [10] F25: Translation cache invalidation — FIXED (Wave 4)
-- [ ] [10] F26: Story chain participant count race condition ($transaction needed)
+- [x] [10] F26: Story chain participant count race condition — FIXED (Wave 8 — $transaction)
 - [x] [13] F07: Reports service resolve — ALREADY FIXED (verified Wave 3 Agent 4 — lines 256-267 handle CONTENT_REMOVED)
 - [x] [13] F18: autoRemoveContent ignores comments — ALREADY FIXED (verified Wave 3 Agent 4 — in content-safety.service.ts)
 - [x] [13] F21: Admin resolveReport creates no ModerationLog — ALREADY FIXED (verified Wave 3 Agent 4 — lines 180-195)
-- [ ] [13] F27: Duplicate moderation systems (moderation.service + content-safety.service)
+- [x] [13] F27: Duplicate moderation systems — FIXED (Wave 8 — documented + deprecated unused)
 - [x] [13] F28: flagContent sets reporterId to content creator — ALREADY FIXED (verified Wave 3 Agent 4 — null for auto-flagged)
 - [x] [13] F30: Reports resolve doesn't handle WARN/BAN actions — ALREADY FIXED (verified Wave 3 Agent 4 — lines 270-296)
 
@@ -289,15 +289,15 @@
 - [x] [14] C-02: Wire dead notification types — FIXED (Wave 4 — 8 emissions in 5 modules)
 - [~] [14] C-03: Real-time socket notification delivery — PARTIALLY DONE (verified Wave 4 Agent 4 — Redis publish added in Wave 3)
 - [x] [14] C-05: Notification dedup — FIXED (Wave 3)
-- [ ] [14] C-08: Expo access token for push service auth
+- [x] [14] C-08: Expo access token for push service auth — FIXED (Wave 8 — Authorization header)
 - [x] [14] M-07: Notification cleanup cron — FIXED (Wave 4)
 - [x] [14] M-09: unread-counts endpoint — FIXED (Wave 3)
 
 ### Infrastructure
 - [x] [06] F19: Scheduled message auto-send — FIXED (Wave 4)
-- [ ] [06] F35: Chat export unbounded memory (needs streaming with chunked DB reads)
+- [x] [06] F35: Chat export unbounded memory — FIXED (Wave 8 — chunked 500)
 - [x] [06] F40-42: Quran room management — FIXED (Wave 4)
-- [ ] [08] F10: Challenge accepts absolute progress (needs server-side tracking)
+- [x] [08] F10: Challenge accepts absolute progress — FIXED (Wave 8 — increment capped at 1)
 - [x] [08] F24: Sticker count atomic — FIXED (Wave 4)
 - [x] [12] F16: Meilisearch filter bypass — FIXED (Wave 5 — search index delete on moderation block)
 - [x] [19] M12: No dead letter queue for BullMQ — FIXED (Wave 5 — moveToDlq in queue.service + 6 processors)
@@ -377,28 +377,28 @@ Not listed individually here — see GAPS_COMPLETE_VERIFIED_2026_03_23.md sectio
 | Critical (launch blockers) | 12 | 0 | 12 |
 | High (broken features) | 24 | 19 | 5 |
 | High (rule violations/bugs) | 15 | 15 | 0 |
-| Medium (UI/UX quality) | 74 | 53 | 21 |
+| Medium (UI/UX quality) | 74 | 59 | 15 |
 | Medium (accessibility) | 5 | 0 | 5 |
 | Medium (RTL) | 3 | 1 | 2 |
-| Medium (performance) | 8 | 2 | 6 |
-| Medium (i18n gaps) | 3 | 2 | 1 |
+| Medium (performance) | 8 | 8 | 0 |
+| Medium (i18n gaps) | 3 | 3 | 0 |
 | Medium (stale docs) | 6 | 6 | 0 |
-| Algorithm | 7 | 3 | 4 |
-| Schema migrations | 27 | 14 | 13 |
-| Code fixes deferred | 31 | 25 | 6 |
+| Algorithm | 7 | 5 | 2 |
+| Schema migrations | 27 | 16 | 11 |
+| Code fixes deferred | 31 | 31 | 0 |
 | Installed not wired | 6 | 0 | 6 |
 | Tests incomplete | 10 | 7 | 3 |
 | Translations | 7 | 0 | 7 |
 | Infrastructure | 8 | 0 | 8 |
 | Large file decomposition | 4 | 0 | 4 |
 | Competitor features | 140 | 0 | 140 |
-| **TOTAL** | **389** | **147** | **242** |
+| **TOTAL** | **389** | **170** | **219** |
 
 ---
 
 ## SESSION 2 PROGRESS (2026-03-23)
 
-**147 items verified done across 7 waves (includes items verified already-fixed).**
+**170 items verified done across 8 waves (includes items verified already-fixed).**
 
 | Wave | Focus | Key Fixes |
 |------|-------|-----------|
@@ -409,5 +409,7 @@ Not listed individually here — see GAPS_COMPLETE_VERIFIED_2026_03_23.md sectio
 | Wave 5 | Dead APIs + security + UX gaps | altProfileApi→flipside.tsx, communityNotesApi→post/[id].tsx, BlurHash in PostCard chain, "Edited" label, feed scroll position restore, maintenance.tsx, Meilisearch index cleanup, BullMQ dead letter queue, AI prompt injection hardening (7 prompts), StarredMessage join table, 35 accessibility labels |
 | Wave 6 | Engagement + safety + schema | ReactionPicker component, ForceUpdateModal, app rating prompt, share reel to DM, unfollow confirmation, read receipt toggle, payout history, FollowerGrowthChart, rate limit 429 retry, token refresh 401 recovery, AI cost controls (per-user daily quota), Meilisearch enhanced indexes, ban session invalidation (Clerk SDK), 2FA login flow, CoinTransactionType enum, CoinTransaction currency, 10 String→Enum schema conversions |
 | Wave 7 | Algorithm + chat + tests + polish | RTL bidi text in RichText, TypingIndicator animated dots, profile grid/list toggle, repost attribution, chat folder filter rules, new conversation contact list, playlist Play All + Shuffle, scheduled posts timezone, trending feed Redis cache, device fingerprinting, exploration mechanism (15% fresh slots), session signals→Redis, diversity reranking (hashtag 2-pass), 5 schema indexes (m-18/19/20), 10 more String→Enum (20/41 total), search tests +12 error paths, embeddings tests +15 error paths, data export formatted text + JSON, account settings cache info, donate/gift-shop/waqf Stripe wiring |
+| Wave 8 | Performance + schema + components | EmojiPicker.tsx, VoiceWaveform.tsx, MentionAutocomplete.tsx, Watch Party video picker + share link, group invite deep link, Qibla compass Magnetometer, trending/foryou cursor-based pagination, live.service lightweight select, notifications buildContentIncludes, pgvector HNSW index, trending decay scoring, ar/tr orphaned keys removed, P2-003 String→Enum complete (all 41, 55 total enums), P1-DANGLING 5/8 FKs, story chain $transaction, chat export chunked 500, challenge increment capped, push i18n template map, Expo access token auth, duplicate moderation documented, Islamic boost prayer-calculator, trending 24h decay, RTL marginStart/End 114 in 33 files |
+| Wave 9 | In progress | Inconsistent progress indicators, static Dimensions bakra |
 
 **Test suite: 4,552+ tests passing, 0 failures, 0 TypeScript errors.**

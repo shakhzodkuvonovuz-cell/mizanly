@@ -193,7 +193,9 @@ function CrossPostContent() {
             const isSelected = selectedSpaces.has(space.key);
             return (
               <Pressable
-                accessibilityRole="button"
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={t(space.tKey)}
                 key={space.key}
                 style={[
                   styles.spaceOption,
@@ -387,8 +389,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.md,
     backgroundColor: colors.dark.bg,

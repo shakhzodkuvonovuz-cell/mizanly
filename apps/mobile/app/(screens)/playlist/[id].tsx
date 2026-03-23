@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   durationBadge: {
-    position: 'absolute', bottom: 4, right: 4,
+    position: 'absolute', bottom: 4, end: 4,
     paddingHorizontal: 4, paddingVertical: 2, borderRadius: radius.sm,
   },
   durationText: { color: '#fff', fontSize: fontSize.xs },

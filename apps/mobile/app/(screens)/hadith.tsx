@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   bookmarkIndicator: {
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
     padding: spacing.xs,
   },
   infoCard: {

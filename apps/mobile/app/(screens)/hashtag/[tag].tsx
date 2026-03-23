@@ -283,7 +283,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   gridText: { color: colors.text.primary, fontSize: fontSize.xs },
   carouselBadge: {
-    position: 'absolute', top: 6, right: 6,
+    position: 'absolute', top: 6, end: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3,
   },
 });

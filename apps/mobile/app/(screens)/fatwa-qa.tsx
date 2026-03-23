@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   askLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 1 },
   inputWrap: { position: 'relative' },
   questionInput: { backgroundColor: colors.dark.bgCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.dark.border, padding: spacing.base, color: colors.text.primary, fontSize: fontSize.base, minHeight: 150, textAlignVertical: 'top' },
-  charRingWrap: { position: 'absolute', bottom: spacing.sm, right: spacing.sm },
+  charRingWrap: { position: 'absolute', bottom: spacing.sm, end: spacing.sm },
   madhabSelector: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.dark.bgCard, borderRadius: radius.md, borderWidth: 1, borderColor: colors.dark.border, padding: spacing.md },
   madhabSelectorText: { color: colors.text.primary, fontSize: fontSize.base },
   submitBtn: { marginTop: spacing.xl, borderRadius: radius.md, overflow: 'hidden' },

@@ -343,6 +343,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
           <Pressable
             onPress={handlePress}
             style={styles.notifThumb}
+            accessibilityRole="button"
             accessibilityLabel={t('notifications.viewContent')}
           >
             <ProgressiveImage
@@ -586,13 +587,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   requestActions: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center' },
 
   notifThumb: {
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   followBackBtn: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radius.sm,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   followBackText: {
     color: '#fff',
@@ -603,7 +604,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radius.sm,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   followingText: {
     fontSize: fontSize.sm,

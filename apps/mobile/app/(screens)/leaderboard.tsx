@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   medalBadge: {
     position: 'absolute',
     bottom: -4,
-    right: -4,
+    end: -4,
     width: 22,
     height: 22,
     borderRadius: radius.full,

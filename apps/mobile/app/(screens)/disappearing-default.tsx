@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   },
   optionTextContainer: {
     flex: 1,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   optionLabel: {
     fontFamily: fonts.bodySemiBold,

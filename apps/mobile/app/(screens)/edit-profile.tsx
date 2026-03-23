@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
 
   saveButtonWrap: {
-    position: 'absolute', right: spacing.base, zIndex: 101,
+    position: 'absolute', end: spacing.base, zIndex: 101,
     alignItems: 'flex-end',
   },
 
@@ -629,12 +629,12 @@ const styles = StyleSheet.create({
 
   // Avatar styles
   avatarWrap: {
-    marginLeft: spacing.base, marginTop: -40, marginBottom: spacing.md,
+    marginStart: spacing.base, marginTop: -40, marginBottom: spacing.md,
     alignSelf: 'flex-start',
   },
   avatarContainer: { position: 'relative' },
   avatarEdit: {
-    position: 'absolute', bottom: 0, right: 0,
+    position: 'absolute', bottom: 0, end: 0,
     width: 36, height: 36, borderRadius: radius.full,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 3, borderColor: colors.dark.bg,
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   label: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
-  fieldHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2, marginLeft: 40 },
+  fieldHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2, marginStart: 40 },
   input: {
     color: colors.text.primary, fontSize: fontSize.base,
     paddingVertical: Platform.OS === 'ios' ? spacing.xs : 0,
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
   iconInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   iconInput: { flex: 1 },
   charCountWrap: { alignItems: 'flex-end', marginTop: spacing.xs },
-  usernameText: { color: colors.text.secondary, fontSize: fontSize.base, marginLeft: 40 },
+  usernameText: { color: colors.text.secondary, fontSize: fontSize.base, marginStart: 40 },
 
   // Premium Toggle Switch
   toggleTextContainer: { flex: 1 },

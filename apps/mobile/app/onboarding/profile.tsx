@@ -36,10 +36,10 @@ function OnboardingProfileScreenContent() {
   const [nameFocused, setNameFocused] = useState(false);
   const [bioFocused, setBioFocused] = useState(false);
 
-  // Animated progress bar (step 2 = 50%)
+  // Animated progress bar (step 2 of 4 = 50%)
   const progressWidth = useSharedValue(0);
   useEffect(() => {
-    progressWidth.value = withSpring(100, animation.spring.responsive);
+    progressWidth.value = withSpring(50, animation.spring.responsive);
   }, []);
 
   const progressStyle = useAnimatedStyle(() => ({

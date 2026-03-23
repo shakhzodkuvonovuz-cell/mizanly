@@ -25,7 +25,9 @@ import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { creatorApi } from '@/services/creatorApi';
+import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
+import { formatCount } from '@/utils/formatCount';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.4;
@@ -77,10 +79,17 @@ interface BestTimeSlot {
   engagement: number;
 }
 
+interface SalesData {
+  totalSalesRevenue: number;
+  totalOrders: number;
+  topProducts: { id: string; title: string; unitsSold: number; revenue: number }[];
+}
+
 const TABS = [
   { key: 'content', label: 'Content' },
   { key: 'audience', label: 'Audience' },
   { key: 'revenue', label: 'Revenue' },
+  { key: 'sales', label: 'Sales' },
 ] as const;
 
 function CreatorDashboardContent() {
@@ -97,6 +106,7 @@ function CreatorDashboardContent() {
   const [audienceData, setAudienceData] = useState<AudienceData | null>(null);
   const [revenueData, setRevenueData] = useState<RevenueData | null>(null);
   const [bestTimes, setBestTimes] = useState<BestTimeSlot[]>([]);
+  const [salesData, setSalesData] = useState<SalesData | null>(null);
 
   const translatedTabs = useMemo(
     () =>
@@ -107,7 +117,9 @@ function CreatorDashboardContent() {
             ? t('creatorDashboard.tabContent', 'Content')
             : tab.key === 'audience'
               ? t('creatorDashboard.tabAudience', 'Audience')
-              : t('creatorDashboard.tabRevenue', 'Revenue'),
+              : tab.key === 'sales'
+                ? t('creatorDashboard.tabSales', 'Sales')
+                : t('creatorDashboard.tabRevenue', 'Revenue'),
       })),
     [t],
   );
@@ -159,6 +171,38 @@ function CreatorDashboardContent() {
 
       setAudienceData(audienceRes as AudienceData);
       setRevenueData(revenueRes as RevenueData);
+
+      // Load seller order data for Sales tab
+      try {
+        const ordersRes = await commerceApi.getMyOrders();
+        const orders = (ordersRes as { data?: Array<{ id: string; status: string; totalAmount?: number; product?: { id: string; title: string; price: number } }> })?.data ?? [];
+        const completedOrders = orders.filter((o) => o.status === 'completed' || o.status === 'delivered');
+        const totalSalesRevenue = completedOrders.reduce((sum, o) => sum + (o.totalAmount ?? o.product?.price ?? 0), 0);
+        // Aggregate top products
+        const productMap = new Map<string, { id: string; title: string; unitsSold: number; revenue: number }>();
+        for (const order of completedOrders) {
+          if (order.product) {
+            const existing = productMap.get(order.product.id);
+            if (existing) {
+              existing.unitsSold += 1;
+              existing.revenue += order.totalAmount ?? order.product.price ?? 0;
+            } else {
+              productMap.set(order.product.id, {
+                id: order.product.id,
+                title: order.product.title,
+                unitsSold: 1,
+                revenue: order.totalAmount ?? order.product.price ?? 0,
+              });
+            }
+          }
+        }
+        const topProducts = Array.from(productMap.values())
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 5);
+        setSalesData({ totalSalesRevenue, totalOrders: completedOrders.length, topProducts });
+      } catch {
+        // Sales data not available — keep null (shows empty state)
+      }
     } catch {
       // Show empty state on failure
     } finally {
@@ -452,6 +496,86 @@ function CreatorDashboardContent() {
     );
   }, [revenueData, t]);
 
+  const renderSalesTab = useCallback(() => {
+    if (!salesData || (salesData.totalOrders === 0 && salesData.topProducts.length === 0)) {
+      return (
+        <EmptyState
+          icon="layers"
+          title={t('creatorDashboard.noSales', 'No sales data yet')}
+          subtitle={t('creatorDashboard.noSalesSub', 'Start selling products to see your sales analytics')}
+        />
+      );
+    }
+
+    return (
+      <View style={styles.tabContent}>
+        {/* Sales Summary Cards */}
+        <View style={styles.salesSummaryRow}>
+          <Animated.View
+            entering={FadeInDown.delay(0).duration(300)}
+            style={[styles.salesSummaryCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+          >
+            <View style={[styles.overviewIconBg, { backgroundColor: `${colors.gold}15` }]}>
+              <Icon name="bar-chart-2" size="sm" color={colors.gold} />
+            </View>
+            <Text style={[styles.salesSummaryValue, { color: tc.text.primary }]}>
+              ${salesData.totalSalesRevenue.toFixed(2)}
+            </Text>
+            <Text style={[styles.salesSummaryLabel, { color: tc.text.secondary }]}>
+              {t('creatorDashboard.totalSalesRevenue', 'Total Sales Revenue')}
+            </Text>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(80).duration(300)}
+            style={[styles.salesSummaryCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+          >
+            <View style={[styles.overviewIconBg, { backgroundColor: `${colors.emerald}15` }]}>
+              <Icon name="check-circle" size="sm" color={colors.emerald} />
+            </View>
+            <Text style={[styles.salesSummaryValue, { color: tc.text.primary }]}>
+              {formatCount(salesData.totalOrders)}
+            </Text>
+            <Text style={[styles.salesSummaryLabel, { color: tc.text.secondary }]}>
+              {t('creatorDashboard.completedOrders', 'Completed Orders')}
+            </Text>
+          </Animated.View>
+        </View>
+
+        {/* Top Selling Products */}
+        {salesData.topProducts.length > 0 && (
+          <>
+            <Text style={[styles.subsectionTitle, { color: tc.text.primary }]}>
+              {t('creatorDashboard.topProducts', 'Top Selling Products')}
+            </Text>
+            {salesData.topProducts.map((product, index) => (
+              <Animated.View
+                key={product.id}
+                entering={FadeInDown.delay(index * 60).duration(300)}
+                style={[styles.topProductRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+              >
+                <View style={[styles.topProductRank, { backgroundColor: `${colors.gold}15` }]}>
+                  <Text style={[styles.topProductRankText, { color: colors.gold }]}>{index + 1}</Text>
+                </View>
+                <View style={styles.topProductInfo}>
+                  <Text style={[styles.topProductTitle, { color: tc.text.primary }]} numberOfLines={1}>
+                    {product.title}
+                  </Text>
+                  <Text style={[styles.topProductMeta, { color: tc.text.secondary }]}>
+                    {formatCount(product.unitsSold)} {t('creatorDashboard.unitsSold', 'sold')}
+                  </Text>
+                </View>
+                <Text style={[styles.topProductRevenue, { color: colors.emerald }]}>
+                  ${product.revenue.toFixed(2)}
+                </Text>
+              </Animated.View>
+            ))}
+          </>
+        )}
+      </View>
+    );
+  }, [salesData, t, tc]);
+
   if (loading) {
     return (
       <View style={[styles.screen, { paddingTop: insets.top + 60 }]}>
@@ -524,6 +648,7 @@ function CreatorDashboardContent() {
         {activeTab === 'content' ? renderContentTab() : null}
         {activeTab === 'audience' ? renderAudienceTab() : null}
         {activeTab === 'revenue' ? renderRevenueTab() : null}
+        {activeTab === 'sales' ? renderSalesTab() : null}
       </ScrollView>
     </View>
   );
@@ -555,7 +680,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     padding: spacing.base,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
     gap: spacing.sm,
   },
   overviewScroll: {
@@ -633,8 +758,8 @@ const styles = StyleSheet.create({
   postOverlay: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
   },
@@ -865,5 +990,65 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     width: 50,
     textAlign: 'right',
+  },
+  salesSummaryRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.base,
+  },
+  salesSummaryCard: {
+    flex: 1,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    padding: spacing.base,
+    gap: spacing.xs,
+  },
+  salesSummaryValue: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.lg,
+    color: colors.text.primary,
+  },
+  salesSummaryLabel: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+  },
+  topProductRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 0.5,
+    padding: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  topProductRank: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topProductRankText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.base,
+  },
+  topProductInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  topProductTitle: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.base,
+    color: colors.text.primary,
+  },
+  topProductMeta: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+  },
+  topProductRevenue: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.base,
   },
 });

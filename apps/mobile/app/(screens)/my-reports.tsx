@@ -237,12 +237,12 @@ const styles = StyleSheet.create({
   target: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    marginLeft: 32,
+    marginStart: 32,
   },
   date: {
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
     marginTop: 4,
-    marginLeft: 32,
+    marginStart: 32,
   },
 });

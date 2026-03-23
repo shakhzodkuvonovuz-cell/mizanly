@@ -346,7 +346,7 @@ export default function CreateVideoScreen() {
 
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 52 }}>
           {/* Video picker */}
-          <Pressable style={[styles.videoPicker, { backgroundColor: tc.surface }]} onPress={pickVideo}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('createVideo.selectVideo')} style={[styles.videoPicker, { backgroundColor: tc.surface }]} onPress={pickVideo}>
             {video ? (
               <>
                 <Video
@@ -374,7 +374,7 @@ export default function CreateVideoScreen() {
           {/* Thumbnail picker */}
           <View style={styles.thumbnailSection}>
             <Text style={styles.sectionLabel}>{t('createVideo.thumbnailOptional')}</Text>
-            <Pressable style={[styles.thumbnailPicker, { backgroundColor: tc.surface }]} onPress={pickThumbnail}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('createVideo.pickThumbnail')} style={[styles.thumbnailPicker, { backgroundColor: tc.surface }]} onPress={pickThumbnail}>
               {thumbnailUri ? (
                 <ProgressiveImage uri={thumbnailUri} width="100%" height={200} contentFit="cover" />
               ) : (
@@ -432,6 +432,8 @@ export default function CreateVideoScreen() {
           {video && (
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('ai.captions.title')}
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: tc.border }}
                 onPress={() => navigate('/(screens)/caption-editor', { videoUri: video.uri })}
               >
@@ -439,6 +441,8 @@ export default function CreateVideoScreen() {
                 <Text style={{ color: tc.text.primary, fontSize: fontSize.sm }}>{t('ai.captions.title')}</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('common.edit')}
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: tc.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: tc.border }}
                 onPress={() => navigate('/(screens)/video-editor', { uri: video.uri })}
               >
@@ -504,7 +508,7 @@ export default function CreateVideoScreen() {
                 onChangeText={setTagInput}
                 onSubmitEditing={addTag}
               />
-              <Pressable style={styles.tagAddButton} onPress={addTag}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('createVideo.tagsField')} style={styles.tagAddButton} onPress={addTag} hitSlop={8}>
                 <Icon name="plus" size="xs" color={tc.text.primary} />
               </Pressable>
             </View>
@@ -513,7 +517,7 @@ export default function CreateVideoScreen() {
                 {tags.map(tag => (
                   <View key={tag} style={[styles.tagChip, { backgroundColor: tc.bgElevated }]}>
                     <Text style={styles.tagText}>#{tag}</Text>
-                    <Pressable onPress={() => removeTag(tag)} hitSlop={8}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={`${t('common.remove')} ${tag}`} onPress={() => removeTag(tag)} hitSlop={8}>
                       <Icon name="x" size={10} color={tc.text.secondary} />
                     </Pressable>
                   </View>
@@ -560,7 +564,9 @@ export default function CreateVideoScreen() {
                 <Text style={styles.toggleSubtitle}>{t('createVideo.normalizeAudioDesc')}</Text>
               </View>
               <Pressable
-                accessibilityRole="button"
+                accessibilityRole="switch"
+                accessibilityState={{ checked: normalizeAudio }}
+                accessibilityLabel={t('createVideo.normalizeAudio')}
                 onPress={() => setNormalizeAudio(!normalizeAudio)}
                 style={[styles.toggle, normalizeAudio && styles.toggleActive]}
               >
@@ -700,8 +706,8 @@ const styles = StyleSheet.create({
   videoOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',

@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  actionText: { flex: 1, marginRight: spacing.md },
+  actionText: { flex: 1, marginEnd: spacing.md },
   actionLabel: {
     color: colors.text.primary,
     fontSize: fontSize.base,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  infoText: { flex: 1, marginRight: spacing.md },
+  infoText: { flex: 1, marginEnd: spacing.md },
   infoLabel: {
     color: colors.text.primary,
     fontSize: fontSize.base,
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 0.5,
     backgroundColor: colors.active.white6,
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
   },
   footerNote: {
     color: colors.text.tertiary,

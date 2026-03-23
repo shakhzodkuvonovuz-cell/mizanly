@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   charCountWrapper: {
-    position: 'absolute', bottom: spacing.sm, right: spacing.sm,
+    position: 'absolute', bottom: spacing.sm, end: spacing.sm,
   },
   // Type selector
   typeSelector: {

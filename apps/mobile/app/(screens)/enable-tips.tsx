@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   configTitle: {
     fontFamily: fonts.bodySemiBold,
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSize.md,
     color: colors.text.tertiary,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   customInput: {
     flex: 1,
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
   },
   toggleContent: {
     flex: 1,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   toggleLabel: {
     fontFamily: fonts.body,
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
   charCountContainer: {
     position: 'absolute',
     bottom: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
   },
   connectButton: {
     marginBottom: spacing.sm,

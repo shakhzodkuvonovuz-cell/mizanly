@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   dataSaverInfo: {
     flex: 1,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   dataSaverTitle: {
     fontFamily: fonts.bodySemiBold,
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.dark.border,
   },
   settingIcon: {
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   settingLabel: {
     flex: 1,

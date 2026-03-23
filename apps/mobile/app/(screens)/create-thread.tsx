@@ -238,7 +238,7 @@ function ThreadPart({
             </Pressable>
 
             {onTogglePoll && (
-              <Pressable onPress={onTogglePoll} hitSlop={8}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('compose.poll')} onPress={onTogglePoll} hitSlop={8}>
                 <LinearGradient
                   colors={hasPoll ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                   style={styles.toolbarBtnGradient}
@@ -513,7 +513,7 @@ export default function CreateThreadScreen() {
           ) : circles.length === 0 ? (
             <View style={styles.emptyCircles}>
               <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
-              <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('compose.createCircle')} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
                 <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.emerald} />
               </Pressable>
@@ -605,7 +605,7 @@ export default function CreateThreadScreen() {
                       <Icon name="bar-chart-2" size="sm" color={tc.bg} />
                     </LinearGradient>
                     <Text style={styles.pollFormTitle}>{t('compose.poll')}</Text>
-                    <Pressable onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={t('common.remove')} onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                       <LinearGradient
                         colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
                         style={styles.pollRemoveBtn}
@@ -658,7 +658,9 @@ export default function CreateThreadScreen() {
                     </Pressable>
                   )}
                   <Pressable
-                    accessibilityRole="button"
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: poll.allowMultiple }}
+                    accessibilityLabel={t('compose.allowMultipleAnswers')}
                     style={styles.pollAllowMultiple}
                     onPress={() => setPoll((p) => p ? { ...p, allowMultiple: !p.allowMultiple } : p)}
                   >
@@ -754,7 +756,7 @@ const styles = StyleSheet.create({
   part: {
     flexDirection: 'row', paddingHorizontal: spacing.base, paddingTop: spacing.md,
   },
-  partLeft: { alignItems: 'center', marginRight: spacing.sm, width: 42 },
+  partLeft: { alignItems: 'center', marginEnd: spacing.sm, width: 42 },
   chainLine: { width: 2, flex: 1, backgroundColor: colors.active.emerald20, marginTop: spacing.xs, borderRadius: 1 },
   partRight: { flex: 1, paddingBottom: spacing.md },
   partUser: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: spacing.xs },
@@ -769,7 +771,7 @@ const styles = StyleSheet.create({
   },
   thumbImg: { width: '100%', height: '100%' },
   removeThumb: {
-    position: 'absolute', top: 3, right: 3,
+    position: 'absolute', top: 3, end: 3,
     backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: radius.sm,
     width: 18, height: 18, alignItems: 'center', justifyContent: 'center',
   },
@@ -846,7 +848,7 @@ const styles = StyleSheet.create({
   removeThumbGradient: {
     position: 'absolute',
     top: 3,
-    right: 3,
+    end: 3,
     borderRadius: radius.sm,
     width: 20,
     height: 20,
@@ -937,8 +939,8 @@ const styles = StyleSheet.create({
     width: 2,
     height: 24,
     borderRadius: 1,
-    marginLeft: spacing.lg,
-    marginRight: spacing.xs,
+    marginStart: spacing.lg,
+    marginEnd: spacing.xs,
   },
   addPartAvatarContainer: {
     width: 40,

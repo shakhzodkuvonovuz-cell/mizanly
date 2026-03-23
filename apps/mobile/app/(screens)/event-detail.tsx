@@ -524,14 +524,14 @@ const styles = StyleSheet.create({
   coverGradient: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 100,
   },
   eventBadge: {
     position: 'absolute',
     top: spacing.base,
-    left: spacing.base,
+    start: spacing.base,
   },
   badgeGradient: {
     paddingHorizontal: spacing.md,
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   },
   infoTextContainer: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
   },
   infoMain: {
     fontSize: fontSize.base,
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   rsvpCheck: {
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   attendeesCard: {
     padding: spacing.base,
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   attendeesCount: {
-    marginLeft: 'auto',
+    marginStart: 'auto',
   },
   countBadge: {
     fontSize: fontSize.xs,
@@ -786,8 +786,8 @@ const styles = StyleSheet.create({
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

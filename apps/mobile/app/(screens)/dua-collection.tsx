@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgElevated,
     borderWidth: 1,
     borderColor: colors.dark.border,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   chipActive: { backgroundColor: colors.emerald, borderColor: colors.emerald },
   chipText: { color: colors.text.secondary, fontSize: fontSize.xs },

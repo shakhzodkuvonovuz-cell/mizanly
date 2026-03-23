@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { authApi, usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -47,6 +52,16 @@ function InterestsScreenContent() {
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const tc = useThemeColors();
+
+  // Animated progress bar (step 3 of 4 = 75%)
+  const progressWidth = useSharedValue(0);
+  useEffect(() => {
+    progressWidth.value = withSpring(75, animation.spring.responsive);
+  }, []);
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
 
   const toggle = (id: string) => {
     haptic.tick();
@@ -90,10 +105,9 @@ function InterestsScreenContent() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
-      <View style={styles.progress}>
-        {[1, 2].map((i) => (
-          <View key={i} style={[styles.dot, { backgroundColor: tc.border }, i <= 1 && styles.dotActive, i === 2 && { backgroundColor: colors.active.emerald50 }]} />
-        ))}
+      {/* Animated progress bar (step 3 of 4 = 75%) */}
+      <View style={[styles.progressTrack, { backgroundColor: tc.border }]}>
+        <Animated.View style={[styles.progressFill, progressStyle]} />
       </View>
 
       <View style={styles.header}>
@@ -164,10 +178,20 @@ export default function InterestsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark.bg },
-  progress: { flexDirection: 'row', gap: spacing.sm, marginHorizontal: spacing.xl, marginTop: spacing['2xl'], marginBottom: spacing.xl },
-  dot: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.dark.border },
-  dotActive: { backgroundColor: colors.emerald },
+  container: { flex: 1, backgroundColor: colors.dark.bg, paddingTop: spacing['2xl'] },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.dark.border,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: colors.emerald,
+  },
   header: { paddingHorizontal: spacing.xl, marginBottom: spacing.xl },
   title: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700', marginBottom: spacing.sm },
   subtitle: { color: colors.text.secondary, fontSize: fontSize.base },

@@ -379,7 +379,7 @@ function GiftShopContent() {
           {Array.from({ length: 6 }).map((_, i) => (
             <View key={`hist-skel-${i}`} style={[styles.historyRow, { borderBottomColor: tc.border }]}>
               <Skeleton.Circle size={40} />
-              <View style={{ flex: 1, marginLeft: spacing.md }}>
+              <View style={{ flex: 1, marginStart: spacing.md }}>
                 <Skeleton.Text width="60%" />
                 <Skeleton.Text width="40%" />
               </View>

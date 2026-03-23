@@ -813,8 +813,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   prayerGlow: {
     position: 'absolute',
     top: 200,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 200,
     zIndex: 0,
   },
@@ -923,7 +923,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   decorationPattern: {
     position: 'absolute',
     top: 0,
-    right: 0,
+    end: 0,
     flexDirection: 'row',
     gap: 4,
     padding: spacing.md,
@@ -1031,7 +1031,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   prayerInfo: {
     flex: 1,
@@ -1055,7 +1055,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'flex-end',
   },
   bellToggle: {
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
     padding: spacing.xs,
   },
   prayerTime: {
@@ -1111,7 +1111,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: colors.active.gold20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   methodText: {
     flex: 1,
@@ -1167,7 +1167,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   settingsRowText: {
     flex: 1,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   settingsLabel: {
     color: colors.text.primary,

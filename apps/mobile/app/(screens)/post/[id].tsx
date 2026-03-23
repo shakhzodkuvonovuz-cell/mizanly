@@ -867,7 +867,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   swipeHeartIcon: {
     position: 'absolute',
-    left: spacing.base,
+    start: spacing.base,
     top: 0,
     bottom: 0,
     justifyContent: 'center',

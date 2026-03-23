@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   sliderLabel: {
     color: colors.text.secondary,

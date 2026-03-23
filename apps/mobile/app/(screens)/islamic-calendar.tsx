@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   crescentDecoration: {
     position: 'absolute',
     top: -20,
-    right: -20,
+    end: -20,
     opacity: 0.3,
   },
   crescentOuter: {
@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   eventInfo: {
     flex: 1,

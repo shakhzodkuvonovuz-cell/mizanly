@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSize.base,
     color: colors.text.primary,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
     padding: 0,
   },
   mapPlaceholder: {
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   },
   mosqueNameContainer: {
     flex: 1,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   mosqueName: {
     fontFamily: fonts.bodySemiBold,
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
   },
   qiblaContent: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
   },
   qiblaTitle: {
     fontFamily: fonts.bodySemiBold,
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   arrowContainer: {
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
   },
   arrowCircle: {
     width: 44,

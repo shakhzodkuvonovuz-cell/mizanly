@@ -482,7 +482,7 @@ export default function CreateStoryScreen() {
         return (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Icon name="map-pin" size="xs" color="#000" />
-            <Text style={{ color: '#000', fontSize: fontSize.sm, fontWeight: '600', marginLeft: 4 }}>
+            <Text style={{ color: '#000', fontSize: fontSize.sm, fontWeight: '600', marginStart: 4 }}>
               {t('common.location')}
             </Text>
           </View>
@@ -590,19 +590,19 @@ export default function CreateStoryScreen() {
               marginTop: 2,
             }}>{t('stories.filter')}</Text>
           </Pressable>
-          <Pressable style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowMusicPicker(true)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('story.music')} style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowMusicPicker(true)}>
             <Icon name="volume-x" size="sm" color={selectedTrack ? colors.emerald : tc.text.primary} />
             <Text style={{ fontSize: fontSize.xs, color: tc.text.secondary, marginTop: 2 }}>{t('story.music')}</Text>
           </Pressable>
-          <Pressable style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowDrawing(true)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('story.draw')} style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowDrawing(true)}>
             <Icon name="pencil" size="sm" color={drawPaths.length > 0 ? colors.emerald : tc.text.primary} />
             <Text style={{ fontSize: fontSize.xs, color: tc.text.secondary, marginTop: 2 }}>{t('story.draw')}</Text>
           </Pressable>
-          <Pressable style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowTextEffects(true)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('story.effects')} style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowTextEffects(true)}>
             <Icon name="edit" size="sm" color={textEffects.length > 0 ? colors.emerald : tc.text.primary} />
             <Text style={{ fontSize: fontSize.xs, color: tc.text.secondary, marginTop: 2 }}>{t('story.effects')}</Text>
           </Pressable>
-          <Pressable style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowEidFramePicker(true)}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('eidCards.pickOccasion')} style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowEidFramePicker(true)}>
             <Icon name="star" size="sm" color={eidFrameOccasion ? colors.emerald : tc.text.primary} />
             <Text style={{ fontSize: fontSize.xs, color: tc.text.secondary, marginTop: 2 }}>{t('eidCards.pickOccasion')}</Text>
           </Pressable>
@@ -638,7 +638,7 @@ export default function CreateStoryScreen() {
         {/* Text overlay */}
         {text.length > 0 && (
           <View style={{
-            position: 'absolute', left: 0, right: 0, top: '40%',
+            position: 'absolute', start: 0, end: 0, top: '40%',
             alignItems: 'center', paddingHorizontal: spacing.base,
           }}>
             <View style={textBgEnabled ? {
@@ -675,8 +675,8 @@ export default function CreateStoryScreen() {
         {textEffects.map((te) => (
           <Animated.View key={te.id} entering={FadeIn} style={[{
             position: 'absolute' as const,
-            left: spacing.base,
-            right: spacing.base,
+            start: spacing.base,
+            end: spacing.base,
             top: SCREEN_H * 0.4,
           }, { alignItems: te.alignment === 'left' ? 'flex-start' : te.alignment === 'right' ? 'flex-end' : 'center' }]}>
             <Text style={{
@@ -702,8 +702,8 @@ export default function CreateStoryScreen() {
             style={{
               position: 'absolute',
               bottom: 20,
-              left: 0,
-              right: 0,
+              start: 0,
+              end: 0,
               alignItems: 'center',
               opacity: hintOpacity,
             }}
@@ -740,7 +740,7 @@ export default function CreateStoryScreen() {
           <Text style={{ flex: 1, color: tc.text.primary, fontSize: fontSize.sm }} numberOfLines={1}>
             {selectedTrack.title} — {selectedTrack.artist}
           </Text>
-          <Pressable onPress={() => setSelectedTrack(null)} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.remove')} onPress={() => setSelectedTrack(null)} hitSlop={8}>
             <Icon name="x" size="sm" color={tc.text.secondary} />
           </Pressable>
         </Animated.View>
@@ -755,21 +755,21 @@ export default function CreateStoryScreen() {
             <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
               <Pressable onPress={pickMedia} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.pickFromGallery')} accessibilityRole="button">
                 <Icon name="image" size="sm" color={colors.emerald} />
-                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.gallery')}</Text>
+                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginStart: spacing.sm }}>{t('stories.gallery')}</Text>
               </Pressable>
               <Pressable onPress={takePhoto} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.takePhoto')} accessibilityRole="button">
                 <Icon name="camera" size="sm" color={colors.emerald} />
-                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.camera')}</Text>
+                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginStart: spacing.sm }}>{t('stories.camera')}</Text>
               </Pressable>
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
               <Pressable onPress={() => navigate('/(screens)/disposable-camera')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.disposable')} accessibilityRole="button">
                 <Icon name="camera" size="sm" color={colors.gold} />
-                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.disposable')}</Text>
+                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginStart: spacing.sm }}>{t('stories.disposable')}</Text>
               </Pressable>
               <Pressable onPress={() => navigate('/(screens)/photo-music')} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.photoMusic')} accessibilityRole="button">
                 <Icon name="volume-x" size="sm" color={colors.gold} />
-                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.photoMusic')}</Text>
+                <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, marginStart: spacing.sm }}>{t('stories.photoMusic')}</Text>
               </Pressable>
             </View>
           </>
@@ -783,12 +783,12 @@ export default function CreateStoryScreen() {
               {BG_GRADIENTS.map((g, i) => {
                 const isActive = i === bgGradientIndex;
                 return (
-                  <Pressable key={i} onPress={() => setBgGradientIndex(i)}>
+                  <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${t('stories.background')} ${i + 1}`} accessibilityState={{ selected: isActive }} onPress={() => setBgGradientIndex(i)}>
                     <View style={{
                       width: 48,
                       height: 48,
                       borderRadius: radius.full,
-                      marginRight: spacing.sm,
+                      marginEnd: spacing.sm,
                       overflow: 'hidden',
                       justifyContent: 'center',
                       alignItems: 'center',
@@ -822,7 +822,7 @@ export default function CreateStoryScreen() {
         {mediaUri && activeTool === null && (
           <Pressable onPress={pickMedia} style={toolBtnStyle} accessibilityLabel={t('stories.changeMedia')} accessibilityRole="button">
             <Icon name="image" size="sm" color={tc.text.secondary} />
-            <Text style={{ color: tc.text.secondary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.changeMedia')}</Text>
+            <Text style={{ color: tc.text.secondary, fontSize: fontSize.sm, marginStart: spacing.sm }}>{t('stories.changeMedia')}</Text>
           </Pressable>
         )}
 
@@ -848,7 +848,7 @@ export default function CreateStoryScreen() {
                 flexDirection: 'row', alignItems: 'center',
                 backgroundColor: textBgEnabled ? colors.active.emerald10 : tc.surface,
                 paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,
-              }} accessibilityLabel={t('accessibility.toggleTextBg')} accessibilityRole="button">
+              }} accessibilityLabel={t('accessibility.toggleTextBg')} accessibilityRole="switch" accessibilityState={{ checked: textBgEnabled }}>
                 <Text style={{ color: textBgEnabled ? colors.emerald : tc.text.secondary, fontSize: fontSize.xs }}>
                   BG
                 </Text>
@@ -857,7 +857,7 @@ export default function CreateStoryScreen() {
             {/* Color picker */}
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
               {TEXT_COLORS.map(c => (
-                <Pressable key={c} onPress={() => setTextColor(c)} style={{
+                <Pressable key={c} accessibilityRole="radio" accessibilityState={{ selected: c === textColor }} accessibilityLabel={c} onPress={() => setTextColor(c)} hitSlop={4} style={{
                   width: 28, height: 28, borderRadius: radius.full,
                   backgroundColor: c, borderWidth: c === textColor ? 2 : 1,
                   borderColor: c === textColor ? colors.emerald : tc.border,
@@ -867,10 +867,10 @@ export default function CreateStoryScreen() {
             {/* Font picker */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {FONTS.map((f, i) => (
-                <Pressable key={f.id} onPress={() => setFontIndex(i)} style={{
+                <Pressable key={f.id} accessibilityRole="radio" accessibilityState={{ selected: i === fontIndex }} onPress={() => setFontIndex(i)} style={{
                   paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
                   backgroundColor: i === fontIndex ? colors.emerald : tc.surface,
-                  borderRadius: radius.full, marginRight: spacing.sm,
+                  borderRadius: radius.full, marginEnd: spacing.sm,
                 }}>
                   <Text style={{
                     color: i === fontIndex ? '#fff' : tc.text.primary,
@@ -888,7 +888,7 @@ export default function CreateStoryScreen() {
         {activeTool === 'filter' && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {FILTERS.map((f, i) => (
-              <Pressable key={f.id} onPress={() => setFilterIndex(i)} style={{ marginRight: spacing.md, alignItems: 'center' }}>
+              <Pressable key={f.id} accessibilityRole="radio" accessibilityState={{ selected: i === filterIndex }} accessibilityLabel={f.label} onPress={() => setFilterIndex(i)} style={{ marginEnd: spacing.md, alignItems: 'center' }}>
                 {/* Circular thumbnail with filter tint overlay */}
                 <View style={{
                   width: 40, height: 40, borderRadius: radius.full, overflow: 'hidden',
@@ -936,7 +936,7 @@ export default function CreateStoryScreen() {
               { type: 'hashtag' as StickerType, icon: 'hash' as const, label: t('stories.hashtag') },
               { type: 'location' as StickerType, icon: 'map-pin' as const, label: t('common.location') },
             ].map(item => (
-              <Pressable key={item.type} onPress={() => {
+              <Pressable key={item.type} accessibilityRole="button" accessibilityLabel={item.label} onPress={() => {
                 if (item.type === 'location') {
                   addSticker('location', {});
                 } else {
@@ -967,15 +967,15 @@ export default function CreateStoryScreen() {
                 maxLength={50} style={[editorInput, { marginTop: spacing.sm }]} />
             ))}
             {pollOptions.length < 4 && (
-              <Pressable onPress={() => setPollOptions([...pollOptions, ''])} style={{ marginTop: spacing.sm }}>
+              <Pressable accessibilityRole="button" onPress={() => setPollOptions([...pollOptions, ''])} style={{ marginTop: spacing.sm }}>
                 <Text style={{ color: colors.emerald, fontSize: fontSize.sm }}>{t('stories.addOption')}</Text>
               </Pressable>
             )}
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
-              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: tc.surface }]}>
                 <Text style={{ color: tc.text.primary}}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={submitPoll} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t('stories.addPoll')} onPress={submitPoll} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addPoll')}</Text>
               </Pressable>
             </View>
@@ -1026,7 +1026,7 @@ export default function CreateStoryScreen() {
                 <View style={{
                   width: 20, height: 20, borderRadius: radius.full,
                   backgroundColor: i === quizCorrectIndex ? colors.emerald : tc.surface,
-                  borderWidth: 1, borderColor: tc.border, marginRight: spacing.sm,
+                  borderWidth: 1, borderColor: tc.border, marginEnd: spacing.sm,
                   justifyContent: 'center', alignItems: 'center',
                 }}>
                   {i === quizCorrectIndex && <Icon name="check" size={12} color="#fff" />}
@@ -1122,7 +1122,7 @@ export default function CreateStoryScreen() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="users" size="sm" color={closeFriendsOnly ? colors.emerald : tc.text.secondary} />
-              <Text style={{ color: closeFriendsOnly ? colors.emerald : tc.text.primary, marginLeft: spacing.sm, fontSize: fontSize.sm }}>
+              <Text style={{ color: closeFriendsOnly ? colors.emerald : tc.text.primary, marginStart: spacing.sm, fontSize: fontSize.sm }}>
                 {t('stories.closeFriendsOnly')}
               </Text>
             </View>
@@ -1146,7 +1146,7 @@ export default function CreateStoryScreen() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="lock" size="sm" color={subscribersOnly ? colors.gold : tc.text.secondary} />
-              <Text style={{ color: subscribersOnly ? colors.gold : tc.text.primary, marginLeft: spacing.sm, fontSize: fontSize.sm }}>
+              <Text style={{ color: subscribersOnly ? colors.gold : tc.text.primary, marginStart: spacing.sm, fontSize: fontSize.sm }}>
                 {t('stories.subscribersOnly')}
               </Text>
             </View>

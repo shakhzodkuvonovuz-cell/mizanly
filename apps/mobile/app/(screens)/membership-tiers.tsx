@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   infoContent: {
     flex: 1,
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   tierName: {
     fontFamily: fonts.heading,
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSize.md,
     color: colors.text.tertiary,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   formInput: {
     flex: 1,
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
     color: colors.text.tertiary,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   multilineInput: {
     minHeight: 80,
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   revenueTitle: {
     fontFamily: fonts.bodySemiBold,

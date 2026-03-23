@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   editIconBadge: {
     position: 'absolute',
     bottom: 0,
-    right: 0,
+    end: 0,
     width: 32,
     height: 32,
     borderRadius: radius.full,
@@ -341,12 +341,12 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   ringWrap: {
-    paddingLeft: spacing.sm,
+    paddingStart: spacing.sm,
   },
   ringWrapBottom: {
     position: 'absolute',
     bottom: spacing.xs,
-    right: spacing.sm,
+    end: spacing.sm,
   },
   buttonWrap: {
     marginTop: spacing.xl,

@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     color: colors.text.primary,
     flex: 1,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   challengePhrase: {
     fontFamily: fonts.arabic,
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: 24,
-    right: spacing.base,
+    end: spacing.base,
   },
   fabGradient: {
     width: 56,

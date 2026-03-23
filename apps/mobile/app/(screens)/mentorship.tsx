@@ -121,7 +121,9 @@ export default function MentorshipScreen() {
         <View style={styles.tabs}>
           {(['find', 'mine'] as const).map(tab => (
             <Pressable
-              accessibilityRole="button"
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === tab }}
+              accessibilityLabel={tab === 'find' ? t('community.findMentor') : t('community.myMentorships')}
               key={tab}
               style={[styles.tab, { backgroundColor: tc.bgCard, borderColor: tc.border }, activeTab === tab && styles.tabActive]}
               onPress={() => { setActiveTab(tab); haptic.tick(); }}

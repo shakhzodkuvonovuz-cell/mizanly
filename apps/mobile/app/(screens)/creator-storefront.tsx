@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   halalBadge: {
     position: 'absolute',
     top: spacing.sm,
-    left: spacing.sm,
+    start: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
@@ -398,8 +398,8 @@ const styles = StyleSheet.create({
   outOfStockOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: spacing.lg,
+    end: spacing.lg,
     ...shadow.lg,
   },
   fabButton: {

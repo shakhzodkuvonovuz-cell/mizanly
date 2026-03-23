@@ -767,7 +767,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     flexDirection: 'row', alignItems: 'center',
     padding: spacing.base,
   },
-  childInfo: { flex: 1, marginLeft: spacing.md },
+  childInfo: { flex: 1, marginStart: spacing.md },
   childName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   childUsername: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
 

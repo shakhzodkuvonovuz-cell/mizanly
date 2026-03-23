@@ -134,7 +134,7 @@ function HajjCompanionContent() {
           {[0, 1, 2, 3, 4].map((i) => (
             <View key={i} style={styles.skeletonStep}>
               <Skeleton.Circle size={48} />
-              <View style={{ marginLeft: spacing.base, flex: 1 }}>
+              <View style={{ marginStart: spacing.base, flex: 1 }}>
                 <Skeleton.Text width="60%" />
                 <View style={{ height: spacing.xs }} />
                 <Skeleton.Text width="40%" />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo, useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken } from 'react-native';
+import { View, Text, StyleSheet, Pressable, useWindowDimensions, type ViewToken } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -51,10 +51,6 @@ import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const VIDEO_HEIGHT = SCREEN_H;
-const VIDEO_WIDTH = SCREEN_W;
-
 // Animated action button wrapper
 function ActionButton({
   children,
@@ -98,6 +94,8 @@ interface ReelItemProps {
   index: number;
   isActive: boolean;
   currentUserId?: string;
+  screenWidth: number;
+  screenHeight: number;
   onLike: (reel: Reel) => void;
   onBookmark: (reel: Reel) => void;
   onShare: (reel: Reel) => void;
@@ -118,6 +116,8 @@ const ReelItem = memo(function ReelItem({
   index,
   isActive,
   currentUserId,
+  screenWidth,
+  screenHeight,
   onLike,
   onBookmark,
   onShare,
@@ -211,11 +211,11 @@ const ReelItem = memo(function ReelItem({
 
   return (
     <GestureDetector gesture={combinedGesture}>
-      <View style={styles.videoContainer}>
+      <View style={[styles.videoContainer, { width: screenWidth, height: screenHeight }]}>
         <Video
           ref={handleVideoRef}
           source={{ uri: item.hlsUrl || item.videoUrl }}
-          style={styles.video}
+          style={{ width: screenWidth, height: screenHeight }}
           resizeMode={ResizeMode.COVER}
           shouldPlay={isActive && !isPaused}
           isLooping={item.isLooping ?? true}
@@ -485,6 +485,7 @@ export default function BakraScreen() {
   const haptic = useContextualHaptic();
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
+  const { width: SCREEN_W, height: SCREEN_H } = useWindowDimensions();
   const [refreshing, setRefreshing] = useState(false);
   const [bakraFeedType, setBakraFeedType] = useState<'foryou' | 'following'>('foryou');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -512,7 +513,7 @@ export default function BakraScreen() {
       lastSavedIndex.current = currentIndex;
       useStore.getState().setBakraScrollOffset(currentIndex * SCREEN_H);
     }
-  }, [currentIndex]);
+  }, [currentIndex, SCREEN_H]);
 
   // Restore scroll position when tab regains focus
   useFocusEffect(
@@ -725,6 +726,8 @@ export default function BakraScreen() {
       index={index}
       isActive={index === currentIndex}
       currentUserId={user?.id}
+      screenWidth={SCREEN_W}
+      screenHeight={SCREEN_H}
       onLike={handleLike}
       onBookmark={handleBookmark}
       onShare={handleShare}
@@ -739,7 +742,7 @@ export default function BakraScreen() {
       doubleTapGesture={doubleTapGesture}
       heartTrigger={heartTrigger}
     />
-  ), [currentIndex, user?.id, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, handleNotInterested, handleCopyLink, handleFollow, handleNavigate, setVideoRef, doubleTapGesture, heartTrigger]);
+  ), [currentIndex, user?.id, SCREEN_W, SCREEN_H, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, handleNotInterested, handleCopyLink, handleFollow, handleNavigate, setVideoRef, doubleTapGesture, heartTrigger]);
 
   const keyExtractor = useCallback((item: Reel) => item.id, []);
   // FlashList uses estimatedItemSize instead of getItemLayout
@@ -747,12 +750,12 @@ export default function BakraScreen() {
     length: SCREEN_H,
     offset: SCREEN_H * index,
     index,
-  }), []);
+  }), [SCREEN_H]);
 
   const listEmpty = useMemo(() => feedQuery.isError ? (
     <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />
   ) : feedQuery.isLoading ? (
-    <View style={styles.skeletonContainer}>
+    <View style={[styles.skeletonContainer, { width: SCREEN_W, height: SCREEN_H }]}>
       <Skeleton.Rect width={SCREEN_W} height={SCREEN_H} borderRadius={0} />
     </View>
   ) : (
@@ -763,13 +766,13 @@ export default function BakraScreen() {
       actionLabel={t('bakra.emptyFeed.actionLabel')}
       onAction={() => router.push('/(screens)/create-reel')}
     />
-  ), [feedQuery.isError, feedQuery.isLoading, t, router]);
+  ), [feedQuery.isError, feedQuery.isLoading, t, router, SCREEN_W, SCREEN_H]);
 
   const listFooter = useMemo(() => feedQuery.isFetchingNextPage ? (
-    <View style={styles.footer}>
+    <View style={[styles.footer, { width: SCREEN_W, height: SCREEN_H }]}>
       <Skeleton.Rect width={SCREEN_W} height={SCREEN_H} borderRadius={0} />
     </View>
-  ) : null, [feedQuery.isFetchingNextPage]);
+  ) : null, [feedQuery.isFetchingNextPage, SCREEN_W, SCREEN_H]);
 
   return (
     <ScreenErrorBoundary>
@@ -932,8 +935,6 @@ const styles = StyleSheet.create({
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   videoContainer: {
-    width: SCREEN_W,
-    height: VIDEO_HEIGHT,
     position: 'relative',
   },
   progressTrack: {
@@ -957,8 +958,7 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   video: {
-    width: SCREEN_W,
-    height: VIDEO_HEIGHT,
+    // width/height set dynamically via inline style using useWindowDimensions
   },
   bottomGradient: {
     position: 'absolute',
@@ -1059,12 +1059,10 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
   skeletonContainer: {
-    width: SCREEN_W,
-    height: VIDEO_HEIGHT,
+    // width/height set dynamically via inline style using useWindowDimensions
   },
   footer: {
-    width: SCREEN_W,
-    height: VIDEO_HEIGHT,
+    // width/height set dynamically via inline style using useWindowDimensions
   },
   shortcutRow: {
     position: 'absolute',
