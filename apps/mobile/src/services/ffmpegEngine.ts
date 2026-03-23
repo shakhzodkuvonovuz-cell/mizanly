@@ -27,6 +27,60 @@ export type AspectRatio = '9:16' | '16:9' | '1:1' | '4:5';
 const MAX_REVERSE_DURATION = 300; // 5 minutes
 
 export type VoiceEffect = 'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'telephone';
+export type TransitionType = 'none' | 'fade' | 'dissolve' | 'wipeleft' | 'wiperight' | 'slideup' | 'slidedown' | 'circleopen' | 'circleclose';
+
+/**
+ * Build FFmpeg concat command with optional transitions for multi-clip merge.
+ *
+ * @param clips — array of { uri, duration } for each clip
+ * @param outputPath — output file path
+ * @param transition — xfade transition type or 'none' for simple concat
+ * @param transitionDuration — seconds of overlap between clips (0.3-1.0 recommended)
+ */
+export function buildConcatCommand(
+  clips: { uri: string; duration: number }[],
+  outputPath: string,
+  transition: TransitionType = 'none',
+  transitionDuration: number = 0.5,
+): string {
+  if (clips.length === 0) return '';
+  if (clips.length === 1) return `-i "${clips[0].uri}" -c copy -y "${outputPath}"`;
+
+  const inputs = clips.map(c => `-i "${c.uri}"`).join(' ');
+
+  if (transition === 'none') {
+    // Simple concat without transitions
+    const filterInputs = clips.map((_, i) => `[${i}:v][${i}:a]`).join('');
+    return `${inputs} -filter_complex "${filterInputs}concat=n=${clips.length}:v=1:a=1[outv][outa]" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -movflags +faststart -y "${outputPath}"`;
+  }
+
+  // Transitions using xfade between consecutive clips
+  // offset = cumulative duration of all previous clips minus transition overlap
+  // Example: clip0(3s) + clip1(5s) with 0.5s fade → offset = 3 - 0.5 = 2.5
+  const dur = Math.max(0.1, Math.min(transitionDuration, 2)).toFixed(2);
+  let vChain = '';
+  let aChain = '';
+  let prevVideoLabel = '[0:v]';
+  let prevAudioLabel = '[0:a]';
+  let cumulativeOffset = 0;
+
+  for (let i = 1; i < clips.length; i++) {
+    const outLabel = i < clips.length - 1 ? `[v${i}]` : '[outv]';
+    const aOutLabel = i < clips.length - 1 ? `[a${i}]` : '[outa]';
+
+    // offset = end of previous clip minus transition duration
+    cumulativeOffset += clips[i - 1].duration - transitionDuration;
+    const offset = Math.max(0, cumulativeOffset).toFixed(2);
+
+    vChain += `${prevVideoLabel}[${i}:v]xfade=transition=${transition}:duration=${dur}:offset=${offset}${outLabel};`;
+    aChain += `${prevAudioLabel}[${i}:a]acrossfade=d=${dur}${aOutLabel};`;
+    prevVideoLabel = outLabel;
+    prevAudioLabel = aOutLabel;
+  }
+
+  const filterComplex = (vChain + aChain).replace(/;$/, '');
+  return `${inputs} -filter_complex "${filterComplex}" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -movflags +faststart -y "${outputPath}"`;
+}
 
 export interface EditParams {
   inputUri: string;

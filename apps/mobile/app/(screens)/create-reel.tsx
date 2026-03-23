@@ -62,6 +62,8 @@ export default function CreateReelScreen() {
   // Multi-clip recording (TikTok-style: record → pause → record more)
   const [clips, setClips] = useState<{ uri: string; duration: number }[]>([]);
   const totalClipsDuration = clips.reduce((sum, c) => sum + c.duration, 0);
+  type TransitionType = 'none' | 'fade' | 'dissolve' | 'wipeleft' | 'slideup';
+  const [clipTransition, setClipTransition] = useState<TransitionType>('none');
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [mentions, setMentions] = useState<string[]>([]);
@@ -157,12 +159,11 @@ export default function CreateReelScreen() {
       const FileSystemMod = await import('expo-file-system');
 
       if (FFmpegKit) {
-        // Build concat filter for N inputs
-        const inputs = clips.map((c, i) => `-i "${c.uri}"`).join(' ');
-        const filterInputs = clips.map((_, i) => `[${i}:v][${i}:a]`).join('');
+        // Build concat with optional transitions
+        const { buildConcatCommand } = await import('@/services/ffmpegEngine');
         const cacheDir = (FileSystemMod.cacheDirectory || '').replace(/\/?$/, '/');
         const outputPath = `${cacheDir}reel_concat_${Date.now()}.mp4`;
-        const cmd = `${inputs} -filter_complex "${filterInputs}concat=n=${clips.length}:v=1:a=1[outv][outa]" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -movflags +faststart -y "${outputPath}"`;
+        const cmd = buildConcatCommand(clips, outputPath, clipTransition as any, 0.5);
 
         showToast({ message: t('createReel.mergingClips'), variant: 'info' });
         const session = await FFmpegKit.FFmpegKit.execute(cmd);
@@ -651,7 +652,7 @@ export default function CreateReelScreen() {
                   )}
                 </View>
 
-                {/* Clip counter + Done button */}
+                {/* Clip counter + Transition + Done button */}
                 {clips.length > 0 && !isRecording && (
                   <View style={styles.clipBar}>
                     <View style={styles.clipCountBadge}>
@@ -659,6 +660,22 @@ export default function CreateReelScreen() {
                         {clips.length} {clips.length === 1 ? t('createReel.clip') : t('createReel.clips')} · {formatRecordTime(totalClipsDuration)}
                       </Text>
                     </View>
+                    {clips.length >= 2 && (
+                      <Pressable
+                        accessibilityRole="button"
+                        style={styles.transitionBadge}
+                        onPress={() => {
+                          const types: TransitionType[] = ['none', 'fade', 'dissolve', 'wipeleft', 'slideup'];
+                          const idx = types.indexOf(clipTransition);
+                          setClipTransition(types[(idx + 1) % types.length]);
+                        }}
+                      >
+                        <Icon name="layers" size={12} color={clipTransition !== 'none' ? colors.emerald : '#fff'} />
+                        <Text style={[styles.clipCountText, clipTransition !== 'none' && { color: colors.emerald }]}>
+                          {clipTransition === 'none' ? t('createReel.noTransition') : clipTransition}
+                        </Text>
+                      </Pressable>
+                    )}
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={t('createReel.doneRecording')}
@@ -1153,6 +1170,15 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: '#fff',
     fontFamily: fonts.mono,
+  },
+  transitionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
   },
   clipDoneButton: {
     borderRadius: radius.full,

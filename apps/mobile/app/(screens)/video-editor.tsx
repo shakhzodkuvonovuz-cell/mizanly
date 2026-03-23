@@ -18,6 +18,8 @@ import { MusicPicker } from '@/components/story/MusicPicker';
 import { uploadApi } from '@/services/api';
 import type { AudioTrack } from '@/types';
 import { executeExport, cancelExport, isFFmpegAvailable, type EditParams } from '@/services/ffmpegEngine';
+import * as Speech from 'expo-speech';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -61,7 +63,7 @@ export default function VideoEditorScreen() {
   const styles = createStyles(tc);
   const router = useRouter();
   const params = useLocalSearchParams<{ videoUri?: string; uri?: string; returnTo?: string }>();
-  const { t } = useTranslation();
+  const { t, language: currentLanguage } = useTranslation();
   const haptic = useContextualHaptic();
   const videoRef = useRef<Video>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -95,6 +97,8 @@ export default function VideoEditorScreen() {
   const [stabilize, setStabilize] = useState(false);
   const [noiseReduce, setNoiseReduce] = useState(false);
   const [freezeFrameAt, setFreezeFrameAt] = useState<number | null>(null); // seconds, null = none
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -651,6 +655,59 @@ export default function VideoEditorScreen() {
                   onPress={() => setSelectedTextColor(color)}
                 />
               ))}
+            </View>
+
+            {/* Text-to-Speech + Emoji */}
+            <View style={styles.ttsRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('videoEditor.textToSpeech')}
+                style={styles.ttsButton}
+                onPress={async () => {
+                  if (!captionText.trim()) return;
+                  if (isSpeaking) {
+                    Speech.stop();
+                    setIsSpeaking(false);
+                  } else {
+                    setIsSpeaking(true);
+                    // Preview TTS — plays through device speaker only (not burned into export)
+                    const langMap: Record<string, string> = { en: 'en-US', ar: 'ar-SA', tr: 'tr-TR', ur: 'ur-PK', bn: 'bn-BD', fr: 'fr-FR', id: 'id-ID', ms: 'ms-MY' };
+                    Speech.speak(captionText, {
+                      language: langMap[currentLanguage] || 'en-US',
+                      onDone: () => setIsSpeaking(false),
+                      onStopped: () => setIsSpeaking(false),
+                    });
+                  }
+                }}
+              >
+                <LinearGradient
+                  colors={isSpeaking
+                    ? ['rgba(248,81,73,0.4)', 'rgba(248,81,73,0.2)']
+                    : colors.gradient.cardDark
+                  }
+                  style={styles.ttsButtonGradient}
+                >
+                  <Icon name={isSpeaking ? 'volume-x' : 'volume-2'} size="sm" color={isSpeaking ? colors.error : tc.text.secondary} />
+                  <Text style={styles.ttsButtonText}>
+                    {isSpeaking ? t('videoEditor.stopTTS') : t('videoEditor.textToSpeech')}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('videoEditor.addEmoji')}
+                style={styles.ttsButton}
+                onPress={() => setShowEmojiPicker(true)}
+              >
+                <LinearGradient
+                  colors={colors.gradient.cardDark}
+                  style={styles.ttsButtonGradient}
+                >
+                  <Icon name="smile" size="sm" color={tc.text.secondary} />
+                  <Text style={styles.ttsButtonText}>{t('videoEditor.addEmoji')}</Text>
+                </LinearGradient>
+              </Pressable>
             </View>
           </View>
         );
@@ -1275,6 +1332,17 @@ export default function VideoEditorScreen() {
           )}
         </LinearGradient>
       </View>
+      {/* Emoji Picker Bottom Sheet */}
+      <EmojiPicker
+        visible={showEmojiPicker}
+        onClose={() => setShowEmojiPicker(false)}
+        onSelect={(emoji) => {
+          setCaptionText(prev => prev + emoji);
+          setShowEmojiPicker(false);
+          haptic.tick();
+        }}
+      />
+
       {/* Music Picker Bottom Sheet */}
       <MusicPicker
         visible={showMusicPicker}
@@ -1774,6 +1842,28 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(248,81,73,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  ttsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  ttsButton: {
+    flex: 1,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  ttsButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+  },
+  ttsButtonText: {
+    fontSize: fontSize.sm,
+    color: tc.text.secondary,
   },
   textTimingHint: {
     fontSize: fontSize.xs,

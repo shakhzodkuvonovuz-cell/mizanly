@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "expo-auth-session": "~6.0.3",
+    "expo-speech": "^55.0.9",
     "expo-web-browser": "~14.0.2",
     "resend": "^6.9.4"
   }

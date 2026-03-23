@@ -752,3 +752,134 @@ describe('FFmpeg Engine — Command Builder', () => {
     });
   });
 });
+
+// ── Concat Command Tests ──────────────────────────────────────────
+
+type TransitionType = 'none' | 'fade' | 'dissolve' | 'wipeleft' | 'wiperight' | 'slideup' | 'slidedown' | 'circleopen' | 'circleclose';
+
+function buildConcatCommand(
+  clips: { uri: string; duration: number }[],
+  outputPath: string,
+  transition: TransitionType = 'none',
+  transitionDuration: number = 0.5,
+): string {
+  if (clips.length === 0) return '';
+  if (clips.length === 1) return `-i "${clips[0].uri}" -c copy -y "${outputPath}"`;
+  const inputs = clips.map(c => `-i "${c.uri}"`).join(' ');
+  if (transition === 'none') {
+    const filterInputs = clips.map((_, i) => `[${i}:v][${i}:a]`).join('');
+    return `${inputs} -filter_complex "${filterInputs}concat=n=${clips.length}:v=1:a=1[outv][outa]" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -movflags +faststart -y "${outputPath}"`;
+  }
+  const dur = Math.max(0.1, Math.min(transitionDuration, 2)).toFixed(2);
+  let vChain = '';
+  let aChain = '';
+  let prevVideoLabel = '[0:v]';
+  let prevAudioLabel = '[0:a]';
+  let cumulativeOffset = 0;
+  for (let i = 1; i < clips.length; i++) {
+    const outLabel = i < clips.length - 1 ? `[v${i}]` : '[outv]';
+    const aOutLabel = i < clips.length - 1 ? `[a${i}]` : '[outa]';
+    cumulativeOffset += clips[i - 1].duration - transitionDuration;
+    const offset = Math.max(0, cumulativeOffset).toFixed(2);
+    vChain += `${prevVideoLabel}[${i}:v]xfade=transition=${transition}:duration=${dur}:offset=${offset}${outLabel};`;
+    aChain += `${prevAudioLabel}[${i}:a]acrossfade=d=${dur}${aOutLabel};`;
+    prevVideoLabel = outLabel;
+    prevAudioLabel = aOutLabel;
+  }
+  const filterComplex = (vChain + aChain).replace(/;$/, '');
+  return `${inputs} -filter_complex "${filterComplex}" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -movflags +faststart -y "${outputPath}"`;
+}
+
+describe('FFmpeg Concat Command Builder', () => {
+  const output = '/tmp/merged.mp4';
+
+  describe('basic concat', () => {
+    it('should return empty string for no clips', () => {
+      expect(buildConcatCommand([], output)).toBe('');
+    });
+
+    it('should copy single clip directly', () => {
+      const cmd = buildConcatCommand([{ uri: '/clip1.mp4', duration: 5 }], output);
+      expect(cmd).toContain('-c copy');
+      expect(cmd).not.toContain('concat');
+    });
+
+    it('should concat 2 clips without transition', () => {
+      const cmd = buildConcatCommand([
+        { uri: '/clip1.mp4', duration: 3 },
+        { uri: '/clip2.mp4', duration: 5 },
+      ], output);
+      expect(cmd).toContain('concat=n=2:v=1:a=1');
+      expect(cmd).toContain('-i "/clip1.mp4"');
+      expect(cmd).toContain('-i "/clip2.mp4"');
+    });
+
+    it('should concat 3 clips', () => {
+      const cmd = buildConcatCommand([
+        { uri: '/a.mp4', duration: 3 },
+        { uri: '/b.mp4', duration: 4 },
+        { uri: '/c.mp4', duration: 5 },
+      ], output);
+      expect(cmd).toContain('concat=n=3');
+    });
+  });
+
+  describe('transitions', () => {
+    it('should use xfade for fade transition', () => {
+      const cmd = buildConcatCommand([
+        { uri: '/a.mp4', duration: 5 },
+        { uri: '/b.mp4', duration: 5 },
+      ], output, 'fade', 0.5);
+      expect(cmd).toContain('xfade=transition=fade');
+      expect(cmd).toContain('duration=0.50');
+    });
+
+    it('should calculate correct offset for 2 clips', () => {
+      const cmd = buildConcatCommand([
+        { uri: '/a.mp4', duration: 3 },
+        { uri: '/b.mp4', duration: 5 },
+      ], output, 'fade', 0.5);
+      // offset = 3 - 0.5 = 2.5
+      expect(cmd).toContain('offset=2.50');
+    });
+
+    it('should calculate correct offsets for 3 clips', () => {
+      const cmd = buildConcatCommand([
+        { uri: '/a.mp4', duration: 3 },
+        { uri: '/b.mp4', duration: 4 },
+        { uri: '/c.mp4', duration: 5 },
+      ], output, 'dissolve', 0.5);
+      // First transition: offset = 3 - 0.5 = 2.5
+      // Second transition: offset = 2.5 + (4 - 0.5) = 6.0
+      expect(cmd).toContain('offset=2.50');
+      expect(cmd).toContain('offset=6.00');
+    });
+
+    it('should use acrossfade for audio transitions', () => {
+      const cmd = buildConcatCommand([
+        { uri: '/a.mp4', duration: 5 },
+        { uri: '/b.mp4', duration: 5 },
+      ], output, 'wipeleft', 0.5);
+      expect(cmd).toContain('acrossfade');
+    });
+
+    it('should clamp transition duration to max 2 seconds', () => {
+      const cmd = buildConcatCommand([
+        { uri: '/a.mp4', duration: 5 },
+        { uri: '/b.mp4', duration: 5 },
+      ], output, 'fade', 10);
+      expect(cmd).toContain('duration=2.00');
+    });
+
+    it('should support all transition types', () => {
+      const types: TransitionType[] = ['fade', 'dissolve', 'wipeleft', 'wiperight', 'slideup', 'slidedown', 'circleopen', 'circleclose'];
+      types.forEach(type => {
+        const cmd = buildConcatCommand([
+          { uri: '/a.mp4', duration: 5 },
+          { uri: '/b.mp4', duration: 5 },
+        ], output, type, 0.5);
+        expect(cmd).toContain(`transition=${type}`);
+      });
+    });
+  });
+});
