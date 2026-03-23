@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Video, AVPlaybackStatus, ResizeMode, VideoFullscreenUpdateEvent, VideoFullscreenUpdate } from 'expo-av';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, runOnJS } from 'react-native-reanimated';
@@ -239,14 +240,11 @@ export const VideoPlayer = memo(function VideoPlayer({
     if (fullscreenUpdate === VideoFullscreenUpdate.PLAYER_WILL_PRESENT) {
       setIsFullscreen(true);
       StatusBar.setHidden(true, 'fade');
-      // TODO: Lock to landscape when expo-screen-orientation is installed
-      // import * as ScreenOrientation from 'expo-screen-orientation';
-      // ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
     } else if (fullscreenUpdate === VideoFullscreenUpdate.PLAYER_WILL_DISMISS) {
       setIsFullscreen(false);
       StatusBar.setHidden(false, 'fade');
-      // TODO: Restore portrait when expo-screen-orientation is installed
-      // ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     }
   }, []);
 

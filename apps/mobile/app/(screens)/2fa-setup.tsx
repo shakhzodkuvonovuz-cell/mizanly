@@ -9,9 +9,9 @@ import {
   TextInput,
   Alert,
   Image,
-  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import * as ScreenCapture from 'expo-screen-capture';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, SlideInDown } from 'react-native-reanimated';
@@ -61,11 +61,8 @@ export default function TwoFactorSetupScreen() {
 
   // Screenshot prevention — 2FA secrets and backup codes must not be captured
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      // TODO: Install expo-screen-capture for screenshot prevention
-      // Once installed: ScreenCapture.preventScreenCaptureAsync();
-      // return () => { ScreenCapture.allowScreenCaptureAsync(); };
-    }
+    ScreenCapture.preventScreenCaptureAsync();
+    return () => { ScreenCapture.allowScreenCaptureAsync(); };
   }, []);
 
   const handleCodeChange = (text: string, index: number) => {

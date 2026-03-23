@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
+import * as ScreenCapture from 'expo-screen-capture';
 import QRCode from 'react-native-qrcode-svg';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -77,11 +78,8 @@ function VerifyEncryptionContent() {
 
   // Screenshot prevention — encryption fingerprints and safety numbers must not be captured
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      // TODO: Install expo-screen-capture for screenshot prevention
-      // Once installed: ScreenCapture.preventScreenCaptureAsync();
-      // return () => { ScreenCapture.allowScreenCaptureAsync(); };
-    }
+    ScreenCapture.preventScreenCaptureAsync();
+    return () => { ScreenCapture.allowScreenCaptureAsync(); };
   }, []);
 
   useEffect(() => {

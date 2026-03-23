@@ -15,6 +15,7 @@ import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import { NotoNaskhArabic_400Regular, NotoNaskhArabic_700Bold } from "@expo-google-fonts/noto-naskh-arabic";
 import * as Linking from 'expo-linking';
+import * as StoreReview from 'expo-store-review';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setupDeepLinkListeners } from '@/utils/deepLinking';
@@ -459,12 +460,10 @@ export default function RootLayout() {
         if (sessions >= 7) {
           const hasAsked = await AsyncStorage.getItem(RATING_ASKED_KEY);
           if (!hasAsked) {
-            // TODO: Wire expo-store-review when installed
-            // import * as StoreReview from 'expo-store-review';
-            // if (await StoreReview.isAvailableAsync()) {
-            //   await StoreReview.requestReview();
-            //   await AsyncStorage.setItem(RATING_ASKED_KEY, 'true');
-            // }
+            if (await StoreReview.isAvailableAsync()) {
+              await StoreReview.requestReview();
+              await AsyncStorage.setItem(RATING_ASKED_KEY, 'true');
+            }
           }
         }
       } catch {
