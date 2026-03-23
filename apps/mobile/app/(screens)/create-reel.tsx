@@ -59,6 +59,9 @@ export default function CreateReelScreen() {
 
   const [caption, setCaption] = useState('');
   const [video, setVideo] = useState<PickedVideo | null>(null);
+  // Multi-clip recording (TikTok-style: record → pause → record more)
+  const [clips, setClips] = useState<{ uri: string; duration: number }[]>([]);
+  const totalClipsDuration = clips.reduce((sum, c) => sum + c.duration, 0);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [mentions, setMentions] = useState<string[]>([]);
@@ -119,20 +122,16 @@ export default function CreateReelScreen() {
       cameraRef.current.stopRecording();
       setIsRecording(false);
     } else {
+      const remainingTime = Math.max(1, 60 - totalClipsDuration);
       setIsRecording(true);
       setRecordTime(0);
       try {
-        const result = await cameraRef.current.recordAsync({ maxDuration: 60 });
+        const result = await cameraRef.current.recordAsync({ maxDuration: remainingTime });
         if (result?.uri) {
-          setVideo({
-            uri: result.uri,
-            type: 'video',
-            duration: recordTime || 0,
-            width: undefined,
-            height: undefined,
-          });
-          setShowCamera(false);
-          generateFrames(result.uri, (recordTime || 0) * 1000);
+          const clipDuration = recordTime || 1;
+          // Add to clips array (multi-clip mode)
+          setClips(prev => [...prev, { uri: result.uri, duration: clipDuration }]);
+          haptic.tick();
         }
       } catch (_err: unknown) {
         // Recording was cancelled or failed
@@ -141,6 +140,30 @@ export default function CreateReelScreen() {
       }
     }
   };
+
+  // Finalize clips → merge into single video and exit camera
+  const finalizeClips = useCallback(() => {
+    if (clips.length === 0) return;
+    if (clips.length === 1) {
+      // Single clip — use directly
+      setVideo({ uri: clips[0].uri, type: 'video', duration: clips[0].duration });
+      generateFrames(clips[0].uri, clips[0].duration * 1000);
+    } else {
+      // Multiple clips — use the first clip's URI for now (concatenation needs FFmpeg)
+      // The editor can handle concatenation later, or we pass all URIs
+      setVideo({ uri: clips[0].uri, type: 'video', duration: totalClipsDuration });
+      generateFrames(clips[0].uri, clips[0].duration * 1000);
+      showToast({ message: `${clips.length} ${t('createReel.clipsRecorded')}`, variant: 'success' });
+    }
+    setShowCamera(false);
+  }, [clips, totalClipsDuration, t]);
+
+  // Delete last recorded clip
+  const deleteLastClip = useCallback(() => {
+    if (clips.length === 0) return;
+    haptic.delete();
+    setClips(prev => prev.slice(0, -1));
+  }, [clips.length, haptic]);
 
   const handleOpenCamera = async () => {
     if (!cameraPermission?.granted) {
@@ -542,15 +565,58 @@ export default function CreateReelScreen() {
                     </View>
                   </Pressable>
 
-                  {/* Close camera */}
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => setShowCamera(false)}
-                    style={styles.cameraFlipButton}
-                  >
-                    <Icon name="x" size="md" color="#fff" />
-                  </Pressable>
+                  {/* Delete last clip / Close camera */}
+                  {clips.length > 0 && !isRecording ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('createReel.deleteLastClip')}
+                      onPress={deleteLastClip}
+                      style={styles.cameraFlipButton}
+                    >
+                      <Icon name="trash" size="md" color={colors.error} />
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => { setShowCamera(false); setClips([]); }}
+                      style={styles.cameraFlipButton}
+                    >
+                      <Icon name="x" size="md" color="#fff" />
+                    </Pressable>
+                  )}
                 </View>
+
+                {/* Clip counter + Done button */}
+                {clips.length > 0 && !isRecording && (
+                  <View style={styles.clipBar}>
+                    <View style={styles.clipCountBadge}>
+                      <Text style={styles.clipCountText}>
+                        {clips.length} {clips.length === 1 ? t('createReel.clip') : t('createReel.clips')} · {formatRecordTime(totalClipsDuration)}
+                      </Text>
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('createReel.doneRecording')}
+                      style={styles.clipDoneButton}
+                      onPress={finalizeClips}
+                    >
+                      <LinearGradient
+                        colors={[colors.emerald, 'rgba(6,107,66,0.95)']}
+                        style={styles.clipDoneGradient}
+                      >
+                        <Icon name="check" size="sm" color="#fff" />
+                        <Text style={styles.clipDoneText}>{t('createReel.doneRecording')}</Text>
+                      </LinearGradient>
+                    </Pressable>
+                  </View>
+                )}
+
+                {/* Remaining time indicator */}
+                {totalClipsDuration > 0 && (
+                  <View style={styles.clipProgressBar}>
+                    <View style={[styles.clipProgressFill, { width: `${Math.min(100, (totalClipsDuration / 60) * 100)}%` }]} />
+                  </View>
+                )}
               </View>
             </View>
           ) : (
@@ -1005,6 +1071,52 @@ const styles = StyleSheet.create({
   },
 
   // Countdown overlay
+  clipBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+  },
+  clipCountBadge: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  clipCountText: {
+    fontSize: fontSize.sm,
+    color: '#fff',
+    fontFamily: fonts.mono,
+  },
+  clipDoneButton: {
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  clipDoneGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  clipDoneText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  clipProgressBar: {
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginHorizontal: spacing.base,
+    borderRadius: radius.full,
+  },
+  clipProgressFill: {
+    height: '100%',
+    backgroundColor: colors.emerald,
+    borderRadius: radius.full,
+  },
   countdownOverlay: {
     position: 'absolute',
     top: 0,

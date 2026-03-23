@@ -2206,6 +2206,11 @@
   },
   "createReel": {
     "timerRecord": "Record with 3-second countdown",
+    "clip": "clip",
+    "clips": "clips",
+    "clipsRecorded": "clips recorded",
+    "deleteLastClip": "Delete last clip",
+    "doneRecording": "Done",
     "selectThumbnail": "Select cover",
     "customThumbnail": "Custom",
     "normalizeAudio": "Normalize audio",
