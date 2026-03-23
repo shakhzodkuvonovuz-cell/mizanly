@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
+    start: 0,
     zIndex: 100,
   },
   canvasContainer: {
@@ -523,15 +523,15 @@ const styles = StyleSheet.create({
   svg: {
     position: 'absolute',
     top: 0,
-    left: 0,
+    start: 0,
   },
 
   // Top toolbar
   topToolbar: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -594,8 +594,8 @@ const styles = StyleSheet.create({
   bottomControls: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.md,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
     color: colors.text.secondary,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   sizeButton: {
     alignItems: 'center',

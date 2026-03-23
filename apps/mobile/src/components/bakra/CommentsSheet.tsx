@@ -315,13 +315,13 @@ const styles = StyleSheet.create({
   opComment: {
     borderLeftWidth: 2,
     borderLeftColor: colors.emerald,
-    paddingLeft: spacing.sm,
+    paddingStart: spacing.sm,
   },
   replyComment: {
-    marginLeft: spacing.xl,
+    marginStart: spacing.xl,
     borderLeftWidth: 2,
     borderLeftColor: colors.active.emerald20,
-    paddingLeft: spacing.sm,
+    paddingStart: spacing.sm,
   },
   commentContent: {
     flex: 1,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   pinnedIndicator: {
     position: 'absolute',
     top: -spacing.xs,
-    left: spacing.xl,
+    start: spacing.xl,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     maxHeight: 100,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   sendButton: {
     width: 36,

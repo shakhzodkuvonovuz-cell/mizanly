@@ -81,6 +81,7 @@ describe('EncryptionService', () => {
         conversationId: 'c1', recipientId: 'u2', encryptedKey: 'ek', nonce: 'n',
       });
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('version', 1);
     });
 
     it('should throw ForbiddenException if not member', async () => {

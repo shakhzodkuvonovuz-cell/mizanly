@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   countBadge: {
     position: 'absolute',
     top: spacing.md,
-    right: spacing.md,
+    end: spacing.md,
     zIndex: 10,
   },
   glassPill: {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   countIcon: {
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   countText: {
     fontFamily: 'DMSans_500Medium',
@@ -171,8 +171,8 @@ const styles = StyleSheet.create({
   indicatorsContainer: {
     position: 'absolute',
     bottom: spacing.lg,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

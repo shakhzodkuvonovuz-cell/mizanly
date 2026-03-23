@@ -201,9 +201,9 @@ export class RecommendationsService {
     limit: number,
   ): Promise<string[]> {
     try {
-    // Stage 1: Get user interest vector and find similar content
-    const interestVector = await this.embeddingsService.getUserInterestVector(userId);
-    if (!interestVector) return [];
+    // Stage 1: Get user interest centroids and find similar content
+    const interestCentroids = await this.embeddingsService.getUserInterestVector(userId);
+    if (!interestCentroids) return [];
 
     const excludedIds = await this.getExcludedUserIds(userId);
 
@@ -216,9 +216,9 @@ export class RecommendationsService {
     });
     const seenSet = new Set(seenIds.map(s => s.postId));
 
-    // KNN search: top 500 candidates
-    const candidates = await this.embeddingsService.findSimilarByVector(
-      interestVector,
+    // KNN search: top 500 candidates across all interest centroids
+    const candidates = await this.embeddingsService.findSimilarByMultipleVectors(
+      interestCentroids,
       500,
       [contentType],
       [...seenSet],

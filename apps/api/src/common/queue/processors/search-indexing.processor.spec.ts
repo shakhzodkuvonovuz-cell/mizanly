@@ -38,12 +38,14 @@ describe('SearchIndexingProcessor', () => {
 
   it('should be defined', () => {
     expect(processor).toBeDefined();
+    expect(processor).toBeInstanceOf(SearchIndexingProcessor);
   });
 
   it('should not start worker when REDIS_URL not set', () => {
     processor.onModuleInit();
     // No worker created — no crash
-    expect(processor).toBeDefined();
+    expect(processor).toBeInstanceOf(SearchIndexingProcessor);
+    expect(() => processor.onModuleInit()).not.toThrow();
   });
 
   describe('processSearchIndex (via reflection)', () => {

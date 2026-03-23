@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: 4,
-    right: 0,
+    end: 0,
   },
   createButton: {
     marginTop: spacing.xs,

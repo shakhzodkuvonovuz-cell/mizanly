@@ -91,6 +91,7 @@ describe('ChannelsService — authorization matrix', () => {
     prisma.subscription.findMany.mockResolvedValue([]);
     const result = await service.getAnalytics('test', userA);
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('totalViews');
   });
 
   it('should throw ForbiddenException when non-owner views analytics', async () => {

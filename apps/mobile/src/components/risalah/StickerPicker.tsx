@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
     color: colors.text.primary,
     fontSize: fontSize.base,
   },

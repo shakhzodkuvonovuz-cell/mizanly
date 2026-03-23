@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: -6,
-    right: -8,
+    end: -8,
   },
   navLabel: {
     color: colors.text.secondary,

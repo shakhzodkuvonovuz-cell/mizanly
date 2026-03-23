@@ -426,7 +426,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   toggleTextContainer: {
     flex: 1,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   toggleLabel: {
     fontFamily: fonts.bodySemiBold,

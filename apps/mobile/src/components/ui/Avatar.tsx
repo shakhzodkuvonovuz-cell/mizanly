@@ -256,7 +256,7 @@ export const Avatar = memo(function Avatar({
               borderWidth: Math.max(2, onlineDotSize * 0.2),
               borderColor: tc.bg,
               bottom: showRing || showStoryRing ? 0 : -1,
-              right: showRing || showStoryRing ? 0 : -1,
+              end: showRing || showStoryRing ? 0 : -1,
             },
             onlinePulseStyle,
           ]}

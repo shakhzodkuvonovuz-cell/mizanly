@@ -156,7 +156,7 @@ function StorageLoadingSkeleton() {
         {Array.from({ length: 5 }).map((_, i) => (
           <View key={`skel-${i}`} style={styles.skeletonRow}>
             <Skeleton.Circle size={40} />
-            <View style={{ flex: 1, marginLeft: spacing.md }}>
+            <View style={{ flex: 1, marginStart: spacing.md }}>
               <Skeleton.Rect width="60%" height={14} borderRadius={radius.sm} />
               <Skeleton.Rect width="30%" height={12} borderRadius={radius.sm} />
             </View>

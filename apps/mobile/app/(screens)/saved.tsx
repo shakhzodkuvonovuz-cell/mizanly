@@ -476,9 +476,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   gridImage: { width: '100%', height: '100%' },
   gridTextPost: { flex: 1, padding: spacing.xs, backgroundColor: tc.bgCard, justifyContent: 'center' },
   gridText: { color: colors.text.primary, fontSize: fontSize.xs },
-  carouselBadge: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3 },
+  carouselBadge: { position: 'absolute', top: 6, end: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3 },
   playOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    position: 'absolute', top: 0, start: 0, end: 0, bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center',
   },
   placeholder: {
@@ -491,7 +491,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderBottomWidth: 0.5, borderBottomColor: tc.border,
   },
   videoThumbnail: { width: 120, height: 68, borderRadius: radius.sm },
-  videoInfo: { flex: 1, marginLeft: spacing.base, justifyContent: 'center' },
+  videoInfo: { flex: 1, marginStart: spacing.base, justifyContent: 'center' },
   videoTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600', marginBottom: 2 },
   videoChannel: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: 2 },
   videoDuration: { color: colors.text.tertiary, fontSize: fontSize.xs },

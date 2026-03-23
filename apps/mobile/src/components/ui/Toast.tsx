@@ -290,8 +290,8 @@ export function ToastContainer(): JSX.Element | null {
 const styles = StyleSheet.create({
   toastContainer: {
     position: 'absolute',
-    left: spacing.base,
-    right: spacing.base,
+    start: spacing.base,
+    end: spacing.base,
     zIndex: 99999,
   },
   card: {
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
-    paddingRight: spacing.md,
+    paddingEnd: spacing.md,
     minHeight: 52,
   },
   accentBar: {
@@ -319,8 +319,8 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radius.lg,
   },
   iconContainer: {
-    marginLeft: spacing.md,
-    marginRight: spacing.sm,
+    marginStart: spacing.md,
+    marginEnd: spacing.sm,
   },
   contentContainer: {
     flex: 1,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   closeButton: {
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
     padding: spacing.xs,
     minWidth: 44,
     minHeight: 44,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     height: 2,
     position: 'absolute',
     bottom: 0,
-    left: 0,
+    start: 0,
     borderRadius: 1,
   },
 });

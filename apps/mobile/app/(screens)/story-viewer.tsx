@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
   media: { ...StyleSheet.absoluteFillObject },
 
   topOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0,
+    position: 'absolute', top: 0, start: 0, end: 0,
     paddingHorizontal: spacing.sm,
     paddingBottom: spacing['2xl'],
   },
@@ -803,7 +803,7 @@ const styles = StyleSheet.create({
   stickersContainer: { ...StyleSheet.absoluteFillObject, pointerEvents: 'box-none' },
 
   textOverlay: {
-    position: 'absolute', top: '40%', left: spacing.xl, right: spacing.xl,
+    position: 'absolute', top: '40%', start: spacing.xl, end: spacing.xl,
     alignItems: 'center',
   },
   overlayText: { fontSize: fontSize.xl, fontWeight: '700', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
@@ -811,8 +811,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     zIndex: 1,
     bottom: 120,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -831,7 +831,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
 
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: spacing.base },
+  bottomBar: { position: 'absolute', bottom: 0, start: 0, end: 0, paddingHorizontal: spacing.base },
   replyPlaceholder: {
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,

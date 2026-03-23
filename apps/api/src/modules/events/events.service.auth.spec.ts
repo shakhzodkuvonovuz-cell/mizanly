@@ -36,6 +36,7 @@ describe('EventsService — authorization matrix', () => {
     prisma.event.update.mockResolvedValue({ ...mockEvent, title: 'Updated' });
     const result = await service.updateEvent(userA, 'event-1', { title: 'Updated' } as any);
     expect(result).toBeDefined();
+    expect(result.title).toBe('Updated');
   });
 
   it('should throw ForbiddenException when non-organizer updates', async () => {
@@ -49,6 +50,7 @@ describe('EventsService — authorization matrix', () => {
     prisma.event.delete.mockResolvedValue({});
     const result = await service.deleteEvent(userA, 'event-1');
     expect(result).toBeDefined();
+    expect(prisma.event.delete).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'event-1' } }));
   });
 
   it('should throw ForbiddenException when non-organizer deletes', async () => {

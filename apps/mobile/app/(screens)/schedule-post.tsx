@@ -768,7 +768,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginBottom: spacing.sm,
   },
   timeOptionButton: {
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
     borderRadius: radius.md,
     overflow: 'hidden',
   },
@@ -867,7 +867,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   summaryBorder: {
     position: 'absolute',
-    left: 0,
+    start: 0,
     top: 0,
     bottom: 0,
     width: 4,
@@ -875,7 +875,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   summaryContent: {
     padding: spacing.base,
-    paddingLeft: spacing.lg,
+    paddingStart: spacing.lg,
   },
   summaryLabel: {
     fontSize: fontSize.sm,
@@ -904,8 +904,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
   },
   bottomBarGradient: {
     flexDirection: 'row',

@@ -576,8 +576,8 @@ const styles = StyleSheet.create({
   textInput: {
     position: 'absolute',
     top: 0,
-    left: spacing.xl,
-    right: spacing.xl,
+    start: spacing.xl,
+    end: spacing.xl,
     bottom: 0,
     textAlignVertical: 'center',
     padding: spacing.base,

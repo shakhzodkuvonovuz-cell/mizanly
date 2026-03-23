@@ -409,7 +409,7 @@ export default function MajlisScreen() {
 
       {/* Floating compose button */}
       <AnimatedPressable
-        style={[styles.fab, fabStyle, isRTL ? { left: spacing.lg, right: undefined } : undefined]}
+        style={[styles.fab, fabStyle]}
         onPress={() => {
           haptic.send();
           fabScale.value = withSequence(
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: tabBar.height + 16,
-    right: spacing.lg,
+    end: spacing.lg,
     shadowColor: colors.emerald,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
@@ -510,8 +510,8 @@ const styles = StyleSheet.create({
   newPostsBanner: {
     position: 'absolute',
     top: 100,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     zIndex: 50,
     alignItems: 'center',
   },

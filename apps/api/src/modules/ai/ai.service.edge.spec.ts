@@ -47,6 +47,8 @@ describe('AiService — edge cases', () => {
     it('should handle empty string without crash', async () => {
       const result = await service.moderateContent('', 'post');
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('safe');
+      expect(typeof result.safe).toBe('boolean');
     });
   });
 
@@ -61,6 +63,7 @@ describe('AiService — edge cases', () => {
     it('should handle Arabic to English translation request', async () => {
       const result = await service.translateText('السلام عليكم', 'en');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('string');
     });
   });
 
@@ -68,7 +71,9 @@ describe('AiService — edge cases', () => {
     it('should return fallback replies for empty context', async () => {
       const result = await service.suggestSmartReplies('', []);
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
+      expect(result.length).toBeGreaterThanOrEqual(1);
+      expect(result[0]).toHaveProperty('text');
+      expect(result[0]).toHaveProperty('tone');
     });
   });
 

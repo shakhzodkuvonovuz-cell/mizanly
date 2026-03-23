@@ -37,6 +37,7 @@ describe('DiscordFeaturesService — edge cases', () => {
     prisma.forumThread.create.mockResolvedValue({ id: 'ft-1', title: 'نقاش في الفقه', circleId: 'c-1', authorId: userId });
     const result = await service.createForumThread(userId, 'c-1', { title: 'نقاش في الفقه', content: 'Body' } as any);
     expect(result).toBeDefined();
+    expect(result.title).toBe('نقاش في الفقه');
   });
 
   it('should return empty forum threads list when none exist', async () => {

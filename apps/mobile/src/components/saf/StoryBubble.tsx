@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   addBtn: {
     position: 'absolute',
     bottom: 18,
-    right: 4,
+    end: 4,
     width: 22,
     height: 22,
     borderRadius: radius.full,

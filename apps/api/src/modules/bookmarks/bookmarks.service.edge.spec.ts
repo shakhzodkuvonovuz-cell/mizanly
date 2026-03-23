@@ -68,6 +68,7 @@ describe('BookmarksService — edge cases', () => {
       // Service may return success even if not found (idempotent)
       const result = await service.unsavePost(userId, 'post-1');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
   });
 
@@ -91,6 +92,7 @@ describe('BookmarksService — edge cases', () => {
 
       const result = await service.getCollections(userId);
       expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
     });
   });
 

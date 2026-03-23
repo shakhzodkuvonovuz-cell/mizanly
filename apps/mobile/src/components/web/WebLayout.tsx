@@ -35,7 +35,7 @@ export function WebLayout({ children, rightPanel }: WebLayoutProps) {
         style={[
           styles.main,
           {
-            marginLeft: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
+            marginStart: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH,
           },
         ]}
       >

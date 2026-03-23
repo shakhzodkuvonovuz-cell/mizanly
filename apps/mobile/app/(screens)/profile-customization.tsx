@@ -634,7 +634,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   divider: {
     height: 1,
     backgroundColor: 'rgba(45,53,72,0.5)',
-    marginLeft: spacing.base,
+    marginStart: spacing.base,
   },
   // Upload
   uploadButton: {

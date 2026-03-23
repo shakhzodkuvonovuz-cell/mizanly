@@ -107,6 +107,7 @@ describe('Authorization Matrix — batch tests (Tasks 56-70)', () => {
       prisma.draftPost.findUnique.mockResolvedValue({ id: 'd-1', userId: 'user-a', data: {} });
       const result = await service.getDraft('d-1', 'user-a');
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'd-1');
     });
   });
 });

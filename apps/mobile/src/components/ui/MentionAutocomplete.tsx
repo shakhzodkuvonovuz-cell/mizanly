@@ -215,8 +215,8 @@ export function MentionAutocomplete({ query, onSelect, visible }: MentionAutocom
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: '100%',
     marginBottom: spacing.xs,
     borderRadius: radius.md,

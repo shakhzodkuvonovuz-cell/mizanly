@@ -251,21 +251,93 @@ describe('EmbeddingsService', () => {
     });
   });
 
-  describe('getUserInterestVector', () => {
+  describe('getUserInterestVector — multi-cluster', () => {
     it('should return null when user has no interactions', async () => {
       prisma.feedInteraction.findMany.mockResolvedValue([]);
       const result = await service.getUserInterestVector('user-1');
       expect(result).toBeNull();
     });
 
-    it('should compute average vector from user interactions', async () => {
+    it('should return single centroid for < 5 vectors', async () => {
       prisma.feedInteraction.findMany.mockResolvedValue([
         { postId: 'p1' }, { postId: 'p2' },
       ]);
-      prisma.$queryRawUnsafe.mockResolvedValue([{ avg_vector: '[0.1,0.2,0.3]' }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([
+        { vector_text: '[0.1,0.2,0.3]' },
+        { vector_text: '[0.3,0.4,0.5]' },
+      ]);
 
       const result = await service.getUserInterestVector('user-1');
-      expect(result).toEqual([0.1, 0.2, 0.3]);
+      expect(result).not.toBeNull();
+      expect(result).toHaveLength(1); // single centroid
+      expect(result![0]).toHaveLength(3); // 3-dimensional vector
+      // Average of [0.1,0.2,0.3] and [0.3,0.4,0.5] = [0.2,0.3,0.4]
+      expect(result![0][0]).toBeCloseTo(0.2);
+      expect(result![0][1]).toBeCloseTo(0.3);
+      expect(result![0][2]).toBeCloseTo(0.4);
+    });
+
+    it('should cluster into multiple centroids for >= 5 vectors', async () => {
+      const interactions = Array.from({ length: 10 }, (_, i) => ({ postId: `p${i}` }));
+      prisma.feedInteraction.findMany.mockResolvedValue(interactions);
+
+      // Two distinct clusters: first 5 near [1,0,0], last 5 near [0,1,0]
+      const vectors = [
+        ...Array(5).fill(null).map(() => ({ vector_text: '[0.9,0.1,0.0]' })),
+        ...Array(5).fill(null).map(() => ({ vector_text: '[0.1,0.9,0.0]' })),
+      ];
+      prisma.$queryRawUnsafe.mockResolvedValue(vectors);
+
+      const result = await service.getUserInterestVector('user-1');
+      expect(result).not.toBeNull();
+      expect(result!.length).toBeGreaterThanOrEqual(2);
+      // Each centroid should be a valid vector
+      for (const centroid of result!) {
+        expect(centroid.length).toBe(3);
+      }
+    });
+
+    it('should return null when pgvector returns no rows', async () => {
+      prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      const result = await service.getUserInterestVector('user-1');
+      expect(result).toBeNull();
+    });
+
+    it('should return null when all vector_text values are null', async () => {
+      prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([{ vector_text: null }]);
+
+      const result = await service.getUserInterestVector('user-1');
+      expect(result).toBeNull();
+    });
+
+    it('should handle NaN values in individual vectors by replacing with 0', async () => {
+      prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([{ vector_text: '[0.1,NaN,0.3]' }]);
+
+      const result = await service.getUserInterestVector('user-1');
+      expect(result).not.toBeNull();
+      expect(result).toHaveLength(1);
+      expect(result![0]).toEqual([0.1, 0, 0.3]);
+    });
+
+    it('should respect k = min(3, ceil(count/5)) for centroid count', async () => {
+      // 15 vectors → k = min(3, ceil(15/5)) = 3
+      const interactions = Array.from({ length: 15 }, (_, i) => ({ postId: `p${i}` }));
+      prisma.feedInteraction.findMany.mockResolvedValue(interactions);
+
+      const vectors = Array.from({ length: 15 }, (_, i) => ({
+        vector_text: `[${i * 0.1},${1 - i * 0.1},0.5]`,
+      }));
+      prisma.$queryRawUnsafe.mockResolvedValue(vectors);
+
+      const result = await service.getUserInterestVector('user-1');
+      expect(result).not.toBeNull();
+      // Should have at most 3 centroids
+      expect(result!.length).toBeLessThanOrEqual(3);
+      expect(result!.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -348,15 +420,15 @@ describe('EmbeddingsService', () => {
   });
 
   describe('error paths — getUserInterestVector', () => {
-    it('should return null when pgvector avg returns null avg_vector', async () => {
+    it('should return null when pgvector returns null vector_text', async () => {
       prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
-      prisma.$queryRawUnsafe.mockResolvedValue([{ avg_vector: null }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([{ vector_text: null }]);
 
       const result = await service.getUserInterestVector('user-1');
       expect(result).toBeNull();
     });
 
-    it('should return null when pgvector avg returns empty result', async () => {
+    it('should return null when pgvector returns empty result', async () => {
       prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
       prisma.$queryRawUnsafe.mockResolvedValue([]);
 
@@ -364,12 +436,14 @@ describe('EmbeddingsService', () => {
       expect(result).toBeNull();
     });
 
-    it('should replace NaN values with 0 in parsed avg vector', async () => {
+    it('should replace NaN values with 0 in parsed vectors', async () => {
       prisma.feedInteraction.findMany.mockResolvedValue([{ postId: 'p1' }]);
-      prisma.$queryRawUnsafe.mockResolvedValue([{ avg_vector: '[0.1,NaN,0.3]' }]);
+      prisma.$queryRawUnsafe.mockResolvedValue([{ vector_text: '[0.1,NaN,0.3]' }]);
 
       const result = await service.getUserInterestVector('user-1');
-      expect(result).toEqual([0.1, 0, 0.3]);
+      expect(result).not.toBeNull();
+      expect(result).toHaveLength(1);
+      expect(result![0]).toEqual([0.1, 0, 0.3]);
     });
   });
 
@@ -401,6 +475,243 @@ describe('EmbeddingsService', () => {
       expect(result).toContain('#tag2');
       expect(result).toContain('Dubai');
       expect(result).toContain('Travel');
+    });
+  });
+
+  // ── Clustering helpers ──────────────────────────────────────────
+
+  describe('cosineDistance', () => {
+    it('should return 0 for identical vectors', () => {
+      const dist = service.cosineDistance([1, 0, 0], [1, 0, 0]);
+      expect(dist).toBeCloseTo(0, 5);
+    });
+
+    it('should return ~1 for orthogonal vectors', () => {
+      const dist = service.cosineDistance([1, 0, 0], [0, 1, 0]);
+      expect(dist).toBeCloseTo(1, 5);
+    });
+
+    it('should return ~2 for opposite vectors', () => {
+      const dist = service.cosineDistance([1, 0, 0], [-1, 0, 0]);
+      expect(dist).toBeCloseTo(2, 5);
+    });
+
+    it('should return 1.0 for zero-magnitude vectors', () => {
+      expect(service.cosineDistance([0, 0, 0], [1, 0, 0])).toBe(1.0);
+      expect(service.cosineDistance([1, 0, 0], [0, 0, 0])).toBe(1.0);
+      expect(service.cosineDistance([0, 0, 0], [0, 0, 0])).toBe(1.0);
+    });
+
+    it('should return 1.0 for mismatched dimensions', () => {
+      expect(service.cosineDistance([1, 0], [1, 0, 0])).toBe(1.0);
+    });
+
+    it('should return 1.0 for empty vectors', () => {
+      expect(service.cosineDistance([], [])).toBe(1.0);
+    });
+
+    it('should handle similar but not identical vectors', () => {
+      const dist = service.cosineDistance([0.9, 0.1, 0.0], [0.85, 0.15, 0.0]);
+      expect(dist).toBeGreaterThan(0);
+      expect(dist).toBeLessThan(0.1); // very similar
+    });
+  });
+
+  describe('averageVectors', () => {
+    it('should return empty array for no vectors', () => {
+      expect(service.averageVectors([])).toEqual([]);
+    });
+
+    it('should return copy of single vector', () => {
+      const result = service.averageVectors([[1, 2, 3]]);
+      expect(result).toEqual([1, 2, 3]);
+    });
+
+    it('should average two vectors element-wise', () => {
+      const result = service.averageVectors([[0, 0, 0], [2, 4, 6]]);
+      expect(result).toEqual([1, 2, 3]);
+    });
+
+    it('should average multiple vectors', () => {
+      const result = service.averageVectors([[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
+      expect(result[0]).toBeCloseTo(1 / 3);
+      expect(result[1]).toBeCloseTo(1 / 3);
+      expect(result[2]).toBeCloseTo(1 / 3);
+    });
+
+    it('should not modify original vector (return copy for single)', () => {
+      const original = [1, 2, 3];
+      const result = service.averageVectors([original]);
+      result[0] = 999;
+      expect(original[0]).toBe(1);
+    });
+  });
+
+  describe('kMeansClustering', () => {
+    it('should return empty array for k=0', () => {
+      expect(service.kMeansClustering([[1, 0]], 0)).toEqual([]);
+    });
+
+    it('should return empty array for empty vectors', () => {
+      expect(service.kMeansClustering([], 3)).toEqual([]);
+    });
+
+    it('should return individual vectors when k >= vector count', () => {
+      const vectors = [[1, 0], [0, 1]];
+      const clusters = service.kMeansClustering(vectors, 5);
+      expect(clusters).toHaveLength(2);
+      expect(clusters[0]).toEqual([[1, 0]]);
+      expect(clusters[1]).toEqual([[0, 1]]);
+    });
+
+    it('should cluster two distinct groups correctly', () => {
+      const groupA = [[0.9, 0.1], [0.85, 0.15], [0.95, 0.05]];
+      const groupB = [[0.1, 0.9], [0.15, 0.85], [0.05, 0.95]];
+      const vectors = [...groupA, ...groupB];
+
+      const clusters = service.kMeansClustering(vectors, 2);
+      expect(clusters).toHaveLength(2);
+
+      // Each cluster should have 3 members
+      expect(clusters[0].length + clusters[1].length).toBe(6);
+
+      // Members of each cluster should be similar to each other
+      // (i.e., groupA members in one cluster, groupB in another)
+      const cluster0First = clusters[0][0][0]; // first dimension of first vector
+      if (cluster0First > 0.5) {
+        // cluster 0 is group A
+        expect(clusters[0]).toHaveLength(3);
+        expect(clusters[1]).toHaveLength(3);
+      } else {
+        // cluster 0 is group B
+        expect(clusters[0]).toHaveLength(3);
+        expect(clusters[1]).toHaveLength(3);
+      }
+    });
+
+    it('should converge within maxIterations', () => {
+      const vectors = [[1, 0], [0.9, 0.1], [0, 1], [0.1, 0.9]];
+      // Should not throw with very low maxIterations
+      const clusters = service.kMeansClustering(vectors, 2, 1);
+      expect(clusters).toHaveLength(2);
+      // All vectors accounted for
+      const totalVectors = clusters.reduce((sum, c) => sum + c.length, 0);
+      expect(totalVectors).toBe(4);
+    });
+
+    it('should handle k=1 (single cluster)', () => {
+      const vectors = [[1, 0], [0, 1], [0.5, 0.5]];
+      const clusters = service.kMeansClustering(vectors, 1);
+      expect(clusters).toHaveLength(1);
+      expect(clusters[0]).toHaveLength(3);
+    });
+  });
+
+  describe('findSimilarByMultipleVectors', () => {
+    it('should return empty array for empty vectors', async () => {
+      const result = await service.findSimilarByMultipleVectors([], 10);
+      expect(result).toEqual([]);
+    });
+
+    it('should delegate to findSimilarByVector for single centroid', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([
+        { contentId: 'p1', contentType: 'POST', similarity: 0.9 },
+      ]);
+
+      const result = await service.findSimilarByMultipleVectors([[0.1, 0.2]], 10);
+      expect(result).toHaveLength(1);
+      expect(result[0].contentId).toBe('p1');
+      // Should call $queryRawUnsafe exactly once (single centroid path)
+      expect(prisma.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+    });
+
+    it('should merge and deduplicate results from multiple centroids', async () => {
+      // First centroid returns p1 + p2, second returns p2 + p3
+      prisma.$queryRawUnsafe
+        .mockResolvedValueOnce([
+          { contentId: 'p1', contentType: 'POST', similarity: 0.9 },
+          { contentId: 'p2', contentType: 'POST', similarity: 0.7 },
+        ])
+        .mockResolvedValueOnce([
+          { contentId: 'p2', contentType: 'POST', similarity: 0.8 }, // higher similarity for p2
+          { contentId: 'p3', contentType: 'POST', similarity: 0.6 },
+        ]);
+
+      const result = await service.findSimilarByMultipleVectors(
+        [[0.1, 0.2], [0.3, 0.4]],
+        10,
+      );
+
+      // Should have 3 unique content IDs
+      expect(result).toHaveLength(3);
+      const ids = result.map(r => r.contentId);
+      expect(ids).toContain('p1');
+      expect(ids).toContain('p2');
+      expect(ids).toContain('p3');
+
+      // p2 should keep the higher similarity (0.8, not 0.7)
+      const p2 = result.find(r => r.contentId === 'p2');
+      expect(p2!.similarity).toBe(0.8);
+    });
+
+    it('should respect limit after merging', async () => {
+      prisma.$queryRawUnsafe
+        .mockResolvedValueOnce([
+          { contentId: 'p1', contentType: 'POST', similarity: 0.9 },
+          { contentId: 'p2', contentType: 'POST', similarity: 0.8 },
+        ])
+        .mockResolvedValueOnce([
+          { contentId: 'p3', contentType: 'POST', similarity: 0.7 },
+          { contentId: 'p4', contentType: 'POST', similarity: 0.6 },
+        ]);
+
+      const result = await service.findSimilarByMultipleVectors(
+        [[0.1], [0.2]],
+        2, // limit to 2
+      );
+
+      expect(result).toHaveLength(2);
+      // Should return the highest-similarity items
+      expect(result[0].contentId).toBe('p1');
+      expect(result[1].contentId).toBe('p2');
+    });
+
+    it('should sort merged results by similarity descending', async () => {
+      prisma.$queryRawUnsafe
+        .mockResolvedValueOnce([
+          { contentId: 'p1', contentType: 'POST', similarity: 0.5 },
+        ])
+        .mockResolvedValueOnce([
+          { contentId: 'p2', contentType: 'POST', similarity: 0.9 },
+        ]);
+
+      const result = await service.findSimilarByMultipleVectors(
+        [[0.1], [0.2]],
+        10,
+      );
+
+      expect(result[0].contentId).toBe('p2'); // 0.9 first
+      expect(result[1].contentId).toBe('p1'); // 0.5 second
+    });
+
+    it('should pass filterTypes and excludeIds to each centroid query', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      await service.findSimilarByMultipleVectors(
+        [[0.1], [0.2]],
+        10,
+        ['POST' as any],
+        ['excluded-1'],
+      );
+
+      // Two queries (one per centroid)
+      expect(prisma.$queryRawUnsafe).toHaveBeenCalledTimes(2);
+      // Both queries should contain POST filter and excluded-1
+      for (let i = 0; i < 2; i++) {
+        const sql = prisma.$queryRawUnsafe.mock.calls[i][0];
+        expect(sql).toContain("'POST'");
+        expect(sql).toContain("'excluded-1'");
+      }
     });
   });
 });

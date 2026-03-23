@@ -861,7 +861,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sequenceDurationBadge: {
     position: 'absolute',
     bottom: spacing.xs,
-    right: spacing.xs,
+    end: spacing.xs,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: radius.sm,
@@ -933,8 +933,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
   },
   bottomBarGradient: {
     flexDirection: 'row',

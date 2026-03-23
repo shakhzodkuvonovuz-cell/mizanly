@@ -371,6 +371,7 @@ describe('AudioRoomsService', () => {
 
       const result = await service.join('room1', 'user123');
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'room1');
     });
   });
 

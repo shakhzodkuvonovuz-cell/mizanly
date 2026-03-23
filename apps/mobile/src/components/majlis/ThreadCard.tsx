@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingLeft: spacing.base + spacing.md + 40,
+    paddingStart: spacing.base + spacing.md + 40,
     paddingTop: spacing.sm,
   },
   repostHeaderText: {
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
-  left: { alignItems: 'center', marginRight: spacing.md, paddingTop: 2 },
+  left: { alignItems: 'center', marginEnd: spacing.md, paddingTop: 2 },
   replyLine: {
     width: 2,
     flex: 1,
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
   },
   pollBar: {
     position: 'absolute',
-    left: 0,
+    start: 0,
     top: 0,
     bottom: 0,
     backgroundColor: colors.active.emerald20,

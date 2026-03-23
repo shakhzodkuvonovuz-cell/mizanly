@@ -68,7 +68,9 @@ describe('Integration: Islamic Features', () => {
 
   it('should return duas by category', () => {
     const all = islamicService.getDuasByCategory();
-    expect(all.length).toBeGreaterThan(0);
+    expect(all.length).toBeGreaterThanOrEqual(1);
+    expect(all[0]).toHaveProperty('id');
+    expect(all[0]).toHaveProperty('arabicText');
     const morning = islamicService.getDuasByCategory('morning');
     expect(morning.every(d => d.category === 'morning')).toBe(true);
   });

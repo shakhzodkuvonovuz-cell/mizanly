@@ -132,7 +132,8 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.subscription.findMany.mockResolvedValue([]);
       prisma.video.findMany.mockResolvedValue([]);
       const result = await service.getFeed('u1');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     it('getChapters — returns empty', async () => {
@@ -179,6 +180,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.channel.findUnique.mockResolvedValue(ch);
       const result = await service.getByHandle('test');
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('handle', 'test');
     });
 
     it('getByHandle — non-existent throws', async () => {
@@ -345,6 +347,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.conversation.update.mockResolvedValue({});
       const result = await service.replyToStory('s-1', 'u2', 'Reply');
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('content', 'Reply');
     });
 
     it('submitStickerResponse — new response', async () => {
@@ -353,6 +356,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.storyStickerResponse.create.mockResolvedValue({ id: 'sr-1' });
       const result = await service.submitStickerResponse('s-1', 'u1', 'emoji', { emoji: '🤲' });
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'sr-1');
     });
 
     it('submitStickerResponse — updates existing', async () => {
@@ -361,6 +365,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.storyStickerResponse.update.mockResolvedValue({ id: 'sr-1' });
       const result = await service.submitStickerResponse('s-1', 'u1', 'emoji', { emoji: '🕌' });
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'sr-1');
     });
 
     it('getStickerSummary — owner only', async () => {
@@ -368,6 +373,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.storyStickerResponse.findMany.mockResolvedValue([]);
       const result = await service.getStickerSummary('s-1', 'owner');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('getStickerSummary — non-owner rejected', async () => {
@@ -461,6 +467,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.follow.findMany.mockResolvedValue([]);
       const result = await service.getSuggestions('u1');
       expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
     });
   });
 
@@ -496,6 +503,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.eventRSVP.findUnique.mockResolvedValue(null);
       const result = await service.getEvent('e-1', 'viewer');
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'e-1');
     });
 
     it('updateEvent — organizer can update', async () => {
@@ -503,6 +511,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.event.update.mockResolvedValue({ ...ev, title: 'Updated' });
       const result = await service.updateEvent('organizer', 'e-1', { title: 'Updated' } as any);
       expect(result).toBeDefined();
+      expect(result.title).toBe('Updated');
     });
 
     it('deleteEvent — organizer can delete', async () => {
@@ -510,6 +519,7 @@ describe('Final Push Part 3 — breaking 3800', () => {
       prisma.event.delete.mockResolvedValue({});
       const result = await service.deleteEvent('organizer', 'e-1');
       expect(result).toBeDefined();
+      expect(prisma.event.delete).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'e-1' } }));
     });
 
     it('listAttendees — returns empty', async () => {

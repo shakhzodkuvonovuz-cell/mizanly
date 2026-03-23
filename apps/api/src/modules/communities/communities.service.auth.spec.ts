@@ -52,6 +52,7 @@ describe('CommunitiesService — authorization matrix', () => {
     prisma.$transaction.mockResolvedValue([{}]);
     const result = await service.delete('comm-1', userA);
     expect(result).toBeDefined();
+    expect(prisma.circle.findUnique).toHaveBeenCalled();
   });
 
   it('should throw ForbiddenException when non-owner deletes', async () => {

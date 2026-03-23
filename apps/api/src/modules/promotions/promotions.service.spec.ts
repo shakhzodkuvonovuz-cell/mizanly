@@ -85,6 +85,7 @@ describe('PromotionsService', () => {
       const futureDate = new Date(Date.now() + 86400000).toISOString();
       const result = await service.setReminder('u1', 'p1', futureDate);
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('postId', 'p1');
     });
 
     it('should throw for past date', async () => {

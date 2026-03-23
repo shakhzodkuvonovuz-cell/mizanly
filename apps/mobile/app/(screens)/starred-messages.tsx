@@ -256,7 +256,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   messageContent: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
   },
   messageHeader: {
     flexDirection: 'row',
@@ -287,7 +287,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.sm,
   },
   mediaText: {
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
     fontSize: fontSize.sm,
     color: colors.text.secondary,
   },
@@ -307,7 +307,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   reactionEmoji: {
     fontSize: fontSize.sm,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   reactionCount: {
     fontSize: fontSize.xs,
@@ -348,7 +348,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   reactionCountGold: {
     fontSize: fontSize.xs,
     color: colors.gold,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   skeletonContainer: {
     paddingHorizontal: spacing.base,

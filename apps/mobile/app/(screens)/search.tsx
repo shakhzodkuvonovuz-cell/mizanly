@@ -872,7 +872,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   videoOverlay: {
     position: 'absolute' as const,
     bottom: spacing.xs,
-    right: spacing.xs,
+    end: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.6)',
     borderRadius: radius.sm,
     padding: spacing.xs,
@@ -908,7 +908,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   reelStat: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   reelUser: {
     flexDirection: 'row',
@@ -955,7 +955,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   videoStat: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   channelRow: {
     flexDirection: 'row',

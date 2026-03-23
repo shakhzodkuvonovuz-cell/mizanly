@@ -602,8 +602,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   urgentGlow: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     pointerEvents: 'none',
   },
@@ -639,7 +639,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(45,53,72,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   scheduleContent: {
     flex: 1,
@@ -672,7 +672,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   currentBadgeText: {
     fontFamily: fonts.bodySemiBold,
@@ -759,7 +759,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   goalLabel: {
     fontFamily: fonts.body,
@@ -772,7 +772,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.text.tertiary,
   },
   checkContainer: {
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   checkCircle: {
     width: 24,

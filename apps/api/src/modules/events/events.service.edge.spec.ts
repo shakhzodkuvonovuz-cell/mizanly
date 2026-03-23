@@ -92,6 +92,7 @@ describe('EventsService — edge cases', () => {
 
       const result = await service.removeRsvp(userId, 'event-1');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
   });
 });

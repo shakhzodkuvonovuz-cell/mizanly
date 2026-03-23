@@ -167,8 +167,8 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     zIndex: 100,
   },
   androidBg: {
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: 4,
-    right: 4,
+    end: 4,
     minWidth: 18,
     height: 18,
     borderRadius: radius.full,

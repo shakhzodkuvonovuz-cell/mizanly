@@ -128,8 +128,8 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
-    marginLeft: spacing.sm,
-    marginRight: spacing.sm,
+    marginStart: spacing.sm,
+    marginEnd: spacing.sm,
     justifyContent: 'center',
   },
   senderText: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   viewAllButton: {
     width: 32,

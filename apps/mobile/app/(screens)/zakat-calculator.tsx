@@ -595,7 +595,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   infoText: {
     fontFamily: fonts.body,
@@ -649,7 +649,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   stepConnector: {
     position: 'absolute',
     top: 16,
-    right: -50,
+    end: -50,
     width: 100,
     height: 2,
     backgroundColor: tc.surface,
@@ -684,7 +684,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   inputContent: {
     flex: 1,
@@ -703,13 +703,13 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontFamily: fonts.body,
     fontSize: fontSize.md,
     color: colors.text.tertiary,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   inputSuffix: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
     color: colors.text.tertiary,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   textInput: {
     flex: 1,

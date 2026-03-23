@@ -4,6 +4,22 @@ import { PrismaService } from '../../config/prisma.service';
 import { CommerceService } from './commerce.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
+// Mock Stripe entirely — no real API calls in tests
+const mockStripeInstanceEdge = {
+  paymentIntents: {
+    create: jest.fn().mockResolvedValue({
+      id: 'pi_test_edge_123',
+      client_secret: 'pi_test_edge_123_secret_abc',
+    }),
+    update: jest.fn().mockResolvedValue({}),
+    cancel: jest.fn().mockResolvedValue({}),
+  },
+};
+jest.mock('stripe', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => mockStripeInstanceEdge),
+}));
+
 describe('CommerceService — edge cases', () => {
   let service: CommerceService;
   let prisma: any;

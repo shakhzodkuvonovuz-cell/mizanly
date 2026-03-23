@@ -507,7 +507,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontFamily: fonts.body,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   // Badges
   badgesSection: {
@@ -671,12 +671,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   // Related products
   relatedSection: {
-    paddingLeft: spacing.base,
+    paddingStart: spacing.base,
     marginBottom: spacing.lg,
   },
   relatedRow: {
     gap: spacing.md,
-    paddingRight: spacing.base,
+    paddingEnd: spacing.base,
   },
   relatedCard: {
     width: 140,

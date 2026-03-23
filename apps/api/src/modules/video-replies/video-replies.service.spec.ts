@@ -39,6 +39,7 @@ describe('VideoRepliesService', () => {
       prisma.videoReply.create.mockResolvedValue({ id: 'vr2' });
       const result = await service.create('u1', { commentId: 'rc1', commentType: 'REEL', mediaUrl: 'https://cdn.test/v.mp4' });
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'vr2');
     });
 
     it('should throw for invalid commentType', async () => {

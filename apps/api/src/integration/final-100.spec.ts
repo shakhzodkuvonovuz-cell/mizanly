@@ -112,6 +112,7 @@ describe('Final 100 — breaking 3800', () => {
       prisma.$transaction.mockResolvedValue([{ id: 'reply-1', userId: 'u1', content: 'reply' }, {}]);
       const result = await service.addComment('p-1', 'u1', { content: 'reply', parentId: 'parent-1' } as any);
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'reply-1');
     });
 
     it('addComment self-notification skipped', async () => {
@@ -119,6 +120,7 @@ describe('Final 100 — breaking 3800', () => {
       prisma.$transaction.mockResolvedValue([{ id: 'c-1', userId: 'u1', content: 'self-comment' }, {}]);
       const result = await service.addComment('p-1', 'u1', { content: 'self-comment' } as any);
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'c-1');
     });
 
     // React edge cases
@@ -136,7 +138,8 @@ describe('Final 100 — breaking 3800', () => {
       const p2002 = Object.assign(new Error('P2002'), { code: 'P2002' });
       prisma.$transaction.mockRejectedValue(p2002);
       const result = await service.react('p-1', 'u1');
-      expect(result.reaction).toBeDefined();
+      expect(result).toHaveProperty('reaction');
+      expect(typeof result.reaction).toBe('string');
     });
 
     it('pin comment with existing pinned comment unpins old', async () => {
@@ -182,7 +185,8 @@ describe('Final 100 — breaking 3800', () => {
       prisma.post.findMany.mockResolvedValue([]);
       const result = await service.getFeed('u1', 'following');
       // Should work without crash, excluding blocked/muted
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
   });
 
@@ -211,6 +215,7 @@ describe('Final 100 — breaking 3800', () => {
         (prisma as any)[type].update.mockResolvedValue({ id: `${type}-1`, scheduledAt: null });
         const result = await service.cancelSchedule('u1', type, `${type}-1`);
         expect(result).toBeDefined();
+        expect(result.scheduledAt).toBeNull();
       });
 
       it(`cancel ${type} — non-owner rejected`, async () => {
@@ -228,6 +233,7 @@ describe('Final 100 — breaking 3800', () => {
         (prisma as any)[type].update.mockResolvedValue({ id: `${type}-1`, scheduledAt: null });
         const result = await service.publishNow('u1', type, `${type}-1`);
         expect(result).toBeDefined();
+        expect(result.scheduledAt).toBeNull();
       });
 
       it(`publishNow ${type} — non-owner rejected`, async () => {
@@ -265,6 +271,7 @@ describe('Final 100 — breaking 3800', () => {
       prisma.encryptionKey.upsert.mockResolvedValue({ userId: 'u1', publicKey: 'a'.repeat(44), keyFingerprint: 'abc' });
       const result = await service.registerKey('u1', 'a'.repeat(44));
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('publicKey');
     });
 
     it('registerKey — key change triggers notification', async () => {
@@ -273,6 +280,7 @@ describe('Final 100 — breaking 3800', () => {
       prisma.conversationMember.findMany.mockResolvedValue([]);
       const result = await service.registerKey('u1', 'b'.repeat(44));
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('keyFingerprint', 'new-fp');
     });
 
     it('getPublicKey — found', async () => {
@@ -347,6 +355,7 @@ describe('Final 100 — breaking 3800', () => {
       prisma.draftPost.update.mockResolvedValue({ id: 'd-1', data: { content: 'updated' } });
       const result = await service.updateDraft('d-1', 'u1', { content: 'updated' });
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'd-1');
     });
 
     it('deleteDraft — owner can delete', async () => {

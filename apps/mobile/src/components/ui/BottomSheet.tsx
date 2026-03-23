@@ -258,8 +258,8 @@ const styles = StyleSheet.create({
   keyboardAvoid: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
   },
   sheet: {
     position: 'relative',

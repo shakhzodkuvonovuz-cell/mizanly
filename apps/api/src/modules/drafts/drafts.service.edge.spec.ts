@@ -36,6 +36,7 @@ describe('DraftsService — edge cases', () => {
     prisma.draftPost.create.mockResolvedValue({ id: 'draft-1', userId, data: { content: 'محتوى عربي' } });
     const result = await service.saveDraft(userId, 'SAF', { content: 'محتوى عربي' });
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('id', 'draft-1');
   });
 
   it('should throw NotFoundException for loading non-existent draft', async () => {

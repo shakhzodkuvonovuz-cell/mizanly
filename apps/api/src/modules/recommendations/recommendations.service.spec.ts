@@ -14,6 +14,7 @@ describe('RecommendationsService', () => {
     mockEmbeddingsService = {
       getUserInterestVector: jest.fn().mockResolvedValue(null),
       findSimilarByVector: jest.fn().mockResolvedValue([]),
+      findSimilarByMultipleVectors: jest.fn().mockResolvedValue([]),
       generateEmbedding: jest.fn().mockResolvedValue(null),
     };
 
@@ -525,9 +526,9 @@ describe('RecommendationsService', () => {
   describe('multiStageRank — pgvector ranking pipeline', () => {
     it('should use ranked order when pgvector returns candidates', async () => {
       const userId = 'user1';
-      const interestVector = [0.1, 0.2, 0.3];
-      mockEmbeddingsService.getUserInterestVector.mockResolvedValue(interestVector);
-      mockEmbeddingsService.findSimilarByVector.mockResolvedValue([
+      const interestCentroids = [[0.1, 0.2, 0.3]];
+      mockEmbeddingsService.getUserInterestVector.mockResolvedValue(interestCentroids);
+      mockEmbeddingsService.findSimilarByMultipleVectors.mockResolvedValue([
         { contentId: 'p1', similarity: 0.9 },
         { contentId: 'p2', similarity: 0.7 },
       ]);
@@ -561,9 +562,9 @@ describe('RecommendationsService', () => {
 
       const result = await service.suggestedPosts(userId, 20);
 
-      // Should have called findSimilarByVector with the interest vector
-      expect(mockEmbeddingsService.findSimilarByVector).toHaveBeenCalledWith(
-        interestVector, 500, expect.any(Array), expect.any(Array),
+      // Should have called findSimilarByMultipleVectors with the interest centroids
+      expect(mockEmbeddingsService.findSimilarByMultipleVectors).toHaveBeenCalledWith(
+        interestCentroids, 500, expect.any(Array), expect.any(Array),
       );
       // Result should be non-empty (ranked posts)
       expect(result.length).toBeGreaterThan(0);
@@ -571,8 +572,8 @@ describe('RecommendationsService', () => {
 
     it('should exclude seen posts from pgvector candidates', async () => {
       const userId = 'user1';
-      mockEmbeddingsService.getUserInterestVector.mockResolvedValue([0.1, 0.2]);
-      mockEmbeddingsService.findSimilarByVector.mockResolvedValue([]);
+      mockEmbeddingsService.getUserInterestVector.mockResolvedValue([[0.1, 0.2]]);
+      mockEmbeddingsService.findSimilarByMultipleVectors.mockResolvedValue([]);
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.feedInteraction.findMany.mockResolvedValue([
@@ -583,7 +584,7 @@ describe('RecommendationsService', () => {
 
       await service.suggestedPosts(userId, 20);
 
-      expect(mockEmbeddingsService.findSimilarByVector).toHaveBeenCalledWith(
+      expect(mockEmbeddingsService.findSimilarByMultipleVectors).toHaveBeenCalledWith(
         expect.any(Array),
         500,
         expect.any(Array),
@@ -593,8 +594,8 @@ describe('RecommendationsService', () => {
 
     it('should fetch hashtag map alongside author map for diversity reranking', async () => {
       const userId = 'user1';
-      mockEmbeddingsService.getUserInterestVector.mockResolvedValue([0.1, 0.2, 0.3]);
-      mockEmbeddingsService.findSimilarByVector.mockResolvedValue([
+      mockEmbeddingsService.getUserInterestVector.mockResolvedValue([[0.1, 0.2, 0.3]]);
+      mockEmbeddingsService.findSimilarByMultipleVectors.mockResolvedValue([
         { contentId: 'p1', similarity: 0.9 },
         { contentId: 'p2', similarity: 0.8 },
         { contentId: 'p3', similarity: 0.7 },
@@ -643,9 +644,9 @@ describe('RecommendationsService', () => {
 
     it('should defer posts with 2+ overlapping hashtags in recent window', async () => {
       const userId = 'user1';
-      mockEmbeddingsService.getUserInterestVector.mockResolvedValue([0.1, 0.2, 0.3]);
+      mockEmbeddingsService.getUserInterestVector.mockResolvedValue([[0.1, 0.2, 0.3]]);
       // 4 candidates: p1, p2, p3 share "islam"+"quran" tags, p4 is different
-      mockEmbeddingsService.findSimilarByVector.mockResolvedValue([
+      mockEmbeddingsService.findSimilarByMultipleVectors.mockResolvedValue([
         { contentId: 'p1', similarity: 0.95 },
         { contentId: 'p2', similarity: 0.90 },
         { contentId: 'p3', similarity: 0.85 },
@@ -760,6 +761,8 @@ describe('RecommendationsService', () => {
 
       // Should not crash, should still return posts
       expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBeGreaterThanOrEqual(1);
     });
   });
 });

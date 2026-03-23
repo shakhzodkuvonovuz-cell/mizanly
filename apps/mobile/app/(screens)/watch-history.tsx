@@ -268,7 +268,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   durationBadge: {
     position: 'absolute',
     bottom: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
@@ -281,7 +281,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   progressBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
+    start: 0,
     height: 3,
     backgroundColor: colors.emerald,
     borderRadius: 1.5,

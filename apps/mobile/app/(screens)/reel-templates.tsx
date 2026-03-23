@@ -404,7 +404,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   segmentBadge: {
     position: 'absolute',
     top: spacing.xs,
-    right: spacing.xs,
+    end: spacing.xs,
   },
   segmentBadgeGradient: {
     flexDirection: 'row',

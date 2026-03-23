@@ -38,6 +38,7 @@ describe('PlaylistsService — authorization matrix', () => {
     prisma.playlist.update.mockResolvedValue({ id: 'pl-1', title: 'Updated' });
     const result = await service.update('pl-1', userA, { title: 'Updated' } as any);
     expect(result).toBeDefined();
+    expect(result.title).toBe('Updated');
   });
 
   it('should throw ForbiddenException when non-owner updates playlist', async () => {

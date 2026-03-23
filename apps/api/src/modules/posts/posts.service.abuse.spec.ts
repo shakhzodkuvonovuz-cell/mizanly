@@ -63,6 +63,7 @@ describe('PostsService — abuse vectors (Task 101, 103)', () => {
     prisma.$transaction.mockResolvedValue([{ id: 'share-1' }, {}]);
     const result = await service.share('post-1', 'user-1');
     expect(result).toBeDefined();
+    expect(prisma.$transaction).toHaveBeenCalled();
   });
 
   it('should reject sharing removed post', async () => {

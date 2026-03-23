@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
   },
   feedbackContainer: {
     backgroundColor: colors.dark.bgCard,

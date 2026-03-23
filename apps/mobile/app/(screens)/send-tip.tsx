@@ -491,7 +491,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   creatorInfo: {
     flex: 1,
@@ -562,7 +562,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   popularBadge: {
     position: 'absolute',
     top: -8,
-    right: -8,
+    end: -8,
     width: 24,
     height: 24,
     borderRadius: radius.full,
@@ -625,12 +625,12 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: colors.text.primary,
     lineHeight: 22,
     minHeight: 60,
-    paddingRight: 40,
+    paddingEnd: 40,
   },
   charCountWrapper: {
     position: 'absolute',
     bottom: 0,
-    right: 0,
+    end: 0,
   },
   summaryCard: {
     borderRadius: radius.lg,

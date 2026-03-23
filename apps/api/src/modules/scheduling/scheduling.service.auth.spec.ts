@@ -40,6 +40,7 @@ describe('SchedulingService — authorization matrix', () => {
     prisma.post.update.mockResolvedValue({ id: 'post-1', scheduledAt: null });
     const result = await service.cancelSchedule(userA, 'post', 'post-1');
     expect(result).toBeDefined();
+    expect(result.scheduledAt).toBeNull();
   });
 
   it('should only return own scheduled posts', async () => {

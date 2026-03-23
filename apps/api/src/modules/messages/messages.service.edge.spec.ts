@@ -108,6 +108,7 @@ describe('MessagesService — edge cases', () => {
       });
 
       expect(result).toBeDefined();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when content and media are both empty', async () => {
@@ -121,6 +122,7 @@ describe('MessagesService — edge cases', () => {
       });
 
       expect(result).toBeDefined();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
 
     it('should accept message with only mediaUrl (no content)', async () => {
@@ -130,6 +132,7 @@ describe('MessagesService — edge cases', () => {
       });
 
       expect(result).toBeDefined();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
   });
 
@@ -157,7 +160,8 @@ describe('MessagesService — edge cases', () => {
       prisma.message.update.mockResolvedValue({ ...msg, content: '\u202E\u202D mixed direction', editedAt: new Date() });
 
       const result = await service.editMessage('msg-1', userId, '\u202E\u202D mixed direction');
-      expect(result.message).toBeDefined();
+      expect(result).toHaveProperty('message');
+      expect(result.message).toHaveProperty('editedAt');
     });
 
     it('should throw BadRequestException for editing deleted message', async () => {

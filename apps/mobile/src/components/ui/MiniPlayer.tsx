@@ -278,8 +278,8 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     bottom: tabBar.height,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: MINI_PLAYER_HEIGHT,
     zIndex: 9999,
     borderTopWidth: StyleSheet.hairlineWidth,

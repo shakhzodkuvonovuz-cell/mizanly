@@ -160,6 +160,7 @@ describe('Additional Tests — reaching 3800+ total', () => {
       prisma.videoBookmark.create.mockResolvedValue({});
       const result = await service.bookmark('v-1', 'u1');
       expect(result).toBeDefined();
+      expect(prisma.videoBookmark.create).toHaveBeenCalled();
     });
 
     it('should unbookmark video', async () => {
@@ -167,6 +168,7 @@ describe('Additional Tests — reaching 3800+ total', () => {
       prisma.videoBookmark.delete.mockResolvedValue({});
       const result = await service.unbookmark('v-1', 'u1');
       expect(result).toBeDefined();
+      expect(prisma.videoBookmark.delete).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when unbookmarking non-bookmarked video', async () => {
@@ -378,11 +380,13 @@ describe('Additional Tests — reaching 3800+ total', () => {
     it('should search people type', async () => {
       const result = await service.search('test', 'people');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('should search tags type', async () => {
       const result = await service.search('test', 'tags');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('should reject empty search query', async () => {
@@ -396,16 +400,19 @@ describe('Additional Tests — reaching 3800+ total', () => {
     it('should return trending data', async () => {
       const result = await service.trending();
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('should search with no type specified', async () => {
       const result = await service.search('general query');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('should return explore feed (empty)', async () => {
       const result = await service.getExploreFeed();
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('should search posts with query', async () => {
@@ -425,7 +432,8 @@ describe('Additional Tests — reaching 3800+ total', () => {
 
     it('should accept 200-char search query (boundary)', async () => {
       const result = await service.search('a'.repeat(200), 'posts');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
   });
 

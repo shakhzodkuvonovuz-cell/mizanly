@@ -110,6 +110,7 @@ describe('MessagesService — authorization matrix', () => {
       prisma.conversation.update.mockResolvedValue({ id: convId, groupName: 'New Name' });
       const result = await service.updateGroup(convId, userA, { groupName: 'New Name' });
       expect(result).toBeDefined();
+      expect(result.groupName).toBe('New Name');
     });
 
     it('should throw ForbiddenException when non-creator updates', async () => {

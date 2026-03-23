@@ -79,7 +79,8 @@ describe('FeedTransparencyService', () => {
       prisma.follow.findUnique.mockResolvedValue(null);
 
       const result = await service.explainPost('user-1', 'post-1');
-      expect(result.reasons).toBeDefined();
+      expect(result).toHaveProperty('reasons');
+      expect(Array.isArray(result.reasons)).toBe(true);
     });
 
     it('should handle post with null content', async () => {
@@ -90,7 +91,8 @@ describe('FeedTransparencyService', () => {
       prisma.follow.findUnique.mockResolvedValue(null);
 
       const result = await service.explainPost('user-1', 'post-1');
-      expect(result.reasons).toBeDefined();
+      expect(result).toHaveProperty('reasons');
+      expect(Array.isArray(result.reasons)).toBe(true);
     });
 
     it('should include multiple reasons when applicable', async () => {
@@ -123,7 +125,8 @@ describe('FeedTransparencyService', () => {
       prisma.follow.findUnique.mockResolvedValue(null);
 
       const result = await service.explainPost('user-1', 'post-1');
-      expect(result.reasons).toBeDefined();
+      expect(result).toHaveProperty('reasons');
+      expect(Array.isArray(result.reasons)).toBe(true);
     });
 
     it('should format username correctly in follow reason', async () => {

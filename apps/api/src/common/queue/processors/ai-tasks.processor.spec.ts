@@ -47,6 +47,7 @@ describe('AiTasksProcessor', () => {
 
   it('should be defined', () => {
     expect(processor).toBeDefined();
+    expect(processor).toBeInstanceOf(AiTasksProcessor);
   });
 
   describe('processModeration (via reflection)', () => {

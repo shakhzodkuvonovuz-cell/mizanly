@@ -775,7 +775,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   pipOverlay: {
     position: 'absolute',
     top: spacing.md,
-    right: spacing.md,
+    end: spacing.md,
     width: PIP_WIDTH,
     height: PIP_HEIGHT,
     borderRadius: radius.md,
@@ -801,7 +801,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   pipLabel: {
     position: 'absolute',
     bottom: spacing.xs,
-    left: spacing.xs,
+    start: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
@@ -817,7 +817,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sideSplitOverlay: {
     position: 'absolute',
     top: 0,
-    right: 0,
+    end: 0,
     bottom: 0,
     width: '50%',
     flexDirection: 'row',
@@ -837,7 +837,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sideSplitLabel: {
     position: 'absolute',
     top: spacing.sm,
-    left: spacing.sm,
+    start: spacing.sm,
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
@@ -848,8 +848,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   fullOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     bottom: 0,
     opacity: 0.4,
   },
@@ -876,7 +876,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   recordingBadge: {
     position: 'absolute',
     top: spacing.md,
-    left: spacing.md,
+    start: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -1049,7 +1049,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewPip: {
     position: 'absolute',
     top: spacing.md,
-    right: spacing.md,
+    end: spacing.md,
     width: 100,
     height: 140,
     borderRadius: radius.md,
@@ -1064,7 +1064,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   previewPipLabel: {
     position: 'absolute',
     bottom: spacing.xs,
-    left: spacing.xs,
+    start: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,

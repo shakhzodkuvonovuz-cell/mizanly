@@ -96,12 +96,16 @@ describe('CommerceController', () => {
   describe('createOrder', () => {
     it('should call commerceService.createOrder with userId and dto', async () => {
       const dto = { productId: 'prod-1', quantity: 2 };
-      service.createOrder.mockResolvedValue({ id: 'order-1' } as any);
+      service.createOrder.mockResolvedValue({
+        order: { id: 'order-1', stripePaymentId: 'pi_test_123', status: 'PENDING' },
+        clientSecret: 'pi_test_123_secret_abc',
+      } as any);
 
       const result = await controller.createOrder(userId, dto as any);
 
       expect(service.createOrder).toHaveBeenCalledWith(userId, dto);
-      expect(result).toEqual(expect.objectContaining({ id: 'order-1' }));
+      expect(result).toEqual(expect.objectContaining({ clientSecret: 'pi_test_123_secret_abc' }));
+      expect((result as any).order.stripePaymentId).toBe('pi_test_123');
     });
   });
 

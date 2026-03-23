@@ -301,6 +301,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
     it('should return collections using groupBy', async () => {
       const result = await service.getCollections('u1');
       expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
     });
   });
 
@@ -337,6 +338,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
       prisma.follow.findUnique.mockResolvedValue(null);
       const result = await service.checkFollowing('u1', 'u2');
       expect(result).toBeDefined();
+      expect(result.isFollowing).toBe(false);
     });
 
     it('should get suggestions', async () => {
@@ -344,6 +346,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
       prisma.user.findMany.mockResolvedValue([]);
       const result = await service.getSuggestions('u1');
       expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
     });
 
     it('should throw NotFoundException for followers of non-existent user', async () => {
@@ -407,6 +410,8 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
     it('should return empty achievements list', async () => {
       const result = await service.getAchievements('u1');
       expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toEqual([]);
     });
 
     it('should return empty challenges', async () => {
@@ -429,6 +434,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
       prisma.profileCustomization.findUnique.mockResolvedValue({ userId: 'u1', badge: null });
       const result = await service.getProfileCustomization('u1');
       expect(result).toBeDefined();
+      expect(result.userId).toBe('u1');
     });
 
     it('should discover series (empty)', async () => {

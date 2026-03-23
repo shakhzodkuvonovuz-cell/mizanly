@@ -496,7 +496,7 @@ export default function RisalahScreen() {
       />
       {/* Channels FAB */}
       <Pressable
-        style={[styles.fab, isRTL ? { left: spacing.base, right: undefined } : undefined]}
+        style={[styles.fab]}
         onPress={() => router.push('/(screens)/broadcast-channels')}
         accessibilityLabel={t('accessibility.broadcastChannels')}
         accessibilityRole="button"
@@ -597,12 +597,12 @@ const styles = StyleSheet.create({
     width: 80,
     borderRadius: radius.md,
     marginVertical: spacing.xs,
-    marginRight: spacing.base,
+    marginEnd: spacing.base,
   },
   fab: {
     position: 'absolute',
     bottom: tabBar.height + 16,
-    right: spacing.base,
+    end: spacing.base,
     width: 56,
     height: 56,
     borderRadius: radius.full,

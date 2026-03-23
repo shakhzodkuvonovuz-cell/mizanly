@@ -17,7 +17,8 @@ describe('UpdateProfileDto', () => {
   it('should reject invalid madhab values', async () => {
     const dto = toDto({ madhab: 'invalid' });
     const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBeGreaterThanOrEqual(1);
+    expect(errors[0].property).toBe('madhab');
   });
 
   it('should accept empty dto (all optional)', async () => {
@@ -37,25 +38,29 @@ describe('UpdateProfileDto', () => {
   it('should reject invalid theme values', async () => {
     const dto = toDto({ theme: 'blue' });
     const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBeGreaterThanOrEqual(1);
+    expect(errors[0].property).toBe('theme');
   });
 
   it('should reject displayName over 50 chars', async () => {
     const dto = toDto({ displayName: 'a'.repeat(51) });
     const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBeGreaterThanOrEqual(1);
+    expect(errors[0].property).toBe('displayName');
   });
 
   it('should reject bio over 160 chars', async () => {
     const dto = toDto({ bio: 'a'.repeat(161) });
     const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBeGreaterThanOrEqual(1);
+    expect(errors[0].property).toBe('bio');
   });
 
   it('should reject invalid avatarUrl', async () => {
     const dto = toDto({ avatarUrl: 'not-a-url' });
     const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBeGreaterThanOrEqual(1);
+    expect(errors[0].property).toBe('avatarUrl');
   });
 
   it('should accept valid complete profile update', async () => {
@@ -75,12 +80,14 @@ describe('UpdateProfileDto', () => {
   it('should reject location over 100 chars', async () => {
     const dto = toDto({ location: 'a'.repeat(101) });
     const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBeGreaterThanOrEqual(1);
+    expect(errors[0].property).toBe('location');
   });
 
   it('should reject non-boolean isPrivate', async () => {
     const dto = toDto({ isPrivate: 'yes' });
     const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBeGreaterThanOrEqual(1);
+    expect(errors[0].property).toBe('isPrivate');
   });
 });

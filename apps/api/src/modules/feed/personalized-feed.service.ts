@@ -261,9 +261,9 @@ export class PersonalizedFeedService {
       return this.getTrendingFeed(space, cursor, limit);
     }
 
-    // Parallelize excluded user IDs, interaction count, and interest vector computation
+    // Parallelize excluded user IDs, interaction count, and interest centroids computation
     const contentType = this.spaceToContentType(space);
-    const [excludedUserIds, interactionCount, interestVector] = await Promise.all([
+    const [excludedUserIds, interactionCount, interestCentroids] = await Promise.all([
       this.getExcludedUserIds(userId),
       this.prisma.feedInteraction.count({ where: { userId } }),
       this.embeddingsService.getUserInterestVector(userId),
@@ -274,7 +274,7 @@ export class PersonalizedFeedService {
       return this.getColdStartFeed(userId, space, cursor, limit, excludedUserIds);
     }
 
-    if (!interestVector) {
+    if (!interestCentroids) {
       return this.getTrendingFeed(space, cursor, limit, excludedUserIds);
     }
 
@@ -282,9 +282,9 @@ export class PersonalizedFeedService {
     const session = await this.getSession(userId);
     const sessionViewedIds = session ? session.viewedIds : [];
 
-    // Stage 1: pgvector KNN — top 500 candidates
-    const candidates = await this.embeddingsService.findSimilarByVector(
-      interestVector,
+    // Stage 1: pgvector KNN — top 500 candidates across all interest centroids
+    const candidates = await this.embeddingsService.findSimilarByMultipleVectors(
+      interestCentroids,
       500,
       [contentType],
       sessionViewedIds,

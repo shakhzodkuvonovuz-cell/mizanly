@@ -1,17 +1,38 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ProductCategory, HalalCategory, ZakatCategory, VolunteerCategory, OrderStatus, ProductStatus, SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
+import Stripe from 'stripe';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 
 @Injectable()
 export class CommerceService {
   private readonly logger = new Logger(CommerceService.name);
+  private stripe: Stripe;
+  private readonly stripeAvailable: boolean;
+
   constructor(
     private prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    this.stripeAvailable = !!secretKey;
+    if (!secretKey) {
+      this.logger.warn('STRIPE_SECRET_KEY not set — order payment processing will fail');
+    }
+    this.stripe = new Stripe(secretKey || '', {
+      apiVersion: '2025-02-24.acacia' as Stripe.LatestApiVersion,
+    });
+  }
+
+  private ensureStripeAvailable(): void {
+    if (!this.stripeAvailable) {
+      throw new BadRequestException('Payment service is not configured');
+    }
+  }
 
   // ── Products / Marketplace ──────────────────────────────
 
@@ -128,6 +149,8 @@ export class CommerceService {
   // ── Orders / Checkout ───────────────────────────────────
 
   async createOrder(userId: string, dto: { productId: string; quantity?: number; installments?: number; shippingAddress?: string }) {
+    this.ensureStripeAvailable();
+
     const product = await this.prisma.product.findUnique({ where: { id: dto.productId } });
     if (!product) throw new NotFoundException('Product not found');
     if (product.status !== ProductStatus.ACTIVE) throw new BadRequestException('Product not available');
@@ -140,32 +163,81 @@ export class CommerceService {
     const installments = dto.installments || 1;
     if (installments < 1 || installments > 4) throw new BadRequestException('Installments must be 1-4');
 
+    const totalAmount = Number(product.price) * qty;
+    const currency = product.currency || 'USD';
+
+    // Create Stripe PaymentIntent before the order
+    let paymentIntent: Stripe.PaymentIntent;
+    try {
+      paymentIntent = await this.stripe.paymentIntents.create({
+        amount: Math.round(totalAmount * 100), // convert to cents
+        currency: currency.toLowerCase(),
+        metadata: {
+          orderId: 'pending', // will update after order creation
+          productId: product.id,
+          buyerId: userId,
+          sellerId: product.sellerId,
+          type: 'marketplace_order',
+        },
+        automatic_payment_methods: { enabled: true },
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Stripe PaymentIntent creation failed for order: ${msg}`);
+      throw new BadRequestException('Payment processing failed — please try again');
+    }
+
     // Use a transaction to atomically check stock and create order
     // This prevents overselling under concurrent orders
-    const order = await this.prisma.$transaction(async (tx) => {
-      // Atomically decrement stock only if sufficient
-      const updated = await tx.product.updateMany({
-        where: { id: dto.productId, stock: { gte: qty }, status: ProductStatus.ACTIVE },
-        data: { stock: { decrement: qty }, salesCount: { increment: qty } },
-      });
+    let order: { id: string; totalAmount: unknown; currency: string; status: string; stripePaymentId: string | null; product: unknown; [key: string]: unknown };
+    try {
+      order = await this.prisma.$transaction(async (tx) => {
+        // Atomically decrement stock only if sufficient
+        const updated = await tx.product.updateMany({
+          where: { id: dto.productId, stock: { gte: qty }, status: ProductStatus.ACTIVE },
+          data: { stock: { decrement: qty }, salesCount: { increment: qty } },
+        });
 
-      if (updated.count === 0) {
-        throw new BadRequestException('Product unavailable or insufficient stock');
+        if (updated.count === 0) {
+          throw new BadRequestException('Product unavailable or insufficient stock');
+        }
+
+        return tx.order.create({
+          data: {
+            buyerId: userId,
+            productId: dto.productId,
+            quantity: qty,
+            totalAmount,
+            currency,
+            installments,
+            shippingAddress: dto.shippingAddress,
+            stripePaymentId: paymentIntent.id,
+            status: OrderStatus.PENDING,
+          },
+          include: { product: true },
+        });
+      });
+    } catch (error: unknown) {
+      // If order creation fails, cancel the PaymentIntent to avoid orphaned intents
+      try {
+        await this.stripe.paymentIntents.cancel(paymentIntent.id);
+      } catch (cancelErr: unknown) {
+        const cancelMsg = cancelErr instanceof Error ? cancelErr.message : String(cancelErr);
+        this.logger.warn(`Failed to cancel orphaned PaymentIntent ${paymentIntent.id}: ${cancelMsg}`);
       }
+      throw error;
+    }
 
-      return tx.order.create({
-        data: {
-          buyerId: userId,
-          productId: dto.productId,
-          quantity: qty,
-          totalAmount: Number(product.price) * qty,
-          currency: product.currency,
-          installments,
-          shippingAddress: dto.shippingAddress,
-        },
-        include: { product: true },
+    // Update the PaymentIntent metadata with the real orderId
+    try {
+      await this.stripe.paymentIntents.update(paymentIntent.id, {
+        metadata: { orderId: order.id },
       });
-    });
+    } catch (error: unknown) {
+      // Non-critical — the PaymentIntent still works, just metadata is stale
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Failed to update PaymentIntent metadata with orderId: ${msg}`);
+    }
 
     // Notify seller about the new order (outside transaction, fire-and-forget)
     this.notificationsService.create({
@@ -176,7 +248,7 @@ export class CommerceService {
       body: `You received a new order for "${product.title}"`,
     }).catch(err => this.logger.warn('Order notification failed', err.message));
 
-    return order;
+    return { order, clientSecret: paymentIntent.client_secret };
   }
 
   async getMyOrders(userId: string, cursor?: string, limit = 20) {

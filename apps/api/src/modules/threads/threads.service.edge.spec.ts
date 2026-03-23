@@ -179,6 +179,7 @@ describe('ThreadsService — edge cases', () => {
       // $transaction is called with an array of Prisma operations
       // The thread.create call is the first operation
       expect(txArgs).toBeDefined();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
   });
 

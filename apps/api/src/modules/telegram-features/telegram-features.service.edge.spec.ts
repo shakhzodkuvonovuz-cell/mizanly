@@ -65,12 +65,14 @@ describe('TelegramFeaturesService — edge cases', () => {
     prisma.savedMessage.create.mockResolvedValue({ id: 'sm-1', userId, content: 'رسالة محفوظة' });
     const result = await service.saveMessage(userId, { content: 'رسالة محفوظة' } as any);
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('id', 'sm-1');
   });
 
   it('should accept Unicode emoji in saved message content', async () => {
     prisma.savedMessage.create.mockResolvedValue({ id: 'sm-1', userId, content: '🕌 Prayer time' });
     const result = await service.saveMessage(userId, { content: '🕌 Prayer time' } as any);
     expect(result).toBeDefined();
+    expect(result.content).toBe('🕌 Prayer time');
   });
 
   it('should reject whitespace-only saved message content', async () => {
@@ -82,6 +84,7 @@ describe('TelegramFeaturesService — edge cases', () => {
     prisma.savedMessage.create.mockResolvedValue({ id: 'sm-1', userId, content: 'x'.repeat(10000) });
     const result = await service.saveMessage(userId, { content: 'x'.repeat(10000) } as any);
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('id');
   });
 
   it('should reject content at 10001 characters', async () => {
@@ -120,6 +123,7 @@ describe('TelegramFeaturesService — edge cases', () => {
     prisma.chatFolder.create.mockResolvedValue({ id: 'f-1', userId, name: 'مجلد خاص', position: 0 });
     const result = await service.createChatFolder(userId, { name: 'مجلد خاص' } as any);
     expect(result).toBeDefined();
+    expect(result.name).toBe('مجلد خاص');
   });
 
   it('should throw BadRequestException for empty folder name', async () => {
@@ -142,6 +146,7 @@ describe('TelegramFeaturesService — edge cases', () => {
     prisma.chatFolder.create.mockResolvedValue({ id: 'f-1', userId, name, position: 0 });
     const result = await service.createChatFolder(userId, { name } as any);
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('id');
   });
 
   it('should reject folder name at 51 characters', async () => {
@@ -200,6 +205,7 @@ describe('TelegramFeaturesService — edge cases', () => {
     prisma.groupTopic.create.mockResolvedValue({ id: 'topic-1', name: '🕌 Prayer Times' });
     const result = await service.createTopic('conv-1', userId, { name: '🕌 Prayer Times' });
     expect(result).toBeDefined();
+    expect(result.name).toBe('🕌 Prayer Times');
   });
 
   it('should throw NotFoundException when topic not found for update', async () => {
@@ -228,6 +234,7 @@ describe('TelegramFeaturesService — edge cases', () => {
       shortcode: 'ab', imageUrl: 'https://example.com/e.png',
     });
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('shortcode');
   });
 
   it('should accept valid shortcode at maximum length (32 chars)', async () => {
@@ -236,6 +243,7 @@ describe('TelegramFeaturesService — edge cases', () => {
       shortcode, imageUrl: 'https://example.com/e.png',
     });
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('shortcode');
   });
 
   it('should reject shortcode with 1 character', async () => {
@@ -267,6 +275,7 @@ describe('TelegramFeaturesService — edge cases', () => {
       shortcode: 'test_emoji_v2', imageUrl: 'https://example.com/e.png',
     });
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('shortcode');
   });
 
   it('should handle animated emoji flag', async () => {
@@ -275,6 +284,7 @@ describe('TelegramFeaturesService — edge cases', () => {
       shortcode: 'dance', imageUrl: 'https://example.com/dance.gif', isAnimated: true,
     });
     expect(result).toBeDefined();
+    expect(result.isAnimated).toBe(true);
   });
 
   it('should throw BadRequestException when max 120 emoji per pack reached', async () => {

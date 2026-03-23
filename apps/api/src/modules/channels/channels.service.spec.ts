@@ -460,6 +460,7 @@ describe('ChannelsService', () => {
 
       const result = await service.getAnalytics('test', 'user-1');
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('totalViews');
     });
 
     it('should throw ForbiddenException for non-owner', async () => {

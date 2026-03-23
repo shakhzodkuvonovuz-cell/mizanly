@@ -487,7 +487,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   surahInfo: {
     flex: 1,
@@ -504,7 +504,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   surahMeta: {
     alignItems: 'flex-end',
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   surahNumber: {
     color: colors.text.primary,

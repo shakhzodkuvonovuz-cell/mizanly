@@ -56,7 +56,8 @@ describe('Error Recovery — batch tests (Tasks 72-85)', () => {
     it('should fall back to Prisma when Meilisearch is offline', async () => {
       meilisearch.isAvailable.mockReturnValue(false);
       const result = await service.search('test', 'posts');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     it('should return results from Prisma even without Meilisearch', async () => {
@@ -70,22 +71,26 @@ describe('Error Recovery — batch tests (Tasks 72-85)', () => {
       meilisearch.isAvailable.mockReturnValue(true);
       meilisearch.search.mockResolvedValue({ hits: [] });
       const result = await service.search('query', 'posts');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     it('should return suggestions even when Meilisearch is down', async () => {
       const result = await service.getSuggestions('test');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('should return trending even when search engine is down', async () => {
       const result = await service.trending();
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('should handle search with no type specified', async () => {
       const result = await service.search('test');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
   });
 

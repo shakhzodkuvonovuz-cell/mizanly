@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   itemContent: {
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
     flex: 1,
   },
   itemTitle: {

@@ -50,6 +50,7 @@ describe('TwoFactorService — edge cases', () => {
     expect(result).toBeDefined();
     // Should return QR code / secret data
     expect(result.secret || result.qrCodeUrl).toBeDefined();
+    expect(typeof (result.secret || result.qrCodeUrl)).toBe('string');
   });
 
   it('should validate backup code format', async () => {

@@ -360,11 +360,11 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   radioText: {
     flex: 1,
-    marginRight: spacing.md,
+    marginEnd: spacing.md,
   },
   radioLabel: {
     color: colors.text.primary,

@@ -71,6 +71,7 @@ describe('StoriesService — authorization matrix', () => {
     prisma.story.update.mockResolvedValue({});
     const result = await service.addStoryToHighlight('story-1', 'album-1', userA);
     expect(result).toBeDefined();
+    expect(prisma.story.update).toHaveBeenCalled();
   });
 
   it('should throw ForbiddenException when non-owner adds to highlight', async () => {

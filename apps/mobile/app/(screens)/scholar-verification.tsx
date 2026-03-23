@@ -563,7 +563,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   statusLine: {
     height: 2,
     width: 40,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   statusLineDone: {
     backgroundColor: colors.emerald,
@@ -640,7 +640,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   badgeInline: {
     flexDirection: 'row',

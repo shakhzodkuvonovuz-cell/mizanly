@@ -45,6 +45,7 @@ describe('BroadcastService — edge cases', () => {
     prisma.broadcastChannel.create.mockResolvedValue({ id: 'bc-1', name: 'بث مباشر', slug: 'broadcast-1', userId });
     const result = await service.create(userId, { name: 'بث مباشر', slug: 'broadcast-1' } as any);
     expect(result).toBeDefined();
+    expect(result.name).toBe('بث مباشر');
   });
 
   it('should throw NotFoundException for non-existent broadcast by slug', async () => {

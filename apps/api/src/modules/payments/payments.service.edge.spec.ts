@@ -73,5 +73,6 @@ describe('PaymentsService — edge cases', () => {
     prisma.user.findUnique.mockResolvedValue({ id: userId, email: 'test@test.com', username: 'test', displayName: 'Test' });
     const result = await service.listPaymentMethods(userId);
     expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
   });
 });

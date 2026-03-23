@@ -22,7 +22,7 @@ describe('BookmarksController', () => {
     controller = module.get(BookmarksController);
     service = module.get(BookmarksService);
   });
-  it('should be defined', () => { expect(controller).toBeDefined(); });
+  it('should be defined', () => { expect(controller).toBeDefined(); expect(controller).toBeInstanceOf(BookmarksController); });
   it('route prefix is bookmarks (no double prefix)', () => {
     const path = Reflect.getMetadata('path', BookmarksController);
     expect(path).toBe('bookmarks');

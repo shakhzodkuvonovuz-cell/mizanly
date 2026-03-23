@@ -598,7 +598,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   hostFab: {
     position: 'absolute',
     bottom: 32,
-    right: spacing.base,
+    end: spacing.base,
   },
   hostFabGradient: {
     width: 56,

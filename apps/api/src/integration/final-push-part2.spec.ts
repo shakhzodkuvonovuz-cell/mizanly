@@ -56,11 +56,13 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
     it('sendMessage — with content', async () => {
       const result = await service.sendMessage('c-1', 'u1', { content: 'Hello' });
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('sendMessage — with mediaUrl only', async () => {
       const result = await service.sendMessage('c-1', 'u1', { mediaUrl: 'url', mediaType: 'image/jpeg' });
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
 
     it('deleteMessage — non-existent', async () => {

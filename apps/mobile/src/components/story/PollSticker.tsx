@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   optionFill: {
     position: 'absolute',
     top: 0,
-    left: 0,
+    start: 0,
     bottom: 0,
     backgroundColor: colors.active.emerald20,
   },
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     color: colors.emerald,
     fontSize: fontSize.sm,
     fontWeight: '700',
-    marginLeft: spacing.md,
+    marginStart: spacing.md,
     zIndex: 1,
   },
   footer: {

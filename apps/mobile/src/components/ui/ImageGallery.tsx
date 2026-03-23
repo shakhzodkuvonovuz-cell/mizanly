@@ -329,13 +329,13 @@ const styles = StyleSheet.create({
   closeButton: {
     position: 'absolute',
     top: spacing.xl + 8,
-    left: spacing.xl,
+    start: spacing.xl,
     zIndex: 10,
   },
   shareButton: {
     position: 'absolute',
     top: spacing.xl + 8,
-    right: spacing.xl,
+    end: spacing.xl,
     zIndex: 10,
   },
   glassButton: {
@@ -353,8 +353,8 @@ const styles = StyleSheet.create({
   counterContainer: {
     position: 'absolute',
     top: spacing.xl + 8,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     alignItems: 'center',
     zIndex: 10,
   },
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   counterIcon: {
-    marginRight: spacing.xs,
+    marginEnd: spacing.xs,
   },
   counterText: {
     fontFamily: 'DMSans_500Medium',

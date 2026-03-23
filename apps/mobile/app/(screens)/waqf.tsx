@@ -275,7 +275,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs, marginBottom: spacing.md },
   raisedAmount: { color: colors.gold, fontSize: fontSize.md, fontWeight: '700' },
   goalAmount: { color: colors.text.tertiary, fontSize: fontSize.sm },
-  percentText: { color: colors.text.secondary, fontSize: fontSize.xs, marginLeft: 'auto' },
+  percentText: { color: colors.text.secondary, fontSize: fontSize.xs, marginStart: 'auto' },
   contributeBtn: { borderRadius: radius.md, overflow: 'hidden' },
   contributeBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.md },
   contributeBtnText: { color: '#FFF', fontSize: fontSize.base, fontWeight: '700' },
@@ -288,7 +288,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   sheetAmountText: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.base, color: colors.text.secondary },
   sheetAmountTextActive: { color: colors.gold },
   sheetCustomRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: tc.bgCard, borderRadius: radius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: tc.border, marginBottom: spacing.lg },
-  sheetCurrencyPrefix: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.md, color: colors.text.tertiary, marginRight: spacing.xs },
+  sheetCurrencyPrefix: { fontFamily: fonts.bodySemiBold, fontSize: fontSize.md, color: colors.text.tertiary, marginEnd: spacing.xs },
   sheetCustomInput: { flex: 1, fontFamily: fonts.body, fontSize: fontSize.base, color: colors.text.primary, paddingVertical: spacing.md },
   sheetActions: { paddingVertical: spacing.md },
 });

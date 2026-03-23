@@ -96,6 +96,7 @@ describe('ThreadsService — authorization matrix', () => {
       prisma.$transaction.mockResolvedValue([{ id: 'repost-1' }, {}]);
       const result = await service.repost('thread-1', userB);
       expect(result).toBeDefined();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
   });
 

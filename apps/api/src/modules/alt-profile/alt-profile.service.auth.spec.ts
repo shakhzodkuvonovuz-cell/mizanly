@@ -57,6 +57,7 @@ describe('AltProfileService — authorization matrix', () => {
     prisma.altProfile.findUnique.mockResolvedValue({ id: 'ap-1', userId: userA, isActive: true, displayName: 'Alt' });
     const result = await service.getForUser(userA, userA);
     expect(result).toBeDefined();
+    expect(result!.displayName).toBe('Alt');
   });
 
   it('should throw NotFoundException when deleting non-existent profile', async () => {

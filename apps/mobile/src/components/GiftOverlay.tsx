@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
     bottom: 120,
-    left: spacing.base,
-    right: spacing.base,
+    start: spacing.base,
+    end: spacing.base,
     alignItems: 'center',
     zIndex: 200,
   },

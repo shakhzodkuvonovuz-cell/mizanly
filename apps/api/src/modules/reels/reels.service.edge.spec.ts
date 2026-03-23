@@ -145,6 +145,7 @@ describe('ReelsService — edge cases', () => {
       } as any);
 
       expect(result).toBeDefined();
+      expect(result.caption).toBeNull();
     });
 
     it('should handle caption containing only hashtags', async () => {

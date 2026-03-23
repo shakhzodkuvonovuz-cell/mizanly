@@ -132,7 +132,8 @@ describe('TelegramFeaturesService', () => {
     it('should get saved messages with pagination', async () => {
       const result = await service.getSavedMessages('user-1');
       expect(Array.isArray(result.data)).toBe(true);
-      expect(result.meta).toBeDefined();
+      expect(result).toHaveProperty('meta');
+      expect(result.meta).toHaveProperty('hasMore');
     });
 
     it('should return cursor=null when hasMore is false', async () => {
@@ -221,6 +222,7 @@ describe('TelegramFeaturesService', () => {
       prisma.conversationMember.findMany.mockResolvedValue([{ conversationId: 'conv-1' }]);
       const result = await service.createChatFolder('user-1', { name: 'Test', conversationIds: ['conv-1'] });
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('name');
     });
 
     it('should include filterType and includeBots in create', async () => {

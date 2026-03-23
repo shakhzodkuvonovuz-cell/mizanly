@@ -26,6 +26,7 @@ describe('WebhooksController — typed ClerkWebhookEvent', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(controller).toBeInstanceOf(WebhooksController);
   });
 
   it('should reject when raw body missing', async () => {

@@ -46,6 +46,7 @@ describe('DevicesService — authorization matrix', () => {
     prisma.device.upsert.mockResolvedValue({ id: 'd-1', userId: userA });
     const result = await service.register(userA, 'token-1', 'ios');
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('id', 'd-1');
   });
 
   it('should only return own active push tokens', async () => {
@@ -60,5 +61,6 @@ describe('DevicesService — authorization matrix', () => {
     prisma.device.deleteMany.mockResolvedValue({ count: 2 });
     const result = await service.logoutAllOtherSessions(userA, 'current-session');
     expect(result).toBeDefined();
+    expect(typeof result).toBe('object');
   });
 });

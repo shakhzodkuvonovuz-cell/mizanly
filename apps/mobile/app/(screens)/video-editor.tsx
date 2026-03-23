@@ -800,7 +800,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   timestampBadge: {
     position: 'absolute',
     top: spacing.md,
-    right: spacing.md,
+    end: spacing.md,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -816,7 +816,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   speedBadge: {
     position: 'absolute',
     top: spacing.md,
-    left: spacing.md,
+    start: spacing.md,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -1129,7 +1129,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginTop: spacing.sm,
   },
   fontButton: {
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
     borderRadius: radius.md,
     overflow: 'hidden',
   },
@@ -1175,7 +1175,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontSize: fontSize.base,
     color: colors.text.primary,
     flex: 1,
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   currentTrackCard: {
     marginTop: spacing.sm,
@@ -1307,8 +1307,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   bottomBar: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
   },
   bottomBarGradient: {
     flexDirection: 'row',

@@ -162,6 +162,8 @@ describe('Comprehensive Auth + Abuse — batch tests', () => {
       prisma.draftPost.create.mockResolvedValue({ id: 'd-1', userId: 'u1', space: 'SAF' });
       const result = await service.saveDraft('u1', 'SAF', { content: 'test' });
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'd-1');
+      expect(result.space).toBe('SAF');
     });
 
     it('should return only own drafts', async () => {

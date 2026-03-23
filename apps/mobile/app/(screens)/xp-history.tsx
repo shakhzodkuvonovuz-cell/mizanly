@@ -309,7 +309,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
   },
   levelCircleWrap: {
-    marginRight: spacing.base,
+    marginEnd: spacing.base,
   },
   levelCircle: {
     width: 64,

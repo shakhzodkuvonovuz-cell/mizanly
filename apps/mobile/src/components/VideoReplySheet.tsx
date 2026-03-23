@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   recordingIndicator: {
     position: 'absolute',
     top: spacing.md,
-    left: spacing.md,
+    start: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,

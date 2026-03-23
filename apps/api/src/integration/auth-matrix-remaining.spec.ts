@@ -86,6 +86,8 @@ describe('Auth Matrix — remaining services', () => {
       prisma.product.create.mockResolvedValue({ id: 'p-1', title: 'Test', price: 10 });
       const result = await service.createProduct('u1', { title: 'Test', price: 10, description: 'desc', category: 'OTHER' } as any);
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'p-1');
+      expect(result.title).toBe('Test');
     });
   });
 
@@ -247,6 +249,9 @@ describe('Auth Matrix — remaining services', () => {
       prisma.circleMember.create.mockResolvedValue({});
       const result = await service.create('u1', { name: 'Test' } as any);
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
+      expect(result).toHaveProperty('data');
+      expect(result.data.name).toBe('Test');
     });
 
     it('should return empty community list', async () => {

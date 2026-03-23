@@ -1458,7 +1458,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   rowIconSpacer: {
     width: 32,
   },
-  rowText: { flex: 1, marginRight: spacing.md },
+  rowText: { flex: 1, marginEnd: spacing.md },
   rowLabel: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: lineHeight.base },
   rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: 2 },
   rowRightText: { color: colors.text.tertiary, fontSize: fontSize.sm, lineHeight: lineHeight.sm },
@@ -1476,7 +1476,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   divider: {
     height: 1,
     backgroundColor: 'rgba(45,53,72,0.5)',
-    marginLeft: spacing.base + 40,
+    marginStart: spacing.base + 40,
   },
 
   // Toggle Switch

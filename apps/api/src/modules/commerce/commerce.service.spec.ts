@@ -4,6 +4,22 @@ import { PrismaService } from '../../config/prisma.service';
 import { CommerceService } from './commerce.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
+// Mock Stripe entirely — no real API calls in tests
+const mockStripeInstance = {
+  paymentIntents: {
+    create: jest.fn().mockResolvedValue({
+      id: 'pi_test_123',
+      client_secret: 'pi_test_123_secret_abc',
+    }),
+    update: jest.fn().mockResolvedValue({}),
+    cancel: jest.fn().mockResolvedValue({}),
+  },
+};
+jest.mock('stripe', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => mockStripeInstance),
+}));
+
 describe('CommerceService', () => {
   let service: CommerceService;
   let prisma: Record<string, Record<string, jest.Mock>>;
@@ -33,7 +49,10 @@ describe('CommerceService', () => {
             premiumSubscription: { findUnique: jest.fn(), upsert: jest.fn(), update: jest.fn() },
             $transaction: jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn({
               product: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
-              order: { create: jest.fn().mockResolvedValue({ id: 'order-1', totalAmount: 15.99, status: 'pending', product: mockProduct }) },
+              order: { create: jest.fn().mockResolvedValue({
+                id: 'order-1', totalAmount: 15.99, status: 'PENDING',
+                stripePaymentId: 'pi_test_123', currency: 'USD', product: mockProduct,
+              }) },
             })),
           },
         },
@@ -56,6 +75,14 @@ describe('CommerceService', () => {
   });
 
   describe('createOrder', () => {
+    it('should create order with Stripe PaymentIntent and return clientSecret', async () => {
+      prisma.product.findUnique.mockResolvedValue(mockProduct);
+      const result = await service.createOrder('buyer-1', { productId: 'prod-1' });
+      expect(result.clientSecret).toBe('pi_test_123_secret_abc');
+      expect(result.order).toBeDefined();
+      expect(result.order.stripePaymentId).toBe('pi_test_123');
+    });
+
     it('should throw BadRequestException when buying own product', async () => {
       prisma.product.findUnique.mockResolvedValue(mockProduct);
       await expect(service.createOrder('seller-1', { productId: 'prod-1' }))
@@ -72,6 +99,16 @@ describe('CommerceService', () => {
       prisma.product.findUnique.mockResolvedValue(mockProduct);
       await expect(service.createOrder('buyer-1', { productId: 'prod-1', installments: 6 }))
         .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw when Stripe is not configured', async () => {
+      // Access the private field to test the guard
+      (service as any).stripeAvailable = false;
+      prisma.product.findUnique.mockResolvedValue(mockProduct);
+      await expect(service.createOrder('buyer-1', { productId: 'prod-1' }))
+        .rejects.toThrow(BadRequestException);
+      // Restore
+      (service as any).stripeAvailable = true;
     });
   });
 

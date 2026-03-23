@@ -394,14 +394,14 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   coverGradient: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 100,
   },
   coverBadgeRow: {
     position: 'absolute',
     top: spacing.sm,
-    right: spacing.sm,
+    end: spacing.sm,
     flexDirection: 'row',
     gap: spacing.xs,
   },
@@ -422,8 +422,8 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   coverBottom: {
     position: 'absolute',
     bottom: spacing.md,
-    left: spacing.md,
-    right: spacing.md,
+    start: spacing.md,
+    end: spacing.md,
   },
   seriesTitle: {
     color: colors.text.primary,

@@ -166,7 +166,7 @@ export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPrevi
               )}
 
               {loading ? (
-                <Skeleton.Rect width={120} height={14} style={{ marginLeft: spacing.sm }} />
+                <Skeleton.Rect width={120} height={14} style={{ marginStart: spacing.sm }} />
               ) : (
                 <Text style={styles.domainText} numberOfLines={1}>
                   {metadata?.domain}
@@ -235,8 +235,8 @@ const styles = StyleSheet.create({
   imageOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 40,
   },
   imageSkeleton: {
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   faviconContainer: {
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   faviconBackground: {
     width: 28,

@@ -37,6 +37,7 @@ describe('LiveService — authorization matrix', () => {
     prisma.liveSession.update.mockResolvedValue({ ...mockSession, status: 'ENDED' });
     const result = await service.endLive('live-1', userA);
     expect(result).toBeDefined();
+    expect(result.status).toBe('ENDED');
   });
 
   it('should throw ForbiddenException when non-host ends stream', async () => {

@@ -289,12 +289,12 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
               <Text style={styles.name}>{post.user.displayName}</Text>
               {post.user.isVerified && <VerifiedBadge size={14} />}
               {isFrequentCreator && (
-                <View style={{ marginLeft: 4, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                <View style={{ marginStart: 4, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
                   <Icon name="heart-filled" size={12} color={colors.gold} />
                 </View>
               )}
               {(post.collaborators?.length ?? 0) > 0 && (
-                <View style={{ marginLeft: 4 }}>
+                <View style={{ marginStart: 4 }}>
                   <Icon name="users" size="sm" color={colors.text.secondary} />
                 </View>
               )}
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
   },
   overlayHeart: {
     position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
+    top: 0, start: 0, end: 0, bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,

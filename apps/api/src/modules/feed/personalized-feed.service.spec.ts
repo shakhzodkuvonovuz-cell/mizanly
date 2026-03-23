@@ -55,6 +55,7 @@ describe('PersonalizedFeedService', () => {
           useValue: {
             getUserInterestVector: jest.fn().mockResolvedValue(null),
             findSimilarByVector: jest.fn().mockResolvedValue([]),
+            findSimilarByMultipleVectors: jest.fn().mockResolvedValue([]),
           },
         },
         {
@@ -509,8 +510,8 @@ describe('PersonalizedFeedService', () => {
   describe('Redis session integration', () => {
     it('should call getSession from Redis during getPersonalizedFeed', async () => {
       prisma.feedInteraction.count.mockResolvedValue(50);
-      embeddings.getUserInterestVector.mockResolvedValue([0.1, 0.2, 0.3]);
-      embeddings.findSimilarByVector.mockResolvedValue([]);
+      embeddings.getUserInterestVector.mockResolvedValue([[0.1, 0.2, 0.3]]);
+      embeddings.findSimilarByMultipleVectors.mockResolvedValue([]);
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.restrict.findMany.mockResolvedValue([]);

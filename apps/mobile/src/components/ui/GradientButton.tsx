@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   iconWrapper: {
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
   },
   fullWidth: {
     width: '100%',

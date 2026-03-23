@@ -30,6 +30,7 @@ describe('WebhookProcessor', () => {
 
   it('should be defined', () => {
     expect(processor).toBeDefined();
+    expect(processor).toBeInstanceOf(WebhookProcessor);
   });
 
   describe('URL validation', () => {

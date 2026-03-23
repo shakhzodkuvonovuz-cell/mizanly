@@ -93,7 +93,8 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.block.findMany.mockResolvedValue([]); prisma.mute.findMany.mockResolvedValue([]);
       prisma.post.findMany.mockResolvedValue([]);
       const result = await service.getFeed('u1', 'following');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     it('getFeed following — triggers trending fallback for 0 follows', async () => {
@@ -101,7 +102,8 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.block.findMany.mockResolvedValue([]); prisma.mute.findMany.mockResolvedValue([]);
       prisma.post.findMany.mockResolvedValue([]);
       const result = await service.getFeed('u1', 'following');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     // Create with various inputs
@@ -120,6 +122,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.user.findUnique.mockResolvedValue({ username: 'owner' });
       const result = await service.create('owner', { postType: 'TEXT', content: '@user2 hi', mentions: ['user2'] } as any);
       expect(result).toBeDefined();
+      expect(prisma.post.create).toHaveBeenCalled();
     });
 
     it('create IMAGE post with media', async () => {
@@ -127,6 +130,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.user.update.mockResolvedValue({});
       const result = await service.create('owner', { postType: 'IMAGE', mediaUrls: ['url1'], mediaTypes: ['image/jpeg'] } as any);
       expect(result).toBeDefined();
+      expect(result.postType).toBe('IMAGE');
     });
 
     // Various method tests
@@ -255,7 +259,8 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.post.findFirst.mockResolvedValue(mockPost);
       prisma.post.create.mockResolvedValue({ ...mockPost, space: 'MAJLIS' });
       const result = await service.crossPost('owner', 'p-1', { targetSpaces: ['MAJLIS'] });
-      expect(result.length).toBeGreaterThan(0);
+      expect(result.length).toBeGreaterThanOrEqual(1);
+      expect(result[0]).toHaveProperty('space', 'MAJLIS');
     });
 
     it('cross-post non-existent post', async () => {
@@ -284,7 +289,8 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.$transaction.mockResolvedValue([{}, {}]);
       for (const reaction of ['LIKE', 'LOVE', 'HAHA', 'WOW', 'SAD']) {
         const result = await service.react('p-1', 'u1', reaction);
-        expect(result.reaction).toBeDefined();
+        expect(result).toHaveProperty('reaction');
+        expect(typeof result.reaction).toBe('string');
       }
     });
 
@@ -365,14 +371,16 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.follow.findMany.mockResolvedValue([]); prisma.block.findMany.mockResolvedValue([]); prisma.mute.findMany.mockResolvedValue([]);
       prisma.thread.findMany.mockResolvedValue([]);
       const result = await service.getFeed('u1', 'following');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     it('getFeed following with < 10 follows — blended', async () => {
       prisma.follow.findMany.mockResolvedValue([{ followingId: 'u2' }]); prisma.block.findMany.mockResolvedValue([]); prisma.mute.findMany.mockResolvedValue([]);
       prisma.thread.findMany.mockResolvedValue([]);
       const result = await service.getFeed('u1', 'following');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     it('getFeed trending — empty', async () => {
@@ -392,6 +400,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.thread.findUnique.mockResolvedValue(mockThread);
       const result = await service.getById('t-1');
       expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 't-1');
     });
 
     it('getById with viewer — enriched with reaction + bookmark', async () => {

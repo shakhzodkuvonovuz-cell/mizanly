@@ -881,6 +881,7 @@ describe('MessagesService', () => {
         content: 'Hidden text',
         isSpoiler: true,
       });
+      expect(prisma.$transaction).toHaveBeenCalled();
       const createCall = prisma.$transaction.mock.calls[0][0];
       expect(createCall).toBeDefined();
     });
@@ -963,7 +964,8 @@ describe('MessagesService', () => {
       prisma.message.update.mockResolvedValue({ id: 'msg-1', deliveredAt: new Date() });
 
       const result = await service.markDelivered('msg-1', 'user-1');
-      expect(result.deliveredAt).toBeDefined();
+      expect(result).toHaveProperty('deliveredAt');
+      expect(result.deliveredAt).toBeInstanceOf(Date);
     });
 
     it('should throw NotFoundException when message not found', async () => {
@@ -1113,7 +1115,8 @@ describe('MessagesService', () => {
       prisma.message.update.mockResolvedValue({ viewedAt: new Date() });
 
       const result = await service.markViewOnceViewed('msg-1', 'user-1');
-      expect(result.viewedAt).toBeDefined();
+      expect(result).toHaveProperty('viewedAt');
+      expect(result.viewedAt).toBeInstanceOf(Date);
     });
 
     it('should throw NotFoundException when message not found', async () => {

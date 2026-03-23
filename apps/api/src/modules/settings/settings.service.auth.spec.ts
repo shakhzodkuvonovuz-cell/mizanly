@@ -50,11 +50,15 @@ describe('SettingsService — authorization matrix', () => {
     prisma.userSettings.upsert.mockResolvedValue({ userId: userA, quietModeEnabled: false });
     const result = await service.getQuietMode(userA);
     expect(result).toBeDefined();
+    expect(typeof result).toBe('object');
+    expect(result).toHaveProperty('isActive');
   });
 
   it('should only return own screen time stats', async () => {
     prisma.userSettings.findUnique.mockResolvedValue({ userId: userA });
     const result = await service.getScreenTimeStats(userA);
     expect(result).toBeDefined();
+    expect(typeof result).toBe('object');
+    expect(result).toHaveProperty('totalSeconds');
   });
 });

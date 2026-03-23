@@ -53,7 +53,8 @@ describe('SearchService — edge cases', () => {
 
     it('should handle regex special characters without regex injection', async () => {
       const result = await service.search('user (test) [bracket]', 'posts');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     it('should throw BadRequestException for empty query', async () => {
@@ -75,7 +76,8 @@ describe('SearchService — edge cases', () => {
     it('should accept query of exactly 200 characters', async () => {
       const maxQuery = 'a'.repeat(200);
       const result = await service.search(maxQuery, 'posts');
-      expect(result.data).toBeDefined();
+      expect(result).toHaveProperty('data');
+      expect(Array.isArray(result.data)).toBe(true);
     });
   });
 
@@ -83,6 +85,7 @@ describe('SearchService — edge cases', () => {
     it('should return result for empty query (returns suggestions or empty)', async () => {
       const result = await service.getSuggestions('');
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
   });
 
@@ -90,6 +93,7 @@ describe('SearchService — edge cases', () => {
     it('should return data even when no content exists', async () => {
       const result = await service.trending();
       expect(result).toBeDefined();
+      expect(typeof result).toBe('object');
     });
   });
 });

@@ -262,7 +262,7 @@ const ReelItem = memo(function ReelItem({
           <View style={styles.audioInfoContentClip}>
             <Animated.View style={[styles.audioInfoContentRow, audioMarqueeStyle]}>
               <Text style={styles.audioTitle}>{audioString}</Text>
-              <Text style={[styles.audioTitle, { marginLeft: 40 }]}>{audioString}</Text>
+              <Text style={[styles.audioTitle, { marginStart: 40 }]}>{audioString}</Text>
             </Animated.View>
           </View>
           <Pressable
@@ -901,8 +901,8 @@ const styles = StyleSheet.create({
   feedTypeTabs: {
     position: 'absolute',
     top: 50,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: spacing.xl,
@@ -929,7 +929,7 @@ const styles = StyleSheet.create({
   header: {
     position: 'absolute',
     top: 50,
-    right: 0,
+    end: 0,
     paddingHorizontal: spacing.base,
     zIndex: 20,
   },
@@ -940,8 +940,8 @@ const styles = StyleSheet.create({
   progressTrack: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 3,
     backgroundColor: 'rgba(255,255,255,0.2)',
     zIndex: 20,
@@ -963,22 +963,22 @@ const styles = StyleSheet.create({
   bottomGradient: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 300,
   },
   topGradient: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     height: 200,
   },
   infoContainer: {
     position: 'absolute',
     bottom: spacing.xl,
-    left: spacing.base,
-    right: 100,
+    start: spacing.base,
+    end: 100,
   },
   userRow: {
     flexDirection: 'row',
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   userText: {
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
     textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
@@ -1020,12 +1020,12 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
-    marginLeft: spacing.xs,
+    marginStart: spacing.xs,
   },
   actionColumn: {
     position: 'absolute',
     bottom: spacing.xl,
-    right: spacing.base,
+    end: spacing.base,
     alignItems: 'center',
     gap: spacing.lg,
     zIndex: 20,
@@ -1067,7 +1067,7 @@ const styles = StyleSheet.create({
   shortcutRow: {
     position: 'absolute',
     top: 86,
-    left: spacing.base,
+    start: spacing.base,
     zIndex: 10,
     flexDirection: 'row',
     gap: spacing.sm,
@@ -1091,8 +1091,8 @@ const styles = StyleSheet.create({
   audioInfoBar: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 90 : 70,
-    left: 0,
-    right: 60,
+    start: 0,
+    end: 60,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
@@ -1116,7 +1116,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
     overflow: 'hidden',
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
     backgroundColor: '#1C1C1E',
     shadowColor: colors.emerald,
     shadowOpacity: 0.3,
@@ -1139,7 +1139,7 @@ const styles = StyleSheet.create({
   trendingBadge: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 110 : 90,
-    left: spacing.base,
+    start: spacing.base,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(200,150,62,0.85)',
@@ -1151,7 +1151,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: fontSizeExt.micro,
     fontWeight: '700',
-    marginLeft: 2,
+    marginStart: 2,
   },
   avatarContainer: {
     position: 'relative',

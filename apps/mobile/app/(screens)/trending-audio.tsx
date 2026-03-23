@@ -282,7 +282,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   playButton: {
     position: 'absolute',
     bottom: 2,
-    right: 2,
+    end: 2,
     width: 20,
     height: 20,
     borderRadius: radius.full,

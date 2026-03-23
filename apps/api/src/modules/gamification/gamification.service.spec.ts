@@ -443,6 +443,8 @@ describe('GamificationService', () => {
 
       const result = await service.getSeries('s-1');
       expect(result).toBeDefined();
+      expect(result.title).toBe('Learn Arabic');
+      expect(result.episodes).toHaveLength(1);
     });
 
     it('should throw NotFoundException when series not found', async () => {

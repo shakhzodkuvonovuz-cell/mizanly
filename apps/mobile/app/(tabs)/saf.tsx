@@ -744,8 +744,8 @@ const styles = StyleSheet.create({
   newPostsBanner: {
     position: 'absolute',
     top: 100,
-    left: 0,
-    right: 0,
+    start: 0,
+    end: 0,
     zIndex: 50,
     alignItems: 'center',
   },

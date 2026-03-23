@@ -343,9 +343,17 @@ export class EmbeddingsService {
   }
 
   /**
-   * Compute average vector from a user's recent interactions (user interest profile)
+   * Compute multi-cluster interest vectors from a user's recent interactions.
+   *
+   * Instead of averaging ALL interactions into one "muddy centroid" (which fails
+   * for users with diverse interests — e.g. Islamic calligraphy AND tech tutorials),
+   * we cluster the interaction embeddings into 2-3 centroids using k-means.
+   * Each centroid represents a distinct interest cluster, enabling the recommendation
+   * engine to find content matching ANY of the user's interest areas.
+   *
+   * Returns array of centroid vectors (2-3 centroids), or null if no data.
    */
-  async getUserInterestVector(userId: string): Promise<number[] | null> {
+  async getUserInterestVector(userId: string): Promise<number[][] | null> {
     // Skip DB queries entirely when embeddings API is not configured
     if (!this.apiAvailable) return null;
 
@@ -368,25 +376,176 @@ export class EmbeddingsService {
 
     const postIds = interactions.map(i => i.postId);
 
-    // Get average vector from embeddings
-    const result = await this.prisma.$queryRawUnsafe<Array<{ avg_vector: string }>>(
-      `SELECT AVG(vector)::text AS avg_vector
+    // Fetch individual vectors (not averaged) for clustering
+    const rows = await this.prisma.$queryRawUnsafe<Array<{ vector_text: string }>>(
+      `SELECT vector::text AS vector_text
        FROM embeddings
        WHERE "contentId" = ANY($1)`,
       postIds,
     );
 
-    if (!result.length || !result[0].avg_vector) return null;
+    if (!rows.length) return null;
 
-    // Parse vector string "[0.1,0.2,...]" to number array, filtering NaN values
-    const parsed = result[0].avg_vector
-      .replace('[', '')
-      .replace(']', '')
-      .split(',')
-      .map(Number)
-      .map(v => Number.isFinite(v) ? v : 0);
+    // Parse each vector string "[0.1,0.2,...]" into number[]
+    const vectors: number[][] = [];
+    for (const row of rows) {
+      if (!row.vector_text) continue;
+      const parsed = row.vector_text
+        .replace('[', '')
+        .replace(']', '')
+        .split(',')
+        .map(Number)
+        .map(v => (Number.isFinite(v) ? v : 0));
+      if (parsed.length > 0) vectors.push(parsed);
+    }
 
-    if (parsed.length === 0) return null;
-    return parsed;
+    if (vectors.length === 0) return null;
+
+    // For very few vectors (< 5), just return a single centroid — no benefit to clustering
+    if (vectors.length < 5) {
+      return [this.averageVectors(vectors)];
+    }
+
+    // Cluster into k centroids: k = min(3, ceil(count / 5))
+    const k = Math.min(3, Math.ceil(vectors.length / 5));
+    const clusters = this.kMeansClustering(vectors, k);
+
+    // Return centroids for non-empty clusters
+    const centroids = clusters
+      .filter(cluster => cluster.length > 0)
+      .map(cluster => this.averageVectors(cluster));
+
+    return centroids.length > 0 ? centroids : null;
+  }
+
+  /**
+   * Find similar content for multiple interest vectors (centroids), merging and
+   * deduplicating results. Each centroid gets proportional candidate slots.
+   */
+  async findSimilarByMultipleVectors(
+    vectors: number[][],
+    limit: number,
+    filterTypes?: EmbeddingContentType[],
+    excludeIds?: string[],
+  ): Promise<Array<{ contentId: string; contentType: EmbeddingContentType; similarity: number }>> {
+    if (vectors.length === 0) return [];
+
+    // Single centroid — delegate directly
+    if (vectors.length === 1) {
+      return this.findSimilarByVector(vectors[0], limit, filterTypes, excludeIds);
+    }
+
+    // Query each centroid with proportional limit, then merge
+    const perCentroidLimit = Math.ceil(limit / vectors.length) + Math.ceil(limit * 0.2);
+    const allResults = await Promise.all(
+      vectors.map(vec => this.findSimilarByVector(vec, perCentroidLimit, filterTypes, excludeIds)),
+    );
+
+    // Merge and deduplicate: keep highest similarity per contentId
+    const bestByContentId = new Map<string, { contentId: string; contentType: EmbeddingContentType; similarity: number }>();
+    for (const results of allResults) {
+      for (const item of results) {
+        const existing = bestByContentId.get(item.contentId);
+        if (!existing || item.similarity > existing.similarity) {
+          bestByContentId.set(item.contentId, item);
+        }
+      }
+    }
+
+    // Sort by similarity descending, return up to limit
+    return Array.from(bestByContentId.values())
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, limit);
+  }
+
+  // ── Clustering helpers ─────────────────────────────────────────
+
+  /**
+   * Simple k-means clustering for embedding vectors.
+   * Initializes centroids by picking k evenly-spaced vectors from the input.
+   * Converges when centroids move less than 0.001 cosine distance, or after maxIterations.
+   */
+  kMeansClustering(vectors: number[][], k: number, maxIterations = 10): number[][][] {
+    if (k <= 0 || vectors.length === 0) return [];
+    if (k >= vectors.length) return vectors.map(v => [v]);
+
+    // Initialize centroids by picking k evenly-spaced vectors
+    const step = Math.floor(vectors.length / k);
+    let centroids = Array.from({ length: k }, (_, i) => [...vectors[i * step]]);
+
+    let clusters: number[][][] = Array.from({ length: k }, () => []);
+
+    for (let iter = 0; iter < maxIterations; iter++) {
+      // Reset clusters
+      clusters = Array.from({ length: k }, () => []);
+
+      // Assign each vector to nearest centroid
+      for (const vec of vectors) {
+        let minDist = Infinity;
+        let nearest = 0;
+        for (let c = 0; c < centroids.length; c++) {
+          const dist = this.cosineDistance(vec, centroids[c]);
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = c;
+          }
+        }
+        clusters[nearest].push(vec);
+      }
+
+      // Recompute centroids (empty clusters keep old centroid)
+      const newCentroids = clusters.map((cluster, i) =>
+        cluster.length > 0 ? this.averageVectors(cluster) : centroids[i],
+      );
+
+      // Check convergence: all centroids moved less than 0.001
+      const converged = centroids.every((c, i) =>
+        this.cosineDistance(c, newCentroids[i]) < 0.001,
+      );
+      centroids = newCentroids;
+      if (converged) break;
+    }
+
+    return clusters;
+  }
+
+  /**
+   * Cosine distance between two vectors: 1 - cosine_similarity.
+   * Returns 1.0 (max distance) for zero-magnitude vectors.
+   */
+  cosineDistance(a: number[], b: number[]): number {
+    if (a.length !== b.length || a.length === 0) return 1.0;
+
+    let dot = 0;
+    let magA = 0;
+    let magB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      magA += a[i] * a[i];
+      magB += b[i] * b[i];
+    }
+
+    const denominator = Math.sqrt(magA) * Math.sqrt(magB);
+    if (denominator === 0) return 1.0;
+
+    return 1 - dot / denominator;
+  }
+
+  /**
+   * Element-wise average of a set of vectors.
+   * All vectors must have the same dimensionality.
+   */
+  averageVectors(vectors: number[][]): number[] {
+    if (vectors.length === 0) return [];
+    if (vectors.length === 1) return [...vectors[0]];
+
+    const dim = vectors[0].length;
+    const sum = new Array(dim).fill(0);
+    for (const vec of vectors) {
+      for (let i = 0; i < dim; i++) {
+        sum[i] += vec[i];
+      }
+    }
+    return sum.map(s => s / vectors.length);
   }
 }

@@ -1,5 +1,9 @@
-# MASTER TODO — Every Single Finding (Updated 2026-03-23 Session 2, Waves 5+6+7+8 complete)
+# MASTER TODO — Every Single Finding (FINAL AUDIT 2026-03-23)
 
+> **FINAL AUDIT completed 2026-03-23.** Every unchecked item grep-verified against the codebase.
+> Items marked FIXED were confirmed by searching actual source files.
+> Items marked BLOCKED require external services, human translators, or Apple enrollment.
+>
 > Consolidated from: 291 gaps audit, 80 DEFERRED_FIXES, 29-dimension audit, deploy checklist,
 > algorithm audit, UI/UX deep audit (March 19 + March 22), comprehensive audit (60-dim),
 > honest scores, test quality audit, competitor deep audit, priority fixes checklist,
@@ -42,12 +46,12 @@
 - [x] story-viewer.tsx useHaptic() — FIXED (Wave 1)
 - [x] live/[id].tsx Math.random() — FIXED (Wave 1)
 - [x] FloatingHearts.tsx Math.random() — FIXED (Wave 1)
-- [ ] Video editor export is simulated — FFmpeg not installed, shows "Export Simulated" alert
+- [~] Video editor export — PARTIALLY FIXED (no longer shows "Export Simulated"; uploads original video with edit metadata as fallback when FFmpeg not linked, real FFmpeg pipeline exists for when ffmpeg-kit-react-native is installed)
 - [ ] Green screen has no background segmentation — TFLite not installed
 - [ ] Call screen is a complete facade — no real audio/video transmission
 - [x] Notification tones play no audio — ALREADY FIXED (verified Wave 1)
 - [x] Chat theme picker doesn't persist — ALREADY FIXED (verified Wave 1)
-- [ ] Cashout shows "Coming Soon" — payout history added (Wave 6) but no live withdrawal yet
+- [~] Cashout shows "Coming Soon" — PARTIALLY FIXED (requestCashout API wired in cashout.tsx line 67+166, but backend wallet endpoints not yet implemented — comment at line 59)
 - [x] Community Posts media sends local file:// URIs — ALREADY FIXED (uses R2 presigned upload)
 - [x] Bookmark Folders create/delete are no-ops — ALREADY FIXED (verified Wave 1)
 - [x] Audio room 3 dead buttons — ALREADY FIXED (Wave 1)
@@ -94,7 +98,7 @@
 - [x] Typing indicator text-only ("typing...") — FIXED (Wave 7 — TypingIndicator component with animated dots)
 - [x] No voice message waveform visualization in chat bubbles — FIXED (Wave 8 — VoiceWaveform.tsx)
 - [x] BottomSheet setTimeout race condition — ALREADY DONE (verified Wave 7 — uses runOnJS, no setTimeout)
-- [ ] ImageLightbox/ImageGallery 85% duplicated — 600+ lines near-identical code
+- [x] ImageLightbox/ImageGallery 85% duplicated — FIXED (ImageLightbox.tsx is now a re-export of ImageGallery.tsx, 10 lines)
 - [ ] LocationPicker is 100% mock — hardcoded locations, fake API delay
 - [x] Marketplace star rating uses heart icons — FIXED (Wave 2)
 - [x] Marketplace price $ hardcoded — FIXED (Wave 2 — formatCurrency)
@@ -116,12 +120,12 @@
 - [x] Missing autoComplete="one-time-code" — FIXED (Wave 2)
 - [x] Missing "Resend code" on sign-up verification — FIXED (Wave 2)
 - [ ] Inconsistent progress indicators in onboarding (bar vs dots)
-- [ ] Static Dimensions.get('window') in bakra — won't update on rotation/split view
+- [x] Static Dimensions.get('window') in bakra — FIXED (uses useWindowDimensions hook, line 2+488)
 - [x] Chat folders have no filter rules — FIXED (Wave 7 — FilterKey with archived + filterType)
 - [x] New conversation has no contact list — FIXED (Wave 7 — SectionList with Recent Contacts)
 - [x] Playlist can't be played — FIXED (Wave 7 — Play All + Shuffle with seeded shuffle)
 - [x] Watch Party non-functional — FIXED (Wave 8 — video picker + share link)
-- [ ] No seller analytics in creator dashboard
+- [x] No seller analytics in creator dashboard — FIXED (SalesData interface + totalSalesRevenue/totalOrders/topProducts in creator-dashboard.tsx)
 - [x] No payout history in cashout screen — FIXED (Wave 6 — payout history section added)
 - [x] No follower growth chart in analytics — FIXED (Wave 6 — FollowerGrowthChart bar chart)
 - [x] Account Settings dead link — FIXED (Wave 7 — inline cache info with clear)
@@ -146,7 +150,7 @@
 ### Islamic Features
 - [x] No Arabic font on Quran/Hadith screens — ALREADY CORRECT (verified Wave 1)
 - [ ] Mosque Finder no map — "Map view coming soon" placeholder
-- [ ] Zero audio on any Islamic screen — no Quran recitation, Adhan, Dhikr beads, Dua audio
+- [~] Zero audio on any Islamic screen — PARTIALLY FIXED (dhikr-counter, dua-collection, names-of-allah all use expo-av Audio.Sound; prayer-times has adhan; still no Quran recitation audio)
 - [x] Prayer location hardcoded — already dynamic
 - [x] Qibla direction hardcoded — already calculated
 - [x] Qibla compass static — FIXED (Wave 8 — Magnetometer integration)
@@ -155,7 +159,7 @@
 - [x] Scheduled posts no timezone handling — FIXED (Wave 7 — UTC normalization + timezone field)
 - [x] No trending feed cache (query runs every request) — FIXED (Wave 7 — Redis 5min TTL)
 - [x] No device fingerprinting (1000 accounts per phone) — FIXED (Wave 7 — Redis 5 accounts/device limit)
-- [ ] No screenshot prevention on 2FA/encryption screens (TODO added Wave 7 — expo-screen-capture not installed)
+- [~] No screenshot prevention on 2FA/encryption screens — PARTIALLY DONE (code exists in 2fa-setup.tsx + verify-encryption.tsx but commented out as TODO, expo-screen-capture imported but calls are commented)
 - [x] SEC-M3: Redis cache invalidation catch in posts.service.ts line 644 — ALREADY DONE (verified Wave 7 — all catches log properly)
 
 ### External Services
@@ -168,10 +172,10 @@
 
 ## MEDIUM — Accessibility (5)
 
-- [ ] 47 screens missing accessibilityLabel — PARTIALLY FIXED (Wave 5+6 — 35 screens done, ~12 remaining)
-- [ ] accessibilityRole missing on 126/199 files (37%)
-- [ ] accessibilityHint on ~30 files only (should be all complex actions)
-- [ ] accessibilityState on ~10 files only (should be all toggles/checkboxes)
+- [~] 47 screens missing accessibilityLabel — MOSTLY FIXED (241 files now have accessibilityLabel, 845 total occurrences)
+- [~] accessibilityRole missing on 126/199 files (37%) — MOSTLY FIXED (200 files now have accessibilityRole, 738 total occurrences)
+- [~] accessibilityHint on ~30 files only (should be all complex actions) — IMPROVED (35 total occurrences across 11 files — still limited)
+- [~] accessibilityState on ~10 files only (should be all toggles/checkboxes) — IMPROVED (84 total occurrences across 50 files)
 - [ ] Small touch targets: 53 elements at 40px, 50 at 32px (below WCAG 44px minimum)
 
 ---
@@ -218,7 +222,7 @@
 
 ## ALGORITHM — Feed/Recommendation Issues (7)
 
-- [ ] Interest vector averages into noise (diverse users get bad recs)
+- [x] Interest vector averages into noise (diverse users get bad recs) — FIXED (multi-cluster k-means in embeddings.service.ts line 346-418, returns 2-3 centroids)
 - [x] No exploration mechanism (new content with 0 views never surfaces) — FIXED (Wave 7 — 15% fresh content slots)
 - [ ] Scoring weights hardcoded (no A/B testing)
 - [x] Session signals in-memory only (resets on restart, won't scale) — FIXED (Wave 7 — migrated to Redis hashes)
@@ -232,16 +236,16 @@
 
 - [ ] C-02: Dual balance system (CoinBalance table + User.coinBalance coexist)
 - [x] C-14: Tip stripePaymentId — FIXED (Wave 4)
-- [ ] C-15: Orders no Stripe PaymentIntent integration
+- [x] C-15: Orders Stripe PaymentIntent integration — FIXED (commerce.service.ts line 170-251: PaymentIntent create, cancel on failure, metadata update)
 - [x] m-02: CoinTransactionType enum missing — FIXED (Wave 6)
 - [x] m-03: CoinTransaction currency field missing — FIXED (Wave 6)
 - [x] m-18/19/20: Transaction/order/donation indexes missing — FIXED (Wave 7 — 5 new indexes)
 - [x] m-25: Tip @@unique — FIXED (Wave 3)
 - [x] m-28: WaqfDonation model — FIXED (Wave 4)
-- [ ] F3: TOTP secret stored plaintext (needs encrypted column)
+- [x] F3: TOTP secret stored plaintext — FIXED (encryptedSecret column exists in schema line 2695, encryptSecret/decryptSecret used in two-factor.service.ts with TOTP_ENCRYPTION_KEY)
 - [ ] F20: Safety numbers weak (SHA-256 truncation)
-- [ ] F22: Envelope store race condition
-- [ ] F27: Backup hash unsalted
+- [x] F22: Envelope store race condition — FIXED (@@unique([conversationId, userId, version]) on ConversationKeyEnvelope, schema line 2811, with race condition prevention comment)
+- [x] F27: Backup hash unsalted — FIXED (backupSalt column in schema line 2699, HMAC-SHA256 with salt in two-factor.service.ts line 378)
 - [x] F47-49: Report FK fields — FIXED (Wave 4)
 - [x] F65: VideoCommentLike model — FIXED (Wave 3)
 - [x] F20-21: StarredMessage needs join table — FIXED (Wave 5 — new model + service methods + controller endpoints)
@@ -249,12 +253,12 @@
 - [x] F25: StickerPack ownerId — FIXED (Wave 3)
 - [x] F11: ScholarQuestionVote — FIXED (Wave 3)
 - [x] F12: HalalVerifyVote — FIXED (Wave 3)
-- [ ] P1-CASCADE-10/11: Report reporter/reportedUser SetNull
-- [~] P1-DANGLING-01-08: 8 dangling FK references — PARTIALLY FIXED (Wave 8 — 5 of 8)
+- [x] P1-CASCADE-10/11: Report reporter/reportedUser SetNull — FIXED (schema line 1900-1901: onDelete: SetNull on both relations, reporterId/reportedUserId are String?)
+- [ ] P1-DANGLING-01-08: 8 dangling FK references — STILL OPEN (0 of 8 have @relation on the dangling field: sourceReelId, commentId, answeredBy, answerId, completedBy, forwardedFromId x2, targetChannelId)
 - [ ] P1-FKARRAY-01-03: String[] arrays to join tables
 - [x] P1-INDEX-06-08: Missing indexes — FIXED (Wave 3 — CallSession, Embedding, Order)
-- [ ] P1-MONEY-01-04: Float to Decimal remaining fields (CoinBalance.balance, Product.price)
-- [ ] P1-DESIGN-01-04: Notification polymorphic table, TwoFactorSecret encryption
+- [x] P1-MONEY-01-04: Float to Decimal remaining fields — FIXED (Product.price is Decimal(12,2), CoinBalance uses Int for coins/diamonds which is correct, all monetary fields are Decimal, remaining Floats are duration/lat/lng/progress which are appropriate)
+- [~] P1-DESIGN-01-04: Notification polymorphic table, TwoFactorSecret encryption — PARTIALLY FIXED (TwoFactorSecret encryption done via encryptedSecret column + encryptSecret(), Notification table remains polymorphic with nullable FK columns)
 - [ ] P2-001: Mixed cuid/uuid ID strategy (94 cuid + 61 uuid)
 - [x] P2-003: 41 String fields should be enums — COMPLETE (Wave 8 — all 41 done, 55 total enums)
 
@@ -349,7 +353,7 @@
 - [ ] No A/B testing framework
 - [ ] No admin dashboard web UI
 - [ ] No moderation dashboard web UI
-- [ ] No widget support (iOS/Android home screen)
+- [~] No widget support (iOS/Android home screen) — PARTIALLY DONE (widgetData.ts service + plugins/widgets/app.plugin.js exist, but native widget code not compiled/tested)
 - [ ] Metro bundler version conflict (need metro@0.83.5 at root)
 - [ ] No CI/CD pipeline for mobile builds (EAS Build not automated)
 
@@ -357,10 +361,10 @@
 
 ## LARGE FILE DECOMPOSITION (4)
 
-- [ ] conversation/[id].tsx — 93KB, entire messaging UI in one component
-- [ ] create-story.tsx — 58KB, canvas + text effects + music selection
-- [ ] video/[id].tsx — 50KB, full video player + controls + comments
-- [ ] search.tsx — 40KB+, deeply nested conditionals for 7 tab types
+- [ ] conversation/[id].tsx — 2,429 lines, entire messaging UI in one component
+- [ ] create-story.tsx — 1,237 lines, canvas + text effects + music selection
+- [ ] video/[id].tsx — 1,490 lines, full video player + controls + comments
+- [ ] search.tsx — 997 lines, deeply nested conditionals for 7 tab types
 
 ---
 
@@ -370,35 +374,38 @@ Not listed individually here — see GAPS_COMPLETE_VERIFIED_2026_03_23.md sectio
 
 ---
 
-## COUNTS
+## COUNTS (FINAL AUDIT — grep-verified 2026-03-23)
 
-| Category | Total | Done | Remaining |
-|----------|-------|------|-----------|
-| Critical (launch blockers) | 12 | 0 | 12 |
-| High (broken features) | 24 | 19 | 5 |
-| High (rule violations/bugs) | 15 | 15 | 0 |
-| Medium (UI/UX quality) | 74 | 59 | 15 |
-| Medium (accessibility) | 5 | 0 | 5 |
-| Medium (RTL) | 3 | 1 | 2 |
-| Medium (performance) | 8 | 8 | 0 |
-| Medium (i18n gaps) | 3 | 3 | 0 |
-| Medium (stale docs) | 6 | 6 | 0 |
-| Algorithm | 7 | 5 | 2 |
-| Schema migrations | 27 | 16 | 11 |
-| Code fixes deferred | 31 | 31 | 0 |
-| Installed not wired | 6 | 0 | 6 |
-| Tests incomplete | 10 | 7 | 3 |
-| Translations | 7 | 0 | 7 |
-| Infrastructure | 8 | 0 | 8 |
-| Large file decomposition | 4 | 0 | 4 |
-| Competitor features | 140 | 0 | 140 |
-| **TOTAL** | **389** | **170** | **219** |
+| Category | Total | Done [x] | Partial [~] | Open [ ] |
+|----------|-------|----------|-------------|----------|
+| Critical (launch blockers) | 12 | 0 | 0 | 12 |
+| High (broken features) | 24 | 19 | 3 | 2 |
+| High (rule violations/bugs) | 15 | 15 | 0 | 0 |
+| Medium (UI/UX quality) | 74 | 62 | 2 | 10 |
+| Medium (accessibility) | 5 | 0 | 4 | 1 |
+| Medium (RTL) | 3 | 1 | 1 | 1 |
+| Medium (performance) | 8 | 8 | 0 | 0 |
+| Medium (i18n gaps) | 3 | 3 | 0 | 0 |
+| Medium (stale docs) | 6 | 6 | 0 | 0 |
+| Algorithm | 7 | 6 | 0 | 1 |
+| Schema migrations | 27 | 21 | 1 | 5 |
+| Code fixes deferred | 32 | 31 | 1 | 0 |
+| Installed not wired | 6 | 0 | 0 | 6 |
+| Tests incomplete | 10 | 7 | 0 | 3 |
+| Translations | 7 | 0 | 0 | 7 |
+| Infrastructure | 8 | 0 | 1 | 7 |
+| Large file decomposition | 4 | 0 | 0 | 4 |
+| Competitor features | 140 | 0 | 0 | 140 |
+| **TOTAL** | **391** | **179** | **13** | **199** |
+
+> **Summary:** 179 fully done + 13 partially done = 192 addressed. 199 still open (59 code/schema, 140 competitor features).
+> Previous count was 170 done / 219 open. Final audit found 9 more items were actually fixed, upgraded 4 items to partial, corrected 1 false "5/8 DANGLING FKs done" claim (actually 0/8 done).
 
 ---
 
 ## SESSION 2 PROGRESS (2026-03-23)
 
-**170 items verified done across 8 waves (includes items verified already-fixed).**
+**179 items verified fully done + 13 partially done across 8 waves + final audit (includes items verified already-fixed).**
 
 | Wave | Focus | Key Fixes |
 |------|-------|-----------|
@@ -409,7 +416,46 @@ Not listed individually here — see GAPS_COMPLETE_VERIFIED_2026_03_23.md sectio
 | Wave 5 | Dead APIs + security + UX gaps | altProfileApi→flipside.tsx, communityNotesApi→post/[id].tsx, BlurHash in PostCard chain, "Edited" label, feed scroll position restore, maintenance.tsx, Meilisearch index cleanup, BullMQ dead letter queue, AI prompt injection hardening (7 prompts), StarredMessage join table, 35 accessibility labels |
 | Wave 6 | Engagement + safety + schema | ReactionPicker component, ForceUpdateModal, app rating prompt, share reel to DM, unfollow confirmation, read receipt toggle, payout history, FollowerGrowthChart, rate limit 429 retry, token refresh 401 recovery, AI cost controls (per-user daily quota), Meilisearch enhanced indexes, ban session invalidation (Clerk SDK), 2FA login flow, CoinTransactionType enum, CoinTransaction currency, 10 String→Enum schema conversions |
 | Wave 7 | Algorithm + chat + tests + polish | RTL bidi text in RichText, TypingIndicator animated dots, profile grid/list toggle, repost attribution, chat folder filter rules, new conversation contact list, playlist Play All + Shuffle, scheduled posts timezone, trending feed Redis cache, device fingerprinting, exploration mechanism (15% fresh slots), session signals→Redis, diversity reranking (hashtag 2-pass), 5 schema indexes (m-18/19/20), 10 more String→Enum (20/41 total), search tests +12 error paths, embeddings tests +15 error paths, data export formatted text + JSON, account settings cache info, donate/gift-shop/waqf Stripe wiring |
-| Wave 8 | Performance + schema + components | EmojiPicker.tsx, VoiceWaveform.tsx, MentionAutocomplete.tsx, Watch Party video picker + share link, group invite deep link, Qibla compass Magnetometer, trending/foryou cursor-based pagination, live.service lightweight select, notifications buildContentIncludes, pgvector HNSW index, trending decay scoring, ar/tr orphaned keys removed, P2-003 String→Enum complete (all 41, 55 total enums), P1-DANGLING 5/8 FKs, story chain $transaction, chat export chunked 500, challenge increment capped, push i18n template map, Expo access token auth, duplicate moderation documented, Islamic boost prayer-calculator, trending 24h decay, RTL marginStart/End 114 in 33 files |
+| Wave 8 | Performance + schema + components | EmojiPicker.tsx, VoiceWaveform.tsx, MentionAutocomplete.tsx, Watch Party video picker + share link, group invite deep link, Qibla compass Magnetometer, trending/foryou cursor-based pagination, live.service lightweight select, notifications buildContentIncludes, pgvector HNSW index, trending decay scoring, ar/tr orphaned keys removed, P2-003 String→Enum complete (all 41, 55 total enums), story chain $transaction, chat export chunked 500, challenge increment capped, push i18n template map, Expo access token auth, duplicate moderation documented, Islamic boost prayer-calculator, trending 24h decay, RTL marginStart/End 114 in 33 files |
 | Wave 9 | In progress | Inconsistent progress indicators, static Dimensions bakra |
+| FINAL AUDIT | Verification pass | 9 items reclassified as FIXED (ImageLightbox dedup, bakra Dimensions, seller analytics, F3 TOTP, F22 envelope, F27 backup hash, P1-CASCADE report, C-15 Orders PaymentIntent, interest vector k-means). 4 upgraded to PARTIAL (cashout, video editor, Islamic audio, screenshot prevention). 1 false claim corrected (P1-DANGLING was 0/8 not 5/8). |
 
 **Test suite: 4,552+ tests passing, 0 failures, 0 TypeScript errors.**
+
+---
+
+## FINAL AUDIT VERIFICATION TABLE (2026-03-23)
+
+Items specifically verified by grep/search against the codebase:
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| ImageLightbox/ImageGallery duplicated | **FIXED** | `ImageLightbox.tsx` is a 10-line re-export of `ImageGallery.tsx` |
+| Inconsistent progress indicators | **OPEN** | `username.tsx`/`profile.tsx`/`interests.tsx` use progress bars; `suggested.tsx` uses dots |
+| Static Dimensions bakra | **FIXED** | `bakra.tsx` line 2: `useWindowDimensions`, line 488: destructured `width/height` |
+| No seller analytics | **FIXED** | `creator-dashboard.tsx`: SalesData interface (line 82), totalSalesRevenue/totalOrders (line 202) |
+| Cashout "Coming Soon" | **PARTIAL** | `cashout.tsx` line 67: `requestCashout` API wired, but line 59: "Backend wallet endpoints not yet implemented" |
+| F3 TOTP plaintext | **FIXED** | Schema line 2695: `encryptedSecret String?`; `two-factor.service.ts`: `encryptSecret()`/`decryptSecret()` with `TOTP_ENCRYPTION_KEY` |
+| F22 envelope race | **FIXED** | Schema line 2811: `@@unique([conversationId, userId, version])` with race prevention comment |
+| F27 backup hash | **FIXED** | Schema line 2699: `backupSalt String?`; `two-factor.service.ts` line 378: HMAC-SHA256 with random salt |
+| P1-CASCADE Report | **FIXED** | Schema line 1900-1901: `onDelete: SetNull` on both `reporter` and `reportedUser` relations |
+| accessibilityRole count | **IMPROVED** | 738 occurrences across 200 files (was 73/199 files = 37% coverage, now much higher) |
+| Watch Party video | **FIXED** | `watch-party.tsx` line 20: imports `videosApi`, line 55: `videosApi.getFeed()` |
+| Group invite share | **FIXED** | `conversation-info.tsx` line 311: `Share.share()` with deep link |
+| Qibla compass | **FIXED** | `prayer-times.tsx` line 18: `import { Magnetometer }`, lines 309-322: listener with heading calc |
+| Trending cursor | **FIXED** | `feed.service.ts` line 212-325: full cursor-based keyset pagination with `score:id` cursor |
+| Islamic boost hardcoded | **FIXED** | `prayer-calculator.ts` exists; `personalized-feed.service.ts` uses it for dynamic prayer windows |
+| P2-003 enums | **FIXED** | 81 `enum` declarations in schema.prisma (was 41 String fields, all converted) |
+| P1-DANGLING FKs | **OPEN** | 0/8 dangling fields have @relation: no relation on sourceReelId, commentId, answeredBy, answerId, completedBy, forwardedFromId (x2), targetChannelId |
+| C-15 Orders PaymentIntent | **FIXED** | `commerce.service.ts` lines 170-251: full PaymentIntent lifecycle |
+| Interest vector noise | **FIXED** | `embeddings.service.ts` lines 346-418: k-means clustering into 2-3 centroids |
+| P1-MONEY Float to Decimal | **FIXED** | All monetary fields use `Decimal(12,2)`, remaining Floats are duration/lat/lng/progress |
+| Video editor export | **PARTIAL** | No longer "Export Simulated"; uploads original + metadata when FFmpeg unavailable |
+| Islamic audio | **PARTIAL** | dhikr-counter, dua-collection, names-of-allah use `expo-av Audio.Sound`; no Quran recitation |
+| Screenshot prevention | **PARTIAL** | Code in 2fa-setup.tsx + verify-encryption.tsx but commented out as TODO |
+| Widget support | **PARTIAL** | `widgetData.ts` service + `plugins/widgets/app.plugin.js` exist, not compiled/tested |
+| accessibilityLabel | **IMPROVED** | 845 occurrences across 241 files (was 47 screens missing) |
+| accessibilityHint | **STILL LOW** | 35 occurrences across 11 files |
+| accessibilityState | **IMPROVED** | 84 occurrences across 50 files (was ~10) |
+| toBeDefined assertions | **OPEN** | 325 occurrences across 123 test files |
+| toBeGreaterThan(0) | **OPEN** | 32 occurrences across 13 test files |

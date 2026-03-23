@@ -416,7 +416,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     paddingTop: spacing.sm,
   },
   charCountWrapper: {
-    position: 'absolute', bottom: spacing.sm, right: spacing.sm,
+    position: 'absolute', bottom: spacing.sm, end: spacing.sm,
   },
   // Thumbnail
   thumbnailPreview: {
@@ -426,7 +426,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   thumbnailImage: { width: '100%', height: '100%' },
   removeThumbnail: {
-    position: 'absolute', top: spacing.xs, right: spacing.xs,
+    position: 'absolute', top: spacing.xs, end: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: radius.md,
     width: 24, height: 24, alignItems: 'center', justifyContent: 'center',
   },
@@ -477,7 +477,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   pickerChip: {
     backgroundColor: tc.bgElevated, borderRadius: radius.full,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
+    marginEnd: spacing.sm,
     borderWidth: 1, borderColor: tc.border,
   },
   pickerChipActive: {

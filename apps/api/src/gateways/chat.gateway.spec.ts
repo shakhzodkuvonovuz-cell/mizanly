@@ -148,6 +148,7 @@ describe('ChatGateway', () => {
 
   it('should be defined', () => {
     expect(gateway).toBeDefined();
+    expect(gateway).toBeInstanceOf(ChatGateway);
     expect(gateway.server).toBeDefined();
   });
 

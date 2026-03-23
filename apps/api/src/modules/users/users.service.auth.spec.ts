@@ -76,6 +76,7 @@ describe('UsersService — authorization matrix', () => {
 
     const result = await service.getProfile('private', userA);
     expect(result).toBeDefined();
+    expect(result).toHaveProperty('username', 'private');
     // Profile should exist but may hide posts/content for non-followers
   });
 

@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontSize: fontSize.xs,
     fontWeight: '600',
-    marginLeft: spacing.sm,
+    marginStart: spacing.sm,
   },
   hint: {
     color: colors.text.tertiary,

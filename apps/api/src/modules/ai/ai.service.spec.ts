@@ -103,7 +103,8 @@ describe('AiService', () => {
     it('should return fallback hashtags when API unavailable', async () => {
       const result = await service.suggestHashtags('test post about cooking');
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
+      expect(result.length).toBeGreaterThanOrEqual(1);
+      result.forEach((tag: string) => expect(typeof tag).toBe('string'));
     });
   });
 

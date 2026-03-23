@@ -91,6 +91,7 @@ describe('ReelsService — authorization matrix', () => {
       prisma.reel.update.mockResolvedValue({ ...mockReelByA, isArchived: true });
       const result = await service.archive('reel-1', userA);
       expect(result).toBeDefined();
+      expect(prisma.reel.update).toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException when non-owner archives', async () => {

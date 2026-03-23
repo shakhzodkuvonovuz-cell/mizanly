@@ -816,7 +816,10 @@ describe('IslamicService', () => {
   describe('getDuasByCategory', () => {
     it('should return all duas when no category specified', () => {
       const result = service.getDuasByCategory();
-      expect(result.length).toBeGreaterThan(0);
+      expect(result.length).toBeGreaterThanOrEqual(1);
+      expect(result[0]).toHaveProperty('id');
+      expect(result[0]).toHaveProperty('arabicText');
+      expect(result[0]).toHaveProperty('category');
     });
 
     it('should return filtered duas for a specific category', () => {
@@ -859,9 +862,10 @@ describe('IslamicService', () => {
   describe('getDuaCategories', () => {
     it('should return unique category names', () => {
       const result = service.getDuaCategories();
-      expect(result.length).toBeGreaterThan(0);
+      expect(result.length).toBeGreaterThanOrEqual(1);
       // Should contain no duplicates
       expect(new Set(result).size).toBe(result.length);
+      result.forEach((cat: string) => expect(typeof cat).toBe('string'));
     });
   });
 
