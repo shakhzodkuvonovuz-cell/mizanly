@@ -28,6 +28,7 @@ import { PostCard } from '@/components/saf/PostCard';
 import { StoryRow } from '@/components/saf/StoryRow';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
+import { CreateHeaderButton } from '@/components/ui/CreateSheet';
 import { Badge } from '@/components/ui/Badge';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { TabSelector } from '@/components/ui/TabSelector';
@@ -569,18 +570,7 @@ export default function SafScreen() {
           <Text style={styles.hijriDate}>{formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}</Text>
         </Animated.View>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <AnimatedPressable
-            hitSlop={8}
-            onPress={() => { haptic.navigate(); router.push('/(screens)/create-story'); }}
-            onPressIn={cameraPress.onPressIn}
-            onPressOut={cameraPress.onPressOut}
-            style={cameraPress.animatedStyle}
-            accessibilityLabel={t('accessibility.createStory')}
-            accessibilityRole="button"
-            accessibilityHint={t('accessibility.createStoryHint')}
-          >
-            <Icon name="camera" size="sm" color={tc.text.primary} />
-          </AnimatedPressable>
+          <CreateHeaderButton />
           <AnimatedPressable
             hitSlop={8}
             onPress={() => { haptic.navigate(); router.push('/(screens)/search'); }}
@@ -593,26 +583,7 @@ export default function SafScreen() {
           >
             <Icon name="search" size="sm" color={tc.text.primary} />
           </AnimatedPressable>
-          <AnimatedPressable
-            hitSlop={8}
-            onPress={() => { haptic.navigate(); router.push('/(tabs)/risalah'); }}
-            onPressIn={dmPress.onPressIn}
-            onPressOut={dmPress.onPressOut}
-            style={dmPress.animatedStyle}
-            accessibilityLabel={t('accessibility.messages')}
-            accessibilityRole="button"
-          >
-            <View>
-              <Icon name="send" size="sm" color={tc.text.primary} />
-              {unreadMessages > 0 && (
-                <Badge
-                  count={unreadMessages}
-                  size="sm"
-                  style={[styles.notifBadge, rtlAbsoluteEnd(isRTL, -8)]}
-                />
-              )}
-            </View>
-          </AnimatedPressable>
+          {/* DMs removed from header — Risalah tab is the DM entry point */}
           <AnimatedPressable
             hitSlop={8}
             onPress={() => {

@@ -4094,5 +4094,22 @@
     "completedOrders": "Commandes terminees",
     "topProducts": "Produits les plus vendus",
     "unitsSold": "vendu(s)"
+  },
+  "createSheet": {
+    "post": "Post",
+    "postDesc": "Photo, video, or text",
+    "story": "Story",
+    "storyDesc": "Disappears in 24h",
+    "reel": "Reel",
+    "reelDesc": "Short video with music",
+    "thread": "Thread",
+    "threadDesc": "Start a conversation",
+    "longVideo": "Long Video",
+    "longVideoDesc": "Upload to Minbar",
+    "goLive": "Go Live",
+    "goLiveDesc": "Stream in real-time",
+    "voicePost": "Voice Post",
+    "voicePostDesc": "Record audio message",
+    "whatWouldYouLikeToShare": "What would you like to share?"
   }
 }

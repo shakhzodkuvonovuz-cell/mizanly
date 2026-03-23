@@ -5,27 +5,23 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
-import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+// BottomSheet removed — create flow now uses CreateSheet component
 import { WebLayout } from '@/components/web/WebLayout';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useResponsive } from '@/hooks/useResponsive';
 import { useWebKeyboardShortcuts } from '@/hooks/useWebKeyboardShortcuts';
-import { colors, tabBar, spacing, fontSize, animation, radius, shadow, fontSizeExt } from '@/theme';
+import { colors, tabBar, spacing, fontSize, animation, radius, fontSizeExt } from '@/theme';
 import { useStore } from '@/store';
 import { navigate as navTo } from '@/utils/navigation';
-import { useState } from 'react';
+// useState removed — create state now in CreateSheet
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 type TabName = 'saf' | 'bakra' | 'minbar' | 'majlis' | 'risalah';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; badge?: number }) {
   const { t } = useTranslation();
@@ -66,90 +62,6 @@ function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; ba
         />
       )}
     </Animated.View>
-  );
-}
-
-function CreateButton() {
-  const { t } = useTranslation();
-  const tc = useThemeColors();
-  const [open, setOpen] = useState(false);
-  const router = useRouter();
-  const haptic = useContextualHaptic();
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePress = () => {
-    haptic.longPress();
-    scale.value = withSequence(
-      withSpring(0.85, animation.spring.bouncy),
-      withSpring(1, animation.spring.bouncy),
-    );
-    setOpen(true);
-  };
-
-  const navigate = (path: string) => {
-    haptic.navigate();
-    setOpen(false);
-    navTo(path);
-  };
-
-  return (
-    <>
-      <AnimatedPressable style={[styles.createButton, animatedStyle]} onPress={handlePress} accessibilityLabel={t('tabs.create.newPost')} accessibilityRole="button">
-        <LinearGradient
-          colors={[colors.emeraldLight, colors.emeraldDark]}
-          style={styles.createGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Icon name="plus" size="md" color="#FFF" strokeWidth={3} />
-        </LinearGradient>
-      </AnimatedPressable>
-
-      <BottomSheet visible={open} onClose={() => setOpen(false)}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>{t('common.create')}</Text>
-        </View>
-        <BottomSheetItem
-          label={t('tabs.createSheet.photoOrVideoPost')}
-          icon={<Icon name="image" size="sm" color={tc.text.primary} />}
-          onPress={() => navigate('/(screens)/create-post')}
-        />
-        <BottomSheetItem
-          label={t('tabs.createSheet.startThread')}
-          icon={<Icon name="message-circle" size="sm" color={tc.text.primary} />}
-          onPress={() => navigate('/(screens)/create-thread')}
-        />
-        <BottomSheetItem
-          label={t('tabs.createSheet.shareStory')}
-          icon={<Icon name="circle-plus" size="sm" color={tc.text.primary} />}
-          onPress={() => navigate('/(screens)/create-story')}
-        />
-        <BottomSheetItem
-          label={t('tabs.createSheet.shortVideoReel')}
-          icon={<Icon name="video" size="sm" color={tc.text.primary} />}
-          onPress={() => navigate('/(screens)/create-reel')}
-        />
-        <BottomSheetItem
-          label={t('tabs.createSheet.longVideo')}
-          icon={<Icon name="play" size="sm" color={tc.text.primary} />}
-          onPress={() => navigate('/(screens)/create-video')}
-        />
-        <BottomSheetItem
-          label={t('tabs.createSheet.goLive')}
-          icon={<Icon name="globe" size="sm" color={tc.text.primary} />}
-          onPress={() => navigate('/(screens)/go-live')}
-        />
-        <BottomSheetItem
-          label={t('tabs.createSheet.voicePost')}
-          icon={<Icon name="mic" size="sm" color={tc.text.primary} />}
-          onPress={() => navigate('/(screens)/voice-post-create')}
-        />
-      </BottomSheet>
-    </>
   );
 }
 
@@ -217,13 +129,6 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="create"
-          options={{
-            title: '',
-            tabBarButton: () => <CreateButton />,
-          }}
-        />
-        <Tabs.Screen
           name="majlis"
           listeners={{ tabPress: () => haptic.tick() }}
           options={{
@@ -286,26 +191,7 @@ const styles = StyleSheet.create({
     top: 4,
     end: 0,
   },
-  createButton: {
-    marginTop: spacing.xs,
-  },
-  createGradient: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    ...shadow.glow,
-  },
-  sheetHeader: {
-    alignItems: 'center',
-    paddingBottom: spacing.sm,
-  },
-  sheetTitle: {
-    color: colors.text.secondary,
-    fontSize: fontSize.sm,
+  // createButton styles removed — now in CreateSheet.tsx
     fontWeight: '700',
   },
 });
