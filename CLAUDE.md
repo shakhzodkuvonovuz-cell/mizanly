@@ -26,9 +26,9 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Current State (as of 2026-03-23)
+## Current State (as of 2026-03-24)
 
-**Backend:** NestJS 10, 79 modules, 82 controllers, 86 services, 193 Prisma models, 55 enums (4,700+ lines). 286 test suites, 4,740 tests, 100% pass, 0 TypeScript errors. Server starts clean.
+**Backend:** NestJS 10, 79 modules, 82 controllers, 86 services, 193 Prisma models, 55 enums (4,700+ lines). 289 test suites, 4,876 tests, 100% pass, 0 TypeScript errors. Server starts clean.
 **Mobile:** React Native Expo SDK 52, 212 screens, 76 components, 23 hooks, 33 API services. 0 mobile TypeScript errors. 210/212 screens accessible.
 **i18n:** 8 languages (en, ar, tr, ur, bn, fr, id, ms), 3,500+ keys each, ~400 keys added in session 2.
 **Real-time:** Socket.io on 4 screens (chat, calls, Quran rooms, conversation list) with Clerk JWT auth, reconnection, token refresh. Redis pub/sub for notification delivery to socket rooms.
@@ -38,9 +38,19 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 **Schema:** 55 Prisma enums (all 41 String→Enum complete). 7/8 dangling FK relations fixed (1 unfixable — polymorphic). StarredMessage + WaqfDonation + VideoCommentLike + ScholarQuestionVote + HalalVerifyVote join tables. 25+ indexes. previousUsername for redirect. Privacy settings server-side. TOTP encryption + backup salt fields.
 **RTL:** Complete — ~430 margin/padding/position replacements across 134 files.
 **Security:** Pre-save moderation on all content types, AI prompt XML hardening, device fingerprint (5/device), nsfwjs client-side service ready, file size limits on uploads.
+**Video Editor:** FFmpeg-kit full-gpl (x264/x265/libass/vidstab). 7 tool tabs (trim, speed, filters, text, music, volume, voiceover). 13 filters incl. brand-themed emerald/golden/night/soft/cinematic. Gesture-based trim handles + volume sliders. Real MusicPicker integration. Undo/redo (20-deep). Reverse clip. Aspect ratio selector (9:16/16:9/1:1/4:5). Export with progress + cancel. Wired into create-reel + create-video. 60 FFmpeg engine tests.
+**Packages installed (session 3):** ffmpeg-kit-react-native 6.0.2 (full-gpl via Expo config plugin), expo-screen-orientation, expo-screen-capture, expo-store-review, nsfwjs + @tensorflow/tfjs + @tensorflow/tfjs-react-native.
 **Database synced** — `prisma db push` confirmed in sync. Production uses `prisma migrate deploy`.
 **CI/CD:** GitHub Actions — lint-typecheck PASS, test-api PASS, build-api PASS. build-mobile needs `npm install --legacy-peer-deps` (metro removed from root, vuln overrides added).
-**970 commits**, 11 waves in session 2 (85 agents, ~400+ files changed).
+**~980 commits**, 11 waves in session 2 + 10 commits in session 3.
+
+### Video Editor — Known Design Limitations
+These are NOT bugs — they are architectural constraints that require significant feature work to resolve:
+1. **Waveform is cosmetic** — Timeline waveform is a deterministic sine wave, not extracted from actual audio. Fixing requires FFprobeKit audio peak extraction.
+2. **Font selection has no effect on export** — `selectedFont` state exists but FFmpeg `drawtext` doesn't resolve platform-specific font paths (`fontfile=`). All text renders in FFmpeg default font. Needs iOS/Android font path resolution.
+3. **Music mixing uses CDN URL directly** — `selectedTrack.audioUrl` is passed as remote URL to FFmpeg `-i`. Works but adds network latency to export. Could timeout on slow connections. Should pre-download to cache.
+4. **No real-time filter preview** — Filters are selected from color chips but NOT applied to the video preview. expo-av `Video` component doesn't support shader/filter overlays. User only sees the filter result after export. Would need OpenGL/Metal overlay or `expo-gl`.
+5. **iOS config plugin uses monkey-patched pre_install** — `ffmpeg-kit-react-native` subspec override via Ruby method redefinition on `pod.root_spec`. Works on current CocoaPods but fragile across versions. This is the documented community approach.
 
 ## Key Documentation
 - `docs/DEPLOYMENT.md` — Production deployment guide (Railway, Neon, Cloudflare, Clerk, Stripe)
@@ -64,6 +74,8 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 - `docs/features/DATA_IMPORT_ARCHITECTURE.md` — Data import spec (not built)
 - `docs/features/EXIT_STORY_SPEC.md` — Exit story spec (not built)
 - `docs/ralph-instructions.md` — Autonomous execution behavioral rules
+- `docs/plans/2026-03-23-video-editor-design.md` — Video editor FFmpeg integration design
+- `docs/plans/2026-03-23-video-editor-competitor-gap-analysis.md` — TikTok/Instagram/YouTube/CapCut feature comparison + build priority
 
 ---
 
