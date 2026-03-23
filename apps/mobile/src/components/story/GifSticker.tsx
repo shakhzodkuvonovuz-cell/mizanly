@@ -45,47 +45,30 @@ export interface GifStickerData {
   gifTitle: string;
 }
 
-// ── Trending categories for GIF search ──
-const GIF_CATEGORIES = [
-  { id: 'trending', label: 'Trending', icon: 'trending-up' as const },
-  { id: 'reactions', label: 'Reactions', icon: 'smile' as const },
-  { id: 'love', label: 'Love', icon: 'heart' as const },
-  { id: 'happy', label: 'Happy', icon: 'star' as const },
-  { id: 'sad', label: 'Sad', icon: 'eye' as const },
-  { id: 'celebrate', label: 'Celebrate', icon: 'star' as const },
-  { id: 'islamic', label: 'Islamic', icon: 'star' as const },
-  { id: 'funny', label: 'Funny', icon: 'smile' as const },
-];
+// ── Trending categories for GIF search (icons + i18n label keys from service) ──
+const GIF_CATEGORY_ICONS: Record<string, string> = {
+  trending: 'trending-up',
+  reactions: 'smile',
+  love: 'heart',
+  happy: 'star',
+  sad: 'eye',
+  celebrate: 'star',
+  islamic: 'star',
+  funny: 'smile',
+};
 
-// ── GIPHY API integration ──
-const GIPHY_API_KEY = process.env.EXPO_PUBLIC_GIPHY_API_KEY || '';
-const GIPHY_BASE = 'https://api.giphy.com/v1/gifs';
+import { searchGiphy, searchStickers, GIPHY_CATEGORIES, type GiphyMediaItem } from '@/services/giphyService';
 
-async function fetchGiphyGifs(query: string, limit: number = 20): Promise<GifItem[]> {
-  if (!GIPHY_API_KEY) return [];
-  try {
-    const endpoint = query && query !== 'trending'
-      ? `${GIPHY_BASE}/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=${limit}&rating=pg`
-      : `${GIPHY_BASE}/trending?api_key=${GIPHY_API_KEY}&limit=${limit}&rating=pg`;
-    const res = await fetch(endpoint);
-    if (!res.ok) return [];
-    const json = await res.json();
-    return (json.data || []).map((gif: Record<string, unknown>) => {
-      const images = gif.images as Record<string, Record<string, string>>;
-      const original = images?.original || {};
-      const preview = images?.fixed_width || images?.preview_gif || original;
-      return {
-        id: String(gif.id),
-        url: original.url || '',
-        previewUrl: preview.url || original.url || '',
-        width: parseInt(original.width || '200', 10),
-        height: parseInt(original.height || '200', 10),
-        title: String(gif.title || ''),
-      };
-    });
-  } catch {
-    return [];
-  }
+// ── Adapter: GiphyMediaItem → GifItem ──
+function toGifItem(item: GiphyMediaItem): GifItem {
+  return {
+    id: item.id,
+    url: item.url,
+    previewUrl: item.previewUrl,
+    width: item.width,
+    height: item.height,
+    title: item.title,
+  };
 }
 
 interface GifSearchProps {
@@ -108,16 +91,17 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch GIFs from GIPHY API
+  // Fetch GIFs via giphyService (API or SDK depending on availability)
   const fetchGifs = useCallback(async (searchTerm: string) => {
     setLoading(true);
-    const results = await fetchGiphyGifs(searchTerm || 'trending');
-    setGifs(results);
+    const results = await searchGiphy({ query: searchTerm || '', type: 'gifs', limit: 20 });
+    setGifs(results.map(toGifItem));
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchGifs(activeCategory);
+    const cat = GIPHY_CATEGORIES.find(c => c.id === activeCategory);
+    fetchGifs(cat?.searchTerm || '');
   }, [activeCategory, fetchGifs]);
 
   const handleSearchChange = useCallback((text: string) => {
@@ -127,7 +111,8 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
       if (text.trim()) {
         fetchGifs(text.trim());
       } else {
-        fetchGifs(activeCategory);
+        const cat = GIPHY_CATEGORIES.find(c => c.id === activeCategory);
+        fetchGifs(cat?.searchTerm || '');
       }
     }, 400);
   }, [activeCategory, fetchGifs]);
@@ -196,12 +181,13 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
       {/* Category chips */}
       <FlatList
         horizontal
-        data={GIF_CATEGORIES}
+        data={GIPHY_CATEGORIES}
         keyExtractor={item => item.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryList}
         renderItem={({ item }) => {
           const isActive = item.id === activeCategory && !query;
+          const iconName = (GIF_CATEGORY_ICONS[item.id] || 'star') as never;
           return (
             <Pressable
               onPress={() => handleCategoryPress(item.id)}
@@ -211,11 +197,11 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected: isActive }}
-              accessibilityLabel={item.label}
+              accessibilityLabel={t(item.labelKey)}
             >
-              <Icon name={item.icon} size={14} color={isActive ? '#fff' : tc.text.secondary} />
+              <Icon name={iconName} size={14} color={isActive ? '#fff' : tc.text.secondary} />
               <Text style={[styles.categoryLabel, { color: isActive ? '#fff' : tc.text.secondary }]}>
-                {item.label}
+                {t(item.labelKey)}
               </Text>
             </Pressable>
           );
