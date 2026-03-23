@@ -3247,6 +3247,8 @@
     "textColor": "لون النص",
     "backgroundMusic": "موسيقى خلفية",
     "addFromAudioLibrary": "إضافة من مكتبة الصوت",
+    "removeTrack": "Remove track",
+    "noMusicSelected": "No background music selected",
     "audioLevels": "مستويات الصوت",
     "originalAudio": "الصوت الأصلي",
     "exportQuality": "جودة التصدير",

@@ -3253,6 +3253,8 @@
     "textColor": "Warna Teks",
     "backgroundMusic": "Muzik Latar",
     "addFromAudioLibrary": "Tambah dari Pustaka Audio",
+    "removeTrack": "Remove track",
+    "noMusicSelected": "No background music selected",
     "audioLevels": "Tahap Audio",
     "originalAudio": "Audio Asal",
     "exportQuality": "Kualiti Eksport",

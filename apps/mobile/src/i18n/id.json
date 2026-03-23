@@ -3254,6 +3254,8 @@
     "textColor": "Warna Teks",
     "backgroundMusic": "Musik Latar",
     "addFromAudioLibrary": "Tambah dari Perpustakaan Audio",
+    "removeTrack": "Remove track",
+    "noMusicSelected": "No background music selected",
     "audioLevels": "Level Audio",
     "originalAudio": "Audio Asli",
     "exportQuality": "Kualitas Ekspor",

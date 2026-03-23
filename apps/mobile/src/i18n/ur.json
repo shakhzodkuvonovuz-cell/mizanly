@@ -3254,6 +3254,8 @@
     "textColor": "متن کا رنگ",
     "backgroundMusic": "پس منظر کی موسیقی",
     "addFromAudioLibrary": "آڈیو لائبریری سے شامل کریں",
+    "removeTrack": "Remove track",
+    "noMusicSelected": "No background music selected",
     "audioLevels": "آواز کی سطحیں",
     "originalAudio": "اصل آواز",
     "exportQuality": "برآمد کا معیار",

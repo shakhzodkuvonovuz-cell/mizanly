@@ -3247,6 +3247,8 @@
     "textColor": "Metin Rengi",
     "backgroundMusic": "Arka Plan Müziği",
     "addFromAudioLibrary": "Ses Kitaplığından Ekle",
+    "removeTrack": "Remove track",
+    "noMusicSelected": "No background music selected",
     "audioLevels": "Ses Seviyeleri",
     "originalAudio": "Orijinal Ses",
     "exportQuality": "Dışa Aktarma Kalitesi",

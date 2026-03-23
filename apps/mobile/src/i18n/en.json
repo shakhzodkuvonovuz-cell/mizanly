@@ -3302,6 +3302,8 @@
     "textColor": "Text Color",
     "backgroundMusic": "Background Music",
     "addFromAudioLibrary": "Add from Audio Library",
+    "removeTrack": "Remove track",
+    "noMusicSelected": "No background music selected",
     "audioLevels": "Audio Levels",
     "originalAudio": "Original Audio",
     "exportQuality": "Export Quality",

@@ -3253,6 +3253,8 @@
     "textColor": "টেক্সট রঙ",
     "backgroundMusic": "পটভূমি সঙ্গীত",
     "addFromAudioLibrary": "অডিও লাইব্রেরি থেকে যোগ",
+    "removeTrack": "Remove track",
+    "noMusicSelected": "No background music selected",
     "audioLevels": "অডিও স্তর",
     "originalAudio": "মূল অডিও",
     "exportQuality": "রপ্তানি মান",

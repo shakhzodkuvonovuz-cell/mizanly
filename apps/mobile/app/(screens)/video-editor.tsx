@@ -16,7 +16,9 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
+import { MusicPicker } from '@/components/story/MusicPicker';
 import { uploadApi } from '@/services/api';
+import type { AudioTrack } from '@/types';
 import { executeExport, cancelExport, isFFmpegAvailable, type EditParams } from '@/services/ffmpegEngine';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -64,6 +66,8 @@ export default function VideoEditorScreen() {
   const [captionText, setCaptionText] = useState('');
   const [originalVolume, setOriginalVolume] = useState(80);
   const [musicVolume, setMusicVolume] = useState(60);
+  const [showMusicPicker, setShowMusicPicker] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -522,7 +526,12 @@ export default function VideoEditorScreen() {
         return (
           <View style={styles.toolPanel}>
             <Text style={styles.toolPanelTitle}>{t('videoEditor.backgroundMusic')}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.addFromAudioLibrary')} style={styles.libraryButton}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('videoEditor.addFromAudioLibrary')}
+              style={styles.libraryButton}
+              onPress={() => setShowMusicPicker(true)}
+            >
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.libraryButtonGradient}
@@ -533,30 +542,42 @@ export default function VideoEditorScreen() {
               </LinearGradient>
             </Pressable>
 
-            <View style={styles.currentTrackCard}>
-              <LinearGradient
-                colors={colors.gradient.cardDark}
-                style={styles.currentTrackGradient}
-              >
-                <View style={styles.trackInfo}>
-                  <View style={styles.trackIconContainer}>
-                    <LinearGradient
-                      colors={['rgba(200,150,62,0.2)', 'rgba(10,123,79,0.1)']}
-                      style={styles.trackIconGradient}
+            {selectedTrack ? (
+              <View style={styles.currentTrackCard}>
+                <LinearGradient
+                  colors={colors.gradient.cardDark}
+                  style={styles.currentTrackGradient}
+                >
+                  <View style={styles.trackInfo}>
+                    <View style={styles.trackIconContainer}>
+                      <LinearGradient
+                        colors={['rgba(200,150,62,0.2)', 'rgba(10,123,79,0.1)']}
+                        style={styles.trackIconGradient}
+                      >
+                        <Icon name="music" size="sm" color={colors.gold} />
+                      </LinearGradient>
+                    </View>
+                    <View style={styles.trackDetails}>
+                      <Text style={styles.trackName} numberOfLines={1}>{selectedTrack.title}</Text>
+                      <Text style={styles.trackArtist} numberOfLines={1}>{selectedTrack.artist}</Text>
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('videoEditor.removeTrack')}
+                      style={styles.removeTrackButton}
+                      onPress={() => setSelectedTrack(null)}
                     >
-                      <Icon name="music" size="sm" color={colors.gold} />
-                    </LinearGradient>
+                      <Icon name="x" size="xs" color={colors.error} />
+                    </Pressable>
                   </View>
-                  <View style={styles.trackDetails}>
-                    <Text style={styles.trackName}>Summer Vibes</Text>
-                    <Text style={styles.trackArtist}>by AudioLibrary</Text>
-                  </View>
-                  <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.removeTrack')} style={styles.removeTrackButton}>
-                    <Icon name="x" size="xs" color={colors.error} />
-                  </Pressable>
-                </View>
-              </LinearGradient>
-            </View>
+                </LinearGradient>
+              </View>
+            ) : (
+              <View style={styles.noTrackHint}>
+                <Icon name="music" size="sm" color={tc.text.tertiary} />
+                <Text style={styles.noTrackHintText}>{t('videoEditor.noMusicSelected')}</Text>
+              </View>
+            )}
           </View>
         );
 
@@ -873,6 +894,16 @@ export default function VideoEditorScreen() {
           )}
         </LinearGradient>
       </View>
+      {/* Music Picker Bottom Sheet */}
+      <MusicPicker
+        visible={showMusicPicker}
+        onClose={() => setShowMusicPicker(false)}
+        onSelect={(track) => {
+          setSelectedTrack(track);
+          setShowMusicPicker(false);
+          haptic.tick();
+        }}
+      />
     </SafeAreaView>
     </ScreenErrorBoundary>
   );
@@ -1331,6 +1362,18 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     backgroundColor: 'rgba(248,81,73,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  noTrackHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    opacity: 0.5,
+  },
+  noTrackHintText: {
+    fontSize: fontSize.sm,
+    color: tc.text.tertiary,
   },
   volumeRow: {
     flexDirection: 'row',

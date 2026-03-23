@@ -3254,6 +3254,8 @@
     "textColor": "Couleur du texte",
     "backgroundMusic": "Musique de fond",
     "addFromAudioLibrary": "Ajouter depuis la bibliothèque audio",
+    "removeTrack": "Remove track",
+    "noMusicSelected": "No background music selected",
     "audioLevels": "Niveaux audio",
     "originalAudio": "Audio original",
     "exportQuality": "Qualité d'exportation",
