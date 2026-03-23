@@ -18,6 +18,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Icon } from '@/components/ui/Icon';
 
 export interface SliderStickerData {
@@ -43,6 +44,7 @@ const THUMB_SIZE = 48;
 
 export function SliderSticker({ data, onResponse, isCreator = false, style }: SliderStickerProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const min = data.minValue ?? 0;
   const max = data.maxValue ?? 100;
   const initialAverage = data.averageValue ?? (min + max) / 2;
@@ -163,7 +165,7 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
       {/* Value display */}
       <View style={styles.valueContainer}>
         <Text style={styles.valueLabel}>
-          {isSliding ? 'Slide to answer' : hasSubmitted ? 'Your answer' : 'Drag the emoji'}
+          {isSliding ? t('stories.sliderSlideToAnswer') : hasSubmitted ? t('stories.sliderYourAnswer') : t('stories.sliderDragEmoji')}
         </Text>
         <Text style={styles.valueNumber}>{value}</Text>
       </View>
@@ -177,21 +179,21 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
           <View style={styles.stats}>
             <Icon name="users" size="xs" color={colors.text.tertiary} />
             <Text style={styles.statsText}>
-              {totalResponses + (hasSubmitted && !isCreator ? 1 : 0)} responses
+              {t('stories.sliderResponses', { count: totalResponses + (hasSubmitted && !isCreator ? 1 : 0) }).replace('{{count}}', String(totalResponses + (hasSubmitted && !isCreator ? 1 : 0)))}
             </Text>
             <Text style={styles.averageText}>
-              Avg: {data.averageValue ?? initialAverage}
+              {t('stories.sliderAvg', { value: data.averageValue ?? initialAverage }).replace('{{value}}', String(data.averageValue ?? initialAverage))}
             </Text>
           </View>
         ) : (
-          <Text style={styles.hint}>Release to submit</Text>
+          <Text style={styles.hint}>{t('stories.sliderReleaseToSubmit')}</Text>
         )}
       </View>
 
       {isCreator && (
         <View style={styles.creatorBadge}>
           <Icon name="eye" size="xs" color={colors.text.secondary} />
-          <Text style={styles.creatorText}>Creator view</Text>
+          <Text style={styles.creatorText}>{t('stories.creatorView')}</Text>
         </View>
       )}
     </View>

@@ -103,7 +103,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
         accessibilityRole="button"
       >
         <Icon name="send" size="xs" color={colors.emerald} />
-        <Text style={styles.replyText}>Reply</Text>
+        <Text style={styles.replyText}>{t('stories.questionReply')}</Text>
       </Pressable>
     </View>
   );
@@ -152,13 +152,13 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
         // Creator view: list of submitted questions
         <View style={styles.creatorContainer}>
           <Text style={styles.sectionTitle}>
-            Questions ({submittedQuestions.length})
+            {t('stories.questionCount', { count: submittedQuestions.length }).replace('{{count}}', String(submittedQuestions.length))}
           </Text>
           {submittedQuestions.length === 0 ? (
             <View style={styles.emptyState}>
               <Icon name="message-circle" size="lg" color={colors.text.tertiary} />
               <Text style={styles.emptyText}>
-                No questions yet
+                {t('stories.questionNoQuestionsYet')}
               </Text>
             </View>
           ) : (
@@ -177,7 +177,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
       {isCreator && (
         <View style={styles.creatorBadge}>
           <Icon name="eye" size="xs" color={colors.text.secondary} />
-          <Text style={styles.creatorText}>Creator view</Text>
+          <Text style={styles.creatorText}>{t('stories.creatorView')}</Text>
         </View>
       )}
     </Animated.View>

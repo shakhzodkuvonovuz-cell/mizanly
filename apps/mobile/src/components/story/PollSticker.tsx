@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Icon } from '@/components/ui/Icon';
 
 export interface PollOption {
@@ -87,6 +88,7 @@ function PollOptionRow({
 
 export function PollSticker({ data, onResponse, isCreator = false, style }: PollStickerProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [localOptions, setLocalOptions] = useState<PollOption[]>(data.options);
@@ -142,13 +144,13 @@ export function PollSticker({ data, onResponse, isCreator = false, style }: Poll
       </View>
       <View style={[styles.footer, { borderTopColor: tc.borderLight }]}>
         <Text style={styles.voteCount}>
-          {data.totalVotes + (hasVoted && !isCreator ? 1 : 0)} votes
+          {t('stories.pollVotes', { count: data.totalVotes + (hasVoted && !isCreator ? 1 : 0) }).replace('{{count}}', String(data.totalVotes + (hasVoted && !isCreator ? 1 : 0)))}
         </Text>
         {data.expiresAt && (
           <View style={styles.expiryRow}>
             <Icon name="clock" size="xs" color={colors.text.tertiary} />
             <Text style={styles.expiryText}>
-              Ends {new Date(data.expiresAt).toLocaleDateString()}
+              {t('stories.pollEnds', { date: new Date(data.expiresAt).toLocaleDateString() }).replace('{{date}}', new Date(data.expiresAt).toLocaleDateString())}
             </Text>
           </View>
         )}

@@ -1,9 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Pressable,
   StyleProp,
   ViewStyle,
 } from 'react-native';
@@ -22,7 +21,6 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, fonts, animation, fontSizeExt } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 // ── Types ──
 export interface MusicStickerData {
@@ -104,22 +102,17 @@ export function MusicSticker({ data, isPlaying = true, style }: MusicStickerProp
   const tc = useThemeColors();
   const { t } = useTranslation();
 
-  // ── Lyric scroll animation ──
-  const lyricIndex = useSharedValue(0);
-  const lyricOpacity = useSharedValue(1);
+  // ── Lyric scroll — cycle through lines every 3 seconds ──
+  const [activeLyricOffset, setActiveLyricOffset] = useState(0);
 
   useEffect(() => {
-    if (data.displayMode === 'lyrics' && data.lyrics && data.lyrics.length > 0 && isPlaying) {
+    if (data.displayMode === 'lyrics' && data.lyrics && data.lyrics.length > 4 && isPlaying) {
       const interval = setInterval(() => {
-        lyricOpacity.value = withSequence(
-          withTiming(0, { duration: 200 }),
-          withTiming(1, { duration: 200 }),
-        );
-        lyricIndex.value = withTiming((lyricIndex.value + 1) % data.lyrics!.length, { duration: 0 });
+        setActiveLyricOffset(prev => (prev + 1) % Math.max(1, data.lyrics!.length - 3));
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [data.displayMode, data.lyrics, isPlaying, lyricIndex, lyricOpacity]);
+  }, [data.displayMode, data.lyrics, isPlaying]);
 
   if (data.displayMode === 'compact') {
     return (
@@ -176,10 +169,10 @@ export function MusicSticker({ data, isPlaying = true, style }: MusicStickerProp
       </View>
       {data.lyrics && data.lyrics.length > 0 ? (
         <View style={styles.lyricsBody}>
-          {data.lyrics.slice(0, 4).map((line, i) => (
+          {data.lyrics.slice(activeLyricOffset, activeLyricOffset + 4).map((line, i) => (
             <Animated.Text
-              key={i}
-              entering={FadeIn.delay(i * 200).duration(300)}
+              key={`${activeLyricOffset}-${i}`}
+              entering={FadeIn.delay(i * 150).duration(250)}
               style={[
                 styles.lyricLine,
                 i === 0 && styles.lyricLineActive,

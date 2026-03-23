@@ -17,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Icon } from '@/components/ui/Icon';
 
 export interface CountdownStickerData {
@@ -36,6 +37,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, style }: CountdownStickerProps) {
   const tc = useThemeColors();
+  const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState(0);
   const [isReminded, setIsReminded] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
@@ -130,9 +132,9 @@ export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, st
       {hasEnded ? (
         <View style={styles.endedContainer}>
           <Icon name="check-circle" size="xl" color={colors.gold} />
-          <Text style={styles.endedTitle}>Event started!</Text>
+          <Text style={styles.endedTitle}>{t('stories.countdownEventStarted')}</Text>
           <Text style={styles.endedSubtitle}>
-            The countdown is over. Enjoy the event!
+            {t('stories.countdownOver')}
           </Text>
         </View>
       ) : (
@@ -140,29 +142,29 @@ export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, st
           <View style={styles.countdownGrid}>
             <View style={styles.timeUnit}>
               <Text style={styles.timeNumber}>{days.toString().padStart(2, '0')}</Text>
-              <Text style={styles.timeLabel}>Days</Text>
+              <Text style={styles.timeLabel}>{t('stories.countdownDays')}</Text>
             </View>
             <Text style={styles.colon}>:</Text>
             <View style={styles.timeUnit}>
               <Text style={styles.timeNumber}>{hours.toString().padStart(2, '0')}</Text>
-              <Text style={styles.timeLabel}>Hours</Text>
+              <Text style={styles.timeLabel}>{t('stories.countdownHours')}</Text>
             </View>
             <Text style={styles.colon}>:</Text>
             <View style={styles.timeUnit}>
               <Text style={styles.timeNumber}>{minutes.toString().padStart(2, '0')}</Text>
-              <Text style={styles.timeLabel}>Mins</Text>
+              <Text style={styles.timeLabel}>{t('stories.countdownMins')}</Text>
             </View>
             <Text style={styles.colon}>:</Text>
             <View style={styles.timeUnit}>
               <Text style={styles.timeNumber}>{seconds.toString().padStart(2, '0')}</Text>
-              <Text style={styles.timeLabel}>Secs</Text>
+              <Text style={styles.timeLabel}>{t('stories.countdownSecs')}</Text>
             </View>
           </View>
 
           <Pressable
             style={[styles.remindButton, { backgroundColor: tc.bgElevated, borderColor: tc.borderLight }, isReminded && styles.remindButtonActive]}
             onPress={handleRemindMeToggle}
-            accessibilityLabel={isReminded ? 'Turn off reminder' : 'Remind me about this event'}
+            accessibilityLabel={isReminded ? t('stories.countdownTurnOff') : t('stories.countdownTurnOn')}
             accessibilityRole="button"
           >
             <Icon
@@ -174,7 +176,7 @@ export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, st
               styles.remindText,
               isReminded && styles.remindTextActive,
             ]}>
-              {isReminded ? 'Reminder set' : 'Remind me'}
+              {isReminded ? t('stories.countdownReminderSet') : t('stories.countdownRemindMe')}
             </Text>
           </Pressable>
         </>
@@ -183,7 +185,7 @@ export function CountdownSticker({ data, onRemindMeToggle, isCreator = false, st
       {isCreator && (
         <View style={styles.creatorBadge}>
           <Icon name="eye" size="xs" color={colors.text.secondary} />
-          <Text style={styles.creatorText}>Creator view</Text>
+          <Text style={styles.creatorText}>{t('stories.creatorView')}</Text>
         </View>
       )}
     </Animated.View>

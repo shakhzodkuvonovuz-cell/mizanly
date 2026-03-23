@@ -67,8 +67,7 @@ export function LocationSearch({ onSelect, onClose, style }: LocationSearchProps
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<LocationData[]>(MOCK_LOCATIONS);
+  const [results] = useState<LocationData[]>(MOCK_LOCATIONS);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filteredResults = useMemo(() => {

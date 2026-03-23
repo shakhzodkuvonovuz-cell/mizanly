@@ -21,6 +21,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { searchGiphy, GIPHY_CATEGORIES, type GiphyMediaItem } from '@/services/giphyService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const GIF_COLUMN_COUNT = 2;
@@ -56,8 +57,6 @@ const GIF_CATEGORY_ICONS: Record<string, string> = {
   islamic: 'star',
   funny: 'smile',
 };
-
-import { searchGiphy, searchStickers, GIPHY_CATEGORIES, type GiphyMediaItem } from '@/services/giphyService';
 
 // ── Adapter: GiphyMediaItem → GifItem ──
 function toGifItem(item: GiphyMediaItem): GifItem {
