@@ -325,6 +325,9 @@ export default function CreateEventScreen() {
                 onValueChange={setAllDay}
                 trackColor={{ false: tc.surface, true: colors.emeraldLight }}
                 thumbColor={allDay ? colors.emerald : tc.text.tertiary}
+                accessibilityRole="switch"
+                accessibilityLabel={t('events.allDay')}
+                accessibilityState={{ checked: allDay }}
               />
             </View>
           </LinearGradient>
@@ -353,6 +356,9 @@ export default function CreateEventScreen() {
                 onValueChange={setIsOnline}
                 trackColor={{ false: tc.surface, true: colors.emeraldLight }}
                 thumbColor={isOnline ? colors.emerald : tc.text.tertiary}
+                accessibilityRole="switch"
+                accessibilityLabel={t('events.onlineEvent')}
+                accessibilityState={{ checked: isOnline }}
               />
             </View>
 
@@ -567,6 +573,9 @@ export default function CreateEventScreen() {
                 onValueChange={setReminder1h}
                 trackColor={{ false: tc.surface, true: colors.emeraldLight }}
                 thumbColor={reminder1h ? colors.emerald : tc.text.tertiary}
+                accessibilityRole="switch"
+                accessibilityLabel={t('events.remind1Hour')}
+                accessibilityState={{ checked: reminder1h }}
               />
             </View>
 
@@ -580,6 +589,9 @@ export default function CreateEventScreen() {
                 onValueChange={setReminder1d}
                 trackColor={{ false: tc.surface, true: colors.emeraldLight }}
                 thumbColor={reminder1d ? colors.emerald : tc.text.tertiary}
+                accessibilityRole="switch"
+                accessibilityLabel={t('events.remind1Day')}
+                accessibilityState={{ checked: reminder1d }}
               />
             </View>
           </LinearGradient>

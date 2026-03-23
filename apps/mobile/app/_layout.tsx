@@ -64,6 +64,7 @@ const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
  * Shows Eid/Ramadan banners — respects user's islamicThemeEnabled setting.
  */
 function IslamicThemeBanner() {
+  const tc = useThemeColors();
   const theme = useIslamicTheme();
   const { t } = useTranslation();
   if (!theme || !theme.bannerTextKey) return null;
@@ -89,6 +90,7 @@ function IslamicThemeBanner() {
  * Uses AsyncStorage to prevent repeat shows.
  */
 function EidCelebrationOverlay() {
+  const tc = useThemeColors();
   const isEid = useIsEidToday();
   const [showCelebration, setShowCelebration] = useState(false);
   const { t } = useTranslation();

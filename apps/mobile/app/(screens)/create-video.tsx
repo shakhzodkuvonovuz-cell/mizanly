@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { Video, ResizeMode } from 'expo-av';
 import { Avatar } from '@/components/ui/Avatar';
@@ -167,6 +168,8 @@ export default function CreateVideoScreen() {
   };
 
   // Pick video
+  const MAX_LONG_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
+
   const pickVideo = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -183,6 +186,16 @@ export default function CreateVideoScreen() {
 
     if (!result.canceled) {
       const asset = result.assets[0];
+      // Check file size
+      let fileSize = asset.fileSize;
+      if (!fileSize) {
+        const info = await FileSystem.getInfoAsync(asset.uri, { size: true });
+        fileSize = info.exists && 'size' in info ? info.size : 0;
+      }
+      if (fileSize > MAX_LONG_VIDEO_SIZE) {
+        showToast({ message: t('createVideo.videoTooLarge', { max: '500MB' }), variant: 'error' });
+        return;
+      }
       const videoAsset: PickedVideo = {
         uri: asset.uri,
         type: 'video',

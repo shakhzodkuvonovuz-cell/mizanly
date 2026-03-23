@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, Inject } from '@nestjs/common';
-import { Queue } from 'bullmq';
+import { Queue, Job } from 'bullmq';
+import Redis from 'ioredis';
 
 /**
  * QueueService — high-level API for enqueuing jobs across all BullMQ queues.
@@ -11,6 +12,9 @@ import { Queue } from 'bullmq';
 export class QueueService implements OnModuleDestroy {
   private readonly logger = new Logger(QueueService.name);
 
+  private static readonly DLQ_KEY = 'mizanly:dlq';
+  private static readonly DLQ_MAX_SIZE = 1000;
+
   constructor(
     @Inject('QUEUE_NOTIFICATIONS') private notificationsQueue: Queue,
     @Inject('QUEUE_MEDIA_PROCESSING') private mediaQueue: Queue,
@@ -18,6 +22,7 @@ export class QueueService implements OnModuleDestroy {
     @Inject('QUEUE_WEBHOOKS') private webhooksQueue: Queue,
     @Inject('QUEUE_SEARCH_INDEXING') private searchQueue: Queue,
     @Inject('QUEUE_AI_TASKS') private aiTasksQueue: Queue,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   async onModuleDestroy() {
@@ -107,6 +112,41 @@ export class QueueService implements OnModuleDestroy {
       backoff: { type: 'exponential', delay: 3000 },
     });
     return job.id!;
+  }
+
+  // ── Dead Letter Queue ────────────────────────────────────
+
+  /**
+   * Moves a permanently failed job to the dead letter queue (Redis list).
+   * Called by processor `on('failed')` handlers when a job exhausts all retries.
+   * Keeps the last 1000 entries to prevent unbounded growth.
+   */
+  async moveToDlq(job: Job | undefined, error: Error, queueName: string): Promise<void> {
+    if (!job) return;
+
+    // Only move to DLQ if this was the final attempt
+    const maxAttempts = job.opts?.attempts ?? 1;
+    if (job.attemptsMade < maxAttempts) return;
+
+    const entry = JSON.stringify({
+      jobId: job.id,
+      queue: queueName,
+      name: job.name,
+      data: job.data,
+      error: error.message,
+      failedAt: new Date().toISOString(),
+      attempts: job.attemptsMade,
+    });
+
+    try {
+      await this.redis.lpush(QueueService.DLQ_KEY, entry);
+      await this.redis.ltrim(QueueService.DLQ_KEY, 0, QueueService.DLQ_MAX_SIZE - 1);
+      this.logger.error(
+        `Job ${job.id} (${queueName}/${job.name}) moved to DLQ after ${job.attemptsMade} attempts: ${error.message}`,
+      );
+    } catch {
+      // DLQ storage failure should not crash the worker
+    }
   }
 
   // ── Stats ─────────────────────────────────────────────────

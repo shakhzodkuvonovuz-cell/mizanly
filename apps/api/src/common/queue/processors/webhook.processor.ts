@@ -1,8 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../config/prisma.service';
 import { createHmac } from 'crypto';
+import { QueueService } from '../queue.service';
 
 interface WebhookJobData {
   url: string;
@@ -27,6 +28,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
+    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
   ) {}
 
   onModuleInit() {
@@ -60,6 +62,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`Webhook job ${job?.id} failed permanently: ${err.message}`);
+      this.queueService.moveToDlq(job, err, 'webhooks').catch(() => {});
     });
 
     this.logger.log('Webhook worker started');

@@ -244,6 +244,9 @@ function StatusPrivacyContent() {
                 disabled={saving}
                 trackColor={{ false: tc.surface, true: colors.emerald }}
                 thumbColor={colors.text.primary}
+                accessibilityRole="switch"
+                accessibilityLabel={t('statusPrivacy.showReadReceipts', 'Show read receipts')}
+                accessibilityState={{ checked: readReceipts }}
               />
             </View>
           </View>
@@ -270,6 +273,9 @@ function StatusPrivacyContent() {
                 disabled={saving}
                 trackColor={{ false: tc.surface, true: colors.emerald }}
                 thumbColor={colors.text.primary}
+                accessibilityRole="switch"
+                accessibilityLabel={t('statusPrivacy.showTyping', 'Show when typing')}
+                accessibilityState={{ checked: typingIndicators }}
               />
             </View>
           </View>

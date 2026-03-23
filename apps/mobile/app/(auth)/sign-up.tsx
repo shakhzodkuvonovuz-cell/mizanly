@@ -36,7 +36,9 @@ function SignUpScreenContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const hiddenInputRef = useRef<TextInput>(null);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Animated logo entrance
   const logoScale = useSharedValue(0.85);
@@ -66,6 +68,28 @@ function SignUpScreenContent() {
   const envelopeAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: envelopeScale.value }],
   }));
+
+  // Resend cooldown timer
+  const startCooldown = () => {
+    setResendCooldown(60);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownRef.current) clearInterval(cooldownRef.current);
+          cooldownRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
 
   // Password strength — checks length, uppercase, numbers, special chars
   const strength = password.length === 0
@@ -122,6 +146,7 @@ function SignUpScreenContent() {
   if (pendingVerification) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]}>
+        <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
         <KeyboardAvoidingView
           style={styles.inner}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -175,6 +200,8 @@ function SignUpScreenContent() {
               keyboardType="number-pad"
               maxLength={6}
               autoFocus
+              autoComplete="one-time-code"
+              textContentType="oneTimeCode"
             />
 
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
@@ -191,21 +218,29 @@ function SignUpScreenContent() {
 
             <Pressable
               accessibilityRole="button"
+              disabled={resendCooldown > 0}
               onPress={async () => {
+                if (resendCooldown > 0) return;
                 try {
                   await signUp?.prepareEmailAddressVerification({ strategy: 'email_code' });
                   setError('');
+                  startCooldown();
                 } catch {
                   setError(t('auth.resendFailed'));
                 }
               }}
-              style={styles.resendBtn}
+              style={[styles.resendBtn, resendCooldown > 0 && { opacity: 0.5 }]}
               hitSlop={8}
             >
-              <Text style={styles.resendText}>{t('auth.resendCode')}</Text>
+              <Text style={styles.resendText}>
+                {resendCooldown > 0
+                  ? t('auth.resendCooldown', { seconds: resendCooldown })
+                  : t('auth.resendCode')}
+              </Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>
+        </Pressable>
       </SafeAreaView>
     );
   }
@@ -219,6 +254,7 @@ function SignUpScreenContent() {
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           {/* Decorative gradient behind logo */}
           <View style={styles.bgGlow}>
@@ -273,6 +309,7 @@ function SignUpScreenContent() {
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 autoComplete="new-password"
+                textContentType="newPassword"
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
               />

@@ -55,7 +55,8 @@ export class PrivacyService {
       this.prisma.savedPost.findMany({ where: { userId }, select: { postId: true, createdAt: true } }),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true, createdAt: true } }),
       this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true, createdAt: true } }),
-      this.prisma.notification.findMany({ where: { userId }, select: { id: true, type: true, isRead: true, createdAt: true }, take: 10000 }),
+      // GDPR export cap: 5000 to prevent OOM on heavy users
+      this.prisma.notification.findMany({ where: { userId }, select: { id: true, type: true, isRead: true, createdAt: true }, take: 5000 }),
       this.prisma.threadReply.findMany({ where: { userId }, select: { id: true, content: true, threadId: true, createdAt: true } }),
       this.prisma.userSettings.findUnique({ where: { userId } }),
       this.prisma.watchHistory.findMany({ where: { userId }, select: { videoId: true, watchedAt: true } }),

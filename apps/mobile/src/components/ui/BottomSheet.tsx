@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { View, StyleSheet, Pressable, Platform, useWindowDimensions, KeyboardAvoidingView, AccessibilityInfo, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, Platform, useWindowDimensions, KeyboardAvoidingView, AccessibilityInfo, ScrollView, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -104,6 +104,16 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
       backdropOpacity.value = 0;
     }
   }, [visible, open, translateY, backdropOpacity]);
+
+  // Close sheet on Android hardware back button
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      close();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, close]);
 
   const panGesture = Gesture.Pan()
     .onStart(() => {

@@ -148,6 +148,14 @@ interface AppState {
   setTTSSpeed: (speed: number) => void;
   stopTTS: () => void;
 
+  // Feed scroll position persistence (transient — not persisted)
+  safScrollOffset: number;
+  setSafScrollOffset: (offset: number) => void;
+  majlisScrollOffset: number;
+  setMajlisScrollOffset: (offset: number) => void;
+  bakraScrollOffset: number;
+  setBakraScrollOffset: (offset: number) => void;
+
   // Toast (transient UI state — not persisted)
   toasts: Array<{ id: string; message: string; variant: 'success' | 'error' | 'warning' | 'info'; duration?: number; action?: { label: string; onPress: () => void } }>;
   addToast: (toast: { id: string; message: string; variant?: string; duration?: number; action?: { label: string; onPress: () => void } }) => void;
@@ -321,6 +329,14 @@ export const useStore = create<AppState>()(
       setTTSSpeed: (ttsSpeed) => set({ ttsSpeed }),
       stopTTS: () => set({ ttsText: null, ttsTitle: null, ttsPlaying: false }),
 
+      // Feed scroll position persistence (transient — not persisted)
+      safScrollOffset: 0,
+      setSafScrollOffset: (safScrollOffset) => set({ safScrollOffset }),
+      majlisScrollOffset: 0,
+      setMajlisScrollOffset: (majlisScrollOffset) => set({ majlisScrollOffset }),
+      bakraScrollOffset: 0,
+      setBakraScrollOffset: (bakraScrollOffset) => set({ bakraScrollOffset }),
+
       // Toast (not persisted — transient UI state)
       toasts: [],
       addToast: (toast) => set((s) => ({
@@ -363,6 +379,9 @@ export const useStore = create<AppState>()(
         screenTimeSessionStart: null,
         pipVideoId: null,
         isPiPActive: false,
+        safScrollOffset: 0,
+        majlisScrollOffset: 0,
+        bakraScrollOffset: 0,
         toasts: [],
       }),
     }),
@@ -423,3 +442,6 @@ export const useParentalRestrictions = () => useStore((s) => s.parentalRestricti
 export const useIslamicThemeEnabled = () => useStore((s) => s.islamicThemeEnabled);
 export const useTTSActive = () => useStore((s) => !!s.ttsText);
 export const useTTSPlaying = () => useStore((s) => s.ttsPlaying);
+export const useSafScrollOffset = () => useStore((s) => s.safScrollOffset);
+export const useMajlisScrollOffset = () => useStore((s) => s.majlisScrollOffset);
+export const useBakraScrollOffset = () => useStore((s) => s.bakraScrollOffset);

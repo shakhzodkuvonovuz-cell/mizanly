@@ -240,7 +240,7 @@ export const shadow = {
   },
 } as const;
 
-// 5-level elevation system
+// 5-level elevation system (dark-mode defaults — use getElevation() for theme-aware values)
 export const elevation = {
   surface: {
     ...shadow.sm,
@@ -275,6 +275,53 @@ export const elevation = {
     borderColor: colors.glass.border,
   },
 } as const;
+
+/**
+ * Theme-aware elevation presets. Returns elevation styles with colors
+ * matching the current theme (dark or light).
+ *
+ * Usage: const elev = getElevation('dark'); style={elev.raised}
+ */
+export function getElevation(theme: 'dark' | 'light' | 'system') {
+  const effectiveTheme = theme === 'system'
+    ? (Appearance.getColorScheme() ?? 'dark')
+    : theme;
+  const surface = effectiveTheme === 'dark' ? colors.dark : colors.light;
+  return {
+    surface: {
+      ...shadow.sm,
+      backgroundColor: surface.bg,
+    },
+    raised: {
+      ...shadow.md,
+      backgroundColor: surface.bgElevated,
+      borderWidth: 1,
+      borderColor: surface.borderLight,
+    },
+    overlay: {
+      ...shadow.md,
+      backgroundColor: surface.bgCard,
+      borderWidth: 1,
+      borderColor: surface.borderLight,
+    },
+    modal: {
+      ...shadow.lg,
+      backgroundColor: surface.bgSheet,
+      borderWidth: 1,
+      borderColor: surface.borderLight,
+    },
+    toast: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 16 },
+      shadowOpacity: 0.4,
+      shadowRadius: 32,
+      elevation: 16,
+      backgroundColor: surface.bgSheet,
+      borderWidth: 1,
+      borderColor: effectiveTheme === 'dark' ? colors.glass.border : surface.borderLight,
+    },
+  };
+}
 
 /**
  * Theme-aware color getter. Returns dark or light surface/text colors

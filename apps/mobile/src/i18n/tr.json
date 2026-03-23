@@ -17,6 +17,7 @@
     "searchLocations": "Konum ara...",
     "share": "Paylaş",
     "edit": "Düzenle",
+    "edited": "Düzenlendi",
     "settings": "Ayarlar",
     "close": "Kapat",
     "confirm": "Onayla",
@@ -193,7 +194,8 @@
     "saveDraft": "Taslağı Kaydet",
     "draftSaved": "Taslak kaydedildi",
     "discardChanges": "Değişiklikleri sil?",
-    "unsavedChangesMessage": "Kaydedilmemiş değişiklikleriniz var. Ne yapmak istersiniz?"
+    "unsavedChangesMessage": "Kaydedilmemiş değişiklikleriniz var. Ne yapmak istersiniz?",
+    "saved": "Saved"
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -234,6 +236,7 @@
     "sendCode": "Kod Gönder",
     "verify": "Doğrula",
     "resendCode": "Kodu Tekrar Gönder",
+    "resendCooldown": "{{seconds}} saniye sonra tekrar gönder",
     "codeExpired": "Kodun süresi doldu",
     "invalidCode": "Geçersiz kod",
     "accountCreated": "Hesap başarıyla oluşturuldu",
@@ -421,7 +424,10 @@
     "deletePostTitle": "Gönderi silinsin mi?",
     "reportPostTitle": "Gönderiyi bildir",
     "couldNotShareAsStory": "Hikaye olarak paylaşılamadı. Lütfen tekrar deneyin.",
-    "viewAllComments": "Tüm {{count}} yorumu görüntüle"
+    "viewAllComments": "Tüm {{count}} yorumu görüntüle",
+    "goBack": "Go Back",
+    "replyingTo": "Replying to @{{username}}",
+    "replyToUser": "Reply to @{{username}}..."
   },
   "bakra": {
     "forYou": "Senin İçin",
@@ -1473,6 +1479,8 @@
     "uploadingMedia": "Medya yükleniyor…",
     "limitReached": "Limite ulaşıldı",
     "mediaLimit": "En fazla 10 fotoğraf veya video ekleyebilirsiniz.",
+    "fileTooLarge": "Dosya çok büyük. Maksimum boyut {{max}}.",
+    "videoTooLarge": "Video çok büyük. Maksimum boyut {{max}}.",
     "saved": "Kaydedildi",
     "draftSavedToAccount": "Taslak hesabınıza kaydedildi",
     "failedToSaveDraft": "Taslak kaydedilemedi",
@@ -1559,7 +1567,8 @@
     "findPeople": "Kişi Bul",
     "loadFailed": "İçerik yüklenemedi",
     "tryAgainLater": "Lütfen daha sonra tekrar deneyin",
-    "reachedEnd": "Sonuna ulaştınız"
+    "reachedEnd": "Sonuna ulaştınız",
+    "filterBy": "{{category}} ile filtrele"
   },
   "editProfile": {
     "changeCover": "Kapak Değiştir",
@@ -1585,7 +1594,8 @@
     "loadErrorTitle": "Profil yüklenemedi",
     "loadErrorSubtitle": "Lütfen daha sonra tekrar deneyin",
     "urlPlaceholder": "URL (https://...)",
-    "couldNotSave": "Profil kaydedilemedi"
+    "couldNotSave": "Profil kaydedilemedi",
+    "websitePlaceholder": "https://yoursite.com"
   },
   "screens": {
     "followers": {
@@ -2128,6 +2138,20 @@
         "clouds": "Clouds",
         "matrix": "Matrix"
       }
+    },
+    "banned": {
+      "title": "Hesap Ask\u0131ya Al\u0131nd\u0131",
+      "subtitle": "Hesab\u0131n\u0131z topluluk kurallar\u0131n\u0131 ihlal etti\u011fi i\u00e7in ask\u0131ya al\u0131nd\u0131.",
+      "appealButton": "\u0130tiraz Et",
+      "signOut": "\u00c7\u0131k\u0131\u015f Yap",
+      "contactSupport": "Bunun bir hata oldu\u011funu d\u00fc\u015f\u00fcn\u00fcyorsan\u0131z, karara itiraz edebilir veya destekle ileti\u015fime ge\u00e7ebilirsiniz."
+    },
+    "maintenance": {
+      "title": "K\u0131sa S\u00fcre \u0130\u00e7inde D\u00f6nece\u011fiz",
+      "subtitle": "Mizanly planl\u0131 bak\u0131m \u00e7al\u0131\u015fmas\u0131 yap\u0131yor. Deneyiminizi iyile\u015ftirmek i\u00e7in \u00e7al\u0131\u015f\u0131yoruz.",
+      "retryButton": "Tekrar Dene",
+      "stillDown": "Sunucu hala bak\u0131m alt\u0131nda. L\u00fctfen k\u0131sa bir s\u00fcre sonra tekrar deneyin.",
+      "hint": "Bu genellikle sadece birka\u00e7 dakika s\u00fcrer. Sabr\u0131n\u0131z i\u00e7in te\u015fekk\u00fcr ederiz."
     }
   },
   "createReel": {
@@ -2144,13 +2168,15 @@
     "greenScreen": "Yeşil Ekran",
     "audioLibrary": "Ses Kütüphanesi",
     "gallery": "Galeri",
-    "record": "Kaydet"
+    "record": "Kaydet",
+    "videoTooLarge": "Video çok büyük. Maksimum boyut {{max}}."
   },
   "createVideo": {
     "selectThumbnail": "Küçük resim seçin",
     "customThumbnail": "Özel",
     "normalizeAudio": "Ses normalleştirme",
-    "normalizeAudioDesc": "Tutarlı ses seviyeleri"
+    "normalizeAudioDesc": "Tutarlı ses seviyeleri",
+    "videoTooLarge": "Video çok büyük. Maksimum boyut {{max}}."
   },
   "qibla": {
     "title": "Kıble Yönü",
@@ -2748,6 +2774,7 @@
     "categoryArt": "Sanat",
     "categoryElectronics": "Elektronik",
     "categoryServices": "Hizmetler",
+    "halal": "Helal",
     "notFound": "Ürün bulunamadı"
   },
   "orders": {
@@ -3585,7 +3612,8 @@
     "started": "Started {{timeAgo}}",
     "speakers": "Speakers",
     "listeners": "Listeners",
-    "raisedHands": "Raised Hands"
+    "raisedHands": "Raised Hands",
+    "reactionSent": "Tepki gönderildi!"
   },
   "video": {
     "title": "Video",
@@ -3610,5 +3638,59 @@
   "errorBoundary": {
     "unexpectedError": "An unexpected error occurred. Please try again.",
     "goHome": "Go Home"
+  },
+  "search": {
+    "placeholder": "Search...",
+    "people": "People",
+    "hashtags": "Hashtags",
+    "posts": "Posts",
+    "threads": "Threads",
+    "reels": "Reels",
+    "videos": "Videos",
+    "channels": "Channels",
+    "followers": "followers",
+    "following": "Following",
+    "subscribers": "subscribers",
+    "videosCount": "videos",
+    "views": "views",
+    "trending": "Trending",
+    "recentSearches": "Recent Searches",
+    "clearAll": "Clear All",
+    "noRecentSearches": "No recent searches",
+    "searchFailed": "Search failed",
+    "checkConnection": "Check your connection and try again",
+    "noResultsFor": "No {{type}} found for \"{{query}}\"",
+    "tryDifferent": "Try a different search term",
+    "searchForPeopleAndTopics": "Search for people and topics",
+    "noCaption": "No caption",
+    "viewProfile": "View profile of {{name}}",
+    "viewVideo": "View video: {{title}}",
+    "viewChannel": "View channel: {{name}}",
+    "viewHashtag": "View hashtag {{name}}",
+    "searchFor": "Search for {{term}}"
+  },
+  "share": {
+    "defaultMessage": "Check this out on Mizanly!"
+  },
+  "communityNotes": {
+    "title": "Topluluk Notları",
+    "addNote": "Topluluk Notu Ekle",
+    "noteAdded": "Not incelemeye gönderildi",
+    "writePlaceholder": "Bu içerik hakkında faydalı bağlam yazın...",
+    "submit": "Notu Gönder",
+    "helpful": "Faydalı",
+    "somewhatHelpful": "Kısmen Faydalı",
+    "notHelpful": "Faydalı Değil",
+    "ratedHelpful": "Faydalı olarak değerlendirildi",
+    "ratedSomewhat": "Kısmen faydalı olarak değerlendirildi",
+    "ratedNotHelpful": "Faydalı değil olarak değerlendirildi",
+    "noNotes": "Henüz topluluk notu yok",
+    "noNotesSubtitle": "Faydalı bağlam ekleyen ilk kişi olun",
+    "loadError": "Topluluk notları yüklenemedi",
+    "submitError": "Not gönderilemedi",
+    "rateError": "Değerlendirme gönderilemedi",
+    "helpfulCount": "{{count}} kişi bunu faydalı buldu",
+    "notHelpfulCount": "{{count}} kişi bunu faydalı bulmadı",
+    "contextByReaders": "İnsanların bilmek isteyebileceğini düşünen okuyucular tarafından eklendi"
   }
 }

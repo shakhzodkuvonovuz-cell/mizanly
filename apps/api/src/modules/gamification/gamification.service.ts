@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // XP rewards for different actions
 const XP_REWARDS: Record<string, number> = {
@@ -42,7 +43,10 @@ function getXPForNextLevel(level: number): number {
 @Injectable()
 export class GamificationService {
   private readonly logger = new Logger(GamificationService.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // ── Streaks ─────────────────────────────────────────────
 
@@ -342,6 +346,17 @@ export class GamificationService {
       throw err;
     }
 
+    // Notify challenge creator that someone joined
+    if (challenge.createdById !== userId) {
+      this.notificationsService.create({
+        userId: challenge.createdById,
+        actorId: userId,
+        type: 'SYSTEM',
+        title: 'New challenger',
+        body: `Someone joined your challenge "${challenge.title}"`,
+      }).catch(err => this.logger.warn('Challenge join notification failed', err.message));
+    }
+
     return { success: true };
   }
 
@@ -364,9 +379,20 @@ export class GamificationService {
       },
     });
 
-    // Award XP on completion
+    // Award XP on completion and notify challenge creator
     if (completed && !participant.completed) {
       await this.awardXP(userId, 'challenge_completed', participant.challenge.xpReward);
+
+      // Notify the challenge creator that someone completed their challenge
+      if (participant.challenge.createdById !== userId) {
+        this.notificationsService.create({
+          userId: participant.challenge.createdById,
+          actorId: userId,
+          type: 'SYSTEM',
+          title: 'Challenge completed',
+          body: `Someone completed your challenge "${participant.challenge.title}"`,
+        }).catch(err => this.logger.warn('Challenge completion notification failed', err.message));
+      }
     }
 
     return updated;

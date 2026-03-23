@@ -129,28 +129,31 @@ export function GradientButton({
 
   const renderContent = () => (
     <View style={[styles.content, { height: config.height }]}>
-      {loading ? (
-        <Skeleton.Rect width={config.iconSize} height={config.iconSize} borderRadius={config.iconSize / 2} />
-      ) : (
-        <>
-          {icon ? (
-            <View style={styles.iconWrapper}>
-              <Icon name={icon} size={config.iconSize} color={textColor} />
-            </View>
-          ) : null}
-          <Text
-            style={[
-              styles.label,
-              {
-                fontSize: config.fontSize,
-                color: textColor,
-              },
-            ]}
-            numberOfLines={1}
-          >
-            {label}
-          </Text>
-        </>
+      {/* Always render label (+ icon) to preserve intrinsic width; hide when loading */}
+      <View style={[styles.content, loading && styles.hiddenContent]}>
+        {icon ? (
+          <View style={styles.iconWrapper}>
+            <Icon name={icon} size={config.iconSize} color={textColor} />
+          </View>
+        ) : null}
+        <Text
+          style={[
+            styles.label,
+            {
+              fontSize: config.fontSize,
+              color: textColor,
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      </View>
+      {/* Overlay skeleton when loading — positioned absolutely so it doesn't affect layout */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <Skeleton.Rect width={config.iconSize} height={config.iconSize} borderRadius={config.iconSize / 2} />
+        </View>
       )}
     </View>
   );
@@ -254,6 +257,14 @@ export function GradientButton({
 const styles = StyleSheet.create({
   content: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hiddenContent: {
+    opacity: 0,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
   },

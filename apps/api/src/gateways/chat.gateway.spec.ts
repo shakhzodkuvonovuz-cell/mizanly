@@ -98,6 +98,9 @@ describe('ChatGateway', () => {
             userSettings: {
               findUnique: jest.fn().mockResolvedValue(null),
             },
+            audioRoom: {
+              update: jest.fn().mockResolvedValue(undefined),
+            },
           },
         },
         {
@@ -138,8 +141,9 @@ describe('ChatGateway', () => {
     config = module.get(ConfigService);
     redis = module.get('REDIS');
     // Attach server mock
-    gateway.server = { to: jest.fn(), emit: jest.fn() } as any;
+    gateway.server = { to: jest.fn(), emit: jest.fn(), in: jest.fn() } as any;
     (gateway.server.to as jest.Mock).mockReturnValue(gateway.server);
+    (gateway.server.in as jest.Mock).mockReturnValue({ fetchSockets: jest.fn().mockResolvedValue([]) });
   });
 
   it('should be defined', () => {
@@ -534,7 +538,7 @@ describe('ChatGateway', () => {
       expect(gateway.server.to).toHaveBeenCalledWith('quran:room-abc');
     });
 
-    it('should delete empty Quran room on last participant disconnect', async () => {
+    it('should delete empty Quran room on last participant disconnect and mark DB ended (F42)', async () => {
       const client = { ...mockSocket, id: 'socket-q2', data: { userId: 'user-q2', quranRooms: ['room-xyz'] } };
       // First scard call (Quran room) returns 0 (empty), second (presence) returns 0
       redis.srem.mockResolvedValue(1);
@@ -545,6 +549,69 @@ describe('ChatGateway', () => {
       await gateway.handleDisconnect(client as any);
 
       expect(redis.del).toHaveBeenCalledWith('quran:room:room-xyz', 'quran:room:room-xyz:participants');
+      expect(prisma.audioRoom.update).toHaveBeenCalledWith({
+        where: { id: 'room-xyz' },
+        data: { status: 'ended', endedAt: expect.any(Date) },
+      });
+    });
+
+    it('should transfer host when host disconnects from Quran room (F41)', async () => {
+      const client = { ...mockSocket, id: 'socket-host', data: { userId: 'host-user', quranRooms: ['room-host'] } };
+      redis.srem.mockResolvedValue(1);
+      // First scard (quran room remaining) = 2, second scard (presence) = 0
+      redis.scard.mockResolvedValueOnce(2).mockResolvedValue(0);
+      redis.hgetall.mockResolvedValue({ hostId: 'host-user', currentSurah: '1', currentVerse: '1', reciterId: '' });
+      prisma.user.update = jest.fn().mockResolvedValue(undefined);
+
+      // Mock fetchSockets to return a remaining participant
+      (gateway.server.in as jest.Mock).mockReturnValue({
+        fetchSockets: jest.fn().mockResolvedValue([
+          { id: 'socket-p2', data: { userId: 'participant-2' } },
+        ]),
+      });
+
+      await gateway.handleDisconnect(client as any);
+
+      // Verify host was updated in Redis
+      expect(redis.hset).toHaveBeenCalledWith('quran:room:room-host', 'hostId', 'participant-2');
+      // Verify host was updated in DB
+      expect(prisma.audioRoom.update).toHaveBeenCalledWith({
+        where: { id: 'room-host' },
+        data: { hostId: 'participant-2' },
+      });
+      // Verify host_changed event was emitted
+      expect(gateway.server.to).toHaveBeenCalledWith('quran:room-host');
+      expect(gateway.server.emit).toHaveBeenCalledWith('host_changed', {
+        roomId: 'room-host',
+        newHostId: 'participant-2',
+      });
+    });
+
+    it('should NOT transfer host when non-host disconnects from Quran room', async () => {
+      const client = { ...mockSocket, id: 'socket-p1', data: { userId: 'participant-1', quranRooms: ['room-nh'] } };
+      redis.srem.mockResolvedValue(1);
+      redis.scard.mockResolvedValueOnce(2).mockResolvedValue(0);
+      redis.hgetall.mockResolvedValue({ hostId: 'real-host', currentSurah: '1', currentVerse: '1', reciterId: '' });
+      prisma.user.update = jest.fn().mockResolvedValue(undefined);
+
+      await gateway.handleDisconnect(client as any);
+
+      // Host should not be changed
+      expect(redis.hset).not.toHaveBeenCalledWith('quran:room:room-nh', 'hostId', expect.any(String));
+      // host_changed should not be emitted
+      expect(gateway.server.emit).not.toHaveBeenCalledWith('host_changed', expect.anything());
+    });
+
+    it('should handle DB failure gracefully during room cleanup (F42)', async () => {
+      const client = { ...mockSocket, id: 'socket-q3', data: { userId: 'user-q3', quranRooms: ['room-fail'] } };
+      redis.srem.mockResolvedValue(1);
+      redis.scard.mockResolvedValueOnce(0).mockResolvedValue(0);
+      redis.del.mockResolvedValue(1);
+      prisma.user.update = jest.fn().mockResolvedValue(undefined);
+      prisma.audioRoom.update.mockRejectedValueOnce(new Error('DB unavailable'));
+
+      // Should not throw — error is caught
+      await expect(gateway.handleDisconnect(client as any)).resolves.not.toThrow();
     });
   });
 
@@ -914,7 +981,7 @@ describe('ChatGateway', () => {
       expect(client.data.quranRooms).not.toContain('room-1');
     });
 
-    it('should delete room when last participant leaves', async () => {
+    it('should delete room and mark DB ended when last participant leaves (F42)', async () => {
       const client = {
         ...mockSocket,
         id: 'socket-ql2',
@@ -926,6 +993,91 @@ describe('ChatGateway', () => {
       await gateway.handleLeaveQuranRoom({ roomId: 'room-1' }, client as any);
 
       expect(redis.del).toHaveBeenCalledWith('quran:room:room-1', 'quran:room:room-1:participants');
+      expect(prisma.audioRoom.update).toHaveBeenCalledWith({
+        where: { id: 'room-1' },
+        data: { status: 'ended', endedAt: expect.any(Date) },
+      });
+    });
+
+    it('should transfer host when host leaves Quran room (F41)', async () => {
+      const client = {
+        ...mockSocket,
+        id: 'socket-host-leave',
+        data: { userId: 'leaving-host', quranRooms: ['room-1'] } as any,
+        leave: jest.fn(),
+      };
+      redis.scard.mockResolvedValue(3); // 3 remaining
+      redis.hgetall.mockResolvedValue({ hostId: 'leaving-host', currentSurah: '5', currentVerse: '10', reciterId: 'r2' });
+
+      // Mock fetchSockets to return remaining participants
+      (gateway.server.in as jest.Mock).mockReturnValue({
+        fetchSockets: jest.fn().mockResolvedValue([
+          { id: 'socket-p1', data: { userId: 'next-host' } },
+          { id: 'socket-p2', data: { userId: 'other-user' } },
+        ]),
+      });
+
+      await gateway.handleLeaveQuranRoom({ roomId: 'room-1' }, client as any);
+
+      // Verify host transfer in Redis
+      expect(redis.hset).toHaveBeenCalledWith('quran:room:room-1', 'hostId', 'next-host');
+      // Verify host transfer in DB
+      expect(prisma.audioRoom.update).toHaveBeenCalledWith({
+        where: { id: 'room-1' },
+        data: { hostId: 'next-host' },
+      });
+      // Verify host_changed event
+      expect(gateway.server.emit).toHaveBeenCalledWith('host_changed', {
+        roomId: 'room-1',
+        newHostId: 'next-host',
+      });
+      // Verify quran_room_update uses new host
+      expect(gateway.server.emit).toHaveBeenCalledWith('quran_room_update', {
+        roomId: 'room-1',
+        hostId: 'next-host',
+        currentSurah: 5,
+        currentVerse: 10,
+        reciterId: 'r2',
+        participantCount: 3,
+      });
+    });
+
+    it('should NOT transfer host when non-host leaves', async () => {
+      const client = {
+        ...mockSocket,
+        id: 'socket-nonhost',
+        data: { userId: 'regular-user', quranRooms: ['room-1'] } as any,
+        leave: jest.fn(),
+      };
+      redis.scard.mockResolvedValue(2);
+      redis.hgetall.mockResolvedValue({ hostId: 'actual-host', currentSurah: '1', currentVerse: '1', reciterId: '' });
+
+      await gateway.handleLeaveQuranRoom({ roomId: 'room-1' }, client as any);
+
+      // No host transfer should happen
+      expect(redis.hset).not.toHaveBeenCalledWith('quran:room:room-1', 'hostId', expect.any(String));
+      expect(gateway.server.emit).not.toHaveBeenCalledWith('host_changed', expect.anything());
+      // But quran_room_update should still be broadcast
+      expect(gateway.server.emit).toHaveBeenCalledWith('quran_room_update', expect.objectContaining({
+        roomId: 'room-1',
+        hostId: 'actual-host',
+      }));
+    });
+
+    it('should handle DB failure gracefully during empty room cleanup (F42)', async () => {
+      const client = {
+        ...mockSocket,
+        id: 'socket-ql3',
+        data: { userId: 'last-user', quranRooms: ['room-1'] } as any,
+        leave: jest.fn(),
+      };
+      redis.scard.mockResolvedValue(0);
+      prisma.audioRoom.update.mockRejectedValueOnce(new Error('DB error'));
+
+      // Should not throw
+      await expect(
+        gateway.handleLeaveQuranRoom({ roomId: 'room-1' }, client as any),
+      ).resolves.not.toThrow();
     });
   });
 

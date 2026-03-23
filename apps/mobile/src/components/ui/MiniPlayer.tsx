@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   Platform,
   Pressable,
 } from 'react-native';
@@ -220,24 +219,16 @@ export function MiniPlayer() {
 
           {/* Content row */}
           <View style={styles.contentRow}>
-            {/* Thumbnail */}
+            {/* Video thumbnail — renders actual video at mini player size */}
             <View style={[styles.thumbnailContainer, { backgroundColor: tc.surface }]}>
-              {miniPlayerVideo.thumbnailUri ? (
-                <Image
-                  source={{ uri: miniPlayerVideo.thumbnailUri }}
-                  style={styles.thumbnail}
-                  resizeMode="cover"
-                  accessibilityLabel={`Thumbnail for ${miniPlayerVideo.title || 'video'}`}
-                />
-              ) : (
-                <View style={styles.thumbnailPlaceholder}>
-                  <Icon
-                    name="video"
-                    size="md"
-                    color={colors.text.secondary}
-                  />
-                </View>
-              )}
+              <Video
+                ref={videoRef}
+                source={{ uri: miniPlayerVideo.videoUrl }}
+                style={styles.miniVideo}
+                resizeMode={ResizeMode.COVER}
+                shouldPlay={miniPlayerPlaying}
+                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+              />
             </View>
 
             {/* Title + channel */}
@@ -277,16 +268,6 @@ export function MiniPlayer() {
             </Pressable>
           </View>
 
-          {/* Hidden audio-only Video component for playback */}
-          <Video
-            ref={videoRef}
-            source={{ uri: miniPlayerVideo.videoUrl }}
-            style={styles.hiddenVideo}
-            resizeMode={ResizeMode.CONTAIN}
-            shouldPlay={miniPlayerPlaying}
-            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-            positionMillis={undefined}
-          />
         </Animated.View>
       </GestureDetector>
     </Animated.View>
@@ -340,17 +321,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.dark.surface,
   },
-  thumbnail: {
-    width: '100%',
-    height: '100%',
-  },
-  thumbnailPlaceholder: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.dark.surface,
-  },
   textContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -372,10 +342,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  hiddenVideo: {
-    width: 0,
-    height: 0,
-    position: 'absolute',
-    opacity: 0,
+  miniVideo: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.sm,
   },
 });

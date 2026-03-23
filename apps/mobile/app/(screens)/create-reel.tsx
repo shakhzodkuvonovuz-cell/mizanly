@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { Video, ResizeMode } from 'expo-av';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -182,6 +183,8 @@ export default function CreateReelScreen() {
     }
   };
 
+  const MAX_REEL_SIZE = 100 * 1024 * 1024; // 100MB
+
   const pickVideo = useCallback(async () => {
     haptic.navigate();
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -194,6 +197,16 @@ export default function CreateReelScreen() {
 
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
+      // Check file size
+      let fileSize = asset.fileSize;
+      if (!fileSize) {
+        const info = await FileSystem.getInfoAsync(asset.uri, { size: true });
+        fileSize = info.exists && 'size' in info ? info.size : 0;
+      }
+      if (fileSize > MAX_REEL_SIZE) {
+        showToast({ message: t('createReel.videoTooLarge', { max: '100MB' }), variant: 'error' });
+        return;
+      }
       setVideo({
         uri: asset.uri,
         type: 'video',
@@ -204,7 +217,7 @@ export default function CreateReelScreen() {
       // Generate thumbnail frames for picker
       generateFrames(asset.uri, (asset.duration || 0) * 1000);
     }
-  }, [haptic]);
+  }, [haptic, t]);
 
   const removeVideo = () => {
     setVideo(null);

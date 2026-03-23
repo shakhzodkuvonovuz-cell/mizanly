@@ -5,10 +5,12 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  StatusBar,
   useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Video, AVPlaybackStatus, ResizeMode } from 'expo-av';
+import { Video, AVPlaybackStatus, ResizeMode, VideoFullscreenUpdateEvent, VideoFullscreenUpdate } from 'expo-av';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, runOnJS } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -55,8 +57,10 @@ export const VideoPlayer = memo(function VideoPlayer({
 }: VideoPlayerProps) {
   const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const videoRef = useRef<Video>(null);
   const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [showControls, setShowControls] = useState(true);
   const [speedSheetVisible, setSpeedSheetVisible] = useState(false);
@@ -125,6 +129,8 @@ export const VideoPlayer = memo(function VideoPlayer({
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
+      // Restore StatusBar if component unmounts while in fullscreen
+      StatusBar.setHidden(false, 'fade');
     };
   }, [resetControlsTimeout]);
 
@@ -228,6 +234,22 @@ export const VideoPlayer = memo(function VideoPlayer({
     resetControlsTimeout();
   }, [resetControlsTimeout]);
 
+  const handleFullscreenUpdate = useCallback((event: VideoFullscreenUpdateEvent) => {
+    const { fullscreenUpdate } = event;
+    if (fullscreenUpdate === VideoFullscreenUpdate.PLAYER_WILL_PRESENT) {
+      setIsFullscreen(true);
+      StatusBar.setHidden(true, 'fade');
+      // TODO: Lock to landscape when expo-screen-orientation is installed
+      // import * as ScreenOrientation from 'expo-screen-orientation';
+      // ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+    } else if (fullscreenUpdate === VideoFullscreenUpdate.PLAYER_WILL_DISMISS) {
+      setIsFullscreen(false);
+      StatusBar.setHidden(false, 'fade');
+      // TODO: Restore portrait when expo-screen-orientation is installed
+      // ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }
+  }, []);
+
   const toggleFullscreen = useCallback(async () => {
     if (!videoRef.current) return;
     haptic.tick();
@@ -284,6 +306,7 @@ export const VideoPlayer = memo(function VideoPlayer({
           shouldPlay={autoPlay}
           useNativeControls={false}
           onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+          onFullscreenUpdate={handleFullscreenUpdate}
           volume={isMuted ? 0 : volume}
           rate={playbackSpeed}
           isLooping={looping}
@@ -314,7 +337,7 @@ export const VideoPlayer = memo(function VideoPlayer({
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.8)']}
             locations={[0.2, 0.5, 0.9]}
-            style={styles.controlsGradient}
+            style={[styles.controlsGradient, { paddingTop: Math.max(insets.top, spacing.base), paddingBottom: Math.max(insets.bottom, spacing.base) }]}
           >
             {/* Top controls row */}
             <View style={styles.topControls}>

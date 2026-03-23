@@ -285,6 +285,7 @@ export default function PrayerTimesScreen() {
   const [showNotifSettings, setShowNotifSettings] = useState(false);
   const [showAdhanStylePicker, setShowAdhanStylePicker] = useState(false);
   const [showReminderPicker, setShowReminderPicker] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   // Compute Qibla direction from user location (Kaaba: 21.4225, 39.8262)
   const qiblaDirection = useMemo(() => {
     if (!userLocation) return 0;
@@ -298,7 +299,6 @@ export default function PrayerTimesScreen() {
     const bearing = (Math.atan2(x, y) * 180) / Math.PI;
     return Math.round((bearing + 360) % 360);
   }, [userLocation]);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [currentPrayerIndex, setCurrentPrayerIndex] = useState(0);
   const [prayerMethods, setPrayerMethods] = useState<PrayerMethodInfo[]>([]);
 
@@ -839,6 +839,7 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     color: 'rgba(255,255,255,0.9)',
     fontSize: fontSize.lg,
     lineHeight: lineHeight.lg,
+    fontFamily: fonts.arabic,
     marginBottom: spacing.md,
   },
   currentPrayerTimeRow: {

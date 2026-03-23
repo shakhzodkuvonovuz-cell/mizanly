@@ -16,6 +16,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { GamificationService } from '../gamification/gamification.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
+import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
 
 const VIDEO_SELECT = {
@@ -76,6 +78,8 @@ export class VideosService {
     private notifications: NotificationsService,
     private stream: StreamService,
     private gamification: GamificationService,
+    private contentSafety: ContentSafetyService,
+    private ai: AiService,
     private queueService: QueueService,
   ) {}
 
@@ -112,6 +116,27 @@ export class VideosService {
     });
     if (!channel) throw new NotFoundException('Channel not found');
     if (channel.userId !== userId) throw new ForbiddenException();
+
+    // Pre-save content moderation: block harmful text before persisting (Finding 45)
+    const moderationText = [dto.title, dto.description].filter(Boolean).join('\n');
+    if (moderationText) {
+      const moderationResult = await this.contentSafety.moderateText(moderationText);
+      if (!moderationResult.safe) {
+        this.logger.warn(`Video creation blocked by content safety: flags=${moderationResult.flags.join(',')}, userId=${userId}`);
+        throw new BadRequestException(
+          `Content flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise your video details.'}`,
+        );
+      }
+    }
+
+    // Pre-save thumbnail moderation: block harmful images before persisting (Finding 45)
+    if (dto.thumbnailUrl) {
+      const imageResult = await this.ai.moderateImage(dto.thumbnailUrl);
+      if (imageResult.classification === 'BLOCK') {
+        this.logger.warn(`Video creation blocked: thumbnail BLOCKED — ${imageResult.reason}, userId=${userId}`);
+        throw new BadRequestException('Thumbnail image violates community guidelines');
+      }
+    }
 
     const video = await this.prisma.$transaction([
       this.prisma.video.create({
@@ -153,13 +178,6 @@ export class VideosService {
           data: { status: 'PUBLISHED' },
         }).catch((e) => this.logger.error('Failed to update video status', e));
       });
-
-    // AI moderation: check title + description via queue (Finding 45: video content not moderated)
-    const moderationText = [dto.title, dto.description].filter(Boolean).join('\n');
-    if (moderationText) {
-      this.queueService.addModerationJob({ content: moderationText, contentType: 'post', contentId: video[0].id })
-        .catch((err: unknown) => this.logger.error(`Moderation queue failed for video ${video[0].id}`, err instanceof Error ? err.message : err));
-    }
 
     // Gamification: award XP + update streak
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' });

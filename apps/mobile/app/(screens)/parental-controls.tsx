@@ -40,7 +40,7 @@ function PinPad({
   const styles = createStyles(tc);
   const [pin, setPin] = useState('');
   const haptic = useContextualHaptic();
-  const { isRTL } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const handleDigit = (d: string) => {
     haptic.tick();
@@ -75,6 +75,7 @@ function PinPad({
         {digits.map((d, i) => (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={d === 'del' ? t('common.delete') : d || undefined}
             key={i}
             style={[styles.numKey, d === '' && styles.numKeyEmpty]}
 
@@ -113,7 +114,9 @@ function AgeRatingSelector({
     <View style={styles.ageRatingRow}>
       {AGE_RATINGS.map((r) => (
         <Pressable
-          accessibilityRole="button"
+          accessibilityRole="radio"
+          accessibilityLabel={r}
+          accessibilityState={{ selected: value === r }}
           key={r}
           style={[styles.ageRatingChip, value === r && styles.ageRatingChipActive]}
           onPress={() => { haptic.tick(); onChange(r); }}
@@ -152,7 +155,9 @@ function DmRestrictionSelector({
     <View style={styles.ageRatingRow}>
       {DM_OPTIONS.map((opt) => (
         <Pressable
-          accessibilityRole="button"
+          accessibilityRole="radio"
+          accessibilityLabel={labels[opt]}
+          accessibilityState={{ selected: value === opt }}
           key={opt}
           style={[styles.dmChip, value === opt && styles.ageRatingChipActive]}
           onPress={() => { haptic.tick(); onChange(opt); }}
@@ -183,7 +188,9 @@ function ToggleRow({
   const { isRTL } = useTranslation();
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityState={{ checked: value }}
       style={[styles.toggleRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={() => { haptic.tick(); onToggle(!value); }}
 
@@ -314,6 +321,8 @@ function ChildCard({
       >
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={control.child?.displayName ?? control.child?.username ?? ''}
+          accessibilityState={{ expanded }}
           style={[styles.childHeader, { flexDirection: rtlFlexRow(isRTL) }]}
           onPress={() => { haptic.selection(); setExpanded(!expanded); }}
 
@@ -393,6 +402,7 @@ function ChildCard({
             <View style={styles.manageActions}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('parentalControls.changePin')}
                 style={[styles.manageBtn, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => onChangePin(control.childUserId)}
 
@@ -405,6 +415,7 @@ function ChildCard({
 
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('parentalControls.unlinkAccount')}
                 style={[styles.manageBtn, styles.manageBtnDanger, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => onUnlink(control.childUserId)}
 

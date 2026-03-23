@@ -61,6 +61,7 @@ function isFeatureIndex(index: number): boolean {
 }
 
 function TrendingHashtagsSkeleton() {
+  const tc = useThemeColors();
   const { t } = useTranslation();
   const chips = Array.from({ length: 5 }, (_, i) => i);
   return (
@@ -206,6 +207,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
 }
 
 function FeaturedSection({ items }: { items: FeaturedItem[] }) {
+  const tc = useThemeColors();
   const router = useRouter();
   const { t } = useTranslation();
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -231,8 +231,30 @@ export default function SafScreen() {
   const feedRef = useRef<FlashListRef<Post | { _type: 'suggested' }>>(null);
   useScrollToTop(feedRef as React.RefObject<FlashListRef<Post | { _type: 'suggested' }>>);
 
-  // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
-  // which would reset scroll position when returning from sub-screens
+  // ── Scroll position persistence across tab switches ──
+  const lastSavedOffset = useRef(0);
+
+  // Throttled scroll offset save — only writes to store when delta > 50px
+  const handleScrollOffsetSave = useCallback((y: number) => {
+    if (Math.abs(y - lastSavedOffset.current) > 50) {
+      lastSavedOffset.current = y;
+      useStore.getState().setSafScrollOffset(y);
+    }
+  }, []);
+
+  // Restore scroll position when tab regains focus
+  useFocusEffect(
+    useCallback(() => {
+      const offset = useStore.getState().safScrollOffset;
+      if (offset > 0) {
+        // Small delay to let FlashList finish layout
+        const timer = setTimeout(() => {
+          feedRef.current?.scrollToOffset({ offset, animated: false });
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }, [])
+  );
 
   const searchPress = useAnimatedPress();
   const dmPress = useAnimatedPress();
@@ -240,7 +262,13 @@ export default function SafScreen() {
   const cameraPress = useAnimatedPress();
   const profilePress = useAnimatedPress();
   const bellShake = useAnimatedIcon('shake');
-  const { onScroll, headerAnimatedStyle, titleAnimatedStyle, scrollY } = useScrollLinkedHeader(56);
+  const { onScroll: headerOnScroll, headerAnimatedStyle, titleAnimatedStyle, scrollY } = useScrollLinkedHeader(56);
+
+  // Combined scroll handler: header animation + scroll position persistence
+  const onScroll = useCallback((event: { nativeEvent: { contentOffset: { y: number } } }) => {
+    headerOnScroll(event);
+    handleScrollOffsetSave(event.nativeEvent.contentOffset.y);
+  }, [headerOnScroll, handleScrollOffsetSave]);
 
   // Shake bell icon when unread notifications go from 0 to positive
   const prevUnreadRef = useRef(0);

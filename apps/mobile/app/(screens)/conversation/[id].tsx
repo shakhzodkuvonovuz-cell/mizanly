@@ -46,6 +46,8 @@ import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
 import { io, Socket } from 'socket.io-client';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { RichText } from '@/components/ui/RichText';
 import { navigate } from '@/utils/navigation';
 
 interface TenorGifResult {
@@ -393,6 +395,7 @@ const MessageBubble = memo(function MessageBubble({
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const spoilerOpacity = useSharedValue(1);
   const spoilerAnimStyle = useAnimatedStyle(() => ({
     opacity: spoilerOpacity.value,
@@ -552,23 +555,36 @@ const MessageBubble = memo(function MessageBubble({
         ) : (
           <>
             {message.mediaUrl && (
-              <ProgressiveImage uri={message.mediaUrl} width={200} height={200} borderRadius={radius.md} style={{ marginBottom: spacing.xs }} accessibilityLabel={t('accessibility.sharedMedia')} />
+              <Pressable
+                onPress={() => { haptic.navigate(); setLightboxImage(message.mediaUrl!); }}
+                accessibilityRole="button"
+                accessibilityLabel={t('accessibility.sharedMedia')}
+              >
+                <ProgressiveImage uri={message.mediaUrl} width={200} height={200} borderRadius={radius.md} style={{ marginBottom: spacing.xs }} accessibilityLabel={t('accessibility.sharedMedia')} />
+              </Pressable>
             )}
             {message.content && (
-              <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
-                {searchQuery.trim() ? (
-                  highlightSearchText(message.content, searchQuery).map((seg, idx) => (
+              searchQuery.trim() ? (
+                <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
+                  {highlightSearchText(message.content, searchQuery).map((seg, idx) => (
                     <Text
                       key={idx}
                       style={seg.highlight ? { backgroundColor: colors.gold + '80' } : {}}
                     >
                       {seg.text}
                     </Text>
-                  ))
-                ) : (
-                  message.content
-                )}
-              </Text>
+                  ))}
+                </Text>
+              ) : (
+                <RichText text={message.content} style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]} />
+              )
+            )}
+            {lightboxImage && (
+              <ImageLightbox
+                images={[lightboxImage]}
+                visible={true}
+                onClose={() => setLightboxImage(null)}
+              />
             )}
           </>
         )}
@@ -610,20 +626,20 @@ const MessageBubble = memo(function MessageBubble({
               {readByMembers.length > 0 && readByMembers[0]?.lastReadAt && (
                 <Text style={[styles.readTime, { color: tc.text.tertiary }]}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
               )}
-            </View>
-          )}
-          {readByMembers.length > 0 && (
-            <View style={styles.readReceipts}>
-              {readByMembers.slice(0, 3).map(member => (
-                <Avatar
-                  key={member.userId}
-                  uri={member.user.avatarUrl}
-                  name={member.user.displayName}
-                  size="xs"
-                />
-              ))}
-              {readByMembers.length > 3 && (
-                <Text style={[styles.readReceiptMore, { color: tc.text.tertiary }]}>+{readByMembers.length - 3}</Text>
+              {readByMembers.length > 0 && (
+                <View style={styles.readReceipts}>
+                  {readByMembers.slice(0, 3).map(member => (
+                    <Avatar
+                      key={member.userId}
+                      uri={member.user.avatarUrl}
+                      name={member.user.displayName}
+                      size="xs"
+                    />
+                  ))}
+                  {readByMembers.length > 3 && (
+                    <Text style={[styles.readReceiptMore, { color: tc.text.tertiary }]}>+{readByMembers.length - 3}</Text>
+                  )}
+                </View>
               )}
             </View>
           )}
@@ -739,6 +755,7 @@ export default function ConversationScreen() {
   const [slideOffset, setSlideOffset] = useState(0);
   const [cancelled, setCancelled] = useState(false);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingCounterRef = useRef(0);
   // Context menu
   const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);
   const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
@@ -1102,7 +1119,7 @@ export default function ConversationScreen() {
       }
     }
 
-    const pendingId = `pending_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const pendingId = `pending_${Date.now()}_${++pendingCounterRef.current}`;
     const pendingMessage: PendingMessage = {
       id: pendingId,
       content: text.trim(),

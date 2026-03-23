@@ -125,6 +125,44 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     return this.redis.scard(this.quranParticipantsKey(roomId));
   }
 
+  /**
+   * F41 — Transfer Quran room host to the next available participant.
+   * Picks the first remaining socket in the room, reads its userId,
+   * updates Redis + DB, and emits host_changed to all participants.
+   * Returns the new hostId or null if no participants remain.
+   */
+  private async transferQuranRoomHost(roomId: string): Promise<string | null> {
+    try {
+      const remainingSockets = await this.server.in(`quran:${roomId}`).fetchSockets();
+      if (remainingSockets.length === 0) return null;
+
+      const newHostSocket = remainingSockets[0];
+      const newHostUserId = newHostSocket.data?.userId;
+      if (!newHostUserId) return null;
+
+      // Update host in Redis
+      await this.redis.hset(this.quranRoomKey(roomId), 'hostId', newHostUserId);
+
+      // Update host in DB (best-effort — don't crash if record doesn't exist)
+      await this.prisma.audioRoom.update({
+        where: { id: roomId },
+        data: { hostId: newHostUserId },
+      }).catch(err => this.logger.warn(`Failed to update Quran room ${roomId} host in DB`, err.message));
+
+      // Notify all participants of host change
+      this.server.to(`quran:${roomId}`).emit('host_changed', {
+        roomId,
+        newHostId: newHostUserId,
+      });
+
+      this.logger.log(`Quran room ${roomId}: host transferred to ${newHostUserId}`);
+      return newHostUserId;
+    } catch (err) {
+      this.logger.error(`Failed to transfer Quran room ${roomId} host`, err);
+      return null;
+    }
+  }
+
   private async checkRateLimit(userId: string, event = 'message', limit = 30, windowSec = 60): Promise<boolean> {
     const key = `ws:ratelimit:${event}:${userId}`;
     const count = await this.redis.incr(key);
@@ -223,14 +261,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         await this.redis.srem(partKey, client.id);
         const remaining = await this.redis.scard(partKey);
         if (remaining === 0) {
-          // Room empty — clean up
+          // Room empty — clean up Redis and mark DB record ended (F42)
           await this.redis.del(this.quranRoomKey(roomId), partKey);
+          await this.prisma.audioRoom.update({
+            where: { id: roomId },
+            data: { status: 'ended', endedAt: new Date() },
+          }).catch(err => this.logger.warn(`Failed to mark empty Quran room ${roomId} as ended in DB`, err.message));
         } else {
-          // Broadcast updated participant count
+          // F41 — Host transfer: if disconnecting user was the host, transfer to next participant
           const room = await this.getQuranRoom(roomId);
+          let currentHostId = room?.hostId;
+          if (currentHostId === client.data.userId) {
+            const newHostId = await this.transferQuranRoomHost(roomId);
+            if (newHostId) currentHostId = newHostId;
+          }
+          // Broadcast updated participant count
           this.server.to(`quran:${roomId}`).emit('quran_room_update', {
             roomId,
-            hostId: room?.hostId,
+            hostId: currentHostId,
             currentSurah: room?.currentSurah,
             currentVerse: room?.currentVerse,
             reciterId: room?.reciterId,
@@ -687,17 +735,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       client.data.quranRooms = client.data.quranRooms.filter((r: string) => r !== roomId);
     }
 
-    // Clean up empty rooms
+    // Clean up empty rooms (F42 — mark DB record ended)
     const remaining = await this.redis.scard(partKey);
     if (remaining === 0) {
       await this.redis.del(this.quranRoomKey(roomId), partKey);
+      await this.prisma.audioRoom.update({
+        where: { id: roomId },
+        data: { status: 'ended', endedAt: new Date() },
+      }).catch(err => this.logger.warn(`Failed to mark empty Quran room ${roomId} as ended in DB`, err.message));
       return;
     }
 
+    // F41 — Host transfer: if leaving user was the host, transfer to next participant
     const room = await this.getQuranRoom(roomId);
+    let currentHostId = room?.hostId;
+    if (currentHostId === client.data.userId) {
+      const newHostId = await this.transferQuranRoomHost(roomId);
+      if (newHostId) currentHostId = newHostId;
+    }
+
     this.server.to(`quran:${roomId}`).emit('quran_room_update', {
       roomId,
-      hostId: room?.hostId,
+      hostId: currentHostId,
       currentSurah: room?.currentSurah,
       currentVerse: room?.currentVerse,
       reciterId: room?.reciterId,

@@ -487,6 +487,25 @@ export class MessagesController {
     return this.messagesService.getStarredMessages(userId, cursor);
   }
 
+  @Post(':conversationId/:messageId/star')
+  @ApiOperation({ summary: 'Star a message' })
+  async starMessage(
+    @Param('messageId') messageId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.starMessage(userId, messageId);
+  }
+
+  @Delete(':conversationId/:messageId/star')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unstar a message' })
+  async unstarMessage(
+    @Param('messageId') messageId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.unstarMessage(userId, messageId);
+  }
+
   // ── Pin Messages ──
   @Post(':conversationId/:messageId/pin')
   @ApiOperation({ summary: 'Pin a message (max 3 per conversation)' })

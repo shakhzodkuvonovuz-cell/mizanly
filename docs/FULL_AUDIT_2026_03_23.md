@@ -105,8 +105,8 @@
 - [x] Webhook HMAC-SHA256 signed + timestamp replay protection
 - [x] 96% of findMany calls have `take` limits
 
-### SILENT CATCH PATTERNS (79 total — should log instead of swallow)
-- [ ] **SEC-CATCH** 79 instances of `.catch(() => {})` across services. Replace with `.catch(err => this.logger.warn(...))`.
+### SILENT CATCH PATTERNS ~~(79 total)~~ [CORRECTED: 1 remaining — async-jobs.service.ts]
+- [ ] **SEC-CATCH** ~~79 instances~~ 1 remaining instance of `.catch(() => {})` in async-jobs.service.ts. Replace with `.catch(err => this.logger.warn(...))`. [CORRECTED 2026-03-23: original count of 79 was pre-remediation; 78 were fixed during audit batches.]
 
 ---
 
@@ -264,7 +264,7 @@
 
 ### CRITICAL (2)
 - [ ] **API-C1** Gamification endpoints — `@Controller()` has EMPTY path prefix. Mobile calls `/streaks`, `/xp`, `/achievements`, etc. May resolve to wrong routes. Verify routing works.
-- [ ] **API-C2** Missing endpoint `POST /posts/{id}/share-as-story` — mobile calls it, backend doesn't implement it.
+- [x] **API-C2** ~~Missing endpoint `POST /posts/{id}/share-as-story`~~ [CORRECTED 2026-03-23: endpoint EXISTS in posts.controller.ts. Original audit finding was false.]
 
 ### MEDIUM (5 controllers with empty @Controller())
 - [ ] **API-M1** gamification.controller.ts — empty prefix
@@ -348,8 +348,8 @@
 
 **Score: 6/10**
 
-### MAJOR — RefreshControl violation
-- [ ] **CMP-M1** 47 raw `<RefreshControl>` instances across app/ — 0% BrandedRefreshControl adoption. Violates CLAUDE.md rule 18. Files: achievements, blocked, blocked-keywords, archive, charity-campaign, challenges, channel/[handle] (2x), circles, creator-dashboard, creator-storefront, cross-post, discover, end-screen-editor, followed-topics, gift-shop, link-child-account, mutual-followers, notifications, marketplace, muted, membership-tiers, photo-music, post-insights, parental-controls, hashtag/[tag], profile-customization, product-detail, product/[id], post/[id], revenue, restricted, saved (4x), screen-time, profile/[username], scholar-verification, send-tip, series-discover, series/[id], series-detail, story-viewer, streaks, video/[id], watch-history, xp-history.
+### ~~MAJOR — RefreshControl violation~~ [CORRECTED: fully resolved]
+- [x] **CMP-M1** ~~47 raw `<RefreshControl>` instances across app/ — 0% BrandedRefreshControl adoption.~~ [CORRECTED 2026-03-23: 0 raw RefreshControl imports remain in app/. All 47 were migrated to BrandedRefreshControl during UI/UX elevation (March 22-23). Only the BrandedRefreshControl wrapper itself imports raw RefreshControl from react-native.]
 
 ### MEDIUM — Hardcoded colors
 - [ ] **CMP-M2** 60+ hardcoded hex colors in app/ screens. ~40% intentional palettes (chat-wallpaper, create-story), ~30% gradient accents, ~20% white/overlay, ~10% should use tc.* theme tokens.
@@ -642,7 +642,7 @@ The explore agent only searched `/src/` directory and missed `/app/` where scree
 | 4 | PKG-H1-H18 | npm audit fix (18 HIGH vulns) | 30 min |
 | 5 | PERF-C1-C4 | Cap unbounded queries take:5000→take:100 | 30 min |
 | 6 | TST-C1-C4 | Write tests for ClerkAuthGuard, Meilisearch, Email, OptionalGuard | 4 hours |
-| 7 | SEC-CATCH | Replace remaining silent .catch(()=>{}) with logging | 2 hours |
+| 7 | SEC-CATCH | Replace 1 remaining silent .catch(()=>{}) with logging (async-jobs.service.ts) | 5 min |
 | 8 | I18N-C1-C5 | Translate 5 languages (requires human translator) | Days |
 | 9 | SCH-E1-E41 | Convert 41 String fields to Prisma enums | 4 hours |
 

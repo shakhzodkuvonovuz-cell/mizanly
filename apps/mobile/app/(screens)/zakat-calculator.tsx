@@ -10,11 +10,13 @@ import {
   Platform,
   Dimensions,
   Share,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery } from '@tanstack/react-query';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -25,12 +27,18 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { islamicApi } from '@/services/islamicApi';
 
 const { width } = Dimensions.get('window');
 
-const NISAB_GOLD = 5800;
-const NISAB_SILVER = 490;
+// Fallback metal prices used when backend is unreachable (approx. market values)
+const FALLBACK_GOLD_PRICE_PER_GRAM = 92;
+const FALLBACK_SILVER_PRICE_PER_GRAM = 1.05;
 const ZAKAT_RATE = 0.025;
+
+// Standard Islamic thresholds (grams)
+const NISAB_GOLD_GRAMS = 87.48;
+const NISAB_SILVER_GRAMS = 612.36;
 
 type Step = 1 | 2 | 3;
 
@@ -180,14 +188,29 @@ export default function ZakatCalculatorScreen() {
     expenses: '',
   });
 
-  const onRefresh = useCallback(() => {
-    // Zakat calculator is client-side; refresh resets the form
+  // Fetch live metal prices from backend (which uses GOLD_PRICE_PER_GRAM / SILVER_PRICE_PER_GRAM env vars)
+  // We call the backend zakat endpoint with minimal values just to get the current prices
+  const { data: priceData, isLoading: pricesLoading, refetch: refetchPrices } = useQuery({
+    queryKey: ['zakat-metal-prices'],
+    queryFn: () => islamicApi.calculateZakat({ cash: 0, gold: 0, silver: 0, investments: 0, debts: 0 }),
+    staleTime: 1000 * 60 * 60, // 1 hour — metal prices don't change that fast
+    retry: 2,
+  });
+
+  const goldPricePerGram = priceData?.goldPricePerGram ?? FALLBACK_GOLD_PRICE_PER_GRAM;
+  const silverPricePerGram = priceData?.silverPricePerGram ?? FALLBACK_SILVER_PRICE_PER_GRAM;
+  const nisabGold = NISAB_GOLD_GRAMS * goldPricePerGram;
+  const nisabSilver = NISAB_SILVER_GRAMS * silverPricePerGram;
+  const nisabThreshold = Math.min(nisabGold, nisabSilver);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setCurrentStep(1);
     setAssets({ cash: '', gold: '', investments: '', inventory: '', property: '' });
     setDeductions({ debts: '', expenses: '' });
+    await refetchPrices();
     setRefreshing(false);
-  }, []);
+  }, [refetchPrices]);
 
   const safeParseFloat = (val: string): number => {
     const parsed = parseFloat(val || '0');
@@ -212,7 +235,7 @@ export default function ZakatCalculatorScreen() {
   }, [deductions]);
 
   const netWealth = totalAssets - totalDeductions;
-  const isAboveNisab = netWealth >= NISAB_SILVER;
+  const isAboveNisab = netWealth >= nisabThreshold;
   const zakatDue = isAboveNisab ? netWealth * ZAKAT_RATE : 0;
 
   const updateAsset = useCallback((key: keyof AssetInput, value: string) => {
@@ -461,15 +484,24 @@ export default function ZakatCalculatorScreen() {
 
                   {/* Nisab Display */}
                   <View style={styles.nisabContainer}>
-                    <Text style={styles.nisabTitle}>{t('screens.zakatCalculator.currentNisabThreshold')}</Text>
+                    <View style={styles.nisabHeaderRow}>
+                      <Text style={styles.nisabTitle}>{t('screens.zakatCalculator.currentNisabThreshold')}</Text>
+                      {pricesLoading && <ActivityIndicator size="small" color={colors.emerald} />}
+                    </View>
                     <View style={styles.nisabRow}>
                       <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.goldNisab')}</Text>
-                      <Text style={styles.nisabValue}>{formatCurrency(NISAB_GOLD)}</Text>
+                      <Text style={styles.nisabValue}>{formatCurrency(nisabGold)}</Text>
                     </View>
                     <View style={styles.nisabRow}>
                       <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.silverNisab')}</Text>
-                      <Text style={styles.nisabValue}>{formatCurrency(NISAB_SILVER)}</Text>
+                      <Text style={styles.nisabValue}>{formatCurrency(nisabSilver)}</Text>
                     </View>
+                    {priceData && (
+                      <View style={styles.nisabRow}>
+                        <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.goldPricePerGram') || `Gold/g`}</Text>
+                        <Text style={styles.nisabValue}>{formatCurrency(goldPricePerGram)}</Text>
+                      </View>
+                    )}
                   </View>
 
                   {/* Final Result */}
@@ -819,11 +851,16 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     marginTop: spacing.md,
     marginBottom: spacing.md,
   },
+  nisabHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
   nisabTitle: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.sm,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
   },
   nisabRow: {
     flexDirection: 'row',

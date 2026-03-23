@@ -46,7 +46,7 @@ function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
       style={[styles.userRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`View profile of ${user.displayName}`}
+      accessibilityLabel={t('search.viewProfile', { name: user.displayName })}
     >
       <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showOnline />
       <View style={styles.userInfo}>
@@ -79,7 +79,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
       style={[styles.videoRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`View video: ${video.title}`}
+      accessibilityLabel={t('search.viewVideo', { title: video.title })}
     >
       <Image
         source={{ uri: video.thumbnailUrl || video.videoUrl }}
@@ -109,7 +109,7 @@ function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => voi
       style={[styles.channelRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`View channel: ${channel.name}`}
+      accessibilityLabel={t('search.viewChannel', { name: channel.name })}
     >
       <Avatar uri={channel.avatarUrl} name={channel.name} size="lg" />
       <View style={styles.channelInfo}>
@@ -595,7 +595,7 @@ export default function SearchScreen() {
                         router.push(`/(screens)/hashtag/${item.data.name}`);
                       }}
                       accessibilityRole="button"
-                      accessibilityLabel={`View hashtag ${item.data.name}`}
+                      accessibilityLabel={t('search.viewHashtag', { name: item.data.name })}
                     >
                       <View style={styles.hashtagIconWrap}>
                         <Icon name="hash" size="sm" color={colors.emerald} />
@@ -637,7 +637,7 @@ export default function SearchScreen() {
                         setDebouncedQuery(item);
                       }}
                       accessibilityRole="button"
-                      accessibilityLabel={`Search for ${item}`}
+                      accessibilityLabel={t('search.searchFor', { term: item })}
                     >
                       <Icon name="clock" size={16} color={tc.text.secondary} />
                       <Text style={styles.historyTerm}>{item}</Text>

@@ -57,6 +57,7 @@ function Row({
       disabled={!onPress && !onToggle}
       accessibilityLabel={label}
       accessibilityRole={onToggle !== undefined ? 'switch' : 'button'}
+      accessibilityState={onToggle !== undefined && value !== undefined ? { checked: value } : undefined}
     >
       <LinearGradient
         colors={onToggle && value ? ['rgba(10,123,79,0.1)', 'transparent'] : ['transparent', 'transparent']}
@@ -203,7 +204,7 @@ export default function ContentSettingsScreen() {
           <Text style={{ color: colors.error, fontSize: fontSize.base, marginBottom: spacing.md }}>
             {t('settings.loadError')}
           </Text>
-          <Pressable onPress={() => settingsQuery.refetch()}>
+          <Pressable onPress={() => settingsQuery.refetch()} accessibilityRole="button" accessibilityLabel={t('common.tryAgain')}>
             <Text style={{ color: colors.emerald, fontSize: fontSize.base }}>{t('common.tryAgain')}</Text>
           </Pressable>
         </View>

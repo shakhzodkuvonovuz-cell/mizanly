@@ -123,13 +123,14 @@ export function FloatingHearts({ trigger, color, count = 8 }: FloatingHeartsProp
 
       const newParticles: HeartParticle[] = [];
       for (let i = 0; i < count; i++) {
+        const seed = nextIdRef.current + i;
         newParticles.push({
           id: nextIdRef.current++,
-          x: Math.random() * 120 - 60,
-          driftX: Math.random() * 60 - 30,
-          rotation: Math.random() * 90 - 30,
-          size: Math.round(Math.random() * 18 + 14),
-          targetY: -(Math.random() * 200 + 150),
+          x: ((seed * 2654435761) % 120) - 60,
+          driftX: ((seed * 1597334677) % 60) - 30,
+          rotation: ((seed * 789456123) % 90) - 30,
+          size: 14 + ((seed * 456789123) % 18),
+          targetY: -(150 + ((seed * 321654987) % 200)),
           delay: i * 30,
         });
       }

@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, avatar as avatarSizes, animation, radius } from '@/theme';
+import { colors, fonts, avatar as avatarSizes, animation, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { imagePresets } from '@/utils/image';
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   img: {},
-  fallback: { color: colors.text.primary, fontWeight: '700' },
+  fallback: { color: colors.text.primary, fontFamily: fonts.bodyBold },
   onlineDot: {
     position: 'absolute',
     backgroundColor: colors.online,

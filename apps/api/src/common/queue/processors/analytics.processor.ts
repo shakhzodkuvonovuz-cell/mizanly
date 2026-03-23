@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { GamificationService } from '../../../modules/gamification/gamification.service';
+import { QueueService } from '../queue.service';
 
 interface GamificationJobData {
   type: 'award-xp' | 'update-streak';
@@ -30,6 +31,7 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private gamification: GamificationService,
+    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
   ) {}
 
   onModuleInit() {
@@ -68,6 +70,7 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`Analytics job ${job?.id} failed: ${err.message}`);
+      this.queueService.moveToDlq(job, err, 'analytics').catch(() => {});
     });
 
     this.logger.log('Analytics worker started');

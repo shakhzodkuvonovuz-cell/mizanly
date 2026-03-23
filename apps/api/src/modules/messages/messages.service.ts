@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { AiService } from '../ai/ai.service';
@@ -182,6 +183,29 @@ export class MessagesService {
       });
       if (blockExists) {
         throw new ForbiddenException('Cannot send messages due to a block');
+      }
+    }
+
+    // DM restriction: prevent non-followers from messaging private accounts (1:1 only)
+    const convoForDmCheck = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { isGroup: true },
+    });
+    if (convoForDmCheck && !convoForDmCheck.isGroup) {
+      const otherMemberId = otherUserIds.length === 1 ? otherUserIds[0] : undefined;
+      if (otherMemberId) {
+        const isFollowing = await this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: senderId, followingId: otherMemberId } },
+        });
+        if (!isFollowing) {
+          const recipientSettings = await this.prisma.user.findUnique({
+            where: { id: otherMemberId },
+            select: { isPrivate: true },
+          });
+          if (recipientSettings?.isPrivate) {
+            throw new ForbiddenException('This user only accepts messages from followers');
+          }
+        }
       }
     }
 
@@ -751,23 +775,53 @@ export class MessagesService {
     return message;
   }
 
+  async starMessage(userId: string, messageId: string) {
+    // Verify message exists
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found');
+
+    return this.prisma.starredMessage.upsert({
+      where: { userId_messageId: { userId, messageId } },
+      create: { userId, messageId },
+      update: {}, // no-op if already starred
+    });
+  }
+
+  async unstarMessage(userId: string, messageId: string) {
+    return this.prisma.starredMessage.deleteMany({
+      where: { userId, messageId },
+    });
+  }
+
   async getStarredMessages(userId: string, cursor?: string, limit = 20) {
-    // starredBy field must exist in Message model
-    const messages = await this.prisma.message.findMany({
-      where: {
-        isDeleted: false,
-        starredBy: { has: userId },
-      },
-      select: MESSAGE_SELECT,
+    // Uses StarredMessage join table (replaces old starredBy String[] approach)
+    const starred = await this.prisma.starredMessage.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy: { createdAt: 'desc' },
     });
-    const hasMore = messages.length > limit;
-    const data = hasMore ? messages.slice(0, limit) : messages;
+    const hasMore = starred.length > limit;
+    const items = hasMore ? starred.slice(0, limit) : starred;
+
+    // Fetch full message data for the starred entries
+    const messageIds = items.map((s) => s.messageId);
+    const messages = messageIds.length
+      ? await this.prisma.message.findMany({
+          where: { id: { in: messageIds }, isDeleted: false },
+          select: MESSAGE_SELECT,
+        })
+      : [];
+
+    // Preserve starred order
+    const messageMap = new Map(messages.map((m) => [m.id, m]));
+    const data = items
+      .map((s) => messageMap.get(s.messageId))
+      .filter(Boolean);
+
     return {
       data,
-      meta: { cursor: hasMore ? data[data.length - 1].id : null, hasMore },
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
   }
 
@@ -966,6 +1020,69 @@ export class MessagesService {
       },
       take: 50,
     });
+  }
+
+  // ── Scheduled Message Auto-Send ──
+  /**
+   * Auto-send all scheduled messages whose scheduledAt has passed.
+   * Runs every minute via @nestjs/schedule cron.
+   * Publishes up to 50 overdue messages per tick, updating conversation metadata.
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async publishScheduledMessages(): Promise<number> {
+    const now = new Date();
+
+    const overdue = await this.prisma.message.findMany({
+      where: {
+        isScheduled: true,
+        scheduledAt: { lte: now },
+        isDeleted: false,
+      },
+      take: 50,
+      orderBy: { scheduledAt: 'asc' },
+    });
+
+    if (overdue.length === 0) return 0;
+
+    let published = 0;
+    for (const msg of overdue) {
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          // Mark message as sent
+          await tx.message.update({
+            where: { id: msg.id },
+            data: { isScheduled: false, scheduledAt: null },
+          });
+
+          // Update conversation last-message metadata
+          await tx.conversation.update({
+            where: { id: msg.conversationId },
+            data: {
+              lastMessageAt: now,
+              lastMessageText: msg.content?.slice(0, 100) ?? null,
+              lastMessageById: msg.senderId,
+            },
+          });
+
+          // Increment unread count for other members
+          if (msg.senderId) {
+            await tx.conversationMember.updateMany({
+              where: { conversationId: msg.conversationId, userId: { not: msg.senderId } },
+              data: { unreadCount: { increment: 1 } },
+            });
+          }
+        });
+        published++;
+      } catch (error) {
+        this.logger.error(`Failed to publish scheduled message ${msg.id}`, error instanceof Error ? error.message : error);
+      }
+    }
+
+    if (published > 0) {
+      this.logger.log(`Auto-sent ${published} scheduled message(s)`);
+    }
+
+    return published;
   }
 
   // ── Message Expiry Job ──

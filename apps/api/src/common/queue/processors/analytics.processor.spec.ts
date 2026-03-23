@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { AnalyticsProcessor } from './analytics.processor';
 import { GamificationService } from '../../../modules/gamification/gamification.service';
+import { QueueService } from '../queue.service';
 
 // Mock bullmq Worker so onModuleInit doesn't create a real Redis connection
 jest.mock('bullmq', () => ({
@@ -28,6 +29,12 @@ describe('AnalyticsProcessor', () => {
           useValue: {
             awardXP: jest.fn().mockResolvedValue(undefined),
             updateStreak: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: QueueService,
+          useValue: {
+            moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

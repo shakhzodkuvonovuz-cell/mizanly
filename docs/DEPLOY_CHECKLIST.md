@@ -4,7 +4,7 @@
 - [ ] Create production Neon project at neon.tech
 - [ ] Set `DATABASE_URL` and `DIRECT_DATABASE_URL` in Railway
 - [ ] Run `npx prisma db push` against production DB
-- [ ] Verify all 81 models created successfully
+- [ ] Verify all 188 models created successfully
 - [ ] Enable connection pooling (PgBouncer) for production traffic
 
 ## 2. Railway (API Server)
@@ -13,14 +13,14 @@
 - [ ] Set build command: `npm run build`
 - [ ] Set start command: `npm run start:prod`
 - [ ] Set all environment variables (see `.env.example`)
-- [ ] Enable health check on `/api/v1/health`
+- [ ] Enable health check on `/api/v1/health/live`
 - [ ] Set custom domain: `api.mizanly.app`
 - [ ] Enable auto-deploy on push to `main`
 
 ## 3. Clerk (Authentication)
 - [ ] Create production Clerk instance
 - [ ] Set `CLERK_SECRET_KEY` and `CLERK_PUBLISHABLE_KEY` (production keys)
-- [ ] Configure webhook endpoint: `https://api.mizanly.app/api/v1/auth/webhook`
+- [ ] Configure webhook endpoint: `https://api.mizanly.app/api/v1/webhooks/clerk`
 - [ ] Set `CLERK_WEBHOOK_SECRET` from Clerk dashboard
 - [ ] Enable social sign-in (Apple, Google)
 - [ ] Configure email/phone verification templates
@@ -54,7 +54,7 @@
 ## 8. Stripe (Payments)
 - [ ] Create Stripe production account
 - [ ] Set `STRIPE_SECRET_KEY` (live key)
-- [ ] Configure webhook endpoint: `https://api.mizanly.app/api/v1/payments/webhook`
+- [ ] Configure webhook endpoint: `https://api.mizanly.app/api/v1/payments/webhooks/stripe`
 - [ ] Set `STRIPE_WEBHOOK_SECRET`
 - [ ] Enable Connect for creator payouts (if needed)
 

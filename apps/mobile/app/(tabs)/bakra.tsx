@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, memo, useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -501,6 +501,31 @@ export default function BakraScreen() {
   const listRef = useRef<FlashListRef<Reel>>(null);
   useScrollToTop(listRef as React.RefObject<FlashListRef<Reel>>);
   const { onViewableChange, markPlaying, isReady } = useVideoPreloader(3);
+
+  // ── Scroll position persistence across tab switches ──
+  // Save current index as offset (index * SCREEN_H) for full-screen snap lists
+  const lastSavedIndex = useRef(0);
+
+  // Save scroll position when viewable items change (already tracks currentIndex)
+  useEffect(() => {
+    if (currentIndex !== lastSavedIndex.current) {
+      lastSavedIndex.current = currentIndex;
+      useStore.getState().setBakraScrollOffset(currentIndex * SCREEN_H);
+    }
+  }, [currentIndex]);
+
+  // Restore scroll position when tab regains focus
+  useFocusEffect(
+    useCallback(() => {
+      const offset = useStore.getState().bakraScrollOffset;
+      if (offset > 0) {
+        const timer = setTimeout(() => {
+          listRef.current?.scrollToOffset({ offset, animated: false });
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }, [])
+  );
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['reels-feed', bakraFeedType],

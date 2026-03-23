@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NotificationProcessor } from './notification.processor';
 import { PushTriggerService } from '../../../modules/notifications/push-trigger.service';
 import { PushService } from '../../../modules/notifications/push.service';
+import { QueueService } from '../queue.service';
 
 // Mock bullmq Worker so onModuleInit doesn't create a real Redis connection
 jest.mock('bullmq', () => ({
@@ -35,6 +36,12 @@ describe('NotificationProcessor', () => {
           provide: PushService,
           useValue: {
             sendToUsers: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: QueueService,
+          useValue: {
+            moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

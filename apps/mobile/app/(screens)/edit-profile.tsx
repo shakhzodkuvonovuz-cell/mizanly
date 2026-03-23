@@ -388,7 +388,7 @@ export default function EditProfileScreen() {
                   style={[styles.input, focusedField === 'website' && styles.inputFocused]}
                   value={website}
                   onChangeText={setWebsite}
-                  placeholder="https://yoursite.com"
+                  placeholder={t('editProfile.websitePlaceholder')}
                   placeholderTextColor={tc.text.tertiary}
                   autoCapitalize="none"
                   keyboardType="url"

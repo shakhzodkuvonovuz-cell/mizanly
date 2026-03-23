@@ -105,6 +105,9 @@ function SettingRow({
         trackColor={{ false: tc.surface, true: colors.emerald }}
         thumbColor={value && !disabled ? '#FFFFFF' : tc.text.tertiary}
         ios_backgroundColor={tc.surface}
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityState={{ checked: value && !disabled }}
       />
     </View>
   );
@@ -262,6 +265,9 @@ export default function MediaSettingsScreen() {
                     trackColor={{ false: tc.surface, true: colors.emerald }}
                     thumbColor={settings.dataSaver ? '#FFFFFF' : tc.text.tertiary}
                     ios_backgroundColor={tc.surface}
+                    accessibilityRole="switch"
+                    accessibilityLabel={t('mediaSettings.dataSaver')}
+                    accessibilityState={{ checked: settings.dataSaver }}
                   />
                 </LinearGradient>
               </Animated.View>
@@ -334,7 +340,9 @@ export default function MediaSettingsScreen() {
               <View style={[styles.sectionCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
                 {(['wifi', 'always', 'never'] as const).map((option) => (
                   <Pressable
-                    accessibilityRole="button"
+                    accessibilityRole="radio"
+                    accessibilityLabel={t(`autoPlaySettings.${option}`)}
+                    accessibilityState={{ selected: autoPlay === option }}
                     key={option}
                     style={[styles.settingRow, { borderBottomColor: tc.border }, { flexDirection: rtlFlexRow(isRTL) }]}
                     onPress={() => {

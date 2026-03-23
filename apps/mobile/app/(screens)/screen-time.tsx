@@ -298,6 +298,7 @@ export default function ScreenTimeScreen() {
           </Text>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={t('screenTime.setLimit')}
             onPress={() => {
               haptic.tick();
               setLimitSheetVisible(true);
@@ -333,7 +334,9 @@ export default function ScreenTimeScreen() {
 
           {/* Take a Break Reminder */}
           <Pressable
-            accessibilityRole="button"
+            accessibilityRole="switch"
+            accessibilityLabel={t('screenTime.takeBreak')}
+            accessibilityState={{ checked: takeBreakEnabled }}
             onPress={() => {
               haptic.tick();
               const next = !takeBreakEnabled;

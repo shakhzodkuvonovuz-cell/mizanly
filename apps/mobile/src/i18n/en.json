@@ -17,6 +17,7 @@
     "searchLocations": "Search locations...",
     "share": "Share",
     "edit": "Edit",
+    "edited": "Edited",
     "settings": "Settings",
     "close": "Close",
     "confirm": "Confirm",
@@ -193,7 +194,8 @@
     "saveDraft": "Save Draft",
     "draftSaved": "Draft saved",
     "discardChanges": "Discard changes?",
-    "unsavedChangesMessage": "You have unsaved changes. What would you like to do?"
+    "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
+    "saved": "Saved"
   },
   "auth": {
     "signIn": "Sign In",
@@ -234,6 +236,7 @@
     "sendCode": "Send Code",
     "verify": "Verify",
     "resendCode": "Resend Code",
+    "resendCooldown": "Resend in {{seconds}}s",
     "codeExpired": "Code expired",
     "invalidCode": "Invalid code",
     "accountCreated": "Account created successfully",
@@ -421,7 +424,10 @@
     "deletePostTitle": "Delete post?",
     "reportPostTitle": "Report post",
     "couldNotShareAsStory": "Could not share as story. Please try again.",
-    "viewAllComments": "View all {{count}} comments"
+    "viewAllComments": "View all {{count}} comments",
+    "goBack": "Go Back",
+    "replyingTo": "Replying to @{{username}}",
+    "replyToUser": "Reply to @{{username}}..."
   },
   "bakra": {
     "forYou": "For You",
@@ -1473,6 +1479,8 @@
     "uploadingMedia": "Uploading media…",
     "limitReached": "Limit reached",
     "mediaLimit": "You can add up to 10 photos or videos.",
+    "fileTooLarge": "File too large. Maximum size is {{max}}.",
+    "videoTooLarge": "Video too large. Maximum size is {{max}}.",
     "saved": "Saved",
     "draftSavedToAccount": "Draft saved to your account",
     "failedToSaveDraft": "Failed to save draft",
@@ -1559,7 +1567,8 @@
     "findPeople": "Find People",
     "loadFailed": "Could not load content",
     "tryAgainLater": "Please try again later",
-    "reachedEnd": "You've reached the end"
+    "reachedEnd": "You've reached the end",
+    "filterBy": "Filter by {{category}}"
   },
   "editProfile": {
     "changeCover": "Change Cover",
@@ -1585,7 +1594,8 @@
     "loadErrorTitle": "Could not load profile",
     "loadErrorSubtitle": "Please try again later",
     "urlPlaceholder": "URL (https://...)",
-    "couldNotSave": "Could not save profile"
+    "couldNotSave": "Could not save profile",
+    "websitePlaceholder": "https://yoursite.com"
   },
   "screens": {
     "followers": {
@@ -2128,6 +2138,20 @@
         "clouds": "Clouds",
         "matrix": "Matrix"
       }
+    },
+    "banned": {
+      "title": "Account Suspended",
+      "subtitle": "Your account has been suspended for violating our community guidelines.",
+      "appealButton": "Appeal Decision",
+      "signOut": "Sign Out",
+      "contactSupport": "If you believe this is an error, you can appeal the decision or contact support."
+    },
+    "maintenance": {
+      "title": "We'll Be Right Back",
+      "subtitle": "Mizanly is undergoing scheduled maintenance. We're working to improve your experience.",
+      "retryButton": "Try Again",
+      "stillDown": "Server is still undergoing maintenance. Please try again shortly.",
+      "hint": "This usually takes just a few minutes. Thank you for your patience."
     }
   },
   "createReel": {
@@ -2144,13 +2168,15 @@
     "greenScreen": "Green Screen",
     "audioLibrary": "Audio Library",
     "gallery": "Gallery",
-    "record": "Record"
+    "record": "Record",
+    "videoTooLarge": "Video too large. Maximum size is {{max}}."
   },
   "createVideo": {
     "selectThumbnail": "Select thumbnail",
     "customThumbnail": "Custom",
     "normalizeAudio": "Normalize audio",
-    "normalizeAudioDesc": "Consistent volume levels"
+    "normalizeAudioDesc": "Consistent volume levels",
+    "videoTooLarge": "Video too large. Maximum size is {{max}}."
   },
   "qibla": {
     "title": "Qibla Direction",
@@ -2799,6 +2825,7 @@
     "categoryArt": "Art",
     "categoryElectronics": "Electronics",
     "categoryServices": "Services",
+    "halal": "Halal",
     "notFound": "Product not found"
   },
   "orders": {
@@ -3579,7 +3606,8 @@
     "started": "Started {{timeAgo}}",
     "speakers": "Speakers",
     "listeners": "Listeners",
-    "raisedHands": "Raised Hands"
+    "raisedHands": "Raised Hands",
+    "reactionSent": "Reaction sent!"
   },
   "video": {
     "title": "Video",
@@ -3604,5 +3632,59 @@
   "errorBoundary": {
     "unexpectedError": "An unexpected error occurred. Please try again.",
     "goHome": "Go Home"
+  },
+  "search": {
+    "placeholder": "Search...",
+    "people": "People",
+    "hashtags": "Hashtags",
+    "posts": "Posts",
+    "threads": "Threads",
+    "reels": "Reels",
+    "videos": "Videos",
+    "channels": "Channels",
+    "followers": "followers",
+    "following": "Following",
+    "subscribers": "subscribers",
+    "videosCount": "videos",
+    "views": "views",
+    "trending": "Trending",
+    "recentSearches": "Recent Searches",
+    "clearAll": "Clear All",
+    "noRecentSearches": "No recent searches",
+    "searchFailed": "Search failed",
+    "checkConnection": "Check your connection and try again",
+    "noResultsFor": "No {{type}} found for \"{{query}}\"",
+    "tryDifferent": "Try a different search term",
+    "searchForPeopleAndTopics": "Search for people and topics",
+    "noCaption": "No caption",
+    "viewProfile": "View profile of {{name}}",
+    "viewVideo": "View video: {{title}}",
+    "viewChannel": "View channel: {{name}}",
+    "viewHashtag": "View hashtag {{name}}",
+    "searchFor": "Search for {{term}}"
+  },
+  "share": {
+    "defaultMessage": "Check this out on Mizanly!"
+  },
+  "communityNotes": {
+    "title": "Community Notes",
+    "addNote": "Add a Community Note",
+    "noteAdded": "Note submitted for review",
+    "writePlaceholder": "Write helpful context about this content...",
+    "submit": "Submit Note",
+    "helpful": "Helpful",
+    "somewhatHelpful": "Somewhat Helpful",
+    "notHelpful": "Not Helpful",
+    "ratedHelpful": "Rated as helpful",
+    "ratedSomewhat": "Rated as somewhat helpful",
+    "ratedNotHelpful": "Rated as not helpful",
+    "noNotes": "No community notes yet",
+    "noNotesSubtitle": "Be the first to add helpful context",
+    "loadError": "Could not load community notes",
+    "submitError": "Could not submit note",
+    "rateError": "Could not submit rating",
+    "helpfulCount": "{{count}} found this helpful",
+    "notHelpfulCount": "{{count}} found this not helpful",
+    "contextByReaders": "Added by readers who thought people might want to know"
   }
 }

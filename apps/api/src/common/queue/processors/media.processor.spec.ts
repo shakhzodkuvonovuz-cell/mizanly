@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { MediaProcessor } from './media.processor';
 import { PrismaService } from '../../../config/prisma.service';
+import { QueueService } from '../queue.service';
 
 // Mock bullmq Worker so onModuleInit doesn't create a real Redis connection
 jest.mock('bullmq', () => ({
@@ -28,6 +29,12 @@ describe('MediaProcessor', () => {
           useValue: {
             reel: { update: jest.fn().mockResolvedValue({}) },
             post: { update: jest.fn().mockResolvedValue({}) },
+          },
+        },
+        {
+          provide: QueueService,
+          useValue: {
+            moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException, BadRequestException, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 function generateSlug(name: string): string {
   return name
@@ -15,7 +16,11 @@ function generateSlug(name: string): string {
 
 @Injectable()
 export class CirclesService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(CirclesService.name);
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async getMyCircles(userId: string) {
     return this.prisma.circle.findMany({
@@ -128,6 +133,17 @@ export class CirclesService {
     // Atomic increment by actual number of rows inserted
     if (result.count > 0) {
       await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = "membersCount" + ${result.count} WHERE id = ${circleId}`;
+
+      // Notify each added member (fire-and-forget, capped at 50 to avoid spam)
+      for (const memberId of safeMemberIds.slice(0, 50)) {
+        this.notificationsService.create({
+          userId: memberId,
+          actorId: userId,
+          type: 'CIRCLE_INVITE',
+          title: 'Added to circle',
+          body: `You were added to "${circle.name}"`,
+        }).catch(err => this.logger.warn('Circle add notification failed', err.message));
+      }
     }
 
     return { added: result.count };

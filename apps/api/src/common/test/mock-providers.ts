@@ -113,6 +113,7 @@ export const mockQueueService = {
     addSearchIndexJob: jest.fn().mockResolvedValue('job-7'),
     addModerationJob: jest.fn().mockResolvedValue('job-8'),
     getStats: jest.fn().mockResolvedValue({}),
+    moveToDlq: jest.fn().mockResolvedValue(undefined),
   },
 };
 

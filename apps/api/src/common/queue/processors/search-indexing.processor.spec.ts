@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { SearchIndexingProcessor } from './search-indexing.processor';
 import { MeilisearchService } from '../../../modules/search/meilisearch.service';
+import { QueueService } from '../queue.service';
 
 describe('SearchIndexingProcessor', () => {
   let processor: SearchIndexingProcessor;
@@ -20,6 +21,12 @@ describe('SearchIndexingProcessor', () => {
           useValue: {
             addDocuments: jest.fn().mockResolvedValue(undefined),
             deleteDocument: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: QueueService,
+          useValue: {
+            moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

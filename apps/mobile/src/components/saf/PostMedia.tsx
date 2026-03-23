@@ -11,9 +11,10 @@ interface Props {
   thumbnailUrl?: string;
   aspectRatio?: number;
   blurred?: boolean;
+  blurhash?: string;
 }
 
-export const PostMedia = memo(function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio, blurred }: Props) {
+export const PostMedia = memo(function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio, blurred, blurhash }: Props) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [galleryVisible, setGalleryVisible] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -38,6 +39,7 @@ export const PostMedia = memo(function PostMedia({ mediaUrls, mediaTypes, thumbn
         <Pressable onPress={() => handleImagePress(0)} style={styles.fill}>
           <ProgressiveImage
             uri={mediaUrls[0]}
+            blurhash={blurhash}
             width="100%"
             height={height}
             contentFit="cover"

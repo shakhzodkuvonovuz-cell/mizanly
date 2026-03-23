@@ -39,6 +39,7 @@ export interface Post {
   thumbnailUrl?: string;
   mediaWidth?: number;
   mediaHeight?: number;
+  blurhash?: string;
   hashtags: string[];
   mentions: string[];
   locationName?: string;

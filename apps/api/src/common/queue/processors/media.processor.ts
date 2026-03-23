@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../config/prisma.service';
+import { QueueService } from '../queue.service';
 
 interface MediaJobData {
   type: 'image-resize' | 'blurhash' | 'video-transcode';
@@ -39,6 +40,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
+    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
   ) {}
 
   onModuleInit() {
@@ -85,6 +87,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`Media job ${job?.id} failed: ${err.message}`);
+      this.queueService.moveToDlq(job, err, 'media-processing').catch(() => {});
     });
 
     this.logger.log('Media processing worker started');

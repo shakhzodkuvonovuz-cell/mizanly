@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -135,6 +136,15 @@ export default function CreatePostScreen() {
   });
   const circles: Circle[] = (circlesQuery.data ?? []) as Circle[];
 
+  // ── File size limits ──
+  const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB
+  const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+
+  const getFileSize = async (uri: string): Promise<number> => {
+    const info = await FileSystem.getInfoAsync(uri, { size: true });
+    return info.exists && 'size' in info ? info.size : 0;
+  };
+
   // ── Media picker ──
   const pickMedia = async () => {
     if (media.length >= 10) {
@@ -149,13 +159,27 @@ export default function CreatePostScreen() {
       exif: false,
     });
     if (!result.canceled) {
-      const picked: PickedMedia[] = result.assets.map((a) => ({
-        uri: a.uri,
-        type: a.type === 'video' ? 'video' : 'image',
-        width: a.width,
-        height: a.height,
-      }));
-      setMedia((prev) => [...prev, ...picked].slice(0, 10));
+      const validAssets: PickedMedia[] = [];
+      for (const a of result.assets) {
+        const isVideo = a.type === 'video';
+        const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+        const maxLabel = isVideo ? '100MB' : '20MB';
+        const fileSize = a.fileSize ?? await getFileSize(a.uri);
+        if (fileSize > maxSize) {
+          const msgKey = isVideo ? 'compose.videoTooLarge' : 'compose.fileTooLarge';
+          showToast({ message: t(msgKey, { max: maxLabel }), variant: 'error' });
+          continue;
+        }
+        validAssets.push({
+          uri: a.uri,
+          type: isVideo ? 'video' : 'image',
+          width: a.width,
+          height: a.height,
+        });
+      }
+      if (validAssets.length > 0) {
+        setMedia((prev) => [...prev, ...validAssets].slice(0, 10));
+      }
     }
   };
 

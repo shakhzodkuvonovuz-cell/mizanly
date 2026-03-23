@@ -26,6 +26,7 @@ describe('NotificationsService', () => {
               update: jest.fn(),
               updateMany: jest.fn(),
               delete: jest.fn(),
+              deleteMany: jest.fn(),
               create: jest.fn(),
               count: jest.fn(),
             },
@@ -45,6 +46,8 @@ describe('NotificationsService', () => {
         {
           provide: 'REDIS',
           useValue: {
+            get: jest.fn().mockResolvedValue(null),
+            set: jest.fn().mockReturnValue({ catch: jest.fn() }),
             publish: jest.fn().mockReturnValue({ catch: jest.fn() }),
           },
         },
@@ -694,6 +697,67 @@ describe('NotificationsService', () => {
 
       expect(result).toBeNull();
       expect(prisma.notification.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cleanupOldNotifications', () => {
+    it('should delete read notifications older than 90 days', async () => {
+      prisma.notification.deleteMany.mockResolvedValue({ count: 42 });
+
+      const result = await service.cleanupOldNotifications();
+
+      expect(prisma.notification.deleteMany).toHaveBeenCalledWith({
+        where: {
+          isRead: true,
+          createdAt: { lt: expect.any(Date) },
+        },
+      });
+
+      // Verify the cutoff date is approximately 90 days ago
+      const callArgs = prisma.notification.deleteMany.mock.calls[0][0];
+      const cutoffDate = callArgs.where.createdAt.lt as Date;
+      const now = new Date();
+      const diffDays = Math.round((now.getTime() - cutoffDate.getTime()) / (1000 * 60 * 60 * 24));
+      expect(diffDays).toBe(90);
+
+      expect(result).toBe(42);
+    });
+
+    it('should return 0 when no old notifications exist', async () => {
+      prisma.notification.deleteMany.mockResolvedValue({ count: 0 });
+
+      const result = await service.cleanupOldNotifications();
+
+      expect(result).toBe(0);
+    });
+
+    it('should only target read notifications (not unread)', async () => {
+      prisma.notification.deleteMany.mockResolvedValue({ count: 5 });
+
+      await service.cleanupOldNotifications();
+
+      const callArgs = prisma.notification.deleteMany.mock.calls[0][0];
+      expect(callArgs.where.isRead).toBe(true);
+    });
+
+    it('should log when notifications are cleaned up', async () => {
+      prisma.notification.deleteMany.mockResolvedValue({ count: 10 });
+      const loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+
+      await service.cleanupOldNotifications();
+
+      expect(loggerSpy).toHaveBeenCalledWith('Cleaned up 10 old read notification(s)');
+      loggerSpy.mockRestore();
+    });
+
+    it('should not log when no notifications are cleaned up', async () => {
+      prisma.notification.deleteMany.mockResolvedValue({ count: 0 });
+      const loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+
+      await service.cleanupOldNotifications();
+
+      expect(loggerSpy).not.toHaveBeenCalledWith(expect.stringContaining('Cleaned up'));
+      loggerSpy.mockRestore();
     });
   });
 });

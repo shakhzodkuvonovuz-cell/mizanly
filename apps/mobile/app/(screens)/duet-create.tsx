@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
 import { Video, ResizeMode } from 'expo-av';
+import * as ImagePicker from 'expo-image-picker';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -26,6 +27,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 type LayoutMode = 'side-by-side' | 'top-bottom' | 'react';
 
 function SimpleSlider({ value, onValueChange, fillColor = colors.emerald, trackColor = 'rgba(255,255,255,0.2)' }: { value: number; onValueChange: (v: number) => void; fillColor?: string; trackColor?: string }) {
+  const { t } = useTranslation();
   const trackWidth = useRef(0);
   return (
     <Pressable
@@ -149,6 +151,26 @@ export default function DuetCreateScreen() {
       } finally {
         setIsRecording(false);
       }
+    }
+  };
+
+  const handlePickVideo = async () => {
+    haptic.navigate();
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: true,
+        videoMaxDuration: 60,
+        quality: 1,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setRecordedUri(result.assets[0].uri);
+        haptic.success();
+        showToast({ message: t('duet.videoSelected', 'Video selected!'), variant: 'success' });
+      }
+    } catch {
+      haptic.error();
+      showToast({ message: t('duet.videoPickFailed', 'Failed to select video'), variant: 'error' });
     }
   };
 
@@ -494,6 +516,26 @@ export default function DuetCreateScreen() {
                 </LinearGradient>
               </Pressable>
             </View>
+          </Animated.View>
+
+          {/* Pick from Gallery */}
+          <Animated.View entering={FadeInUp.delay(275).duration(400)}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('duet.pickFromGallery', 'Pick from gallery')}
+              style={styles.galleryButton}
+              onPress={handlePickVideo}
+            >
+              <LinearGradient
+                colors={recordedUri ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)'] : colors.gradient.cardDark}
+                style={styles.galleryButtonGradient}
+              >
+                <Icon name="image" size="sm" color={recordedUri ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.galleryButtonText, recordedUri && { color: colors.emerald }]}>
+                  {recordedUri ? t('duet.videoReady', 'Video ready') : t('duet.pickFromGallery', 'Pick from gallery')}
+                </Text>
+              </LinearGradient>
+            </Pressable>
           </Animated.View>
 
           {/* Audio Settings */}
@@ -982,6 +1024,27 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     color: '#FFF',
     fontWeight: '600',
+  },
+  galleryButton: {
+    marginHorizontal: spacing.base,
+    marginTop: spacing.md,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  galleryButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.active.white6,
+  },
+  galleryButtonText: {
+    fontSize: fontSize.base,
+    color: colors.text.secondary,
+    fontWeight: '500',
   },
   bottomSpacing: {
     height: spacing.xxl,

@@ -15,6 +15,7 @@
     "search": "অনুসন্ধান",
     "share": "শেয়ার করুন",
     "edit": "সম্পাদনা",
+    "edited": "সম্পাদিত",
     "settings": "সেটিংস",
     "close": "বন্ধ",
     "confirm": "নিশ্চিত",
@@ -193,7 +194,8 @@
     "saveDraft": "Save Draft",
     "draftSaved": "Draft saved",
     "discardChanges": "Discard changes?",
-    "unsavedChangesMessage": "You have unsaved changes. What would you like to do?"
+    "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
+    "saved": "Saved"
   },
   "tabs": {
     "saf": "সাফ",
@@ -330,6 +332,7 @@
     "sendCode": "Send Code",
     "verify": "Verify",
     "resendCode": "Resend Code",
+    "resendCooldown": "Resend in {{seconds}}s",
     "codeExpired": "Code expired",
     "invalidCode": "Invalid code",
     "accountCreated": "Account created successfully",
@@ -474,7 +477,10 @@
     "deletePostTitle": "পোস্ট মুছবেন?",
     "reportPostTitle": "পোস্ট রিপোর্ট করুন",
     "couldNotShareAsStory": "স্টোরি হিসেবে শেয়ার করা যায়নি। আবার চেষ্টা করুন।",
-    "viewAllComments": "সব {{count}} মন্তব্য দেখুন"
+    "viewAllComments": "সব {{count}} মন্তব্য দেখুন",
+    "goBack": "Go Back",
+    "replyingTo": "Replying to @{{username}}",
+    "replyToUser": "Reply to @{{username}}..."
   },
   "bakra": {
     "forYou": "For You",
@@ -1473,6 +1479,8 @@
     "uploadingMedia": "Uploading media…",
     "limitReached": "Limit reached",
     "mediaLimit": "You can add up to 10 photos or videos.",
+    "fileTooLarge": "File too large. Maximum size is {{max}}.",
+    "videoTooLarge": "Video too large. Maximum size is {{max}}.",
     "saved": "Saved",
     "draftSavedToAccount": "Draft saved to your account",
     "failedToSaveDraft": "Failed to save draft",
@@ -1559,7 +1567,8 @@
     "findPeople": "Find People",
     "loadFailed": "Could not load content",
     "tryAgainLater": "Please try again later",
-    "reachedEnd": "You've reached the end"
+    "reachedEnd": "You've reached the end",
+    "filterBy": "Filter by {{category}}"
   },
   "editProfile": {
     "changeCover": "Change Cover",
@@ -1585,7 +1594,8 @@
     "loadErrorTitle": "Could not load profile",
     "loadErrorSubtitle": "Please try again later",
     "urlPlaceholder": "URL (https://...)",
-    "couldNotSave": "প্রোফাইল সংরক্ষণ করা যায়নি"
+    "couldNotSave": "প্রোফাইল সংরক্ষণ করা যায়নি",
+    "websitePlaceholder": "https://yoursite.com"
   },
   "screens": {
     "followers": {
@@ -2128,6 +2138,20 @@
         "clouds": "Clouds",
         "matrix": "Matrix"
       }
+    },
+    "banned": {
+      "title": "\u0985\u09cd\u09af\u09be\u0995\u09be\u0989\u09a8\u09cd\u099f \u09b8\u09cd\u09a5\u0997\u09bf\u09a4",
+      "subtitle": "\u0995\u09ae\u09bf\u0989\u09a8\u09bf\u099f\u09bf \u09a8\u09c0\u09a4\u09bf\u09ae\u09be\u09b2\u09be \u09b2\u0999\u09cd\u0998\u09a8\u09c7\u09b0 \u0995\u09be\u09b0\u09a3\u09c7 \u0986\u09aa\u09a8\u09be\u09b0 \u0985\u09cd\u09af\u09be\u0995\u09be\u0989\u09a8\u09cd\u099f \u09b8\u09cd\u09a5\u0997\u09bf\u09a4 \u0995\u09b0\u09be \u09b9\u09df\u09c7\u099b\u09c7\u0964",
+      "appealButton": "\u09b8\u09bf\u09a6\u09cd\u09a7\u09be\u09a8\u09cd\u09a4\u09c7\u09b0 \u09ac\u09bf\u09b0\u09c1\u09a6\u09cd\u09a7\u09c7 \u0986\u09aa\u09bf\u09b2",
+      "signOut": "\u09b8\u09be\u0987\u09a8 \u0986\u0989\u099f",
+      "contactSupport": "\u0986\u09aa\u09a8\u09bf \u09af\u09a6\u09bf \u09ae\u09a8\u09c7 \u0995\u09b0\u09c7\u09a8 \u098f\u099f\u09bf \u09ad\u09c1\u09b2, \u09a4\u09be\u09b9\u09b2\u09c7 \u09b8\u09bf\u09a6\u09cd\u09a7\u09be\u09a8\u09cd\u09a4\u09c7\u09b0 \u09ac\u09bf\u09b0\u09c1\u09a6\u09cd\u09a7\u09c7 \u0986\u09aa\u09bf\u09b2 \u0995\u09b0\u09a4\u09c7 \u09aa\u09be\u09b0\u09c7\u09a8 \u09ac\u09be \u09b8\u09be\u09aa\u09cb\u09b0\u09cd\u099f\u09c7 \u09af\u09cb\u0997\u09be\u09af\u09cb\u0997 \u0995\u09b0\u09a4\u09c7 \u09aa\u09be\u09b0\u09c7\u09a8\u0964"
+    },
+    "maintenance": {
+      "title": "\u0986\u09ae\u09b0\u09be \u09b6\u09c0\u0998\u09cd\u09b0\u0987 \u09ab\u09bf\u09b0\u09c7 \u0986\u09b8\u09ac",
+      "subtitle": "\u09ae\u09bf\u099c\u09be\u09a8\u09b2\u09bf \u09a8\u09bf\u09b0\u09cd\u09a7\u09be\u09b0\u09bf\u09a4 \u09b0\u0995\u09cd\u09b7\u09a3\u09be\u09ac\u09c7\u0995\u09cd\u09b7\u09a3\u09c7\u09b0 \u09ae\u09a7\u09cd\u09af\u09c7 \u0986\u099b\u09c7\u0964 \u0986\u09ae\u09b0\u09be \u0986\u09aa\u09a8\u09be\u09b0 \u0985\u09ad\u09bf\u099c\u09cd\u099e\u09a4\u09be \u0989\u09a8\u09cd\u09a8\u09a4 \u0995\u09b0\u09a4\u09c7 \u0995\u09be\u099c \u0995\u09b0\u099b\u09bf\u0964",
+      "retryButton": "\u0986\u09ac\u09be\u09b0 \u099a\u09c7\u09b7\u09cd\u099f\u09be \u0995\u09b0\u09c1\u09a8",
+      "stillDown": "\u09b8\u09be\u09b0\u09cd\u09ad\u09be\u09b0 \u098f\u0996\u09a8\u0993 \u09b0\u0995\u09cd\u09b7\u09a3\u09be\u09ac\u09c7\u0995\u09cd\u09b7\u09a3\u09c7 \u0986\u099b\u09c7\u0964 \u0985\u09a8\u09c1\u0997\u09cd\u09b0\u09b9 \u0995\u09b0\u09c7 \u0995\u09bf\u099b\u09c1\u0995\u09cd\u09b7\u09a3 \u09aa\u09b0\u09c7 \u0986\u09ac\u09be\u09b0 \u099a\u09c7\u09b7\u09cd\u099f\u09be \u0995\u09b0\u09c1\u09a8\u0964",
+      "hint": "\u098f\u099f\u09bf \u09b8\u09be\u09a7\u09be\u09b0\u09a3\u09a4 \u09ae\u09be\u09a4\u09cd\u09b0 \u0995\u09df\u09c7\u0995 \u09ae\u09bf\u09a8\u09bf\u099f \u09b8\u09ae\u09df \u09a8\u09c7\u09df\u0964 \u0986\u09aa\u09a8\u09be\u09b0 \u09a7\u09c8\u09b0\u09cd\u09af\u09c7\u09b0 \u099c\u09a8\u09cd\u09af \u09a7\u09a8\u09cd\u09af\u09ac\u09be\u09a6\u0964"
     }
   },
   "createReel": {
@@ -2144,13 +2168,15 @@
     "greenScreen": "Green Screen",
     "audioLibrary": "Audio Library",
     "gallery": "Gallery",
-    "record": "Record"
+    "record": "Record",
+    "videoTooLarge": "Video too large. Maximum size is {{max}}."
   },
   "createVideo": {
     "selectThumbnail": "Select thumbnail",
     "customThumbnail": "Custom",
     "normalizeAudio": "Normalize audio",
-    "normalizeAudioDesc": "Consistent volume levels"
+    "normalizeAudioDesc": "Consistent volume levels",
+    "videoTooLarge": "Video too large. Maximum size is {{max}}."
   },
   "qibla": {
     "title": "Qibla Direction",
@@ -2748,6 +2774,7 @@
     "categoryArt": "Art",
     "categoryElectronics": "Electronics",
     "categoryServices": "Services",
+    "halal": "Halal",
     "notFound": "Product not found"
   },
   "orders": {
@@ -3579,7 +3606,8 @@
     "started": "Started {{timeAgo}}",
     "speakers": "Speakers",
     "listeners": "Listeners",
-    "raisedHands": "Raised Hands"
+    "raisedHands": "Raised Hands",
+    "reactionSent": "Reaction sent!"
   },
   "video": {
     "title": "Video",
@@ -3604,5 +3632,59 @@
   "errorBoundary": {
     "unexpectedError": "An unexpected error occurred. Please try again.",
     "goHome": "Go Home"
+  },
+  "search": {
+    "placeholder": "Search...",
+    "people": "People",
+    "hashtags": "Hashtags",
+    "posts": "Posts",
+    "threads": "Threads",
+    "reels": "Reels",
+    "videos": "Videos",
+    "channels": "Channels",
+    "followers": "followers",
+    "following": "Following",
+    "subscribers": "subscribers",
+    "videosCount": "videos",
+    "views": "views",
+    "trending": "Trending",
+    "recentSearches": "Recent Searches",
+    "clearAll": "Clear All",
+    "noRecentSearches": "No recent searches",
+    "searchFailed": "Search failed",
+    "checkConnection": "Check your connection and try again",
+    "noResultsFor": "No {{type}} found for \"{{query}}\"",
+    "tryDifferent": "Try a different search term",
+    "searchForPeopleAndTopics": "Search for people and topics",
+    "noCaption": "No caption",
+    "viewProfile": "View profile of {{name}}",
+    "viewVideo": "View video: {{title}}",
+    "viewChannel": "View channel: {{name}}",
+    "viewHashtag": "View hashtag {{name}}",
+    "searchFor": "Search for {{term}}"
+  },
+  "share": {
+    "defaultMessage": "Check this out on Mizanly!"
+  },
+  "communityNotes": {
+    "title": "Community Notes",
+    "addNote": "Add a Community Note",
+    "noteAdded": "Note submitted for review",
+    "writePlaceholder": "Write helpful context about this content...",
+    "submit": "Submit Note",
+    "helpful": "Helpful",
+    "somewhatHelpful": "Somewhat Helpful",
+    "notHelpful": "Not Helpful",
+    "ratedHelpful": "Rated as helpful",
+    "ratedSomewhat": "Rated as somewhat helpful",
+    "ratedNotHelpful": "Rated as not helpful",
+    "noNotes": "No community notes yet",
+    "noNotesSubtitle": "Be the first to add helpful context",
+    "loadError": "Could not load community notes",
+    "submitError": "Could not submit note",
+    "rateError": "Could not submit rating",
+    "helpfulCount": "{{count}} found this helpful",
+    "notHelpfulCount": "{{count}} found this not helpful",
+    "contextByReaders": "Added by readers who thought people might want to know"
   }
 }

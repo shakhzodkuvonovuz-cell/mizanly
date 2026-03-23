@@ -8,11 +8,15 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateEventDto, UpdateEventDto } from './events.controller';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async createEvent(userId: string, dto: CreateEventDto) {
     const data: Prisma.EventCreateInput = {
@@ -328,6 +332,18 @@ export class EventsService {
           },
         },
       });
+
+      // Notify event organizer when someone RSVPs as "going"
+      if (status === 'going' && event.userId !== userId) {
+        this.notificationsService.create({
+          userId: event.userId,
+          actorId: userId,
+          type: 'SYSTEM',
+          title: 'New RSVP',
+          body: 'Someone is going to your event',
+        }).catch(err => this.logger.warn('RSVP notification failed', err.message));
+      }
+
       return rsvp;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

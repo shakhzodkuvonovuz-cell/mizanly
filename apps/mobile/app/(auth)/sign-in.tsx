@@ -190,6 +190,7 @@ function SignInScreenContent() {
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
               autoComplete="password"
+              textContentType="password"
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
             />

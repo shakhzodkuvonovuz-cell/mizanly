@@ -40,9 +40,10 @@ interface Props {
   viewerId?: string;
   isOwn?: boolean;
   isFrequentCreator?: boolean;
+  onLongPress?: () => void;
 }
 
-export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFrequentCreator }: Props) {
+export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFrequentCreator, onLongPress }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useContextualHaptic();
@@ -230,6 +231,12 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
   const timeAgo = useMemo(() => formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true, locale: getDateFnsLocale() }), [post.createdAt]);
 
+  // Show "Edited" label when post was modified after creation (>1min difference to account for rounding)
+  const isEdited = useMemo(() => {
+    if (!post.updatedAt || !post.createdAt) return false;
+    return new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
+  }, [post.updatedAt, post.createdAt]);
+
   // Derive likers for SocialProof: use recentLikers from API, fallback to post author
   const likers = useMemo(() => {
     if (post.recentLikers?.length) return post.recentLikers;
@@ -239,9 +246,17 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     return [];
   }, [post.recentLikers, post.user]);
 
+  const handleLongPress = useCallback(() => {
+    if (onLongPress) {
+      haptic.longPress();
+      onLongPress();
+    }
+  }, [onLongPress, haptic]);
+
   if (dismissed) return null;
 
   return (
+    <Pressable onLongPress={handleLongPress} delayLongPress={400} disabled={!onLongPress}>
     <Animated.View style={[styles.card, { backgroundColor: tc.bgCard, borderColor: tc.borderLight }]}>
       {/* Header */}
       <View style={styles.header}>
@@ -271,6 +286,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
             </View>
             <Text style={styles.handle}>
               @{post.user.username} · {timeAgo}
+              {isEdited && <Text style={styles.editedLabel}> · {tr('common.edited')}</Text>}
               {post.isPromoted && <Text style={styles.sponsoredLabel}> · {tr('saf.sponsored')}</Text>}
             </Text>
           </View>
@@ -341,6 +357,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
                 thumbnailUrl={post.thumbnailUrl}
                 aspectRatio={post.mediaWidth && post.mediaHeight ? post.mediaWidth / post.mediaHeight : undefined}
                 blurred={post.isSensitive && !revealed}
+                blurhash={post.blurhash}
               />
               {/* Overlay heart for double-tap */}
               <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">
@@ -498,6 +515,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
         )}
       </BottomSheet>
     </Animated.View>
+    </Pressable>
   );
 });
 
@@ -524,6 +542,7 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   name: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base, lineHeight: lineHeight.base },
   handle: { color: colors.text.secondary, fontSize: fontSize.xs, lineHeight: lineHeight.xs, marginTop: 1 },
+  editedLabel: { color: colors.text.tertiary, fontSize: fontSize.xs, fontStyle: 'italic' },
   sponsoredLabel: { color: colors.text.tertiary, fontSize: fontSize.xs, fontWeight: '600' },
   moreBtn: { padding: spacing.sm },
   content: {

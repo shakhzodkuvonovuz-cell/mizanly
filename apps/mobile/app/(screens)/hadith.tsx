@@ -58,6 +58,7 @@ function ActionButton({
   activeColor?: string;
 }) {
   const haptic = useContextualHaptic();
+  const tc = useThemeColors();
 
   return (
     <Pressable
@@ -92,6 +93,7 @@ function PreviousHadithCard({
   index: number;
   onPress: () => void;
 }) {
+  const tc = useThemeColors();
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={hadith.source}>

@@ -1,12 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 
 @Injectable()
 export class CommunityService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(CommunityService.name);
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // ── Local Boards ────────────────────────────────────────
 
@@ -39,9 +44,20 @@ export class CommunityService {
     if (!mentor) throw new NotFoundException('Mentor not found');
 
     try {
-      return await this.prisma.mentorship.create({
+      const mentorship = await this.prisma.mentorship.create({
         data: { menteeId, mentorId: dto.mentorId, topic: dto.topic, notes: dto.notes },
       });
+
+      // Notify the mentor about the new mentorship request
+      this.notificationsService.create({
+        userId: dto.mentorId,
+        actorId: menteeId,
+        type: 'SYSTEM',
+        title: 'Mentorship request',
+        body: `You have a new mentorship request for "${dto.topic}"`,
+      }).catch(err => this.logger.warn('Mentorship notification failed', err.message));
+
+      return mentorship;
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new ConflictException('Mentorship request already exists');
@@ -125,10 +141,21 @@ export class CommunityService {
     const q = await this.prisma.fatwaQuestion.findUnique({ where: { id: questionId } });
     if (!q) throw new NotFoundException('Fatwa question not found');
     if (q.status === 'answered') throw new ConflictException('Question already answered');
-    return this.prisma.fatwaQuestion.update({
+    const updated = await this.prisma.fatwaQuestion.update({
       where: { id: questionId },
       data: { status: 'answered', answerId: answer, answeredBy: scholarId, answeredAt: new Date() },
     });
+
+    // Notify the asker that their question was answered
+    this.notificationsService.create({
+      userId: q.askerId,
+      actorId: scholarId,
+      type: 'SYSTEM',
+      title: 'Fatwa answered',
+      body: 'A scholar has answered your question',
+    }).catch(err => this.logger.warn('Fatwa answer notification failed', err.message));
+
+    return updated;
   }
 
   // ── Volunteer ───────────────────────────────────────────

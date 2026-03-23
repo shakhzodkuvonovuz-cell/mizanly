@@ -321,8 +321,32 @@ export default function ProfileScreen() {
       if (!profile) return Promise.reject(new Error('Profile not loaded'));
       return isFollowing ? followsApi.unfollow(profile.id) : followsApi.follow(profile.id);
     },
+    onMutate: async () => {
+      // Cancel outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['profile', username] });
+      const previousProfile = queryClient.getQueryData(['profile', username]);
+      // Optimistically update follower count and follow state
+      queryClient.setQueryData(['profile', username], (old: typeof profile) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isFollowing: !isFollowing,
+          followersCount: (old.followersCount ?? 0) + (isFollowing ? -1 : 1),
+        };
+      });
+      return { previousProfile };
+    },
     onSuccess: () => {
       if (!isFollowing) followPulse.trigger();
+    },
+    onError: (_err, _vars, context) => {
+      // Roll back to previous profile data on error
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', username], context.previousProfile);
+      }
+    },
+    onSettled: () => {
+      // Always refetch to ensure server state is in sync
       queryClient.invalidateQueries({ queryKey: ['profile', username] });
     },
   });
@@ -520,6 +544,18 @@ export default function ProfileScreen() {
               accessibilityRole="button"
             >
               <Icon name="clock" size="sm" color={tc.text.primary} />
+            </Pressable>
+            <Pressable
+              onPress={() => { haptic.navigate(); router.push('/(screens)/flipside'); }}
+              style={{
+                backgroundColor: tc.bgElevated, borderRadius: radius.md,
+                paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
+                ...rtlMargin(isRTL, spacing.sm, 0),
+              }}
+              accessibilityLabel={t('flipside.title')}
+              accessibilityRole="button"
+            >
+              <Icon name="user" size="sm" color={colors.gold} />
             </Pressable>
           </View>
         ) : (

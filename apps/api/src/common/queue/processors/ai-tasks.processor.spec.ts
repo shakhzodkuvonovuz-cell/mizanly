@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { AiTasksProcessor } from './ai-tasks.processor';
 import { AiService } from '../../../modules/ai/ai.service';
 import { PrismaService } from '../../../config/prisma.service';
+import { QueueService } from '../queue.service';
 
 describe('AiTasksProcessor', () => {
   let processor: AiTasksProcessor;
@@ -28,6 +29,12 @@ describe('AiTasksProcessor', () => {
             thread: { findUnique: jest.fn().mockResolvedValue({ userId: 'author-1' }) },
             reel: { findUnique: jest.fn().mockResolvedValue({ userId: 'author-1' }) },
             comment: { findUnique: jest.fn().mockResolvedValue({ userId: 'author-1' }) },
+          },
+        },
+        {
+          provide: QueueService,
+          useValue: {
+            moveToDlq: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

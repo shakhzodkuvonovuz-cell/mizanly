@@ -1,11 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 
 @Injectable()
 export class CommerceService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(CommerceService.name);
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   // ── Products / Marketplace ──────────────────────────────
 
@@ -136,7 +141,7 @@ export class CommerceService {
 
     // Use a transaction to atomically check stock and create order
     // This prevents overselling under concurrent orders
-    return this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(async (tx) => {
       // Atomically decrement stock only if sufficient
       const updated = await tx.product.updateMany({
         where: { id: dto.productId, stock: { gte: qty }, status: 'active' },
@@ -147,7 +152,7 @@ export class CommerceService {
         throw new BadRequestException('Product unavailable or insufficient stock');
       }
 
-      const order = await tx.order.create({
+      return tx.order.create({
         data: {
           buyerId: userId,
           productId: dto.productId,
@@ -159,9 +164,18 @@ export class CommerceService {
         },
         include: { product: true },
       });
-
-      return order;
     });
+
+    // Notify seller about the new order (outside transaction, fire-and-forget)
+    this.notificationsService.create({
+      userId: product.sellerId,
+      actorId: userId,
+      type: 'SYSTEM',
+      title: 'New order',
+      body: `You received a new order for "${product.title}"`,
+    }).catch(err => this.logger.warn('Order notification failed', err.message));
+
+    return order;
   }
 
   async getMyOrders(userId: string, cursor?: string, limit = 20) {
@@ -230,7 +244,20 @@ export class CommerceService {
       });
     }
 
-    return this.prisma.order.update({ where: { id: orderId }, data: { status } });
+    const updated = await this.prisma.order.update({ where: { id: orderId }, data: { status } });
+
+    // Notify the buyer about order status change (skip if buyer was deleted)
+    if (order.buyerId) {
+      this.notificationsService.create({
+        userId: order.buyerId,
+        actorId: sellerId,
+        type: 'SYSTEM',
+        title: 'Order updated',
+        body: `Your order status changed to "${status}"`,
+      }).catch(err => this.logger.warn('Order status notification failed', err.message));
+    }
+
+    return updated;
   }
 
   // ── Halal Business Directory ────────────────────────────

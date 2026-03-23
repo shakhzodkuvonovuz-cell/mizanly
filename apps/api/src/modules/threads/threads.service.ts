@@ -14,6 +14,7 @@ import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, ThreadVisibility, ReportReason } from '@prisma/client';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
 
 const THREAD_SELECT = {
@@ -98,6 +99,7 @@ export class ThreadsService {
     private gamification: GamificationService,
     private ai: AiService,
     private queueService: QueueService,
+    private contentSafety: ContentSafetyService,
   ) {}
 
   /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us) */
@@ -324,6 +326,30 @@ export class ThreadsService {
   }
 
   async create(userId: string, dto: CreateThreadDto) {
+    // Pre-save content moderation: block harmful text before persisting (Finding 44)
+    if (dto.content) {
+      const moderationResult = await this.contentSafety.moderateText(dto.content);
+      if (!moderationResult.safe) {
+        this.logger.warn(`Thread creation blocked by content safety: flags=${moderationResult.flags.join(',')}, userId=${userId}`);
+        throw new BadRequestException(
+          `Content flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise your thread.'}`,
+        );
+      }
+    }
+
+    // Pre-save image moderation: block harmful images before persisting (Finding 44)
+    if (dto.mediaUrls?.length && dto.mediaTypes?.some((t: string) => t.startsWith('image'))) {
+      for (const [idx, url] of dto.mediaUrls.entries()) {
+        if (dto.mediaTypes?.[idx]?.startsWith('image')) {
+          const imageResult = await this.ai.moderateImage(url);
+          if (imageResult.classification === 'BLOCK') {
+            this.logger.warn(`Thread creation blocked: image BLOCKED — ${imageResult.reason}, userId=${userId}`);
+            throw new BadRequestException('Image violates community guidelines');
+          }
+        }
+      }
+    }
+
     // Parse and upsert hashtags
     const hashtagNames = extractHashtags(dto.content ?? '');
     if (hashtagNames.length > 0) {
@@ -400,22 +426,6 @@ export class ThreadsService {
     // Gamification: award XP + update streak
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' });
     this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
-
-    // AI moderation: async content check via queue
-    if (dto.content) {
-      this.queueService.addModerationJob({ content: dto.content, contentType: 'thread', contentId: thread.id });
-    }
-
-    // Image moderation: check uploaded images via Claude Vision (Finding 44: thread images not moderated)
-    if (dto.mediaUrls?.length && dto.mediaTypes?.some((t: string) => t.startsWith('image'))) {
-      for (const [idx, url] of dto.mediaUrls.entries()) {
-        if (dto.mediaTypes?.[idx]?.startsWith('image')) {
-          this.moderateThreadImage(userId, thread.id, url).catch((err: Error) => {
-            this.logger.error(`Image moderation failed for thread ${thread.id}: ${err.message}`);
-          });
-        }
-      }
-    }
 
     return thread;
   }
@@ -969,6 +979,11 @@ export class ThreadsService {
           data: { isRemoved: true },
         });
         this.logger.warn(`Thread ${threadId} auto-removed: image BLOCKED — ${result.reason}`);
+
+        // Remove from Meilisearch index on auto-moderation removal
+        this.queueService.addSearchIndexJob({
+          action: 'delete', indexName: 'threads', documentId: threadId,
+        }).catch(err => this.logger.warn('Failed to queue search index deletion for moderated thread', err instanceof Error ? err.message : err));
       } else if (result.classification === 'WARNING') {
         await this.prisma.thread.update({
           where: { id: threadId },

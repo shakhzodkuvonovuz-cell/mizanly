@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -88,7 +88,24 @@ export default function MajlisScreen() {
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { onScroll, headerAnimatedStyle, titleAnimatedStyle, scrollY } = useScrollLinkedHeader(56);
+  const { onScroll: headerOnScroll, headerAnimatedStyle, titleAnimatedStyle, scrollY } = useScrollLinkedHeader(56);
+
+  // ── Scroll position persistence across tab switches ──
+  const lastSavedOffset = useRef(0);
+
+  // Throttled scroll offset save — only writes to store when delta > 50px
+  const handleScrollOffsetSave = useCallback((y: number) => {
+    if (Math.abs(y - lastSavedOffset.current) > 50) {
+      lastSavedOffset.current = y;
+      useStore.getState().setMajlisScrollOffset(y);
+    }
+  }, []);
+
+  // Combined scroll handler: header animation + scroll position persistence
+  const onScroll = useCallback((event: { nativeEvent: { contentOffset: { y: number } } }) => {
+    headerOnScroll(event);
+    handleScrollOffsetSave(event.nativeEvent.contentOffset.y);
+  }, [headerOnScroll, handleScrollOffsetSave]);
 
   // ── "New posts" banner state ──
   const [hasScrolledDown, setHasScrolledDown] = useState(false);
@@ -123,8 +140,18 @@ export default function MajlisScreen() {
   const feedRef = useRef<FlashListRef<Thread>>(null);
   useScrollToTop(feedRef as React.RefObject<FlashListRef<Thread>>);
 
-  // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
-  // which would reset scroll position when returning from sub-screens
+  // Restore scroll position when tab regains focus
+  useFocusEffect(
+    useCallback(() => {
+      const offset = useStore.getState().majlisScrollOffset;
+      if (offset > 0) {
+        const timer = setTimeout(() => {
+          feedRef.current?.scrollToOffset({ offset, animated: false });
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }, [])
+  );
 
   // Floating compose button
   const fabScale = useSharedValue(1);

@@ -237,40 +237,43 @@ export class StickersService {
       throw new NotFoundException('Sticker not found');
     }
 
-    // Find or create "My Stickers" pack for user
-    let myPack = await this.prisma.stickerPack.findFirst({
-      where: { name: `My Stickers - ${userId}` },
-    });
+    // Atomic transaction: find/create pack, add sticker, update count
+    await this.prisma.$transaction(async (tx) => {
+      // Find or create "My Stickers" pack for user
+      let myPack = await tx.stickerPack.findFirst({
+        where: { name: `My Stickers - ${userId}` },
+      });
 
-    if (!myPack) {
-      myPack = await this.prisma.stickerPack.create({
+      if (!myPack) {
+        myPack = await tx.stickerPack.create({
+          data: {
+            name: `My Stickers - ${userId}`,
+            isFree: true,
+            stickersCount: 0,
+          },
+        });
+        // Auto-add to user's collection
+        await tx.userStickerPack.create({
+          data: { userId, packId: myPack.id },
+        });
+      }
+
+      // Add sticker to pack — position derived inside transaction to prevent races
+      const position = await tx.sticker.count({ where: { packId: myPack.id } });
+      await tx.sticker.create({
         data: {
-          name: `My Stickers - ${userId}`,
-          isFree: true,
-          stickersCount: 0,
+          packId: myPack.id,
+          url: generated.imageUrl,
+          name: generated.prompt.slice(0, 50),
+          position,
         },
       });
-      // Auto-add to user's collection
-      await this.prisma.userStickerPack.create({
-        data: { userId, packId: myPack.id },
+
+      // Atomic increment of sticker count
+      await tx.stickerPack.update({
+        where: { id: myPack.id },
+        data: { stickersCount: { increment: 1 } },
       });
-    }
-
-    // Add sticker to pack
-    const position = await this.prisma.sticker.count({ where: { packId: myPack.id } });
-    await this.prisma.sticker.create({
-      data: {
-        packId: myPack.id,
-        url: generated.imageUrl,
-        name: generated.prompt.slice(0, 50),
-        position,
-      },
-    });
-
-    // Update sticker count
-    await this.prisma.stickerPack.update({
-      where: { id: myPack.id },
-      data: { stickersCount: { increment: 1 } },
     });
 
     return { saved: true };

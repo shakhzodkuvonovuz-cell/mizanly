@@ -186,6 +186,9 @@ export default function QuietModeScreen() {
                 onValueChange={handleToggleActive}
                 trackColor={{ false: tc.border, true: colors.emerald }}
                 thumbColor="#fff"
+                accessibilityRole="switch"
+                accessibilityLabel={t('quietMode.enable')}
+                accessibilityState={{ checked: isActive }}
               />
             </View>
           </LinearGradient>
@@ -217,6 +220,9 @@ export default function QuietModeScreen() {
                 onValueChange={handleToggleSchedule}
                 trackColor={{ false: tc.border, true: colors.emerald }}
                 thumbColor="#fff"
+                accessibilityRole="switch"
+                accessibilityLabel={t('quietMode.schedule')}
+                accessibilityState={{ checked: isScheduled }}
               />
             </View>
 

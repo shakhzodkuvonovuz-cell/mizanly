@@ -130,7 +130,7 @@ export default function LiveViewerScreen() {
   // Floating reactions animation
   const addFloatingReaction = (emoji: string) => {
     const reactionId = Date.now().toString();
-    const startX = Math.random() * (SCREEN_WIDTH - 100) + 50;
+    const startX = ((emoji.charCodeAt(0) * 2654435761 + Date.now()) % (SCREEN_WIDTH - 100)) + 50;
     setFloatingReactions(prev => [...prev, { id: reactionId, emoji, startX }]);
     setTimeout(() => {
       setFloatingReactions(prev => prev.filter(r => r.id !== reactionId));

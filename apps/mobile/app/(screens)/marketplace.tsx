@@ -27,6 +27,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { commerceApi } from '@/services/api';
 import { navigate } from '@/utils/navigation';
 import { formatCount } from '@/utils/formatCount';
+import { formatCurrency } from '@/utils/localeFormat';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -63,26 +64,22 @@ interface ProductsResponse {
   meta: { cursor: string | null; hasMore: boolean };
 }
 
-function renderStars(rating: number) {
+function RatingStars({ rating, tc }: { rating: number; tc: ReturnType<typeof useThemeColors> }) {
   const stars: React.ReactNode[] = [];
   const full = Math.floor(rating);
   const half = rating - full >= 0.5;
   for (let i = 0; i < 5; i++) {
-    if (i < full) {
+    if (i < full || (i === full && half)) {
       stars.push(
-        <Icon key={`star-${i}`} name="heart-filled" size="xs" color={colors.gold} />
-      );
-    } else if (i === full && half) {
-      stars.push(
-        <Icon key={`star-${i}`} name="heart-filled" size="xs" color={colors.gold} />
+        <Icon key={`star-${i}`} name="star" size="xs" color={colors.gold} />
       );
     } else {
       stars.push(
-        <Icon key={`star-${i}`} name="heart" size="xs" color={tc.text.tertiary} />
+        <Icon key={`star-${i}`} name="star" size="xs" color={tc.text.tertiary} />
       );
     }
   }
-  return stars;
+  return <>{stars}</>;
 }
 
 function MarketplaceContent() {
@@ -175,7 +172,7 @@ function MarketplaceContent() {
         style={styles.productPressable}
         onPress={() => handleProductPress(item)}
         accessibilityRole="button"
-        accessibilityLabel={`${item.title}, ${item.price}`}
+        accessibilityLabel={`${item.title}, ${formatCurrency(item.price / 100, item.currency || 'USD')}`}
       >
         <View style={styles.productImageWrap}>
           {item.imageUrls?.[0] ? (
@@ -207,10 +204,10 @@ function MarketplaceContent() {
             {item.title}
           </Text>
           <Text style={styles.productPrice}>
-            ${(item.price / 100).toFixed(2)}
+            {formatCurrency(item.price / 100, item.currency || 'USD')}
           </Text>
           <View style={styles.ratingRow}>
-            {renderStars(item.rating)}
+            <RatingStars rating={item.rating} tc={tc} />
             <Text style={[styles.reviewCount, { color: tc.text.tertiary }]}>({formatCount(item.reviewCount)})</Text>
           </View>
           <View style={styles.sellerRow}>

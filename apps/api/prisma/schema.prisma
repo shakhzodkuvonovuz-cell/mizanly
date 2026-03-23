@@ -1176,7 +1176,7 @@ model Message {
   editedAt        DateTime?
   isScheduled     Boolean           @default(false)
   scheduledAt     DateTime?
-  starredBy       String[]          @default([])
+  starredBy       String[]          @default([]) // @deprecated — use StarredMessage join table instead. Kept for migration compatibility.
   isPinned        Boolean           @default(false)
   pinnedAt        DateTime?
   pinnedById      String?
@@ -1198,6 +1198,7 @@ model Message {
   @@index([conversationId, createdAt(sort: Desc)])
   @@index([senderId])
   @@index([expiresAt])
+  @@index([scheduledAt])
   @@map("messages")
 }
 
@@ -1452,6 +1453,9 @@ model Report {
   reportedComment       Comment?         @relation("reportedComments", fields: [reportedCommentId], references: [id], onDelete: SetNull)
   reportedMessageId     String?
   reportedMessage       Message?         @relation("reportedMessages", fields: [reportedMessageId], references: [id], onDelete: SetNull)
+  reportedThreadId      String?
+  reportedReelId        String?
+  reportedVideoId       String?
   reason                ReportReason
   description           String?          @db.VarChar(1000)
   status                ReportStatus     @default(PENDING)
@@ -1470,6 +1474,9 @@ model Report {
   @@index([status, createdAt])
   @@index([reportedUserId])
   @@index([reporterId])
+  @@index([reportedThreadId])
+  @@index([reportedReelId])
+  @@index([reportedVideoId])
   @@map("reports")
 }
 
@@ -1834,6 +1841,7 @@ model CallSession {
 
   @@index([status])
   @@index([createdAt])
+  @@index([endedAt])
   @@map("call_sessions")
 }
 
@@ -1858,10 +1866,12 @@ model StickerPack {
   coverUrl      String?
   stickersCount Int               @default(0)
   isFree        Boolean           @default(true)
+  ownerId       String?
   createdAt     DateTime          @default(now())
   stickers      Sticker[]
   users         UserStickerPack[]
 
+  @@index([ownerId])
   @@map("sticker_packs")
 }
 
@@ -2157,15 +2167,17 @@ model Tip {
   receiverId  String?
   sender      User?    @relation("TipSender", fields: [senderId], references: [id], onDelete: SetNull)
   receiver    User?    @relation("TipReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
-  amount      Decimal  @db.Decimal(12, 2)
-  currency    String   @default("USD") @db.VarChar(3)
-  message     String?  @db.VarChar(500)
-  platformFee Decimal  @default(0) @db.Decimal(12, 2)
-  status      String   @default("completed") @db.VarChar(20)
-  createdAt   DateTime @default(now())
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String   @default("USD") @db.VarChar(3)
+  message         String?  @db.VarChar(500)
+  platformFee     Decimal  @default(0) @db.Decimal(12, 2)
+  status          String   @default("completed") @db.VarChar(20)
+  stripePaymentId String?
+  createdAt       DateTime @default(now())
 
   @@index([senderId])
   @@index([receiverId])
+  @@unique([senderId, receiverId, createdAt])
   @@map("tips")
 }
 
@@ -3150,6 +3162,7 @@ model Order {
   product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([buyerId])
+  @@index([buyerId, createdAt])
   @@index([productId])
   @@index([status])
   @@map("orders")
@@ -3501,6 +3514,18 @@ model WaqfFund {
   @@map("waqf_funds")
 }
 
+model WaqfDonation {
+  id        String   @id @default(cuid())
+  fundId    String
+  userId    String
+  amount    Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+
+  @@index([fundId])
+  @@index([userId])
+  @@map("waqf_donations")
+}
+
 // ── Telegram Parity Models (Batch 50) ───────────────────
 
 model SavedMessage {
@@ -3698,11 +3723,16 @@ model Embedding {
   contentType EmbeddingContentType
   vector      Unsupported("vector(768)")
   metadata    Json?
+  postId      String?
+  userId      String?
   createdAt   DateTime                   @default(now())
   updatedAt   DateTime                   @updatedAt
 
   @@unique([contentId, contentType])
   @@index([contentType])
+  @@index([contentType, contentId])
+  @@index([postId])
+  @@index([userId])
   @@map("embeddings")
 }
 
@@ -4077,4 +4107,68 @@ model HalalRestaurantReview {
 
   @@unique([restaurantId, userId])
   @@map("halal_restaurant_reviews")
+}
+
+// ============================================================
+// VIDEO COMMENT LIKES — Like tracking for video comments
+// ============================================================
+
+model VideoCommentLike {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@map("video_comment_likes")
+}
+
+// ============================================================
+// SCHOLAR QUESTION VOTES — Upvote/downvote on scholar Q&A
+// ============================================================
+
+model ScholarQuestionVote {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  voteType   String // 'upvote' or 'downvote'
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, questionId])
+  @@index([questionId])
+  @@map("scholar_question_votes")
+}
+
+// ============================================================
+// HALAL VERIFY VOTES — Community verification for halal businesses
+// ============================================================
+
+model HalalVerifyVote {
+  id         String   @id @default(cuid())
+  userId     String
+  businessId String
+  isVerified Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+  @@map("halal_verify_votes")
+}
+
+// ============================================================
+// STARRED MESSAGES — Join table for user-message starring
+// Replaces the old Message.starredBy String[] field
+// ============================================================
+
+model StarredMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, messageId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([messageId])
+  @@map("starred_messages")
 }

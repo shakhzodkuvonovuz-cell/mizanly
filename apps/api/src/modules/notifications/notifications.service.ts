@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger, Inject } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from './push-trigger.service';
 import { NotificationType, Prisma } from '@prisma/client';
@@ -118,6 +119,13 @@ export class NotificationsService {
     return counts;
   }
 
+  async getUnreadCountTotal(userId: string) {
+    const total = await this.prisma.notification.count({
+      where: { userId, isRead: false },
+    });
+    return { total };
+  }
+
   async deleteNotification(notificationId: string, userId: string) {
     const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
@@ -128,6 +136,14 @@ export class NotificationsService {
     await this.prisma.notification.delete({ where: { id: notificationId } });
     return { deleted: true };
   }
+
+  // TODO: [03] F28 — Push notification i18n
+  // When user locale is available (via User.locale field), use it to select
+  // the notification title/body from i18n templates instead of hardcoded English.
+  // This requires:
+  // 1. User.locale field in Prisma schema
+  // 2. Server-side i18n template file (e.g., notification-templates.ts)
+  // 3. Lookup user locale before constructing title/body
 
   // Internal helper — used by other services to create notifications
   async create(params: {
@@ -196,6 +212,21 @@ export class NotificationsService {
     // Don't notify if recipient has blocked or muted the actor
     if (blockExists || muteExists) return null;
 
+    // Redis-based deduplication: suppress identical notifications within 5 minutes
+    const targetId = params.postId || params.threadId || params.reelId || params.videoId
+      || params.commentId || params.conversationId || params.followRequestId || params.actorId;
+    const dedupeKey = `notif_dedup:${params.userId}:${params.type}:${targetId}`;
+    try {
+      const exists = await this.redis.get(dedupeKey);
+      if (exists) {
+        this.logger.debug(`Duplicate notification suppressed: ${dedupeKey}`);
+        return null;
+      }
+    } catch (e) {
+      // Redis failure should not block notification creation
+      this.logger.debug('Redis dedup check failed, proceeding with creation', e);
+    }
+
     const notification = await this.prisma.notification.create({
       data: {
         userId: params.userId,
@@ -212,6 +243,11 @@ export class NotificationsService {
         body: params.body,
       },
     });
+
+    // Set Redis dedup key with 5 minute TTL (non-blocking)
+    this.redis.set(dedupeKey, '1', 'EX', 300).catch((e) =>
+      this.logger.debug('Redis dedup set failed', e),
+    );
 
     // Fire push notification (non-blocking, logged on failure)
     this.pushTrigger.triggerPush(notification.id).catch((e) => this.logger.error('Push trigger failed', e));
@@ -238,5 +274,29 @@ export class NotificationsService {
     })).catch((e) => this.logger.debug('Redis notification publish failed', e));
 
     return notification;
+  }
+
+  /**
+   * M-07: Notification cleanup/retention cron
+   * Deletes read notifications older than 90 days.
+   * Runs at 3 AM daily (low-traffic window) to minimize DB impact.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanupOldNotifications(): Promise<number> {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 90);
+
+    const result = await this.prisma.notification.deleteMany({
+      where: {
+        isRead: true,
+        createdAt: { lt: cutoff },
+      },
+    });
+
+    if (result.count > 0) {
+      this.logger.log(`Cleaned up ${result.count} old read notification(s)`);
+    }
+
+    return result.count;
   }
 }

@@ -1028,6 +1028,11 @@ export class ReelsService {
           data: { isRemoved: true, isSensitive: true },
         });
         this.logger.warn(`Reel ${reelId} auto-removed: thumbnail blocked (${result.reason})`);
+
+        // Remove from Meilisearch index on auto-moderation removal
+        this.queueService.addSearchIndexJob({
+          action: 'delete', indexName: 'reels', documentId: reelId,
+        }).catch(err => this.logger.warn('Failed to queue search index deletion for moderated reel', err instanceof Error ? err.message : err));
       } else if (result.classification === 'WARNING') {
         await this.prisma.reel.update({
           where: { id: reelId },

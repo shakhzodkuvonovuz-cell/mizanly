@@ -395,6 +395,9 @@ export default function AccountSwitcherScreen() {
                     onValueChange={setAutoSwitchOnNotification}
                     trackColor={{ false: tc.surface, true: colors.emerald }}
                     thumbColor="#FFF"
+                    accessibilityRole="switch"
+                    accessibilityLabel={t('screens.accountSwitcher.autoSwitchToggle')}
+                    accessibilityState={{ checked: autoSwitchOnNotification }}
                   />
                 </View>
               </LinearGradient>

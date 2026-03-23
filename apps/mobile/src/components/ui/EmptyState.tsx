@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.active.emerald20,
-    backgroundColor: colors.dark.bgElevated,
+    // backgroundColor set via inline style using tc.bgElevated for theme-awareness
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,

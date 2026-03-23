@@ -146,7 +146,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
   const [showViewers, setShowViewers] = useState(false);
   const [stickerResponses, setStickerResponses] = useState<Record<string, Record<string, unknown>>>({});
   const { t } = useTranslation();
-  const { selection } = useHaptic();
+  const haptic = useContextualHaptic();
 
   const story = group.stories[storyIndex];
 
@@ -368,7 +368,7 @@ const StoryGroupPage = memo(function StoryGroupPage({
   const handleTapRight = () => advance();
 
   const handleStoryReaction = (emoji: string) => {
-    selection();
+    haptic.tick();
     reactionMutation.mutate(emoji);
   };
 

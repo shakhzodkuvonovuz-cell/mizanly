@@ -57,6 +57,11 @@ describe('MessagesService', () => {
               findMany: jest.fn().mockResolvedValue([]),
               delete: jest.fn(),
             },
+            starredMessage: {
+              upsert: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              deleteMany: jest.fn(),
+            },
             $transaction: jest.fn().mockImplementation(async (fn: unknown) => {
               if (typeof fn === 'function') return fn({
                 message: { create: jest.fn().mockResolvedValue({ id: 'msg-tx', content: 'test' }) },
@@ -1284,21 +1289,85 @@ describe('MessagesService', () => {
   });
 
   // ═══════════════════════════════════════════════════════
-  // getStarredMessages
+  // starMessage / unstarMessage / getStarredMessages
   // ═══════════════════════════════════════════════════════
 
+  describe('starMessage', () => {
+    it('should star a message via upsert', async () => {
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1' });
+      prisma.starredMessage.upsert.mockResolvedValue({ id: 'star-1', userId: 'user-1', messageId: 'msg-1' });
+      const result = await service.starMessage('user-1', 'msg-1');
+      expect(result).toEqual({ id: 'star-1', userId: 'user-1', messageId: 'msg-1' });
+      expect(prisma.starredMessage.upsert).toHaveBeenCalledWith({
+        where: { userId_messageId: { userId: 'user-1', messageId: 'msg-1' } },
+        create: { userId: 'user-1', messageId: 'msg-1' },
+        update: {},
+      });
+    });
+
+    it('should throw NotFoundException when message does not exist', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.starMessage('user-1', 'msg-nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unstarMessage', () => {
+    it('should unstar a message via deleteMany', async () => {
+      prisma.starredMessage.deleteMany.mockResolvedValue({ count: 1 });
+      const result = await service.unstarMessage('user-1', 'msg-1');
+      expect(result).toEqual({ count: 1 });
+      expect(prisma.starredMessage.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', messageId: 'msg-1' },
+      });
+    });
+
+    it('should succeed even if message was not starred', async () => {
+      prisma.starredMessage.deleteMany.mockResolvedValue({ count: 0 });
+      const result = await service.unstarMessage('user-1', 'msg-1');
+      expect(result).toEqual({ count: 0 });
+    });
+  });
+
   describe('getStarredMessages', () => {
-    it('should return starred messages with pagination', async () => {
-      prisma.message.findMany.mockResolvedValue([{ id: 'msg-1', starredBy: ['user-1'] }]);
+    it('should return starred messages with pagination using join table', async () => {
+      prisma.starredMessage.findMany.mockResolvedValue([
+        { id: 'star-1', userId: 'user-1', messageId: 'msg-1', createdAt: new Date() },
+      ]);
+      prisma.message.findMany.mockResolvedValue([{ id: 'msg-1', content: 'Hello' }]);
       const result = await service.getStarredMessages('user-1');
       expect(result.data).toHaveLength(1);
       expect(result.meta.hasMore).toBe(false);
     });
 
     it('should return empty when no starred messages', async () => {
-      prisma.message.findMany.mockResolvedValue([]);
+      prisma.starredMessage.findMany.mockResolvedValue([]);
       const result = await service.getStarredMessages('user-1');
       expect(result.data).toEqual([]);
+    });
+
+    it('should handle pagination with hasMore', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({
+        id: `star-${i}`, userId: 'user-1', messageId: `msg-${i}`, createdAt: new Date(),
+      }));
+      prisma.starredMessage.findMany.mockResolvedValue(items);
+      prisma.message.findMany.mockResolvedValue(
+        items.slice(0, 20).map((s) => ({ id: s.messageId, content: 'test' })),
+      );
+      const result = await service.getStarredMessages('user-1');
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('star-19');
+    });
+
+    it('should filter out deleted messages', async () => {
+      prisma.starredMessage.findMany.mockResolvedValue([
+        { id: 'star-1', userId: 'user-1', messageId: 'msg-1', createdAt: new Date() },
+        { id: 'star-2', userId: 'user-1', messageId: 'msg-2', createdAt: new Date() },
+      ]);
+      // Only msg-1 returned (msg-2 was deleted, filtered by isDeleted: false)
+      prisma.message.findMany.mockResolvedValue([{ id: 'msg-1', content: 'Hello' }]);
+      const result = await service.getStarredMessages('user-1');
+      expect(result.data).toHaveLength(1);
     });
   });
 

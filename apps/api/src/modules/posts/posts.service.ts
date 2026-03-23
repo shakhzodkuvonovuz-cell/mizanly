@@ -1282,6 +1282,11 @@ export class PostsService {
         });
         this.logger.warn(`Post ${postId} auto-removed: image blocked (${result.reason})`);
 
+        // Remove from Meilisearch index on auto-moderation removal
+        this.queueService.addSearchIndexJob({
+          action: 'delete', indexName: 'posts', documentId: postId,
+        }).catch(err => this.logger.warn('Failed to queue search index deletion for moderated post', err instanceof Error ? err.message : err));
+
         // Create a moderation report for the record
         await this.prisma.report.create({
           data: {

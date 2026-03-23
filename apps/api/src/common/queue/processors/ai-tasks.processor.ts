@@ -1,8 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { AiService } from '../../../modules/ai/ai.service';
 import { PrismaService } from '../../../config/prisma.service';
+import { QueueService } from '../queue.service';
 
 interface ModerationJobData {
   content: string;
@@ -31,6 +32,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
     private config: ConfigService,
     private ai: AiService,
     private prisma: PrismaService,
+    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
   ) {}
 
   onModuleInit() {
@@ -70,6 +72,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`AI task ${job?.id} failed: ${err.message}`);
+      this.queueService.moveToDlq(job, err, 'ai-tasks').catch(() => {});
     });
 
     this.logger.log('AI tasks worker started');

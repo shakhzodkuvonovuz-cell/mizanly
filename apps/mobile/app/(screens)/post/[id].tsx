@@ -30,13 +30,28 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi } from '@/services/api';
+import { communityNotesApi } from '@/services/communityNotesApi';
 import type { Comment } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTS } from '@/hooks/useTTS';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
+import { LinearGradient } from 'expo-linear-gradient';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart } from '@/utils/rtl';
+
+type CommunityNote = {
+  id: string;
+  authorId: string;
+  contentType: string;
+  contentId: string;
+  note: string;
+  status: string;
+  helpfulCount: number;
+  notHelpfulCount: number;
+  createdAt: string;
+  author?: { id: string; displayName: string; avatarUrl?: string };
+};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -221,6 +236,192 @@ function CommentRow({
   );
 }
 
+function CommunityNotesSection({ postId }: { postId: string }) {
+  const tc = useThemeColors();
+  const cnStyles = createCommunityNotesStyles(tc);
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { user } = useUser();
+  const haptic = useContextualHaptic();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [noteText, setNoteText] = useState('');
+
+  const notesQuery = useQuery({
+    queryKey: ['community-notes', 'post', postId],
+    queryFn: () => communityNotesApi.getHelpful('post', postId),
+    enabled: !!postId,
+  });
+
+  const notes: CommunityNote[] = (notesQuery.data as CommunityNote[]) ?? [];
+
+  const createNoteMutation = useMutation({
+    mutationFn: (note: string) =>
+      communityNotesApi.create({ contentType: 'post', contentId: postId, note }),
+    onSuccess: () => {
+      setNoteText('');
+      setShowAddForm(false);
+      queryClient.invalidateQueries({ queryKey: ['community-notes', 'post', postId] });
+      showToast({ message: t('communityNotes.noteAdded'), variant: 'success' });
+    },
+    onError: (err: Error) => showToast({ message: err.message || t('communityNotes.submitError'), variant: 'error' }),
+  });
+
+  const rateNoteMutation = useMutation({
+    mutationFn: ({ noteId, rating }: { noteId: string; rating: 'helpful' | 'somewhat_helpful' | 'not_helpful' }) =>
+      communityNotesApi.rate(noteId, rating),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['community-notes', 'post', postId] });
+      const ratingLabels: Record<string, string> = {
+        helpful: t('communityNotes.ratedHelpful'),
+        somewhat_helpful: t('communityNotes.ratedSomewhat'),
+        not_helpful: t('communityNotes.ratedNotHelpful'),
+      };
+      showToast({ message: ratingLabels[variables.rating] ?? t('common.saved'), variant: 'success' });
+    },
+    onError: (err: Error) => showToast({ message: err.message || t('communityNotes.rateError'), variant: 'error' }),
+  });
+
+  const handleSubmitNote = () => {
+    if (!noteText.trim()) return;
+    haptic.send();
+    createNoteMutation.mutate(noteText.trim());
+  };
+
+  const handleRate = (noteId: string, rating: 'helpful' | 'somewhat_helpful' | 'not_helpful') => {
+    haptic.tick();
+    rateNoteMutation.mutate({ noteId, rating });
+  };
+
+  // Don't render section if loading or no notes and not showing add form
+  if (notesQuery.isLoading) {
+    return (
+      <View style={cnStyles.section}>
+        <Skeleton.Rect width="100%" height={60} />
+      </View>
+    );
+  }
+
+  if (notes.length === 0 && !showAddForm && !user) return null;
+
+  return (
+    <View style={cnStyles.section}>
+      {notes.length > 0 && (
+        <View style={cnStyles.notesContainer}>
+          <View style={cnStyles.sectionHeaderRow}>
+            <Icon name="edit" size="sm" color={colors.gold} />
+            <Text style={cnStyles.sectionTitle}>{t('communityNotes.title')}</Text>
+          </View>
+          <Text style={cnStyles.contextLabel}>{t('communityNotes.contextByReaders')}</Text>
+
+          {notes.map((note) => (
+            <LinearGradient
+              key={note.id}
+              colors={['rgba(200,150,62,0.12)', 'rgba(200,150,62,0.04)']}
+              style={cnStyles.noteCard}
+            >
+              <Text style={cnStyles.noteText}>{note.note}</Text>
+              <View style={cnStyles.noteFooter}>
+                <View style={cnStyles.noteAuthor}>
+                  {note.author && (
+                    <Avatar
+                      uri={note.author.avatarUrl ?? null}
+                      name={note.author.displayName}
+                      size="xs"
+                    />
+                  )}
+                  <Text style={cnStyles.noteAuthorText}>
+                    {note.author?.displayName ?? t('common.unknown')}
+                  </Text>
+                </View>
+                {user && (
+                  <View style={cnStyles.ratingRow}>
+                    <Pressable
+                      style={cnStyles.ratingBtn}
+                      onPress={() => handleRate(note.id, 'helpful')}
+                      disabled={rateNoteMutation.isPending}
+                      accessibilityLabel={t('communityNotes.helpful')}
+                      accessibilityRole="button"
+                    >
+                      <Icon name="check" size={14} color={colors.emerald} />
+                      {note.helpfulCount > 0 && (
+                        <Text style={cnStyles.ratingCount}>{note.helpfulCount}</Text>
+                      )}
+                    </Pressable>
+                    <Pressable
+                      style={cnStyles.ratingBtn}
+                      onPress={() => handleRate(note.id, 'not_helpful')}
+                      disabled={rateNoteMutation.isPending}
+                      accessibilityLabel={t('communityNotes.notHelpful')}
+                      accessibilityRole="button"
+                    >
+                      <Icon name="x" size={14} color={colors.error} />
+                      {note.notHelpfulCount > 0 && (
+                        <Text style={cnStyles.ratingCountNeg}>{note.notHelpfulCount}</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            </LinearGradient>
+          ))}
+        </View>
+      )}
+
+      {/* Add note form */}
+      {user && (
+        showAddForm ? (
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={cnStyles.addForm}
+          >
+            <TextInput
+              style={cnStyles.addInput}
+              value={noteText}
+              onChangeText={setNoteText}
+              placeholder={t('communityNotes.writePlaceholder')}
+              placeholderTextColor={tc.text.tertiary}
+              multiline
+              maxLength={2000}
+              textAlignVertical="top"
+            />
+            <View style={cnStyles.addActions}>
+              <Pressable onPress={() => { setShowAddForm(false); setNoteText(''); }}>
+                <Text style={cnStyles.addCancel}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  cnStyles.submitBtn,
+                  (!noteText.trim() || createNoteMutation.isPending) && cnStyles.submitBtnDisabled,
+                ]}
+                onPress={handleSubmitNote}
+                disabled={!noteText.trim() || createNoteMutation.isPending}
+                accessibilityLabel={t('communityNotes.submit')}
+                accessibilityRole="button"
+              >
+                {createNoteMutation.isPending ? (
+                  <Skeleton.Rect width={20} height={20} borderRadius={radius.full} />
+                ) : (
+                  <Text style={cnStyles.submitBtnText}>{t('communityNotes.submit')}</Text>
+                )}
+              </Pressable>
+            </View>
+          </LinearGradient>
+        ) : (
+          <Pressable
+            style={cnStyles.addNoteBtn}
+            onPress={() => setShowAddForm(true)}
+            accessibilityLabel={t('communityNotes.addNote')}
+            accessibilityRole="button"
+          >
+            <Icon name="edit" size="sm" color={colors.gold} />
+            <Text style={cnStyles.addNoteBtnText}>{t('communityNotes.addNote')}</Text>
+          </Pressable>
+        )
+      )}
+    </View>
+  );
+}
+
 export default function PostDetailScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);
@@ -393,6 +594,8 @@ export default function PostDetailScreen() {
             <Text style={styles.listenText}>{t('tts.listen')}</Text>
           </Pressable>
         )}
+        {/* Community Notes Section */}
+        <CommunityNotesSection postId={id} />
         <View style={styles.commentsHeader}>
           <Text style={[styles.commentsTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('saf.comments', { count: postQuery.data.commentsCount })}
@@ -701,5 +904,137 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     alignItems: 'center',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.base,
+  },
+});
+
+const createCommunityNotesStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  section: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 0.5,
+    borderTopColor: tc.border,
+  },
+  notesContainer: { gap: spacing.sm },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  sectionTitle: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  contextLabel: {
+    color: tc.text.tertiary,
+    fontSize: fontSize.xs,
+    marginBottom: spacing.sm,
+    fontStyle: 'italic',
+  },
+  noteCard: {
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(200,150,62,0.15)',
+  },
+  noteText: {
+    color: tc.text.primary,
+    fontSize: fontSize.sm,
+    lineHeight: 20,
+  },
+  noteFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  noteAuthor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  noteAuthorText: {
+    color: tc.text.secondary,
+    fontSize: fontSize.xs,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  ratingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  ratingCount: {
+    color: colors.emerald,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+  },
+  ratingCountNeg: {
+    color: colors.error,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+  },
+  addNoteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  addNoteBtnText: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  addForm: {
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  addInput: {
+    color: tc.text.primary,
+    fontSize: fontSize.base,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    lineHeight: 22,
+  },
+  addActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  addCancel: {
+    color: tc.text.secondary,
+    fontSize: fontSize.base,
+  },
+  submitBtn: {
+    backgroundColor: colors.gold,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 2,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  submitBtnDisabled: {
+    opacity: 0.5,
+  },
+  submitBtnText: {
+    color: '#fff',
+    fontSize: fontSize.sm,
+    fontWeight: '700',
   },
 });

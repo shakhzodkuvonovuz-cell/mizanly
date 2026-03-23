@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
 import { Video, ResizeMode } from 'expo-av';
+import * as ImagePicker from 'expo-image-picker';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -132,6 +133,27 @@ export default function StitchCreateScreen() {
       } finally {
         setIsRecording(false);
       }
+    }
+  };
+
+  const handlePickVideo = async () => {
+    haptic.navigate();
+    try {
+      const maxTime = 60 - selectedDuration;
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: true,
+        videoMaxDuration: maxTime,
+        quality: 1,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setRecordedUri(result.assets[0].uri);
+        haptic.success();
+        showToast({ message: t('stitch.videoSelected', 'Video selected!'), variant: 'success' });
+      }
+    } catch {
+      haptic.error();
+      showToast({ message: t('stitch.videoPickFailed', 'Failed to select video'), variant: 'error' });
     }
   };
 
@@ -398,6 +420,26 @@ export default function StitchCreateScreen() {
                 </View>
               </LinearGradient>
             </View>
+          </Animated.View>
+
+          {/* Pick from Gallery */}
+          <Animated.View entering={FadeInUp.delay(175).duration(400)}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('stitch.pickFromGallery', 'Pick from gallery')}
+              style={styles.galleryButton}
+              onPress={handlePickVideo}
+            >
+              <LinearGradient
+                colors={recordedUri ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)'] : colors.gradient.cardDark}
+                style={styles.galleryButtonGradient}
+              >
+                <Icon name="image" size="sm" color={recordedUri ? colors.emerald : tc.text.secondary} />
+                <Text style={[styles.galleryButtonText, recordedUri && { color: colors.emerald }]}>
+                  {recordedUri ? t('stitch.videoReady', 'Video ready') : t('stitch.pickFromGallery', 'Pick from gallery')}
+                </Text>
+              </LinearGradient>
+            </Pressable>
           </Animated.View>
 
           {/* Combined Preview Card */}
@@ -925,5 +967,26 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     fontSize: fontSize.base,
     color: '#FFF',
     fontWeight: '600',
+  },
+  galleryButton: {
+    marginHorizontal: spacing.base,
+    marginTop: spacing.md,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  galleryButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.active.white6,
+  },
+  galleryButtonText: {
+    fontSize: fontSize.base,
+    color: colors.text.secondary,
+    fontWeight: '500',
   },
 });

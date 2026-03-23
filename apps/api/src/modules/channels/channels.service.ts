@@ -14,6 +14,7 @@ import { Prisma, VideoStatus } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { QueueService } from '../../common/queue/queue.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 import { cacheAside } from '../../common/utils/cache';
 import { sanitizeText } from '@/common/utils/sanitize';
 
@@ -60,6 +61,7 @@ export class ChannelsService {
     @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
     private queueService: QueueService,
+    private contentSafety: ContentSafetyService,
   ) {}
 
   async create(userId: string, dto: CreateChannelDto) {
@@ -79,6 +81,18 @@ export class ChannelsService {
       throw new ConflictException('Handle already taken');
     }
 
+    // Pre-save content moderation: block harmful text before persisting (Finding 46)
+    const moderationText = [dto.name, dto.description].filter(Boolean).join('\n');
+    if (moderationText) {
+      const moderationResult = await this.contentSafety.moderateText(moderationText);
+      if (!moderationResult.safe) {
+        this.logger.warn(`Channel creation blocked by content safety: flags=${moderationResult.flags.join(',')}, userId=${userId}`);
+        throw new BadRequestException(
+          `Content flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise your channel details.'}`,
+        );
+      }
+    }
+
     const channel = await this.prisma.channel.create({
       data: {
         userId,
@@ -88,13 +102,6 @@ export class ChannelsService {
       },
       select: CHANNEL_SELECT,
     });
-
-    // AI moderation: check channel name + description (Finding 46: channel names not moderated)
-    const moderationText = [dto.name, dto.description].filter(Boolean).join('\n');
-    if (moderationText) {
-      this.queueService.addModerationJob({ content: moderationText, contentType: 'post', contentId: channel.id })
-        .catch((err: unknown) => this.logger.error(`Moderation queue failed for channel ${channel.id}`, err instanceof Error ? err.message : err));
-    }
 
     // Gamification: award XP for channel creation
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'channel_created' }).catch(err => this.logger.warn('Failed to queue gamification XP', err instanceof Error ? err.message : err));

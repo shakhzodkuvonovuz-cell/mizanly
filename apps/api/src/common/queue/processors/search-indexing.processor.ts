@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { MeilisearchService } from '../../../modules/search/meilisearch.service';
+import { QueueService } from '../queue.service';
 
 interface SearchIndexJobData {
   action: 'index' | 'update' | 'delete';
@@ -24,6 +25,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
   constructor(
     private config: ConfigService,
     private meilisearch: MeilisearchService,
+    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
   ) {}
 
   onModuleInit() {
@@ -50,6 +52,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`Search index job ${job?.id} failed: ${err.message}`);
+      this.queueService.moveToDlq(job, err, 'search-indexing').catch(() => {});
     });
 
     this.logger.log('Search indexing worker started');

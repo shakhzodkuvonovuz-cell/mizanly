@@ -13,7 +13,6 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { showToast } from '@/components/ui/Toast';
-import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { stickersApi } from '@/services/api';

@@ -1,8 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, forwardRef, Inject } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PushTriggerService } from '../../../modules/notifications/push-trigger.service';
 import { PushService } from '../../../modules/notifications/push.service';
+import { QueueService } from '../queue.service';
 
 /**
  * Notification processor — handles push notification delivery via BullMQ worker.
@@ -20,6 +21,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
     private config: ConfigService,
     private pushTrigger: PushTriggerService,
     private pushService: PushService,
+    @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
   ) {}
 
   onModuleInit() {
@@ -62,6 +64,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`Notification job ${job?.id} failed: ${err.message}`);
+      this.queueService.moveToDlq(job, err, 'notifications').catch(() => {});
     });
 
     this.logger.log('Notification worker started');

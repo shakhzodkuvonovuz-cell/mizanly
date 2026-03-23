@@ -50,19 +50,19 @@ export interface ZakatCalculationInput {
 }
 
 export interface ZakatCalculationResult {
-  totalWealth: number;
-  nisabGold: number;
-  nisabSilver: number;
-  nisabValue: number;
-  isAboveNisab: boolean;
+  totalAssets: number;
+  nisab: number;
+  nisabMet: boolean;
   zakatDue: number;
   breakdown: {
     cash: number;
-    gold: number;
-    silver: number;
+    goldValue: number;
+    silverValue: number;
     investments: number;
     debts: number;
   };
+  goldPricePerGram: number;
+  silverPricePerGram: number;
 }
 
 export interface RamadanInfo {

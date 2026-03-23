@@ -27,5 +27,8 @@ export function useThemeColors() {
  */
 export function useThemeBg() {
   const theme = useStore(s => s.theme);
+  if (theme === 'system') {
+    return Appearance.getColorScheme() === 'light' ? colors.light.bg : colors.dark.bg;
+  }
   return theme === 'light' ? colors.light.bg : colors.dark.bg;
 }

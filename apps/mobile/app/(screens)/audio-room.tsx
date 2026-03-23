@@ -23,6 +23,7 @@ import type { AudioRoom, AudioRoomParticipant } from '@/types/audioRooms';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { showToast } from '@/components/ui/Toast';
@@ -65,6 +66,7 @@ export default function AudioRoomScreen() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [reactionsSheetVisible, setReactionsSheetVisible] = useState(false);
 
   const pulseAnim = useSharedValue(1);
@@ -176,30 +178,36 @@ export default function AudioRoomScreen() {
 
   const handleToggleMic = async () => {
     if (!room) return;
+    haptic.tick();
     try {
       await audioRoomsApi.toggleMute(room.id);
       fetchData(); // refresh participants
     } catch (err) {
+      haptic.error();
       showToast({ message: t('audioRoom.failedToToggleMute'), variant: 'error' });
     }
   };
 
   const handleToggleHand = async () => {
     if (!room) return;
+    haptic.tick();
     try {
       await audioRoomsApi.toggleHand(room.id);
       fetchData(); // refresh participants
     } catch (err) {
+      haptic.error();
       showToast({ message: t('audioRoom.failedToRaiseHand'), variant: 'error' });
     }
   };
 
   const handleLeave = async () => {
     if (!room) return;
+    haptic.navigate();
     try {
       await audioRoomsApi.leave(room.id);
       router.back();
     } catch (err) {
+      haptic.error();
       showToast({ message: t('audioRoom.failedToLeaveRoom'), variant: 'error' });
     }
   };
@@ -226,6 +234,7 @@ export default function AudioRoomScreen() {
 
   const handleEndRoom = () => {
     if (!room) return;
+    haptic.delete();
     Alert.alert(
       t('audioRoom.endRoomTitle'),
       t('audioRoom.endRoomConfirm'),
@@ -248,8 +257,10 @@ export default function AudioRoomScreen() {
   };
 
   const handleReaction = (emoji: string) => {
+    haptic.like();
     setReactionsSheetVisible(false);
-    // Reactions are visual-only in audio rooms; future: emit via socket
+    showToast({ message: `${emoji} ${t('audioRoom.reactionSent', 'Reaction sent!')}`, variant: 'success' });
+    // TODO: Wire to socket.emit('audio_room_reaction', { roomId: room?.id, emoji }) when socket is available in this screen
   };
 
   // Loading skeleton

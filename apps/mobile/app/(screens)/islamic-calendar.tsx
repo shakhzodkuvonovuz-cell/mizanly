@@ -6,8 +6,10 @@ import { useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fontSizeExt, fonts } from '@/theme';
@@ -15,6 +17,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { eventsApi } from '@/services/eventsApi';
 import {
   gregorianToHijri,
   getHijriMonthName,
@@ -194,6 +197,7 @@ function EventCard({
   t: (key: string, params?: Record<string, unknown>) => string;
   isRTL: boolean;
 }) {
+  const tc = useThemeColors();
   const monthNames = isRTL ? HIJRI_MONTHS_AR : HIJRI_MONTHS_EN;
   return (
     <Animated.View entering={FadeInUp.delay(index * 100).duration(500)} style={styles.eventCard}>
@@ -228,9 +232,61 @@ function EventCard({
   );
 }
 
+/** Card for a community event fetched from the backend */
+function CommunityEventCard({
+  event,
+  index,
+  t,
+}: {
+  event: { id: string; title: string; startDate: string; location?: string };
+  index: number;
+  t: (key: string, params?: Record<string, unknown>) => string;
+}) {
+  const tc = useThemeColors();
+  const formattedDate = useMemo(() => {
+    try {
+      return new Date(event.startDate).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return event.startDate;
+    }
+  }, [event.startDate]);
+
+  return (
+    <Animated.View entering={FadeInUp.delay(index * 100).duration(500)} style={styles.eventCard}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+        style={styles.eventCardGradient}
+      >
+        <LinearGradient
+          colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+          style={styles.eventIconBg}
+        >
+          <Icon name="users" size="sm" color={colors.emerald} />
+        </LinearGradient>
+        <View style={styles.eventInfo}>
+          <Text style={[styles.eventName, { color: tc.text.primary }]} numberOfLines={1}>{event.title}</Text>
+          <Text style={[styles.eventDate, { color: tc.text.tertiary }]}>{formattedDate}</Text>
+          {event.location ? (
+            <Text style={[styles.eventDate, { color: tc.text.tertiary }]} numberOfLines={1}>{event.location}</Text>
+          ) : null}
+        </View>
+        <View style={styles.eventBadge}>
+          <Text style={styles.eventBadgeText}>{t('screens.islamicCalendar.badgeCommunity') || 'Community'}</Text>
+        </View>
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
 export default function IslamicCalendarScreen() {
   const router = useRouter();
   const { t, isRTL } = useTranslation();
+  const [refreshing, setRefreshing] = useState(false);
 
   // Get today's real Hijri date
   const todayHijri = useMemo(() => gregorianToHijri(new Date()), []);
@@ -255,6 +311,24 @@ export default function IslamicCalendarScreen() {
   // Event detail bottom sheet
   const [selectedEvent, setSelectedEvent] = useState<IslamicEvent | null>(null);
   const tc = useThemeColors();
+
+  // Fetch community events from backend
+  const { data: communityEventsData, isLoading: eventsLoading, refetch: refetchEvents } = useQuery({
+    queryKey: ['calendar-community-events'],
+    queryFn: () => eventsApi.list(undefined, 10),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
+  });
+
+  const communityEvents = useMemo(() => {
+    if (!communityEventsData?.data) return [];
+    return communityEventsData.data.map((e) => ({
+      id: e.id,
+      title: e.title,
+      startDate: e.startDate,
+      location: e.location ?? undefined,
+    }));
+  }, [communityEventsData]);
 
   const days = useMemo(
     () => generateDaysInMonth(currentMonth, currentYear, todayHijri),
@@ -308,11 +382,13 @@ export default function IslamicCalendarScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <BrandedRefreshControl
-              refreshing={false}
-              onRefresh={() => {
-                // Calendar is computed client-side; refresh resets to current month
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
                 setCurrentMonth(todayHijri.month - 1);
                 setCurrentYear(todayHijri.year);
+                await refetchEvents();
+                setRefreshing(false);
               }}
             />
           }
@@ -443,6 +519,43 @@ export default function IslamicCalendarScreen() {
               ))
             )}
           </View>
+
+          {/* Community Events from Backend */}
+          {(eventsLoading || communityEvents.length > 0) && (
+            <View style={styles.eventsSection}>
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                  style={styles.sectionIconBg}
+                >
+                  <Icon name="users" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('screens.islamicCalendar.communityEvents') || 'Community Events'}</Text>
+              </View>
+
+              {eventsLoading ? (
+                <View style={{ gap: spacing.sm }}>
+                  <Skeleton.Rect width="100%" height={64} />
+                  <Skeleton.Rect width="100%" height={64} />
+                </View>
+              ) : communityEvents.length === 0 ? (
+                <EmptyState
+                  icon="calendar"
+                  title={t('screens.islamicCalendar.noCommunityEvents') || 'No community events'}
+                />
+              ) : (
+                communityEvents.map((event, index) => (
+                  <Pressable
+                    key={event.id}
+                    accessibilityRole="button"
+                    onPress={() => navigate(`/(screens)/event-detail?id=${event.id}`)}
+                  >
+                    <CommunityEventCard event={event} index={index} t={t} />
+                  </Pressable>
+                ))
+              )}
+            </View>
+          )}
 
           {/* Quick Links */}
           <View style={styles.quickLinks}>

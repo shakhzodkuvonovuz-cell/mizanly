@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../config/prisma.service';
 import { WebhookProcessor } from './webhook.processor';
+import { QueueService } from '../queue.service';
 
 describe('WebhookProcessor', () => {
   let processor: WebhookProcessor;
@@ -14,6 +15,12 @@ describe('WebhookProcessor', () => {
         {
           provide: PrismaService,
           useValue: { webhook: { update: jest.fn().mockResolvedValue({}) } },
+        },
+        {
+          provide: QueueService,
+          useValue: {
+            moveToDlq: jest.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();

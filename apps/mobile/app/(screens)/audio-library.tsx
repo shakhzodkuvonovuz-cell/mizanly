@@ -119,6 +119,7 @@ function AudioCard({
   index: number;
 }) {
   const { t } = useTranslation();
+  const tc = useThemeColors();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <LinearGradient
