@@ -23,60 +23,102 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { Icon } from '@/components/ui/Icon';
 
-// ── Confetti particle (animated dot that bursts outward) ──
-function ConfettiParticle({ index, isActive }: { index: number; isActive: boolean }) {
+// ── Confetti: ticker-tape particles with gravity, rotation, varied shapes ──
+const CONFETTI_COLORS = [colors.emerald, colors.gold, colors.extended.blue, colors.extended.purple, colors.extended.orangeLight, colors.extended.greenBright];
+const CONFETTI_COUNT = 24;
+
+// Pre-compute random values per particle (deterministic from index)
+function seedRandom(index: number) {
+  const a = Math.sin(index * 9301 + 49297) * 49297;
+  return a - Math.floor(a);
+}
+
+function ConfettiPiece({ index, isActive }: { index: number; isActive: boolean }) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const rotate = useSharedValue(0);
   const opacity = useSharedValue(0);
-  const scale = useSharedValue(0);
 
-  const angle = (index / 12) * Math.PI * 2;
-  const distance = 60 + (index % 3) * 20;
-  const particleColors = [colors.emerald, colors.gold, colors.extended.blue, colors.extended.purple, '#FF7B72', '#3FB950'];
-  const color = particleColors[index % particleColors.length];
+  // Deterministic random values for this particle
+  const rand = seedRandom(index);
+  const rand2 = seedRandom(index + 100);
+  const rand3 = seedRandom(index + 200);
+
+  // Spread angle: full circle with some randomness
+  const baseAngle = (index / CONFETTI_COUNT) * Math.PI * 2;
+  const angle = baseAngle + (rand - 0.5) * 0.6;
+
+  // Burst distance varies
+  const burstDistance = 50 + rand2 * 60;
+
+  // Gravity fall distance
+  const gravityDrop = 80 + rand3 * 40;
+
+  // Varied dimensions: some wide rectangles, some thin strips, some squares
+  const isWide = index % 3 === 0;
+  const isThin = index % 3 === 1;
+  const particleW = isWide ? 10 : isThin ? 4 : 7;
+  const particleH = isWide ? 5 : isThin ? 10 : 7;
+  const particleRadius = index % 4 === 0 ? particleW / 2 : 1; // some circles, mostly rectangles
+
+  const color = CONFETTI_COLORS[index % CONFETTI_COLORS.length];
 
   useEffect(() => {
     if (isActive) {
-      const delay = index * 30;
+      const delay = index * 15; // Fast stagger
+
+      // Burst outward
+      opacity.value = withDelay(delay, withTiming(1, { duration: 80 }));
+
+      translateX.value = withDelay(delay, withSequence(
+        // Phase 1: burst outward (fast)
+        withTiming(Math.cos(angle) * burstDistance, { duration: 250, easing: Easing.out(Easing.cubic) }),
+        // Phase 2: drift with air resistance
+        withTiming(Math.cos(angle) * burstDistance + (rand - 0.5) * 30, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+      ));
+
+      translateY.value = withDelay(delay, withSequence(
+        // Phase 1: burst upward-outward
+        withTiming(Math.sin(angle) * burstDistance - 30, { duration: 250, easing: Easing.out(Easing.cubic) }),
+        // Phase 2: gravity pulls down (the "fall")
+        withTiming(Math.sin(angle) * burstDistance + gravityDrop, { duration: 700, easing: Easing.in(Easing.quad) }),
+      ));
+
+      // Tumbling rotation
+      rotate.value = withDelay(delay,
+        withTiming((rand - 0.5) * 720, { duration: 950, easing: Easing.out(Easing.ease) })
+      );
+
+      // Fade out near the end
       opacity.value = withDelay(delay, withSequence(
-        withTiming(1, { duration: 100 }),
-        withDelay(400, withTiming(0, { duration: 300 })),
-      ));
-      scale.value = withDelay(delay, withSequence(
-        withSpring(1.5, animation.spring.bouncy),
-        withTiming(0.3, { duration: 400 }),
-      ));
-      translateX.value = withDelay(delay, withSpring(
-        Math.cos(angle) * distance, { damping: 8, stiffness: 200 }
-      ));
-      translateY.value = withDelay(delay, withSpring(
-        Math.sin(angle) * distance - 20, { damping: 8, stiffness: 200 }
+        withTiming(1, { duration: 80 }),
+        withDelay(650, withTiming(0, { duration: 300, easing: Easing.in(Easing.ease) })),
       ));
     }
-  }, [isActive, index, angle, distance, opacity, scale, translateX, translateY]);
+  }, [isActive, index, angle, burstDistance, gravityDrop, rand, opacity, translateX, translateY, rotate]);
 
-  const particleStyle = useAnimatedStyle(() => ({
+  const pieceStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
-      { scale: scale.value },
+      { rotate: `${rotate.value}deg` },
     ],
     opacity: opacity.value,
   }));
 
   return (
-    <Animated.View style={[confettiStyles.particle, { backgroundColor: color }, particleStyle]} />
+    <Animated.View style={[
+      {
+        position: 'absolute',
+        width: particleW,
+        height: particleH,
+        borderRadius: particleRadius,
+        backgroundColor: color,
+      },
+      pieceStyle,
+    ]} />
   );
 }
-
-const confettiStyles = StyleSheet.create({
-  particle: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-});
 
 export interface QuizOption {
   id: string;
@@ -205,11 +247,11 @@ export function QuizSticker({ data, onResponse, isCreator = false, style }: Quiz
 
       {hasAnswered && (
         <Animated.View style={[styles.feedbackContainer, { backgroundColor: tc.bgCard }]}>
-          {/* Confetti particles burst on correct answer */}
+          {/* Ticker-tape confetti burst on correct answer */}
           {showConfetti && (
             <View style={styles.confettiContainer}>
-              {Array.from({ length: 12 }, (_, i) => (
-                <ConfettiParticle key={i} index={i} isActive={showConfetti} />
+              {Array.from({ length: CONFETTI_COUNT }, (_, i) => (
+                <ConfettiPiece key={i} index={i} isActive={showConfetti} />
               ))}
             </View>
           )}

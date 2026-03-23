@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { Icon } from '@/components/ui/Icon';
 
 export interface SliderStickerData {
@@ -45,6 +46,7 @@ const THUMB_SIZE = 48;
 export function SliderSticker({ data, onResponse, isCreator = false, style }: SliderStickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const min = data.minValue ?? 0;
   const max = data.maxValue ?? 100;
   const initialAverage = data.averageValue ?? (min + max) / 2;
@@ -66,6 +68,7 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
   }, [data.averageValue, min, max, initialAverage, averagePos]);
 
   const startX = useRef(0);
+  const lastHapticQuarter = useRef(-1);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -74,6 +77,7 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
       onPanResponderGrant: () => {
         startX.current = sliderPos.value;
         thumbScale.value = withSpring(1.2, animation.spring.bouncy);
+        lastHapticQuarter.current = -1;
         setIsSliding(true);
       },
       onPanResponderMove: (_, gestureState) => {
@@ -83,6 +87,15 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
         sliderPos.value = newX;
         const newValue = min + (newX / SLIDER_WIDTH) * (max - min);
         runOnJS(setValue)(Math.round(newValue));
+
+        // Haptic tick at quarter marks (25%, 50%, 75%)
+        const pct = newX / SLIDER_WIDTH;
+        const quarter = Math.floor(pct * 4);
+        if (quarter !== lastHapticQuarter.current && quarter > 0 && quarter < 4) {
+          lastHapticQuarter.current = quarter;
+          // Can't call haptic.tick() directly from PanResponder — use lightweight vibration
+          try { const RN = require('react-native'); RN.Vibration?.vibrate?.(5); } catch {}
+        }
       },
       onPanResponderRelease: (_, gestureState) => {
         let newX = startX.current + gestureState.dx;

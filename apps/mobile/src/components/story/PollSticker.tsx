@@ -15,6 +15,7 @@ import Animated, {
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { Icon } from '@/components/ui/Icon';
 
 export interface PollOption {
@@ -65,10 +66,14 @@ function PollOptionRow({
 
   return (
     <Pressable
-      style={[styles.optionWrapper, isSelected && styles.optionSelected]}
+      style={({ pressed }) => [
+        styles.optionWrapper,
+        isSelected && styles.optionSelected,
+        { transform: [{ scale: pressed && !showResults ? 0.96 : 1 }] },
+      ]}
       onPress={onPress}
       disabled={showResults}
-      accessibilityLabel={`Option: ${option.text}`}
+      accessibilityLabel={`${option.text}${showResults ? `, ${Math.round(percentage)}%` : ''}`}
       accessibilityRole="button"
     >
       <View style={[styles.optionBackground, { backgroundColor: tc.bgElevated }]}>
@@ -89,6 +94,7 @@ function PollOptionRow({
 export function PollSticker({ data, onResponse, isCreator = false, style }: PollStickerProps) {
   const tc = useThemeColors();
   const { t } = useTranslation();
+  const haptic = useContextualHaptic();
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [localOptions, setLocalOptions] = useState<PollOption[]>(data.options);
@@ -103,6 +109,7 @@ export function PollSticker({ data, onResponse, isCreator = false, style }: Poll
   const handleOptionPress = useCallback((optionId: string) => {
     if (hasVoted || isCreator) return;
 
+    haptic.tick();
     setSelectedOptionId(optionId);
     setHasVoted(true);
 
