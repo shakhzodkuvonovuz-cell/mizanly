@@ -120,30 +120,43 @@ export function CreateSheet({ visible, onClose }: CreateSheetProps) {
           </Text>
         </View>
 
-        {/* Options grid — 2 columns for top 4, then list for rest */}
+        {/* Options grid — 2 columns for top 4 with gradient backgrounds */}
         <View style={styles.gridRow}>
           {CREATE_OPTIONS.slice(0, 4).map((opt, index) => (
             <Animated.View
               key={opt.id}
-              entering={FadeInDown.delay(index * 60).duration(250).springify()}
+              entering={FadeInDown.delay(index * 70).duration(300).springify()}
               style={styles.gridItem}
             >
               <Pressable
                 onPress={() => handleSelect(opt.route)}
                 style={({ pressed }) => [
                   styles.gridCard,
-                  { backgroundColor: pressed ? opt.bgColor : tc.bgElevated },
+                  {
+                    borderColor: pressed ? opt.color : tc.border,
+                    transform: [{ scale: pressed ? 0.95 : 1 }],
+                  },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={t(opt.labelKey)}
+                accessibilityHint={t(opt.descKey)}
               >
-                <View style={[styles.gridIconWrap, { backgroundColor: opt.bgColor }]}>
-                  <Icon name={opt.icon} size="lg" color={opt.color} />
-                </View>
+                <LinearGradient
+                  colors={[`${opt.color}18`, `${opt.color}05`]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <LinearGradient
+                  colors={[`${opt.color}30`, `${opt.color}08`]}
+                  style={styles.gridIconWrap}
+                >
+                  <Icon name={opt.icon} size="xl" color={opt.color} />
+                </LinearGradient>
                 <Text style={[styles.gridLabel, { color: tc.text.primary }]} numberOfLines={1}>
                   {t(opt.labelKey)}
                 </Text>
-                <Text style={[styles.gridDesc, { color: tc.text.tertiary }]} numberOfLines={1}>
+                <Text style={[styles.gridDesc, { color: tc.text.secondary }]} numberOfLines={1}>
                   {t(opt.descKey)}
                 </Text>
               </Pressable>
@@ -151,25 +164,33 @@ export function CreateSheet({ visible, onClose }: CreateSheetProps) {
           ))}
         </View>
 
-        {/* Secondary options — compact row */}
+        {/* Secondary options — compact rows with subtle gradient accent */}
         <View style={styles.secondaryRow}>
           {CREATE_OPTIONS.slice(4).map((opt, index) => (
             <Animated.View
               key={opt.id}
-              entering={FadeInDown.delay((index + 4) * 60).duration(250).springify()}
+              entering={FadeInDown.delay((index + 4) * 70).duration(300).springify()}
             >
               <Pressable
                 onPress={() => handleSelect(opt.route)}
                 style={({ pressed }) => [
                   styles.secondaryItem,
-                  { backgroundColor: pressed ? opt.bgColor : tc.bgElevated },
+                  {
+                    backgroundColor: pressed ? opt.bgColor : tc.bgElevated,
+                    borderColor: pressed ? opt.color : tc.border,
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={t(opt.labelKey)}
+                accessibilityHint={t(opt.descKey)}
               >
-                <View style={[styles.secondaryIcon, { backgroundColor: opt.bgColor }]}>
-                  <Icon name={opt.icon} size="sm" color={opt.color} />
-                </View>
+                <LinearGradient
+                  colors={[`${opt.color}25`, `${opt.color}08`]}
+                  style={styles.secondaryIcon}
+                >
+                  <Icon name={opt.icon} size="md" color={opt.color} />
+                </LinearGradient>
                 <View style={styles.secondaryText}>
                   <Text style={[styles.secondaryLabel, { color: tc.text.primary }]}>
                     {t(opt.labelKey)}
@@ -277,12 +298,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.dark.border,
-    minHeight: 120,
+    minHeight: 130,
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   gridIconWrap: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
