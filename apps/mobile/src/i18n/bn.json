@@ -3231,6 +3231,7 @@
     "exporting": "রপ্তানি হচ্ছে...",
     "exportComplete": "ভিডিও সফলভাবে রপ্তানি হয়েছে",
     "exportFailed": "রপ্তানি ব্যর্থ। আবার চেষ্টা করুন।",
+    "exportCancelled": "রপ্তানি বাতিল হয়েছে",
     "preview": "পূর্বরূপ",
     "timeline": "টাইমলাইন",
     "textPosition": "টেক্সট অবস্থান",

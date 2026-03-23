@@ -3231,6 +3231,7 @@
     "exporting": "Mengeksport...",
     "exportComplete": "Video berjaya dieksport",
     "exportFailed": "Eksport gagal. Sila cuba lagi.",
+    "exportCancelled": "Eksport dibatalkan",
     "preview": "Pratonton",
     "timeline": "Garis Masa",
     "textPosition": "Kedudukan Teks",

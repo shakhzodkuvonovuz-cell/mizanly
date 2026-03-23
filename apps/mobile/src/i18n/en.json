@@ -3280,6 +3280,7 @@
     "exporting": "Exporting...",
     "exportComplete": "Video exported successfully",
     "exportFailed": "Export failed. Please try again.",
+    "exportCancelled": "Export cancelled",
     "preview": "Preview",
     "timeline": "Timeline",
     "textPosition": "Text Position",

@@ -2,7 +2,8 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -16,6 +17,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { showToast } from '@/components/ui/Toast';
 import { uploadApi } from '@/services/api';
+import { executeExport, cancelExport, isFFmpegAvailable, type EditParams } from '@/services/ffmpegEngine';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -66,6 +68,71 @@ export default function VideoEditorScreen() {
   const [exportProgress, setExportProgress] = useState(0);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const videoUri = params.videoUri || null;
+
+  // Timeline width reference for gesture calculations
+  const timelineWidth = useRef(0);
+  const MIN_TRIM_GAP = 1; // minimum 1 second between handles
+
+  // Animated trim handle positions (0-1 fraction of timeline)
+  const leftHandlePos = useSharedValue(0);
+  const rightHandlePos = useSharedValue(1);
+
+  // Update shared values when trim times change from other interactions
+  useEffect(() => {
+    if (totalDuration > 0) {
+      leftHandlePos.value = startTime / totalDuration;
+      rightHandlePos.value = endTime / totalDuration;
+    }
+  }, [totalDuration, startTime, endTime, leftHandlePos, rightHandlePos]);
+
+  // Gesture: drag left trim handle
+  const leftTrimGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (timelineWidth.current <= 0 || totalDuration <= 0) return;
+      const fraction = Math.max(0, Math.min(rightHandlePos.value - MIN_TRIM_GAP / totalDuration, leftHandlePos.value + e.translationX / timelineWidth.current));
+      leftHandlePos.value = fraction;
+      runOnJS(setStartTime)(fraction * totalDuration);
+    })
+    .onEnd(() => {
+      // Seek video to new start position
+      if (videoRef.current) {
+        runOnJS((async () => {
+          await videoRef.current?.setPositionAsync(startTime * 1000);
+        }))();
+      }
+    });
+
+  // Gesture: drag right trim handle
+  const rightTrimGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (timelineWidth.current <= 0 || totalDuration <= 0) return;
+      const fraction = Math.min(1, Math.max(leftHandlePos.value + MIN_TRIM_GAP / totalDuration, rightHandlePos.value + e.translationX / timelineWidth.current));
+      rightHandlePos.value = fraction;
+      runOnJS(setEndTime)(fraction * totalDuration);
+    });
+
+  // Animated styles for trim handles
+  const leftHandleStyle = useAnimatedStyle(() => ({
+    left: `${leftHandlePos.value * 100}%`,
+  }));
+  const rightHandleStyle = useAnimatedStyle(() => ({
+    right: `${(1 - rightHandlePos.value) * 100}%`,
+  }));
+
+  // Gesture: volume slider
+  const volumeSliderWidth = useRef(0);
+  const onOriginalVolumeGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (volumeSliderWidth.current <= 0) return;
+      const newVol = Math.max(0, Math.min(100, Math.round((e.absoluteX - 80) / volumeSliderWidth.current * 100)));
+      runOnJS(setOriginalVolume)(newVol);
+    });
+  const onMusicVolumeGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (volumeSliderWidth.current <= 0) return;
+      const newVol = Math.max(0, Math.min(100, Math.round((e.absoluteX - 80) / volumeSliderWidth.current * 100)));
+      runOnJS(setMusicVolume)(newVol);
+    });
 
   // Deterministic waveform pattern that looks like real audio (no Math.random)
   const waveformData = useMemo(() =>
@@ -142,137 +209,118 @@ export default function VideoEditorScreen() {
     setPlaybackSpeed(speeds[nextIndex]);
   };
 
-  // FFmpeg export pipeline
+  // FFmpeg export pipeline — uses ffmpegEngine.ts for command building + execution
   const handleExport = useCallback(async () => {
+    if (!videoUri) {
+      showToast({ message: t('videoEditor.noVideo'), variant: 'error' });
+      return;
+    }
+
     haptic.send();
     setIsExporting(true);
     setExportProgress(0);
     exportProgressAnim.value = 0;
 
-    try {
-      // Dynamic import of ffmpeg-kit to avoid crash if not linked
-      const FFmpegKit = await import('ffmpeg-kit-react-native').catch(() => null);
+    const ffmpegReady = await isFFmpegAvailable();
 
-      if (!FFmpegKit || !videoUri) {
-        // FFmpeg not available — upload original video with edit metadata
-        // Server-side processing can apply edits (trim, speed, caption) later
-        try {
-          const editMetadata = {
-            trimStart: startTime,
-            trimEnd: endTime,
-            speed: playbackSpeed,
-            filter: selectedFilter,
-            caption: captionText,
-            captionColor: selectedTextColor,
-            captionFont: selectedFont,
-            volume: originalVolume,
-            quality: selectedQuality,
-          };
+    if (!ffmpegReady) {
+      // FFmpeg not available — upload original video with edit metadata for server-side processing
+      try {
+        const editMetadata = {
+          trimStart: startTime,
+          trimEnd: endTime,
+          speed: playbackSpeed,
+          filter: selectedFilter,
+          caption: captionText,
+          captionColor: selectedTextColor,
+          captionFont: selectedFont,
+          volume: originalVolume,
+          quality: selectedQuality,
+        };
 
-          setExportProgress(5);
-          exportProgressAnim.value = withTiming(5, { duration: 200 });
+        setExportProgress(5);
+        exportProgressAnim.value = withTiming(5, { duration: 200 });
 
-          const presign = await uploadApi.getPresignUrl('video/mp4', 'videos');
+        const presign = await uploadApi.getPresignUrl('video/mp4', 'videos');
 
-          setExportProgress(15);
-          exportProgressAnim.value = withTiming(15, { duration: 200 });
+        setExportProgress(15);
+        exportProgressAnim.value = withTiming(15, { duration: 200 });
 
-          const response = await fetch(videoUri!);
-          const blob = await (response as Response & { blob: () => Promise<Blob> }).blob();
+        const response = await fetch(videoUri);
+        const blob = await (response as Response & { blob: () => Promise<Blob> }).blob();
 
-          setExportProgress(30);
-          exportProgressAnim.value = withTiming(30, { duration: 200 });
+        setExportProgress(30);
+        exportProgressAnim.value = withTiming(30, { duration: 200 });
 
-          const uploadRes = await fetch(presign.uploadUrl, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'video/mp4',
-              'x-amz-meta-edit': JSON.stringify(editMetadata),
-            },
-            body: blob,
-          });
+        const uploadRes = await fetch(presign.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'video/mp4',
+            'x-amz-meta-edit': JSON.stringify(editMetadata),
+          },
+          body: blob,
+        });
 
-          if (!uploadRes.ok) throw new Error('Upload failed');
+        if (!uploadRes.ok) throw new Error('Upload failed');
 
-          setExportProgress(100);
-          exportProgressAnim.value = withTiming(100, { duration: 200 });
+        setExportProgress(100);
+        exportProgressAnim.value = withTiming(100, { duration: 200 });
 
-          showToast({ message: t('videoEditor.videoSaved'), variant: 'success' });
-          setTimeout(() => router.back(), 800);
-        } catch {
-          showToast({ message: t('videoEditor.saveFailed'), variant: 'error' });
-        } finally {
-          setIsExporting(false);
-        }
-        return;
+        showToast({ message: t('videoEditor.videoSaved'), variant: 'success' });
+        setTimeout(() => router.back(), 800);
+      } catch {
+        showToast({ message: t('videoEditor.saveFailed'), variant: 'error' });
+      } finally {
+        setIsExporting(false);
       }
-
-      // Build FFmpeg command for real processing
-      const outputPath = `${videoUri.replace(/\.[^.]+$/, '')}_edited.mp4`;
-      const filters: string[] = [];
-
-      // Trim filter
-      if (startTime > 0 || endTime < totalDuration) {
-        filters.push(`trim=start=${startTime}:end=${endTime},setpts=PTS-STARTPTS`);
-      }
-
-      // Speed filter
-      if (playbackSpeed !== 1) {
-        filters.push(`setpts=${(1 / playbackSpeed).toFixed(4)}*PTS`);
-      }
-
-      // Text overlay filter
-      if (captionText) {
-        const escapedText = captionText.replace(/'/g, "\\'");
-        filters.push(
-          `drawtext=text='${escapedText}':fontsize=48:fontcolor=${selectedTextColor}:x=(w-text_w)/2:y=h-th-50`
-        );
-      }
-
-      const videoFilter = filters.length > 0 ? `-vf "${filters.join(',')}"` : '';
-      const audioFilter = playbackSpeed !== 1
-        ? `-af "atempo=${playbackSpeed}"`
-        : '';
-      const volumeFilter = originalVolume !== 100
-        ? `-af "volume=${originalVolume / 100}"`
-        : '';
-
-      const command = `-i "${videoUri}" ${videoFilter} ${audioFilter || volumeFilter} -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -y "${outputPath}"`;
-
-      // Execute FFmpeg with progress tracking
-      const session = await FFmpegKit.FFmpegKit.executeAsync(
-        command,
-        async (completedSession: { getReturnCode: () => Promise<{ isValueSuccess: () => boolean }> }) => {
-          const returnCode = await completedSession.getReturnCode();
-          if (returnCode.isValueSuccess()) {
-            setExportProgress(100);
-            exportProgressAnim.value = withTiming(100, { duration: 200 });
-            showToast({ message: t('videoEditor.exportComplete'), variant: 'success' });
-            router.back();
-          } else {
-            showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
-          }
-          setIsExporting(false);
-        },
-        undefined,
-        (statistics: { getTime: () => number }) => {
-          // Update progress based on time processed
-          const timeMs = statistics.getTime();
-          const duration = (endTime - startTime) * 1000;
-          if (duration > 0) {
-            const progress = Math.min(100, Math.round((timeMs / duration) * 100));
-            setExportProgress(progress);
-            exportProgressAnim.value = withTiming(progress, { duration: 80 });
-          }
-        },
-      );
       return;
-    } catch (error) {
-      showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
     }
 
-    setIsExporting(false);
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, exportProgressAnim, t, router]);
+    // Real FFmpeg export via engine
+    try {
+      const editParams: EditParams = {
+        inputUri: videoUri,
+        startTime,
+        endTime,
+        totalDuration,
+        speed: playbackSpeed,
+        filter: selectedFilter,
+        captionText,
+        captionColor: selectedTextColor,
+        captionFont: selectedFont,
+        originalVolume,
+        musicVolume,
+        quality: selectedQuality,
+      };
+
+      const result = await executeExport(editParams, (percent) => {
+        setExportProgress(percent);
+        exportProgressAnim.value = withTiming(percent, { duration: 80 });
+      });
+
+      if (result.success && result.outputUri) {
+        setExportProgress(100);
+        exportProgressAnim.value = withTiming(100, { duration: 200 });
+        showToast({ message: t('videoEditor.exportComplete'), variant: 'success' });
+        // Navigate back with the exported URI so the caller can use it
+        router.back();
+      } else if (result.cancelled) {
+        showToast({ message: t('videoEditor.exportCancelled'), variant: 'info' });
+      } else {
+        showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
+      }
+    } catch {
+      showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, exportProgressAnim, t, router]);
+
+  // Cancel export handler
+  const handleCancelExport = useCallback(async () => {
+    haptic.delete();
+    await cancelExport();
+  }, [haptic]);
 
   const renderToolPanel = () => {
     switch (selectedTool) {
@@ -494,10 +542,15 @@ export default function VideoEditorScreen() {
                 <Text style={styles.volumeValue}>{originalVolume}%</Text>
               </View>
             </View>
-            <View style={styles.sliderTrack}>
-              <View style={[styles.sliderFill, { width: `${originalVolume}%` }]} />
-              <View style={styles.sliderThumb} />
-            </View>
+            <GestureDetector gesture={onOriginalVolumeGesture}>
+              <View
+                style={styles.sliderTrack}
+                onLayout={(e) => { volumeSliderWidth.current = e.nativeEvent.layout.width; }}
+              >
+                <View style={[styles.sliderFill, { width: `${originalVolume}%` }]} />
+                <View style={[styles.sliderThumb, { left: `${originalVolume}%` }]} />
+              </View>
+            </GestureDetector>
 
             <View style={[styles.volumeRow, styles.volumeRowSecond]}>
               <View style={styles.volumeIconContainer}>
@@ -508,10 +561,12 @@ export default function VideoEditorScreen() {
                 <Text style={styles.volumeValue}>{musicVolume}%</Text>
               </View>
             </View>
-            <View style={styles.sliderTrack}>
-              <View style={[styles.sliderFill, { width: `${musicVolume}%` }]} />
-              <View style={styles.sliderThumb} />
-            </View>
+            <GestureDetector gesture={onMusicVolumeGesture}>
+              <View style={styles.sliderTrack}>
+                <View style={[styles.sliderFill, { width: `${musicVolume}%` }]} />
+                <View style={[styles.sliderThumb, { left: `${musicVolume}%` }]} />
+              </View>
+            </GestureDetector>
           </View>
         );
 
@@ -599,14 +654,17 @@ export default function VideoEditorScreen() {
               colors={colors.gradient.cardDark}
               style={styles.timelineGradient}
             >
-              {/* Time Labels */}
+              {/* Time Labels — show trim range */}
               <View style={styles.timeLabels}>
-                <Text style={styles.timeLabelStart}>00:00</Text>
-                <Text style={styles.timeLabelEnd}>00:45</Text>
+                <Text style={styles.timeLabelStart}>{formatTime(startTime)}</Text>
+                <Text style={styles.timeLabelEnd}>{formatTime(endTime)}</Text>
               </View>
 
-              {/* Waveform Strip */}
-              <View style={styles.waveformContainer}>
+              {/* Waveform Strip with Draggable Trim Handles */}
+              <View
+                style={styles.waveformContainer}
+                onLayout={(e) => { timelineWidth.current = e.nativeEvent.layout.width; }}
+              >
                 <View style={styles.waveform}>
                   {waveformData.map((h, i) => (
                     <View
@@ -619,23 +677,29 @@ export default function VideoEditorScreen() {
                   ))}
                 </View>
 
-                {/* Trim Handles */}
-                <View style={[styles.trimHandle, styles.trimHandleLeft]}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
-                    style={styles.trimHandleGradient}
-                  >
-                    <Icon name="scissors" size="xs" color="#FFF" />
-                  </LinearGradient>
-                </View>
-                <View style={[styles.trimHandle, styles.trimHandleRight]}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
-                    style={styles.trimHandleGradient}
-                  >
-                    <Icon name="scissors" size="xs" color="#FFF" />
-                  </LinearGradient>
-                </View>
+                {/* Left Trim Handle — draggable */}
+                <GestureDetector gesture={leftTrimGesture}>
+                  <Animated.View style={[styles.trimHandle, leftHandleStyle]}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
+                      style={styles.trimHandleGradient}
+                    >
+                      <Icon name="chevron-right" size="xs" color="#FFF" />
+                    </LinearGradient>
+                  </Animated.View>
+                </GestureDetector>
+
+                {/* Right Trim Handle — draggable */}
+                <GestureDetector gesture={rightTrimGesture}>
+                  <Animated.View style={[styles.trimHandle, rightHandleStyle]}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
+                      style={styles.trimHandleGradient}
+                    >
+                      <Icon name="chevron-left" size="xs" color="#FFF" />
+                    </LinearGradient>
+                  </Animated.View>
+                </GestureDetector>
 
                 {/* Playhead */}
                 <View style={[styles.playhead, { left: `${(currentTime / totalDuration) * 100}%` }]}>
@@ -752,24 +816,29 @@ export default function VideoEditorScreen() {
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.export')} style={styles.exportButton} onPress={handleExport} disabled={isExporting}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
-              style={styles.exportButtonGradient}
-            >
-              {isExporting ? (
+          {isExporting ? (
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.exportButton} onPress={handleCancelExport}>
+              <LinearGradient
+                colors={['rgba(248,81,73,0.8)', 'rgba(248,81,73,0.6)']}
+                style={styles.exportButtonGradient}
+              >
                 <View style={styles.exportProgressContainer}>
                   <ActivityIndicator size="small" color="#FFF" />
                   <Text style={styles.exportButtonText}>{exportProgress}%</Text>
                 </View>
-              ) : (
-                <>
-                  <Icon name="check" size="sm" color="#FFF" />
-                  <Text style={styles.exportButtonText}>{t('videoEditor.export')}</Text>
-                </>
-              )}
-            </LinearGradient>
-          </Pressable>
+              </LinearGradient>
+            </Pressable>
+          ) : (
+            <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.export')} style={styles.exportButton} onPress={handleExport}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
+                style={styles.exportButtonGradient}
+              >
+                <Icon name="check" size="sm" color="#FFF" />
+                <Text style={styles.exportButtonText}>{t('videoEditor.export')}</Text>
+              </LinearGradient>
+            </Pressable>
+          )}
         </LinearGradient>
       </View>
     </SafeAreaView>
@@ -906,15 +975,10 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: 24,
+    width: 28,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  trimHandleLeft: {
-    left: 10,
-  },
-  trimHandleRight: {
-    right: 10,
+    zIndex: 10,
   },
   trimHandleGradient: {
     width: 20,

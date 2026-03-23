@@ -3225,6 +3225,7 @@
     "exporting": "Dışa aktarılıyor...",
     "exportComplete": "Video başarıyla dışa aktarıldı",
     "exportFailed": "Dışa aktarma başarısız. Tekrar deneyin.",
+    "exportCancelled": "Dışa aktarma iptal edildi",
     "preview": "Önizleme",
     "timeline": "Zaman Çizelgesi",
     "textPosition": "Metin Konumu",

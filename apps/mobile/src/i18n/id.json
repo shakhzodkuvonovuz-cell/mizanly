@@ -3232,6 +3232,7 @@
     "exporting": "Mengekspor...",
     "exportComplete": "Video berhasil diekspor",
     "exportFailed": "Ekspor gagal. Coba lagi.",
+    "exportCancelled": "Ekspor dibatalkan",
     "preview": "Pratinjau",
     "timeline": "Garis Waktu",
     "textPosition": "Posisi Teks",

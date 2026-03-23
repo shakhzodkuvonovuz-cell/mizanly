@@ -3225,6 +3225,7 @@
     "exporting": "جاري التصدير...",
     "exportComplete": "تم تصدير الفيديو بنجاح",
     "exportFailed": "فشل التصدير. حاول مرة أخرى.",
+    "exportCancelled": "تم إلغاء التصدير",
     "preview": "معاينة",
     "timeline": "الخط الزمني",
     "textPosition": "موضع النص",

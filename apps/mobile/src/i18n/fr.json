@@ -3232,6 +3232,7 @@
     "exporting": "Exportation en cours...",
     "exportComplete": "Vidéo exportée avec succès",
     "exportFailed": "Échec de l'exportation. Réessayez.",
+    "exportCancelled": "Exportation annulée",
     "preview": "Aperçu",
     "timeline": "Chronologie",
     "textPosition": "Position du texte",
