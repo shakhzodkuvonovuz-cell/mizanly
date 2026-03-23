@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   compactTitle: {
-    color: '#fff',
+    color: colors.text.onColor,
     fontSize: fontSize.sm,
     fontFamily: fonts.bodyBold,
     fontWeight: '700',

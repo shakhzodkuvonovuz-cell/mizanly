@@ -563,7 +563,7 @@ export default function CreatePostScreen() {
             {/* ── Tag people ── */}
             <Pressable
               onPress={() => setShowTagPeople(!showTagPeople)}
-              style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+              style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
               accessibilityRole="button"
               accessibilityLabel={t('compose.tagPeople')}
             >
@@ -602,7 +602,7 @@ export default function CreatePostScreen() {
             {/* ── Invite collaborator ── */}
             <Pressable
               onPress={() => setShowCollaborator(!showCollaborator)}
-              style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+              style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
               accessibilityRole="button"
               accessibilityLabel={t('compose.inviteCollaborator')}
             >
@@ -632,7 +632,7 @@ export default function CreatePostScreen() {
             {/* ── Who can comment ── */}
             <Pressable
               onPress={() => setShowCommentControl(!showCommentControl)}
-              style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+              style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
               accessibilityRole="button"
               accessibilityLabel={t('compose.whoCanComment')}
             >
@@ -668,7 +668,7 @@ export default function CreatePostScreen() {
             {/* ── Advanced settings toggle ── */}
             <Pressable
               onPress={() => setShowAdvancedSettings(!showAdvancedSettings)}
-              style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+              style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
               accessibilityRole="button"
               accessibilityLabel={t('compose.advancedSettings')}
             >
@@ -684,7 +684,7 @@ export default function CreatePostScreen() {
                 {/* Share to feed toggle */}
                 <Pressable
                   onPress={() => setShareToFeed(!shareToFeed)}
-                  style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                  style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="switch"
                   accessibilityState={{ checked: shareToFeed }}
                   accessibilityLabel={t('compose.shareToFeed')}
@@ -701,7 +701,7 @@ export default function CreatePostScreen() {
                 {/* Remix allowed toggle */}
                 <Pressable
                   onPress={() => setRemixAllowed(!remixAllowed)}
-                  style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                  style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="switch"
                   accessibilityState={{ checked: remixAllowed }}
                   accessibilityLabel={t('compose.allowRemix')}
@@ -718,7 +718,7 @@ export default function CreatePostScreen() {
                 {/* Branded content */}
                 <Pressable
                   onPress={() => setBrandedContent(!brandedContent)}
-                  style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                  style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="switch"
                   accessibilityState={{ checked: brandedContent }}
                   accessibilityLabel={t('compose.brandedContent')}
@@ -753,7 +753,7 @@ export default function CreatePostScreen() {
                 {/* Topics / categories */}
                 <Pressable
                   onPress={() => setShowTopics(!showTopics)}
-                  style={[publishRowStyle, { backgroundColor: tc.bgElevated }]}
+                  style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                   accessibilityRole="button"
                   accessibilityLabel={t('compose.addTopics')}
                 >

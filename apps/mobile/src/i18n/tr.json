@@ -3160,7 +3160,8 @@
     "gifCategoryIslamic": "Islamic",
     "gifCategoryFunny": "Funny",
     "openGiphyPicker": "Open GIPHY Picker",
-    "giphyTextAndStickers": "Text Stickers & More"
+    "giphyTextAndStickers": "Text Stickers & More",
+    "noGifsFound": "No GIFs found"
   },
   "windDown": {
     "title": "Dinlenme Zamanı",

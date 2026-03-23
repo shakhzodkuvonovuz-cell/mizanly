@@ -47,7 +47,8 @@ export interface GifStickerData {
 }
 
 // ── Trending categories for GIF search (icons + i18n label keys from service) ──
-const GIF_CATEGORY_ICONS: Record<string, string> = {
+type IconName = React.ComponentProps<typeof Icon>['name'];
+const GIF_CATEGORY_ICONS: Record<string, IconName> = {
   trending: 'trending-up',
   reactions: 'smile',
   love: 'heart',
@@ -135,12 +136,19 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
 
   const renderGifItem = useCallback(({ item, index }: { item: GifItem; index: number }) => {
     const aspectRatio = item.width / item.height;
+    // Cap stagger to first 8 items — prevents jank on long lists
+    const shouldStagger = index < 8;
     return (
-      <Animated.View entering={FadeInDown.delay(index * 30).duration(200)}>
+      <Animated.View
+        entering={shouldStagger ? FadeInDown.delay(index * 40).duration(200) : undefined}
+      >
         <Pressable
           onPress={() => handleSelectGif(item)}
-          style={[styles.gifItem, { width: GIF_ITEM_WIDTH }]}
-          accessibilityLabel={item.title}
+          style={({ pressed }) => [
+            styles.gifItem,
+            { width: GIF_ITEM_WIDTH, transform: [{ scale: pressed ? 0.93 : 1 }] },
+          ]}
+          accessibilityLabel={item.title || t('stories.gif')}
           accessibilityRole="button"
         >
           <Image
@@ -148,15 +156,24 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
             style={[styles.gifImage, { aspectRatio: Math.max(0.5, Math.min(2, aspectRatio)) }]}
             contentFit="cover"
             transition={200}
+            placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+            placeholderContentFit="cover"
           />
         </Pressable>
       </Animated.View>
     );
-  }, [handleSelectGif]);
+  }, [handleSelectGif, t]);
 
   // ── Launch native GIPHY dialog (SDK) for Text/Stickers/Clips ──
+  const cleanupRef = useRef<(() => void) | null>(null);
+
   const handleNativePicker = useCallback(() => {
     haptic.tick();
+    // Clean up previous listener if any
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
     const cleanup = showGiphyPicker({
       mediaTypes: ['gif', 'sticker', 'text', 'emoji'],
       onSelect: (media) => {
@@ -170,9 +187,18 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
         });
       },
     });
-    // cleanup is null if SDK not available
-    return cleanup;
+    cleanupRef.current = cleanup;
   }, [haptic, onSelect]);
+
+  // Cleanup SDK listener on unmount
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <View style={[styles.searchContainer, style]}>
@@ -234,13 +260,16 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
         contentContainerStyle={styles.categoryList}
         renderItem={({ item }) => {
           const isActive = item.id === activeCategory && !query;
-          const iconName = (GIF_CATEGORY_ICONS[item.id] || 'star') as never;
+          const iconName: IconName = GIF_CATEGORY_ICONS[item.id] || 'star';
           return (
             <Pressable
               onPress={() => handleCategoryPress(item.id)}
-              style={[
+              style={({ pressed }) => [
                 styles.categoryChip,
-                { backgroundColor: isActive ? colors.emerald : tc.bgElevated },
+                {
+                  backgroundColor: isActive ? colors.emerald : pressed ? colors.active.white10 : tc.bgElevated,
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                },
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected: isActive }}
@@ -266,6 +295,13 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
             <Skeleton.Rect width={GIF_ITEM_WIDTH} height={90} />
             <Skeleton.Rect width={GIF_ITEM_WIDTH} height={90} />
           </View>
+        </View>
+      ) : gifs.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Icon name="search" size="lg" color={tc.text.tertiary} />
+          <Text style={[styles.emptyText, { color: tc.text.tertiary }]}>
+            {query ? t('stories.noGifsFound') : t('stories.searchGifs')}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -366,6 +402,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 200,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 160,
+    gap: spacing.sm,
+  },
+  emptyText: {
+    fontSize: fontSize.sm,
+    fontFamily: fonts.body,
   },
   attribution: {
     alignItems: 'center',
