@@ -40,6 +40,18 @@ interface EditParams {
   stabilize?: boolean;
   noiseReduce?: boolean;
   freezeFrameAt?: number | null;
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+  temperature?: number;
+  fadeIn?: number;
+  fadeOut?: number;
+  rotation?: 0 | 90 | 180 | 270;
+  sharpen?: boolean;
+  vignette?: boolean;
+  grain?: boolean;
+  audioPitch?: number;
+  speedCurve?: string;
 }
 
 const VOICE_EFFECT_MAP: Record<VoiceEffect, string> = {
@@ -122,7 +134,18 @@ function buildCommand(params: EditParams, outputPath: string): string {
   if (params.isReversed && clipDuration <= 300) {
     vFilters.push('reverse');
   }
-  if (speed !== 1) {
+  if ((params as any).speedCurve) {
+    const D = clipDuration.toFixed(2);
+    const curvePtsMap: Record<string, string> = {
+      montage: `setpts='if(lt(T,0.3*${D}),0.5*PTS,if(gt(T,0.7*${D}),0.5*PTS,2.0*PTS))'`,
+      hero: `setpts='if(lt(T,0.2*${D}),PTS,if(gt(T,0.8*${D}),PTS,2.5*PTS))'`,
+      bullet: `setpts='if(between(T,0.4*${D},0.6*${D}),3.0*PTS,0.8*PTS)'`,
+      flashIn: `setpts='(0.3+0.7*T/${D})*PTS'`,
+      flashOut: `setpts='(1.0-0.7*T/${D})*PTS'`,
+    };
+    const curveExpr = curvePtsMap[(params as any).speedCurve];
+    if (curveExpr) vFilters.push(curveExpr);
+  } else if (speed !== 1) {
     vFilters.push(`setpts=${(1 / speed).toFixed(4)}*PTS`);
   }
   const colorFilter = FILTER_MAP[filter];
@@ -158,7 +181,30 @@ function buildCommand(params: EditParams, outputPath: string): string {
       `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5${enableExpr}`,
     );
   }
+  // Color grading
+  const eqParts: string[] = [];
+  if (params.brightness && params.brightness !== 0) eqParts.push(`brightness=${(params.brightness / 333).toFixed(3)}`);
+  if (params.contrast && params.contrast !== 0) eqParts.push(`contrast=${(1 + params.contrast / 200).toFixed(3)}`);
+  if (params.saturation && params.saturation !== 0) eqParts.push(`saturation=${Math.max(0, 1 + params.saturation / 100).toFixed(3)}`);
+  if (eqParts.length > 0) vFilters.push(`eq=${eqParts.join(':')}`);
+  if (params.temperature && params.temperature !== 0) {
+    const shift = (params.temperature / 200).toFixed(3);
+    const negShift = (-params.temperature / 200).toFixed(3);
+    vFilters.push(`colorbalance=rs=${shift}:gs=0:bs=${negShift}:rm=${shift}:gm=0:bm=${negShift}`);
+  }
   if (params.stabilize) vFilters.push('deshake=rx=32:ry=32');
+  if (params.fadeIn && params.fadeIn > 0) vFilters.push(`fade=t=in:st=0:d=${params.fadeIn.toFixed(2)}`);
+  if (params.fadeOut && params.fadeOut > 0) {
+    const fadeStart = Math.max(0, clipDuration - params.fadeOut);
+    vFilters.push(`fade=t=out:st=${fadeStart.toFixed(2)}:d=${params.fadeOut.toFixed(2)}`);
+  }
+  if (params.rotation && params.rotation !== 0) {
+    const rotMap: Record<number, string> = { 90: 'transpose=1', 180: 'transpose=1,transpose=1', 270: 'transpose=2' };
+    if (rotMap[params.rotation]) vFilters.push(rotMap[params.rotation]);
+  }
+  if (params.sharpen) vFilters.push('unsharp=5:5:1.0:5:5:0.0');
+  if (params.vignette) vFilters.push('vignette=PI/4');
+  if (params.grain) vFilters.push('noise=alls=20:allf=t');
   if (params.freezeFrameAt !== null && params.freezeFrameAt !== undefined) {
     const freezeAt = params.freezeFrameAt - startTime;
     if (freezeAt > 0.1 && freezeAt < clipDuration - 0.1) {
@@ -179,7 +225,16 @@ function buildCommand(params: EditParams, outputPath: string): string {
   if (originalVolume !== 100) origChain.push(`volume=${(originalVolume / 100).toFixed(2)}`);
   const voiceEffectF = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
   if (voiceEffectF) origChain.push(voiceEffectF);
+  if (params.audioPitch && params.audioPitch !== 0) {
+    const ratio = Math.pow(2, params.audioPitch / 12).toFixed(4);
+    origChain.push(`asetrate=44100*${ratio},aresample=44100`);
+  }
   if (params.noiseReduce) origChain.push('highpass=f=80,lowpass=f=12000,afftdn=nf=-20');
+  if (params.fadeIn && params.fadeIn > 0) origChain.push(`afade=t=in:st=0:d=${params.fadeIn.toFixed(2)}`);
+  if (params.fadeOut && params.fadeOut > 0) {
+    const aFadeStart = Math.max(0, clipDuration - params.fadeOut);
+    origChain.push(`afade=t=out:st=${aFadeStart.toFixed(2)}:d=${params.fadeOut.toFixed(2)}`);
+  }
 
   const hasMusic = !!params.musicUri;
   const hasVoiceover = !!params.voiceoverUri;
@@ -732,6 +787,122 @@ describe('FFmpeg Engine — Command Builder', () => {
     it('should not add freeze frame at 0 (start of clip)', () => {
       const cmd = buildCommand(defaultParams({ freezeFrameAt: 0 }), outputPath);
       expect(cmd).not.toContain('tpad');
+    });
+  });
+
+  describe('color grading', () => {
+    it('should add eq filter for brightness adjustment', () => {
+      const cmd = buildCommand(defaultParams({ brightness: 50 }), outputPath);
+      expect(cmd).toContain('eq=brightness=');
+    });
+
+    it('should add eq filter for contrast', () => {
+      const cmd = buildCommand(defaultParams({ contrast: -30 }), outputPath);
+      expect(cmd).toContain('contrast=');
+    });
+
+    it('should add eq filter for saturation', () => {
+      const cmd = buildCommand(defaultParams({ saturation: 50 }), outputPath);
+      expect(cmd).toContain('saturation=');
+    });
+
+    it('should add colorbalance for temperature', () => {
+      const cmd = buildCommand(defaultParams({ temperature: 40 }), outputPath);
+      expect(cmd).toContain('colorbalance');
+    });
+
+    it('should not add color grading when all 0', () => {
+      const cmd = buildCommand(defaultParams({ brightness: 0, contrast: 0, saturation: 0, temperature: 0 }), outputPath);
+      expect(cmd).not.toContain('eq=brightness');
+      expect(cmd).not.toContain('colorbalance');
+    });
+  });
+
+  describe('video fade', () => {
+    it('should add fade in filter', () => {
+      const cmd = buildCommand(defaultParams({ fadeIn: 1 }), outputPath);
+      expect(cmd).toContain('fade=t=in:st=0:d=1.00');
+    });
+
+    it('should add fade out at correct position', () => {
+      const cmd = buildCommand(defaultParams({ fadeOut: 2 }), outputPath);
+      // clip is 30s, fade out starts at 28
+      expect(cmd).toContain('fade=t=out:st=28.00:d=2.00');
+    });
+
+    it('should add audio fade matching video fade', () => {
+      const cmd = buildCommand(defaultParams({ fadeIn: 1 }), outputPath);
+      expect(cmd).toContain('afade=t=in:st=0:d=1.00');
+    });
+
+    it('should not add fades when 0', () => {
+      const cmd = buildCommand(defaultParams({ fadeIn: 0, fadeOut: 0 }), outputPath);
+      expect(cmd).not.toContain('fade=');
+      expect(cmd).not.toContain('afade=');
+    });
+  });
+
+  describe('visual effects', () => {
+    it('should add transpose for 90° rotation', () => {
+      const cmd = buildCommand(defaultParams({ rotation: 90 }), outputPath);
+      expect(cmd).toContain('transpose=1');
+    });
+
+    it('should add double transpose for 180°', () => {
+      const cmd = buildCommand(defaultParams({ rotation: 180 }), outputPath);
+      expect(cmd).toContain('transpose=1,transpose=1');
+    });
+
+    it('should add sharpen filter', () => {
+      const cmd = buildCommand(defaultParams({ sharpen: true }), outputPath);
+      expect(cmd).toContain('unsharp=5:5:1.0:5:5:0.0');
+    });
+
+    it('should add standalone vignette', () => {
+      const cmd = buildCommand(defaultParams({ vignette: true }), outputPath);
+      expect(cmd).toContain('vignette=PI/4');
+    });
+
+    it('should add film grain', () => {
+      const cmd = buildCommand(defaultParams({ grain: true }), outputPath);
+      expect(cmd).toContain('noise=alls=20:allf=t');
+    });
+  });
+
+  describe('audio pitch', () => {
+    it('should shift pitch up with asetrate', () => {
+      const cmd = buildCommand(defaultParams({ audioPitch: 6 }), outputPath);
+      expect(cmd).toContain('asetrate=44100*');
+      expect(cmd).toContain('aresample=44100');
+    });
+
+    it('should shift pitch down', () => {
+      const cmd = buildCommand(defaultParams({ audioPitch: -6 }), outputPath);
+      expect(cmd).toContain('asetrate=44100*');
+    });
+
+    it('should not add pitch when 0', () => {
+      const cmd = buildCommand(defaultParams({ audioPitch: 0 }), outputPath);
+      expect(cmd).not.toContain('asetrate');
+    });
+  });
+
+  describe('speed curves', () => {
+    it('should add montage speed curve', () => {
+      const cmd = buildCommand(defaultParams({ speedCurve: 'montage' }), outputPath);
+      expect(cmd).toContain('setpts=');
+      expect(cmd).not.toContain('setpts=1.0000*PTS'); // not constant speed
+    });
+
+    it('should add bullet speed curve', () => {
+      const cmd = buildCommand(defaultParams({ speedCurve: 'bullet' }), outputPath);
+      expect(cmd).toContain('between');
+    });
+
+    it('should prefer speed curve over constant speed', () => {
+      const cmd = buildCommand(defaultParams({ speed: 2, speedCurve: 'hero' }), outputPath);
+      // Speed curve should be used, not constant 0.5000*PTS
+      expect(cmd).not.toContain('0.5000*PTS');
     });
   });
 
