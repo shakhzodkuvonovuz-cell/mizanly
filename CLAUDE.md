@@ -38,19 +38,127 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 **Schema:** 55 Prisma enums (all 41 String→Enum complete). 7/8 dangling FK relations fixed (1 unfixable — polymorphic). StarredMessage + WaqfDonation + VideoCommentLike + ScholarQuestionVote + HalalVerifyVote join tables. 25+ indexes. previousUsername for redirect. Privacy settings server-side. TOTP encryption + backup salt fields.
 **RTL:** Complete — ~430 margin/padding/position replacements across 134 files.
 **Security:** Pre-save moderation on all content types, AI prompt XML hardening, device fingerprint (5/device), nsfwjs client-side service ready, file size limits on uploads.
-**Video Editor:** FFmpeg-kit full-gpl. **10 tool tabs** (trim, speed, filters, adjust, text, music, volume, effects, voiceover + quick actions bar). 13 color filters + 4 color grading sliders (brightness/contrast/saturation/temperature). 6 voice effects + audio pitch (-6 to +6 semitones). 5 speed curve presets (Montage/Hero/Bullet/FlashIn/FlashOut). Noise reduction + video stabilization + sharpen + vignette + film grain + rotation (90/180/270). Video/audio fade in/out. Text timing (appear/disappear). TTS preview (expo-speech). Emoji picker. Reverse clip. Aspect ratio (4 options). Freeze frame. Undo/redo (20-deep, 27 fields). Gesture trim handles + volume sliders. Real MusicPicker. Voiceover recording (Audio.Recording). Export with progress + cancel, returnTo URI. Multi-clip recording + FFmpeg concat with 8 transition types. 89 FFmpeg engine + 10 concat tests.
-**Packages installed (session 3):** ffmpeg-kit-react-native 6.0.2 (full-gpl via Expo config plugin), expo-screen-orientation, expo-screen-capture, expo-store-review, nsfwjs + @tensorflow/tfjs + @tensorflow/tfjs-react-native.
+**Video Editor:** FFmpeg-kit full-gpl. **10 tool tabs** (trim, speed, filters, adjust, text, music, volume, effects, voiceover + quick actions bar). 35 edit state fields tracked in undo/redo. 118 FFmpeg engine tests + 10 concat tests. See "Session 3 — What Was Built" below for complete feature list.
+**Packages installed (session 3):** ffmpeg-kit-react-native 6.0.2 (full-gpl via Expo config plugin), expo-screen-orientation, expo-screen-capture, expo-store-review, expo-speech, nsfwjs + @tensorflow/tfjs + @tensorflow/tfjs-react-native.
 **Database synced** — `prisma db push` confirmed in sync. Production uses `prisma migrate deploy`.
 **CI/CD:** GitHub Actions — lint-typecheck PASS, test-api PASS, build-api PASS. build-mobile needs `npm install --legacy-peer-deps` (metro removed from root, vuln overrides added).
-**~1000 commits**, 11 waves in session 2 + 22 commits in session 3.
+**~1030 commits**, 11 waves in session 2 + 29 commits in session 3.
+
+---
+
+## Session 3 — What Was Built (2026-03-24)
+
+**29 commits. 4,934 tests (+194). 7 audit rounds. 45 bugs found and fixed.**
+
+### Video Editor Features (Complete List)
+
+**Files:** `apps/mobile/app/(screens)/video-editor.tsx` (2,566 lines), `apps/mobile/src/services/ffmpegEngine.ts` (673 lines)
+
+| Category | Features |
+|----------|----------|
+| **Trim** | Gesture-based drag handles (onStart captures initial pos), split at playhead, reset trim |
+| **Speed** | 6 presets (0.25x–3x) + 5 speed curves (Montage/Hero/Bullet/FlashIn/FlashOut) with variable PTS |
+| **Filters** | 13 presets: original, warm, cool, B&W, vintage, vivid, dramatic, fade, emerald, golden, night, soft, cinematic |
+| **Color Grading** | Brightness, contrast, saturation sliders (-100 to +100 → FFmpeg eq). Temperature slider (→ colorbalance) |
+| **Text** | Overlay with timing (appear/disappear via enable='between(t,...)'), 5 size presets (24-80pt), background box, drop shadow, font/color selection, TTS preview (expo-speech), emoji picker |
+| **Music** | Real MusicPicker (449-line component, genre search, preview). Volume mixing (original + music). Track displayed with remove button |
+| **Audio** | 6 voice effects (robot/echo/deep/chipmunk/telephone). Audio pitch (-6 to +6 semitones). Noise reduction (highpass+lowpass+afftdn). Fade in/out (off/0.5s/1s/2s). Voiceover recording (real Audio.Recording, mixed into export via filter_complex) |
+| **Video Effects** | Reverse, stabilization (deshake), sharpen (unsharp), vignette, film grain (noise), rotation (90/180/270° transpose), horizontal flip (hflip), vertical flip (vflip), glitch (RGB channel split rgbashift), letterbox (cinema bars drawbox), boomerang (post-export forward+reverse concat), freeze frame (tpad) |
+| **Aspect Ratio** | 9:16, 16:9, 1:1, 4:5 with center crop using min() to prevent overflow |
+| **Undo/Redo** | 20-deep stack, 35 fields captured via captureSnapshot/applySnapshot, every edit action pushes undo |
+| **Export** | 720p (CRF 28) / 1080p (CRF 23) / 4K (CRF 18). Progress callback + cancel. returnTo param passes URI to caller. Fallback upload-with-metadata when FFmpeg unavailable (all 35 fields included). Android file:// URI normalization |
+| **Quick Actions Bar** | Undo, redo, reverse toggle, aspect ratio cycle, auto-captions link |
+
+### Create-Reel Features
+- Multi-clip recording (record→pause→record, 60s total capacity)
+- FFmpeg concat with 8 transition types (fade/dissolve/wipeleft/wiperight/slideup/slidedown/circleopen/circleclose)
+- Transition selector badge (cycles on tap)
+- Clip counter, delete last clip, progress bar
+- 3-2-1 countdown timer (wired to real recording with interval cleanup on unmount)
+- Discard confirmation (Alert.alert when clips.length > 0)
+- Edit button → video-editor with returnTo
+- Video onLoad captures real duration from route params
+
+### Other Packages Wired
+- expo-screen-orientation → VideoPlayer.tsx fullscreen landscape lock
+- expo-screen-capture → 2fa-setup.tsx + verify-encryption.tsx screenshot prevention
+- expo-store-review → _layout.tsx prompts after 7 sessions
+- expo-speech → video editor TTS preview
+- nsfwjs + tensorflow → nsfwCheck.ts service activates automatically
+
+### Bugs Found & Fixed (7 audit rounds, 45 total)
+Full list in `~/.claude/projects/C--dev-mizanly/memory/project_session3_complete.md`. Key categories:
+- Gesture math (trim handle compounding, volume slider magic number)
+- Async patterns (runOnJS, session ID race, countdown interval leak)
+- FFmpeg correctness (reverse+trim, atempo chaining, text escaping, speed curve DURATION var, aspect ratio overflow, boomerang audio, voice+pitch conflict)
+- State completeness (undo snapshot missing fields, export dep array, fallback metadata missing 25 fields)
+- Resource leaks (voiceover Audio.Recording on unmount, TTS Speech on unmount, iOS audio mode not reset)
+- i18n (35 keys in wrong JSON namespace, fixed via Node script)
+- Platform (Android file:// URI not normalized for FFmpeg)
 
 ### Video Editor — Known Design Limitations
-These are NOT bugs — they are architectural constraints that require significant feature work to resolve:
-1. **Waveform is cosmetic** — Timeline waveform is a deterministic sine wave, not extracted from actual audio. Fixing requires FFprobeKit audio peak extraction.
-2. **Font selection has no effect on export** — `selectedFont` state exists but FFmpeg `drawtext` doesn't resolve platform-specific font paths (`fontfile=`). All text renders in FFmpeg default font. Needs iOS/Android font path resolution.
-3. **Music mixing uses CDN URL directly** — `selectedTrack.audioUrl` is passed as remote URL to FFmpeg `-i`. Works but adds network latency to export. Could timeout on slow connections. Should pre-download to cache.
-4. **No real-time filter preview** — Filters are selected from color chips but NOT applied to the video preview. expo-av `Video` component doesn't support shader/filter overlays. User only sees the filter result after export. Would need OpenGL/Metal overlay or `expo-gl`.
-5. **iOS config plugin uses monkey-patched pre_install** — `ffmpeg-kit-react-native` subspec override via Ruby method redefinition on `pod.root_spec`. Works on current CocoaPods but fragile across versions. This is the documented community approach.
+1. **Waveform is cosmetic** — deterministic sine wave, not from actual audio. Needs FFprobeKit audio peak extraction.
+2. **Font selection has no effect on export** — FFmpeg drawtext doesn't resolve platform font paths. Needs iOS/Android fontfile= resolution.
+3. **Music mixing uses CDN URL directly** — works but adds network latency. Should pre-download to cache.
+4. **No real-time filter preview** — expo-av Video doesn't support shaders. User only sees filter after export. Needs OpenGL/expo-gl.
+5. **iOS config plugin uses monkey-patched pre_install** — documented community approach, fragile across CocoaPods versions.
+
+---
+
+## SESSION 4 CHECKLIST — Creation Flow & Interactive Features
+
+### Interactive Story Stickers (Instagram parity — HIGH PRIORITY)
+- [ ] Poll sticker (binary/multi-option, real-time results)
+- [ ] Quiz sticker (multiple choice with correct answer reveal)
+- [ ] Question box sticker (open text, reshare answers)
+- [ ] Countdown sticker (timer to date, follower opt-in)
+- [ ] Emoji slider sticker (sliding scale with custom emoji)
+- [ ] Location sticker on stories (searchable, tappable)
+- [ ] Link sticker (external URL, available to all)
+- [ ] "Add Yours" chain sticker (viewers add their own response)
+- [ ] GIF search sticker (GIPHY integration)
+- [ ] Music sticker on stories (song clip with lyric display)
+
+### Publish Screen Fields (Table stakes)
+- [ ] Location tag on post/reel publish
+- [ ] Tag people in post
+- [ ] Invite collaborator (co-author, reel on both profiles)
+- [ ] Topics/categories selector for reels
+- [ ] Schedule posting (date/time picker)
+- [ ] Alt text for accessibility
+- [ ] Remix settings (allow/disallow)
+- [ ] Who can comment selector
+- [ ] Share to feed toggle
+- [ ] Branded content / paid partnership label
+- [ ] Trial reel (test with non-followers, auto-share if performs well)
+
+### Photo Carousel Posts (TikTok/Instagram)
+- [ ] Multi-photo upload (up to 10-35 slides)
+- [ ] Music attachment on carousel
+- [ ] Per-slide text overlay
+- [ ] Swipe navigation
+- [ ] Drag-to-reorder
+
+### Story Drawing Tools (Instagram/Snapchat parity)
+- [ ] Freehand pen (color picker + size)
+- [ ] Highlighter pen
+- [ ] Neon glow pen
+- [ ] Eraser
+- [ ] Eyedropper (pick color from image)
+
+### "2026 Wow" Features
+- [ ] AI stickers (type text → generate image via Claude/Gemini)
+- [ ] AI backdrop (text prompt → background replacement)
+- [ ] Auto-captions with word emphasis styling
+- [ ] Thumbnail A/B testing (for Minbar videos)
+- [ ] Custom sticker creation (cut out from photo)
+
+### Non-Editor Priorities (Deferred from Session 3)
+- [ ] WebRTC calls wiring (~500 lines, TURN ready)
+- [ ] Wire react-native-maps into MosqueFinder
+- [ ] Wire expo-location into LocationPicker
+- [ ] Performance sweep (React.memo, FlashList, prefetching)
+- [ ] Quran recitation audio CDN
 
 ## Key Documentation
 - `docs/DEPLOYMENT.md` — Production deployment guide (Railway, Neon, Cloudflare, Clerk, Stripe)
@@ -387,6 +495,17 @@ npm install expo-store-review --legacy-peer-deps
 22. **NEVER use `colors.dark.*` in JSX directly** — Always use `tc.*` from `useThemeColors()`
 23. **NEVER use `Math.random()` for visual data**
 24. **NEVER use setTimeout for fake loading**
+25. **MANDATORY AUDIT BEFORE EVERY COMMIT** — After ANY code change:
+    - (a) Grep-verify: count occurrences, check correct file/namespace placement
+    - (b) Line-by-line code review of EVERY changed line — not just "looks right" but trace logic, check edge cases, verify FFmpeg filter syntax, confirm state→export→dep-array chain is complete
+    - (c) Run `npx jest --passWithNoTests --forceExit --silent` and confirm pass count
+    - (d) For i18n changes: verify key counts match across all 8 languages (`node -e` JSON parse + Object.keys count)
+    - (e) For FFmpeg engine changes: verify test buildCommand matches engine buildCommand (count vFilters.push and origChain.push)
+    - (f) For new state variables: verify present in EditSnapshot type + captureSnapshot + applySnapshot + export editParams + handleExport dep array
+    - **NEVER commit without completing ALL applicable checks above. Session 3 found 45 bugs across 7 audit rounds — most would have been caught by this checklist.**
+26. **NEVER use `sed` for i18n key injection** — Session 3 proved sed puts keys in wrong JSON nesting level. Use a Node script that parses JSON, inserts into correct namespace, and writes back.
+27. **EVERY new feature needs cleanup on unmount** — useEffect return function for: Audio.Recording stop, Speech.stop, setInterval clear, socket disconnect. Session 3 found voiceover + TTS leaks.
+28. **Fallback export metadata MUST mirror FFmpeg export params** — When FFmpeg is unavailable, the upload-with-metadata path must include ALL edit fields. Session 3 found 25 fields missing from fallback.
 
 ---
 
