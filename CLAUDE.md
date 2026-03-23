@@ -64,41 +64,86 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## PRE-APP STORE BLOCKERS
+## LAUNCH ROADMAP
 
-- **WebRTC 1:1 calls:** `react-native-webrtc` installed but not wired. Need ~500-800 lines: `RTCPeerConnection` + `getUserMedia()` + ICE candidate exchange via existing Socket.io signaling (`call_initiate`/`call_answer`/`call_signal` already on backend). TURN credentials set (Metered.ca). Estimated 2-3 days.
-- **App icon + splash screen:** Currently 69-byte placeholder PNGs. Need proper 1024x1024 icon + splash.
-- **Apple Developer Program:** $99/yr enrollment required.
-- **Apple IAP package:** No in-app purchase package installed (`expo-iap` or `react-native-iap`). Required if monetization features go through App Store.
+### Week 1: Launch Blockers
+- [ ] App icon + splash (replace 69-byte placeholders) — designer or Canva
+- [ ] Apple Developer enrollment ($99, 48h)
+- [ ] Clerk production keys (switch sk_test_ → sk_live_)
+- [ ] Stripe live keys
+- [ ] APP_URL → production URL (currently localhost:3000)
+- [ ] Custom domain (api.mizanly.app) — Cloudflare + Railway
+- [ ] Fix metro CI build (remove root metro dep)
+- [ ] First EAS build (iOS + Android)
+
+### Week 2: Test With Real Data
+- [ ] Upload real images/videos (verify R2 presigned URLs)
+- [ ] Send real push notifications (verify FCM + APNs)
+- [ ] Process $1 test payment (verify Stripe end-to-end)
+- [ ] Real-time messaging (two devices, real conversation)
+- [ ] Deploy to Railway + verify health endpoint
+
+### Week 3: Beta Polish
+- [ ] TestFlight / Play Store internal testing (first 10 users)
+- [ ] Fix bugs from beta testers
+- [ ] App Store screenshots + description
+- [ ] Landing page at mizanly.app
+
+### Month 2: Post-Launch
+- [ ] WebRTC calls wiring (~500-800 lines, TURN credentials ready)
+- [ ] Apple IAP for iOS coin purchases
+- [ ] Meilisearch deployment (search falls back to Prisma LIKE for now)
+- [ ] Human translations for 5 languages (ur, bn, fr, id, ms)
+
+### Month 3+: Growth
+- [ ] nsfwjs on-device + pHash re-upload detection
+- [ ] Whisper.cpp on RTX 5070 (self-hosted transcription)
+- [ ] Interest vector multi-cluster (replace averaging)
+- [ ] Expo Web PWA (desktop version)
+- [ ] Data import from Instagram/TikTok/X/YouTube/WhatsApp
+
+## PACKAGES WAITING FOR INSTALL (code wired, need terminal)
+
+Run these in Windows terminal when back home:
+```bash
+cd C:\dev\mizanly\apps\mobile
+
+# Client-side NSFW screening (nsfwCheck.ts ready, wired into create-post)
+npm install nsfwjs @tensorflow/tfjs @tensorflow/tfjs-react-native --legacy-peer-deps
+# Then download MobileNetV2 model to apps/mobile/assets/model/
+
+# Video fullscreen orientation lock (VideoPlayer.tsx has TODO)
+npm install expo-screen-orientation --legacy-peer-deps
+
+# Screenshot prevention on 2FA/encryption (useEffect TODO added)
+npm install expo-screen-capture --legacy-peer-deps
+
+# App rating prompt after 7 sessions (session counter in _layout.tsx)
+npm install expo-store-review --legacy-peer-deps
+```
 
 ## REMAINING TECHNICAL DEBT
 
-**Installed but NOT wired (packages exist, zero or partial usage in screens):**
-- react-native-shared-element — installed but no `<SharedElement>` in any screen
-- react-native-maps — installed but MosqueFinder doesn't use `<MapView>`
-- Lottie animations — no .json animation files exist, no LottieView used anywhere
-- Social auth Google/Apple — sign-in/sign-up screens have disabled OAuth buttons ("disabled until OAuth configured"). Needs Clerk dashboard setup.
-- Payments on mobile — only send-tip.tsx uses paymentsApi. donate.tsx, gift-shop.tsx, waqf.tsx still have TODO stubs for Stripe integration.
-- Green screen ML segmentation — needs TFLite model, no ML inference code exists
-- 43 inline renderItems in utility screens (negligible perf impact, not React.memo wrapped)
+**Packages installed but NOT wired:**
+- react-native-shared-element — no SharedElement transitions in screens
+- react-native-maps — MosqueFinder doesn't use MapView
+- react-native-webrtc — RTCPeerConnection in call screen but no getUserMedia/ICE exchange
+- expo-location — installed but LocationPicker uses hardcoded mosques
+- Lottie — no .json animation files, no LottieView
+- Social auth Google/Apple — disabled buttons, needs Clerk dashboard config
+- Green screen — needs TFLite model
 
-**Test expansion incomplete:**
-- Ralph test batch 3 was planned (~1,050 new tests for edge cases, auth matrix, error recovery, concurrency, abuse vectors) but never executed. Spec exists at `docs/archive/ralph-test-batch3.md`.
+**Payments:** donate, gift-shop, waqf all wired to Stripe PaymentIntent. Cashout has withdrawal UI. Backend cashout endpoint needs building.
 
-**Cannot fix via code (need external services/humans):**
-- 5 languages (ur, bn, fr, id, ms) at 14-15% translated — needs human translator
-- Schema enum migrations — 41 String fields should be enums (high-risk, needs careful planning)
-- RTL marginLeft→marginStart — 500+ instances (massive refactor)
-- Metro bundler version conflict: run `npm install metro@0.83.5 metro-transform-worker@0.83.5 --legacy-peer-deps` at root before `npx expo start`
-- Stream uploads fire-and-forget, CDN variants, virus scanning, getNearbyContent (PostGIS), caption generation, image resize upload — all need external services
-- LocationPicker uses hardcoded mosques (expo-location installed but not wired to geocoding)
+**RTL:** ~200 marginLeft/Right instances remain in ~50 files (first 33 files done — 114 replacements). ~314 left:/right: remain.
 
-**Deferred features:**
-- AI dubbing, AI restyle, AI "Best Moments", Friends Map, camera effects, TV app
-- Bakra "not interested" swipe-left gesture
-- Profile story highlights row
-- Account deep dive (creation country, username history)
-- Data import from Instagram/TikTok/X/YouTube/WhatsApp (spec exists)
+**Translations:** ur 14%, bn 14%, fr 15%, id 16%, ms 15% — needs human translator. ar 77%, tr 89%.
+
+**Schema:** TOTP encryption + backup hash salt fields added with migration TODOs. Mixed cuid/uuid strategy (94+61) — leave as-is. Dual balance system documented.
+
+**Cannot fix via code:** PostGIS for nearby content, CDN image variants, virus scanning, caption generation
+
+**Deferred features:** AI dubbing, AI restyle, Friends Map, camera effects, TV app, Bakra "not interested" swipe, profile story highlights, data import
 
 ---
 
