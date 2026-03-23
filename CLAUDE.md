@@ -98,8 +98,8 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 ### Month 3+: Growth
 - [ ] nsfwjs on-device + pHash re-upload detection
 - [ ] Whisper.cpp on RTX 5070 (self-hosted transcription)
-- [ ] Interest vector multi-cluster (replace averaging)
-- [ ] Expo Web PWA (desktop version)
+- [x] Interest vector multi-cluster — DONE (Wave 10 — k-means 2-3 centroids)
+- [ ] Expo Web PWA (desktop version) — mobile-first, web later
 - [ ] Data import from Instagram/TikTok/X/YouTube/WhatsApp
 
 ## PACKAGES WAITING FOR INSTALL (code wired, need terminal)
@@ -122,7 +122,9 @@ npm install expo-screen-capture --legacy-peer-deps
 npm install expo-store-review --legacy-peer-deps
 ```
 
-## REMAINING TECHNICAL DEBT
+## REMAINING TECHNICAL DEBT (verified 2026-03-23 final audit)
+
+**Session 2 stats:** 10 waves, 80 agents, ~220 fixes, 4,706 tests, 965 commits. MASTER_TODO: 179 done, 13 partial, 59 open + 140 competitor features.
 
 **Packages installed but NOT wired:**
 - react-native-shared-element — no SharedElement transitions in screens
@@ -133,17 +135,34 @@ npm install expo-store-review --legacy-peer-deps
 - Social auth Google/Apple — disabled buttons, needs Clerk dashboard config
 - Green screen — needs TFLite model
 
-**Payments:** donate, gift-shop, waqf all wired to Stripe PaymentIntent. Cashout has withdrawal UI. Backend cashout endpoint needs building.
+**Payments:** donate, gift-shop, waqf, orders all wired to Stripe PaymentIntent. Cashout has withdrawal UI (backend endpoint TODO). Apple IAP not installed (needed for iOS monetization).
 
-**RTL:** ~200 marginLeft/Right instances remain in ~50 files (first 33 files done — 114 replacements). ~314 left:/right: remain.
+**RTL:** COMPLETE — ~429 margin/padding/position replacements across ~134 files in 3 batches. ~28 intentional physical-position skips (editors, compass, canvas, centering tricks).
 
 **Translations:** ur 14%, bn 14%, fr 15%, id 16%, ms 15% — needs human translator. ar 77%, tr 89%.
 
-**Schema:** TOTP encryption + backup hash salt fields added with migration TODOs. Mixed cuid/uuid strategy (94+61) — leave as-is. Dual balance system documented.
+**Schema remaining (deferred — risky migrations):**
+- P1-DANGLING: 8 FK fields still lack @relation (sourceReelId, commentId, answeredBy, etc.)
+- P1-FKARRAY: String[] arrays that should be join tables (3 models)
+- P2-001: Mixed cuid/uuid strategy (94+61) — leave as-is for now
+- C-02: Dual balance system (CoinBalance table + User.coinBalance) — needs consolidation
+- TOTP encryption + backup hash salt fields added with migration TODOs
 
-**Cannot fix via code:** PostGIS for nearby content, CDN image variants, virus scanning, caption generation
+**Algorithm remaining:**
+- A/B testing framework for scoring weights (hardcoded currently)
+- Scoring weights not tunable without code deploy
 
-**Deferred features:** AI dubbing, AI restyle, Friends Map, camera effects, TV app, Bakra "not interested" swipe, profile story highlights, data import
+**Still open (code-fixable, low priority):**
+- Old username links break (needs UsernameHistory schema model)
+- Status privacy in AsyncStorage only (needs backend persistence)
+- Video editor simulated (FFmpeg not installed)
+- Call screen facade (WebRTC not wired — Month 2 roadmap)
+- Zero Quran/Adhan audio on Islamic screens (has dhikr/dua audio)
+- Mosque Finder no map (react-native-maps installed, not wired)
+
+**Cannot fix via code:** PostGIS for nearby content, CDN image variants, virus scanning, AI caption generation, Meilisearch deployment
+
+**Deferred features:** AI dubbing, AI restyle, Friends Map, camera effects, TV app, Bakra "not interested" swipe, profile story highlights, data import, Expo Web PWA
 
 ---
 
