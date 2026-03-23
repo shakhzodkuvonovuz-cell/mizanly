@@ -46,6 +46,7 @@ type PickedVideo = {
 };
 
 type AutocompleteType = 'hashtag' | 'mention' | null;
+type ReelTransitionType = 'none' | 'fade' | 'dissolve' | 'wipeleft' | 'slideup';
 
 export default function CreateReelScreen() {
   const router = useRouter();
@@ -62,8 +63,7 @@ export default function CreateReelScreen() {
   // Multi-clip recording (TikTok-style: record → pause → record more)
   const [clips, setClips] = useState<{ uri: string; duration: number }[]>([]);
   const totalClipsDuration = clips.reduce((sum, c) => sum + c.duration, 0);
-  type TransitionType = 'none' | 'fade' | 'dissolve' | 'wipeleft' | 'slideup';
-  const [clipTransition, setClipTransition] = useState<TransitionType>('none');
+  const [clipTransition, setClipTransition] = useState<ReelTransitionType>('none');
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [mentions, setMentions] = useState<string[]>([]);
@@ -665,7 +665,7 @@ export default function CreateReelScreen() {
                         accessibilityRole="button"
                         style={styles.transitionBadge}
                         onPress={() => {
-                          const types: TransitionType[] = ['none', 'fade', 'dissolve', 'wipeleft', 'slideup'];
+                          const types: ReelTransitionType[] = ['none', 'fade', 'dissolve', 'wipeleft', 'slideup'];
                           const idx = types.indexOf(clipTransition);
                           setClipTransition(types[(idx + 1) % types.length]);
                         }}

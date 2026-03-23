@@ -185,13 +185,13 @@ function buildCommand(params: EditParams, outputPath: string): string {
     const txtStart = Math.max(0, rawTxtStart - startTime);
     const txtEnd = Math.min(clipDuration, rawTxtEnd - startTime);
     const enableExpr = `:enable='between(t,${txtStart.toFixed(2)},${txtEnd.toFixed(2)})'`;
-    const fontSize = params.textSize || 48;
+    const fSize = params.textSize || 48;
     const xExpr = 'x=(w-text_w)/2';
     const yExpr = 'y=h-th-80';
     const bgExpr = params.textBg ? ':box=1:boxcolor=black@0.6:boxborderw=12' : '';
     const shadowExpr = params.textShadow ? ':shadowcolor=black@0.5:shadowx=3:shadowy=3' : '';
     vFilters.push(
-      `drawtext=text='${escaped}':fontsize=${fontSize}:fontcolor=${captionColor}:${xExpr}:${yExpr}:borderw=2:bordercolor=black@0.5${bgExpr}${shadowExpr}${enableExpr}`,
+      `drawtext=text='${escaped}':fontsize=${fSize}:fontcolor=${captionColor}:${xExpr}:${yExpr}:borderw=2:bordercolor=black@0.5${bgExpr}${shadowExpr}${enableExpr}`,
     );
   }
   // Color grading
@@ -238,11 +238,11 @@ function buildCommand(params: EditParams, outputPath: string): string {
     origChain.push(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
   }
   if (params.isReversed && clipDuration <= 300) origChain.push('areverse');
-  if (speed !== 1) origChain.push(buildAtempoChain(speed));
+  if (speed !== 1 && !(params as any).speedCurve) origChain.push(buildAtempoChain(speed));
   if (originalVolume !== 100) origChain.push(`volume=${(originalVolume / 100).toFixed(2)}`);
   const voiceEffectF = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
   if (voiceEffectF) origChain.push(voiceEffectF);
-  if (params.audioPitch && params.audioPitch !== 0) {
+  if (params.audioPitch && params.audioPitch !== 0 && !voiceEffectF) {
     const ratio = Math.pow(2, params.audioPitch / 12).toFixed(4);
     origChain.push(`asetrate=44100*${ratio},aresample=44100`);
   }

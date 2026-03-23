@@ -125,8 +125,6 @@ export interface EditParams {
   textSize?: number;              // font size override (default 48)
   textBg?: boolean;               // dark background box behind text
   textShadow?: boolean;           // drop shadow on text
-  textX?: number;                 // text X position (0-100% of width, default 50 = center)
-  textY?: number;                 // text Y position (0-100% of height, default 90 = bottom)
 }
 
 export interface ExportResult {
@@ -348,10 +346,10 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     const txtEnd = Math.min(clipDuration, rawTxtEnd - startTime);
     const enableExpr = `:enable='between(t,${txtStart.toFixed(2)},${txtEnd.toFixed(2)})'`;
 
-    // Text size, position, background, shadow
+    // Text size, background, shadow
     const fontSize = params.textSize || 48;
-    const xExpr = params.textX !== undefined ? `x=w*${(params.textX / 100).toFixed(2)}-text_w/2` : 'x=(w-text_w)/2';
-    const yExpr = params.textY !== undefined ? `y=h*${(params.textY / 100).toFixed(2)}-th/2` : 'y=h-th-80';
+    const xExpr = 'x=(w-text_w)/2';
+    const yExpr = 'y=h-th-80';
     const bgExpr = params.textBg ? ':box=1:boxcolor=black@0.6:boxborderw=12' : '';
     const shadowExpr = params.textShadow ? ':shadowcolor=black@0.5:shadowx=3:shadowy=3' : '';
 
@@ -466,7 +464,9 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   if (params.isReversed && clipDuration <= MAX_REVERSE_DURATION) {
     origChain.push('areverse');
   }
-  if (speed !== 1) {
+  // Skip constant atempo when speed curve is active (curve handles video speed,
+  // audio stays at 1x to avoid desync with variable-speed video)
+  if (speed !== 1 && !params.speedCurve) {
     origChain.push(buildAtempoChain(speed));
   }
   if (originalVolume !== 100) {
@@ -475,7 +475,8 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   const voiceEffectFilter = VOICE_EFFECT_MAP[params.voiceEffect || 'none'];
   if (voiceEffectFilter) origChain.push(voiceEffectFilter);
   // Audio pitch adjustment (semitones → frequency ratio)
-  if (params.audioPitch && params.audioPitch !== 0) {
+  // Skip if voice effect is active (both use asetrate — they're incompatible)
+  if (params.audioPitch && params.audioPitch !== 0 && !voiceEffectFilter) {
     const ratio = Math.pow(2, params.audioPitch / 12).toFixed(4);
     origChain.push(`asetrate=44100*${ratio},aresample=44100`);
   }
@@ -581,7 +582,8 @@ export async function executeExport(
           // Post-processing: boomerang (forward + reverse concat)
           if (params.boomerang) {
             const boomerangPath = outputPath.replace('.mp4', '_boom.mp4');
-            const boomCmd = `-i "${outputPath}" -filter_complex "[0:v]split[fwd][rev];[rev]reverse[rvid];[fwd][rvid]concat=n=2:v=1:a=0[outv];[0:a]apad=pad_dur=0[outa]" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -shortest -y "${boomerangPath}"`;
+            // Forward + reverse for BOTH video and audio
+            const boomCmd = `-i "${outputPath}" -filter_complex "[0:v]split[vfwd][vrev];[vrev]reverse[vrvid];[vfwd][vrvid]concat=n=2:v=1:a=0[outv];[0:a]asplit[afwd][arev];[arev]areverse[arvid];[afwd][arvid]concat=n=2:v=0:a=1[outa]" -map "[outv]" -map "[outa]" -c:v libx264 -preset fast -crf 23 -c:a aac -y "${boomerangPath}"`;
             const boomSession = await kit.FFmpegKit.execute(boomCmd);
             const boomCode = await boomSession.getReturnCode();
             if (boomCode.isValueSuccess()) {
