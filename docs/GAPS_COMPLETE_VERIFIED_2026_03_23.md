@@ -386,3 +386,86 @@ F16 2FA login, F28 push i18n, F33 PIN re-verify, P2-25 circle notifications, F44
 | **STILL DEFERRED (code)** | 17 |
 | **NOTED (acceptable risk)** | ~19 |
 | **TOTAL** | 80 |
+
+---
+
+## MEMORY FILES — COMPLETE LINE-BY-LINE VERIFICATION
+
+### Files that are CURRENT (keep as-is):
+- `user_shakhzod.md` — User profile, preferences. Still accurate.
+- `feedback_always_test.md` — Rule: always test. Still applies.
+- `feedback_autonomous_mode.md` — Rule: autonomous execution. Still applies.
+- `feedback_brutal_honesty.md` — Rule: no sugarcoating. Still applies.
+- `feedback_explain_before_commit.md` — Rule: explain changes before committing. Still applies.
+- `feedback_honest_assessment.md` — Rule: never inflate scores. Still applies.
+- `feedback_implement_all.md` — Rule: fix all findings, not just critical. Still applies.
+- `feedback_islamic_data_manual.md` — Rule: Islamic data curated by human. Still applies.
+- `feedback_max_effort.md` — Rule: maximum effort always. Still applies.
+- `feedback_no_coauthor.md` — Rule: no Co-Authored-By. Still applies.
+- `feedback_no_inferior_models.md` — Rule: Opus only for subagents. Still applies.
+- `feedback_no_subagents.md` — Rule: no subagents for code. Updated 2026-03-23.
+- `feedback_tests_for_scope.md` — Rule: test entire scope. Still applies.
+- `feedback_subagent_context.md` — Rule: full context for agents. Created 2026-03-23.
+- `reference_competitor_intel.md` — Market data. Still reference material.
+- `project_uiux_elevation_march22.md` — UI/UX elevation record. Mostly accurate.
+
+### Files that are STALE (wrong numbers, need update or deletion):
+
+**project_current_state_march21.md (96 lines) — SEVERELY STALE:**
+- Tests: says 3,974, actual 4,483
+- Screens: says 203, actual 209
+- Services: says 94, actual 86 (after TS error fixes changed model/field names)
+- Hooks: says 19, actual 23
+- Mobile services: says 19, actual 32
+- i18n keys: says 2,838, actual 3,173+
+- Commits: says 816, actual 940+
+- Says "files 37-72 pending" — ALL COMPLETE
+- Recommendation: DELETE and replace with fresh snapshot, or mark "HISTORICAL — March 22"
+
+**project_audit_march2026.md (33 lines) — ALL FINDINGS FIXED:**
+- All 3 P0s now fixed (Aladhan API, Haversine, Claude Vision)
+- All 3 P1s now fixed (onDelete rules, TURN credentials, Decimal)
+- Overall score "5.8/10" is outdated — should be 7.5+ now
+- Tests: says 1,445, actual 4,483
+- Recommendation: DELETE or mark "HISTORICAL — pre-remediation"
+
+**project_deferred_items.md (37 lines) — MOST ITEMS FIXED:**
+- "161 failing tests" — ALL 4,483 PASSING
+- "FCM needs npm install" — expo-notifications installed, google-services.json exists
+- "9 mock screens" — most wired (quran-room, eid-cards have API calls now)
+- "Per-user rate limiting per-IP only" — FIXED (UserThrottlerGuard uses userId)
+- "Meilisearch not integrated" — STILL TRUE
+- "Float→Decimal" — DONE for charity/zakat/tips
+- Recommendation: DELETE (superseded by DEFERRED_FIXES.md and this verification)
+
+**project_honest_scores_post_batch2.md (44 lines) — ALL SCORES OUTDATED:**
+- Overall "5.8/10" — should be 7.5+ post-remediation
+- Email "0/10" — Resend key now set
+- Calls "2/10" — WebRTC installed, TURN credentials set
+- Push "3/10" — google-services.json exists, expo-notifications configured
+- Recommendation: DELETE (scores meaningless now)
+
+**project_audit_complete.md (20 lines) — SUPERSEDED:**
+- From March 19, pre-72-agent audit
+- Recommendation: DELETE
+
+**project_missing_gaps_march2026.md (73 lines) — DUPLICATE:**
+- Subset of project_complete_gaps_audit_march21.md
+- Recommendation: DELETE
+
+**project_turkish_translation.md (15 lines) — STALE:**
+- Says "3 files: en, ar, tr" — actually 8 files
+- Says "~2,500 keys" — actually 3,173+
+- Says "add to all 3 files" — should be "all 8 files"
+- Recommendation: DELETE (info in CLAUDE.md is current)
+
+**project_uiux_audit_progress.md (23 lines) — SUPERSEDED:**
+- Tracking which screens need UI/UX work — ALL NOW DONE
+- Recommendation: DELETE
+
+**project_deployment_status.md (27 lines) — PARTIALLY STALE:**
+- Railway URL may still work
+- "Expo Go SDK mismatch SDK 54 vs 52" — may have changed
+- Apple Developer enrollment info still relevant
+- EAS project ID current
+- Recommendation: UPDATE (keep Apple/EAS info, update credential status)
