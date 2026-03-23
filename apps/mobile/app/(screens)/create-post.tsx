@@ -23,7 +23,8 @@ import { Autocomplete } from '@/components/ui/Autocomplete';
 import { LocationPicker } from '@/components/ui/LocationPicker';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius, fontSizeExt } from '@/theme';
+import { AnimatedAccordion } from '@/components/ui/AnimatedAccordion';
+import { colors, spacing, fontSize, radius, fontSizeExt, fonts } from '@/theme';
 import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -79,12 +80,9 @@ export default function CreatePostScreen() {
 
   // ── Publish fields (Session 4 — Instagram parity) ──
   const [altText, setAltText] = useState('');
-  const [showAltText, setShowAltText] = useState(false);
   const [taggedUsers, setTaggedUsers] = useState<string[]>([]);
-  const [showTagPeople, setShowTagPeople] = useState(false);
   const [tagSearchQuery, setTagSearchQuery] = useState('');
   const [collaboratorUsername, setCollaboratorUsername] = useState('');
-  const [showCollaborator, setShowCollaborator] = useState(false);
   const [commentControl, setCommentControl] = useState<'everyone' | 'followers' | 'nobody'>('everyone');
   const [showCommentControl, setShowCommentControl] = useState(false);
   const [shareToFeed, setShareToFeed] = useState(true);
@@ -527,94 +525,69 @@ export default function CreatePostScreen() {
               </Text>
             </View>
 
-            {/* ── Alt text (accessibility) ── */}
+            {/* ── Alt text (accessibility) — animated accordion ── */}
             {media.length > 0 && (
-              <Pressable
-                onPress={() => setShowAltText(!showAltText)}
-                style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-                accessibilityRole="button"
-                accessibilityLabel={t('compose.altText')}
+              <AnimatedAccordion
+                icon="eye"
+                title={altText ? t('compose.altTextAdded') : t('compose.addAltText')}
+                isActive={!!altText}
               >
-                <Icon name="eye" size="sm" color={altText ? colors.emerald : tc.text.secondary} />
-                <Text style={{ flex: 1, color: altText ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
-                  {altText ? t('compose.altTextAdded') : t('compose.addAltText')}
-                </Text>
-                <Icon name={showAltText ? 'chevron-down' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
-              </Pressable>
-            )}
-            {showAltText && media.length > 0 && (
-              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}>
-                <TextInput
-                  value={altText}
-                  onChangeText={setAltText}
-                  placeholder={t('compose.describeForScreenReaders')}
-                  placeholderTextColor={tc.text.tertiary}
-                  multiline
-                  maxLength={1000}
-                  style={{ color: tc.text.primary, fontSize: fontSize.sm, minHeight: 60, textAlignVertical: 'top' }}
-                  accessibilityLabel={t('compose.altTextInput')}
-                />
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: spacing.xs }}>
-                  <CharCountRing current={altText.length} max={1000} size={20} />
+                <View style={{ paddingTop: spacing.sm }}>
+                  <TextInput
+                    value={altText}
+                    onChangeText={setAltText}
+                    placeholder={t('compose.describeForScreenReaders')}
+                    placeholderTextColor={tc.text.tertiary}
+                    multiline
+                    maxLength={1000}
+                    style={{ color: tc.text.primary, fontSize: fontSize.sm, minHeight: 60, textAlignVertical: 'top', backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}
+                    accessibilityLabel={t('compose.altTextInput')}
+                  />
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: spacing.xs }}>
+                    <CharCountRing current={altText.length} max={1000} size={20} />
+                  </View>
                 </View>
-              </View>
+              </AnimatedAccordion>
             )}
 
-            {/* ── Tag people ── */}
-            <Pressable
-              onPress={() => setShowTagPeople(!showTagPeople)}
-              style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-              accessibilityRole="button"
-              accessibilityLabel={t('compose.tagPeople')}
+            {/* ── Tag people — animated accordion ── */}
+            <AnimatedAccordion
+              icon="users"
+              title={taggedUsers.length > 0 ? `${taggedUsers.length} ${t('compose.peopleTagged')}` : t('compose.tagPeople')}
+              isActive={taggedUsers.length > 0}
             >
-              <Icon name="users" size="sm" color={taggedUsers.length > 0 ? colors.emerald : tc.text.secondary} />
-              <Text style={{ flex: 1, color: taggedUsers.length > 0 ? colors.emerald : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
-                {taggedUsers.length > 0 ? `${taggedUsers.length} ${t('compose.peopleTagged')}` : t('compose.tagPeople')}
-              </Text>
-              <Icon name={showTagPeople ? 'chevron-down' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
-            </Pressable>
-            {showTagPeople && (
-              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}>
+              <View style={{ paddingTop: spacing.sm }}>
                 <TextInput
                   value={tagSearchQuery}
                   onChangeText={setTagSearchQuery}
                   placeholder={t('compose.searchPeopleToTag')}
                   placeholderTextColor={tc.text.tertiary}
                   autoCapitalize="none"
-                  style={{ color: tc.text.primary, fontSize: fontSize.sm, paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: tc.border }}
+                  style={{ color: tc.text.primary, fontSize: fontSize.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, backgroundColor: tc.bgElevated, borderRadius: radius.md }}
                   accessibilityLabel={t('compose.searchPeopleToTag')}
                 />
                 {taggedUsers.length > 0 && (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm }}>
                     {taggedUsers.map((user, i) => (
-                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.active.emerald10, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, gap: spacing.xs }}>
-                        <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>@{user}</Text>
-                        <Pressable onPress={() => setTaggedUsers(prev => prev.filter((_, idx) => idx !== i))} hitSlop={4} accessibilityRole="button" accessibilityLabel={t('common.remove')}>
-                          <Icon name="x" size={12} color={colors.emerald} />
-                        </Pressable>
-                      </View>
+                      <Pressable key={i} onPress={() => setTaggedUsers(prev => prev.filter((_, idx) => idx !== i))} hitSlop={4} accessibilityRole="button" accessibilityLabel={`${t('common.remove')} @${user}`} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', backgroundColor: pressed ? colors.active.emerald20 : colors.active.emerald10, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, gap: spacing.xs, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+                        <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontFamily: fonts.bodyBold, fontWeight: '600' }}>@{user}</Text>
+                        <Icon name="x" size={12} color={colors.emerald} />
+                      </Pressable>
                     ))}
                   </View>
                 )}
               </View>
-            )}
+            </AnimatedAccordion>
 
-            {/* ── Invite collaborator ── */}
-            <Pressable
-              onPress={() => setShowCollaborator(!showCollaborator)}
-              style={({ pressed }) => [publishRowStyle, { backgroundColor: tc.bgElevated, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-              accessibilityRole="button"
-              accessibilityLabel={t('compose.inviteCollaborator')}
+            {/* ── Invite collaborator — animated accordion ── */}
+            <AnimatedAccordion
+              icon="users"
+              iconColor={colors.gold}
+              title={collaboratorUsername ? `${t('compose.collaborator')}: @${collaboratorUsername}` : t('compose.inviteCollaborator')}
+              isActive={!!collaboratorUsername}
             >
-              <Icon name="users" size="sm" color={collaboratorUsername ? colors.gold : tc.text.secondary} />
-              <Text style={{ flex: 1, color: collaboratorUsername ? colors.gold : tc.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>
-                {collaboratorUsername ? `${t('compose.collaborator')}: @${collaboratorUsername}` : t('compose.inviteCollaborator')}
-              </Text>
-              <Icon name={showCollaborator ? 'chevron-down' : 'chevron-right'} size="sm" color={tc.text.tertiary} />
-            </Pressable>
-            {showCollaborator && (
-              <View style={{ backgroundColor: tc.bgElevated, borderRadius: radius.md, padding: spacing.md }}>
-                <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, marginBottom: spacing.sm }}>
+              <View style={{ paddingTop: spacing.sm }}>
+                <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.body, marginBottom: spacing.sm, lineHeight: 16 }}>
                   {t('compose.collaboratorDescription')}
                 </Text>
                 <TextInput
@@ -623,11 +596,11 @@ export default function CreatePostScreen() {
                   placeholder="@username"
                   placeholderTextColor={tc.text.tertiary}
                   autoCapitalize="none"
-                  style={{ color: tc.text.primary, fontSize: fontSize.sm, paddingVertical: spacing.sm }}
+                  style={{ color: tc.text.primary, fontSize: fontSize.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, backgroundColor: tc.bgElevated, borderRadius: radius.md }}
                   accessibilityLabel={t('compose.collaboratorUsername')}
                 />
               </View>
-            )}
+            </AnimatedAccordion>
 
             {/* ── Who can comment ── */}
             <Pressable

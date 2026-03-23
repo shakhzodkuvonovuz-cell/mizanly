@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TextInput,
   Pressable,
   FlatList,
+  ScrollView,
   Dimensions,
   StyleProp,
   ViewStyle,
@@ -134,26 +135,57 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
     setQuery('');
   }, [haptic]);
 
-  const renderGifItem = useCallback(({ item, index }: { item: GifItem; index: number }) => {
-    const aspectRatio = item.width / item.height;
-    // Cap stagger to first 8 items — prevents jank on long lists
-    const shouldStagger = index < 8;
+  // ── Waterfall masonry: assign GIFs to two columns, shortest-first ──
+  const { leftColumn, rightColumn } = useMemo(() => {
+    const left: Array<GifItem & { globalIndex: number }> = [];
+    const right: Array<GifItem & { globalIndex: number }> = [];
+    let leftHeight = 0;
+    let rightHeight = 0;
+
+    gifs.forEach((gif, i) => {
+      const ratio = Math.max(0.5, Math.min(2.5, gif.width / gif.height));
+      const itemHeight = GIF_ITEM_WIDTH / ratio;
+
+      if (leftHeight <= rightHeight) {
+        left.push({ ...gif, globalIndex: i });
+        leftHeight += itemHeight + GIF_ITEM_GAP;
+      } else {
+        right.push({ ...gif, globalIndex: i });
+        rightHeight += itemHeight + GIF_ITEM_GAP;
+      }
+    });
+
+    return { leftColumn: left, rightColumn: right };
+  }, [gifs]);
+
+  const renderMasonryItem = useCallback((item: GifItem & { globalIndex: number }) => {
+    const ratio = Math.max(0.5, Math.min(2.5, item.width / item.height));
+    const shouldStagger = item.globalIndex < 10;
     return (
       <Animated.View
-        entering={shouldStagger ? FadeInDown.delay(index * 40).duration(200) : undefined}
+        key={item.id}
+        entering={shouldStagger ? FadeInDown.delay(item.globalIndex * 35).duration(250).springify() : FadeIn.duration(150)}
       >
         <Pressable
           onPress={() => handleSelectGif(item)}
-          style={({ pressed }) => [
-            styles.gifItem,
-            { width: GIF_ITEM_WIDTH, transform: [{ scale: pressed ? 0.93 : 1 }] },
-          ]}
+          style={({ pressed }) => ({
+            borderRadius: radius.md,
+            overflow: 'hidden',
+            marginBottom: GIF_ITEM_GAP,
+            transform: [{ scale: pressed ? 0.93 : 1 }],
+            // Subtle shadow on each GIF card
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 4,
+            elevation: 3,
+          })}
           accessibilityLabel={item.title || t('stories.gif')}
           accessibilityRole="button"
         >
           <Image
             source={{ uri: item.previewUrl }}
-            style={[styles.gifImage, { aspectRatio: Math.max(0.5, Math.min(2, aspectRatio)) }]}
+            style={{ width: GIF_ITEM_WIDTH, height: GIF_ITEM_WIDTH / ratio, borderRadius: radius.md }}
             contentFit="cover"
             transition={200}
             placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
@@ -304,15 +336,16 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={gifs}
-          numColumns={GIF_COLUMN_COUNT}
-          keyExtractor={item => item.id}
-          renderItem={renderGifItem}
-          contentContainerStyle={styles.gifGrid}
-          columnWrapperStyle={styles.gifRow}
-          showsVerticalScrollIndicator={false}
-        />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.gifGrid}>
+          <View style={styles.masonryContainer}>
+            <View style={styles.masonryColumn}>
+              {leftColumn.map(renderMasonryItem)}
+            </View>
+            <View style={styles.masonryColumn}>
+              {rightColumn.map(renderMasonryItem)}
+            </View>
+          </View>
+        </ScrollView>
       )}
 
       {/* GIPHY attribution */}
@@ -385,17 +418,12 @@ const styles = StyleSheet.create({
   gifGrid: {
     paddingBottom: spacing.base,
   },
-  gifRow: {
+  masonryContainer: {
+    flexDirection: 'row',
     gap: GIF_ITEM_GAP,
-    marginBottom: GIF_ITEM_GAP,
   },
-  gifItem: {
-    borderRadius: radius.md,
-    overflow: 'hidden',
-  },
-  gifImage: {
-    width: '100%',
-    borderRadius: radius.md,
+  masonryColumn: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
