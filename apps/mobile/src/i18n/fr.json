@@ -3223,6 +3223,11 @@
   },
   "videoEditor": {
     "editVideo": "Éditer la vidéo",
+    "undo": "Undo",
+    "redo": "Redo",
+    "reverse": "Reverse",
+    "aspectRatio": "Aspect Ratio",
+    "autoCaptions": "Captions",
     "trim": "Couper",
     "speed": "Vitesse",
     "volume": "Volume",

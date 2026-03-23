@@ -3223,6 +3223,11 @@
   },
   "videoEditor": {
     "editVideo": "ویڈیو ایڈٹ کریں",
+    "undo": "Undo",
+    "redo": "Redo",
+    "reverse": "Reverse",
+    "aspectRatio": "Aspect Ratio",
+    "autoCaptions": "Captions",
     "trim": "تراشیں",
     "speed": "رفتار",
     "volume": "آواز",

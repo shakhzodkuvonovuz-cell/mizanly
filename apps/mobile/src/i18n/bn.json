@@ -3222,6 +3222,11 @@
   },
   "videoEditor": {
     "editVideo": "ভিডিও সম্পাদনা",
+    "undo": "Undo",
+    "redo": "Redo",
+    "reverse": "Reverse",
+    "aspectRatio": "Aspect Ratio",
+    "autoCaptions": "Captions",
     "trim": "ছাঁটাই",
     "speed": "গতি",
     "volume": "ভলিউম",

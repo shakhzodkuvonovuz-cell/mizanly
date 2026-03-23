@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
   editVideoButton: {
     position: 'absolute',
     top: spacing.sm,
-    end: spacing.sm + 40,
+    end: spacing.sm + 32 + spacing.sm, // remove button width (32) + gap
     backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: radius.full,
     width: 32,

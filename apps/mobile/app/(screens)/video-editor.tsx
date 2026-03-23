@@ -57,13 +57,13 @@ export default function VideoEditorScreen() {
   const videoRef = useRef<Video>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [totalDuration, setTotalDuration] = useState(45);
+  const [totalDuration, setTotalDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState<SpeedOption>(1);
   const [selectedTool, setSelectedTool] = useState<ToolTab>('trim');
   const [selectedFilter, setSelectedFilter] = useState<FilterName>('original');
   const [selectedQuality, setSelectedQuality] = useState<QualityOption>('1080p');
   const [startTime, setStartTime] = useState(0);
-  const [endTime, setEndTime] = useState(45);
+  const [endTime, setEndTime] = useState(0);
   const [selectedFont, setSelectedFont] = useState('default');
   const [selectedTextColor, setSelectedTextColor] = useState('#FFFFFF');
   const [captionText, setCaptionText] = useState('');
@@ -188,9 +188,10 @@ export default function VideoEditorScreen() {
     right: `${(1 - rightHandlePos.value) * 100}%`,
   }));
 
-  // FIX: Volume slider uses onLayout to capture absolute X position (no magic number)
+  // Volume slider uses ref + onLayout to capture absolute X position
   const volumeSliderWidth = useRef(0);
   const volumeSliderX = useRef(0);
+  const volumeSliderRef = useRef<View>(null);
   const onOriginalVolumeGesture = Gesture.Pan()
     .onUpdate((e) => {
       if (volumeSliderWidth.current <= 0) return;
@@ -670,10 +671,11 @@ export default function VideoEditorScreen() {
             </View>
             <GestureDetector gesture={onOriginalVolumeGesture}>
               <View
+                ref={volumeSliderRef}
                 style={styles.sliderTrack}
                 onLayout={(e) => {
                   volumeSliderWidth.current = e.nativeEvent.layout.width;
-                  (e.target as any).measureInWindow?.((x: number) => { volumeSliderX.current = x; });
+                  volumeSliderRef.current?.measureInWindow((x) => { volumeSliderX.current = x; });
                 }}
               >
                 <View style={[styles.sliderFill, { width: `${originalVolume}%` }]} />

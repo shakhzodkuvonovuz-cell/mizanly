@@ -3216,6 +3216,11 @@
   },
   "videoEditor": {
     "editVideo": "تعديل الفيديو",
+    "undo": "Undo",
+    "redo": "Redo",
+    "reverse": "Reverse",
+    "aspectRatio": "Aspect Ratio",
+    "autoCaptions": "Captions",
     "trim": "قص",
     "speed": "السرعة",
     "volume": "الصوت",
