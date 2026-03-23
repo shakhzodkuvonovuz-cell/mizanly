@@ -818,12 +818,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.lg,
     paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    marginHorizontal: spacing.xl,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: radius.full,
+    alignSelf: 'center',
   },
   reactionBtn: {
     padding: spacing.sm,
   },
   reactionEmoji: {
-    fontSize: fontSize.xl,
+    fontSize: 32,
   },
 
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: spacing.base },

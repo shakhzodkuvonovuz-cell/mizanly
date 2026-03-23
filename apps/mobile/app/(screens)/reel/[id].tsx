@@ -24,17 +24,18 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { reelsApi, followsApi } from '@/services/api';
+import { reelsApi, followsApi, messagesApi } from '@/services/api';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { formatCount } from '@/utils/formatCount';
 import { showToast } from '@/components/ui/Toast';
-import type { Comment, Reel } from '@/types';
+import type { Comment, Reel, Conversation } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 
@@ -151,6 +152,7 @@ export default function ReelDetailScreen() {
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const { animatedStyle, onPressIn, onPressOut } = useAnimatedPress();
 
   // Clear mode state
@@ -295,6 +297,30 @@ export default function ReelDetailScreen() {
     }
   }, [id, shareMutation, haptic, t]);
 
+  // ── Share to DM ──
+  const conversationsQuery = useQuery({
+    queryKey: ['conversations'],
+    queryFn: () => messagesApi.getConversations(),
+    enabled: showShareSheet,
+  });
+
+  const handleShareToDM = useCallback(async (conversationId: string) => {
+    if (!reelQuery.data) return;
+    try {
+      const reel = reelQuery.data;
+      await messagesApi.sendMessage(conversationId, {
+        content: `Check out this reel!`,
+        mediaUrl: reel.hlsUrl || reel.videoUrl,
+        messageType: 'reel_share',
+      });
+      showToast({ message: t('bakra.sent'), variant: 'success' });
+      haptic.send();
+      setShowShareSheet(false);
+    } catch {
+      showToast({ message: t('common.error'), variant: 'error' });
+    }
+  }, [reelQuery.data, haptic, t]);
+
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
 
   if (reelQuery.isError) {
@@ -430,6 +456,12 @@ export default function ReelDetailScreen() {
                 activeColor={colors.gold}
                 accessibilityLabel={t('common.bookmark')}
               />
+
+              <ActionButton
+                icon={<Icon name="send" size={28} color={colors.text.primary} />}
+                onPress={() => setShowShareSheet(true)}
+                accessibilityLabel={t('bakra.shareToChat')}
+              />
             </View>
           </Animated.View>
         </Pressable>
@@ -562,8 +594,60 @@ export default function ReelDetailScreen() {
             </View>
           )}
         </KeyboardAvoidingView>
+
+        {/* Share to DM BottomSheet */}
+        <BottomSheet
+          visible={showShareSheet}
+          onClose={() => setShowShareSheet(false)}
+          snapPoint={0.5}
+          scrollable
+        >
+          <Text style={styles.shareSheetTitle}>{t('bakra.selectConversation')}</Text>
+          {conversationsQuery.isLoading ? (
+            <View style={styles.shareSheetList}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <View key={i} style={styles.shareSheetRow}>
+                  <Skeleton.Circle size={40} />
+                  <Skeleton.Rect width={140} height={14} />
+                </View>
+              ))}
+            </View>
+          ) : (conversationsQuery.data ?? []).length === 0 ? (
+            <EmptyState
+              icon="message-circle"
+              title={t('risalah.noMessages')}
+              subtitle={t('risalah.messagesHint')}
+            />
+          ) : (
+            <FlatList
+              data={conversationsQuery.data ?? []}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }: { item: Conversation }) => {
+                const displayName = item.isGroup
+                  ? item.groupName ?? t('risalah.group')
+                  : item.members.find((m) => m.user.id !== user?.id)?.user.displayName ?? t('risalah.chat');
+                const avatarUri = item.isGroup
+                  ? item.groupAvatarUrl ?? null
+                  : item.members.find((m) => m.user.id !== user?.id)?.user.avatarUrl ?? null;
+                return (
+                  <Pressable
+                    style={styles.shareSheetRow}
+                    onPress={() => handleShareToDM(item.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('bakra.shareToChat')}
+                  >
+                    <Avatar uri={avatarUri} name={displayName} size="md" />
+                    <Text style={styles.shareSheetName} numberOfLines={1}>{displayName}</Text>
+                    <Icon name="send" size="sm" color={tc.text.secondary} />
+                  </Pressable>
+                );
+              }}
+              contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
+            />
+          )}
+        </BottomSheet>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -769,5 +853,29 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   },
   sendBtnDisabled: {
     color: colors.text.tertiary,
+  },
+  shareSheetTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.md,
+  },
+  shareSheetList: {
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
+  },
+  shareSheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+  },
+  shareSheetName: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
   },
 });

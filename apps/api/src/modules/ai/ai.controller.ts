@@ -1,6 +1,6 @@
 import {
   Controller, Post, Get,
-  Body, Param, Query, UseGuards, BadRequestException,
+  Body, Param, Query, UseGuards, HttpException, HttpStatus,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -19,11 +19,14 @@ import {
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
-  /** Enforce per-user daily AI quota — throws if exhausted */
+  /** Enforce per-user daily AI quota — throws 429 if exhausted */
   private async enforceQuota(userId: string): Promise<void> {
     const allowed = await this.aiService.checkDailyQuota(userId);
     if (!allowed) {
-      throw new BadRequestException('Daily AI usage limit reached. Try again tomorrow.');
+      throw new HttpException(
+        'Daily AI usage limit reached. Try again tomorrow.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
   }
 

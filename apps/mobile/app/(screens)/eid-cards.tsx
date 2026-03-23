@@ -93,6 +93,7 @@ export default function EidCardsScreen() {
               <Animated.View key={occ.id} entering={FadeInUp.delay(Math.min(index, 15) * 80).duration(400).springify()}>
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={`${occ.name} - ${occ.nameAr}`}
                   onPress={() => handleOccasionPress(occ.id)}
                   style={styles.cardOuter}
                 >
@@ -132,6 +133,7 @@ export default function EidCardsScreen() {
               </View>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('common.share')}
                 onPress={handleShareDirect}
                 style={styles.shareDirectBtn}
               >

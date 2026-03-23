@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PostCard } from '@/components/saf/PostCard';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { ReactionPicker, type ReactionType } from '@/components/ui/ReactionPicker';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -83,6 +84,7 @@ function CommentRow({
   const isPostAuthor = !!viewerId && !!postAuthorId && postAuthorId === viewerId;
   const canDelete = isOwn || isPostAuthor;
   const canEdit = isOwn; // only comment author can edit their own text
+  const [showReactions, setShowReactions] = useState(false);
 
   // Swipe-to-like gesture
   const translateX = useSharedValue(0);
@@ -148,6 +150,17 @@ function CommentRow({
     ]);
   };
 
+  const handleCommentReaction = useCallback((type: ReactionType) => {
+    // TODO: Wire to postsApi.reactToComment(postId, comment.id, type) when backend supports multiple reaction types
+    setShowReactions(false);
+  }, []);
+
+  const handleLongPress = useCallback(() => {
+    if (!viewerId) return;
+    haptic.longPress();
+    setShowReactions((prev) => !prev);
+  }, [viewerId, haptic]);
+
   return (
     <GestureDetector gesture={panGesture}>
     <View style={styles.swipeContainer}>
@@ -157,12 +170,17 @@ function CommentRow({
       <Animated.View style={[{ flexDirection: rtlFlexRow(isRTL) }, styles.commentRow, swipeRowStyle]}>
       <Avatar uri={comment.user.avatarUrl} name={comment.user.displayName} size="sm" />
       <View style={styles.commentBody}>
-        <View style={[
-          styles.commentBubble,
-          !!postAuthorId && comment.user.id === postAuthorId
-            ? rtlBorderStart(isRTL, 2, colors.emerald)
-            : rtlBorderStart(isRTL, 2, 'transparent'),
-        ]}>
+        <Pressable
+          onLongPress={handleLongPress}
+          delayLongPress={400}
+          style={[
+            styles.commentBubble,
+            !!postAuthorId && comment.user.id === postAuthorId
+              ? rtlBorderStart(isRTL, 2, colors.emerald)
+              : rtlBorderStart(isRTL, 2, 'transparent'),
+          ]}
+          accessibilityLabel={t('reactions.longPressToReact')}
+        >
           <Text style={[styles.commentUser, { textAlign: rtlTextAlign(isRTL) }]}>{comment.user.displayName}</Text>
           {editing ? (
             <TextInput
@@ -176,7 +194,7 @@ function CommentRow({
           ) : (
             <RichText text={comment.content} />
           )}
-        </View>
+        </Pressable>
         {editing ? (
           <View style={[styles.commentMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Pressable onPress={() => setEditing(false)} accessibilityLabel={t('accessibility.cancelEditing')} accessibilityRole="button">
@@ -210,6 +228,15 @@ function CommentRow({
                 <Text style={styles.commentActionDestructive}>{t('common.delete')}</Text>
               </Pressable>
             )}
+          </View>
+        )}
+        {showReactions && (
+          <View style={styles.reactionPickerWrap}>
+            <ReactionPicker
+              onReact={handleCommentReaction}
+              userReaction={undefined}
+              compact
+            />
           </View>
         )}
       </View>
@@ -868,6 +895,9 @@ const createStyles = (tc: ReturnType<typeof useThemeColors>) => StyleSheet.creat
   commentAction: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '700' },
   commentActionDestructive: { color: colors.error, fontSize: fontSize.xs, fontWeight: '700' },
   commentLike: { paddingTop: spacing.xs },
+  reactionPickerWrap: {
+    marginTop: spacing.xs,
+  },
   inputWrap: {
     borderTopWidth: 0.5, borderTopColor: tc.border,
     backgroundColor: tc.bg,

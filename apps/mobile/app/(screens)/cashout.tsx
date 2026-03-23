@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
@@ -45,6 +46,14 @@ interface PaymentMethod {
 
 type PayoutSpeed = 'instant' | 'standard';
 
+interface PayoutHistoryEntry {
+  id: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed';
+  createdAt: string;
+}
+
 // ── API helpers ──
 
 // TODO: Backend wallet endpoints not yet implemented
@@ -60,6 +69,9 @@ const walletApi = {
     payoutSpeed: PayoutSpeed;
     paymentMethodId: string;
   }) => api.post<{ success: boolean }>('/monetization/wallet/cashout', payload),
+  // TODO: Backend payout history endpoint not yet implemented
+  getPayoutHistory: () =>
+    api.get<{ data: PayoutHistoryEntry[]; meta: { cursor: string | null; hasMore: boolean } }>('/monetization/wallet/payouts'),
 };
 
 // ── Constants ──
@@ -76,6 +88,8 @@ function CashoutContent() {
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState<WalletBalance | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [amountText, setAmountText] = useState('');
   const [payoutSpeed, setPayoutSpeed] = useState<PayoutSpeed>('standard');
   const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
@@ -108,7 +122,21 @@ function CashoutContent() {
         if (!cancelled) setLoading(false);
       }
     }
+    async function loadHistory() {
+      try {
+        const res = await walletApi.getPayoutHistory();
+        if (!cancelled) {
+          const history = (res as { data: PayoutHistoryEntry[] })?.data ?? [];
+          setPayoutHistory(history);
+        }
+      } catch {
+        // Payout history not available yet — show empty state
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    }
     load();
+    loadHistory();
     return () => { cancelled = true; };
   }, []);
 
@@ -385,6 +413,63 @@ function CashoutContent() {
             ))}
           </Animated.View>
         )}
+
+        {/* Payout History */}
+        <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.historySection}>
+          <Text style={[styles.sectionLabel, { color: tc.text.primary }]}>
+            {t('cashout.payoutHistory', 'Payout History')}
+          </Text>
+          {historyLoading ? (
+            <View style={{ gap: spacing.sm }}>
+              <Skeleton.Rect width="100%" height={56} borderRadius={radius.lg} />
+              <Skeleton.Rect width="100%" height={56} borderRadius={radius.lg} />
+            </View>
+          ) : payoutHistory.length === 0 ? (
+            <View style={[styles.historyEmptyCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}>
+              <EmptyState
+                icon="clock"
+                title={t('cashout.noPayouts', 'No payouts yet')}
+                subtitle={t('cashout.noPayoutsSubtitle', 'Your payout history will appear here once you make your first cash out')}
+              />
+            </View>
+          ) : (
+            <View style={{ gap: spacing.sm }}>
+              {payoutHistory.map((entry) => {
+                const statusColor =
+                  entry.status === 'completed' ? colors.emerald
+                    : entry.status === 'pending' ? colors.gold
+                      : colors.error;
+                const statusBgColor =
+                  entry.status === 'completed' ? colors.active.emerald10
+                    : entry.status === 'pending' ? colors.active.gold10
+                      : colors.active.error10;
+                const statusLabel =
+                  entry.status === 'completed' ? t('cashout.completed', 'Completed')
+                    : entry.status === 'pending' ? t('cashout.pending', 'Pending')
+                      : t('cashout.failed', 'Failed');
+
+                return (
+                  <View
+                    key={entry.id}
+                    style={[styles.historyRow, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
+                  >
+                    <View style={styles.historyLeft}>
+                      <Text style={[styles.historyDate, { color: tc.text.secondary }]}>
+                        {new Date(entry.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Text>
+                      <View style={[styles.statusBadge, { backgroundColor: statusBgColor }]}>
+                        <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.historyAmount, { color: tc.text.primary }]}>
+                      ${entry.amount.toFixed(2)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </Animated.View>
       </ScrollView>
 
       {/* Confirm Button */}
@@ -688,6 +773,45 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: radius.full,
     backgroundColor: colors.emerald,
+  },
+
+  // Payout history
+  historySection: {
+    marginTop: spacing.xl,
+  },
+  historyEmptyCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.base,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.base,
+  },
+  historyLeft: {
+    gap: spacing.xs,
+  },
+  historyDate: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.sm,
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  statusText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.xs,
+  },
+  historyAmount: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSize.md,
   },
 
   // Bottom bar

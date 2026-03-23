@@ -201,6 +201,8 @@ function HajjStepContent() {
           {step.duas.map((dua, duaIndex) => (
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={dua.transliteration}
+              accessibilityState={{ expanded: expandedDua === duaIndex }}
               key={duaIndex}
               style={[styles.duaCard, { backgroundColor: tc.bgCard, borderColor: tc.border }]}
               onPress={() =>
@@ -232,7 +234,9 @@ function HajjStepContent() {
           <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>{t('hajj.checklist')}</Text>
           {step.checklist.map((item, idx) => (
             <Pressable
-              accessibilityRole="button"
+              accessibilityRole="checkbox"
+              accessibilityLabel={item}
+              accessibilityState={{ checked: checklistState[idx] ?? false }}
               key={idx}
               style={styles.checkItem}
               onPress={() => toggleCheckItem(idx)}
@@ -265,6 +269,7 @@ function HajjStepContent() {
           <Animated.View entering={FadeInUp.delay(300).duration(300)}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('hajj.markComplete')}
               style={styles.completeButton}
               onPress={handleMarkComplete}
 

@@ -120,9 +120,48 @@ describe('MeilisearchService', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({
-            searchableAttributes: ['content', 'hashtags'],
-            filterableAttributes: ['userId', 'postType'],
+            searchableAttributes: ['content', 'hashtags', 'username'],
+            filterableAttributes: ['userId', 'postType', 'visibility', 'isRemoved'],
             sortableAttributes: ['likesCount', 'createdAt'],
+          }),
+        }),
+      );
+
+      // Verify threads settings
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${TEST_HOST}/indexes/threads/settings`,
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({
+            searchableAttributes: ['content', 'hashtags', 'username'],
+            filterableAttributes: ['userId', 'visibility', 'isRemoved', 'isChainHead'],
+            sortableAttributes: ['likesCount', 'createdAt'],
+          }),
+        }),
+      );
+
+      // Verify reels settings
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${TEST_HOST}/indexes/reels/settings`,
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({
+            searchableAttributes: ['caption', 'hashtags', 'username'],
+            filterableAttributes: ['userId', 'status', 'isRemoved'],
+            sortableAttributes: ['likesCount', 'viewsCount', 'createdAt'],
+          }),
+        }),
+      );
+
+      // Verify videos settings
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${TEST_HOST}/indexes/videos/settings`,
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({
+            searchableAttributes: ['title', 'description', 'tags', 'username'],
+            filterableAttributes: ['userId', 'channelId', 'category', 'status', 'isRemoved'],
+            sortableAttributes: ['viewsCount', 'likesCount', 'publishedAt', 'createdAt'],
           }),
         }),
       );

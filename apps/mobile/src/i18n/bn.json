@@ -195,7 +195,8 @@
     "draftSaved": "Draft saved",
     "discardChanges": "Discard changes?",
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
-    "saved": "Saved"
+    "saved": "Saved",
+    "rateLimited": "Slow down! Try again in {{seconds}} seconds"
   },
   "tabs": {
     "saf": "সাফ",
@@ -588,7 +589,10 @@
       "actionLabel": "Create a Reel"
     },
     "remix": "Remix",
-    "reel": "Reel"
+    "reel": "Reel",
+    "shareToChat": "Send to...",
+    "selectConversation": "Select a conversation",
+    "sent": "Sent"
   },
   "majlis": {
     "forYou": "For You",
@@ -1063,7 +1067,10 @@
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
-    "reels": "Reels"
+    "reels": "Reels",
+    "unfollowTitle": "Unfollow?",
+    "unfollowMessage": "You'll stop seeing {{username}}'s posts in your feed",
+    "unfollow": "Unfollow"
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",
@@ -1280,7 +1287,9 @@
     "edit": "Edit",
     "manage": "Manage",
     "scheduleLive": "Schedule Live",
-    "disappearingDefault": "Default Disappearing Timer"
+    "disappearingDefault": "Default Disappearing Timer",
+    "readReceipts": "Read Receipts",
+    "readReceiptsDescription": "Let others see when you've read their messages"
   },
   "onboarding": {
     "interests": {
@@ -2967,7 +2976,8 @@
     "fontDefault": "Default",
     "fontSerif": "Serif",
     "fontMono": "Mono",
-    "fontBold": "Bold"
+    "fontBold": "Bold",
+    "quickReact": "Quick react"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -3477,8 +3487,16 @@
     "errorTitle": "Error"
   },
   "cashout": {
-    "title": "Cash Out",
-    "errorTitle": "Error"
+    "title": "নগদ উত্তোলন",
+    "errorTitle": "ত্রুটি",
+    "payoutHistory": "পেআউট ইতিহাস",
+    "noPayouts": "এখনও কোনো পেআউট নেই",
+    "noPayoutsSubtitle": "আপনার প্রথম নগদ উত্তোলনের পরে পেআউট ইতিহাস এখানে দেখা যাবে",
+    "pending": "অপেক্ষমান",
+    "completed": "সম্পন্ন",
+    "failed": "ব্যর্থ",
+    "amount": "পরিমাণ",
+    "date": "তারিখ"
   },
   "chatLock": {
     "removeLockMessage": "Are you sure you want to remove the chat lock?"
@@ -3686,5 +3704,42 @@
     "helpfulCount": "{{count}} found this helpful",
     "notHelpfulCount": "{{count}} found this not helpful",
     "contextByReaders": "Added by readers who thought people might want to know"
+  },
+  "forceUpdate": {
+    "title": "Update Required",
+    "subtitle": "A new version of Mizanly is available. Please update to continue using the app.",
+    "updateButton": "Update Now",
+    "currentVersion": "Current version",
+    "requiredVersion": "Required version"
+  },
+  "reactions": {
+    "love": "Love",
+    "fire": "Fire",
+    "clap": "Clap",
+    "laugh": "Laugh",
+    "amazing": "Amazing",
+    "sad": "Sad",
+    "longPressToReact": "Long press to react"
+  },
+  "analytics": {
+    "creatorAnalytics": "Creator Analytics",
+    "views": "Views",
+    "likes": "Likes",
+    "followers": "Followers",
+    "engagementOverTime": "Engagement Over Time",
+    "topPerformingContent": "Top Performing Content",
+    "notEnoughData": "Not enough data",
+    "topContentHint": "Post more content to see which posts perform best",
+    "failedToLoad": "Failed to load analytics",
+    "tryAgainLater": "Please try again later",
+    "noDataYet": "No analytics data yet",
+    "noDataSubtitle": "Start creating content to see your analytics",
+    "startCreating": "Start Creating",
+    "followerGrowth": "Follower Growth",
+    "last7Days": "7 Days",
+    "last30Days": "30 Days",
+    "newFollowers": "new followers",
+    "noGrowthData": "No growth data yet",
+    "noGrowthDataSubtitle": "Follower growth data will appear as your audience grows"
   }
 }

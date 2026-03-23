@@ -82,6 +82,8 @@ export const mockRedis = {
     hgetall: jest.fn().mockResolvedValue({}),
     hset: jest.fn().mockResolvedValue(1),
     hdel: jest.fn().mockResolvedValue(1),
+    incr: jest.fn().mockResolvedValue(1),
+    expire: jest.fn().mockResolvedValue(1),
     ping: jest.fn().mockResolvedValue('PONG'),
     pipeline: jest.fn().mockReturnValue({
       incrby: jest.fn().mockReturnThis(),

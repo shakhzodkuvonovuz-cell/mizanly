@@ -61,26 +61,26 @@ export class MeilisearchService implements OnModuleInit {
       });
 
       await this.updateSettings('posts', {
-        searchableAttributes: ['content', 'hashtags'],
-        filterableAttributes: ['userId', 'postType'],
+        searchableAttributes: ['content', 'hashtags', 'username'],
+        filterableAttributes: ['userId', 'postType', 'visibility', 'isRemoved'],
         sortableAttributes: ['likesCount', 'createdAt'],
       });
 
       await this.updateSettings('threads', {
-        searchableAttributes: ['content', 'hashtags'],
-        filterableAttributes: ['userId'],
+        searchableAttributes: ['content', 'hashtags', 'username'],
+        filterableAttributes: ['userId', 'visibility', 'isRemoved', 'isChainHead'],
         sortableAttributes: ['likesCount', 'createdAt'],
       });
 
       await this.updateSettings('reels', {
-        searchableAttributes: ['caption', 'hashtags'],
-        filterableAttributes: ['userId', 'status'],
+        searchableAttributes: ['caption', 'hashtags', 'username'],
+        filterableAttributes: ['userId', 'status', 'isRemoved'],
         sortableAttributes: ['likesCount', 'viewsCount', 'createdAt'],
       });
 
       await this.updateSettings('videos', {
-        searchableAttributes: ['title', 'description', 'tags'],
-        filterableAttributes: ['userId', 'channelId', 'category', 'status'],
+        searchableAttributes: ['title', 'description', 'tags', 'username'],
+        filterableAttributes: ['userId', 'channelId', 'category', 'status', 'isRemoved'],
         sortableAttributes: ['viewsCount', 'likesCount', 'publishedAt', 'createdAt'],
       });
 

@@ -195,7 +195,8 @@
     "draftSaved": "تم حفظ المسودة",
     "discardChanges": "تجاهل التغييرات؟",
     "unsavedChangesMessage": "لديك تغييرات غير محفوظة. ماذا تريد أن تفعل؟",
-    "saved": "Saved"
+    "saved": "Saved",
+    "rateLimited": "تمهّل! حاول مرة أخرى بعد {{seconds}} ثانية"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -535,7 +536,10 @@
     "creator": "صاحب المنشور",
     "questionPlaceholder": "اكتب سؤالك...",
     "couldNotLoadContent": "تعذر تحميل هذا المحتوى",
-    "goBack": "رجوع"
+    "goBack": "رجوع",
+    "shareToChat": "إرسال إلى...",
+    "selectConversation": "اختر محادثة",
+    "sent": "تم الإرسال"
   },
   "majlis": {
     "forYou": "لك",
@@ -1010,7 +1014,10 @@
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
-    "reels": "Reels"
+    "reels": "Reels",
+    "unfollowTitle": "إلغاء المتابعة؟",
+    "unfollowMessage": "ستتوقف عن رؤية منشورات {{username}} في خلاصتك",
+    "unfollow": "إلغاء المتابعة"
   },
   "islamic": {
     "prayerTimes": "أوقات الصلاة",
@@ -1280,7 +1287,9 @@
     "edit": "تعديل",
     "manage": "إدارة",
     "scheduleLive": "جدولة بث مباشر",
-    "disappearingDefault": "مؤقت الاختفاء الافتراضي"
+    "disappearingDefault": "مؤقت الاختفاء الافتراضي",
+    "readReceipts": "إيصالات القراءة",
+    "readReceiptsDescription": "اسمح للآخرين بمعرفة متى قرأت رسائلهم"
   },
   "accessibility": {
     "goBack": "رجوع",
@@ -2762,7 +2771,8 @@
     "fontDefault": "افتراضي",
     "fontSerif": "Serif",
     "fontMono": "Mono",
-    "fontBold": "غامق"
+    "fontBold": "غامق",
+    "quickReact": "تفاعل سريع"
   },
   "windDown": {
     "title": "حان وقت الراحة",
@@ -3483,8 +3493,16 @@
     "errorTitle": "Error"
   },
   "cashout": {
-    "title": "Cash Out",
-    "errorTitle": "Error"
+    "title": "سحب الأموال",
+    "errorTitle": "خطأ",
+    "payoutHistory": "سجل المدفوعات",
+    "noPayouts": "لا توجد مدفوعات بعد",
+    "noPayoutsSubtitle": "سيظهر سجل المدفوعات هنا بعد أول عملية سحب",
+    "pending": "قيد الانتظار",
+    "completed": "مكتمل",
+    "failed": "فشل",
+    "amount": "المبلغ",
+    "date": "التاريخ"
   },
   "chatLock": {
     "removeLockMessage": "Are you sure you want to remove the chat lock?"
@@ -3692,5 +3710,42 @@
     "helpfulCount": "{{count}} وجدوا هذا مفيداً",
     "notHelpfulCount": "{{count}} وجدوا هذا غير مفيد",
     "contextByReaders": "أضافه قراء اعتقدوا أن الناس قد يرغبون في معرفته"
+  },
+  "forceUpdate": {
+    "title": "تحديث مطلوب",
+    "subtitle": "يتوفر إصدار جديد من ميزانلي. يرجى التحديث لمتابعة استخدام التطبيق.",
+    "updateButton": "حدّث الآن",
+    "currentVersion": "الإصدار الحالي",
+    "requiredVersion": "الإصدار المطلوب"
+  },
+  "reactions": {
+    "love": "حب",
+    "fire": "نار",
+    "clap": "تصفيق",
+    "laugh": "ضحك",
+    "amazing": "رائع",
+    "sad": "حزن",
+    "longPressToReact": "اضغط مطولاً للتفاعل"
+  },
+  "analytics": {
+    "creatorAnalytics": "تحليلات صانع المحتوى",
+    "views": "المشاهدات",
+    "likes": "الإعجابات",
+    "followers": "المتابعون",
+    "engagementOverTime": "التفاعل عبر الزمن",
+    "topPerformingContent": "المحتوى الأفضل أداءً",
+    "notEnoughData": "لا توجد بيانات كافية",
+    "topContentHint": "انشر المزيد من المحتوى لمعرفة المنشورات الأفضل أداءً",
+    "failedToLoad": "فشل تحميل التحليلات",
+    "tryAgainLater": "يرجى المحاولة مرة أخرى لاحقاً",
+    "noDataYet": "لا توجد بيانات تحليلية بعد",
+    "noDataSubtitle": "ابدأ بإنشاء المحتوى لرؤية تحليلاتك",
+    "startCreating": "ابدأ الإنشاء",
+    "followerGrowth": "نمو المتابعين",
+    "last7Days": "٧ أيام",
+    "last30Days": "٣٠ يوماً",
+    "newFollowers": "متابعون جدد",
+    "noGrowthData": "لا توجد بيانات نمو بعد",
+    "noGrowthDataSubtitle": "ستظهر بيانات نمو المتابعين مع نمو جمهورك"
   }
 }

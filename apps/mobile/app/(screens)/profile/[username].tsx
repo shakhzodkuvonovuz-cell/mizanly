@@ -351,6 +351,21 @@ export default function ProfileScreen() {
     },
   });
 
+  const handleFollowPress = useCallback(() => {
+    if (isFollowing) {
+      Alert.alert(
+        t('profile.unfollowTitle'),
+        t('profile.unfollowMessage', { username: profile?.username ?? username }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('profile.unfollow'), style: 'destructive', onPress: () => followMutation.mutate() },
+        ]
+      );
+    } else {
+      followMutation.mutate();
+    }
+  }, [isFollowing, profile?.username, username, t, followMutation]);
+
   const blockMutation = useMutation({
     mutationFn: () => {
       if (!profile) return Promise.reject(new Error('Profile not loaded'));
@@ -564,7 +579,7 @@ export default function ProfileScreen() {
               <FollowButton
                 isFollowing={isFollowing}
                 isPending={followMutation.isPending}
-                onPress={() => { haptic.follow(); followMutation.mutate(); }}
+                onPress={() => { haptic.follow(); handleFollowPress(); }}
               />
             </Animated.View>
             <Pressable

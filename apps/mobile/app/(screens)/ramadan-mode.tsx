@@ -168,8 +168,9 @@ function GoalItem({
   return (
     <Animated.View entering={FadeInUp.delay(200 + index * 60).duration(300)}>
       <Pressable
-        accessibilityRole="button"
+        accessibilityRole="checkbox"
         accessibilityLabel={t(goal.label)}
+        accessibilityState={{ checked: goal.completed }}
         onPress={() => {
           haptic.tick();
           onToggle();

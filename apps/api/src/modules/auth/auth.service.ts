@@ -177,7 +177,18 @@ export class AuthService {
       },
     });
     if (!user) throw new NotFoundException('User not found');
-    return user;
+
+    // Finding F16: Check if user has 2FA enabled so mobile app can show verification screen.
+    // Clerk handles primary authentication, but app-level TOTP needs a post-login check.
+    const twoFactorRecord = await this.prisma.twoFactorSecret.findUnique({
+      where: { userId },
+      select: { isEnabled: true },
+    });
+
+    return {
+      ...user,
+      twoFactorEnabled: twoFactorRecord?.isEnabled ?? false,
+    };
   }
 
   async checkUsername(username: string) {

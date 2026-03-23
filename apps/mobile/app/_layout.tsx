@@ -15,6 +15,8 @@ import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import { NotoNaskhArabic_400Regular, NotoNaskhArabic_700Bold } from "@expo-google-fonts/noto-naskh-arabic";
 import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setupDeepLinkListeners } from '@/utils/deepLinking';
 import { api } from '@/services/api';
 import { widgetData } from '@/services/widgetData';
@@ -24,6 +26,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { ForceUpdateModal } from '@/components/ui/ForceUpdateModal';
 import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { TTSMiniPlayer } from '@/components/ui/TTSMiniPlayer';
 import { ToastContainer, showToast } from '@/components/ui/Toast';
@@ -59,6 +62,26 @@ initSentry();
 
 // Keep the splash screen visible until fonts are loaded
 SplashScreen.preventAutoHideAsync();
+
+const APP_API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const APP_SESSIONS_KEY = 'app_sessions';
+const RATING_ASKED_KEY = 'rating_asked';
+
+/**
+ * Compare two semver version strings (e.g. "1.2.3" vs "1.3.0").
+ * Returns negative if a < b, 0 if equal, positive if a > b.
+ */
+function compareVersions(a: string, b: string): number {
+  const partsA = a.split('.').map(Number);
+  const partsB = b.split('.').map(Number);
+  const len = Math.max(partsA.length, partsB.length);
+  for (let i = 0; i < len; i++) {
+    const numA = partsA[i] ?? 0;
+    const numB = partsB[i] ?? 0;
+    if (numA !== numB) return numA - numB;
+  }
+  return 0;
+}
 
 const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
@@ -202,7 +225,17 @@ function AuthGuard() {
       if (!token && __DEV__) console.warn('[API] No auth token from Clerk');
       return token;
     });
-  }, [getToken]);
+    // Force-refresh getter bypasses Clerk cache — used for 401 retry
+    api.setForceRefreshTokenGetter(async () => {
+      const freshToken = await getToken({ skipCache: true });
+      if (!freshToken && __DEV__) console.warn('[API] Force-refresh token returned null');
+      return freshToken;
+    });
+    // When token refresh fails, navigate to sign-in
+    api.setSessionExpiredHandler(() => {
+      router.replace('/(auth)/sign-in');
+    });
+  }, [getToken, router]);
 
   // Register push notification token once signed in
   usePushNotifications(!!isSignedIn);
@@ -367,6 +400,9 @@ function ThemeAwareStatusBar() {
 }
 
 export default function RootLayout() {
+  const [forceUpdate, setForceUpdate] = useState(false);
+  const [requiredVersion, setRequiredVersion] = useState('');
+  const currentVersion = Constants.expoConfig?.version || '0.0.0';
 
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_700Bold,
@@ -381,6 +417,52 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  // Force update check — fetch minimum required version from backend
+  useEffect(() => {
+    const checkVersion = async () => {
+      try {
+        const baseUrl = APP_API_URL.replace('/api/v1', '');
+        const response = await fetch(`${baseUrl}/health/config`);
+        const config = await response.json();
+        if (config.minAppVersion) {
+          if (compareVersions(currentVersion, config.minAppVersion) < 0) {
+            setRequiredVersion(config.minAppVersion);
+            setForceUpdate(true);
+          }
+        }
+      } catch {
+        // Silent — don't block app on config fetch failure
+      }
+    };
+    checkVersion();
+  }, [currentVersion]);
+
+  // App rating prompt — after 7+ sessions, prompt for store review
+  useEffect(() => {
+    const trackSessionAndPromptRating = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(APP_SESSIONS_KEY);
+        const sessions = parseInt(raw || '0', 10) + 1;
+        await AsyncStorage.setItem(APP_SESSIONS_KEY, String(sessions));
+
+        if (sessions >= 7) {
+          const hasAsked = await AsyncStorage.getItem(RATING_ASKED_KEY);
+          if (!hasAsked) {
+            // TODO: Wire expo-store-review when installed
+            // import * as StoreReview from 'expo-store-review';
+            // if (await StoreReview.isAvailableAsync()) {
+            //   await StoreReview.requestReview();
+            //   await AsyncStorage.setItem(RATING_ASKED_KEY, 'true');
+            // }
+          }
+        }
+      } catch {
+        // Silent — rating prompt is non-critical
+      }
+    };
+    trackSessionAndPromptRating();
+  }, []);
 
   useNetworkStatus();
 
@@ -401,6 +483,11 @@ export default function RootLayout() {
               <DeepLinkHandler />
               <BiometricLockOverlay />
               <EidCelebrationOverlay />
+              <ForceUpdateModal
+                visible={forceUpdate}
+                currentVersion={currentVersion}
+                requiredVersion={requiredVersion}
+              />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />

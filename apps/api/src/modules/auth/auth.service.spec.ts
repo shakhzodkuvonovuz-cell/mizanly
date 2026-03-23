@@ -54,6 +54,9 @@ describe('AuthService', () => {
             device: {
               deleteMany: jest.fn(),
             },
+            twoFactorSecret: {
+              findUnique: jest.fn(),
+            },
           },
         },
         {
@@ -208,7 +211,7 @@ describe('AuthService', () => {
   });
 
   describe('getMe', () => {
-    it('should return user details', async () => {
+    it('should return user details with twoFactorEnabled false when no 2FA record', async () => {
       const userId = 'user-123';
       const mockUser = {
         id: userId,
@@ -231,6 +234,7 @@ describe('AuthService', () => {
         settings: {},
       };
       prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.twoFactorSecret.findUnique.mockResolvedValue(null);
 
       const result = await service.getMe(userId);
 
@@ -238,7 +242,71 @@ describe('AuthService', () => {
         where: { id: userId },
         select: expect.any(Object),
       });
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({ ...mockUser, twoFactorEnabled: false });
+    });
+
+    it('should return twoFactorEnabled true when 2FA is enabled', async () => {
+      const userId = 'user-123';
+      const mockUser = {
+        id: userId,
+        username: 'testuser',
+        displayName: 'Test User',
+        bio: '',
+        avatarUrl: null,
+        coverUrl: null,
+        website: null,
+        location: null,
+        followersCount: 0,
+        followingCount: 0,
+        postsCount: 0,
+        role: 'USER',
+        isVerified: false,
+        isPrivate: false,
+        language: 'en',
+        theme: 'dark',
+        createdAt: new Date(),
+        settings: {},
+      };
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.twoFactorSecret.findUnique.mockResolvedValue({ isEnabled: true });
+
+      const result = await service.getMe(userId);
+
+      expect(result.twoFactorEnabled).toBe(true);
+      expect(prisma.twoFactorSecret.findUnique).toHaveBeenCalledWith({
+        where: { userId },
+        select: { isEnabled: true },
+      });
+    });
+
+    it('should return twoFactorEnabled false when 2FA exists but not enabled', async () => {
+      const userId = 'user-123';
+      const mockUser = {
+        id: userId,
+        username: 'testuser',
+        displayName: 'Test User',
+        bio: '',
+        avatarUrl: null,
+        coverUrl: null,
+        website: null,
+        location: null,
+        followersCount: 0,
+        followingCount: 0,
+        postsCount: 0,
+        role: 'USER',
+        isVerified: false,
+        isPrivate: false,
+        language: 'en',
+        theme: 'dark',
+        createdAt: new Date(),
+        settings: {},
+      };
+      prisma.user.findUnique.mockResolvedValue(mockUser);
+      prisma.twoFactorSecret.findUnique.mockResolvedValue({ isEnabled: false });
+
+      const result = await service.getMe(userId);
+
+      expect(result.twoFactorEnabled).toBe(false);
     });
 
     it('should throw NotFoundException if user not found', async () => {

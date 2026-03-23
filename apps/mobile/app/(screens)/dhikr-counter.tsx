@@ -472,6 +472,7 @@ export default function DhikrCounterScreen() {
               </Pressable>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('dhikr.challenges')}
                 onPress={() => navigate('/(screens)/dhikr-challenges')}
 
                 style={styles.actionButtonWrapper}

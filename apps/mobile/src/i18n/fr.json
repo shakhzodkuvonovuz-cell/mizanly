@@ -195,7 +195,8 @@
     "draftSaved": "Draft saved",
     "discardChanges": "Discard changes?",
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
-    "saved": "Saved"
+    "saved": "Saved",
+    "rateLimited": "Slow down! Try again in {{seconds}} seconds"
   },
   "tabs": {
     "saf": "Saf",
@@ -589,7 +590,10 @@
       "actionLabel": "Create a Reel"
     },
     "remix": "Remix",
-    "reel": "Reel"
+    "reel": "Reel",
+    "shareToChat": "Envoyer a...",
+    "selectConversation": "Choisir une conversation",
+    "sent": "Envoye"
   },
   "majlis": {
     "forYou": "For You",
@@ -1064,7 +1068,10 @@
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
-    "reels": "Reels"
+    "reels": "Reels",
+    "unfollowTitle": "Unfollow?",
+    "unfollowMessage": "You'll stop seeing {{username}}'s posts in your feed",
+    "unfollow": "Unfollow"
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",
@@ -1281,7 +1288,9 @@
     "edit": "Edit",
     "manage": "Manage",
     "scheduleLive": "Schedule Live",
-    "disappearingDefault": "Default Disappearing Timer"
+    "disappearingDefault": "Default Disappearing Timer",
+    "readReceipts": "Read Receipts",
+    "readReceiptsDescription": "Let others see when you've read their messages"
   },
   "onboarding": {
     "interests": {
@@ -2968,7 +2977,8 @@
     "fontDefault": "Default",
     "fontSerif": "Serif",
     "fontMono": "Mono",
-    "fontBold": "Bold"
+    "fontBold": "Bold",
+    "quickReact": "Quick react"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -3478,8 +3488,16 @@
     "errorTitle": "Error"
   },
   "cashout": {
-    "title": "Cash Out",
-    "errorTitle": "Error"
+    "title": "Retirer",
+    "errorTitle": "Erreur",
+    "payoutHistory": "Historique des paiements",
+    "noPayouts": "Aucun paiement pour le moment",
+    "noPayoutsSubtitle": "L'historique des paiements apparaitra ici apres votre premier retrait",
+    "pending": "En attente",
+    "completed": "Termine",
+    "failed": "Echoue",
+    "amount": "Montant",
+    "date": "Date"
   },
   "chatLock": {
     "removeLockMessage": "Are you sure you want to remove the chat lock?"
@@ -3687,5 +3705,42 @@
     "helpfulCount": "{{count}} found this helpful",
     "notHelpfulCount": "{{count}} found this not helpful",
     "contextByReaders": "Added by readers who thought people might want to know"
+  },
+  "forceUpdate": {
+    "title": "Update Required",
+    "subtitle": "A new version of Mizanly is available. Please update to continue using the app.",
+    "updateButton": "Update Now",
+    "currentVersion": "Current version",
+    "requiredVersion": "Required version"
+  },
+  "reactions": {
+    "love": "Love",
+    "fire": "Fire",
+    "clap": "Clap",
+    "laugh": "Laugh",
+    "amazing": "Amazing",
+    "sad": "Sad",
+    "longPressToReact": "Long press to react"
+  },
+  "analytics": {
+    "creatorAnalytics": "Analytique du createur",
+    "views": "Vues",
+    "likes": "J'aime",
+    "followers": "Abonnes",
+    "engagementOverTime": "Engagement au fil du temps",
+    "topPerformingContent": "Contenu le plus performant",
+    "notEnoughData": "Pas assez de donnees",
+    "topContentHint": "Publiez plus de contenu pour voir quelles publications performent le mieux",
+    "failedToLoad": "Echec du chargement des analytiques",
+    "tryAgainLater": "Veuillez reessayer plus tard",
+    "noDataYet": "Pas encore de donnees analytiques",
+    "noDataSubtitle": "Commencez a creer du contenu pour voir vos analytiques",
+    "startCreating": "Commencer a creer",
+    "followerGrowth": "Croissance des abonnes",
+    "last7Days": "7 jours",
+    "last30Days": "30 jours",
+    "newFollowers": "nouveaux abonnes",
+    "noGrowthData": "Pas encore de donnees de croissance",
+    "noGrowthDataSubtitle": "Les donnees de croissance des abonnes apparaitront a mesure que votre audience grandit"
   }
 }

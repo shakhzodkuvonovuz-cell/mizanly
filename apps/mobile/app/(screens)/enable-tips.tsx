@@ -53,7 +53,9 @@ function CustomToggle({
         {description && <Text style={[styles.toggleDescription, { color: tc.text.tertiary }]}>{description}</Text>}
       </View>
       <Pressable
-        accessibilityRole="button"
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityState={{ checked: value }}
         onPress={() => {
           haptic.tick();
           onValueChange(!value);
@@ -181,12 +183,14 @@ export default function EnableTipsScreen() {
               <View style={[styles.mainToggleRow, { borderTopColor: tc.border }]}>
                 <Text style={[styles.mainToggleLabel, { color: tc.text.primary }]}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
                 <Pressable
-                  accessibilityRole="button"
+                  accessibilityRole="switch"
+                  accessibilityLabel={t('screens.enableTips.title')}
+                  accessibilityState={{ checked: isEnabled }}
                   onPress={() => {
                     haptic.tick();
                     setIsEnabled(!isEnabled);
                   }}
-          
+
                 >
                   <LinearGradient
                     colors={isEnabled ? [colors.emerald, colors.emeraldDark] : [tc.surface, tc.bgCard]}
@@ -228,13 +232,14 @@ export default function EnableTipsScreen() {
                     {PRESET_AMOUNTS.map(amount => (
                       <Pressable
                         accessibilityRole="button"
+                        accessibilityLabel={`$${amount}`}
                         key={amount}
                         onPress={() => {
                           haptic.tick();
                           setMinTipAmount(amount);
                           setCustomAmount('');
                         }}
-                
+
                       >
                         <LinearGradient
                           colors={
@@ -373,8 +378,9 @@ export default function EnableTipsScreen() {
 
                   <Pressable
                     accessibilityRole="button"
+                    accessibilityLabel={isConnected ? t('screens.enableTips.connected') : t('screens.enableTips.connectPaymentMethod')}
                     onPress={handleConnectPayment}
-            
+
                     style={styles.connectButton}
                   >
                     <LinearGradient
@@ -413,7 +419,7 @@ export default function EnableTipsScreen() {
           {/* Save Button */}
           {isEnabled && (
             <Animated.View entering={FadeInUp.delay(500).duration(400)}>
-              <Pressable onPress={handleSave}>
+              <Pressable onPress={handleSave} accessibilityRole="button" accessibilityLabel={t('screens.enableTips.saveSettings')}>
                 <LinearGradient
                   colors={[colors.emerald, colors.emeraldDark]}
                   style={styles.saveButton}

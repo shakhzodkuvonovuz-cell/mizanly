@@ -4,6 +4,7 @@ import {
   ScrollView, Alert, Linking, Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { navigate } from '@/utils/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -189,6 +190,19 @@ export default function SettingsScreen() {
   const [notifyMessages, setNotifyMessages] = useState(true);
   const [sensitiveContent, setSensitiveContent] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [readReceipts, setReadReceipts] = useState(true);
+
+  // Load read receipts from AsyncStorage (same key as status-privacy screen)
+  useEffect(() => {
+    AsyncStorage.getItem('status-privacy-settings').then((val) => {
+      if (val) {
+        try {
+          const parsed = JSON.parse(val) as { readReceipts?: boolean };
+          if (typeof parsed.readReceipts === 'boolean') setReadReceipts(parsed.readReceipts);
+        } catch { /* use default */ }
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (s) {
@@ -207,6 +221,19 @@ export default function SettingsScreen() {
   const notifMutation = useMutation({ mutationFn: settingsApi.updateNotifications });
   const accessibilityMutation = useMutation({ mutationFn: settingsApi.updateAccessibility });
   const wellbeingMutation = useMutation({ mutationFn: settingsApi.updateWellbeing });
+
+  const toggleReadReceipts = useCallback(async (v: boolean) => {
+    setReadReceipts(v);
+    try {
+      const existing = await AsyncStorage.getItem('status-privacy-settings');
+      const parsed = existing ? JSON.parse(existing) : {};
+      parsed.readReceipts = v;
+      await AsyncStorage.setItem('status-privacy-settings', JSON.stringify(parsed));
+    } catch {
+      showToast({ message: t('statusPrivacy.errorSave'), variant: 'error' });
+      setReadReceipts(!v); // rollback on failure
+    }
+  }, [t]);
 
   const deactivateMutation = useMutation({
     mutationFn: () => usersApi.deactivate(),
@@ -436,7 +463,7 @@ export default function SettingsScreen() {
           )}
 
           {/* Privacy Section */}
-          {(matchesSearch(t('settings.privateAccount')) || matchesSearch(t('settings.followRequests')) || matchesSearch(t('settings.blockedKeywords')) || matchesSearch(t('biometric.settingsLabel')) || matchesSearch(t('parentalControls.settingsLabel'))) && (
+          {(matchesSearch(t('settings.privateAccount')) || matchesSearch(t('settings.followRequests')) || matchesSearch(t('settings.blockedKeywords')) || matchesSearch(t('biometric.settingsLabel')) || matchesSearch(t('parentalControls.settingsLabel')) || matchesSearch(t('settings.readReceipts'))) && (
           <Animated.View entering={FadeInUp.delay(180).duration(400).springify()}>
           <SectionHeader title={t('settings.privacy')} icon="lock" />
           <LinearGradient
@@ -481,12 +508,22 @@ export default function SettingsScreen() {
             />
             <View style={styles.divider} />
             </>)}
-            {matchesSearch(t('parentalControls.settingsLabel')) && (
+            {matchesSearch(t('parentalControls.settingsLabel')) && (<>
             <Row
               label={t('parentalControls.settingsLabel')}
               icon={<Icon name="users" size="sm" color={colors.gold} />}
               hint={t('parentalControls.settingsHint')}
               onPress={() => navigate('/(screens)/parental-controls')}
+            />
+            <View style={styles.divider} />
+            </>)}
+            {matchesSearch(t('settings.readReceipts')) && (
+            <Row
+              label={t('settings.readReceipts')}
+              icon={<Icon name="check-check" size="sm" color={colors.emerald} />}
+              hint={t('settings.readReceiptsDescription')}
+              value={readReceipts}
+              onToggle={toggleReadReceipts}
               isLast
             />
             )}

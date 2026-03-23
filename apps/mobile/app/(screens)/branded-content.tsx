@@ -94,7 +94,9 @@ function BrandedContentContent() {
               onValueChange={setIsPaidPartnership}
               trackColor={{ false: tc.surface, true: colors.active.emerald20 }}
               thumbColor={isPaidPartnership ? colors.emerald : tc.text.tertiary}
+              accessibilityRole="switch"
               accessibilityLabel={t('branded.togglePartnership')}
+              accessibilityState={{ checked: isPaidPartnership }}
             />
           </View>
         </Animated.View>

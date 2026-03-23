@@ -195,7 +195,8 @@
     "draftSaved": "Draft saved",
     "discardChanges": "Discard changes?",
     "unsavedChangesMessage": "You have unsaved changes. What would you like to do?",
-    "saved": "Saved"
+    "saved": "Saved",
+    "rateLimited": "Slow down! Try again in {{seconds}} seconds"
   },
   "tabs": {
     "saf": "Saf",
@@ -588,7 +589,10 @@
       "actionLabel": "Create a Reel"
     },
     "remix": "Remix",
-    "reel": "Reel"
+    "reel": "Reel",
+    "shareToChat": "Hantar ke...",
+    "selectConversation": "Pilih perbualan",
+    "sent": "Dihantar"
   },
   "majlis": {
     "forYou": "For You",
@@ -1063,7 +1067,10 @@
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
-    "reels": "Reels"
+    "reels": "Reels",
+    "unfollowTitle": "Unfollow?",
+    "unfollowMessage": "You'll stop seeing {{username}}'s posts in your feed",
+    "unfollow": "Unfollow"
   },
   "prayerNotifications": {
     "settings": "Prayer Settings",
@@ -1280,7 +1287,9 @@
     "edit": "Edit",
     "manage": "Manage",
     "scheduleLive": "Schedule Live",
-    "disappearingDefault": "Default Disappearing Timer"
+    "disappearingDefault": "Default Disappearing Timer",
+    "readReceipts": "Read Receipts",
+    "readReceiptsDescription": "Let others see when you've read their messages"
   },
   "onboarding": {
     "interests": {
@@ -2967,7 +2976,8 @@
     "fontDefault": "Default",
     "fontSerif": "Serif",
     "fontMono": "Mono",
-    "fontBold": "Bold"
+    "fontBold": "Bold",
+    "quickReact": "Quick react"
   },
   "windDown": {
     "title": "Time to Wind Down",
@@ -3477,8 +3487,16 @@
     "errorTitle": "Error"
   },
   "cashout": {
-    "title": "Cash Out",
-    "errorTitle": "Error"
+    "title": "Keluarkan Wang",
+    "errorTitle": "Ralat",
+    "payoutHistory": "Sejarah Pembayaran",
+    "noPayouts": "Tiada pembayaran lagi",
+    "noPayoutsSubtitle": "Sejarah pembayaran akan muncul di sini selepas pengeluaran tunai pertama anda",
+    "pending": "Dalam Proses",
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "amount": "Jumlah",
+    "date": "Tarikh"
   },
   "chatLock": {
     "removeLockMessage": "Are you sure you want to remove the chat lock?"
@@ -3686,5 +3704,42 @@
     "helpfulCount": "{{count}} found this helpful",
     "notHelpfulCount": "{{count}} found this not helpful",
     "contextByReaders": "Added by readers who thought people might want to know"
+  },
+  "forceUpdate": {
+    "title": "Update Required",
+    "subtitle": "A new version of Mizanly is available. Please update to continue using the app.",
+    "updateButton": "Update Now",
+    "currentVersion": "Current version",
+    "requiredVersion": "Required version"
+  },
+  "reactions": {
+    "love": "Love",
+    "fire": "Fire",
+    "clap": "Clap",
+    "laugh": "Laugh",
+    "amazing": "Amazing",
+    "sad": "Sad",
+    "longPressToReact": "Long press to react"
+  },
+  "analytics": {
+    "creatorAnalytics": "Analitik Pencipta",
+    "views": "Tontonan",
+    "likes": "Suka",
+    "followers": "Pengikut",
+    "engagementOverTime": "Interaksi Mengikut Masa",
+    "topPerformingContent": "Kandungan Terbaik",
+    "notEnoughData": "Data tidak mencukupi",
+    "topContentHint": "Siarkan lebih banyak kandungan untuk melihat siaran mana yang berprestasi terbaik",
+    "failedToLoad": "Gagal memuatkan analitik",
+    "tryAgainLater": "Sila cuba lagi kemudian",
+    "noDataYet": "Tiada data analitik lagi",
+    "noDataSubtitle": "Mula mencipta kandungan untuk melihat analitik anda",
+    "startCreating": "Mula Mencipta",
+    "followerGrowth": "Pertumbuhan Pengikut",
+    "last7Days": "7 Hari",
+    "last30Days": "30 Hari",
+    "newFollowers": "pengikut baharu",
+    "noGrowthData": "Tiada data pertumbuhan lagi",
+    "noGrowthDataSubtitle": "Data pertumbuhan pengikut akan muncul apabila audiens anda berkembang"
   }
 }

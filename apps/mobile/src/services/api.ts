@@ -12,6 +12,8 @@ import type {
   HashtagInfo, BookmarkCollection, SearchSuggestion, ModerationLogEntry,
   DMNote, OfflineDownload, EndScreen,
 } from '@/types';
+import { showToast } from '@/components/ui/Toast';
+import i18next from '@/i18n';
 
 // ── Request payload types (API layer only) ──
 
@@ -161,12 +163,28 @@ export class ApiNetworkError extends Error {
 
 class ApiClient {
   private getToken: (() => Promise<string | null>) | null = null;
+  private forceRefreshToken: (() => Promise<string | null>) | null = null;
+  private onSessionExpired: (() => void) | null = null;
 
   setTokenGetter(getter: () => Promise<string | null>) {
     this.getToken = getter;
   }
 
-  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  /** Register a getter that forces a fresh token (bypasses cache). Used for 401 retry. */
+  setForceRefreshTokenGetter(getter: () => Promise<string | null>) {
+    this.forceRefreshToken = getter;
+  }
+
+  /** Register a callback invoked when token refresh fails (navigate to sign-in). */
+  setSessionExpiredHandler(handler: () => void) {
+    this.onSessionExpired = handler;
+  }
+
+  private async request<T>(
+    path: string,
+    options: RequestInit = {},
+    retryFlags: { _retried401?: boolean; _retried429?: boolean } = {},
+  ): Promise<T> {
     const startTime = Date.now();
     let token: string | null = null;
     try {
@@ -203,6 +221,46 @@ class ApiClient {
     }
 
     if (!res.ok) {
+      // ── 429 Rate Limited — auto-retry once after Retry-After delay ──
+      if (res.status === 429 && !retryFlags._retried429) {
+        const retryAfterRaw = res.headers.get('Retry-After');
+        const retryAfter = Math.min(parseInt(retryAfterRaw || '60', 10) || 60, 120);
+        showToast({
+          message: i18next.t('common.rateLimited', { seconds: retryAfter }),
+          variant: 'warning',
+        });
+        if (__DEV__) console.warn(`[API] 429 on ${path} — retrying in ${retryAfter}s`);
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        return this.request<T>(path, options, { ...retryFlags, _retried429: true });
+      }
+
+      // ── 401 Unauthorized — refresh token and retry once ──
+      if (res.status === 401 && !retryFlags._retried401 && this.forceRefreshToken) {
+        if (__DEV__) console.warn(`[API] 401 on ${path} — attempting token refresh`);
+        try {
+          const freshToken = await this.forceRefreshToken();
+          if (freshToken) {
+            // Inject the fresh token into the request headers for the retry
+            const retryHeaders = {
+              ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+              Authorization: `Bearer ${freshToken}`,
+              ...options.headers,
+            };
+            const retryOptions: RequestInit = { ...options, headers: retryHeaders };
+            return this.request<T>(path, retryOptions, { ...retryFlags, _retried401: true });
+          }
+        } catch (refreshErr) {
+          if (__DEV__) console.error('[API] Token refresh failed:', refreshErr);
+        }
+        // Token refresh failed or returned null — session is expired
+        showToast({
+          message: i18next.t('auth.sessionExpired'),
+          variant: 'error',
+        });
+        if (this.onSessionExpired) this.onSessionExpired();
+        throw new ApiError('Session expired', 401, 'SESSION_EXPIRED');
+      }
+
       const error = await res.json().catch(() => ({ message: 'Request failed' }));
       if (__DEV__) console.error(`[API] ${options.method || 'GET'} ${path} → ${res.status}`, error);
       throw new ApiError(error.message || `HTTP ${res.status}`, res.status);

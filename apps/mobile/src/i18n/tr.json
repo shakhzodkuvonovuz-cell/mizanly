@@ -195,7 +195,8 @@
     "draftSaved": "Taslak kaydedildi",
     "discardChanges": "Değişiklikleri sil?",
     "unsavedChangesMessage": "Kaydedilmemiş değişiklikleriniz var. Ne yapmak istersiniz?",
-    "saved": "Saved"
+    "saved": "Saved",
+    "rateLimited": "Yavaşla! {{seconds}} saniye sonra tekrar dene"
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -535,7 +536,10 @@
       "message": "Bağlantı panonuza kopyalandı"
     },
     "remix": "Remix",
-    "reel": "Reel"
+    "reel": "Reel",
+    "shareToChat": "Gönder...",
+    "selectConversation": "Bir sohbet seçin",
+    "sent": "Gönderildi"
   },
   "majlis": {
     "forYou": "Senin İçin",
@@ -1010,7 +1014,10 @@
     "noContent": "No content yet",
     "noLikedPosts": "No liked posts yet",
     "threads": "Threads",
-    "reels": "Reels"
+    "reels": "Reels",
+    "unfollowTitle": "Takibi Bırak?",
+    "unfollowMessage": "{{username}} kullanıcısının gönderilerini akışınızda görmeyeceksiniz",
+    "unfollow": "Takibi Bırak"
   },
   "islamic": {
     "prayerTimes": "Namaz Vakitleri",
@@ -1280,7 +1287,9 @@
     "edit": "Düzenle",
     "manage": "Yönet",
     "scheduleLive": "Canlı Yayın Planla",
-    "disappearingDefault": "Varsayılan Kaybolma Zamanlayıcısı"
+    "disappearingDefault": "Varsayılan Kaybolma Zamanlayıcısı",
+    "readReceipts": "Okundu Bilgisi",
+    "readReceiptsDescription": "Diğer kullanıcıların mesajlarını okuduğunuzu görmesine izin ver"
   },
   "onboarding": {
     "interests": {
@@ -2967,7 +2976,8 @@
     "fontDefault": "Varsayılan",
     "fontSerif": "Serif",
     "fontMono": "Mono",
-    "fontBold": "Kalın"
+    "fontBold": "Kalın",
+    "quickReact": "Hızlı tepki"
   },
   "windDown": {
     "title": "Dinlenme Zamanı",
@@ -3483,8 +3493,16 @@
     "errorTitle": "Error"
   },
   "cashout": {
-    "title": "Cash Out",
-    "errorTitle": "Error"
+    "title": "Nakde Cevir",
+    "errorTitle": "Hata",
+    "payoutHistory": "Odeme Gecmisi",
+    "noPayouts": "Henuz odeme yok",
+    "noPayoutsSubtitle": "Ilk nakit cekiminizden sonra odeme gecmisiniz burada gorunecektir",
+    "pending": "Beklemede",
+    "completed": "Tamamlandi",
+    "failed": "Basarisiz",
+    "amount": "Tutar",
+    "date": "Tarih"
   },
   "chatLock": {
     "removeLockMessage": "Are you sure you want to remove the chat lock?"
@@ -3692,5 +3710,42 @@
     "helpfulCount": "{{count}} kişi bunu faydalı buldu",
     "notHelpfulCount": "{{count}} kişi bunu faydalı bulmadı",
     "contextByReaders": "İnsanların bilmek isteyebileceğini düşünen okuyucular tarafından eklendi"
+  },
+  "forceUpdate": {
+    "title": "Güncelleme Gerekli",
+    "subtitle": "Mizanly'nin yeni bir sürümü mevcut. Uygulamayı kullanmaya devam etmek için lütfen güncelleyin.",
+    "updateButton": "Şimdi Güncelle",
+    "currentVersion": "Mevcut sürüm",
+    "requiredVersion": "Gerekli sürüm"
+  },
+  "reactions": {
+    "love": "Sevgi",
+    "fire": "Ateş",
+    "clap": "Alkış",
+    "laugh": "Gülme",
+    "amazing": "Harika",
+    "sad": "Üzgün",
+    "longPressToReact": "Tepki vermek için uzun basın"
+  },
+  "analytics": {
+    "creatorAnalytics": "Icerik Uretici Analitikleri",
+    "views": "Goruntulemeler",
+    "likes": "Begeniler",
+    "followers": "Takipciler",
+    "engagementOverTime": "Zamana Gore Etkilesim",
+    "topPerformingContent": "En Iyi Performans Gosteren Icerik",
+    "notEnoughData": "Yeterli veri yok",
+    "topContentHint": "En iyi performans gosteren gonderileri gormek icin daha fazla icerik paylasin",
+    "failedToLoad": "Analitikler yuklenemedi",
+    "tryAgainLater": "Lutfen daha sonra tekrar deneyin",
+    "noDataYet": "Henuz analitik verisi yok",
+    "noDataSubtitle": "Analitiklerinizi gormek icin icerik olusturmaya baslayin",
+    "startCreating": "Olusturmaya Basla",
+    "followerGrowth": "Takipci Buyumesi",
+    "last7Days": "7 Gun",
+    "last30Days": "30 Gun",
+    "newFollowers": "yeni takipci",
+    "noGrowthData": "Henuz buyume verisi yok",
+    "noGrowthDataSubtitle": "Kitleniz buyudukce takipci buyume verileri gorunecektir"
   }
 }

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { formatCompactNumber } from '@/utils/localeFormat';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { usersApi } from '@/services/api';
+import { creatorApi } from '@/services/creatorApi';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { CreatorStat } from '@/types';
@@ -151,6 +152,132 @@ function TopContentSection() {
   );
 }
 
+type GrowthPeriod = '7d' | '30d';
+
+function FollowerGrowthChart() {
+  const { t } = useTranslation();
+  const tc = useThemeColors();
+  const [period, setPeriod] = useState<GrowthPeriod>('7d');
+
+  const { data: growthData, isLoading: growthLoading } = useQuery({
+    queryKey: ['creator-growth'],
+    queryFn: () => creatorApi.getGrowth(),
+  });
+
+  const daily = (growthData as { daily?: Record<string, number> })?.daily ?? {};
+  const allDates = Object.keys(daily).sort();
+
+  // Filter to last 7 or 30 days
+  const now = new Date();
+  const daysToShow = period === '7d' ? 7 : 30;
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() - daysToShow);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+
+  const filteredDates = allDates.filter((d) => d >= cutoffStr);
+  const values = filteredDates.map((d) => daily[d] ?? 0);
+  const maxValue = Math.max(...values, 1);
+  const totalNew = values.reduce((sum, v) => sum + v, 0);
+
+  return (
+    <Animated.View entering={FadeInUp.delay(350).duration(500)} style={styles.growthContainer}>
+      <View style={styles.sectionHeader}>
+        <LinearGradient
+          colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+          style={styles.sectionIconBg}
+        >
+          <Icon name="users" size="xs" color={colors.emerald} />
+        </LinearGradient>
+        <Text style={[styles.sectionTitle, { color: tc.text.primary }]}>
+          {t('analytics.followerGrowth', 'Follower Growth')}
+        </Text>
+      </View>
+
+      {/* Period Toggle */}
+      <View style={styles.periodToggle}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setPeriod('7d')}
+          style={[
+            styles.periodTab,
+            period === '7d' && styles.periodTabActive,
+          ]}
+        >
+          <Text style={[
+            styles.periodTabText,
+            { color: period === '7d' ? colors.emerald : tc.text.tertiary },
+          ]}>
+            {t('analytics.last7Days', '7 Days')}
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setPeriod('30d')}
+          style={[
+            styles.periodTab,
+            period === '30d' && styles.periodTabActive,
+          ]}
+        >
+          <Text style={[
+            styles.periodTabText,
+            { color: period === '30d' ? colors.emerald : tc.text.tertiary },
+          ]}>
+            {t('analytics.last30Days', '30 Days')}
+          </Text>
+        </Pressable>
+      </View>
+
+      <LinearGradient
+        colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+        style={styles.growthChartBg}
+      >
+        {growthLoading ? (
+          <View style={{ padding: spacing.md }}>
+            <Skeleton.Rect width="100%" height={120} borderRadius={radius.sm} />
+          </View>
+        ) : filteredDates.length === 0 ? (
+          <EmptyState
+            icon="users"
+            title={t('analytics.noGrowthData', 'No growth data yet')}
+            subtitle={t('analytics.noGrowthDataSubtitle', 'Follower growth data will appear as your audience grows')}
+          />
+        ) : (
+          <>
+            <View style={styles.growthSummary}>
+              <Text style={[styles.growthNewCount, { color: tc.text.primary }]}>
+                +{formatCompactNumber(totalNew)}
+              </Text>
+              <Text style={[styles.growthNewLabel, { color: tc.text.secondary }]}>
+                {t('analytics.newFollowers', 'new followers')}
+              </Text>
+            </View>
+            <View style={styles.growthChart}>
+              {filteredDates.map((date, i) => (
+                <View key={date} style={styles.growthBarWrapper}>
+                  <View
+                    style={[
+                      styles.growthBar,
+                      {
+                        height: Math.max(4, (values[i] / maxValue) * 120),
+                        backgroundColor: colors.emerald,
+                      },
+                    ]}
+                  />
+                  <Text style={[styles.growthBarLabel, { color: tc.text.tertiary }]}>
+                    {period === '7d'
+                      ? new Date(date).toLocaleDateString(undefined, { weekday: 'short' })
+                      : new Date(date).toLocaleDateString(undefined, { day: 'numeric' })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
 // TODO [cross-scope]: This screen uses usersApi.getAnalytics() (GET /users/me/analytics)
 // while creator-dashboard uses creatorApi.getOverview() (GET /creator/analytics/overview).
 // These are two separate data sources that may show inconsistent numbers.
@@ -268,6 +395,8 @@ function AnalyticsContent() {
             </View>
 
             <BarChart stats={stats} />
+
+            <FollowerGrowthChart />
 
             <TopContentSection />
           </>
@@ -407,6 +536,72 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: spacing.xs,
   },
+  // Follower growth
+  growthContainer: {
+    marginBottom: spacing.xl,
+  },
+  periodToggle: {
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  periodTab: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  periodTabActive: {
+    borderColor: colors.emerald,
+    backgroundColor: colors.active.emerald10,
+  },
+  periodTabText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.sm,
+  },
+  growthChartBg: {
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.active.white6,
+  },
+  growthSummary: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  growthNewCount: {
+    fontFamily: fonts.bodyBold,
+    fontSize: fontSize.xl,
+  },
+  growthNewLabel: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.sm,
+  },
+  growthChart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 150,
+    paddingTop: spacing.md,
+  },
+  growthBarWrapper: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  growthBar: {
+    width: 8,
+    borderRadius: radius.sm,
+    marginBottom: spacing.xs,
+  },
+  growthBarLabel: {
+    fontSize: 9,
+    fontFamily: fonts.body,
+    marginTop: spacing.xs,
+  },
+
   // Top content section
   topContentCard: {
     borderRadius: radius.md,

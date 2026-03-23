@@ -4,13 +4,24 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { ReportStatus, ModerationAction } from '@prisma/client';
+import { createClerkClient } from '@clerk/backend';
 
 @Injectable()
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
-  constructor(private prisma: PrismaService) {}
+  private clerk;
+
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {
+    this.clerk = createClerkClient({
+      secretKey: this.config.get('CLERK_SECRET_KEY'),
+    });
+  }
 
   async verifyAdmin(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -234,7 +245,13 @@ export class AdminService {
 
     const banExpiresAt = duration ? new Date(Date.now() + duration * 3600000) : null;
 
-    return this.prisma.user.update({
+    // Also fetch clerkId so we can revoke their Clerk sessions
+    const targetFull = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { clerkId: true },
+    });
+
+    const updatedUser = await this.prisma.user.update({
       where: { id: targetId },
       data: {
         isBanned: true,
@@ -243,12 +260,33 @@ export class AdminService {
         banExpiresAt,
       },
     });
+
+    // Finding F24: Revoke active Clerk sessions so banned user is immediately logged out.
+    // Uses Clerk Backend SDK users.banUser() which disables sign-in and revokes all sessions.
+    if (targetFull?.clerkId) {
+      try {
+        await this.clerk.users.banUser(targetFull.clerkId);
+        this.logger.log(`Clerk sessions revoked for banned user ${targetId} (clerkId: ${targetFull.clerkId})`);
+      } catch (err: unknown) {
+        // Non-fatal: user is banned in DB regardless. Log for investigation.
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Failed to revoke Clerk session for banned user ${targetId}: ${msg}`);
+      }
+    }
+
+    return updatedUser;
   }
 
   async unbanUser(adminId: string, targetId: string) {
     await this.assertAdmin(adminId);
 
-    return this.prisma.user.update({
+    // Fetch clerkId to unban in Clerk as well
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { clerkId: true },
+    });
+
+    const updatedUser = await this.prisma.user.update({
       where: { id: targetId },
       data: {
         isBanned: false,
@@ -257,5 +295,18 @@ export class AdminService {
         banExpiresAt: null,
       },
     });
+
+    // Unban in Clerk so the user can sign in again
+    if (target?.clerkId) {
+      try {
+        await this.clerk.users.unbanUser(target.clerkId);
+        this.logger.log(`Clerk ban lifted for user ${targetId} (clerkId: ${target.clerkId})`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Failed to lift Clerk ban for user ${targetId}: ${msg}`);
+      }
+    }
+
+    return updatedUser;
   }
 }

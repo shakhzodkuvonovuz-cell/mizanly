@@ -33,6 +33,62 @@ describe('AiService', () => {
     prisma = module.get(PrismaService) as any;
   });
 
+  describe('checkDailyQuota', () => {
+    let redis: any;
+
+    beforeEach(() => {
+      redis = (service as any).redis;
+    });
+
+    it('should return true when user is under quota limit', async () => {
+      redis.incr.mockResolvedValue(50);
+      const result = await service.checkDailyQuota('user-1');
+      expect(result).toBe(true);
+      expect(redis.incr).toHaveBeenCalledWith('ai:daily:user-1');
+    });
+
+    it('should set TTL on first call (count === 1)', async () => {
+      redis.incr.mockResolvedValue(1);
+      redis.expire.mockResolvedValue(1);
+      await service.checkDailyQuota('user-1');
+      expect(redis.expire).toHaveBeenCalledWith('ai:daily:user-1', expect.any(Number));
+    });
+
+    it('should NOT set TTL on subsequent calls (count > 1)', async () => {
+      redis.expire.mockClear();
+      redis.incr.mockResolvedValue(5);
+      await service.checkDailyQuota('user-1');
+      expect(redis.expire).not.toHaveBeenCalled();
+    });
+
+    it('should return false when user exceeds daily quota (100)', async () => {
+      redis.incr.mockResolvedValue(101);
+      const result = await service.checkDailyQuota('user-1');
+      expect(result).toBe(false);
+    });
+
+    it('should return true when user is at exactly 100 calls', async () => {
+      redis.incr.mockResolvedValue(100);
+      const result = await service.checkDailyQuota('user-1');
+      expect(result).toBe(true);
+    });
+
+    it('should return true (allow) when Redis is unavailable', async () => {
+      redis.incr.mockRejectedValue(new Error('Redis connection lost'));
+      const result = await service.checkDailyQuota('user-1');
+      expect(result).toBe(true);
+    });
+
+    it('should use per-user key to track quotas independently', async () => {
+      redis.incr.mockResolvedValue(1);
+      redis.expire.mockResolvedValue(1);
+      await service.checkDailyQuota('user-a');
+      await service.checkDailyQuota('user-b');
+      expect(redis.incr).toHaveBeenCalledWith('ai:daily:user-a');
+      expect(redis.incr).toHaveBeenCalledWith('ai:daily:user-b');
+    });
+  });
+
   describe('suggestCaptions', () => {
     it('should return fallback captions when API unavailable', async () => {
       const result = await service.suggestCaptions('test content');

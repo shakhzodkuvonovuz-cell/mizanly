@@ -235,6 +235,7 @@ export default function DhikrChallengesScreen() {
         {/* FAB */}
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t('dhikr.createChallenge')}
           onPress={() => {
             haptic.navigate();
             setShowCreateSheet(true);
@@ -270,6 +271,7 @@ export default function DhikrChallengesScreen() {
             <Text style={[styles.inputLabel, { color: tc.text.secondary }]}>{t('dhikr.phrase')}</Text>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('dhikr.phrase')}
               onPress={() => setShowPhraseSheet(true)}
 
               style={[styles.pickerButton, { backgroundColor: tc.surface, borderColor: tc.border }]}

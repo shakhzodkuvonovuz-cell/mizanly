@@ -45,6 +45,60 @@ describe('AiController', () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  describe('enforceQuota', () => {
+    it('should throw 429 HttpException when daily quota is exhausted', async () => {
+      service.checkDailyQuota.mockResolvedValue(false);
+
+      await expect(controller.suggestCaptions(userId, { content: 'test' } as any))
+        .rejects
+        .toThrow('Daily AI usage limit reached. Try again tomorrow.');
+    });
+
+    it('should throw HttpException with status 429', async () => {
+      service.checkDailyQuota.mockResolvedValue(false);
+
+      try {
+        await controller.suggestCaptions(userId, { content: 'test' } as any);
+        fail('Expected HttpException');
+      } catch (error: any) {
+        expect(error.getStatus()).toBe(429);
+      }
+    });
+
+    it('should allow request when quota is not exhausted', async () => {
+      service.checkDailyQuota.mockResolvedValue(true);
+      service.suggestCaptions.mockResolvedValue([]);
+
+      await expect(controller.suggestCaptions(userId, { content: 'test' } as any))
+        .resolves.not.toThrow();
+      expect(service.suggestCaptions).toHaveBeenCalled();
+    });
+
+    it('should check quota for translate endpoint', async () => {
+      service.checkDailyQuota.mockResolvedValue(false);
+
+      await expect(controller.translate(userId, { text: 'hello', targetLanguage: 'ar' } as any))
+        .rejects
+        .toThrow('Daily AI usage limit reached. Try again tomorrow.');
+    });
+
+    it('should check quota for smart-replies endpoint', async () => {
+      service.checkDailyQuota.mockResolvedValue(false);
+
+      await expect(controller.smartReplies(userId, { conversationContext: 'ctx', lastMessages: ['hi'] } as any))
+        .rejects
+        .toThrow('Daily AI usage limit reached. Try again tomorrow.');
+    });
+
+    it('should check quota for summarize endpoint', async () => {
+      service.checkDailyQuota.mockResolvedValue(false);
+
+      await expect(controller.summarize(userId, { text: 'long text', maxLength: 100 } as any))
+        .rejects
+        .toThrow('Daily AI usage limit reached. Try again tomorrow.');
+    });
+  });
+
   describe('suggestCaptions', () => {
     it('should call aiService.suggestCaptions with content and mediaDescription', async () => {
       const mockCaptions = [{ caption: 'Beautiful sunset', tone: 'casual' }];

@@ -199,6 +199,7 @@ export default function QuranShareScreen() {
           <Animated.View entering={FadeInUp.duration(500)}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('screens.quranShare.selectSurah', { defaultValue: 'Select surah' })}
               style={styles.surahSelector}
               onPress={() => setShowSurahPicker(true)}
             >
@@ -229,6 +230,7 @@ export default function QuranShareScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.verseNav}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('accessibility.previousVerse', { defaultValue: 'Previous verse' })}
               style={styles.navButton}
               onPress={handlePrevVerse}
               disabled={currentVerse === 1}
@@ -250,6 +252,7 @@ export default function QuranShareScreen() {
 
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('accessibility.nextVerse', { defaultValue: 'Next verse' })}
               style={styles.navButton}
               onPress={handleNextVerse}
               disabled={currentVerse === currentSurah.verses}
@@ -331,6 +334,7 @@ export default function QuranShareScreen() {
                     {/* Tafsir Button */}
                     <Pressable
                       accessibilityRole="button"
+                      accessibilityLabel={t('tafsir.viewTafsir')}
                       onPress={() => navigate('/(screens)/tafsir-viewer', { surah: selectedSurahNumber, verse: currentVerse })}
                       style={styles.tafsirButton}
                     >
@@ -353,6 +357,7 @@ export default function QuranShareScreen() {
           <Animated.View entering={FadeInUp.delay(300).duration(500)} style={styles.shareOptions}>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('screens.quranShare.shareThisVerse')}
               style={styles.shareButton}
               onPress={() => setShowShareOptions(true)}
             >
@@ -367,6 +372,7 @@ export default function QuranShareScreen() {
 
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={t('screens.quranShare.copyText')}
               style={styles.copyButton}
               onPress={handleCopyText}
             >
