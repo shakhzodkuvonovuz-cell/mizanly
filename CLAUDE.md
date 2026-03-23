@@ -26,10 +26,10 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Current State (as of 2026-03-24)
+## Current State (as of 2026-03-24, post-session 4)
 
-**Backend:** NestJS 10, 79 modules, 82 controllers, 86 services, 193 Prisma models, 55 enums (4,700+ lines). 289 test suites, 4,876 tests, 100% pass, 0 TypeScript errors. Server starts clean.
-**Mobile:** React Native Expo SDK 52, 212 screens, 76 components, 23 hooks, 33 API services. 0 mobile TypeScript errors. 210/212 screens accessible.
+**Backend:** NestJS 10, 79 modules, 82 controllers, 86 services, 193 Prisma models, 55 enums (4,700+ lines). 293 test suites, 5,093 tests, 100% pass, 0 TypeScript errors. Server starts clean.
+**Mobile:** React Native Expo SDK 52, 212 screens, 85 components, 23 hooks, 34 API services. 0 mobile TypeScript errors. 210/212 screens accessible.
 **i18n:** 8 languages (en, ar, tr, ur, bn, fr, id, ms), 3,500+ keys each, ~400 keys added in session 2.
 **Real-time:** Socket.io on 4 screens (chat, calls, Quran rooms, conversation list) with Clerk JWT auth, reconnection, token refresh. Redis pub/sub for notification delivery to socket rooms.
 **Algorithm:** 3-stage ranking (pgvector KNN → weighted scoring → diversity reranking), k-means multi-cluster interest vectors (2-3 centroids), 15% exploration slots, hashtag diversity reranking, Islamic boost location-aware via prayer-calculator, session signals in Redis, trending 24h window with 12h decay, HNSW vector index, cursor-based keyset pagination.
@@ -41,9 +41,93 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 **Security:** Pre-save moderation on all content types, AI prompt XML hardening, device fingerprint (5/device), nsfwjs client-side service ready, file size limits on uploads.
 **Video Editor:** FFmpeg-kit full-gpl. **10 tool tabs** (trim, speed, filters, adjust, text, music, volume, effects, voiceover + quick actions bar). 35 edit state fields tracked in undo/redo. 118 FFmpeg engine tests + 10 concat tests. See "Session 3 — What Was Built" below for complete feature list.
 **Packages installed (session 3):** ffmpeg-kit-react-native 6.0.2 (full-gpl via Expo config plugin), expo-screen-orientation, expo-screen-capture, expo-store-review, expo-speech, nsfwjs + @tensorflow/tfjs + @tensorflow/tfjs-react-native.
+**Packages installed (session 4):** @giphy/react-native-sdk 5.0.2 (GIF search + Text stickers + Clips + Emoji, Expo config plugin at plugins/giphy-sdk/).
 **Database synced** — `prisma db push` confirmed in sync. Production uses `prisma migrate deploy`.
 **CI/CD:** GitHub Actions — lint-typecheck PASS, test-api PASS, build-api PASS. build-mobile needs `npm install --legacy-peer-deps` (metro removed from root, vuln overrides added).
 **~1030 commits**, 11 waves in session 2 + 29 commits in session 3.
+
+---
+
+## Production Deployment (as of 2026-03-24)
+
+### Live Infrastructure
+| Service | Provider | URL / Status |
+|---------|----------|-------------|
+| **API** | Railway (Nixpacks) | `https://mizanlyapi-production.up.railway.app` — LIVE |
+| **Database** | Neon PostgreSQL 16 | Connected (use direct URL, not pooler for migrations) |
+| **Cache** | Upstash Redis | Connected |
+| **Storage** | Cloudflare R2 | Configured (bucket: mizanly-media) |
+| **Video** | Cloudflare Stream | Configured |
+| **Auth** | Clerk | Connected (TEST keys — switch to live before launch) |
+| **Payments** | Stripe | Connected (TEST keys) |
+| **Email** | Resend | Configured (domain not yet verified) |
+| **Monitoring** | Sentry | Configured |
+| **Search** | Meilisearch | NOT configured (falls back to Prisma LIKE) |
+
+### Domain Setup (2026-03-24)
+- **Domain:** `mizanly.app` — registered on Namecheap (expires 2027-03-23)
+- **DNS:** Cloudflare (Free plan) — nameservers `macy.ns.cloudflare.com` + `neil.ns.cloudflare.com`
+- **SSL/TLS:** Full (Strict)
+- **AI Bot Blocking:** ON (block on all pages)
+- **Cloudflare Zone ID:** `a80d909cd5b47fdb4dcba31a66a3283b`
+
+### Custom Domain Wiring (TODO)
+1. **Cloudflare DNS:** Add CNAME `api` → `mizanlyapi-production.up.railway.app` (Proxy ON)
+2. **Railway:** Settings → Custom Domain → add `api.mizanly.app`
+3. **Update env vars (Railway + local):**
+   - `APP_URL` → `https://api.mizanly.app`
+   - `API_URL` → `https://api.mizanly.app`
+   - `CORS_ORIGINS` → add `https://mizanly.app`
+4. **Update mobile .env:**
+   - `EXPO_PUBLIC_API_URL` → `https://api.mizanly.app/api/v1`
+   - `EXPO_PUBLIC_WS_URL` → `https://api.mizanly.app`
+
+### Railway Config (`apps/api/railway.json`)
+```json
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "installCommand": "npm install --legacy-peer-deps",
+    "buildCommand": "npx prisma generate && npx prisma migrate deploy && rm -rf dist && npx nest build && ls dist/main.js"
+  },
+  "deploy": {
+    "startCommand": "node dist/main.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "healthcheckPath": "/api/v1/health/live"
+  }
+}
+```
+
+### Entry Point (`apps/api/src/main.ts`)
+- Port: `process.env.PORT || 3000`, listens on `0.0.0.0`
+- Global prefix: `/api/v1`
+- CORS from `CORS_ORIGINS` env (comma-separated)
+- Helmet + compression + 1mb request limit
+- Swagger: development only
+- Sentry: initialized before app creation
+- Socket.io Redis adapter: initialized after app setup
+
+### CI/CD (`.github/workflows/ci.yml`)
+| Job | Depends On | Services |
+|-----|-----------|----------|
+| lint-and-typecheck | — | — |
+| build-mobile | lint-and-typecheck | — |
+| test-api | lint-and-typecheck | postgres:16, redis:7 |
+| build-api | test-api | — |
+
+### Environment Variables (32/34 configured)
+**Set:** DATABASE_URL, DIRECT_DATABASE_URL, CLERK_SECRET_KEY (test), CLERK_PUBLISHABLE_KEY (test), CLERK_WEBHOOK_SECRET, REDIS_URL, STRIPE_SECRET_KEY (test), STRIPE_WEBHOOK_SECRET, ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_PUBLIC_URL, CF_STREAM_ACCOUNT_ID, CF_STREAM_API_TOKEN, CF_STREAM_WEBHOOK_SECRET, RESEND_API_KEY, SENTRY_DSN, TURN_SERVER_URL, TURN_USERNAME, TURN_CREDENTIAL, TOTP_ENCRYPTION_KEY, GOLD_PRICE_PER_GRAM, SILVER_PRICE_PER_GRAM, NODE_ENV, PORT, CORS_ORIGINS
+**Empty:** MEILISEARCH_HOST, MEILISEARCH_API_KEY
+**Needs update for production:** APP_URL (localhost:3000 → api.mizanly.app), API_URL (same)
+
+### Mobile .env (current)
+```
+EXPO_PUBLIC_API_URL=https://mizanlyapi-production.up.railway.app/api/v1
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+EXPO_PUBLIC_WS_URL=https://mizanlyapi-production.up.railway.app
+EXPO_PUBLIC_GIPHY_API_KEY=<beta key>
+```
 
 ---
 
@@ -106,32 +190,115 @@ Full list in `~/.claude/projects/C--dev-mizanly/memory/project_session3_complete
 
 ---
 
-## SESSION 4 CHECKLIST — Creation Flow & Interactive Features
+## Session 4 — What Was Built (2026-03-24 continued)
+
+**28 commits. 5,093 tests (+159). 3 audit rounds. 23 bugs found and fixed. All pushed to GitHub.**
+
+### New Components Built
+| Component | Lines | Purpose |
+|-----------|-------|---------|
+| `GifSticker.tsx` | 400 | Waterfall masonry GIF search + GIPHY native dialog, blurhash placeholders |
+| `MusicSticker.tsx` | 310 | 3 display modes (compact pill/waveform/lyrics), word-by-word lyric highlighting |
+| `LocationSticker.tsx` | 320 | Real expo-location GPS + reverse geocode, gradient pill display |
+| `CreateSheet.tsx` | 370 | Premium 2×2 grid + compact rows, spring press, shadows, glow accents |
+| `AnimatedAccordion.tsx` | 140 | Reanimated 3 spring height animation, chevron rotation, press feedback |
+| `RichCaptionInput.tsx` | 210 | Live syntax highlighting (#hashtags→emerald, @mentions→blue, URLs→gold) |
+| `UploadProgressBar.tsx` | 180 | XMLHttpRequest progress tracking, spring-animated fill, cancel support |
+| `giphyService.ts` | 200 | Unified GIPHY API/SDK interface, search/trending/stickers/text |
+| `giphy-sdk/app.plugin.js` | 60 | Expo config plugin for GIPHY SDK (Fresco resolution) |
+
+### Sticker System (10 interactive types — all from checklist)
+| Sticker | What it does |
+|---------|-------------|
+| Poll | Spring percentage bars, haptic on vote, press feedback on options |
+| Quiz | 24 ticker-tape confetti (gravity + rotation + varied shapes), haptic success/error |
+| Question | Immediate optimistic submit (no fake setTimeout) |
+| Countdown | All strings i18n'd, emoji→Icon |
+| Emoji Slider | Haptic ticks at quarter marks during drag |
+| Location | Real GPS + reverse geocode, gradient pill with shadow glow |
+| Link | URL truncation, favicon, "See More" CTA |
+| Add Yours | GradientButton, participant count, chain entry |
+| GIF | Waterfall masonry, GIPHY native SDK dialog as primary, blurhash |
+| Music | Compact pill + waveform bars + word-by-word lyrics (3-line scroll) |
+
+### Navigation Restructure
+- **5-tab bar** (was 6): Saf, Bakra, Minbar, Majlis, Risalah
+- **Create moved to header**: emerald gradient "+" button with spring press
+- **CreateSheet**: 4 primary cards (Post/Story/Reel/Thread) + 3 secondary rows
+
+### Create Flow Quality (ALL 7 screens polished)
+| Screen | Haptics | Spring press | Entrance anim | Rich text | Progress bar |
+|--------|---------|-------------|---------------|-----------|-------------|
+| create-post | success/error | AnimatedAccordion | FadeInUp | RichCaptionInput | UploadProgressBar |
+| create-story | tick/success | Sticker drag spring | FadeIn/FadeInDown | — | — |
+| create-thread | tick/success/error | Scale on add/vis | FadeInUp parts | — | — |
+| create-reel | tick (session 3) | Clip scale | FadeInDown | — | — |
+| create-video | tick/success/error | Scale on picker | FadeInUp sections | — | — |
+| go-live | send/tick/success/error | FadeInUp already | FadeInUp cards | — | — |
+| voice-post | existing | Pulse animation | Animated | — | — |
+
+### Publish Screen Fields (9/11 from checklist)
+All use AnimatedAccordion (spring height animation):
+- Alt text, Tag people, Collaborator, Who can comment, Share to feed, Allow remixes, Branded content, Topics
+- Missing: Schedule posting (separate screen), Trial reel
+
+### DraggableSticker Enhancement
+- Haptic vibration on drag start
+- Spring scale to 1.08 while dragging, shadow lift (radius 16, elevation 12)
+- Springs back on release
+
+### Key Files Changed
+| File | Lines | What |
+|------|-------|------|
+| `create-post.tsx` | ~1,150 | RichCaptionInput, UploadProgressBar, 9 AnimatedAccordion fields |
+| `create-story.tsx` | ~1,700 | 12 sticker types, 3-col search tray, GIPHY native primary |
+| `story-viewer.tsx` | ~900 | Renders all new sticker types (gif/link/addYours/music/location) |
+| `(tabs)/_layout.tsx` | ~200 | 5-tab nav, hidden create tab |
+| `(tabs)/saf.tsx` | ~700 | CreateHeaderButton replacing camera icon |
+
+### Tests Added (+159)
+| File | Tests | Covers |
+|------|-------|--------|
+| `story-stickers.spec.ts` | 49 | All 12 sticker types, serialization, responses |
+| `publish-fields.spec.ts` | 42 | Alt text, tags, collaborator, comments, topics, GIPHY, file size |
+| `giphy-service.spec.ts` | 45 | URL construction, response parsing (15 cases), error handling, categories |
+| `create-sheet.spec.ts` | 23 | Options structure, animation timing, scale feedback, gradients, a11y |
+
+### Audit Findings Fixed (23 total)
+| Round | Critical | Bugs | i18n | Cleanup |
+|-------|----------|------|------|---------|
+| 1 | GIPHY API wired | ActivityIndicator→Skeleton | Hardcoded strings | Unused imports |
+| 2 | Duplicate `isSDKAvailable()` crash | Dead lyric animation | 19 strings unwired | 7 cleanups |
+| 3 | Dangling code fragment | Type safety `as never` | Topics hardcoded | Hidden create tab |
+
+---
+
+## SESSION 4 CHECKLIST — Creation Flow & Interactive Features (UPDATED)
 
 ### Interactive Story Stickers (Instagram parity — HIGH PRIORITY)
-- [ ] Poll sticker (binary/multi-option, real-time results)
-- [ ] Quiz sticker (multiple choice with correct answer reveal)
-- [ ] Question box sticker (open text, reshare answers)
-- [ ] Countdown sticker (timer to date, follower opt-in)
-- [ ] Emoji slider sticker (sliding scale with custom emoji)
-- [ ] Location sticker on stories (searchable, tappable)
-- [ ] Link sticker (external URL, available to all)
-- [ ] "Add Yours" chain sticker (viewers add their own response)
-- [ ] GIF search sticker (GIPHY integration)
-- [ ] Music sticker on stories (song clip with lyric display)
+- [x] Poll sticker (spring bars, haptic vote, press feedback)
+- [x] Quiz sticker (24 ticker-tape confetti, gravity physics, haptic)
+- [x] Question box sticker (immediate optimistic submit)
+- [x] Countdown sticker (all i18n, emoji→Icon)
+- [x] Emoji slider sticker (haptic ticks at quarter marks)
+- [x] Location sticker (real expo-location GPS + reverse geocode)
+- [x] Link sticker (URL truncation, favicon, See More CTA)
+- [x] "Add Yours" chain sticker (GradientButton, participant count)
+- [x] GIF search sticker (waterfall masonry + GIPHY native SDK dialog)
+- [x] Music sticker (compact/waveform/lyrics, word-by-word highlighting)
 
 ### Publish Screen Fields (Table stakes)
-- [ ] Location tag on post/reel publish
-- [ ] Tag people in post
-- [ ] Invite collaborator (co-author, reel on both profiles)
-- [ ] Topics/categories selector for reels
-- [ ] Schedule posting (date/time picker)
-- [ ] Alt text for accessibility
-- [ ] Remix settings (allow/disallow)
-- [ ] Who can comment selector
-- [ ] Share to feed toggle
-- [ ] Branded content / paid partnership label
-- [ ] Trial reel (test with non-followers, auto-share if performs well)
+- [x] Location tag on post/reel publish (LocationPicker wired)
+- [x] Tag people in post (AnimatedAccordion, chip badges)
+- [x] Invite collaborator (AnimatedAccordion, description)
+- [x] Topics/categories selector (10 categories, max 3, i18n labels)
+- [ ] Schedule posting (date/time picker) — needs separate screen
+- [x] Alt text for accessibility (AnimatedAccordion, 1000 char, CharCountRing)
+- [x] Remix settings (toggle in advanced settings)
+- [x] Who can comment selector (radio group in AnimatedAccordion)
+- [x] Share to feed toggle (in advanced settings)
+- [x] Branded content / paid partnership label (toggle + partner field)
+- [ ] Trial reel (test with non-followers) — needs backend
 
 ### Photo Carousel Posts (TikTok/Instagram)
 - [ ] Multi-photo upload (up to 10-35 slides)
@@ -195,8 +362,8 @@ Full list in `~/.claude/projects/C--dev-mizanly/memory/project_session3_complete
 - [ ] Apple Developer enrollment ($99, 48h)
 - [ ] Clerk production keys (switch sk_test_ → sk_live_)
 - [ ] Stripe live keys
-- [ ] APP_URL → production URL (currently localhost:3000)
-- [ ] Custom domain (api.mizanly.app) — Cloudflare + Railway
+- [ ] APP_URL → production URL (currently localhost:3000) — domain bought, Cloudflare active, CNAME + Railway custom domain pending
+- [x] Custom domain (mizanly.app) — bought on Namecheap, Cloudflare DNS active, SSL Full (Strict)
 - [ ] Fix metro CI build (remove root metro dep)
 - [ ] First EAS build (iOS + Android)
 
@@ -205,7 +372,7 @@ Full list in `~/.claude/projects/C--dev-mizanly/memory/project_session3_complete
 - [ ] Send real push notifications (verify FCM + APNs)
 - [ ] Process $1 test payment (verify Stripe end-to-end)
 - [ ] Real-time messaging (two devices, real conversation)
-- [ ] Deploy to Railway + verify health endpoint
+- [x] Deploy to Railway + verify health endpoint — LIVE at mizanlyapi-production.up.railway.app
 
 ### Week 3: Beta Polish
 - [ ] TestFlight / Play Store internal testing (first 10 users)
