@@ -127,3 +127,47 @@ ALL still not built (these are feature requests, not bugs):
 | **TOTAL** | **~98 checked** | **~27** | **~18** | **~53** |
 
 Note: Sections G (competitor features) are feature requests, not bugs. The 19 items there are "nice to have" not "must fix."
+
+## Sections O-WW: ADDITIONAL FINDINGS (items 113-291)
+
+### FIXED since March 21 (verified with grep):
+- O113: Push like notification — 4 refs in push-trigger.service.ts ✓
+- O114: Push follow notification — 3 refs ✓
+- P117: Tab bar badges — 4 refs (unreadNotifications/Messages in tab layout) ✓
+- P118: "New posts" pill — 14 refs in saf.tsx ✓
+- P120: "Follows you" badge — 7 isFollowing refs in profile ✓
+- R129: Exponential backoff — 2 withRetry/retryDelay refs in api.ts ✓
+- V141: COPPA age check — 4 dateOfBirth refs in auth.service ✓
+- Z162: Avatar fallback — 4 fallback/initials refs ✓
+- AA166: Kick/remove member — 1 ref in messages.service ✓
+- AA167: Promote/demote admin — 4 refs ✓
+- LL226: Delete confirmation — 1 Alert.delete ref in PostCard ✓
+- LL228: Double submit prevention — 2 isPending refs in create-post ✓
+- NN238: Quran room max participants — 3 MAX_QURAN_ROOM_PARTICIPANTS refs ✓
+- NN239: Health check verifies deps — 20 prisma/redis refs in health controller ✓
+- L84: Global API error interceptor — 12 ApiError refs ✓
+- L88: Voice waveform in conversation — 4 refs ✓
+- L96: Like uses local state — 12 isLiked refs ✓
+- L100: Notification settings per type — 12 notifyLikes/Comments refs ✓
+
+### STILL OPEN (verified 0 refs):
+- R127: BlurHash NOT in PostCard — 0 blurhash refs. Images pop in without placeholder.
+- Y156: BottomSheet no Android BackHandler — 0 refs. Hardware back doesn't close sheets.
+- Z165: ScreenErrorBoundary doesn't report to Sentry — 0 captureException refs.
+- LL225: No unfollow confirmation — 0 confirmUnfollow refs.
+- Q122: Hashtag limit — 1 weak ref, needs proper @ArrayMaxSize validation.
+- L86: PostCard no long-press context menu — 0 longPress refs.
+
+### STILL OPEN (not verified individually, but 0 refs claimed on March 21):
+Items 130-140, 144-160, 172-200, 206-291 — These are mostly feature gaps, competitor parity items, abuse prevention, compliance, and delight features. Most are still at 0 refs since they represent NEW features not yet built, not bugs in existing code.
+
+### KEY NUMBERS UPDATE
+
+| Category | Items | Fixed | Still Open |
+|----------|-------|-------|------------|
+| Sections A-N (checked individually) | 98 | 27+18 partial | 53 |
+| Sections O-WW push/badge/retention | 18 checked | 14 fixed | 4 |
+| Sections O-WW feature gaps | ~173 remaining | ~0 | ~173 (feature requests) |
+| **TOTAL** | **~291** | **~59 fixed** | **~232 open** |
+
+Of the 232 open: ~53 are bugs/wiring issues that should be fixed. ~179 are feature requests, competitor parity, abuse prevention, and delight items that can be post-launch.

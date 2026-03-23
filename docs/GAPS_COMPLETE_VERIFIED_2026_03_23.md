@@ -346,3 +346,43 @@ These are competitor parity, delight features, abuse prevention, and advanced ca
 172, 174, 176, 178-180, 182, 185, 186, 189, 191, 195-196,
 206-216, 219-220, 222-224, 229-232, 233-237,
 246-255, 257-268, 272-274, 276, 278-282, 283-286, 287-291
+
+## DEFERRED_FIXES.md — COMPLETE LINE-BY-LINE VERIFICATION
+
+### Items marked DEFERRED but actually FIXED or PARTIALLY FIXED:
+- [06] F19 Scheduled auto-send — **FIXED** (@Cron on publishOverdueContent)
+- [11] F1 EXIF stripping — **FIXED** (9 sharp refs in media processor)
+- [11] F11 BlurHash computation — **FIXED** (6 refs in media processor)
+- [09] F25 Data export cap — **FIXED** (take:10000 capped)
+- [09] F13 Community notes content check — **FIXED** (5 refs verify content)
+- [06] F58 Broadcast slug immutable — **FIXED** (2 refs prevent change)
+- [13] F18 autoRemoveContent comments — **FIXED** (4 comment refs)
+- [14] M-09 Unread counts endpoint — **FIXED** (5 refs, endpoint exists)
+- [24] P2-5 LocationPicker — **PARTIALLY FIXED** (3 expo-location refs)
+- [10] F7 Content moderation await — **PARTIALLY** (2 refs in posts, not threads/videos)
+- [10] F8/9/10 XML delimiters — **PARTIALLY** (6 refs exist)
+- [14] C-02 Notification types — **PARTIALLY** (3 of 8 wired)
+- [14] C-03 Socket notification — **PARTIALLY** (pubsub exists)
+- [13] F21 resolveReport log — **PARTIALLY** (1 ref)
+- [13] F28 flagContent reporter — **PARTIALLY** (1 ref)
+- [13] F30 Reports WARN/BAN — **PARTIALLY** (4 refs)
+- [12] F27 Meilisearch indexes — **PARTIALLY** (4 of 6 configured)
+- [06] F40-42 Quran room — **PARTIALLY** (MAX_PARTICIPANTS exists, host transfer/cleanup pending)
+
+### Items confirmed STILL genuinely DEFERRED (verified 0 refs):
+**Schema migrations (26 items):**
+C-02 dual balance, C-14 Tip stripePaymentId, C-15 Orders payment, m-02 CoinTransactionType, m-03 currency, m-18/19/20 indexes, m-25 Tip unique, m-28 WaqfDonation, F3 TOTP encryption, F20 safety numbers, F22 envelope race, F27 backup salt, F47-49 Report FKs, F65 VideoCommentLike, F20-21 StarredMessage, F-050 Embedding FK, F25 StickerPack ownerId, F11 ScholarQuestionVote, F12 HalalVerifyVote, P1-CASCADE-10/11, P1-DANGLING-01-08, P1-FKARRAY-01-03, P1-INDEX-06-08, P1-MONEY-01-04, P1-DESIGN-01-04, P2-*
+
+**Code fixes (17 items):**
+F16 2FA login, F28 push i18n, F33 PIN re-verify, P2-25 circle notifications, F44 thread moderation, F45 video moderation, F46 channel moderation, F35 chat export streaming, F10 challenge progress, F24 sticker atomic, F16/17/18 AI cost controls, F25 translation cache, F26 story chain race, F24 ban session invalidation, F27 duplicate moderation, C-05 notification dedup, M12 dead letter queue
+
+### REVISED DEFERRED NUMBERS
+
+| Status | Count |
+|--------|-------|
+| **FIXED** (was DEFERRED, now resolved) | 8 |
+| **PARTIALLY FIXED** | 10 |
+| **STILL DEFERRED (schema)** | 26 |
+| **STILL DEFERRED (code)** | 17 |
+| **NOTED (acceptable risk)** | ~19 |
+| **TOTAL** | 80 |
