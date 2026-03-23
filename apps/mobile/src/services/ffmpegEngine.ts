@@ -10,6 +10,8 @@
  *
  * Uses ffmpeg-kit-react-native (full-gpl variant configured via Expo plugin).
  * Gracefully degrades if native module isn't linked.
+ *
+ * NOTE: Only one export can run at a time (single activeSessionId).
  */
 
 import * as FileSystem from 'expo-file-system';
@@ -20,6 +22,9 @@ export type FilterName = 'original' | 'warm' | 'cool' | 'bw' | 'vintage' | 'vivi
 export type QualityPreset = '720p' | '1080p' | '4K';
 
 export type AspectRatio = '9:16' | '16:9' | '1:1' | '4:5';
+
+/** Max clip duration (seconds) for reverse — prevents OOM on long videos */
+const MAX_REVERSE_DURATION = 300; // 5 minutes
 
 export interface EditParams {
   inputUri: string;
@@ -88,15 +93,19 @@ let activeSessionId: number | null = null;
 // ── FFmpeg availability check ──────────────────────────────────────
 
 let _ffmpegKit: typeof import('ffmpeg-kit-react-native') | null = null;
-let _ffmpegChecked = false;
+let _loadFailed = false;
 
 async function getFFmpegKit(): Promise<typeof import('ffmpeg-kit-react-native') | null> {
-  if (_ffmpegChecked) return _ffmpegKit;
-  _ffmpegChecked = true;
+  // Return cached result if already loaded
+  if (_ffmpegKit) return _ffmpegKit;
+  // Don't retry if it previously failed (avoids repeated import cost)
+  // But allow one retry per app session via resetFFmpegCheck()
+  if (_loadFailed) return null;
   try {
     _ffmpegKit = await import('ffmpeg-kit-react-native');
     return _ffmpegKit;
   } catch {
+    _loadFailed = true;
     if (__DEV__) console.warn('[FFmpegEngine] ffmpeg-kit-react-native not available');
     return null;
   }
@@ -107,17 +116,50 @@ export async function isFFmpegAvailable(): Promise<boolean> {
   return kit !== null;
 }
 
+/** Allow retrying FFmpeg import (e.g., after hot reload in dev) */
+export function resetFFmpegCheck(): void {
+  _ffmpegKit = null;
+  _loadFailed = false;
+}
+
+// ── Atempo helper ──────────────────────────────────────────────────
+// atempo only supports 0.5–100. For values below 0.5, chain multiple.
+
+function buildAtempoChain(speed: number): string {
+  if (speed >= 0.5 && speed <= 100) {
+    return `atempo=${speed}`;
+  }
+  if (speed < 0.5 && speed >= 0.25) {
+    return 'atempo=0.5,atempo=0.5';
+  }
+  if (speed < 0.25) {
+    // 0.125x = atempo=0.5,atempo=0.5,atempo=0.5
+    const chains: string[] = [];
+    let remaining = speed;
+    while (remaining < 0.5) {
+      chains.push('atempo=0.5');
+      remaining *= 2;
+    }
+    if (remaining !== 1) chains.push(`atempo=${remaining}`);
+    return chains.join(',');
+  }
+  return `atempo=${speed}`;
+}
+
 // ── Command builder ────────────────────────────────────────────────
 
 export function buildCommand(params: EditParams, outputPath: string): string {
   const { inputUri, startTime, endTime, totalDuration, speed, filter, captionText, captionColor, originalVolume, quality } = params;
   const qualityCfg = QUALITY_MAP[quality];
+  const clipDuration = endTime - startTime;
 
   const parts: string[] = [];
 
   // Input with seek (use -ss before -i for fast seek)
+  // When reversing, we must NOT use -ss seek — reverse needs full decoded frames.
+  // Instead, use trim filter inside the filter chain for reversed clips.
   const needsTrim = startTime > 0.1 || endTime < totalDuration - 0.1;
-  if (needsTrim) {
+  if (needsTrim && !params.isReversed) {
     parts.push(`-ss ${startTime.toFixed(3)}`);
     parts.push(`-to ${endTime.toFixed(3)}`);
   }
@@ -132,8 +174,13 @@ export function buildCommand(params: EditParams, outputPath: string): string {
 
   const vFilters: string[] = [];
 
-  // Reverse (must come before speed to get correct visual result)
-  if (params.isReversed) {
+  // When reversing with trim, use trim filter first (since we can't use -ss with reverse)
+  if (params.isReversed && needsTrim) {
+    vFilters.push(`trim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},setpts=PTS-STARTPTS`);
+  }
+
+  // Reverse video (requires entire segment in memory — capped at MAX_REVERSE_DURATION)
+  if (params.isReversed && clipDuration <= MAX_REVERSE_DURATION) {
     vFilters.push('reverse');
   }
 
@@ -154,19 +201,27 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   }
 
   // Aspect ratio crop (center crop to target ratio)
+  // Use min() to prevent crop dimensions exceeding input dimensions
   if (params.aspectRatio && params.aspectRatio !== '9:16') {
     const ratioMap: Record<string, string> = {
-      '16:9': 'crop=ih*16/9:ih',
+      '16:9': 'crop=min(iw\\,ih*16/9):min(ih\\,iw*9/16)',
       '1:1': 'crop=min(iw\\,ih):min(iw\\,ih)',
-      '4:5': 'crop=ih*4/5:ih',
+      '4:5': 'crop=min(iw\\,ih*4/5):min(ih\\,iw*5/4)',
     };
     const cropFilter = ratioMap[params.aspectRatio];
     if (cropFilter) vFilters.push(cropFilter);
   }
 
-  // Text overlay
+  // Text overlay — use FFmpeg-native escaping
   if (captionText.trim()) {
-    const escaped = captionText.replace(/'/g, "'\\''").replace(/:/g, '\\:');
+    // FFmpeg drawtext escaping: \ : ' must be escaped with backslash
+    const escaped = captionText
+      .replace(/\\/g, '\\\\\\\\')  // backslash
+      .replace(/'/g, "'\\\\\\''")   // single quote
+      .replace(/:/g, '\\:')         // colon (FFmpeg option separator)
+      .replace(/%/g, '%%')          // percent (FFmpeg time code)
+      .replace(/\[/g, '\\[')        // brackets
+      .replace(/\]/g, '\\]');
     vFilters.push(
       `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5`
     );
@@ -178,41 +233,55 @@ export function buildCommand(params: EditParams, outputPath: string): string {
 
   // ── Audio filter chain ──────────────────────────────────
 
-  const aFilters: string[] = [];
-
-  // Reverse audio
-  if (params.isReversed) {
-    aFilters.push('areverse');
-  }
-
-  // Speed adjustment for audio
-  if (speed !== 1) {
-    // atempo only supports 0.5–100, chain multiple for extreme values
-    if (speed >= 0.5 && speed <= 100) {
-      aFilters.push(`atempo=${speed}`);
-    } else if (speed < 0.5) {
-      // Chain: 0.25x = atempo=0.5,atempo=0.5
-      aFilters.push('atempo=0.5', 'atempo=0.5');
-    }
-  }
-
-  // Volume adjustment
-  if (originalVolume !== 100) {
-    aFilters.push(`volume=${(originalVolume / 100).toFixed(2)}`);
-  }
-
   if (params.musicUri) {
     // Complex audio filter for mixing original + music
+    // Handles: reverse, speed, volume for original audio + volume for music
     const musicVol = (params.musicVolume / 100).toFixed(2);
     const origVol = (originalVolume / 100).toFixed(2);
-    const speedFilters = speed !== 1 ? `,atempo=${speed}` : '';
+
+    const origChain: string[] = [`volume=${origVol}`];
+    if (params.isReversed && needsTrim) {
+      origChain.unshift(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
+    }
+    if (params.isReversed && clipDuration <= MAX_REVERSE_DURATION) {
+      origChain.push('areverse');
+    }
+    if (speed !== 1) {
+      origChain.push(buildAtempoChain(speed));
+    }
+
     parts.push(
-      `-filter_complex "[0:a]volume=${origVol}${speedFilters}[a0];[1:a]volume=${musicVol}[a1];[a0][a1]amix=inputs=2:duration=first[aout]"`,
+      `-filter_complex "[0:a]${origChain.join(',')}[a0];[1:a]volume=${musicVol}[a1];[a0][a1]amix=inputs=2:duration=first[aout]"`,
       '-map 0:v',
       '-map "[aout]"'
     );
-  } else if (aFilters.length > 0) {
-    parts.push(`-af "${aFilters.join(',')}"`);
+  } else {
+    // Simple audio filter chain (no music mixing)
+    const aFilters: string[] = [];
+
+    // Trim audio when reversing (since we can't use -ss)
+    if (params.isReversed && needsTrim) {
+      aFilters.push(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
+    }
+
+    // Reverse audio
+    if (params.isReversed && clipDuration <= MAX_REVERSE_DURATION) {
+      aFilters.push('areverse');
+    }
+
+    // Speed adjustment for audio
+    if (speed !== 1) {
+      aFilters.push(buildAtempoChain(speed));
+    }
+
+    // Volume adjustment
+    if (originalVolume !== 100) {
+      aFilters.push(`volume=${(originalVolume / 100).toFixed(2)}`);
+    }
+
+    if (aFilters.length > 0) {
+      parts.push(`-af "${aFilters.join(',')}"`);
+    }
   }
 
   // ── Encoding settings ───────────────────────────────────
@@ -237,6 +306,12 @@ export async function executeExport(
     return { success: false, error: 'FFmpeg not available — native module not linked' };
   }
 
+  // Validate reverse duration
+  const clipDuration = params.endTime - params.startTime;
+  if (params.isReversed && clipDuration > MAX_REVERSE_DURATION) {
+    return { success: false, error: `Reverse is limited to ${MAX_REVERSE_DURATION / 60} minutes. Trim the clip first.` };
+  }
+
   // Generate output path in cache directory
   const timestamp = Date.now();
   const outputPath = `${FileSystem.cacheDirectory}video_export_${timestamp}.mp4`;
@@ -247,11 +322,15 @@ export async function executeExport(
     console.log('[FFmpegEngine] Command:', command);
   }
 
+  // Progress estimation — account for reverse (which processes slower)
   const trimDuration = params.endTime - params.startTime;
-  const exportDurationMs = (trimDuration / params.speed) * 1000;
+  const speedFactor = params.speed || 1;
+  const reverseFactor = params.isReversed ? 2 : 1; // reverse is ~2x slower
+  const exportDurationMs = (trimDuration / speedFactor) * reverseFactor * 1000;
 
   return new Promise<ExportResult>((resolve) => {
-    kit.FFmpegKit.executeAsync(
+    // Capture session ID synchronously via the returned promise
+    const sessionPromise = kit.FFmpegKit.executeAsync(
       command,
       // Complete callback
       async (session) => {
@@ -279,8 +358,15 @@ export async function executeExport(
           onProgress(percent);
         }
       },
-    ).then((session) => {
-      activeSessionId = session.getSessionId();
+    );
+
+    // Set activeSessionId BEFORE the complete callback can fire
+    // by awaiting the session promise immediately
+    sessionPromise.then((session) => {
+      // Only set if not already completed (race guard)
+      if (activeSessionId === null) {
+        activeSessionId = session.getSessionId();
+      }
     });
   });
 }

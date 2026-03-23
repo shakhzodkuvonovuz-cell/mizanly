@@ -5,11 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Video, Audio, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -73,6 +71,7 @@ export default function VideoEditorScreen() {
   const [musicVolume, setMusicVolume] = useState(60);
   const [voiceoverUri, setVoiceoverUri] = useState<string | null>(null);
   const [isRecordingVoiceover, setIsRecordingVoiceover] = useState(false);
+  const recordingRef = useRef<Audio.Recording | null>(null);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
   const [isReversed, setIsReversed] = useState(false);
@@ -131,6 +130,9 @@ export default function VideoEditorScreen() {
   // Animated trim handle positions (0-1 fraction of timeline)
   const leftHandlePos = useSharedValue(0);
   const rightHandlePos = useSharedValue(1);
+  // Store initial position at gesture start to avoid compounding
+  const leftHandleStartPos = useSharedValue(0);
+  const rightHandleStartPos = useSharedValue(1);
 
   // Update shared values when trim times change from other interactions
   useEffect(() => {
@@ -140,28 +142,40 @@ export default function VideoEditorScreen() {
     }
   }, [totalDuration, startTime, endTime, leftHandlePos, rightHandlePos]);
 
-  // Gesture: drag left trim handle
+  // Seek helper — extracted as named function for runOnJS
+  const seekToStart = useCallback(() => {
+    videoRef.current?.setPositionAsync(startTime * 1000);
+  }, [startTime]);
+
+  // FIX: Gesture captures start position in onStart, uses absolute offset in onUpdate
   const leftTrimGesture = Gesture.Pan()
+    .onStart(() => {
+      leftHandleStartPos.value = leftHandlePos.value;
+    })
     .onUpdate((e) => {
       if (timelineWidth.current <= 0 || totalDuration <= 0) return;
-      const fraction = Math.max(0, Math.min(rightHandlePos.value - MIN_TRIM_GAP / totalDuration, leftHandlePos.value + e.translationX / timelineWidth.current));
+      const fraction = Math.max(0, Math.min(
+        rightHandlePos.value - MIN_TRIM_GAP / totalDuration,
+        leftHandleStartPos.value + e.translationX / timelineWidth.current
+      ));
       leftHandlePos.value = fraction;
       runOnJS(setStartTime)(fraction * totalDuration);
     })
     .onEnd(() => {
-      // Seek video to new start position
-      if (videoRef.current) {
-        runOnJS((async () => {
-          await videoRef.current?.setPositionAsync(startTime * 1000);
-        }))();
-      }
+      runOnJS(seekToStart)();
     });
 
-  // Gesture: drag right trim handle
+  // FIX: Same pattern for right handle
   const rightTrimGesture = Gesture.Pan()
+    .onStart(() => {
+      rightHandleStartPos.value = rightHandlePos.value;
+    })
     .onUpdate((e) => {
       if (timelineWidth.current <= 0 || totalDuration <= 0) return;
-      const fraction = Math.min(1, Math.max(leftHandlePos.value + MIN_TRIM_GAP / totalDuration, rightHandlePos.value + e.translationX / timelineWidth.current));
+      const fraction = Math.min(1, Math.max(
+        leftHandlePos.value + MIN_TRIM_GAP / totalDuration,
+        rightHandleStartPos.value + e.translationX / timelineWidth.current
+      ));
       rightHandlePos.value = fraction;
       runOnJS(setEndTime)(fraction * totalDuration);
     });
@@ -174,18 +188,19 @@ export default function VideoEditorScreen() {
     right: `${(1 - rightHandlePos.value) * 100}%`,
   }));
 
-  // Gesture: volume slider
+  // FIX: Volume slider uses onLayout to capture absolute X position (no magic number)
   const volumeSliderWidth = useRef(0);
+  const volumeSliderX = useRef(0);
   const onOriginalVolumeGesture = Gesture.Pan()
     .onUpdate((e) => {
       if (volumeSliderWidth.current <= 0) return;
-      const newVol = Math.max(0, Math.min(100, Math.round((e.absoluteX - 80) / volumeSliderWidth.current * 100)));
+      const newVol = Math.max(0, Math.min(100, Math.round((e.absoluteX - volumeSliderX.current) / volumeSliderWidth.current * 100)));
       runOnJS(setOriginalVolume)(newVol);
     });
   const onMusicVolumeGesture = Gesture.Pan()
     .onUpdate((e) => {
       if (volumeSliderWidth.current <= 0) return;
-      const newVol = Math.max(0, Math.min(100, Math.round((e.absoluteX - 80) / volumeSliderWidth.current * 100)));
+      const newVol = Math.max(0, Math.min(100, Math.round((e.absoluteX - volumeSliderX.current) / volumeSliderWidth.current * 100)));
       runOnJS(setMusicVolume)(newVol);
     });
 
@@ -378,7 +393,7 @@ export default function VideoEditorScreen() {
     } finally {
       setIsExporting(false);
     }
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, exportProgressAnim, t, router]);
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, isReversed, aspectRatio, exportProgressAnim, t, router, params.returnTo]);
 
   // Cancel export handler
   const handleCancelExport = useCallback(async () => {
@@ -416,6 +431,7 @@ export default function VideoEditorScreen() {
               onPress={() => {
                 // Split at current playhead: set endTime to current position
                 if (currentTime > startTime + 1 && currentTime < endTime - 1) {
+                  pushUndo();
                   haptic.tick();
                   setEndTime(currentTime);
                   showToast({ message: t('videoEditor.splitDone'), variant: 'success' });
@@ -438,6 +454,7 @@ export default function VideoEditorScreen() {
               style={styles.deleteButton}
               onPress={() => {
                 // Reset trim to full duration
+                pushUndo();
                 haptic.delete();
                 setStartTime(0);
                 setEndTime(totalDuration);
@@ -461,7 +478,7 @@ export default function VideoEditorScreen() {
                   accessibilityLabel={`${speed}x ${t('videoEditor.speed')}`}
                   key={speed}
                   style={styles.speedButton}
-                  onPress={() => setPlaybackSpeed(speed)}
+                  onPress={() => { pushUndo(); setPlaybackSpeed(speed); }}
                 >
                   <LinearGradient
                     colors={playbackSpeed === speed
@@ -496,7 +513,7 @@ export default function VideoEditorScreen() {
                   <Pressable accessibilityRole="button"
                     accessibilityLabel={t(filter.labelKey)}
                     style={styles.filterButton}
-                    onPress={() => setSelectedFilter(filter.id)}
+                    onPress={() => { pushUndo(); setSelectedFilter(filter.id); }}
                   >
                     <LinearGradient
                       colors={colors.gradient.cardDark}
@@ -654,7 +671,10 @@ export default function VideoEditorScreen() {
             <GestureDetector gesture={onOriginalVolumeGesture}>
               <View
                 style={styles.sliderTrack}
-                onLayout={(e) => { volumeSliderWidth.current = e.nativeEvent.layout.width; }}
+                onLayout={(e) => {
+                  volumeSliderWidth.current = e.nativeEvent.layout.width;
+                  (e.target as any).measureInWindow?.((x: number) => { volumeSliderX.current = x; });
+                }}
               >
                 <View style={[styles.sliderFill, { width: `${originalVolume}%` }]} />
                 <View style={[styles.sliderThumb, { left: `${originalVolume}%` }]} />
@@ -695,15 +715,41 @@ export default function VideoEditorScreen() {
               onPress={async () => {
                 haptic.tick();
                 if (isRecordingVoiceover) {
+                  // Stop recording
                   setIsRecordingVoiceover(false);
-                  // Stop recording handled by Audio.Recording
-                  showToast({ message: t('videoEditor.voiceoverSaved'), variant: 'success' });
+                  if (videoRef.current) await videoRef.current.pauseAsync();
+                  if (recordingRef.current) {
+                    try {
+                      await recordingRef.current.stopAndUnloadAsync();
+                      const uri = recordingRef.current.getURI();
+                      recordingRef.current = null;
+                      if (uri) {
+                        setVoiceoverUri(uri);
+                        showToast({ message: t('videoEditor.voiceoverSaved'), variant: 'success' });
+                      }
+                    } catch {
+                      showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
+                    }
+                  }
                 } else {
-                  setIsRecordingVoiceover(true);
-                  // Play video from current position while recording
-                  if (videoRef.current) {
-                    await videoRef.current.setPositionAsync(startTime * 1000);
-                    await videoRef.current.playAsync();
+                  // Start recording
+                  try {
+                    await Audio.setAudioModeAsync({
+                      allowsRecordingIOS: true,
+                      playsInSilentModeIOS: true,
+                    });
+                    const { recording } = await Audio.Recording.createAsync(
+                      Audio.RecordingOptionsPresets.HIGH_QUALITY,
+                    );
+                    recordingRef.current = recording;
+                    setIsRecordingVoiceover(true);
+                    // Play video from trim start while recording
+                    if (videoRef.current) {
+                      await videoRef.current.setPositionAsync(startTime * 1000);
+                      await videoRef.current.playAsync();
+                    }
+                  } catch {
+                    showToast({ message: t('videoEditor.exportFailed'), variant: 'error' });
                   }
                 }
               }}
@@ -757,7 +803,9 @@ export default function VideoEditorScreen() {
           <Icon name="arrow-left" size="sm" color={undoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel={t('videoEditor.redo')} onPress={handleRedo} style={[styles.quickActionBtn, redoStack.length === 0 && styles.quickActionDisabled]}>
-          <Icon name="arrow-left" size="sm" color={redoStack.length > 0 ? tc.text.primary : tc.text.tertiary} style={{ transform: [{ scaleX: -1 }] }} />
+          <View style={{ transform: [{ scaleX: -1 }] }}>
+            <Icon name="arrow-left" size="sm" color={redoStack.length > 0 ? tc.text.primary : tc.text.tertiary} />
+          </View>
         </Pressable>
         <View style={styles.quickActionDivider} />
         <Pressable
@@ -787,7 +835,7 @@ export default function VideoEditorScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('videoEditor.autoCaptions')}
           onPress={() => {
-            if (videoUri) navigate('/(screens)/caption-editor', { videoUri });
+            if (videoUri) router.push({ pathname: '/(screens)/caption-editor' as any, params: { videoUri } });
           }}
           style={styles.quickActionBtn}
         >

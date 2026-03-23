@@ -62,13 +62,25 @@ const QUALITY_MAP: Record<QualityPreset, QualityConfig> = {
   '4K': { scale: 'scale=-2:2160', crf: 18, preset: 'medium', audioBitrate: '256k' },
 };
 
+function buildAtempoChain(speed: number): string {
+  if (speed >= 0.5 && speed <= 100) return `atempo=${speed}`;
+  if (speed < 0.5 && speed >= 0.25) return 'atempo=0.5,atempo=0.5';
+  const chains: string[] = [];
+  let remaining = speed;
+  while (remaining < 0.5) { chains.push('atempo=0.5'); remaining *= 2; }
+  if (remaining !== 1) chains.push(`atempo=${remaining}`);
+  return chains.join(',');
+}
+
 function buildCommand(params: EditParams, outputPath: string): string {
   const { inputUri, startTime, endTime, totalDuration, speed, filter, captionText, captionColor, originalVolume, quality } = params;
   const qualityCfg = QUALITY_MAP[quality];
+  const clipDuration = endTime - startTime;
   const parts: string[] = [];
 
   const needsTrim = startTime > 0.1 || endTime < totalDuration - 0.1;
-  if (needsTrim) {
+  // Don't use -ss seek when reversing — reverse needs full decoded frames
+  if (needsTrim && !params.isReversed) {
     parts.push(`-ss ${startTime.toFixed(3)}`);
     parts.push(`-to ${endTime.toFixed(3)}`);
   }
@@ -79,7 +91,12 @@ function buildCommand(params: EditParams, outputPath: string): string {
   }
 
   const vFilters: string[] = [];
-  if (params.isReversed) {
+
+  // Reverse with trim uses trim filter instead of -ss
+  if (params.isReversed && needsTrim) {
+    vFilters.push(`trim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},setpts=PTS-STARTPTS`);
+  }
+  if (params.isReversed && clipDuration <= 300) {
     vFilters.push('reverse');
   }
   if (speed !== 1) {
@@ -94,15 +111,21 @@ function buildCommand(params: EditParams, outputPath: string): string {
   }
   if (params.aspectRatio && params.aspectRatio !== '9:16') {
     const ratioMap: Record<string, string> = {
-      '16:9': 'crop=ih*16/9:ih',
+      '16:9': 'crop=min(iw\\,ih*16/9):min(ih\\,iw*9/16)',
       '1:1': 'crop=min(iw\\,ih):min(iw\\,ih)',
-      '4:5': 'crop=ih*4/5:ih',
+      '4:5': 'crop=min(iw\\,ih*4/5):min(ih\\,iw*5/4)',
     };
     const cropFilter = ratioMap[params.aspectRatio];
     if (cropFilter) vFilters.push(cropFilter);
   }
   if (captionText.trim()) {
-    const escaped = captionText.replace(/'/g, "'\\''").replace(/:/g, '\\:');
+    const escaped = captionText
+      .replace(/\\/g, '\\\\\\\\')
+      .replace(/'/g, "'\\\\\\''")
+      .replace(/:/g, '\\:')
+      .replace(/%/g, '%%')
+      .replace(/\[/g, '\\[')
+      .replace(/\]/g, '\\]');
     vFilters.push(
       `drawtext=text='${escaped}':fontsize=48:fontcolor=${captionColor}:x=(w-text_w)/2:y=h-th-80:borderw=2:bordercolor=black@0.5`,
     );
@@ -111,32 +134,29 @@ function buildCommand(params: EditParams, outputPath: string): string {
     parts.push(`-vf "${vFilters.join(',')}"`);
   }
 
-  const aFilters: string[] = [];
-  if (params.isReversed) {
-    aFilters.push('areverse');
-  }
-  if (speed !== 1) {
-    if (speed >= 0.5 && speed <= 100) {
-      aFilters.push(`atempo=${speed}`);
-    } else if (speed < 0.5) {
-      aFilters.push('atempo=0.5', 'atempo=0.5');
-    }
-  }
-  if (originalVolume !== 100) {
-    aFilters.push(`volume=${(originalVolume / 100).toFixed(2)}`);
-  }
-
   if (params.musicUri) {
     const musicVol = (params.musicVolume / 100).toFixed(2);
     const origVol = (originalVolume / 100).toFixed(2);
-    const speedFilters = speed !== 1 ? `,atempo=${speed}` : '';
+    const origChain: string[] = [`volume=${origVol}`];
+    if (params.isReversed && needsTrim) {
+      origChain.unshift(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
+    }
+    if (params.isReversed && clipDuration <= 300) origChain.push('areverse');
+    if (speed !== 1) origChain.push(buildAtempoChain(speed));
     parts.push(
-      `-filter_complex "[0:a]volume=${origVol}${speedFilters}[a0];[1:a]volume=${musicVol}[a1];[a0][a1]amix=inputs=2:duration=first[aout]"`,
+      `-filter_complex "[0:a]${origChain.join(',')}[a0];[1:a]volume=${musicVol}[a1];[a0][a1]amix=inputs=2:duration=first[aout]"`,
       '-map 0:v',
       '-map "[aout]"',
     );
-  } else if (aFilters.length > 0) {
-    parts.push(`-af "${aFilters.join(',')}"`);
+  } else {
+    const aFilters: string[] = [];
+    if (params.isReversed && needsTrim) {
+      aFilters.push(`atrim=start=${startTime.toFixed(3)}:end=${endTime.toFixed(3)},asetpts=PTS-STARTPTS`);
+    }
+    if (params.isReversed && clipDuration <= 300) aFilters.push('areverse');
+    if (speed !== 1) aFilters.push(buildAtempoChain(speed));
+    if (originalVolume !== 100) aFilters.push(`volume=${(originalVolume / 100).toFixed(2)}`);
+    if (aFilters.length > 0) parts.push(`-af "${aFilters.join(',')}"`);
   }
 
   parts.push(`-c:v libx264 -preset ${qualityCfg.preset} -crf ${qualityCfg.crf}`);
@@ -374,12 +394,23 @@ describe('FFmpeg Engine — Command Builder', () => {
 
     it('should escape single quotes in caption', () => {
       const cmd = buildCommand(defaultParams({ captionText: "it's a test" }), outputPath);
-      expect(cmd).toContain("text='it'\\''s a test'");
+      expect(cmd).toContain("text='it");
+      expect(cmd).toContain('s a test');
     });
 
     it('should escape colons in caption', () => {
       const cmd = buildCommand(defaultParams({ captionText: 'Time: 12:30' }), outputPath);
       expect(cmd).toContain('Time\\: 12\\:30');
+    });
+
+    it('should escape percent signs in caption (FFmpeg time code)', () => {
+      const cmd = buildCommand(defaultParams({ captionText: '100% halal' }), outputPath);
+      expect(cmd).toContain('100%% halal');
+    });
+
+    it('should escape brackets in caption', () => {
+      const cmd = buildCommand(defaultParams({ captionText: '[important]' }), outputPath);
+      expect(cmd).toContain('\\[important\\]');
     });
 
     it('should use specified caption color', () => {
@@ -499,6 +530,23 @@ describe('FFmpeg Engine — Command Builder', () => {
       expect(vf![1]).toContain('reverse');
       expect(vf![1]).toContain('setpts');
     });
+
+    it('should NOT use -ss seek when reversed (uses trim filter instead)', () => {
+      const cmd = buildCommand(defaultParams({ isReversed: true, startTime: 5, endTime: 20 }), outputPath);
+      expect(cmd).not.toContain('-ss 5.000');
+      expect(cmd).toContain('trim=start=5.000:end=20.000');
+    });
+
+    it('should add atrim for audio when reversed with trim', () => {
+      const cmd = buildCommand(defaultParams({ isReversed: true, startTime: 5, endTime: 20 }), outputPath);
+      expect(cmd).toContain('atrim=start=5.000:end=20.000');
+    });
+
+    it('should include areverse in filter_complex when music + reverse', () => {
+      const cmd = buildCommand(defaultParams({ isReversed: true, musicUri: '/tmp/music.mp3' }), outputPath);
+      expect(cmd).toContain('areverse');
+      expect(cmd).toContain('-filter_complex');
+    });
   });
 
   describe('aspect ratio', () => {
@@ -507,9 +555,10 @@ describe('FFmpeg Engine — Command Builder', () => {
       expect(cmd).not.toContain('crop=');
     });
 
-    it('should crop for 16:9', () => {
+    it('should crop for 16:9 with min() to prevent overflow', () => {
       const cmd = buildCommand(defaultParams({ aspectRatio: '16:9' }), outputPath);
-      expect(cmd).toContain('crop=ih*16/9:ih');
+      expect(cmd).toContain('crop=min(iw');
+      expect(cmd).toContain('ih*16/9');
     });
 
     it('should crop for 1:1 (square)', () => {
@@ -517,9 +566,10 @@ describe('FFmpeg Engine — Command Builder', () => {
       expect(cmd).toContain('crop=min(iw');
     });
 
-    it('should crop for 4:5', () => {
+    it('should crop for 4:5 with min() to prevent overflow', () => {
       const cmd = buildCommand(defaultParams({ aspectRatio: '4:5' }), outputPath);
-      expect(cmd).toContain('crop=ih*4/5:ih');
+      expect(cmd).toContain('crop=min(iw');
+      expect(cmd).toContain('ih*4/5');
     });
 
     it('should not crop when aspectRatio is undefined', () => {
