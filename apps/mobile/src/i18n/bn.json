@@ -3284,6 +3284,15 @@
     "splitTooShort": "Playhead must be at least 1s from trim edges",
     "deleteSelectedSegment": "Reset Trim",
     "playbackSpeed": "প্লেব্যাক গতি",
+    "speedCurves": "Speed Curves",
+    "curve": {
+      "none": "None",
+      "montage": "Montage",
+      "hero": "Hero",
+      "bullet": "Bullet",
+      "flashIn": "Flash In",
+      "flashOut": "Flash Out"
+    },
     "selectFilter": "ফিল্টার নির্বাচন",
     "filters": "ফিল্টার",
     "text": "টেক্সট",

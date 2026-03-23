@@ -99,6 +99,7 @@ export interface EditParams {
   musicUri?: string;       // optional background music
   voiceoverUri?: string;   // optional voiceover recording to mix in
   quality: QualityPreset;
+  speedCurve?: 'montage' | 'hero' | 'bullet' | 'flashIn' | 'flashOut'; // variable speed curve preset
   isReversed?: boolean;    // reverse playback
   aspectRatio?: AspectRatio; // output aspect ratio
   voiceEffect?: VoiceEffect; // audio voice effect
@@ -264,8 +265,26 @@ export function buildCommand(params: EditParams, outputPath: string): string {
     vFilters.push('reverse');
   }
 
-  // Speed adjustment
-  if (speed !== 1) {
+  // Speed adjustment — constant or variable (speed curve)
+  if (params.speedCurve) {
+    // Speed curves use variable PTS expression based on time T
+    // We substitute actual clip duration (D) since FFmpeg setpts doesn't have DURATION
+    const D = clipDuration.toFixed(2);
+    const curvePtsMap: Record<string, string> = {
+      // Montage: fast-slow-fast (2x speed at edges, 0.5x in middle)
+      montage: `setpts='if(lt(T,0.3*${D}),0.5*PTS,if(gt(T,0.7*${D}),0.5*PTS,2.0*PTS))'`,
+      // Hero: normal bookends, 2.5x slow in middle section
+      hero: `setpts='if(lt(T,0.2*${D}),PTS,if(gt(T,0.8*${D}),PTS,2.5*PTS))'`,
+      // Bullet: extreme slow-mo in the middle 40-60% of clip
+      bullet: `setpts='if(between(T,0.4*${D},0.6*${D}),3.0*PTS,0.8*PTS)'`,
+      // Flash In: starts 3.3x speed, decelerates to normal by end
+      flashIn: `setpts='(0.3+0.7*T/${D})*PTS'`,
+      // Flash Out: normal speed, accelerates to 3.3x by end
+      flashOut: `setpts='(1.0-0.7*T/${D})*PTS'`,
+    };
+    const curveExpr = curvePtsMap[params.speedCurve];
+    if (curveExpr) vFilters.push(curveExpr);
+  } else if (speed !== 1) {
     vFilters.push(`setpts=${(1 / speed).toFixed(4)}*PTS`);
   }
 

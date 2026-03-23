@@ -50,8 +50,10 @@ const FONT_OPTION_KEYS = ['default', 'bold', 'handwritten'];
 const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', colors.extended.blue];
 
 type VoiceEffect = 'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'telephone';
+type SpeedCurve = 'none' | 'montage' | 'hero' | 'bullet' | 'flashIn' | 'flashOut';
+
 type EditSnapshot = {
-  startTime: number; endTime: number; speed: SpeedOption; filter: FilterName;
+  startTime: number; endTime: number; speed: SpeedOption; speedCurve: SpeedCurve; filter: FilterName;
   captionText: string; originalVolume: number; musicVolume: number; isReversed: boolean;
   voiceEffect: VoiceEffect; stabilize: boolean; noiseReduce: boolean;
   freezeFrameAt: number | null; textStartTime: number; textEndTime: number;
@@ -86,6 +88,7 @@ export default function VideoEditorScreen() {
   const [showMusicPicker, setShowMusicPicker] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
   const [isReversed, setIsReversed] = useState(false);
+  const [speedCurve, setSpeedCurve] = useState<SpeedCurve>('none');
   const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('9:16');
 
   // Text timing — when the caption appears and disappears
@@ -108,15 +111,15 @@ export default function VideoEditorScreen() {
   const [redoStack, setRedoStack] = useState<EditSnapshot[]>([]);
 
   const captureSnapshot = useCallback((): EditSnapshot => ({
-    startTime, endTime, speed: playbackSpeed, filter: selectedFilter,
+    startTime, endTime, speed: playbackSpeed, speedCurve, filter: selectedFilter,
     captionText, originalVolume, musicVolume, isReversed,
     voiceEffect, stabilize, noiseReduce, freezeFrameAt,
     textStartTime, textEndTime, aspectRatio,
-  }), [startTime, endTime, playbackSpeed, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio]);
+  }), [startTime, endTime, playbackSpeed, speedCurve, selectedFilter, captionText, originalVolume, musicVolume, isReversed, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, aspectRatio]);
 
   const applySnapshot = useCallback((s: EditSnapshot) => {
     setStartTime(s.startTime); setEndTime(s.endTime);
-    setPlaybackSpeed(s.speed); setSelectedFilter(s.filter);
+    setPlaybackSpeed(s.speed); setSpeedCurve(s.speedCurve); setSelectedFilter(s.filter);
     setCaptionText(s.captionText); setOriginalVolume(s.originalVolume);
     setMusicVolume(s.musicVolume); setIsReversed(s.isReversed);
     setVoiceEffect(s.voiceEffect); setStabilize(s.stabilize);
@@ -394,6 +397,7 @@ export default function VideoEditorScreen() {
         quality: selectedQuality,
         isReversed,
         aspectRatio,
+        speedCurve: speedCurve !== 'none' ? speedCurve : undefined,
         textStartTime,
         textEndTime: textEndTime || undefined,
         voiceEffect,
@@ -427,7 +431,7 @@ export default function VideoEditorScreen() {
     } finally {
       setIsExporting(false);
     }
-  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
+  }, [haptic, videoUri, startTime, endTime, totalDuration, playbackSpeed, speedCurve, captionText, selectedTextColor, selectedFont, selectedFilter, selectedQuality, originalVolume, musicVolume, selectedTrack, voiceoverUri, isReversed, aspectRatio, voiceEffect, stabilize, noiseReduce, freezeFrameAt, textStartTime, textEndTime, exportProgressAnim, t, router, params.returnTo]);
 
   // Cancel export handler
   const handleCancelExport = useCallback(async () => {
@@ -531,6 +535,40 @@ export default function VideoEditorScreen() {
                 </Pressable>
               ))}
             </View>
+
+            {/* Speed curve presets (CapCut-style) */}
+            <Text style={[styles.toolSubTitle, { marginTop: spacing.md }]}>{t('videoEditor.speedCurves')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.effectsRow}>
+                {[
+                  { id: 'none', label: t('videoEditor.curve.none') },
+                  { id: 'montage', label: t('videoEditor.curve.montage') },
+                  { id: 'hero', label: t('videoEditor.curve.hero') },
+                  { id: 'bullet', label: t('videoEditor.curve.bullet') },
+                  { id: 'flashIn', label: t('videoEditor.curve.flashIn') },
+                  { id: 'flashOut', label: t('videoEditor.curve.flashOut') },
+                ].map((curve) => (
+                  <Pressable
+                    key={curve.id}
+                    accessibilityRole="button"
+                    style={styles.effectChip}
+                    onPress={() => { pushUndo(); setSpeedCurve(curve.id as SpeedCurve); haptic.tick(); }}
+                  >
+                    <LinearGradient
+                      colors={speedCurve === curve.id
+                        ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']
+                        : colors.gradient.cardDark
+                      }
+                      style={styles.effectChipGradient}
+                    >
+                      <Text style={[styles.effectChipText, speedCurve === curve.id && { color: colors.gold, fontWeight: '600' }]}>
+                        {curve.label}
+                      </Text>
+                    </LinearGradient>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
           </View>
         );
 

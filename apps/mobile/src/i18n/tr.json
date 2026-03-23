@@ -3278,6 +3278,15 @@
     "splitTooShort": "Playhead must be at least 1s from trim edges",
     "deleteSelectedSegment": "Reset Trim",
     "playbackSpeed": "Oynatma Hızı",
+    "speedCurves": "Speed Curves",
+    "curve": {
+      "none": "None",
+      "montage": "Montage",
+      "hero": "Hero",
+      "bullet": "Bullet",
+      "flashIn": "Flash In",
+      "flashOut": "Flash Out"
+    },
     "selectFilter": "Filtre Seç",
     "filters": "Filtreler",
     "text": "Metin",

@@ -3284,6 +3284,15 @@
     "splitTooShort": "Playhead must be at least 1s from trim edges",
     "deleteSelectedSegment": "Reset Trim",
     "playbackSpeed": "Kelajuan Main Balik",
+    "speedCurves": "Speed Curves",
+    "curve": {
+      "none": "None",
+      "montage": "Montage",
+      "hero": "Hero",
+      "bullet": "Bullet",
+      "flashIn": "Flash In",
+      "flashOut": "Flash Out"
+    },
     "selectFilter": "Pilih Penapis",
     "filters": "Penapis",
     "text": "Teks",
