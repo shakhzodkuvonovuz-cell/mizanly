@@ -21,7 +21,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
-import { searchGiphy, GIPHY_CATEGORIES, type GiphyMediaItem } from '@/services/giphyService';
+import { searchGiphy, GIPHY_CATEGORIES, isSDKAvailable, showGiphyPicker, type GiphyMediaItem } from '@/services/giphyService';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const GIF_COLUMN_COUNT = 2;
@@ -154,8 +154,56 @@ export function GifSearch({ onSelect, onClose, style }: GifSearchProps) {
     );
   }, [handleSelectGif]);
 
+  // ── Launch native GIPHY dialog (SDK) for Text/Stickers/Clips ──
+  const handleNativePicker = useCallback(() => {
+    haptic.tick();
+    const cleanup = showGiphyPicker({
+      mediaTypes: ['gif', 'sticker', 'text', 'emoji'],
+      onSelect: (media) => {
+        onSelect({
+          id: media.id,
+          url: media.url,
+          previewUrl: media.previewUrl,
+          width: media.width,
+          height: media.height,
+          title: media.title,
+        });
+      },
+    });
+    // cleanup is null if SDK not available
+    return cleanup;
+  }, [haptic, onSelect]);
+
   return (
     <View style={[styles.searchContainer, style]}>
+      {/* Native GIPHY picker button — shows Text, Stickers, Clips */}
+      {isSDKAvailable() && (
+        <Pressable
+          onPress={handleNativePicker}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: spacing.sm,
+            backgroundColor: pressed ? colors.active.emerald20 : colors.active.emerald10,
+            borderRadius: radius.md,
+            paddingVertical: spacing.md,
+            marginBottom: spacing.md,
+            borderWidth: 1,
+            borderColor: colors.emerald,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          })}
+          accessibilityRole="button"
+          accessibilityLabel={t('stories.openGiphyPicker')}
+        >
+          <Icon name="star" size="sm" color={colors.emerald} />
+          <Text style={{ color: colors.emerald, fontSize: fontSize.sm, fontFamily: fonts.bodyBold, fontWeight: '700' }}>
+            {t('stories.giphyTextAndStickers')}
+          </Text>
+          <Icon name="chevron-right" size="sm" color={colors.emerald} />
+        </Pressable>
+      )}
+
       {/* Search input */}
       <View style={[styles.searchBar, { backgroundColor: tc.bgElevated, borderColor: tc.borderLight }]}>
         <Icon name="search" size="sm" color={tc.text.tertiary} />

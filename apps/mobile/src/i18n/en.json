@@ -3214,7 +3214,9 @@
     "gifCategorySad": "Sad",
     "gifCategoryCelebrate": "Celebrate",
     "gifCategoryIslamic": "Islamic",
-    "gifCategoryFunny": "Funny"
+    "gifCategoryFunny": "Funny",
+    "openGiphyPicker": "Open GIPHY Picker",
+    "giphyTextAndStickers": "Text Stickers & More"
   },
   "windDown": {
     "title": "Time to Wind Down",
