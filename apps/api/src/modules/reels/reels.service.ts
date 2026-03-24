@@ -1009,7 +1009,7 @@ export class ReelsService {
     if (!parent) throw new NotFoundException('Reel not found');
 
     const reels = await this.prisma.reel.findMany({
-      where: { duetOfId: reelId, status: ReelStatus.READY, isRemoved: false, isTrial: false },
+      where: { duetOfId: reelId, status: ReelStatus.READY, isRemoved: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
       select: REEL_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -1059,7 +1059,7 @@ export class ReelsService {
     if (!parent) throw new NotFoundException('Reel not found');
 
     const reels = await this.prisma.reel.findMany({
-      where: { stitchOfId: reelId, status: ReelStatus.READY, isRemoved: false, isTrial: false },
+      where: { stitchOfId: reelId, status: ReelStatus.READY, isRemoved: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
       select: REEL_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
