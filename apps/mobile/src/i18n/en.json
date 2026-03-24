@@ -4153,6 +4153,8 @@
     "moveNext": "Move slide right",
     "addMore": "Add more photos",
     "removeSlideTitle": "Remove slide?",
-    "removeSlideMessage": "This slide will be removed from the carousel."
+    "removeSlideMessage": "This slide will be removed from the carousel.",
+    "slideTiming": "Slide timing",
+    "totalDuration": "Total"
   }
 }

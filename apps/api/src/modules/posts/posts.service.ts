@@ -1019,7 +1019,20 @@ export class PostsService {
   async addComment(postId: string, userId: string, dto: AddCommentDto) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
-    if (post.commentsDisabled) throw new ForbiddenException('Comments are disabled on this post');
+
+    // Enforce commentPermission (supersedes legacy commentsDisabled)
+    const perm = post.commentPermission ?? 'EVERYONE';
+    if (perm === 'NOBODY' || post.commentsDisabled) {
+      throw new ForbiddenException('Comments are disabled on this post');
+    }
+    if (perm === 'FOLLOWERS' && post.userId && post.userId !== userId) {
+      const follows = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId, followingId: post.userId } },
+      });
+      if (!follows) {
+        throw new ForbiddenException('Only followers can comment on this post');
+      }
+    }
 
     const [comment] = await this.prisma.$transaction([
       this.prisma.comment.create({

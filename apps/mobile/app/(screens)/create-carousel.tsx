@@ -109,8 +109,10 @@ function CreateCarouselScreen() {
   // Publish fields
   const [altText, setAltText] = useState('');
   const [brandedContent, setBrandedContent] = useState(false);
+  const [brandPartner, setBrandPartner] = useState('');
   const [commentPermission, setCommentPermission] = useState<'EVERYONE' | 'FOLLOWERS' | 'NOBODY'>('EVERYONE');
   const [remixAllowed, setRemixAllowed] = useState(true);
+  const [slideDuration, setSlideDuration] = useState(5); // seconds per slide (3-10)
 
   // Refs
   const thumbListRef = useRef<FlatList<Slide>>(null);
@@ -181,8 +183,11 @@ function CreateCarouselScreen() {
       // Upload each slide image
       for (let i = 0; i < slides.length; i++) {
         const slide = slides[i];
-        const ext = slide.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const contentType = `image/${ext === 'png' ? 'png' : 'jpeg'}`;
+        // Extract extension from URI, handling paths with multiple dots and query params
+        const uriPath = slide.uri.split('?')[0];
+        const ext = uriPath.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const MIME_MAP: Record<string, string> = { png: 'image/png', webp: 'image/webp', gif: 'image/gif', heic: 'image/heic' };
+        const contentType = MIME_MAP[ext] ?? 'image/jpeg';
         const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'reels');
 
         const fileRes = await fetch(slide.uri);
@@ -208,7 +213,7 @@ function CreateCarouselScreen() {
 
       return reelsApi.create({
         videoUrl: carouselUrls[0], // First image as primary (required field)
-        duration: slides.length * 5, // Auto-advance: 5 seconds per slide
+        duration: Math.min(180, slides.length * slideDuration), // Capped at 180s (reel max)
         isPhotoCarousel: true,
         carouselUrls,
         carouselTexts,
@@ -217,6 +222,7 @@ function CreateCarouselScreen() {
         commentPermission,
         remixAllowed,
         brandedContent,
+        brandPartner: brandedContent ? brandPartner.trim() || undefined : undefined,
       });
     },
     onSuccess: () => {
@@ -452,6 +458,35 @@ function CreateCarouselScreen() {
             />
           </AnimatedAccordion>
 
+          {/* Slide timing */}
+          <AnimatedAccordion title={t('carousel.slideTiming')} icon="clock" defaultExpanded={false}>
+            <View style={styles.timingRow}>
+              {[3, 5, 7, 10].map((sec) => (
+                <Pressable
+                  key={sec}
+                  onPress={() => { setSlideDuration(sec); haptic.tick(); }}
+                  style={[
+                    styles.timingChip,
+                    { borderColor: slideDuration === sec ? colors.emerald : 'rgba(255,255,255,0.15)' },
+                    slideDuration === sec && { backgroundColor: `${colors.emerald}20` },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: slideDuration === sec }}
+                >
+                  <Text style={[
+                    styles.timingChipText,
+                    { color: slideDuration === sec ? colors.emerald : tc.text.secondary },
+                  ]}>
+                    {sec}s
+                  </Text>
+                </Pressable>
+              ))}
+              <Text style={[styles.timingTotal, { color: tc.text.tertiary }]}>
+                {t('carousel.totalDuration')}: {Math.min(180, slides.length * slideDuration)}s
+              </Text>
+            </View>
+          </AnimatedAccordion>
+
           {/* Comment permission */}
           <AnimatedAccordion title={t('compose.whoCanComment')} icon="message-circle" defaultExpanded={false}>
             {(['EVERYONE', 'FOLLOWERS', 'NOBODY'] as const).map((perm) => (
@@ -504,6 +539,16 @@ function CreateCarouselScreen() {
                 <View style={[styles.toggleThumb, brandedContent && styles.toggleThumbActive]} />
               </View>
             </Pressable>
+            {brandedContent && (
+              <RichCaptionInput
+                value={brandPartner}
+                onChangeText={setBrandPartner}
+                placeholder={t('compose.brandPartnerPlaceholder')}
+                maxLength={100}
+                minHeight={40}
+                multiline={false}
+              />
+            )}
           </AnimatedAccordion>
 
           <View style={{ height: spacing.xl * 2 }} />
@@ -575,6 +620,15 @@ const styles = StyleSheet.create({
   section: { borderTopWidth: 1, paddingTop: spacing.md, marginTop: spacing.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   sectionTitle: { fontSize: fontSize.md, fontFamily: fonts.bodyBold, fontWeight: '600', flex: 1 },
+
+  // Slide timing
+  timingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', paddingBottom: spacing.sm },
+  timingChip: {
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: radius.full, borderWidth: 1.5,
+  },
+  timingChipText: { fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '600' },
+  timingTotal: { fontSize: fontSizeExt.tiny, fontFamily: fonts.body, marginStart: spacing.xs },
 
   // Publish field toggles + radio
   radioRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },

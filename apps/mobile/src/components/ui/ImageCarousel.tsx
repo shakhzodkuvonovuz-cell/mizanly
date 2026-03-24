@@ -8,9 +8,9 @@ import {
   useWindowDimensions,
   ListRenderItemInfo,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ProgressiveImage } from './ProgressiveImage';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -125,12 +125,14 @@ export const ImageCarousel = memo(function ImageCarousel({
         accessibilityLabel={`Image ${index + 1} of ${images.length}${slideText ? `. ${slideText}` : ''}`}
         accessibilityRole="image"
       >
-        <Image
-          source={{ uri: item }}
-          style={[styles.image, { borderRadius }, blurred && { opacity: 0.15 }]}
+        <ProgressiveImage
+          uri={item}
+          width={screenWidth}
+          height={height}
+          borderRadius={borderRadius}
           contentFit="cover"
           transition={200}
-          blurRadius={blurred ? 30 : 0}
+          style={blurred ? { opacity: 0.15 } : undefined}
         />
         {/* Per-slide text overlay — positioned above dots */}
         {slideText ? (

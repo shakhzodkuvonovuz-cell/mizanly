@@ -83,6 +83,13 @@ export class ReelsService {
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
+    // Validate carousel array parity
+    if (dto.isPhotoCarousel && dto.carouselUrls?.length && dto.carouselTexts?.length) {
+      if (dto.carouselTexts.length > dto.carouselUrls.length) {
+        throw new BadRequestException('carouselTexts cannot have more items than carouselUrls');
+      }
+    }
+
     // Parse and upsert hashtags from caption
     const hashtagNames = [...new Set([
       ...extractHashtags(dto.caption ?? ''),
@@ -539,6 +546,20 @@ export class ReelsService {
   async comment(reelId: string, userId: string, content: string, parentId?: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
+
+    // Enforce commentPermission
+    const perm = reel.commentPermission ?? 'EVERYONE';
+    if (perm === 'NOBODY') {
+      throw new ForbiddenException('Comments are disabled on this reel');
+    }
+    if (perm === 'FOLLOWERS' && reel.userId && reel.userId !== userId) {
+      const follows = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId, followingId: reel.userId } },
+      });
+      if (!follows) {
+        throw new ForbiddenException('Only followers can comment on this reel');
+      }
+    }
 
     // Validate parentId belongs to the same reel
     if (parentId) {
