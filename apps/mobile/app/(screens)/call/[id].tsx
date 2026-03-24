@@ -62,6 +62,7 @@ export default function CallScreen() {
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
   const socketRef = useRef<Socket | null>(null);
+  const [socketReady, setSocketReady] = useState(false);
   const [callStatus, setCallStatus] = useState<CallStatus>('ringing');
   const [duration, setDuration] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -89,6 +90,7 @@ export default function CallScreen() {
 
   const webrtc = useWebRTC({
     socketRef,
+    socketReady,
     targetUserId: targetUser ?? '',
     callType: (call?.type ?? 'voice') as 'voice' | 'video',
     iceServers: (iceConfig as { iceServers?: IceServer[] })?.iceServers ?? [],
@@ -162,10 +164,13 @@ export default function CallScreen() {
       });
 
       socketRef.current = socket;
+      socket.on('connect', () => setSocketReady(true));
+      socket.on('disconnect', () => setSocketReady(false));
     };
     connect();
 
     return () => {
+      setSocketReady(false);
       mounted = false;
       socketRef.current?.disconnect();
       socketRef.current = null;
@@ -197,7 +202,7 @@ export default function CallScreen() {
   const handleAnswer = () => {
     haptic.success();
     answerMutation.mutate();
-    webrtc.start(); // Start media + peer connection on answer
+    webrtc.start().catch(() => {}); // Start media + peer connection on answer
   };
   const handleDecline = () => { haptic.delete(); declineMutation.mutate(); };
   const handleEndCall = () => {
@@ -209,12 +214,12 @@ export default function CallScreen() {
   const toggleSpeaker = () => { haptic.tick(); }; // Speaker routing needs InCallManager — keep as UI state for now
   const toggleCamera = () => { haptic.tick(); webrtc.flipCamera(); };
 
-  // Start WebRTC when caller initiates (not incoming) — waits for iceConfig
+  // Start WebRTC when caller initiates (not incoming) — waits for socket + iceConfig
   useEffect(() => {
-    if (call && !isIncomingCall && callStatus === 'ringing' && socketRef.current && iceConfig) {
-      webrtc.start();
+    if (call && !isIncomingCall && callStatus === 'ringing' && socketReady && iceConfig) {
+      webrtc.start().catch(() => {}); // Error already logged inside start
     }
-  }, [call, isIncomingCall, callStatus, iceConfig]);
+  }, [call, isIncomingCall, callStatus, socketReady, iceConfig]);
 
   // Pulsing ring animation for ringing state
   const pulseScale = useSharedValue(1);

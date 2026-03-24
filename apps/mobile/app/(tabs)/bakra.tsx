@@ -509,6 +509,7 @@ export default function BakraScreen() {
   const [bakraFeedType, setBakraFeedType] = useState<'foryou' | 'following'>('foryou');
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
+  const currentIndexRef = useRef(0);
   const reelsRef = useRef<Reel[]>([]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   const [commentsReel, setCommentsReel] = useState<Reel | null>(null);
@@ -596,6 +597,7 @@ export default function BakraScreen() {
             reelsApi.view(newReel.id).catch(() => {});
           }
         }
+        currentIndexRef.current = idx;
         setCurrentIndex(idx);
         // Preload next 2 videos
         const videoUrls = currentReels.map(r => r.hlsUrl || r.videoUrl);
@@ -743,7 +745,7 @@ export default function BakraScreen() {
     <ReelItem
       item={item}
       index={index}
-      isActive={index === currentIndex}
+      isActive={index === currentIndexRef.current}
       currentUserId={user?.id}
       screenWidth={SCREEN_W}
       screenHeight={SCREEN_H}
@@ -761,7 +763,7 @@ export default function BakraScreen() {
       doubleTapGesture={doubleTapGesture}
       heartTrigger={heartTrigger}
     />
-  ), [currentIndex, user?.id, SCREEN_W, SCREEN_H, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, handleNotInterested, handleCopyLink, handleFollow, handleNavigate, setVideoRef, doubleTapGesture, heartTrigger]);
+  ), [user?.id, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, handleNotInterested, handleCopyLink, handleFollow, handleNavigate, setVideoRef, doubleTapGesture, heartTrigger]);
 
   const keyExtractor = useCallback((item: Reel) => item.id, []);
   // FlashList uses estimatedItemSize instead of getItemLayout
@@ -885,6 +887,7 @@ export default function BakraScreen() {
       <FlashList
         ref={listRef}
         data={reels}
+        extraData={currentIndex}
         keyExtractor={keyExtractor}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}

@@ -38,6 +38,7 @@ interface WebRTCSignal {
 
 interface UseWebRTCOptions {
   socketRef: React.RefObject<Socket | null>;
+  socketReady: boolean; // Flips to true when socket connects — triggers effect re-run
   targetUserId: string;
   callType: 'voice' | 'video';
   iceServers: IceServer[];
@@ -55,6 +56,7 @@ interface UseWebRTCOptions {
  */
 export function useWebRTC({
   socketRef,
+  socketReady,
   targetUserId,
   callType,
   iceServers,
@@ -74,13 +76,17 @@ export function useWebRTC({
   const [isVideoEnabled, setIsVideoEnabled] = useState(callType === 'video');
   const iceCandidateQueue = useRef<RTCIceCandidate[]>([]);
   const hasRemoteDescRef = useRef(false);
+  const startingRef = useRef(false); // Mutex to prevent double-start race
 
   // ── Create peer connection and get media ──
   const start = useCallback(async () => {
-    if (pcRef.current) return;
+    if (pcRef.current || startingRef.current) return;
+    startingRef.current = true;
+
     const socket = socketRef.current;
     if (!socket?.connected) {
       console.warn('[WebRTC] Cannot start — socket not connected');
+      startingRef.current = false;
       return;
     }
 
@@ -95,6 +101,7 @@ export function useWebRTC({
       stream = await mediaDevices.getUserMedia(constraints) as MediaStream;
     } catch (err) {
       console.error('[WebRTC] getUserMedia failed:', err);
+      startingRef.current = false;
       return;
     }
     localStreamRef.current = stream;
@@ -103,6 +110,7 @@ export function useWebRTC({
     // Create peer connection
     const pc = new RTCPeerConnection({ iceServers });
     pcRef.current = pc;
+    startingRef.current = false; // Mutex released — pcRef is now the guard
 
     // Add local tracks
     stream.getTracks().forEach((track: MediaStreamTrack) => {
@@ -151,9 +159,10 @@ export function useWebRTC({
   }, [socketRef, targetUserId, callType, iceServers, isInitiator, onConnected, onDisconnected, onFailed]);
 
   // ── Handle incoming signaling messages ──
+  // socketReady triggers re-run when socket connects (ref alone doesn't trigger re-render)
   useEffect(() => {
     const socket = socketRef.current;
-    if (!socket) return;
+    if (!socket || !socketReady) return;
 
     const handleSignal = async (data: { fromUserId: string; signal: WebRTCSignal }) => {
       const pc = pcRef.current;
@@ -207,7 +216,7 @@ export function useWebRTC({
 
     socket.on('call_signal', handleSignal);
     return () => { socket.off('call_signal', handleSignal); };
-  }, [socketRef, targetUserId]);
+  }, [socketRef, socketReady, targetUserId]);
 
   // ── Media controls ──
   const toggleMute = useCallback(() => {
