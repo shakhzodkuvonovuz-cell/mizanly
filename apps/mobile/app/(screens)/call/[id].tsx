@@ -64,6 +64,7 @@ export default function CallScreen() {
   const socketRef = useRef<Socket | null>(null);
   const [socketReady, setSocketReady] = useState(false);
   const [callStatus, setCallStatus] = useState<CallStatus>('ringing');
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
   const [duration, setDuration] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const endedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -211,7 +212,7 @@ export default function CallScreen() {
     endCallMutation.mutate();
   };
   const toggleMute = () => { haptic.tick(); webrtc.toggleMute(); };
-  const toggleSpeaker = () => { haptic.tick(); }; // Speaker routing needs InCallManager — keep as UI state for now
+  const toggleSpeaker = () => { haptic.tick(); setIsSpeakerOn((prev) => !prev); }; // Speaker routing needs InCallManager
   const toggleCamera = () => { haptic.tick(); webrtc.flipCamera(); };
 
   // Start WebRTC when caller initiates (not incoming) — waits for socket + iceConfig
@@ -440,12 +441,12 @@ export default function CallScreen() {
 
                 >
                   <LinearGradient
-                    colors={webrtc.isSpeakerOn ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                    colors={isSpeakerOn ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.controlGradient}
                   >
                     <Icon name="volume-x" size="lg" color={tc.text.primary} />
                   </LinearGradient>
-                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{webrtc.isSpeakerOn ? t('calls.speakerOff') : t('calls.speaker')}</Text>
+                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{isSpeakerOn ? t('calls.speakerOff') : t('calls.speaker')}</Text>
                 </Pressable>
 
                 {/* Flip Camera Button */}
