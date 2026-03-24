@@ -1,0 +1,110 @@
+PASS src/gateways/chat.gateway.spec.ts
+  ChatGateway
+    √ should be defined (6 ms)
+    handleJoin
+      √ should join conversation room if user is a member (2 ms)
+      √ should throw WsException if not authorized (no userId) (7 ms)
+      √ should throw WsException if not a member of conversation (1 ms)
+      √ should emit error for invalid conversationId (2 ms)
+    handleLeave
+      √ should leave conversation room (2 ms)
+      √ should throw WsException if not authorized (1 ms)
+      √ should emit error for invalid conversationId (1 ms)
+    handleMessage
+      √ should send message and emit to conversation room using dto.conversationId (2 ms)
+      √ should throw WsException if not authorized (1 ms)
+      √ should emit error if rate limit exceeded (1 ms)
+      √ should throw WsException when sendMessage fails (not a member) (1 ms)
+    handleTyping
+      √ should emit typing event to conversation room (1 ms)
+      √ should throw WsException if not authorized (1 ms)
+      √ should throw WsException when not a member of conversation (1 ms)
+    handleRead
+      √ should mark messages as read and emit read event (1 ms)
+      √ should throw WsException if not authorized (2 ms)
+    online presence
+      √ tracks user on connection via Redis presence (1 ms)
+      √ initializes quranRooms array on connection (1 ms)
+      √ removes user on disconnect and emits user_offline when last socket (1 ms)
+      √ responds to get_online_status via Redis pipeline (1 ms)
+      √ does not emit offline when other sockets remain (1 ms)
+      √ caps get_online_status at 50 user IDs (1 ms)
+    handleConnection — error cases
+      √ should disconnect if no token provided (1 ms)
+      √ should disconnect if token verification fails (1 ms)
+      √ should disconnect if user not found in DB (1 ms)
+      √ should disconnect banned users
+      √ should extract Bearer token from authorization header (1 ms)
+      √ should rate limit connections per IP (1 ms)
+    handleDisconnect — no userId
+      √ should return early when no userId on socket (1 ms)
+    handleDisconnect — Quran room cleanup
+      √ should clean up Quran room memberships on disconnect (1 ms)
+      √ should delete empty Quran room on last participant disconnect and mark DB ended (F42) (8 ms)
+      √ should transfer host when host disconnects from Quran room (F41) (1 ms)
+      √ should NOT transfer host when non-host disconnects from Quran room (1 ms)
+      √ should handle DB failure gracefully during room cleanup (F42) (1 ms)
+    handleCallInitiate
+      √ should throw WsException when unauthorized (1 ms)
+      √ should emit error for invalid data (1 ms)
+      √ should emit error when target user is blocked (1 ms)
+      √ should forward incoming_call to target user sockets
+    handleCallAnswer
+      √ should throw WsException when unauthorized
+      √ should emit error for invalid data
+      √ should block call answer when users are blocked (1 ms)
+      √ should forward call_answered event to caller sockets (1 ms)
+    handleCallReject
+      √ should throw WsException when unauthorized (1 ms)
+      √ should emit error for invalid data (1 ms)
+      √ should block call reject when users are blocked
+      √ should forward call_rejected event to caller sockets
+    handleCallEnd
+      √ should throw WsException when unauthorized (1 ms)
+      √ should emit error for invalid data (1 ms)
+      √ should forward call_ended to all participant sockets (1 ms)
+    handleCallSignal
+      √ should throw WsException when unauthorized (1 ms)
+      √ should forward signal to target user sockets (1 ms)
+      √ should reject signal payloads larger than 64KB (1 ms)
+      √ should block signal when users are blocked (1 ms)
+      √ should not emit when target has no connected sockets
+    handleMessageDelivered
+      √ should throw WsException when unauthorized (1 ms)
+      √ should emit error for invalid messageId (not UUID) (1 ms)
+      √ should emit error for invalid conversationId (not UUID) (1 ms)
+      √ should throw WsException when not a member (1 ms)
+      √ should update delivery and emit receipt to message sender only (1 ms)
+    handleJoinQuranRoom
+      √ should throw WsException when unauthorized (1 ms)
+      √ should emit error for invalid roomId (special chars)
+      √ should create room in Redis if first joiner
+      √ should not create room if it already exists (1 ms)
+      √ should broadcast quran_room_update to all participants (1 ms)
+    handleLeaveQuranRoom
+      √ should throw WsException when unauthorized (1 ms)
+      √ should remove participant and leave socket room (1 ms)
+      √ should delete room and mark DB ended when last participant leaves (F42) (1 ms)
+      √ should transfer host when host leaves Quran room (F41) (1 ms)
+      √ should NOT transfer host when non-host leaves (1 ms)
+      √ should handle DB failure gracefully during empty room cleanup (F42)
+    handleQuranVerseSync
+      √ should throw WsException when unauthorized (1 ms)
+      √ should only allow host to sync verse (1 ms)
+      √ should sync verse and broadcast when host (1 ms)
+      √ should emit error for surahNumber > 114
+      √ should emit error for verseNumber > 286
+    handleQuranReciterChange
+      √ should throw WsException when unauthorized (2 ms)
+      √ should only allow host to change reciter
+      √ should change reciter and broadcast when host (1 ms)
+      √ should reject roomId with special characters (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       80 passed, 80 total
+Snapshots:   0 total
+Time:        3.851 s
+Ran all test suites matching /src\\gateways\\chat.gateway.spec.ts/i.
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.

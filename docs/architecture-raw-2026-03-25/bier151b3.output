@@ -1,0 +1,879 @@
+PASS src/modules/commerce/commerce.controller.spec.ts (6.615 s)
+FAIL src/modules/commerce/commerce.service.spec.ts
+  ● CommerceService › createProduct › should create a product listing
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › createOrder › should create order with Stripe PaymentIntent and return clientSecret
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › createOrder › should throw BadRequestException when buying own product
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › createOrder › should throw BadRequestException when not enough stock
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › createOrder › should reject installments > 4
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › createOrder › should throw when Stripe is not configured
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › donateZakat › should donate to an active fund
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › donateZakat › should throw NotFoundException for closed fund
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › premiumSubscription › should return premium status
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › premiumSubscription › should return not premium when no subscription
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › premiumSubscription › should throw ConflictException when already subscribed
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › reviewProduct › should reject rating outside 1-5
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › reviewProduct › should create review and update product rating
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › getProducts › should return active products with pagination
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › getProducts › should return empty when no products
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › getProduct › should return product by ID
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › getProduct › should throw NotFoundException for nonexistent product
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › getMyOrders › should return user orders
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › createBusiness › should create halal business listing
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › getBusinesses › should return businesses with pagination
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › cancelPremium › should cancel premium subscription
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › cancelPremium › should throw NotFoundException when no subscription
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+  ● CommerceService › getZakatFunds › should return active zakat funds
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.spec.ts:32:35)
+
+FAIL src/modules/commerce/commerce.service.edge.spec.ts
+  ● CommerceService — edge cases › createProduct — edge cases › should accept Arabic product title
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.edge.spec.ts:29:35)
+
+  ● CommerceService — edge cases › createProduct — edge cases › should reject negative price
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.edge.spec.ts:29:35)
+
+  ● CommerceService — edge cases › getProducts — edge cases › should return empty array when no products exist
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.edge.spec.ts:29:35)
+
+  ● CommerceService — edge cases › createOrder — edge cases › should reject order for non-existent product
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.edge.spec.ts:29:35)
+
+  ● CommerceService — edge cases › getPremiumStatus — edge cases › should return non-premium status for user without subscription
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.edge.spec.ts:29:35)
+
+  ● CommerceService — edge cases › cancelPremium — edge cases › should throw when user has no premium subscription
+
+    TypeError: stripe_1.default is not a constructor
+
+    [0m [90m 24 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m'STRIPE_SECRET_KEY not set — order payment processing will fail'[39m)[33m;[39m
+     [90m 25 |[39m     }
+    [31m[1m>[22m[39m[90m 26 |[39m     [36mthis[39m[33m.[39mstripe [33m=[39m [36mnew[39m [33mStripe[39m(secretKey [33m||[39m [32m''[39m[33m,[39m {
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 27 |[39m       apiVersion[33m:[39m [32m'2025-02-24.acacia'[39m [36mas[39m [33mStripe[39m[33m.[39m[33mLatestApiVersion[39m[33m,[39m
+     [90m 28 |[39m     })[33m;[39m
+     [90m 29 |[39m   }[0m
+
+      at new CommerceService (modules/commerce/commerce.service.ts:26:19)
+      at TestingInjector.instantiateClass (../../../node_modules/@nestjs/core/injector/injector.js:373:19)
+      at callback (../../../node_modules/@nestjs/core/injector/injector.js:65:45)
+      at async TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:145:24)
+      at async TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:70:13)
+      at async TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:98:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 17)
+      at async TestingInstanceLoader.createInstancesOfProviders (../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../async C:/dev/mizanly/node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at async TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at async TestingInstanceLoader.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at async TestingModuleBuilder.createInstancesOfDependencies (../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at async TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at async Object.<anonymous> (modules/commerce/commerce.service.edge.spec.ts:29:35)
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       29 failed, 11 passed, 40 total
+Snapshots:   0 total
+Time:        7.46 s
+Ran all test suites matching /commerce/i.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

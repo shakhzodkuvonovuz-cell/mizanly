@@ -1,0 +1,10 @@
+[32m[Nest] 32764  - [39m23/03/2026, 10:06:10 pm [32m    LOG[39m [38;5;3m[EmailService] [39m[32mEmail sent to test@example.com: Your Weekly Mizanly Summary[39m
+[33m[Nest] 32764  - [39m23/03/2026, 10:06:10 pm [33m   WARN[39m [38;5;3m[EmailService] [39m[33mRESEND_API_KEY not set — emails will be logged only[39m
+[32m[Nest] 32764  - [39m23/03/2026, 10:06:10 pm [32m    LOG[39m [38;5;3m[EmailService] [39m[32mEmail sent to test@example.com: Creator Weekly Summary — Mizanly[39m
+[33m[Nest] 32764  - [39m23/03/2026, 10:06:10 pm [33m   WARN[39m [38;5;3m[EmailService] [39m[33mRESEND_API_KEY not set — emails will be logged only[39m
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+
+Test Suites: 286 passed, 286 total
+Tests:       4740 passed, 4740 total
+Snapshots:   0 total
+Time:        19.131 s, estimated 20 s

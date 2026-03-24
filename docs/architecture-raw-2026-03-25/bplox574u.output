@@ -1,0 +1,30 @@
+PASS src/common/queue/processors/media.processor.spec.ts
+PASS src/modules/feed/feed-transparency.service.spec.ts
+PASS src/modules/embeddings/embeddings.service.security.spec.ts
+PASS src/modules/alt-profile/alt-profile.service.spec.ts
+PASS src/modules/retention/retention.service.spec.ts
+PASS src/modules/encryption/encryption.service.edge.spec.ts
+PASS src/modules/drafts/drafts.service.edge.spec.ts
+PASS src/common/guards/clerk-auth.guard.spec.ts
+PASS src/common/guards/user-throttler.guard.spec.ts
+PASS src/modules/videos/videos.service.concurrency.spec.ts
+PASS src/modules/scheduling/scheduling.service.edge.spec.ts
+PASS src/modules/islamic/prayer-calculator.spec.ts
+PASS src/integration/follow-feed.integration.spec.ts
+PASS src/common/interceptors/transform.interceptor.spec.ts
+PASS src/common/utils/hashtag.spec.ts
+PASS src/gateways/chat.gateway.ratelimit.spec.ts
+PASS src/common/guards/optional-clerk-auth.guard.spec.ts
+PASS src/modules/alt-profile/alt-profile.service.edge.spec.ts
+PASS src/config/redis.module.spec.ts
+PASS src/common/middleware/security-headers.middleware.spec.ts
+[33m[Nest] 7340  - [39m23/03/2026, 12:45:15 pm [33m   WARN[39m [38;5;3m[OptionalClerkAuthGuard] [39m[33mExpired token on optional route — client should refresh JWT[39m
+PASS src/common/queue/processors/analytics.processor.spec.ts
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+
+Test Suites: 286 passed, 286 total
+Tests:       4552 passed, 4552 total
+Snapshots:   0 total
+Time:        67.734 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

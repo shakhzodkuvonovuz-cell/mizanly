@@ -1,0 +1,375 @@
+app/(screens)/call/[id].tsx(167,7): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+app/(screens)/camera.tsx(59,9): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+app/(screens)/caption-editor.tsx(131,9): error TS2353: Object literal may only specify known properties, and 'srtContent' does not exist in type '{ label: string; language: string; srtUrl: string; }'.
+app/(screens)/challenges.tsx(159,22): error TS2345: Argument of type '["gamification.challenges.participants", { count: string; }]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string, options?: (TOptionsBase & $Dictionary) | undefined] | [key: ...]'.
+app/(screens)/challenges.tsx(435,18): error TS2339: Property 'medium' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/channel/[handle].tsx(120,68): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(132,60): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(134,65): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(135,64): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(136,65): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(141,57): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(158,64): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(162,68): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(163,48): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(167,54): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(168,53): error TS2304: Cannot find name 'tc'.
+app/(screens)/channel/[handle].tsx(168,98): error TS2304: Cannot find name 't'.
+app/(screens)/chat-export.tsx(273,48): error TS2304: Cannot find name 'tc'.
+app/(screens)/chat-export.tsx(274,48): error TS2304: Cannot find name 'tc'.
+app/(screens)/chat-folder-view.tsx(109,13): error TS2769: No overload matches this call.
+app/(screens)/chat-folder-view.tsx(34,29): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/chat-folder-view.tsx(36,30): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/chat-folder-view.tsx(37,52): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/chat-folder-view.tsx(95,22): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/chat-folder-view.tsx(96,22): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/circles.tsx(155,58): error TS2304: Cannot find name 'tc'.
+app/(screens)/circles.tsx(173,58): error TS2304: Cannot find name 'tc'.
+app/(screens)/circles.tsx(220,63): error TS2304: Cannot find name 'tc'.
+app/(screens)/circles.tsx(222,59): error TS2304: Cannot find name 'tc'.
+app/(screens)/circles.tsx(223,72): error TS2304: Cannot find name 'tc'.
+app/(screens)/close-friends.tsx(59,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/close-friends.tsx(77,38): error TS2304: Cannot find name 'tc'.
+app/(screens)/close-friends.tsx(78,54): error TS2304: Cannot find name 'tc'.
+app/(screens)/close-friends.tsx(79,38): error TS2304: Cannot find name 'tc'.
+app/(screens)/communities.tsx(161,87): error TS2304: Cannot find name 't'.
+app/(screens)/community-posts.tsx(128,93): error TS2304: Cannot find name 't'.
+app/(screens)/community-posts.tsx(132,93): error TS2304: Cannot find name 't'.
+app/(screens)/community-posts.tsx(294,58): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(313,58): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(330,60): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(359,59): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(373,69): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(375,43): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(388,60): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(435,57): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(447,57): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(458,63): error TS2304: Cannot find name 'tc'.
+app/(screens)/community-posts.tsx(478,58): error TS2304: Cannot find name 'tc'.
+app/(screens)/contact-sync.tsx(12,25): error TS2307: Cannot find module 'expo-crypto' or its corresponding type declarations.
+app/(screens)/conversation-info.tsx(417,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-info.tsx(425,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-info.tsx(433,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-info.tsx(441,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-info.tsx(449,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-info.tsx(457,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-info.tsx(465,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-info.tsx(473,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-info.tsx(481,39): error TS2339: Property 'actionText' does not exist on type '{ container: { flex: number; backgroundColor: "#0D1117"; }; loader: { flex: number; marginTop: number; }; optionsCard: { backgroundColor: "#1C2333"; borderRadius: 16; borderWidth: number; borderColor: "#30363D"; overflow: "hidden"; marginHorizontal: 16; marginBottom: 12; }; ... 61 more ...; hintText: { ...; }; }'.
+app/(screens)/conversation-media.tsx(135,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+app/(screens)/conversation-media.tsx(167,31): error TS2339: Property 'thumbnailUrl' does not exist on type 'Message'.
+app/(screens)/conversation-media.tsx(247,53): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(260,50): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(263,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(267,53): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(275,52): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(288,50): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(292,52): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(296,50): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(300,48): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(328,66): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(336,66): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(350,66): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(353,72): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation-media.tsx(362,60): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(1218,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+app/(screens)/conversation/[id].tsx(424,7): error TS2367: This comparison appears to be unintentional because the types 'MessageType' and '"SYSTEM"' have no overlap.
+app/(screens)/conversation/[id].tsx(429,73): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(430,60): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(442,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(500,49): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(501,58): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(505,65): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(547,53): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(548,37): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(593,145): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(596,71): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(606,29): error TS2339: Property 'translatedText' does not exist on type '{}'.
+app/(screens)/conversation/[id].tsx(606,70): error TS2339: Property 'translatedText' does not exist on type '{}'.
+app/(screens)/conversation/[id].tsx(613,35): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(627,57): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(640,68): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(648,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(649,37): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(667,65): error TS2304: Cannot find name 'tc'.
+app/(screens)/conversation/[id].tsx(687,76): error TS2304: Cannot find name 'tc'.
+app/(screens)/create-story.tsx(1219,20): error TS2304: Cannot find name 'tc'.
+app/(screens)/create-story.tsx(1225,10): error TS2304: Cannot find name 'tc'.
+app/(screens)/create-story.tsx(1229,10): error TS2304: Cannot find name 'tc'.
+app/(screens)/create-story.tsx(1230,20): error TS2304: Cannot find name 'tc'.
+app/(screens)/create-story.tsx(628,13): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/create-story.tsx(628,14): error TS2786: 'Image' cannot be used as a JSX component.
+app/(screens)/create-story.tsx(665,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/create-story.tsx(665,12): error TS2786: 'Svg' cannot be used as a JSX component.
+app/(screens)/create-story.tsx(667,15): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/create-story.tsx(667,16): error TS2786: 'Path' cannot be used as a JSX component.
+app/(screens)/creator-storefront.tsx(107,12): error TS2339: Property 'medium' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/dhikr-challenge-detail.tsx(190,22): error TS2345: Argument of type '["dhikr.participants", { count: string; }]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string, options?: (TOptionsBase & $Dictionary) | undefined] | [key: ...]'.
+app/(screens)/dhikr-challenge-detail.tsx(73,82): error TS2304: Cannot find name 'tc'.
+app/(screens)/dhikr-challenge-detail.tsx(80,54): error TS2304: Cannot find name 'tc'.
+app/(screens)/dhikr-challenges.tsx(90,18): error TS2345: Argument of type '["dhikr.participants", { count: string; }]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string, options?: (TOptionsBase & $Dictionary) | undefined] | [key: ...]'.
+app/(screens)/dhikr-counter.tsx(133,94): error TS2304: Cannot find name 'tc'.
+app/(screens)/dhikr-counter.tsx(136,53): error TS2304: Cannot find name 'tc'.
+app/(screens)/dhikr-counter.tsx(137,54): error TS2304: Cannot find name 'tc'.
+app/(screens)/dhikr-counter.tsx(166,50): error TS2304: Cannot find name 'tc'.
+app/(screens)/dhikr-counter.tsx(167,50): error TS2304: Cannot find name 'tc'.
+app/(screens)/discover.tsx(386,29): error TS2677: A type predicate's type must be assignable to its parameter's type.
+app/(screens)/discover.tsx(389,37): error TS2339: Property 'thumbnailUrl' does not exist on type '(Post | Thread | Reel) & Record<"channel", unknown>'.
+app/(screens)/discover.tsx(399,27): error TS2352: Conversion of type '(Post | Thread | Reel) & Record<"channel", unknown>' to type 'Video' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/discover.tsx(403,16): error TS2352: Conversion of type '(Post | Thread | Reel) & Record<"channel", unknown>' to type 'Video' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/discover.tsx(403,48): error TS2352: Conversion of type '(Post | Thread | Reel) & Record<"channel", unknown>' to type 'Video' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/downloads.tsx(145,30): error TS2352: Conversion of type 'OfflineDownload' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/downloads.tsx(169,15): error TS2352: Conversion of type 'OfflineDownload' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/dua-collection.tsx(123,21): error TS2339: Property 'locale' does not exist on type '{ t: TFunction<"translation", undefined>; language: SupportedLanguage; changeLanguage: (lang: SupportedLanguage) => Promise<TFunction<"translation", undefined>>; isRTL: boolean; }'.
+app/(screens)/dua-collection.tsx(142,62): error TS2339: Property 'data' does not exist on type 'string[]'.
+app/(screens)/dua-collection.tsx(147,82): error TS2339: Property 'data' does not exist on type '{ id: string; arabic: string; transliteration: string; translation: string; category: string; }[]'.
+app/(screens)/dua-collection.tsx(152,60): error TS2339: Property 'data' does not exist on type '{ id: string; arabic: string; transliteration: string; translation: string; }'.
+app/(screens)/dua-collection.tsx(157,63): error TS2339: Property 'data' does not exist on type '{ id: string; arabic: string; translation: string; }[]'.
+app/(screens)/dua-collection.tsx(213,84): error TS2769: No overload matches this call.
+app/(screens)/dua-collection.tsx(222,83): error TS2769: No overload matches this call.
+app/(screens)/dua-collection.tsx(249,100): error TS2769: No overload matches this call.
+app/(screens)/event-detail.tsx(213,23): error TS2352: Conversion of type 'EventWithCounts' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/event-detail.tsx(214,23): error TS2352: Conversion of type 'EventWithCounts' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/event-detail.tsx(91,16): error TS2339: Property 'myRsvp' does not exist on type 'EventWithCounts'.
+app/(screens)/event-detail.tsx(97,37): error TS2339: Property 'myRsvp' does not exist on type 'EventWithCounts'.
+app/(screens)/event-detail.tsx(99,14): error TS2339: Property 'myRsvp' does not exist on type 'EventWithCounts'.
+app/(screens)/fasting-tracker.tsx(212,58): error TS2769: No overload matches this call.
+app/(screens)/fasting-tracker.tsx(219,137): error TS1117: An object literal cannot have multiple properties with the same name.
+app/(screens)/fasting-tracker.tsx(87,61): error TS2339: Property 'data' does not exist on type '{ totalDays: number; currentStreak: number; }'.
+app/(screens)/fasting-tracker.tsx(92,71): error TS2339: Property 'data' does not exist on type '{ date: string; isFasting: boolean; fastType?: string | undefined; }[]'.
+app/(screens)/fatwa-qa.tsx(116,90): error TS2769: No overload matches this call.
+app/(screens)/fatwa-qa.tsx(134,112): error TS2769: No overload matches this call.
+app/(screens)/fatwa-qa.tsx(163,46): error TS2769: No overload matches this call.
+app/(screens)/fatwa-qa.tsx(166,105): error TS2769: No overload matches this call.
+app/(screens)/fatwa-qa.tsx(166,127): error TS1117: An object literal cannot have multiple properties with the same name.
+app/(screens)/fatwa-qa.tsx(166,153): error TS1117: An object literal cannot have multiple properties with the same name.
+app/(screens)/fatwa-qa.tsx(166,179): error TS1117: An object literal cannot have multiple properties with the same name.
+app/(screens)/fatwa-qa.tsx(179,73): error TS2769: No overload matches this call.
+app/(screens)/fatwa-qa.tsx(181,58): error TS2769: No overload matches this call.
+app/(screens)/fatwa-qa.tsx(72,49): error TS2769: No overload matches this call.
+app/(screens)/fatwa-qa.tsx(86,48): error TS2769: No overload matches this call.
+app/(screens)/fatwa-qa.tsx(90,50): error TS2769: No overload matches this call.
+app/(screens)/follow-requests.tsx(54,49): error TS2304: Cannot find name 'tc'.
+app/(screens)/follow-requests.tsx(55,53): error TS2304: Cannot find name 'tc'.
+app/(screens)/follow-requests.tsx(57,50): error TS2304: Cannot find name 'tc'.
+app/(screens)/gift-shop.tsx(308,18): error TS2339: Property 'light' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/hadith.tsx(211,16): error TS2339: Property 'bookmarkHadith' does not exist on type '{ getPrayerTimes: (lat: number, lng: number, method?: string | undefined, date?: string | undefined) => Promise<PrayerTimes>; getPrayerMethods: () => Promise<PrayerMethodInfo[]>; ... 63 more ...; getDailyTasksToday: () => Promise<...>; }'.
+app/(screens)/halal-finder.tsx(141,78): error TS2352: Conversion of type 'undefined' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/halal-finder.tsx(141,9): error TS2322: Type 'HalalRestaurant[] | HalalRestaurant[]' is not assignable to type 'HalalRestaurant[]'.
+app/(screens)/hifz-tracker.tsx(146,16): error TS2304: Cannot find name 'tc'.
+app/(screens)/hifz-tracker.tsx(270,16): error TS2345: Argument of type '["hifz.totalMemorized", { count: string; }]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string, options?: (TOptionsBase & $Dictionary) | undefined] | [key: ...]'.
+app/(screens)/link-child-account.tsx(65,12): error TS2339: Property 'selection' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/location-picker.tsx(102,119): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/location-picker.tsx(112,125): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/location-picker.tsx(80,133): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/location-picker.tsx(99,112): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/majlis-list/[id].tsx(115,11): error TS2322: Type '{ data: Thread[]; keyExtractor: (item: Thread) => string; renderItem: ({ item }: { item: Thread; }) => Element; onEndReached: () => void; onEndReachedThreshold: number; ... 4 more ...; refreshControl: Element; }' is not assignable to type 'IntrinsicAttributes & FlashListProps<Thread> & { ref?: Ref<FlashListRef<Thread>> | undefined; }'.
+app/(screens)/majlis-lists.tsx(58,56): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/majlis-lists.tsx(70,56): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/majlis-lists.tsx(83,57): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-broadcast.tsx(58,64): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-broadcast.tsx(67,63): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-broadcast.tsx(76,63): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-data.tsx(112,59): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-data.tsx(115,30): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-data.tsx(124,53): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-data.tsx(138,59): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-data.tsx(140,64): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-data.tsx(159,59): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/manage-data.tsx(42,50): error TS2304: Cannot find name 'tc'.
+app/(screens)/manage-data.tsx(43,72): error TS2304: Cannot find name 'tc'.
+app/(screens)/manage-data.tsx(75,52): error TS2304: Cannot find name 'tc'.
+app/(screens)/manage-data.tsx(76,74): error TS2304: Cannot find name 'tc'.
+app/(screens)/media-settings.tsx(119,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/membership-tiers.tsx(139,33): error TS2339: Property 'light' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/membership-tiers.tsx(204,62): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/membership-tiers.tsx(210,57): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/membership-tiers.tsx(215,66): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/membership-tiers.tsx(219,12): error TS2339: Property 'medium' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/membership-tiers.tsx(237,62): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/morning-briefing.tsx(189,18): error TS2339: Property 'data' does not exist on type '{ greeting: string; date: string; hijriDate: string; prayerTimes?: Record<string, string> | undefined; dailyVerse?: { arabic: string; translation: string; } | undefined; tasks: { type: string; completed: boolean; }[]; }'.
+app/(screens)/morning-briefing.tsx(97,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/morning-briefing.tsx(98,52): error TS2304: Cannot find name 'tc'.
+app/(screens)/mosque-finder.tsx(121,62): error TS2304: Cannot find name 'tc'.
+app/(screens)/mosque-finder.tsx(122,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/mosque-finder.tsx(155,55): error TS2304: Cannot find name 'tc'.
+app/(screens)/mosque-finder.tsx(156,58): error TS2304: Cannot find name 'tc'.
+app/(screens)/mosque-finder.tsx(202,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/mosque-finder.tsx(203,59): error TS2304: Cannot find name 'tc'.
+app/(screens)/mosque-finder.tsx(245,39): error TS2345: Argument of type 'PrayerTimes | undefined' is not assignable to parameter of type 'Record<string, string> | undefined'.
+app/(screens)/mosque-finder.tsx(246,47): error TS2345: Argument of type 'PrayerTimes | undefined' is not assignable to parameter of type 'Record<string, string> | undefined'.
+app/(screens)/muted.tsx(63,53): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/mutual-followers.tsx(45,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/mutual-followers.tsx(48,51): error TS2304: Cannot find name 'tc'.
+app/(screens)/names-of-allah.tsx(163,61): error TS2339: Property 'data' does not exist on type '{ number: number; arabic: string; transliteration: string; meaning: string; }[]'.
+app/(screens)/names-of-allah.tsx(168,65): error TS2339: Property 'data' does not exist on type '{ number: number; arabic: string; transliteration: string; meaning: string; }'.
+app/(screens)/names-of-allah.tsx(202,14): error TS2345: Argument of type '["namesOfAllah.progress", { count: string; }]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string, options?: (TOptionsBase & $Dictionary) | undefined] | [key: ...]'.
+app/(screens)/new-conversation.tsx(66,96): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/notifications.tsx(68,59): error TS2304: Cannot find name 'tc'.
+app/(screens)/parental-controls.tsx(327,35): error TS2339: Property 'selection' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/photo-music.tsx(245,51): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/photo-music.tsx(3,27): error TS2300: Duplicate identifier 'Pressable'.
+app/(screens)/photo-music.tsx(5,3): error TS2300: Duplicate identifier 'Pressable'.
+app/(screens)/photo-music.tsx(80,52): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/photo-music.tsx(86,51): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/playlist/[id].tsx(83,15): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/playlist/[id].tsx(83,16): error TS2786: 'Image' cannot be used as a JSX component.
+app/(screens)/post/[id].tsx(135,53): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/post/[id].tsx(141,53): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/post/[id].tsx(523,53): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/product-detail.tsx(10,3): error TS2300: Duplicate identifier 'Pressable'.
+app/(screens)/product-detail.tsx(131,12): error TS2339: Property 'medium' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/product-detail.tsx(206,35): error TS2339: Property 'light' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/product-detail.tsx(7,3): error TS2300: Duplicate identifier 'Pressable'.
+app/(screens)/product-detail.tsx(89,41): error TS2304: Cannot find name 'tc'.
+app/(screens)/product/[id].tsx(10,3): error TS2300: Duplicate identifier 'Pressable'.
+app/(screens)/product/[id].tsx(7,3): error TS2300: Duplicate identifier 'Pressable'.
+app/(screens)/profile-customization.tsx(200,63): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/profile-customization.tsx(204,67): error TS2554: Expected 1 arguments, but got 2.
+app/(screens)/profile/[username].tsx(413,36): error TS2345: Argument of type '(s: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }) => { id: string; mediaUrl: string; mediaType: string; createdAt: string; }' is not assignable to parameter of type '(value: Pick<Story, "id" | "mediaUrl" | "mediaType" | "thumbnailUrl">, index: number, array: Pick<Story, "id" | "mediaUrl" | "mediaType" | "thumbnailUrl">[]) => { ...; }'.
+app/(screens)/profile/[username].tsx(889,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/(screens)/qr-code.tsx(84,17): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/qr-code.tsx(84,18): error TS2786: 'QRCode' cannot be used as a JSX component.
+app/(screens)/quiet-mode.tsx(240,45): error TS2339: Property 'selection' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/quiet-mode.tsx(255,45): error TS2339: Property 'selection' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/quran-reading-plan.tsx(237,14): error TS2339: Property 'light' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/quran-reading-plan.tsx(245,14): error TS2339: Property 'medium' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/quran-room.tsx(355,18): error TS2345: Argument of type '["quranRoom.participants", { count: string; }]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string, options?: (TOptionsBase & $Dictionary) | undefined] | [key: ...]'.
+app/(screens)/ramadan-mode.tsx(264,34): error TS2339: Property 'totalDays' does not exist on type 'RamadanInfo'.
+app/(screens)/ramadan-mode.tsx(265,35): error TS2339: Property 'daysFasted' does not exist on type 'RamadanInfo'.
+app/(screens)/ramadan-mode.tsx(329,12): error TS2339: Property 'light' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/reel/[id].tsx(277,18): error TS2554: Expected 1-2 arguments, but got 0.
+app/(screens)/reel/[id].tsx(372,61): error TS2551: Property 'userId' does not exist on type 'Reel'. Did you mean 'user'?
+app/(screens)/screen-time.tsx(175,12): error TS2339: Property 'selection' does not exist on type '{ like: () => void; follow: () => void; save: () => void; navigate: () => void; tick: () => void; delete: () => void; error: () => void; longPress: () => void; send: () => void; success: () => void; }'.
+app/(screens)/search.tsx(256,55): error TS2322: Type 'SearchResults | Post[]' is not assignable to type 'Post | readonly Post[]'.
+app/(screens)/search.tsx(257,59): error TS2322: Type 'SearchResults | Thread[]' is not assignable to type 'Thread | readonly Thread[]'.
+app/(screens)/search.tsx(258,63): error TS2322: Type 'SearchResults | Reel[]' is not assignable to type 'Reel | readonly Reel[]'.
+app/(screens)/search.tsx(259,66): error TS2322: Type 'SearchResults | Video[]' is not assignable to type 'Video | readonly Video[]'.
+app/(screens)/search.tsx(260,72): error TS2322: Type 'SearchResults | Channel[]' is not assignable to type 'Channel | readonly Channel[]'.
+app/(screens)/search.tsx(343,47): error TS18046: 'item' is of type 'unknown'.
+app/(screens)/search.tsx(345,35): error TS2322: Type 'unknown' is not assignable to type 'Post'.
+app/(screens)/search.tsx(382,47): error TS18046: 'item' is of type 'unknown'.
+app/(screens)/search.tsx(384,37): error TS2322: Type 'unknown' is not assignable to type 'Thread'.
+app/(screens)/share-profile.tsx(157,17): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/share-profile.tsx(157,18): error TS2786: 'QRCode' cannot be used as a JSX component.
+app/(screens)/starred-messages.tsx(53,44): error TS2352: Conversion of type 'Message' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/status-privacy.tsx(91,43): error TS2353: Object literal may only specify known properties, and 'activityStatus' does not exist in type 'PrivacySettings'.
+app/(screens)/story-viewer.tsx(625,18): error TS2352: Conversion of type '{ userId: string; username: string; avatarUrl: string | null; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }[]; }[]' to type 'StoryGroup[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/story-viewer.tsx(751,11): error TS2769: No overload matches this call.
+app/(screens)/verify-encryption.tsx(112,35): error TS2339: Property 'getUserId' does not exist on type 'EncryptionService'.
+app/(screens)/verify-encryption.tsx(376,19): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/verify-encryption.tsx(376,20): error TS2786: 'QRCode' cannot be used as a JSX component.
+app/(screens)/video-editor.tsx(175,19): error TS2339: Property 'data' does not exist on type '{ uploadUrl: string; key: string; publicUrl: string; expiresIn: number; }'.
+app/(screens)/video-editor.tsx(180,36): error TS2769: No overload matches this call.
+app/(screens)/voice-post-create.tsx(79,7): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+app/(screens)/voice-recorder.tsx(71,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+app/(screens)/voice-recorder.tsx(79,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+app/(tabs)/_layout.tsx(116,53): error TS2304: Cannot find name 'tc'.
+app/(tabs)/_layout.tsx(121,62): error TS2304: Cannot find name 'tc'.
+app/(tabs)/_layout.tsx(126,59): error TS2304: Cannot find name 'tc'.
+app/(tabs)/_layout.tsx(131,53): error TS2304: Cannot find name 'tc'.
+app/(tabs)/_layout.tsx(136,52): error TS2304: Cannot find name 'tc'.
+app/(tabs)/_layout.tsx(141,53): error TS2304: Cannot find name 'tc'.
+app/(tabs)/_layout.tsx(146,51): error TS2304: Cannot find name 'tc'.
+app/(tabs)/_layout.tsx(57,43): error TS2304: Cannot find name 'tc'.
+app/(tabs)/bakra.tsx(277,18): error TS2304: Cannot find name 'ProgressiveImage'.
+app/(tabs)/bakra.tsx(491,27): error TS2448: Block-scoped variable 'reels' used before its declaration.
+app/(tabs)/bakra.tsx(491,27): error TS2454: Variable 'reels' is used before being assigned.
+app/(tabs)/bakra.tsx(493,51): error TS2448: Block-scoped variable 'reels' used before its declaration.
+app/(tabs)/bakra.tsx(493,51): error TS2454: Variable 'reels' is used before being assigned.
+app/(tabs)/bakra.tsx(874,9): error TS2322: Type '{ ref: RefObject<FlashListRef<Reel>>; data: Reel[]; keyExtractor: (item: Reel) => string; onEndReached: () => void; onEndReachedThreshold: number; ... 12 more ...; refreshControl: Element; }' is not assignable to type 'IntrinsicAttributes & FlashListProps<Reel> & { ref?: Ref<FlashListRef<Reel>> | undefined; }'.
+app/(tabs)/majlis.tsx(400,11): error TS2322: Type '{ ref: RefObject<FlashListRef<Thread>>; data: Thread[]; keyExtractor: (item: Thread) => string; onEndReached: () => void; onEndReachedThreshold: number; ... 9 more ...; refreshControl: Element; }' is not assignable to type 'IntrinsicAttributes & FlashListProps<Thread> & { ref?: Ref<FlashListRef<Thread>> | undefined; }'.
+app/(tabs)/minbar.tsx(462,9): error TS2322: Type '{ ref: RefObject<FlashListRef<Video>>; data: Video[]; keyExtractor: (item: Video) => string; onEndReached: () => void; onEndReachedThreshold: number; ... 10 more ...; refreshControl: Element; }' is not assignable to type 'IntrinsicAttributes & FlashListProps<Video> & { ref?: Ref<FlashListRef<Video>> | undefined; }'.
+app/(tabs)/risalah.tsx(157,49): error TS2304: Cannot find name 'tc'.
+app/(tabs)/risalah.tsx(160,52): error TS2304: Cannot find name 'tc'.
+app/(tabs)/saf.tsx(158,41): error TS2304: Cannot find name 'tc'.
+app/(tabs)/saf.tsx(190,43): error TS2304: Cannot find name 'tc'.
+app/(tabs)/saf.tsx(352,5): error TS2769: No overload matches this call.
+app/(tabs)/saf.tsx(361,45): error TS2339: Property 'hasMore' does not exist on type '{}'.
+app/(tabs)/saf.tsx(361,65): error TS2339: Property 'cursor' does not exist on type '{}'.
+app/(tabs)/saf.tsx(368,9): error TS2322: Type '{}[]' is not assignable to type 'Post[]'.
+app/(tabs)/saf.tsx(453,18): error TS2345: Argument of type '["saf.viewAllComments", { count: string; }]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string, options?: (TOptionsBase & $Dictionary) | undefined] | [key: ...]'.
+app/(tabs)/saf.tsx(682,9): error TS2322: Type 'RefObject<FlashListRef<Post | { _type: "suggested"; }>>' is not assignable to type 'Ref<FlashListRef<FeedItem>> | undefined'.
+app/_layout.tsx(49,10): error TS2339: Property 'defaultProps' does not exist on type 'typeof Text'.
+app/_layout.tsx(49,37): error TS2339: Property 'defaultProps' does not exist on type 'typeof Text'.
+app/_layout.tsx(50,6): error TS2339: Property 'defaultProps' does not exist on type 'typeof Text'.
+app/_layout.tsx(51,15): error TS2339: Property 'defaultProps' does not exist on type 'typeof TextInput'.
+app/_layout.tsx(51,47): error TS2339: Property 'defaultProps' does not exist on type 'typeof TextInput'.
+app/_layout.tsx(52,12): error TS2339: Property 'defaultProps' does not exist on type 'typeof TextInput'.
+app/onboarding/interests.tsx(74,35): error TS2353: Object literal may only specify known properties, and 'madhab' does not exist in type 'UpdateUserPayload'.
+src/components/majlis/ThreadCard.tsx(380,15): error TS2322: Type '"light"' is not assignable to type '"send" | "like" | "follow" | "delete" | "save" | "navigate" | "tick" | undefined'.
+src/components/majlis/ThreadCard.tsx(413,15): error TS2322: Type '"light"' is not assignable to type '"send" | "like" | "follow" | "delete" | "save" | "navigate" | "tick" | undefined'.
+src/components/risalah/StickerPackBrowser.tsx(290,33): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPackBrowser.tsx(306,28): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPackBrowser.tsx(377,24): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPackBrowser.tsx(378,27): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPicker.tsx(13,3): error TS2300: Duplicate identifier 'Pressable'.
+src/components/risalah/StickerPicker.tsx(183,26): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPicker.tsx(225,24): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPicker.tsx(226,27): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPicker.tsx(265,37): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPicker.tsx(293,26): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPicker.tsx(294,29): error TS2304: Cannot find name 't'.
+src/components/risalah/StickerPicker.tsx(9,3): error TS2300: Duplicate identifier 'Pressable'.
+src/components/saf/PostCard.tsx(407,11): error TS2322: Type '"light"' is not assignable to type '"send" | "like" | "follow" | "delete" | "save" | "navigate" | "tick" | undefined'.
+src/components/saf/PostCard.tsx(416,11): error TS2322: Type '"light"' is not assignable to type '"send" | "like" | "follow" | "delete" | "save" | "navigate" | "tick" | undefined'.
+src/components/saf/PostCard.tsx(505,27): error TS2322: Type '"help-circle"' is not assignable to type 'IconName'.
+src/components/story/DrawingCanvas.tsx(240,10): error TS2786: 'G' cannot be used as a JSX component.
+src/components/story/DrawingCanvas.tsx(240,9): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(241,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(241,12): error TS2786: 'Path' cannot be used as a JSX component.
+src/components/story/DrawingCanvas.tsx(250,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(250,12): error TS2786: 'Path' cannot be used as a JSX component.
+src/components/story/DrawingCanvas.tsx(264,7): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(264,8): error TS2786: 'Path' cannot be used as a JSX component.
+src/components/story/DrawingCanvas.tsx(282,10): error TS2786: 'G' cannot be used as a JSX component.
+src/components/story/DrawingCanvas.tsx(283,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(283,12): error TS2786: 'Path' cannot be used as a JSX component.
+src/components/story/DrawingCanvas.tsx(292,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(292,12): error TS2786: 'Path' cannot be used as a JSX component.
+src/components/story/DrawingCanvas.tsx(306,7): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(306,8): error TS2786: 'Path' cannot be used as a JSX component.
+src/components/story/DrawingCanvas.tsx(402,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(402,12): error TS2786: 'Svg' cannot be used as a JSX component.
+src/components/story/QuestionSticker.tsx(107,29): error TS2304: Cannot find name 't'.
+src/components/story/QuestionSticker.tsx(126,26): error TS2304: Cannot find name 't'.
+src/components/story/QuestionSticker.tsx(133,33): error TS2304: Cannot find name 't'.
+src/components/story/QuestionSticker.tsx(145,35): error TS2304: Cannot find name 't'.
+src/components/ui/Autocomplete.tsx(123,18): error TS2345: Argument of type '["autocomplete.postsCount", { count: string; }]' is not assignable to parameter of type '[key: string | string[], options: TOptionsBase & $Dictionary & { defaultValue: string; }] | [key: string | string[], defaultValue: string, options?: (TOptionsBase & $Dictionary) | undefined] | [key: ...]'.
+src/components/ui/CharCountRing.tsx(96,7): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/CharCountRing.tsx(96,8): error TS2786: 'Svg' cannot be used as a JSX component.
+src/components/ui/CharCountRing.tsx(97,10): error TS2786: 'Circle' cannot be used as a JSX component.
+src/components/ui/CharCountRing.tsx(97,9): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/ProgressiveImage.tsx(60,48): error TS2322: Type 'StyleProp<ViewStyle>' is not assignable to type 'Falsy | ImageStyle | RegisteredStyle<ImageStyle> | RecursiveArray<Falsy | ImageStyle | RegisteredStyle<ImageStyle>> | readonly (Falsy | ... 1 more ... | RegisteredStyle<...>)[]'.
+src/components/ui/VerifiedBadge.tsx(23,10): error TS2786: 'Svg' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(23,9): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(25,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(25,12): error TS2786: 'Circle' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(26,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(26,12): error TS2786: 'Circle' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(27,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(27,12): error TS2786: 'Circle' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(29,12): error TS2786: 'G' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(30,13): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(30,14): error TS2786: 'Path' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(45,7): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(45,8): error TS2786: 'Svg' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(46,10): error TS2786: 'Circle' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(46,9): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(47,10): error TS2786: 'Path' cannot be used as a JSX component.
+src/components/ui/VerifiedBadge.tsx(47,9): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VideoControls.tsx(80,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/components/ui/VideoPlayer.tsx(106,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/components/ui/VideoPlayer.tsx(121,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/components/ui/VideoPlayer.tsx(259,14): error TS2352: Conversion of type 'Video' to type 'Record<string, () => Promise<void>>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+src/components/web/WebSidebar.tsx(68,19): error TS2339: Property 'hovered' does not exist on type 'PressableStateCallbackType'.
+src/hooks/useAmbientColor.ts(69,11): error TS2322: Type 'string' is not assignable to type '"#0A7B4F"'.
+src/hooks/useAmbientColor.ts(70,11): error TS2322: Type 'string' is not assignable to type '"#C8963E"'.
+src/hooks/useAmbientColor.ts(72,11): error TS2322: Type 'string' is not assignable to type '"#0A7B4F"'.
+src/hooks/useAmbientColor.ts(73,11): error TS2322: Type 'string' is not assignable to type '"#C8963E"'.
+src/hooks/useAmbientColor.ts(75,11): error TS2322: Type 'string' is not assignable to type '"#0A7B4F"'.
+src/hooks/useAmbientColor.ts(76,11): error TS2322: Type 'string' is not assignable to type '"#C8963E"'.
+src/hooks/usePushNotificationHandler.ts(54,11): error TS2322: Type '() => Promise<{ shouldShowAlert: true; shouldPlaySound: true; shouldSetBadge: true; priority: AndroidNotificationPriority.HIGH; }>' is not assignable to type '(notification: Notification) => Promise<NotificationBehavior>'.
+src/hooks/useVideoPreloader.ts(62,17): error TS18048: 'slot.abortController' is possibly 'undefined'.
+src/store/index.ts(315,54): error TS2322: Type '{ groups: unknown[]; startIndex: number; isOwn?: boolean | undefined; } | null' is not assignable to type '{ groups: { userId: string; username: string; avatarUrl: string | null; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }[]; }[]; startIndex: number; isOwn?: boolean | undefined; } | null | undefined'.
+src/utils/localeFormat.ts(42,9): error TS2322: Type '{ month: string; day: string; } | { year: string; month: string; day: string; } | { year: string; month: string; day: string; weekday: string; }' is not assignable to type 'DateTimeFormatOptions'.

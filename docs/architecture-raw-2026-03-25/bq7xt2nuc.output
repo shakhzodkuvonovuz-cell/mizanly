@@ -1,0 +1,20 @@
+
+        [0m [90m 39 |[39m
+         [90m 40 |[39m     [36mif[39m (commentType [33m!==[39m [32m'POST'[39m [33m&&[39m commentType [33m!==[39m [32m'REEL'[39m) {
+        [31m[1m>[22m[39m[90m 41 |[39m       [36mthrow[39m [36mnew[39m [33mBadRequestException[39m([32m'commentType must be "POST" or "REEL"'[39m)[33m;[39m
+         [90m    |[39m             [31m[1m^[22m[39m
+         [90m 42 |[39m     }
+         [90m 43 |[39m
+         [90m 44 |[39m     [36mif[39m ([33m![39mmediaUrl [33m||[39m [33m![39mmediaUrl[33m.[39mtrim()) {[0m
+
+      at VideoRepliesService.create (modules/video-replies/video-replies.service.ts:41:13)
+      at Object.<anonymous> (modules/video-replies/video-replies.service.spec.ts:66:28)
+      at Object.toThrow (../../../node_modules/expect/build/index.js:218:22)
+      at Object.<anonymous> (modules/video-replies/video-replies.service.spec.ts:67:18)
+
+
+Test Suites: 10 failed, 276 passed, 286 total
+Tests:       32 failed, 4643 passed, 4675 total
+Snapshots:   0 total
+Time:        61.402 s
+Ran all test suites.

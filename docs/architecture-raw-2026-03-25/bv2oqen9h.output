@@ -1,0 +1,324 @@
+app/(screens)/caption-editor.tsx(131,9): error TS2353: Object literal may only specify known properties, and 'srtContent' does not exist in type '{ label: string; language: string; srtUrl: string; }'.
+app/(screens)/chat-folder-view.tsx(34,29): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Conversation'.
+app/(screens)/chat-folder-view.tsx(36,30): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Conversation'.
+app/(screens)/chat-folder-view.tsx(37,52): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Conversation'.
+app/(screens)/chat-folder-view.tsx(95,22): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Conversation'.
+app/(screens)/chat-folder-view.tsx(96,22): error TS2352: Conversion of type 'Conversation' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Conversation'.
+app/(screens)/chat-folder-view.tsx(109,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: ViewProps): View', gave the following error.
+    Type 'unknown' is not assignable to type 'ReactNode'.
+  Overload 2 of 2, '(props: ViewProps, context: any): View', gave the following error.
+    Type 'unknown' is not assignable to type 'ReactNode'.
+app/(screens)/chat-folders.tsx(128,25): error TS2345: Argument of type '`/(screens)/chat-folder-view?filter=folder&folderId=${string}`' is not assignable to parameter of type 'RelativePathString | ExternalPathString | "/" | `/?${string}` | `/#${string}` | "/_sitemap" | `/_sitemap?${string}` | `/_sitemap#${string}` | "/(auth)/sign-in" | `/(auth)/sign-in?${string}` | ... 1257 more ... | { ...; }'.
+app/(screens)/chat-folders.tsx(180,31): error TS2345: Argument of type '`/(screens)/chat-folder-view?filter=${string}`' is not assignable to parameter of type 'RelativePathString | ExternalPathString | "/" | `/?${string}` | `/#${string}` | "/_sitemap" | `/_sitemap?${string}` | `/_sitemap#${string}` | "/(auth)/sign-in" | `/(auth)/sign-in?${string}` | ... 1257 more ... | { ...; }'.
+app/(screens)/contact-sync.tsx(12,25): error TS2307: Cannot find module 'expo-crypto' or its corresponding type declarations.
+app/(screens)/conversation-media.tsx(136,57): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/(screens)/conversation-media.tsx(168,31): error TS2339: Property 'thumbnailUrl' does not exist on type 'Message'.
+app/(screens)/conversation/[id].tsx(425,7): error TS2367: This comparison appears to be unintentional because the types 'MessageType' and '"SYSTEM"' have no overlap.
+app/(screens)/conversation/[id].tsx(607,29): error TS2339: Property 'translatedText' does not exist on type '{}'.
+app/(screens)/conversation/[id].tsx(607,70): error TS2339: Property 'translatedText' does not exist on type '{}'.
+app/(screens)/create-story.tsx(666,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/create-story.tsx(666,12): error TS2786: 'Svg' cannot be used as a JSX component.
+  Its type 'typeof Svg' is not a valid JSX element type.
+    Types of construct signatures are incompatible.
+      Type 'new (props: SvgProps | Readonly<SvgProps>) => Svg' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+        Type 'Svg' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, props, and 2 more.
+app/(screens)/discover.tsx(386,29): error TS2677: A type predicate's type must be assignable to its parameter's type.
+  Type 'Post | Reel | Video' is not assignable to type 'Post | Thread | Reel'.
+    Type 'Video' is not assignable to type 'Post | Thread | Reel'.
+      Type 'Video' is missing the following properties from type 'Reel': mentions, hashtags, isRemoved, isDuet, and 2 more.
+app/(screens)/discover.tsx(389,37): error TS2339: Property 'thumbnailUrl' does not exist on type '(Post | Thread | Reel) & Record<"channel", unknown>'.
+  Property 'thumbnailUrl' does not exist on type 'Thread & Record<"channel", unknown>'.
+app/(screens)/discover.tsx(399,27): error TS2352: Conversion of type '(Post | Thread | Reel) & Record<"channel", unknown>' to type 'Video' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Reel & Record<"channel", unknown>' is missing the following properties from type 'Video': userId, channelId, title, category, and 3 more.
+app/(screens)/discover.tsx(403,16): error TS2352: Conversion of type '(Post | Thread | Reel) & Record<"channel", unknown>' to type 'Video' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Reel & Record<"channel", unknown>' is missing the following properties from type 'Video': userId, channelId, title, category, and 3 more.
+app/(screens)/discover.tsx(403,48): error TS2352: Conversion of type '(Post | Thread | Reel) & Record<"channel", unknown>' to type 'Video' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Reel & Record<"channel", unknown>' is missing the following properties from type 'Video': userId, channelId, title, category, and 3 more.
+app/(screens)/downloads.tsx(145,30): error TS2352: Conversion of type 'OfflineDownload' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'OfflineDownload'.
+app/(screens)/downloads.tsx(169,15): error TS2352: Conversion of type 'OfflineDownload' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'OfflineDownload'.
+app/(screens)/dua-collection.tsx(123,21): error TS2339: Property 'locale' does not exist on type '{ t: TFunction<"translation", undefined>; language: SupportedLanguage; changeLanguage: (lang: SupportedLanguage) => Promise<TFunction<"translation", undefined>>; isRTL: boolean; }'.
+app/(screens)/dua-collection.tsx(142,62): error TS2339: Property 'data' does not exist on type 'string[]'.
+app/(screens)/dua-collection.tsx(147,82): error TS2339: Property 'data' does not exist on type '{ id: string; arabic: string; transliteration: string; translation: string; category: string; }[]'.
+app/(screens)/dua-collection.tsx(152,60): error TS2339: Property 'data' does not exist on type '{ id: string; arabic: string; transliteration: string; translation: string; }'.
+app/(screens)/dua-collection.tsx(157,63): error TS2339: Property 'data' does not exist on type '{ id: string; arabic: string; translation: string; }[]'.
+app/(screens)/dua-collection.tsx(213,84): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'tabText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'tabText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/dua-collection.tsx(222,83): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'tabText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'tabText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/dua-collection.tsx(249,100): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'chipText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'chipText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/event-detail.tsx(91,16): error TS2339: Property 'myRsvp' does not exist on type 'EventWithCounts'.
+app/(screens)/event-detail.tsx(97,37): error TS2339: Property 'myRsvp' does not exist on type 'EventWithCounts'.
+app/(screens)/event-detail.tsx(99,14): error TS2339: Property 'myRsvp' does not exist on type 'EventWithCounts'.
+app/(screens)/event-detail.tsx(213,23): error TS2352: Conversion of type 'EventWithCounts' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'EventWithCounts'.
+app/(screens)/event-detail.tsx(214,23): error TS2352: Conversion of type 'EventWithCounts' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'EventWithCounts'.
+app/(screens)/fasting-tracker.tsx(87,61): error TS2339: Property 'data' does not exist on type '{ totalDays: number; currentStreak: number; }'.
+app/(screens)/fasting-tracker.tsx(92,71): error TS2339: Property 'data' does not exist on type '{ date: string; isFasting: boolean; fastType?: string | undefined; }[]'.
+app/(screens)/fasting-tracker.tsx(212,58): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'todayBtnTextNo' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'todayBtnTextNo' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fasting-tracker.tsx(219,137): error TS1117: An object literal cannot have multiple properties with the same name.
+app/(screens)/fatwa-qa.tsx(72,49): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'askerName' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'askerName' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fatwa-qa.tsx(86,48): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'questionText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'questionText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fatwa-qa.tsx(90,50): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'answerText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'answerText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fatwa-qa.tsx(116,90): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'tabText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'tabText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fatwa-qa.tsx(134,112): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'filterChipText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'filterChipText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fatwa-qa.tsx(163,46): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'askLabel' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'askLabel' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fatwa-qa.tsx(166,105): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextInputProps): TextInput', gave the following error.
+    Object literal may only specify known properties, and 'questionInput' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextInputProps, context: any): TextInput', gave the following error.
+    Object literal may only specify known properties, and 'questionInput' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fatwa-qa.tsx(166,127): error TS1117: An object literal cannot have multiple properties with the same name.
+app/(screens)/fatwa-qa.tsx(166,153): error TS1117: An object literal cannot have multiple properties with the same name.
+app/(screens)/fatwa-qa.tsx(166,179): error TS1117: An object literal cannot have multiple properties with the same name.
+app/(screens)/fatwa-qa.tsx(179,73): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'askLabel' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'askLabel' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/fatwa-qa.tsx(181,58): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Object literal may only specify known properties, and 'madhabSelectorText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Object literal may only specify known properties, and 'madhabSelectorText' does not exist in type 'TextStyle | RecursiveArray<Falsy | TextStyle | RegisteredStyle<TextStyle>> | readonly (Falsy | TextStyle | RegisteredStyle<...>)[]'.
+app/(screens)/hadith.tsx(211,16): error TS2339: Property 'bookmarkHadith' does not exist on type '{ getPrayerTimes: (lat: number, lng: number, method?: string | undefined, date?: string | undefined) => Promise<PrayerTimes>; getPrayerMethods: () => Promise<PrayerMethodInfo[]>; ... 63 more ...; getDailyTasksToday: () => Promise<...>; }'.
+app/(screens)/halal-finder.tsx(141,9): error TS2322: Type 'HalalRestaurant[] | HalalRestaurant[]' is not assignable to type 'HalalRestaurant[]'.
+  Type 'HalalRestaurant[]' is not assignable to type 'HalalRestaurant[]'. Two different types with this name exist, but they are unrelated.
+    Type 'HalalRestaurant' is missing the following properties from type 'HalalRestaurant': isVerified, averageRating
+app/(screens)/halal-finder.tsx(141,78): error TS2352: Conversion of type 'undefined' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+app/(screens)/majlis-list/[id].tsx(115,11): error TS2322: Type '{ data: Thread[]; keyExtractor: (item: Thread) => string; renderItem: ({ item }: { item: Thread; }) => Element; onEndReached: () => void; onEndReachedThreshold: number; ... 4 more ...; refreshControl: Element; }' is not assignable to type 'IntrinsicAttributes & FlashListProps<Thread> & { ref?: Ref<FlashListRef<Thread>> | undefined; }'.
+  Property 'estimatedItemSize' does not exist on type 'IntrinsicAttributes & FlashListProps<Thread> & { ref?: Ref<FlashListRef<Thread>> | undefined; }'.
+app/(screens)/morning-briefing.tsx(190,18): error TS2339: Property 'data' does not exist on type '{ greeting: string; date: string; hijriDate: string; prayerTimes?: Record<string, string> | undefined; dailyVerse?: { arabic: string; translation: string; } | undefined; tasks: { type: string; completed: boolean; }[]; }'.
+app/(screens)/mosque-finder.tsx(148,38): error TS2820: Type '"/(screens)/mosque-detail"' is not assignable to type 'RelativePathString | ExternalPathString | "/" | "/_sitemap" | "/(auth)/sign-in" | "/sign-in" | "/(auth)/sign-up" | "/sign-up" | "/(screens)/2fa-setup" | ... 374 more ... | "/video/[id]"'. Did you mean '"/(screens)/mosque-finder"'?
+app/(screens)/mosque-finder.tsx(247,39): error TS2345: Argument of type 'PrayerTimes | undefined' is not assignable to parameter of type 'Record<string, string> | undefined'.
+  Type 'PrayerTimes' is not assignable to type 'Record<string, string>'.
+    Index signature for type 'string' is missing in type 'PrayerTimes'.
+app/(screens)/mosque-finder.tsx(248,47): error TS2345: Argument of type 'PrayerTimes | undefined' is not assignable to parameter of type 'Record<string, string> | undefined'.
+  Type 'PrayerTimes' is not assignable to type 'Record<string, string>'.
+    Index signature for type 'string' is missing in type 'PrayerTimes'.
+app/(screens)/names-of-allah.tsx(163,61): error TS2339: Property 'data' does not exist on type '{ number: number; arabic: string; transliteration: string; meaning: string; }[]'.
+app/(screens)/names-of-allah.tsx(168,65): error TS2339: Property 'data' does not exist on type '{ number: number; arabic: string; transliteration: string; meaning: string; }'.
+app/(screens)/profile/[username].tsx(413,36): error TS2345: Argument of type '(s: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }) => { id: string; mediaUrl: string; mediaType: string; createdAt: string; }' is not assignable to parameter of type '(value: Pick<Story, "id" | "mediaUrl" | "mediaType" | "thumbnailUrl">, index: number, array: Pick<Story, "id" | "mediaUrl" | "mediaType" | "thumbnailUrl">[]) => { ...; }'.
+  Types of parameters 's' and 'value' are incompatible.
+    Property 'createdAt' is missing in type 'Pick<Story, "id" | "mediaUrl" | "mediaType" | "thumbnailUrl">' but required in type '{ id: string; mediaUrl: string; mediaType: string; createdAt: string; }'.
+app/(screens)/profile/[username].tsx(549,63): error TS2345: Argument of type '"/(screens)/flipside"' is not assignable to parameter of type 'RelativePathString | ExternalPathString | "/" | `/?${string}` | `/#${string}` | "/_sitemap" | `/_sitemap?${string}` | `/_sitemap#${string}` | "/(auth)/sign-in" | `/(auth)/sign-in?${string}` | ... 1257 more ... | { ...; }'.
+app/(screens)/profile/[username].tsx(889,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+app/(screens)/qr-code.tsx(84,17): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/qr-code.tsx(84,18): error TS2786: 'QRCode' cannot be used as a JSX component.
+  Its type 'typeof QRCode' is not a valid JSX element type.
+    Type 'typeof QRCode' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+      Type 'QRCode' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, render, and 3 more.
+app/(screens)/ramadan-mode.tsx(264,34): error TS2339: Property 'totalDays' does not exist on type 'RamadanInfo'.
+app/(screens)/ramadan-mode.tsx(265,35): error TS2339: Property 'daysFasted' does not exist on type 'RamadanInfo'.
+app/(screens)/reel/[id].tsx(230,5): error TS2322: Type '(_err: unknown, _vars: unknown, context: { prev?: unknown; } | undefined) => void' is not assignable to type '(error: unknown, variables: void, onMutateResult: unknown, context: MutationFunctionContext) => unknown'.
+  Types of parameters 'context' and 'onMutateResult' are incompatible.
+    Type 'unknown' is not assignable to type '{ prev?: unknown; } | undefined'.
+app/(screens)/reel/[id].tsx(372,61): error TS2551: Property 'userId' does not exist on type 'Reel'. Did you mean 'user'?
+app/(screens)/search.tsx(256,55): error TS2322: Type 'SearchResults | Post[]' is not assignable to type 'Post | readonly Post[]'.
+  Type 'SearchResults' is not assignable to type 'Post | readonly Post[]'.
+    Type 'SearchResults' is missing the following properties from type 'Post': id, postType, visibility, mediaUrls, and 14 more.
+app/(screens)/search.tsx(257,59): error TS2322: Type 'SearchResults | Thread[]' is not assignable to type 'Thread | readonly Thread[]'.
+  Type 'SearchResults' is not assignable to type 'Thread | readonly Thread[]'.
+    Type 'SearchResults' is missing the following properties from type 'Thread': id, content, mediaUrls, mediaTypes, and 18 more.
+app/(screens)/search.tsx(258,63): error TS2322: Type 'SearchResults | Reel[]' is not assignable to type 'Reel | readonly Reel[]'.
+  Type 'SearchResults' is not assignable to type 'Reel | readonly Reel[]'.
+    Type 'SearchResults' is missing the following properties from type 'Reel': id, videoUrl, duration, mentions, and 10 more.
+app/(screens)/search.tsx(259,66): error TS2322: Type 'SearchResults | Video[]' is not assignable to type 'Video | readonly Video[]'.
+  Type 'SearchResults' is not assignable to type 'Video | readonly Video[]'.
+app/(screens)/search.tsx(260,72): error TS2322: Type 'SearchResults | Channel[]' is not assignable to type 'Channel | readonly Channel[]'.
+  Type 'SearchResults' is not assignable to type 'Channel | readonly Channel[]'.
+app/(screens)/search.tsx(343,47): error TS18046: 'item' is of type 'unknown'.
+app/(screens)/search.tsx(345,35): error TS2322: Type 'unknown' is not assignable to type 'Post'.
+app/(screens)/search.tsx(382,47): error TS18046: 'item' is of type 'unknown'.
+app/(screens)/search.tsx(384,37): error TS2322: Type 'unknown' is not assignable to type 'Thread'.
+app/(screens)/share-profile.tsx(157,17): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/share-profile.tsx(157,18): error TS2786: 'QRCode' cannot be used as a JSX component.
+  Its type 'typeof QRCode' is not a valid JSX element type.
+    Type 'typeof QRCode' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+      Type 'QRCode' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, render, and 3 more.
+app/(screens)/starred-messages.tsx(53,44): error TS2352: Conversion of type 'Message' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Message'.
+app/(screens)/status-privacy.tsx(91,43): error TS2353: Object literal may only specify known properties, and 'activityStatus' does not exist in type 'PrivacySettings'.
+app/(screens)/story-viewer.tsx(625,18): error TS2352: Conversion of type '{ userId: string; username: string; avatarUrl: string | null; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }[]; }[]' to type 'StoryGroup[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ userId: string; username: string; avatarUrl: string | null; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }[]; }' is missing the following properties from type 'StoryGroup': user, hasUnread
+app/(screens)/story-viewer.tsx(751,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: FlatListProps<StoryGroup>): FlatList<StoryGroup>', gave the following error.
+    Type '(_: StoryGroup[] | null, index: number) => { length: number; offset: number; index: number; }' is not assignable to type '(data: ArrayLike<StoryGroup> | null | undefined, index: number) => { length: number; offset: number; index: number; }'.
+      Types of parameters '_' and 'data' are incompatible.
+        Type 'ArrayLike<StoryGroup> | null | undefined' is not assignable to type 'StoryGroup[] | null'.
+          Type 'undefined' is not assignable to type 'StoryGroup[] | null'.
+  Overload 2 of 2, '(props: FlatListProps<StoryGroup>, context: any): FlatList<StoryGroup>', gave the following error.
+    Type '(_: StoryGroup[] | null, index: number) => { length: number; offset: number; index: number; }' is not assignable to type '(data: ArrayLike<StoryGroup> | null | undefined, index: number) => { length: number; offset: number; index: number; }'.
+      Types of parameters '_' and 'data' are incompatible.
+        Type 'ArrayLike<StoryGroup> | null | undefined' is not assignable to type 'StoryGroup[] | null'.
+          Type 'undefined' is not assignable to type 'StoryGroup[] | null'.
+app/(screens)/verify-encryption.tsx(112,35): error TS2339: Property 'getUserId' does not exist on type 'EncryptionService'.
+app/(screens)/verify-encryption.tsx(376,19): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+app/(screens)/verify-encryption.tsx(376,20): error TS2786: 'QRCode' cannot be used as a JSX component.
+  Its type 'typeof QRCode' is not a valid JSX element type.
+    Type 'typeof QRCode' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+      Type 'QRCode' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, render, and 3 more.
+app/(screens)/video-editor.tsx(175,19): error TS2339: Property 'data' does not exist on type '{ uploadUrl: string; key: string; publicUrl: string; expiresIn: number; }'.
+app/(screens)/video-editor.tsx(180,36): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(input: RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'RequestInfo'.
+      Type 'null' is not assignable to type 'RequestInfo'.
+  Overload 2 of 3, '(input: string | Request | URL, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'string | Request | URL'.
+      Type 'null' is not assignable to type 'string | Request | URL'.
+  Overload 3 of 3, '(input: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response>', gave the following error.
+    Argument of type 'string | null' is not assignable to parameter of type 'URL | RequestInfo'.
+      Type 'null' is not assignable to type 'URL | RequestInfo'.
+app/(tabs)/bakra.tsx(277,18): error TS2304: Cannot find name 'ProgressiveImage'.
+app/(tabs)/bakra.tsx(491,27): error TS2448: Block-scoped variable 'reels' used before its declaration.
+app/(tabs)/bakra.tsx(491,27): error TS2454: Variable 'reels' is used before being assigned.
+app/(tabs)/bakra.tsx(493,51): error TS2448: Block-scoped variable 'reels' used before its declaration.
+app/(tabs)/bakra.tsx(493,51): error TS2454: Variable 'reels' is used before being assigned.
+app/(tabs)/bakra.tsx(874,9): error TS2322: Type '{ ref: RefObject<FlashListRef<Reel>>; data: Reel[]; keyExtractor: (item: Reel) => string; onEndReached: () => void; onEndReachedThreshold: number; ... 12 more ...; refreshControl: Element; }' is not assignable to type 'IntrinsicAttributes & FlashListProps<Reel> & { ref?: Ref<FlashListRef<Reel>> | undefined; }'.
+  Property 'estimatedItemSize' does not exist on type 'IntrinsicAttributes & FlashListProps<Reel> & { ref?: Ref<FlashListRef<Reel>> | undefined; }'.
+app/(tabs)/majlis.tsx(400,11): error TS2322: Type '{ ref: RefObject<FlashListRef<Thread>>; data: Thread[]; keyExtractor: (item: Thread) => string; onEndReached: () => void; onEndReachedThreshold: number; ... 9 more ...; refreshControl: Element; }' is not assignable to type 'IntrinsicAttributes & FlashListProps<Thread> & { ref?: Ref<FlashListRef<Thread>> | undefined; }'.
+  Property 'estimatedItemSize' does not exist on type 'IntrinsicAttributes & FlashListProps<Thread> & { ref?: Ref<FlashListRef<Thread>> | undefined; }'.
+app/(tabs)/minbar.tsx(462,9): error TS2322: Type '{ ref: RefObject<FlashListRef<Video>>; data: Video[]; keyExtractor: (item: Video) => string; onEndReached: () => void; onEndReachedThreshold: number; ... 10 more ...; refreshControl: Element; }' is not assignable to type 'IntrinsicAttributes & FlashListProps<Video> & { ref?: Ref<FlashListRef<Video>> | undefined; }'.
+  Property 'estimatedItemSize' does not exist on type 'IntrinsicAttributes & FlashListProps<Video> & { ref?: Ref<FlashListRef<Video>> | undefined; }'.
+app/(tabs)/saf.tsx(354,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataInfiniteOptions<Record<string, unknown>, Error, InfiniteData<Record<string, unknown>, unknown>, string[], any>, queryClient?: QueryClient | undefined): DefinedUseInfiniteQueryResult<...>', gave the following error.
+    Type '({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: string | undefined; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>' is not assignable to type 'unique symbol | QueryFunction<Record<string, unknown>, string[], any> | undefined'.
+      Type '({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: string | undefined; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>' is not assignable to type 'QueryFunction<Record<string, unknown>, string[], any>'.
+        Type 'Promise<PaginatedResponse<Post>>' is not assignable to type 'Record<string, unknown> | Promise<Record<string, unknown>>'.
+          Type 'Promise<PaginatedResponse<Post>>' is not assignable to type 'Promise<Record<string, unknown>>'.
+            Type 'PaginatedResponse<Post>' is not assignable to type 'Record<string, unknown>'.
+              Index signature for type 'string' is missing in type 'PaginatedResponse<Post>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataInfiniteOptions<Record<string, unknown>, Error, InfiniteData<Record<string, unknown>, unknown>, string[], any>, queryClient?: QueryClient | undefined): UseInfiniteQueryResult<...>', gave the following error.
+    Type '({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: string | undefined; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>' is not assignable to type 'unique symbol | QueryFunction<Record<string, unknown>, string[], any> | undefined'.
+      Type '({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: string | undefined; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>' is not assignable to type 'QueryFunction<Record<string, unknown>, string[], any>'.
+        Type 'Promise<PaginatedResponse<Post>>' is not assignable to type 'Record<string, unknown> | Promise<Record<string, unknown>>'.
+          Type 'Promise<PaginatedResponse<Post>>' is not assignable to type 'Promise<Record<string, unknown>>'.
+            Type 'PaginatedResponse<Post>' is not assignable to type 'Record<string, unknown>'.
+              Index signature for type 'string' is missing in type 'PaginatedResponse<Post>'.
+  Overload 3 of 3, '(options: UseInfiniteQueryOptions<Record<string, unknown>, Error, InfiniteData<Record<string, unknown>, unknown>, string[], any>, queryClient?: QueryClient | undefined): UseInfiniteQueryResult<...>', gave the following error.
+    Type '({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: string | undefined; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>' is not assignable to type 'unique symbol | QueryFunction<Record<string, unknown>, string[], any> | undefined'.
+      Type '({ pageParam }: { client: QueryClient; queryKey: string[]; signal: AbortSignal; pageParam: string | undefined; direction: FetchDirection; meta: Record<string, unknown> | undefined; }) => Promise<...>' is not assignable to type 'QueryFunction<Record<string, unknown>, string[], any>'.
+        Type 'Promise<PaginatedResponse<Post>>' is not assignable to type 'Record<string, unknown> | Promise<Record<string, unknown>>'.
+          Type 'Promise<PaginatedResponse<Post>>' is not assignable to type 'Promise<Record<string, unknown>>'.
+            Type 'PaginatedResponse<Post>' is not assignable to type 'Record<string, unknown>'.
+              Index signature for type 'string' is missing in type 'PaginatedResponse<Post>'.
+app/(tabs)/saf.tsx(363,45): error TS2339: Property 'hasMore' does not exist on type '{}'.
+app/(tabs)/saf.tsx(363,65): error TS2339: Property 'cursor' does not exist on type '{}'.
+app/(tabs)/saf.tsx(370,9): error TS2322: Type '{}[]' is not assignable to type 'Post[]'.
+  Type '{}' is missing the following properties from type 'Post': id, postType, visibility, mediaUrls, and 15 more.
+app/(tabs)/saf.tsx(684,9): error TS2322: Type 'RefObject<FlashListRef<Post | { _type: "suggested"; }>>' is not assignable to type 'Ref<FlashListRef<FeedItem>> | undefined'.
+  Type 'RefObject<FlashListRef<Post | { _type: "suggested"; }>>' is not assignable to type 'RefObject<FlashListRef<FeedItem>>'.
+    Type 'FlashListRef<Post | { _type: "suggested"; }>' is not assignable to type 'FlashListRef<FeedItem>'.
+      The types of 'props.data' are incompatible between these types.
+        Type 'readonly (Post | { _type: "suggested"; })[] | null | undefined' is not assignable to type 'readonly FeedItem[] | null | undefined'.
+          Type 'readonly (Post | { _type: "suggested"; })[]' is not assignable to type 'readonly FeedItem[]'.
+            Type 'Post | { _type: "suggested"; }' is not assignable to type 'FeedItem'.
+              Type '{ _type: "suggested"; }' is not assignable to type 'FeedItem'.
+                Type '{ _type: "suggested"; }' is missing the following properties from type '{ _type: "suggested"; id: string; users: SuggestedUser[]; }': id, users
+app/_layout.tsx(49,10): error TS2339: Property 'defaultProps' does not exist on type 'typeof Text'.
+app/_layout.tsx(49,37): error TS2339: Property 'defaultProps' does not exist on type 'typeof Text'.
+app/_layout.tsx(50,6): error TS2339: Property 'defaultProps' does not exist on type 'typeof Text'.
+app/_layout.tsx(51,15): error TS2339: Property 'defaultProps' does not exist on type 'typeof TextInput'.
+app/_layout.tsx(51,47): error TS2339: Property 'defaultProps' does not exist on type 'typeof TextInput'.
+app/_layout.tsx(52,12): error TS2339: Property 'defaultProps' does not exist on type 'typeof TextInput'.
+app/onboarding/interests.tsx(74,35): error TS2353: Object literal may only specify known properties, and 'madhab' does not exist in type 'UpdateUserPayload'.
+src/components/saf/PostCard.tsx(505,27): error TS2322: Type '"help-circle"' is not assignable to type 'IconName'.
+src/components/story/DrawingCanvas.tsx(402,11): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/story/DrawingCanvas.tsx(402,12): error TS2786: 'Svg' cannot be used as a JSX component.
+  Its type 'typeof Svg' is not a valid JSX element type.
+    Types of construct signatures are incompatible.
+      Type 'new (props: SvgProps | Readonly<SvgProps>) => Svg' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+        Type 'Svg' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, props, and 2 more.
+src/components/ui/CharCountRing.tsx(96,7): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/CharCountRing.tsx(96,8): error TS2786: 'Svg' cannot be used as a JSX component.
+  Its type 'typeof Svg' is not a valid JSX element type.
+    Types of construct signatures are incompatible.
+      Type 'new (props: SvgProps | Readonly<SvgProps>) => Svg' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+        Type 'Svg' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, props, and 2 more.
+src/components/ui/ProgressiveImage.tsx(60,48): error TS2322: Type 'StyleProp<ViewStyle>' is not assignable to type 'Falsy | ImageStyle | RegisteredStyle<ImageStyle> | RecursiveArray<Falsy | ImageStyle | RegisteredStyle<ImageStyle>> | readonly (Falsy | ... 1 more ... | RegisteredStyle<...>)[]'.
+  Type 'ViewStyle' is not assignable to type 'Falsy | ImageStyle | RegisteredStyle<ImageStyle> | RecursiveArray<Falsy | ImageStyle | RegisteredStyle<ImageStyle>> | readonly (Falsy | ... 1 more ... | RegisteredStyle<...>)[]'.
+    Type 'ViewStyle' is not assignable to type 'ImageStyle'.
+      Types of property 'overflow' are incompatible.
+        Type '"visible" | "hidden" | "scroll" | undefined' is not assignable to type '"visible" | "hidden" | undefined'.
+          Type '"scroll"' is not assignable to type '"visible" | "hidden" | undefined'.
+src/components/ui/VerifiedBadge.tsx(23,9): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(23,10): error TS2786: 'Svg' cannot be used as a JSX component.
+  Its type 'typeof Svg' is not a valid JSX element type.
+    Types of construct signatures are incompatible.
+      Type 'new (props: SvgProps | Readonly<SvgProps>) => Svg' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+        Type 'Svg' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, props, and 2 more.
+src/components/ui/VerifiedBadge.tsx(45,7): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/ui/VerifiedBadge.tsx(45,8): error TS2786: 'Svg' cannot be used as a JSX component.
+  Its type 'typeof Svg' is not a valid JSX element type.
+    Types of construct signatures are incompatible.
+      Type 'new (props: SvgProps | Readonly<SvgProps>) => Svg' is not assignable to type 'new (props: any, deprecatedLegacyContext?: any) => Component<any, any, any>'.
+        Type 'Svg' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, props, and 2 more.
+src/components/ui/VideoPlayer.tsx(259,14): error TS2352: Conversion of type 'Video' to type 'Record<string, () => Promise<void>>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Video'.
+src/components/web/WebSidebar.tsx(68,19): error TS2339: Property 'hovered' does not exist on type 'PressableStateCallbackType'.
+src/hooks/useAmbientColor.ts(69,11): error TS2322: Type 'string' is not assignable to type '"#0A7B4F"'.
+src/hooks/useAmbientColor.ts(70,11): error TS2322: Type 'string' is not assignable to type '"#C8963E"'.
+src/hooks/useAmbientColor.ts(72,11): error TS2322: Type 'string' is not assignable to type '"#0A7B4F"'.
+src/hooks/useAmbientColor.ts(73,11): error TS2322: Type 'string' is not assignable to type '"#C8963E"'.
+src/hooks/useAmbientColor.ts(75,11): error TS2322: Type 'string' is not assignable to type '"#0A7B4F"'.
+src/hooks/useAmbientColor.ts(76,11): error TS2322: Type 'string' is not assignable to type '"#C8963E"'.
+src/hooks/usePushNotificationHandler.ts(54,11): error TS2322: Type '() => Promise<{ shouldShowAlert: true; shouldPlaySound: true; shouldSetBadge: true; priority: AndroidNotificationPriority.HIGH; }>' is not assignable to type '(notification: Notification) => Promise<NotificationBehavior>'.
+  Type 'Promise<{ shouldShowAlert: true; shouldPlaySound: true; shouldSetBadge: true; priority: AndroidNotificationPriority.HIGH; }>' is not assignable to type 'Promise<NotificationBehavior>'.
+    Type '{ shouldShowAlert: true; shouldPlaySound: true; shouldSetBadge: true; priority: AndroidNotificationPriority.HIGH; }' is missing the following properties from type 'NotificationBehavior': shouldShowBanner, shouldShowList
+src/hooks/useVideoPreloader.ts(62,17): error TS18048: 'slot.abortController' is possibly 'undefined'.
+src/store/index.ts(315,54): error TS2322: Type '{ groups: unknown[]; startIndex: number; isOwn?: boolean | undefined; } | null' is not assignable to type '{ groups: { userId: string; username: string; avatarUrl: string | null; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }[]; }[]; startIndex: number; isOwn?: boolean | undefined; } | null | undefined'.
+  Type '{ groups: unknown[]; startIndex: number; isOwn?: boolean | undefined; }' is not assignable to type '{ groups: { userId: string; username: string; avatarUrl: string | null; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }[]; }[]; startIndex: number; isOwn?: boolean | undefined; }'.
+    Types of property 'groups' are incompatible.
+      Type 'unknown[]' is not assignable to type '{ userId: string; username: string; avatarUrl: string | null; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }[]; }[]'.
+        Type 'unknown' is not assignable to type '{ userId: string; username: string; avatarUrl: string | null; stories: { id: string; mediaUrl: string; mediaType: string; createdAt: string; }[]; }'.
+src/utils/localeFormat.ts(42,9): error TS2322: Type '{ month: string; day: string; } | { year: string; month: string; day: string; } | { year: string; month: string; day: string; weekday: string; }' is not assignable to type 'DateTimeFormatOptions'.
+  Type '{ month: string; day: string; }' is not assignable to type 'DateTimeFormatOptions'.
+    Types of property 'month' are incompatible.
+      Type 'string' is not assignable to type '"short" | "long" | "numeric" | "2-digit" | "narrow" | undefined'.
