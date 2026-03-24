@@ -110,6 +110,8 @@ function CreateCarouselScreen() {
   // Publish fields
   const [altText, setAltText] = useState('');
   const [locationName, setLocationName] = useState('');
+  const [taggedUsers, setTaggedUsers] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [brandedContent, setBrandedContent] = useState(false);
   const [brandPartner, setBrandPartner] = useState('');
@@ -223,6 +225,7 @@ function CreateCarouselScreen() {
         caption: caption.trim() || undefined,
         altText: altText.trim() || undefined,
         locationName: locationName.trim() || undefined,
+        taggedUserIds: taggedUsers.length > 0 ? taggedUsers : undefined,
         topics: selectedTopics.length > 0 ? selectedTopics : undefined,
         commentPermission,
         remixAllowed,
@@ -464,6 +467,7 @@ function CreateCarouselScreen() {
           </AnimatedAccordion>
 
           {/* Location */}
+          {/* Location */}
           <AnimatedAccordion title={t('compose.location')} icon="map-pin" defaultExpanded={false}>
             <RichCaptionInput
               value={locationName}
@@ -473,6 +477,61 @@ function CreateCarouselScreen() {
               minHeight={40}
               multiline={false}
             />
+          </AnimatedAccordion>
+
+          {/* Tag people */}
+          <AnimatedAccordion title={t('compose.tagPeople')} icon="users" defaultExpanded={false}>
+            <View style={styles.tagPeopleWrap}>
+              {taggedUsers.length > 0 && (
+                <View style={styles.tagChipsRow}>
+                  {taggedUsers.map((uid) => (
+                    <Pressable
+                      key={uid}
+                      onPress={() => {
+                        haptic.tick();
+                        setTaggedUsers((prev) => prev.filter((id) => id !== uid));
+                      }}
+                      style={styles.tagChip}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t('common.remove')} ${uid}`}
+                    >
+                      <Icon name="user" size="xs" color={colors.emerald} />
+                      <Text style={styles.tagChipText} numberOfLines={1}>{uid}</Text>
+                      <Icon name="x" size="xs" color={tc.text.tertiary} />
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+              <View style={styles.tagInputRow}>
+                <RichCaptionInput
+                  value={tagInput}
+                  onChangeText={setTagInput}
+                  placeholder={t('compose.tagPeoplePlaceholder')}
+                  maxLength={50}
+                  minHeight={40}
+                  multiline={false}
+                />
+                <Pressable
+                  onPress={() => {
+                    const trimmed = tagInput.trim();
+                    if (trimmed && !taggedUsers.includes(trimmed) && taggedUsers.length < 20) {
+                      haptic.tick();
+                      setTaggedUsers((prev) => [...prev, trimmed]);
+                      setTagInput('');
+                    }
+                  }}
+                  style={[styles.tagAddBtn, { backgroundColor: `${colors.emerald}20` }]}
+                  hitSlop={8}
+                  accessibilityLabel={t('carousel.addMore')}
+                  accessibilityRole="button"
+                >
+                  <Icon name="plus" size="sm" color={colors.emerald} />
+                </Pressable>
+              </View>
+              <Text style={[styles.tagHint, { color: tc.text.tertiary }]}>
+                {t('compose.tagPeopleHint')}
+              </Text>
+            </View>
           </AnimatedAccordion>
 
           {/* Topics */}
@@ -689,6 +748,23 @@ const styles = StyleSheet.create({
   },
   topicChipText: { fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '500' },
   topicsHint: { width: '100%', fontSize: fontSizeExt.tiny, fontFamily: fonts.body, marginTop: spacing.xs },
+
+  // Tag people
+  tagPeopleWrap: { paddingBottom: spacing.sm },
+  tagChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+  tagChip: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
+    borderRadius: radius.full, backgroundColor: `${colors.emerald}15`,
+    borderWidth: 1, borderColor: `${colors.emerald}30`,
+  },
+  tagChipText: { fontSize: fontSizeExt.caption, fontFamily: fonts.bodyMedium, color: colors.emerald, maxWidth: 120 },
+  tagInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  tagAddBtn: {
+    width: 40, height: 40, borderRadius: radius.md,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  tagHint: { fontSize: fontSizeExt.tiny, fontFamily: fonts.body, marginTop: spacing.xs },
 
   // Publish field toggles + radio
   radioRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },

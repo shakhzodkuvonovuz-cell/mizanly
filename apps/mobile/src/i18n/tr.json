@@ -1556,7 +1556,9 @@
     "topic_art": "Art",
     "topic_nature": "Nature",
     "topic_community": "Community",
-    "topic_business": "Business"
+    "topic_business": "Business",
+    "tagPeoplePlaceholder": "Enter username...",
+    "tagPeopleHint": "Tag up to 20 people. They will be notified."
   },
   "community": {
     "fatwaQA": "Fetva Soru-Cevap",
