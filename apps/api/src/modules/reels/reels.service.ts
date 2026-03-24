@@ -156,10 +156,17 @@ export class ReelsService {
       ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }))?.username ?? 'Someone'
       : undefined;
 
-    // Create tagged user records
+    // Create tagged user records (accepts user IDs or usernames — resolves both)
     if (dto.taggedUserIds?.length) {
       const validUsers = await this.prisma.user.findMany({
-        where: { id: { in: dto.taggedUserIds }, isDeleted: false, isBanned: false },
+        where: {
+          OR: [
+            { id: { in: dto.taggedUserIds } },
+            { username: { in: dto.taggedUserIds } },
+          ],
+          isDeleted: false,
+          isBanned: false,
+        },
         select: { id: true },
       });
       if (validUsers.length > 0) {

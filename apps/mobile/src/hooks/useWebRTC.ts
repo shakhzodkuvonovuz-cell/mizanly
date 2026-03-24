@@ -60,6 +60,7 @@ export function useWebRTC({
   onFailed,
 }: UseWebRTCOptions) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [connectionState, setConnectionState] = useState<WebRTCState['connectionState']>('new');
@@ -87,6 +88,7 @@ export function useWebRTC({
       console.error('[WebRTC] getUserMedia failed:', err);
       return;
     }
+    localStreamRef.current = stream;
     setLocalStream(stream);
 
     // Create peer connection
@@ -99,16 +101,8 @@ export function useWebRTC({
     });
 
     // Handle remote stream
-    const remote = new MediaStream(undefined);
-    setRemoteStream(remote);
-
     pc.addEventListener('track', (event: any) => {
       if (event.streams?.[0]) {
-        event.streams[0].getTracks().forEach((track: MediaStreamTrack) => {
-          remote.addTrack(track);
-        });
-        setRemoteStream(new MediaStream(remote.toURL ? undefined : undefined));
-        // Force re-render with new reference
         setRemoteStream(event.streams[0]);
       }
     });
@@ -145,7 +139,7 @@ export function useWebRTC({
         console.error('[WebRTC] createOffer failed:', err);
       }
     }
-  }, [socket, sessionId, targetUserId, callType, iceServers, isInitiator, onConnected, onDisconnected, onFailed]);
+  }, [socket, targetUserId, callType, iceServers, isInitiator, onConnected, onDisconnected, onFailed]);
 
   // ── Handle incoming signaling messages ──
   useEffect(() => {
@@ -248,20 +242,22 @@ export function useWebRTC({
   const hangup = useCallback(() => {
     pcRef.current?.close();
     pcRef.current = null;
-    localStream?.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+    localStreamRef.current?.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+    localStreamRef.current = null;
     setLocalStream(null);
     setRemoteStream(null);
     setConnectionState('closed');
     hasRemoteDescRef.current = false;
     iceCandidateQueue.current = [];
-  }, [localStream]);
+  }, []);
 
-  // Cleanup on unmount
+  // Cleanup on unmount — uses ref (not stale state closure)
   useEffect(() => {
     return () => {
       pcRef.current?.close();
       pcRef.current = null;
-      localStream?.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+      localStreamRef.current?.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+      localStreamRef.current = null;
     };
   }, []);
 

@@ -509,10 +509,17 @@ export class PostsService {
         select: POST_SELECT,
       });
 
-      // Create tagged user records (photo tags — users need to approve)
+      // Create tagged user records (accepts user IDs or usernames — resolves both)
       if (dto.taggedUserIds?.length) {
         const validUsers = await tx.user.findMany({
-          where: { id: { in: dto.taggedUserIds }, isDeleted: false, isBanned: false },
+          where: {
+            OR: [
+              { id: { in: dto.taggedUserIds } },
+              { username: { in: dto.taggedUserIds } },
+            ],
+            isDeleted: false,
+            isBanned: false,
+          },
           select: { id: true },
         });
         if (validUsers.length > 0) {

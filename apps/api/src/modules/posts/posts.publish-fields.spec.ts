@@ -189,7 +189,12 @@ describe('PostsService — Publish Fields', () => {
 
       expect(userFindManyMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ id: { in: taggedIds } }),
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ id: { in: taggedIds } }),
+              expect.objectContaining({ username: { in: taggedIds } }),
+            ]),
+          }),
         }),
       );
       expect(postTaggedUserCreateManyMock).toHaveBeenCalledWith(

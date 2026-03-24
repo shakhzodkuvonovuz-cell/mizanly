@@ -467,7 +467,6 @@ function CreateCarouselScreen() {
           </AnimatedAccordion>
 
           {/* Location */}
-          {/* Location */}
           <AnimatedAccordion title={t('compose.location')} icon="map-pin" defaultExpanded={false}>
             <RichCaptionInput
               value={locationName}

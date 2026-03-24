@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -17,34 +17,13 @@ interface SchedulePostSheetProps {
   currentSchedule?: string | null;
 }
 
-// Generate date options: today + next 14 days
-function generateDateOptions(): { label: string; date: Date }[] {
-  const options: { label: string; date: Date }[] = [];
-  const now = new Date();
-  for (let i = 0; i < 14; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() + i);
-    d.setHours(0, 0, 0, 0);
-    const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    options.push({ label, date: d });
+// Time slots are static — generated once at module load (they don't depend on current time)
+const TIME_SLOTS: { label: string; hours: number; minutes: number }[] = [];
+for (let h = 0; h < 24; h++) {
+  for (const m of [0, 30]) {
+    TIME_SLOTS.push({ label: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`, hours: h, minutes: m });
   }
-  return options;
 }
-
-// Generate time slots: every 30 min from 00:00 to 23:30
-function generateTimeSlots(): { label: string; hours: number; minutes: number }[] {
-  const slots: { label: string; hours: number; minutes: number }[] = [];
-  for (let h = 0; h < 24; h++) {
-    for (const m of [0, 30]) {
-      const label = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-      slots.push({ label, hours: h, minutes: m });
-    }
-  }
-  return slots;
-}
-
-const DATE_OPTIONS = generateDateOptions();
-const TIME_SLOTS = generateTimeSlots();
 
 export function SchedulePostSheet({
   visible,
@@ -57,16 +36,34 @@ export function SchedulePostSheet({
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
 
+  // Date options regenerated when sheet opens (not frozen at module load)
+  const dateOptions = useMemo(() => {
+    const options: { label: string; date: Date }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + i);
+      d.setHours(0, 0, 0, 0);
+      const label = i === 0 ? t('schedule.tonight') : i === 1 ? t('schedule.tomorrow') : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      options.push({ label, date: d });
+    }
+    return options;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, t]); // Regenerate when sheet opens
+
   const [selectedDateIdx, setSelectedDateIdx] = useState(0);
   const [selectedTimeIdx, setSelectedTimeIdx] = useState(() => {
-    // Default to next full hour
     const now = new Date();
     const nextHour = now.getHours() + 1;
     return Math.min(TIME_SLOTS.findIndex((s) => s.hours >= nextHour) || 0, TIME_SLOTS.length - 1);
   });
 
+  // Memoize current time for past-time checks
+  const nowRef = useRef(Date.now());
+  if (visible) nowRef.current = Date.now(); // Refresh when sheet opens
+
   const selectedDateTime = useMemo(() => {
-    const d = new Date(DATE_OPTIONS[selectedDateIdx].date);
+    const d = new Date(dateOptions[selectedDateIdx].date);
     const time = TIME_SLOTS[selectedTimeIdx];
     d.setHours(time.hours, time.minutes, 0, 0);
     return d;
@@ -100,7 +97,7 @@ export function SchedulePostSheet({
           {t('schedule.selectDate')}
         </Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRow}>
-          {DATE_OPTIONS.map((opt, i) => (
+          {dateOptions.map((opt, i) => (
             <Pressable
               key={i}
               onPress={() => { setSelectedDateIdx(i); haptic.tick(); }}
