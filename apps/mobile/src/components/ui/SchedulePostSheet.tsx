@@ -113,6 +113,7 @@ export function SchedulePostSheet({
                 selectedDateIdx === i && { backgroundColor: `${colors.emerald}20` },
               ]}
               accessibilityRole="radio"
+              accessibilityLabel={`${t('schedule.selectDate')}: ${opt.label}`}
               accessibilityState={{ selected: selectedDateIdx === i }}
             >
               <Text style={[
@@ -130,22 +131,26 @@ export function SchedulePostSheet({
           {t('schedule.selectTime')}
         </Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timeRow}>
-          {TIME_SLOTS.map((slot, i) => {
-            const isPast = selectedDateIdx === 0 && (slot.hours < new Date().getHours() || (slot.hours === new Date().getHours() && slot.minutes <= new Date().getMinutes()));
-            return (
-              <Pressable
-                key={i}
-                onPress={() => { if (!isPast) { setSelectedTimeIdx(i); haptic.tick(); } }}
-                disabled={isPast}
-                style={[
-                  styles.timeChip,
-                  { borderColor: selectedTimeIdx === i ? colors.emerald : tc.border },
-                  selectedTimeIdx === i && { backgroundColor: `${colors.emerald}20` },
-                  isPast && { opacity: 0.3 },
-                ]}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: selectedTimeIdx === i }}
-              >
+          {(() => {
+            const nowHours = new Date().getHours();
+            const nowMinutes = new Date().getMinutes();
+            return TIME_SLOTS.map((slot, i) => {
+              const isPast = selectedDateIdx === 0 && (slot.hours < nowHours || (slot.hours === nowHours && slot.minutes <= nowMinutes));
+              return (
+                <Pressable
+                  key={i}
+                  onPress={() => { if (!isPast) { setSelectedTimeIdx(i); haptic.tick(); } }}
+                  disabled={isPast}
+                  style={[
+                    styles.timeChip,
+                    { borderColor: selectedTimeIdx === i ? colors.emerald : tc.border },
+                    selectedTimeIdx === i && { backgroundColor: `${colors.emerald}20` },
+                    isPast && { opacity: 0.3 },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityLabel={`${t('schedule.selectTime')}: ${slot.label}`}
+                  accessibilityState={{ selected: selectedTimeIdx === i, disabled: isPast }}
+                >
                 <Text style={[
                   styles.timeChipText,
                   { color: selectedTimeIdx === i ? colors.emerald : tc.text.primary },
@@ -153,8 +158,9 @@ export function SchedulePostSheet({
                   {slot.label}
                 </Text>
               </Pressable>
-            );
-          })}
+              );
+            });
+          })()}
         </ScrollView>
 
         {/* Summary */}
@@ -178,6 +184,7 @@ export function SchedulePostSheet({
               onPress={() => { haptic.delete(); onClearSchedule(); onClose(); }}
               style={[styles.clearBtn, { borderColor: tc.border }]}
               accessibilityRole="button"
+              accessibilityLabel={t('schedule.removeSchedule')}
             >
               <Icon name="x" size="sm" color={colors.error} />
               <Text style={[styles.clearText, { color: colors.error }]}>

@@ -130,7 +130,10 @@ function CreateCarouselScreen() {
 
   // Cleanup upload on unmount (Rule 27)
   useEffect(() => {
-    return () => { uploadAbortRef.current?.(); };
+    return () => {
+      uploadAbortRef.current?.();
+      uploadAbortRef.current = null;
+    };
   }, []);
 
   const currentSlide = slides[selectedIndex];
