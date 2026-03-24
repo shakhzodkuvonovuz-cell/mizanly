@@ -159,4 +159,9 @@ export class CreateReelDto {
   @IsOptional()
   @IsDateString()
   scheduledAt?: string;
+
+  @ApiProperty({ required: false, description: 'Trial reel — shown to non-followers for feedback before publishing to all' })
+  @IsOptional()
+  @IsBoolean()
+  isTrial?: boolean;
 }

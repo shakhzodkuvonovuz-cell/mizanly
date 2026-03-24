@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Pressable, Text } from 'react-native';
+import { View, StyleSheet, Pressable, Text, TextInput } from 'react-native';
 import Svg, { Path, G, Defs, Mask, Rect } from 'react-native-svg';
 import {
   PanGestureHandler,
@@ -41,9 +41,14 @@ interface DrawingCanvasProps {
 // ---------------------------------------------------------------------------
 
 const DRAW_COLORS: readonly string[] = [
+  // Row 1: core colors
   '#FFFFFF', '#000000', '#0A7B4F', '#C8963E',
   '#F85149', colors.extended.blue, '#D2A8FF', '#FFA657',
   colors.extended.greenBright, '#F0883E', '#FF7B72', '#79C0FF',
+  // Row 2: extended palette (eyedropper alternative — full spectrum)
+  '#FF0000', '#FF6600', '#FFCC00', '#33CC00',
+  '#00CCCC', '#0066FF', '#6633FF', '#CC00CC',
+  '#FF99CC', '#996633', '#666666', '#CCCCCC',
 ];
 
 interface ToolConfig {
@@ -463,6 +468,22 @@ export function DrawingCanvas({
               />
             );
           })}
+          {/* Custom hex input (eyedropper alternative) */}
+          <View style={styles.hexInputWrap}>
+            <View style={[styles.hexPreview, { backgroundColor: activeColor }]} />
+            <TextInput
+              value={activeColor}
+              onChangeText={(text) => {
+                const hex = text.startsWith('#') ? text : `#${text}`;
+                if (/^#[0-9A-Fa-f]{0,6}$/.test(hex)) setActiveColor(hex);
+              }}
+              style={styles.hexInput}
+              maxLength={7}
+              autoCapitalize="characters"
+              placeholder="#HEX"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+            />
+          </View>
         </View>
 
         {/* Stroke size selector (discrete S/M/L/XL) */}
@@ -654,6 +675,30 @@ const styles = StyleSheet.create({
   colorSwatchBlack: {
     borderColor: colors.dark.border,
     borderWidth: 1,
+  },
+  hexInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginStart: spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+  hexPreview: {
+    width: 18,
+    height: 18,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  hexInput: {
+    color: '#fff',
+    fontSize: 11,
+    fontFamily: 'monospace',
+    width: 60,
+    paddingVertical: 2,
   },
 
   // Size selector

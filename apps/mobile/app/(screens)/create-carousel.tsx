@@ -31,6 +31,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { showToast } from '@/components/ui/Toast';
+import { resizeForUpload } from '@/utils/imageResize';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const MAX_SLIDES = 35;
@@ -200,13 +201,11 @@ function CreateCarouselScreen() {
       // Upload each slide image
       for (let i = 0; i < slides.length; i++) {
         const slide = slides[i];
-        // Extract extension from URI, handling paths with multiple dots and query params
-        const uriPath = slide.uri.split('?')[0];
-        const ext = uriPath.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const contentType = MIME_MAP[ext] ?? 'image/jpeg';
-        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'reels');
+        // Resize before upload (saves bandwidth + storage)
+        const resized = await resizeForUpload(slide.uri, slide.width, slide.height);
+        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl('image/jpeg', 'reels');
 
-        const fileRes = await fetch(slide.uri);
+        const fileRes = await fetch(resized.uri);
         const blob = await fileRes.blob();
 
         const baseProgress = (i / slides.length) * 100;

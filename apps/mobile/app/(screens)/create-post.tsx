@@ -36,6 +36,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { navigate } from '@/utils/navigation';
 import { showToast } from '@/components/ui/Toast';
+import { resizeForUpload } from '@/utils/imageResize';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 
@@ -237,11 +238,21 @@ export default function CreatePostScreen() {
       // Upload each media file with real progress tracking
       for (let i = 0; i < media.length; i++) {
         const item = media[i];
-        const ext = item.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const contentType = item.type === 'video' ? `video/${ext}` : `image/${ext}`;
+        // Resize images before upload (saves bandwidth + storage)
+        let uploadUri = item.uri;
+        let uploadWidth = item.width;
+        let uploadHeight = item.height;
+        if (item.type === 'image') {
+          const resized = await resizeForUpload(item.uri, item.width, item.height);
+          uploadUri = resized.uri;
+          uploadWidth = resized.width;
+          uploadHeight = resized.height;
+        }
+        const ext = uploadUri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'jpg';
+        const contentType = item.type === 'video' ? `video/${ext}` : 'image/jpeg'; // Always JPEG after resize
         const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'posts');
 
-        const fileRes = await fetch(item.uri);
+        const fileRes = await fetch(uploadUri);
         const blob = await fileRes.blob();
 
         // Use XMLHttpRequest for real progress tracking
@@ -258,9 +269,9 @@ export default function CreatePostScreen() {
 
         mediaUrls.push(publicUrl);
         mediaTypes.push(item.type);
-        if (mediaWidth === undefined && item.width) {
-          mediaWidth = item.width;
-          mediaHeight = item.height;
+        if (mediaWidth === undefined && uploadWidth) {
+          mediaWidth = uploadWidth;
+          mediaHeight = uploadHeight;
         }
       }
 

@@ -141,6 +141,7 @@ export class ReelsService {
           remixAllowed: dto.remixAllowed ?? true,
           topics: dto.topics ?? [],
           scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+          isTrial: dto.isTrial ?? false,
           status: ReelStatus.PROCESSING,
         },
         select: REEL_SELECT,
@@ -288,6 +289,7 @@ export class ReelsService {
     const where: Prisma.ReelWhereInput = {
       status: ReelStatus.READY,
       isRemoved: false,
+      isTrial: false, // Trial reels excluded from public feeds
       user: { isPrivate: false },
       createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) }, // last 72h
       ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
@@ -514,6 +516,21 @@ export class ReelsService {
     }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
 
     return { deleted: true };
+  }
+
+  /** Convert a trial reel to a published reel (visible in feeds) */
+  async publishTrial(reelId: string, userId: string) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
+    if (!reel) throw new NotFoundException('Reel not found');
+    if (reel.userId !== userId) throw new ForbiddenException();
+    if (!reel.isTrial) throw new BadRequestException('Reel is not a trial');
+
+    await this.prisma.reel.update({
+      where: { id: reelId },
+      data: { isTrial: false },
+    });
+
+    return { published: true };
   }
 
   async like(reelId: string, userId: string) {

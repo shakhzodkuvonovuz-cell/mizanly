@@ -257,6 +257,16 @@ export class ReelsController {
     return this.reelsService.archive(id, userId);
   }
 
+  @Patch(':id/publish-trial')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Publish a trial reel to all followers' })
+  publishTrial(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.reelsService.publishTrial(id, userId);
+  }
+
   @Patch(':id/unarchive')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Unarchive a reel' })

@@ -1157,6 +1157,7 @@ model Reel {
   viewsCount      Int               @default(0)
   loopsCount      Int               @default(0)
   isFeatureWorthy Boolean           @default(false)
+  isTrial         Boolean           @default(false)
   isSensitive     Boolean           @default(false)
   isArchived      Boolean           @default(false)
   isRemoved       Boolean           @default(false)

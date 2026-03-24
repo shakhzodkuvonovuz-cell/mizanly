@@ -25,6 +25,7 @@ import { showToast } from '@/components/ui/Toast';
 import { islamicApi } from '@/services/islamicApi';
 import type { Mosque as ApiMosque, PrayerTimes } from '@/types/islamic';
 import * as Location from 'expo-location';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -349,6 +350,35 @@ export default function MosqueFinderScreen() {
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={
             <>
+              {/* Map */}
+              {userLocation && (
+                <Animated.View entering={FadeInUp.duration(500)} style={styles.mapContainer}>
+                  <MapView
+                    style={styles.map}
+                    provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+                    initialRegion={{
+                      latitude: userLocation.lat,
+                      longitude: userLocation.lng,
+                      latitudeDelta: 0.05,
+                      longitudeDelta: 0.05,
+                    }}
+                    showsUserLocation
+                    showsMyLocationButton={false}
+                    mapType="standard"
+                  >
+                    {filteredMosques.map((m) => (
+                      <Marker
+                        key={m.id}
+                        coordinate={{ latitude: m.lat, longitude: m.lng }}
+                        title={m.name}
+                        description={`${m.distance} · ${m.nextPrayer} ${m.nextPrayerTime}`}
+                        pinColor={colors.emerald}
+                      />
+                    ))}
+                  </MapView>
+                </Animated.View>
+              )}
+
               {/* Search Bar */}
               <Animated.View entering={FadeInUp.duration(400)}>
                 <LinearGradient
@@ -445,6 +475,16 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.base,
     paddingTop: 100,
+  },
+  mapContainer: {
+    height: 220,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
   searchContainer: {
     flexDirection: 'row',

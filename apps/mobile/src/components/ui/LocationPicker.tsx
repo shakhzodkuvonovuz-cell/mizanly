@@ -65,15 +65,41 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
 
     setLoading(true);
     try {
-      // Simulate API call - in production this would call a places API
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const filtered = POPULAR_LOCATIONS.filter(
-        loc =>
+      // First: filter popular locations locally
+      const localMatches = POPULAR_LOCATIONS.filter(
+        (loc) =>
           loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          loc.address?.toLowerCase().includes(searchQuery.toLowerCase())
+          loc.address?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
 
+      // Then: geocode the search query for real-world results
+      const geocoded = await Location.geocodeAsync(searchQuery);
+      const geocodedResults: LocationResult[] = [];
+      for (const geo of geocoded.slice(0, 5)) {
+        const reverseResults = await Location.reverseGeocodeAsync({
+          latitude: geo.latitude,
+          longitude: geo.longitude,
+        });
+        const place = reverseResults[0];
+        if (place) {
+          geocodedResults.push({
+            id: `geo-${geo.latitude}-${geo.longitude}`,
+            name: place.name || place.street || searchQuery,
+            address: [place.city, place.region, place.country].filter(Boolean).join(', '),
+            latitude: geo.latitude,
+            longitude: geo.longitude,
+          });
+        }
+      }
+
+      setResults([...localMatches, ...geocodedResults]);
+    } catch {
+      // Fallback to local filter on geocode failure
+      const filtered = POPULAR_LOCATIONS.filter(
+        (loc) =>
+          loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          loc.address?.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
       setResults(filtered);
     } finally {
       setLoading(false);
