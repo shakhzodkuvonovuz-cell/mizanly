@@ -28,6 +28,8 @@ import { api, callsApi, SOCKET_URL } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
+import { RTCView } from 'react-native-webrtc';
+import { useWebRTC, type IceServer } from '@/hooks/useWebRTC';
 import type { CallSession } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -61,10 +63,7 @@ export default function CallScreen() {
   const haptic = useContextualHaptic();
   const socketRef = useRef<Socket | null>(null);
   const [callStatus, setCallStatus] = useState<CallStatus>('ringing');
-  const [isMuted, setIsMuted] = useState(false);
-  const [isSpeaker, setIsSpeaker] = useState(false);
-  const [isFrontCamera, setIsFrontCamera] = useState(true);
-  const [duration, setDuration] = useState(0); // seconds
+  const [duration, setDuration] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: call, isLoading } = useQuery({
@@ -83,8 +82,21 @@ export default function CallScreen() {
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  // ICE servers available for RTCPeerConnection configuration:
-  // new RTCPeerConnection({ iceServers: iceConfig?.iceServers ?? [] })
+  // ── WebRTC peer connection ──
+  const isIncomingCall = call?.callerId !== userId;
+  const targetUser = isIncomingCall ? call?.callerId : call?.calleeId;
+
+  const webrtc = useWebRTC({
+    socket: socketRef.current,
+    sessionId: id,
+    targetUserId: targetUser ?? '',
+    callType: (call?.type ?? 'voice') as 'voice' | 'video',
+    iceServers: (iceConfig as { iceServers?: IceServer[] })?.iceServers ?? [],
+    isInitiator: !isIncomingCall,
+    onConnected: () => setCallStatus('connected'),
+    onDisconnected: () => setCallStatus('ended'),
+    onFailed: () => { setCallStatus('ended'); showToast({ message: t('calls.connectionFailed'), variant: 'error' }); },
+  });
 
   const answerMutation = useMutation({
     mutationFn: () => callsApi.answer(id),
@@ -181,14 +193,27 @@ export default function CallScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleAnswer = () => { haptic.success(); answerMutation.mutate(); };
+  const handleAnswer = () => {
+    haptic.success();
+    answerMutation.mutate();
+    webrtc.start(); // Start media + peer connection on answer
+  };
   const handleDecline = () => { haptic.delete(); declineMutation.mutate(); };
-  const handleEndCall = () => { haptic.delete(); endCallMutation.mutate(); };
-  // Note: Mute/Speaker/Camera are local UI state only. They will control actual
-  // audio/video tracks once WebRTC (RTCPeerConnection) is wired up with iceConfig.
-  const toggleMute = () => { haptic.tick(); setIsMuted(!isMuted); };
-  const toggleSpeaker = () => { haptic.tick(); setIsSpeaker(!isSpeaker); };
-  const toggleCamera = () => { haptic.tick(); setIsFrontCamera(!isFrontCamera); };
+  const handleEndCall = () => {
+    haptic.delete();
+    webrtc.hangup();
+    endCallMutation.mutate();
+  };
+  const toggleMute = () => { haptic.tick(); webrtc.toggleMute(); };
+  const toggleSpeaker = () => { haptic.tick(); }; // Speaker routing needs InCallManager — keep as UI state for now
+  const toggleCamera = () => { haptic.tick(); webrtc.flipCamera(); };
+
+  // Start WebRTC when caller initiates (not incoming)
+  useEffect(() => {
+    if (call && !isIncomingCall && callStatus === 'ringing' && socketRef.current) {
+      webrtc.start();
+    }
+  }, [call, isIncomingCall, callStatus]);
 
   // Pulsing ring animation for ringing state
   const pulseScale = useSharedValue(1);
@@ -301,15 +326,38 @@ export default function CallScreen() {
             {statusText}
           </Animated.Text>
 
-          {/* Video preview placeholder */}
-          {isVideo && callStatus === 'connected' && (
+          {/* Video streams — remote full-screen, local PiP */}
+          {isVideo && callStatus === 'connected' && webrtc.remoteStream && (
+            <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.videoPreview}>
+              <RTCView
+                streamURL={webrtc.remoteStream.toURL()}
+                style={styles.remoteVideo}
+                objectFit="cover"
+                mirror={false}
+              />
+              {/* Local camera PiP */}
+              {webrtc.localStream && (
+                <View style={styles.localVideoPip}>
+                  <RTCView
+                    streamURL={webrtc.localStream.toURL()}
+                    style={styles.localVideo}
+                    objectFit="cover"
+                    mirror={webrtc.isFrontCamera}
+                    zOrder={1}
+                  />
+                </View>
+              )}
+            </Animated.View>
+          )}
+          {/* Fallback: video call connected but no remote stream yet */}
+          {isVideo && callStatus === 'connected' && !webrtc.remoteStream && (
             <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.videoPreview}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.videoPreviewGradient}
               >
                 <Icon name="video" size="lg" color={tc.text.tertiary} />
-                <Text style={[styles.videoPreviewText, { color: tc.text.tertiary }]}>{t('calls.videoPreview')}</Text>
+                <Text style={[styles.videoPreviewText, { color: tc.text.tertiary }]}>{t('calls.connectingVideo')}</Text>
               </LinearGradient>
             </Animated.View>
           )}
@@ -370,12 +418,12 @@ export default function CallScreen() {
 
                 >
                   <LinearGradient
-                    colors={isMuted ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                    colors={webrtc.isMuted ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.controlGradient}
                   >
-                    <Icon name={isMuted ? 'volume-x' : 'mic'} size="lg" color={tc.text.primary} />
+                    <Icon name={webrtc.isMuted ? 'volume-x' : 'mic'} size="lg" color={tc.text.primary} />
                   </LinearGradient>
-                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
+                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{webrtc.isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
                 </Pressable>
 
                 {/* Speaker Button */}
@@ -386,12 +434,12 @@ export default function CallScreen() {
 
                 >
                   <LinearGradient
-                    colors={isSpeaker ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                    colors={webrtc.isSpeakerOn ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.controlGradient}
                   >
                     <Icon name="volume-x" size="lg" color={tc.text.primary} />
                   </LinearGradient>
-                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{isSpeaker ? t('calls.speakerOff') : t('calls.speaker')}</Text>
+                  <Text style={[styles.controlLabel, { color: tc.text.primary }]}>{webrtc.isSpeakerOn ? t('calls.speakerOff') : t('calls.speaker')}</Text>
                 </Pressable>
 
                 {/* Flip Camera Button */}
@@ -499,10 +547,30 @@ const styles = StyleSheet.create({
   },
   videoPreview: {
     marginTop: spacing.lg,
-    width: 160,
-    height: 120,
+    width: '90%',
+    aspectRatio: 4 / 3,
     borderRadius: radius.lg,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  remoteVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  localVideoPip: {
+    position: 'absolute',
+    top: spacing.sm,
+    end: spacing.sm,
+    width: 100,
+    height: 140,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  localVideo: {
+    width: '100%',
+    height: '100%',
   },
   videoPreviewGradient: {
     flex: 1,

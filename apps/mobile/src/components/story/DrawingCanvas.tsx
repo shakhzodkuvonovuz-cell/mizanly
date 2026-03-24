@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
-import Svg, { Path, G } from 'react-native-svg';
+import Svg, { Path, G, Defs, Mask, Rect } from 'react-native-svg';
 import {
   PanGestureHandler,
   State,
@@ -18,7 +18,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 // Types
 // ---------------------------------------------------------------------------
 
-export type DrawTool = 'pen' | 'marker' | 'highlighter' | 'neon';
+export type DrawTool = 'pen' | 'marker' | 'highlighter' | 'neon' | 'eraser';
 
 export interface DrawPath {
   d: string;
@@ -58,9 +58,10 @@ const TOOL_CONFIGS: Record<DrawTool, ToolConfig> = {
   marker:      { label: 'Marker',      icon: 'edit',   defaultWidth: 12, opacity: 0.6 },
   highlighter: { label: 'Highlighter', icon: 'type',   defaultWidth: 20, opacity: 0.3 },
   neon:        { label: 'Neon',        icon: 'sun',    defaultWidth: 4,  opacity: 1.0 },
+  eraser:      { label: 'Eraser',      icon: 'slash',  defaultWidth: 20, opacity: 1.0 },
 };
 
-const TOOLS: readonly DrawTool[] = ['pen', 'marker', 'highlighter', 'neon'];
+const TOOLS: readonly DrawTool[] = ['pen', 'marker', 'highlighter', 'neon', 'eraser'];
 
 interface SizeStep {
   label: string;
@@ -404,11 +405,39 @@ export function DrawingCanvas({
             height={canvasHeight}
             style={styles.svg}
           >
-            {/* Completed paths */}
-            {paths.map(renderPath)}
+            {/* Eraser mask: white = visible, black = erased */}
+            <Defs>
+              <Mask id="eraserMask">
+                <Rect x="0" y="0" width={canvasWidth} height={canvasHeight} fill="white" />
+                {paths.filter((p) => p.tool === 'eraser').map((p, i) => (
+                  <Path
+                    key={`erase-${i}`}
+                    d={p.d}
+                    stroke="black"
+                    strokeWidth={p.strokeWidth}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                ))}
+                {activeTool === 'eraser' && currentPathD ? (
+                  <Path
+                    d={currentPathD}
+                    stroke="black"
+                    strokeWidth={strokeWidth}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                ) : null}
+              </Mask>
+            </Defs>
 
-            {/* Active / in-progress path */}
-            {renderCurrentPath()}
+            {/* Drawing paths — masked by eraser strokes */}
+            <G mask="url(#eraserMask)">
+              {paths.filter((p) => p.tool !== 'eraser').map(renderPath)}
+              {activeTool !== 'eraser' && renderCurrentPath()}
+            </G>
           </Svg>
         </Animated.View>
       </PanGestureHandler>

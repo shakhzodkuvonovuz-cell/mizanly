@@ -4173,5 +4173,9 @@
     "slideTiming": "Slide timing",
     "totalDuration": "Total",
     "slideLabel": "Slide"
+  },
+  "calls": {
+    "connectingVideo": "Connecting video...",
+    "connectionFailed": "Connection failed"
   }
 }
