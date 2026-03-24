@@ -169,4 +169,9 @@ export class CreatePostDto {
   @ArrayMaxSize(3)
   @MaxLength(50, { each: true })
   topics?: string[];
+
+  @ApiProperty({ required: false, description: 'ISO 8601 datetime to schedule post for future publishing' })
+  @IsOptional()
+  @IsString()
+  scheduledAt?: string;
 }

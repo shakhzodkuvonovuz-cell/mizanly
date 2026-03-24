@@ -26,6 +26,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { AnimatedAccordion } from '@/components/ui/AnimatedAccordion';
 import { RichCaptionInput, type RichCaptionInputRef } from '@/components/ui/RichCaptionInput';
 import { UploadProgressBar, uploadWithProgress } from '@/components/ui/UploadProgressBar';
+import { SchedulePostSheet } from '@/components/ui/SchedulePostSheet';
 import { colors, spacing, fontSize, radius, fontSizeExt, fonts } from '@/theme';
 import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
@@ -95,6 +96,8 @@ export default function CreatePostScreen() {
   const [brandPartner, setBrandPartner] = useState('');
   const [remixAllowed, setRemixAllowed] = useState(true);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [scheduledAt, setScheduledAt] = useState<string | null>(null);
+  const [showScheduleSheet, setShowScheduleSheet] = useState(false);
 
   const inputRef = useRef<RichCaptionInputRef>(null);
   const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -291,6 +294,7 @@ export default function CreatePostScreen() {
         brandPartner: brandedContent ? brandPartner.trim() || undefined : undefined,
         remixAllowed,
         topics: selectedTopics.length > 0 ? selectedTopics : undefined,
+        scheduledAt: scheduledAt ?? undefined,
       });
     },
     onSuccess: async () => {
@@ -332,14 +336,25 @@ export default function CreatePostScreen() {
           }} hitSlop={8}>
             <Icon name="x" size="md" color={tc.text.primary} />
           </Pressable>
-          <Text style={styles.headerTitle}>{t('saf.newPost')}</Text>
-          <GradientButton
-            label={t('common.share')}
-            size="sm"
-            onPress={() => canPost && createMutation.mutate()}
-            loading={createMutation.isPending}
-            disabled={!canPost}
-          />
+          <Text style={styles.headerTitle}>{scheduledAt ? t('schedule.scheduled') : t('saf.newPost')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <Pressable
+              onPress={() => setShowScheduleSheet(true)}
+              hitSlop={8}
+              style={{ padding: spacing.xs }}
+              accessibilityLabel={t('schedule.scheduleButton')}
+              accessibilityRole="button"
+            >
+              <Icon name="clock" size="md" color={scheduledAt ? colors.emerald : tc.text.tertiary} />
+            </Pressable>
+            <GradientButton
+              label={scheduledAt ? t('schedule.confirm') : t('common.share')}
+              size="sm"
+              onPress={() => canPost && createMutation.mutate()}
+              loading={createMutation.isPending}
+              disabled={!canPost}
+            />
+          </View>
         </View>
 
         {/* Draft restored banner */}
@@ -1045,7 +1060,14 @@ export default function CreatePostScreen() {
           </View>
         </LinearGradient>
       </SafeAreaView>
-  
+
+      <SchedulePostSheet
+        visible={showScheduleSheet}
+        onClose={() => setShowScheduleSheet(false)}
+        onSchedule={(isoDate) => { setScheduledAt(isoDate); haptic.success(); }}
+        onClearSchedule={() => { setScheduledAt(null); haptic.delete(); }}
+        currentSchedule={scheduledAt}
+      />
     </ScreenErrorBoundary>
   );
 }

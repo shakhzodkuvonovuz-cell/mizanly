@@ -4179,5 +4179,21 @@
   "calls": {
     "connectingVideo": "Connecting video...",
     "connectionFailed": "Connection failed"
+  },
+  "schedule": {
+    "title": "Schedule Post",
+    "subtitle": "Choose when your post goes live",
+    "selectDate": "Date",
+    "selectTime": "Time",
+    "at": "at",
+    "tonight": "Tonight",
+    "tomorrow": "Tomorrow",
+    "nextWeek": "Next week",
+    "confirm": "Schedule",
+    "removeSchedule": "Remove schedule",
+    "selectFutureTime": "Select a future time",
+    "changeDateTime": "Change date and time",
+    "scheduled": "Post scheduled",
+    "scheduleButton": "Schedule"
   }
 }

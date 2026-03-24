@@ -504,6 +504,7 @@ export class PostsService {
           remixAllowed: dto.remixAllowed ?? true,
           shareToFeed: dto.shareToFeed ?? true,
           topics: dto.topics ?? [],
+          scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
         },
         select: POST_SELECT,
       });
