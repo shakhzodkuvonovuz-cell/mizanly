@@ -214,6 +214,14 @@ export interface Reel {
   isStitch: boolean;
   isPhotoCarousel?: boolean;
   carouselUrls?: string[];
+  carouselTexts?: string[];
+  altText?: string;
+  locationName?: string;
+  commentPermission?: 'EVERYONE' | 'FOLLOWERS' | 'NOBODY';
+  brandedContent?: boolean;
+  brandPartner?: string;
+  remixAllowed?: boolean;
+  topics?: string[];
   likesCount: number;
   commentsCount: number;
   sharesCount: number;

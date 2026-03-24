@@ -4122,6 +4122,26 @@
     "goLiveDesc": "Stream in real-time",
     "voicePost": "Voice Post",
     "voicePostDesc": "Record audio message",
-    "whatWouldYouLikeToShare": "What would you like to share?"
+    "whatWouldYouLikeToShare": "What would you like to share?",
+    "carousel": "Carousel",
+    "carouselDesc": "Multi-photo slideshow"
+  },
+  "carousel": {
+    "title": "Photo Carousel",
+    "emptyTitle": "Create a Photo Carousel",
+    "emptySubtitle": "Select 2-35 photos to create an engaging slideshow with per-slide text overlays",
+    "selectPhotos": "Select Photos",
+    "published": "Carousel published!",
+    "publishFailed": "Failed to publish carousel",
+    "discardConfirm": "Discard this carousel? Your selected photos will be lost.",
+    "uploadingSlide": "Uploading slide",
+    "slideText": "Slide Text Overlay",
+    "slideTextPlaceholder": "Add text for this slide...",
+    "slideTextHint": "Text appears on this slide when viewed",
+    "caption": "Caption",
+    "captionPlaceholder": "Write a caption for your carousel...",
+    "movePrev": "Move slide left",
+    "moveNext": "Move slide right",
+    "addMore": "Add more photos"
   }
 }

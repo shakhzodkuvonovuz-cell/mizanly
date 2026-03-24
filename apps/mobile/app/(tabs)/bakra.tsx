@@ -8,6 +8,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
+import { ImageCarousel } from '@/components/ui/ImageCarousel';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -212,37 +213,48 @@ const ReelItem = memo(function ReelItem({
   return (
     <GestureDetector gesture={combinedGesture}>
       <View style={[styles.videoContainer, { width: screenWidth, height: screenHeight }]}>
-        <Video
-          ref={handleVideoRef}
-          source={{ uri: item.hlsUrl || item.videoUrl }}
-          style={{ width: screenWidth, height: screenHeight }}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={isActive && !isPaused}
-          isLooping={item.isLooping ?? true}
-          useNativeControls={false}
-          onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-            if (status.isLoaded) {
-              if (status.durationMillis && status.durationMillis > 0) {
-                const newProgress = status.positionMillis / status.durationMillis;
-                runOnJS(setProgress)(newProgress);
-              }
-              if (!status.isPlaying && isActive && !isPaused) {
-                // Auto-play if paused but should be playing (not user-paused)
-                localVideoRef.current?.playAsync();
-              }
-            }
-          }}
-        />
-        {/* Progress bar at top */}
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-        </View>
+        {item.isPhotoCarousel && item.carouselUrls?.length ? (
+          /* Photo carousel mode — swipeable images instead of video */
+          <ImageCarousel
+            images={item.carouselUrls}
+            height={screenHeight}
+            borderRadius={0}
+            showIndicators
+          />
+        ) : (
+          <>
+            <Video
+              ref={handleVideoRef}
+              source={{ uri: item.hlsUrl || item.videoUrl }}
+              style={{ width: screenWidth, height: screenHeight }}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay={isActive && !isPaused}
+              isLooping={item.isLooping ?? true}
+              useNativeControls={false}
+              onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+                if (status.isLoaded) {
+                  if (status.durationMillis && status.durationMillis > 0) {
+                    const newProgress = status.positionMillis / status.durationMillis;
+                    runOnJS(setProgress)(newProgress);
+                  }
+                  if (!status.isPlaying && isActive && !isPaused) {
+                    localVideoRef.current?.playAsync();
+                  }
+                }
+              }}
+            />
+            {/* Progress bar at top */}
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
 
-        {/* Pause overlay */}
-        {isPaused && (
-          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.pauseOverlay}>
-            <Icon name="play" size={48} color="rgba(255,255,255,0.7)" />
-          </Animated.View>
+            {/* Pause overlay */}
+            {isPaused && (
+              <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)} style={styles.pauseOverlay}>
+                <Icon name="play" size={48} color="rgba(255,255,255,0.7)" />
+              </Animated.View>
+            )}
+          </>
         )}
 
         <LinearGradient

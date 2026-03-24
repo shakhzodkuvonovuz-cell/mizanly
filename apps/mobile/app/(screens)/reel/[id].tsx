@@ -11,6 +11,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Video, ResizeMode } from 'expo-av';
+import { ImageCarousel } from '@/components/ui/ImageCarousel';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -348,27 +349,38 @@ export default function ReelDetailScreen() {
       <View style={styles.reelContainer}>
         {/* Video Player */}
         <Pressable onPress={handleClearModeToggle} style={styles.videoContainer}>
-          <Video
-            ref={videoRef}
-            source={{ uri: reelQuery.data.hlsUrl || reelQuery.data.videoUrl }}
-            style={styles.video}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay={isPlaying}
-            isLooping={reelQuery.data.isLooping ?? true}
-            useNativeControls={false}
-          />
+          {reelQuery.data.isPhotoCarousel && reelQuery.data.carouselUrls?.length ? (
+            <ImageCarousel
+              images={reelQuery.data.carouselUrls}
+              height={VIDEO_HEIGHT}
+              borderRadius={0}
+              showIndicators
+            />
+          ) : (
+            <>
+              <Video
+                ref={videoRef}
+                source={{ uri: reelQuery.data.hlsUrl || reelQuery.data.videoUrl }}
+                style={styles.video}
+                resizeMode={ResizeMode.COVER}
+                shouldPlay={isPlaying}
+                isLooping={reelQuery.data.isLooping ?? true}
+                useNativeControls={false}
+              />
 
-          {/* Video Controls Overlay - Show play button when paused */}
-          {!isPlaying && (
-            <View style={styles.videoControls}>
-              <Pressable onPress={handlePlayPause} style={styles.controlButton}>
-                <Icon
-                  name="play"
-                  size={44}
-                  color={colors.text.primary}
-                />
-              </Pressable>
-            </View>
+              {/* Video Controls Overlay - Show play button when paused */}
+              {!isPlaying && (
+                <View style={styles.videoControls}>
+                  <Pressable onPress={handlePlayPause} style={styles.controlButton}>
+                    <Icon
+                      name="play"
+                      size={44}
+                      color={colors.text.primary}
+                    />
+                  </Pressable>
+                </View>
+              )}
+            </>
           )}
 
           {/* Gradient Overlay */}
