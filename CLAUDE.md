@@ -26,10 +26,10 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Current State (as of 2026-03-24, post-session 4)
+## Current State (as of 2026-03-25, post-session 5)
 
-**Backend:** NestJS 10, 79 modules, 82 controllers, 86 services, 193 Prisma models, 55 enums (4,700+ lines). 293 test suites, 5,093 tests, 100% pass, 0 TypeScript errors. Server starts clean.
-**Mobile:** React Native Expo SDK 52, 212 screens, 85 components, 23 hooks, 34 API services. 0 mobile TypeScript errors. 210/212 screens accessible.
+**Backend:** NestJS 10, 80 modules, 82 controllers, 86 services, 193 Prisma models, 82 enums (4,704 lines). 302 test suites, 5,226 tests, 100% pass, 0 TypeScript errors. Server starts clean.
+**Mobile:** React Native Expo SDK 52, 213 screens, 84 components, 24 hooks, 36 API services. 0 mobile TypeScript errors.
 **i18n:** 8 languages (en, ar, tr, ur, bn, fr, id, ms), 3,500+ keys each, ~400 keys added in session 2.
 **Real-time:** Socket.io on 4 screens (chat, calls, Quran rooms, conversation list) with Clerk JWT auth, reconnection, token refresh. Redis pub/sub for notification delivery to socket rooms.
 **Algorithm:** 3-stage ranking (pgvector KNN → weighted scoring → diversity reranking), k-means multi-cluster interest vectors (2-3 centroids), 15% exploration slots, hashtag diversity reranking, Islamic boost location-aware via prayer-calculator, session signals in Redis, trending 24h window with 12h decay, HNSW vector index, cursor-based keyset pagination.
@@ -292,27 +292,27 @@ All use AnimatedAccordion (spring height animation):
 - [x] Tag people in post (AnimatedAccordion, chip badges)
 - [x] Invite collaborator (AnimatedAccordion, description)
 - [x] Topics/categories selector (10 categories, max 3, i18n labels)
-- [ ] Schedule posting (date/time picker) — needs separate screen
+- [x] Schedule posting (SchedulePostSheet built, backend scheduledAt wired, 50+ queries patched — Session 5)
 - [x] Alt text for accessibility (AnimatedAccordion, 1000 char, CharCountRing)
 - [x] Remix settings (toggle in advanced settings)
 - [x] Who can comment selector (radio group in AnimatedAccordion)
 - [x] Share to feed toggle (in advanced settings)
 - [x] Branded content / paid partnership label (toggle + partner field)
-- [ ] Trial reel (test with non-followers) — needs backend
+- [x] Trial reel (isTrial field + publishTrial endpoint + feed filters — Session 5)
 
 ### Photo Carousel Posts (TikTok/Instagram)
-- [ ] Multi-photo upload (up to 10-35 slides)
-- [ ] Music attachment on carousel
-- [ ] Per-slide text overlay
-- [ ] Swipe navigation
-- [ ] Drag-to-reorder
+- [x] Multi-photo upload (up to 35 slides — Session 5, create-carousel.tsx ~800 lines)
+- [x] Music attachment on carousel (MusicPicker integration — Session 5)
+- [x] Per-slide text overlay (carouselTexts[] — Session 5)
+- [x] Swipe navigation (ImageCarousel with dot indicators — Session 5)
+- [x] Drag-to-reorder (moveSlide arrows — Session 5)
 
 ### Story Drawing Tools (Instagram/Snapchat parity)
-- [ ] Freehand pen (color picker + size)
-- [ ] Highlighter pen
-- [ ] Neon glow pen
-- [ ] Eraser
-- [ ] Eyedropper (pick color from image)
+- [x] Freehand pen (color picker + size — Session 5, DrawingCanvas.tsx)
+- [x] Highlighter pen (20px width, 0.3 opacity — Session 5)
+- [x] Neon glow pen (2-pass: glow + sharp — Session 5)
+- [x] Eraser (SVG Defs+Mask technique — Session 5)
+- [ ] Eyedropper (pick color from image) — NOT BUILT
 
 ### "2026 Wow" Features
 - [ ] AI stickers (type text → generate image via Claude/Gemini)
@@ -322,13 +322,74 @@ All use AnimatedAccordion (spring height animation):
 - [ ] Custom sticker creation (cut out from photo)
 
 ### Non-Editor Priorities (Deferred from Session 3)
-- [ ] WebRTC calls wiring (~500 lines, TURN ready)
-- [ ] Wire react-native-maps into MosqueFinder
-- [ ] Wire expo-location into LocationPicker
-- [ ] Performance sweep (React.memo, FlashList, prefetching)
+- [x] WebRTC calls wiring (useWebRTC.ts complete rewrite, 13 fixes — Session 5. BUT: 3 missing socket emits + CallType mismatch = calls still non-functional end-to-end)
+- [x] Wire react-native-maps into MosqueFinder (MapView with emerald markers — Session 5)
+- [x] Wire expo-location into LocationPicker (geocodeAsync + reverseGeocodeAsync — Session 5)
+- [x] Performance sweep (search memoization, bakra currentIndex fix, imageResize — Session 5. Partial: more screens need React.memo)
+- [ ] Quran recitation audio CDN — NOT BUILT
+
+---
+
+## Session 5 — What Was Built (2026-03-25)
+
+**31 commits. 5,226 tests (+133). 14-agent parallel audit + 40-agent architecture extraction. All pushed.**
+
+### Publish Fields Wired to Backend
+- 7 new fields: taggedUsers, collaboratorUsername, commentPermission, shareToFeed, brandedContent, brandPartner, remixAllowed, topics
+- PostTaggedUser + ReelTaggedUser join tables, CommentPermission enum, TagApprovalStatus enum
+- Comment permission enforced in posts.addComment() and reels.comment() with owner bypass
+- Thread addReply FOLLOWING direction FIXED, MENTIONED now checks thread.mentions.includes(username)
+
+### Photo Carousel Posts (create-carousel.tsx ~800 lines)
+- Multi-photo (up to 35 slides), numbered thumbnails, reorder arrows, per-slide text
+- ImageCarousel rewritten: Instagram-style dots (max 5 visible, sliding window), ProgressiveImage, prefetch
+- Fixed: contentType undefined CRASH, folder 'reels' rejects images, dead MIME_MAP removed
+
+### Scheduled Content (50+ queries patched)
+- ALL feed queries: `scheduledAt: null` → `OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }]`
+- 36 queries in search/hashtags/personalized-feed/recommendations/feed/users
+- 9 pre-existing converted, 3 with OR conflicts merged via AND
+
+### WebRTC Complete Rewrite (useWebRTC.ts)
+- Research-based rewrite using react-native-webrtc v124 documented patterns
+- 13 issues fixed: pc.ontrack (not addEventListener), Pattern B streams, callback refs, mountedRef, applyConstraints camera flip, stream.release(), ICE queue (max 200), signal filtering, offer options
+
+### Performance
+- search.tsx: memoized 3 row components, 8 FlatLists optimized (windowSize+maxToRenderPerBatch)
+- bakra.tsx: currentIndex removed from renderItem deps (uses currentIndexRef + extraData)
+- imageResize.ts: GIF/PNG preserved, small JPEGs skip re-encoding
+
+### Architecture Documentation
+- 40 parallel Explore agents extracted every layer of codebase
+- Raw data: docs/architecture-raw-2026-03-25/ (195 files, 856 KB)
+- Compiled: docs/ARCHITECTURE.md (1,189 lines — target 10K in dedicated session)
+- Master prompt: docs/ARCHITECTURE_COMPILATION_PROMPT.md
+
+### Session 5 — Critical Bugs Found by Agents (MUST FIX)
+1. **WebRTC: 3 missing socket emits** — call_initiate, call_answer, call_end never emitted from mobile → calls non-functional end-to-end
+2. **WebRTC: CallType enum mismatch** — Socket DTO validates 'AUDIO'/'VIDEO' but REST uses VOICE/VIDEO → socket rejects
+3. **Coin purchase webhook NOT crediting** — handleGiftPaymentIntentSucceeded not implemented → coins never arrive
+4. **Waqf contribution endpoint MISSING** — POST /community/waqf/{id}/contribute doesn't exist → waqf donations fail
+5. **Dual CoinBalance system** — User.coinBalance (legacy) vs CoinBalance table (correct) → reading wrong one = wrong balance
+6. **Owner can't see own scheduled/trial content** on profile feed queries
+7. **Frontend doesn't hide comment input** when permission is NOBODY → users get 403
+8. **Tag approval workflow dead** — status field exists but no approve/decline endpoint
+
+### Session 5 — Items NOT Done (Deferred)
+- [ ] Eyedropper tool (pick color from image in drawing)
 - [ ] Quran recitation audio CDN
+- [ ] AI stickers, AI backdrop, auto-captions, thumbnail A/B testing, custom sticker creation (all "2026 Wow")
+- [ ] react-native-incall-manager for speaker routing
+- [ ] Group calls + screen sharing (backend exists, mobile not built)
+- [ ] Stripe Connect real payout (getPaymentMethods is placeholder)
+- [ ] 2FA enforced at Clerk login (needs session claim integration)
+- [ ] Meilisearch deployment (search still Prisma LIKE fallback)
+- [ ] Architecture doc expansion to 10K lines (master prompt ready, needs dedicated session)
 
 ## Key Documentation
+- `docs/ARCHITECTURE.md` — **Technical blueprint (1,189 lines). Needs 10K expansion — use ARCHITECTURE_COMPILATION_PROMPT.md**
+- `docs/ARCHITECTURE_COMPILATION_PROMPT.md` — Master prompt for 10K-line architecture compilation in fresh session
+- `docs/architecture-raw-2026-03-25/` — Raw agent outputs (40 agents, 856 KB) — source data for architecture doc
 - `docs/DEPLOYMENT.md` — Production deployment guide (Railway, Neon, Cloudflare, Clerk, Stripe)
 - `docs/DEPLOY_CHECKLIST.md` — Pre-deployment verification checklist
 - `docs/TURN_SETUP.md` — WebRTC TURN/STUN server setup
