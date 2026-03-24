@@ -8,11 +8,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
+import { Image } from 'expo-image'; // Used in SlideThumb
 import Animated, {
   FadeInUp, FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withSpring,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ImageCarousel } from '@/components/ui/ImageCarousel';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
@@ -108,6 +109,11 @@ function CreateCarouselScreen() {
   // Publish fields
   const [altText, setAltText] = useState('');
   const [brandedContent, setBrandedContent] = useState(false);
+  const [commentPermission, setCommentPermission] = useState<'EVERYONE' | 'FOLLOWERS' | 'NOBODY'>('EVERYONE');
+  const [remixAllowed, setRemixAllowed] = useState(true);
+
+  // Refs
+  const thumbListRef = useRef<FlatList<Slide>>(null);
 
   const currentSlide = slides[selectedIndex];
   const canPublish = slides.length >= 2 && !uploading;
@@ -208,6 +214,8 @@ function CreateCarouselScreen() {
         carouselTexts,
         caption: caption.trim() || undefined,
         altText: altText.trim() || undefined,
+        commentPermission,
+        remixAllowed,
         brandedContent,
       });
     },
@@ -309,56 +317,64 @@ function CreateCarouselScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Preview: current selected slide ── */}
-          <Animated.View entering={FadeInUp.duration(300)} style={[styles.previewWrap, { width: previewSize, height: previewSize }]}>
-            <Image
-              source={{ uri: currentSlide?.uri }}
-              style={[styles.previewImage, { borderRadius: radius.lg }]}
-              contentFit="cover"
-              transition={200}
+          {/* ── Preview: swipeable carousel preview ── */}
+          <Animated.View entering={FadeInUp.duration(300)} style={[styles.previewWrap, { height: previewSize }]}>
+            <ImageCarousel
+              images={slides.map((s) => s.uri)}
+              texts={slides.map((s) => s.text)}
+              height={previewSize}
+              borderRadius={radius.lg}
+              showIndicators={slides.length > 1}
             />
-            <View style={styles.previewBadge}>
-              <Text style={styles.previewBadgeText}>
-                {selectedIndex + 1} / {slides.length}
-              </Text>
-            </View>
 
-            {/* Reorder arrows */}
-            <View style={styles.reorderRow}>
-              <Pressable
-                onPress={() => moveSlide(selectedIndex, selectedIndex - 1)}
-                disabled={selectedIndex === 0}
-                style={[styles.reorderBtn, selectedIndex === 0 && { opacity: 0.3 }]}
-                hitSlop={12}
-                accessibilityLabel={t('carousel.movePrev')}
-              >
-                <Icon name="chevron-left" size="md" color="#fff" />
-              </Pressable>
-              <Pressable
-                onPress={() => moveSlide(selectedIndex, selectedIndex + 1)}
-                disabled={selectedIndex === slides.length - 1}
-                style={[styles.reorderBtn, selectedIndex === slides.length - 1 && { opacity: 0.3 }]}
-                hitSlop={12}
-                accessibilityLabel={t('carousel.moveNext')}
-              >
-                <Icon name="chevron-right" size="md" color="#fff" />
-              </Pressable>
-            </View>
+            {/* Reorder arrows overlaid */}
+            {slides.length > 1 && (
+              <View style={styles.reorderRow}>
+                <Pressable
+                  onPress={() => moveSlide(selectedIndex, selectedIndex - 1)}
+                  disabled={selectedIndex === 0}
+                  style={[styles.reorderBtn, selectedIndex === 0 && { opacity: 0.3 }]}
+                  hitSlop={12}
+                  accessibilityLabel={t('carousel.movePrev')}
+                >
+                  <Icon name="chevron-left" size="md" color="#fff" />
+                </Pressable>
+                <Pressable
+                  onPress={() => moveSlide(selectedIndex, selectedIndex + 1)}
+                  disabled={selectedIndex === slides.length - 1}
+                  style={[styles.reorderBtn, selectedIndex === slides.length - 1 && { opacity: 0.3 }]}
+                  hitSlop={12}
+                  accessibilityLabel={t('carousel.moveNext')}
+                >
+                  <Icon name="chevron-right" size="md" color="#fff" />
+                </Pressable>
+              </View>
+            )}
           </Animated.View>
 
-          {/* ── Thumbnail strip ── */}
+          {/* ── Thumbnail strip (auto-scrolls to selected) ── */}
           <FlatList
+            ref={thumbListRef}
             data={slides}
             keyExtractor={(_, i) => `thumb-${i}`}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.thumbStrip}
+            onContentSizeChange={() => {
+              if (selectedIndex > 0) {
+                thumbListRef.current?.scrollToIndex({ index: selectedIndex, animated: true, viewPosition: 0.5 });
+              }
+            }}
+            getItemLayout={(_, index) => ({ length: 72 + spacing.sm, offset: (72 + spacing.sm) * index, index })}
             renderItem={({ item, index }) => (
               <SlideThumb
                 slide={item}
                 index={index}
                 isSelected={index === selectedIndex}
-                onSelect={() => setSelectedIndex(index)}
+                onSelect={() => {
+                  setSelectedIndex(index);
+                  thumbListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+                }}
                 onRemove={() => removeSlide(index)}
                 total={slides.length}
                 t={t}
@@ -436,9 +452,47 @@ function CreateCarouselScreen() {
             />
           </AnimatedAccordion>
 
+          {/* Comment permission */}
+          <AnimatedAccordion title={t('compose.whoCanComment')} icon="message-circle" defaultExpanded={false}>
+            {(['EVERYONE', 'FOLLOWERS', 'NOBODY'] as const).map((perm) => (
+              <Pressable
+                key={perm}
+                onPress={() => { setCommentPermission(perm); haptic.tick(); }}
+                style={[styles.radioRow, { borderColor: tc.border }]}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: commentPermission === perm }}
+              >
+                <View style={[styles.radioOuter, commentPermission === perm && styles.radioSelected]}>
+                  {commentPermission === perm && <View style={styles.radioInner} />}
+                </View>
+                <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>
+                  {t(`compose.commentPerm_${perm}`)}
+                </Text>
+              </Pressable>
+            ))}
+          </AnimatedAccordion>
+
+          {/* Remix toggle */}
+          <AnimatedAccordion title={t('compose.remixSettings')} icon="repeat" defaultExpanded={false}>
+            <Pressable
+              onPress={() => { setRemixAllowed(!remixAllowed); haptic.tick(); }}
+              style={[styles.toggleRow, { borderColor: tc.border }]}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: remixAllowed }}
+            >
+              <Text style={[styles.toggleLabel, { color: tc.text.primary }]}>
+                {t('compose.allowRemix')}
+              </Text>
+              <View style={[styles.toggleTrack, remixAllowed && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, remixAllowed && styles.toggleThumbActive]} />
+              </View>
+            </Pressable>
+          </AnimatedAccordion>
+
+          {/* Branded content */}
           <AnimatedAccordion title={t('compose.brandedContent')} icon="flag" defaultExpanded={false}>
             <Pressable
-              onPress={() => setBrandedContent(!brandedContent)}
+              onPress={() => { setBrandedContent(!brandedContent); haptic.tick(); }}
               style={[styles.toggleRow, { borderColor: tc.border }]}
               accessibilityRole="switch"
               accessibilityState={{ checked: brandedContent }}
@@ -478,17 +532,10 @@ const styles = StyleSheet.create({
 
   // Preview
   previewWrap: {
-    alignSelf: 'center', borderRadius: radius.lg, overflow: 'hidden',
+    borderRadius: radius.lg, overflow: 'hidden',
     marginBottom: spacing.md, position: 'relative',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 6,
   },
-  previewImage: { width: '100%', height: '100%' },
-  previewBadge: {
-    position: 'absolute', top: spacing.md, end: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  previewBadgeText: { color: '#fff', fontSize: fontSizeExt.caption, fontFamily: fonts.bodyMedium, fontWeight: '500' },
 
   reorderRow: {
     position: 'absolute', bottom: spacing.md, start: 0, end: 0,
@@ -529,7 +576,14 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   sectionTitle: { fontSize: fontSize.md, fontFamily: fonts.bodyBold, fontWeight: '600', flex: 1 },
 
-  // Publish field toggles
+  // Publish field toggles + radio
+  radioRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
+  radioOuter: {
+    width: 22, height: 22, borderRadius: 11, borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center',
+  },
+  radioSelected: { borderColor: colors.emerald },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.emerald },
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm },
   toggleLabel: { fontSize: fontSize.base, fontFamily: fonts.body },
   toggleTrack: {

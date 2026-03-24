@@ -213,14 +213,18 @@ const ReelItem = memo(function ReelItem({
   return (
     <View style={[styles.videoContainer, { width: screenWidth, height: screenHeight }]}>
       {item.isPhotoCarousel && item.carouselUrls?.length ? (
-        /* Photo carousel mode — no gesture detector (would block horizontal swipe) */
-        <ImageCarousel
-          images={item.carouselUrls}
-          texts={item.carouselTexts}
-          height={screenHeight}
-          borderRadius={0}
-          showIndicators
-        />
+        /* Photo carousel: only double-tap (for like), no single-tap (would block swipe) */
+        <GestureDetector gesture={doubleTapGesture}>
+          <View style={{ width: screenWidth, height: screenHeight }}>
+            <ImageCarousel
+              images={item.carouselUrls}
+              texts={item.carouselTexts}
+              height={screenHeight}
+              borderRadius={0}
+              showIndicators
+            />
+          </View>
+        </GestureDetector>
       ) : (
         <GestureDetector gesture={combinedGesture}>
           <View style={{ width: screenWidth, height: screenHeight }}>

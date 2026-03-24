@@ -1538,7 +1538,11 @@
     "topicArt": "Art",
     "publishSettings": "Publish Settings",
     "uploadCancelled": "Upload cancelled",
-    "uploadComplete": "Upload complete"
+    "uploadComplete": "Upload complete",
+    "commentPerm_EVERYONE": "Everyone",
+    "commentPerm_FOLLOWERS": "Followers only",
+    "commentPerm_NOBODY": "Nobody",
+    "remixSettings": "Remix settings"
   },
   "community": {
     "fatwaQA": "Fetva Soru-Cevap",

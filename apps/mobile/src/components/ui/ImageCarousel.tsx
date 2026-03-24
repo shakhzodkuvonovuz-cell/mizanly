@@ -1,6 +1,7 @@
-import React, { useRef, useState, useCallback, memo } from 'react';
+import React, { useRef, useState, useCallback, memo, useMemo } from 'react';
 import {
   View,
+  Text,
   FlatList,
   StyleSheet,
   Pressable,
@@ -9,19 +10,85 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
-import Animated from 'react-native-reanimated';
-import { colors, spacing, radius, animation, glass } from '@/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
+import { colors, spacing, radius, fonts, fontSize, fontSizeExt, glass } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { Icon } from './Icon';
 
 export interface ImageCarouselProps {
-  images: string[]; // Array of image URIs
-  texts?: string[]; // Per-slide text overlays (same length as images)
-  height?: number; // Default 400
-  showIndicators?: boolean; // Dot indicators, default true
-  onImagePress?: (index: number) => void; // Opens gallery
-  borderRadius?: number; // Default radius.lg
-  blurred?: boolean; // Apply blur effect for sensitive content
+  images: string[];
+  texts?: string[];
+  height?: number;
+  showIndicators?: boolean;
+  onImagePress?: (index: number) => void;
+  borderRadius?: number;
+  blurred?: boolean;
+}
+
+// ── Instagram-style dot indicator: max 5 visible, outer dots shrink ──
+const MAX_VISIBLE_DOTS = 5;
+
+function DotIndicator({ total, current, onDotPress }: {
+  total: number;
+  current: number;
+  onDotPress: (i: number) => void;
+}) {
+  const tc = useThemeColors();
+
+  // For <= MAX_VISIBLE_DOTS, show all. For more, show a sliding window.
+  const dots = useMemo(() => {
+    if (total <= MAX_VISIBLE_DOTS) {
+      return Array.from({ length: total }, (_, i) => i);
+    }
+    // Sliding window centered on current
+    const half = Math.floor(MAX_VISIBLE_DOTS / 2);
+    let start = current - half;
+    let end = current + half;
+
+    if (start < 0) { start = 0; end = MAX_VISIBLE_DOTS - 1; }
+    if (end >= total) { end = total - 1; start = total - MAX_VISIBLE_DOTS; }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [total, current]);
+
+  return (
+    <View style={styles.dotsRow}>
+      {dots.map((dotIndex) => {
+        const isActive = dotIndex === current;
+        // Distance from current: used to scale edge dots
+        const dist = Math.abs(dotIndex - current);
+        const isEdge = total > MAX_VISIBLE_DOTS && (dotIndex === dots[0] || dotIndex === dots[dots.length - 1]) && dist > 1;
+        const dotScale = isEdge ? 0.6 : 1;
+
+        return (
+          <Pressable
+            key={dotIndex}
+            onPress={() => onDotPress(dotIndex)}
+            hitSlop={14}
+            accessibilityLabel={`Slide ${dotIndex + 1}`}
+            accessibilityRole="button"
+            style={[
+              styles.dot,
+              {
+                backgroundColor: isActive ? colors.emerald : tc.surface,
+                width: isActive ? 20 : 7,
+                height: 7,
+                transform: [{ scale: dotScale }],
+                opacity: isEdge ? 0.5 : 1,
+              },
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
 }
 
 export const ImageCarousel = memo(function ImageCarousel({
@@ -38,16 +105,15 @@ export const ImageCarousel = memo(function ImageCarousel({
   const flatListRef = useRef<FlatList<string>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Handle scroll to update current index
   const onScroll = useCallback((event: { nativeEvent: { contentOffset: { x: number } } }) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / screenWidth);
     setCurrentIndex((prev) => (prev !== index ? index : prev));
   }, [screenWidth]);
 
-  const goToIndex = (index: number) => {
+  const goToIndex = useCallback((index: number) => {
     flatListRef.current?.scrollToIndex({ index, animated: true });
-  };
+  }, []);
 
   const renderItem = useCallback(({ item, index }: ListRenderItemInfo<string>) => {
     const slideText = texts?.[index];
@@ -66,12 +132,17 @@ export const ImageCarousel = memo(function ImageCarousel({
           transition={200}
           blurRadius={blurred ? 30 : 0}
         />
+        {/* Per-slide text overlay — positioned above dots */}
         {slideText ? (
           <View style={styles.textOverlay}>
-            <View style={styles.textOverlayBg}>
-              <Animated.Text style={styles.textOverlayText} numberOfLines={3}>
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.7)']}
+              style={styles.textGradient}
+            />
+            <View style={styles.textContent}>
+              <Text style={styles.textOverlayText} numberOfLines={3}>
                 {slideText}
-              </Animated.Text>
+              </Text>
             </View>
           </View>
         ) : null}
@@ -79,31 +150,23 @@ export const ImageCarousel = memo(function ImageCarousel({
     );
   }, [screenWidth, height, onImagePress, images.length, borderRadius, blurred, texts]);
 
-  const scrollSnapInterval = screenWidth;
-
-
   if (images.length === 0) return null;
 
   return (
     <View style={[styles.container, { height }]}>
-      {/* Image count badge top-right */}
+      {/* Count badge top-right */}
       {images.length > 1 && (
         <View style={styles.countBadge}>
           <BlurView intensity={glass.medium.blurIntensity} tint="dark" style={styles.glassPill}>
-            <Icon
-              name="image"
-              size="sm"
-              color={colors.text.secondary}
-              style={styles.countIcon}
-            />
-            <Animated.Text style={styles.countText}>
+            <Icon name="layers" size="xs" color={colors.text.secondary} style={styles.countIcon} />
+            <Text style={styles.countText}>
               {`${currentIndex + 1} / ${images.length}`}
-            </Animated.Text>
+            </Text>
           </BlurView>
         </View>
       )}
 
-      {/* Horizontal carousel */}
+      {/* Horizontal scroll */}
       <FlatList
         ref={flatListRef}
         data={images}
@@ -111,7 +174,7 @@ export const ImageCarousel = memo(function ImageCarousel({
         renderItem={renderItem}
         horizontal
         pagingEnabled
-        snapToInterval={scrollSnapInterval}
+        snapToInterval={screenWidth}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
@@ -126,20 +189,9 @@ export const ImageCarousel = memo(function ImageCarousel({
         windowSize={5}
       />
 
-      {/* Dot indicators */}
+      {/* Animated dot indicators */}
       {showIndicators && images.length > 1 && (
-        <View style={styles.indicatorsContainer}>
-          {images.map((_, index) => (
-            <Pressable
-              key={index}
-              style={[styles.dotBase, { backgroundColor: tc.surface }, index === currentIndex && styles.dotActive]}
-              onPress={() => goToIndex(index)}
-              hitSlop={18}
-              accessibilityLabel={`Go to image ${index + 1}`}
-              accessibilityRole="button"
-            />
-          ))}
-        </View>
+        <DotIndicator total={images.length} current={currentIndex} onDotPress={goToIndex} />
       )}
     </View>
   );
@@ -177,50 +229,53 @@ const styles = StyleSheet.create({
     marginEnd: spacing.xs,
   },
   countText: {
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: fonts.bodyMedium,
     fontSize: 12,
     color: colors.text.secondary,
     letterSpacing: 0.5,
   },
-  indicatorsContainer: {
+
+  // ── Dot indicators ──
+  dotsRow: {
     position: 'absolute',
-    bottom: spacing.lg,
+    bottom: spacing.base,
     start: 0,
     end: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 5,
   },
-  dotBase: {
-    width: 8,
-    height: 8,
+  dot: {
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
   },
-  dotActive: {
-    backgroundColor: colors.emerald,
-    width: 24,
-  },
+
+  // ── Text overlay ──
   textOverlay: {
     position: 'absolute',
-    bottom: 60,
-    start: spacing.lg,
-    end: spacing.lg,
-    alignItems: 'center',
+    bottom: 44, // Above dot indicators (base 16 + dot height + gap)
+    start: 0,
+    end: 0,
   },
-  textOverlayBg: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    maxWidth: '80%',
+  textGradient: {
+    position: 'absolute',
+    bottom: -44,
+    start: 0,
+    end: 0,
+    height: 120,
+  },
+  textContent: {
+    paddingHorizontal: spacing.xl,
+    alignItems: 'center',
   },
   textOverlayText: {
     color: '#fff',
-    fontSize: 16,
-    fontFamily: 'DMSans_500Medium',
+    fontSize: fontSize.base,
+    fontFamily: fonts.bodyMedium,
     textAlign: 'center',
     lineHeight: 22,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
 });
