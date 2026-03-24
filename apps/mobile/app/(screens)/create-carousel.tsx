@@ -33,6 +33,7 @@ import { showToast } from '@/components/ui/Toast';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const MAX_SLIDES = 35;
 const CAPTION_MAX = 500;
+const TOPIC_OPTIONS = ['islamic', 'education', 'technology', 'travel', 'food', 'fitness', 'art', 'nature', 'community', 'business'];
 
 interface Slide {
   uri: string;
@@ -108,6 +109,8 @@ function CreateCarouselScreen() {
 
   // Publish fields
   const [altText, setAltText] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [brandedContent, setBrandedContent] = useState(false);
   const [brandPartner, setBrandPartner] = useState('');
   const [commentPermission, setCommentPermission] = useState<'EVERYONE' | 'FOLLOWERS' | 'NOBODY'>('EVERYONE');
@@ -219,6 +222,8 @@ function CreateCarouselScreen() {
         carouselTexts,
         caption: caption.trim() || undefined,
         altText: altText.trim() || undefined,
+        locationName: locationName.trim() || undefined,
+        topics: selectedTopics.length > 0 ? selectedTopics : undefined,
         commentPermission,
         remixAllowed,
         brandedContent,
@@ -458,6 +463,52 @@ function CreateCarouselScreen() {
             />
           </AnimatedAccordion>
 
+          {/* Location */}
+          <AnimatedAccordion title={t('compose.location')} icon="map-pin" defaultExpanded={false}>
+            <RichCaptionInput
+              value={locationName}
+              onChangeText={setLocationName}
+              placeholder={t('compose.locationPlaceholder')}
+              maxLength={200}
+              minHeight={40}
+              multiline={false}
+            />
+          </AnimatedAccordion>
+
+          {/* Topics */}
+          <AnimatedAccordion title={t('compose.topics')} icon="hash" defaultExpanded={false}>
+            <View style={styles.topicsWrap}>
+              {TOPIC_OPTIONS.map((topic) => {
+                const isSelected = selectedTopics.includes(topic);
+                return (
+                  <Pressable
+                    key={topic}
+                    onPress={() => {
+                      haptic.tick();
+                      setSelectedTopics((prev) =>
+                        isSelected ? prev.filter((t2) => t2 !== topic) : prev.length < 3 ? [...prev, topic] : prev,
+                      );
+                    }}
+                    style={[
+                      styles.topicChip,
+                      { borderColor: isSelected ? colors.emerald : 'rgba(255,255,255,0.15)' },
+                      isSelected && { backgroundColor: `${colors.emerald}20` },
+                    ]}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isSelected }}
+                  >
+                    <Text style={[styles.topicChipText, { color: isSelected ? colors.emerald : tc.text.secondary }]}>
+                      {t(`compose.topic_${topic}`)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+              <Text style={[styles.topicsHint, { color: tc.text.tertiary }]}>
+                {t('compose.topicsMax')} ({selectedTopics.length}/3)
+              </Text>
+            </View>
+          </AnimatedAccordion>
+
           {/* Slide timing */}
           <AnimatedAccordion title={t('carousel.slideTiming')} icon="clock" defaultExpanded={false}>
             <View style={styles.timingRow}>
@@ -629,6 +680,15 @@ const styles = StyleSheet.create({
   },
   timingChipText: { fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '600' },
   timingTotal: { fontSize: fontSizeExt.tiny, fontFamily: fonts.body, marginStart: spacing.xs },
+
+  // Topics
+  topicsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingBottom: spacing.sm },
+  topicChip: {
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: radius.full, borderWidth: 1.5,
+  },
+  topicChipText: { fontSize: fontSize.sm, fontFamily: fonts.bodyMedium, fontWeight: '500' },
+  topicsHint: { width: '100%', fontSize: fontSizeExt.tiny, fontFamily: fonts.body, marginTop: spacing.xs },
 
   // Publish field toggles + radio
   radioRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },

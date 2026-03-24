@@ -3061,7 +3061,21 @@
     "commentPerm_EVERYONE": "Everyone",
     "commentPerm_FOLLOWERS": "Followers only",
     "commentPerm_NOBODY": "Nobody",
-    "remixSettings": "Remix settings"
+    "remixSettings": "Remix settings",
+    "location": "Location",
+    "locationPlaceholder": "Add location...",
+    "topics": "Topics",
+    "topicsMax": "Max 3 topics",
+    "topic_islamic": "Islamic",
+    "topic_education": "Education",
+    "topic_technology": "Technology",
+    "topic_travel": "Travel",
+    "topic_food": "Food",
+    "topic_fitness": "Fitness",
+    "topic_art": "Art",
+    "topic_nature": "Nature",
+    "topic_community": "Community",
+    "topic_business": "Business"
   },
   "community": {
     "fatwaQA": "أسئلة وفتاوى",
