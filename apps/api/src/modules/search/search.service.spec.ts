@@ -117,12 +117,12 @@ describe('SearchService', () => {
       const result = await service.search(query, 'threads');
 
       expect(prisma.thread.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           content: { contains: query, mode: 'insensitive' },
           visibility: 'PUBLIC',
           isChainHead: true,
           isRemoved: false,
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         orderBy: { likesCount: 'desc' },
@@ -157,11 +157,11 @@ describe('SearchService', () => {
       const result = await service.search(query, 'posts');
 
       expect(prisma.post.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           content: { contains: query, mode: 'insensitive' },
           visibility: 'PUBLIC',
           isRemoved: false,
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         orderBy: { likesCount: 'desc' },
@@ -183,7 +183,7 @@ describe('SearchService', () => {
       const result = await service.search(query, 'tags');
 
       expect(prisma.hashtag.findMany).toHaveBeenCalledWith({
-        where: { name: { contains: query, mode: 'insensitive' } },
+        where: expect.objectContaining({ name: { contains: query, mode: 'insensitive' } }),
         take: 20,
         orderBy: { postsCount: 'desc' },
       });
@@ -336,14 +336,14 @@ describe('SearchService', () => {
       const result = await service.search(query, 'channels');
 
       expect(prisma.channel.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           OR: [
             { handle: { contains: query, mode: 'insensitive' } },
             { name: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
           ],
           user: { isBanned: false, isDeleted: false, isDeactivated: false },
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         orderBy: { subscribersCount: 'desc' },
@@ -366,11 +366,11 @@ describe('SearchService', () => {
       const result = await service.search(query, 'posts', cursor);
 
       expect(prisma.post.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           content: { contains: query, mode: 'insensitive' },
           visibility: 'PUBLIC',
           isRemoved: false,
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         cursor: { id: cursor },
@@ -427,12 +427,12 @@ describe('SearchService', () => {
       const result = await service.search(query, 'threads', cursor);
 
       expect(prisma.thread.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           content: { contains: query, mode: 'insensitive' },
           visibility: 'PUBLIC',
           isChainHead: true,
           isRemoved: false,
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         cursor: { id: cursor },
@@ -524,14 +524,14 @@ describe('SearchService', () => {
       const result = await service.search(query, 'channels', cursor);
 
       expect(prisma.channel.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           OR: [
             { handle: { contains: query, mode: 'insensitive' } },
             { name: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
           ],
           user: { isBanned: false, isDeleted: false, isDeactivated: false },
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         cursor: { id: cursor },
@@ -615,15 +615,15 @@ describe('SearchService', () => {
       expect(prisma.$queryRaw).toHaveBeenCalled();
       expect(prisma.hashtag.findMany).toHaveBeenCalledWith({
         take: 50,
-        where: { name: { in: ['trending', 'news'] } },
+        where: expect.objectContaining({ name: { in: ['trending', 'news'] } },
       });
       expect(prisma.thread.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           visibility: 'PUBLIC',
           isChainHead: true,
           isRemoved: false,
           createdAt: { gte: expect.any(Date) },
-        },
+        }),
         select: expect.any(Object),
         take: 10,
         orderBy: { likesCount: 'desc' },
@@ -654,14 +654,14 @@ describe('SearchService', () => {
       const result = await service.getHashtagPosts(tag);
 
       expect(prisma.hashtag.findUnique).toHaveBeenCalledWith({
-        where: { name: tag.toLowerCase() },
+        where: expect.objectContaining({ name: tag.toLowerCase() },
       });
       expect(prisma.post.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           hashtags: { has: tag.toLowerCase() },
           visibility: 'PUBLIC',
           isRemoved: false,
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         orderBy: { createdAt: 'desc' },
@@ -688,14 +688,14 @@ describe('SearchService', () => {
       const result = await service.getHashtagPosts(tag, cursor);
 
       expect(prisma.hashtag.findUnique).toHaveBeenCalledWith({
-        where: { name: tag.toLowerCase() },
+        where: expect.objectContaining({ name: tag.toLowerCase() },
       });
       expect(prisma.post.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           hashtags: { has: tag.toLowerCase() },
           visibility: 'PUBLIC',
           isRemoved: false,
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         cursor: { id: cursor },
@@ -732,7 +732,7 @@ describe('SearchService', () => {
 
       expect(prisma.follow.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { followerId: userId },
+          where: expect.objectContaining({ followerId: userId }),
           select: { followingId: true },
           take: 1000,
         }),

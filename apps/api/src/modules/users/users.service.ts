@@ -491,6 +491,7 @@ export class UsersService {
 
     const threads = await this.prisma.thread.findMany({
       where: { userId: user.id, isRemoved: false, isChainHead: true, ...visibilityFilter },
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       select: {
         id: true,
         content: true,

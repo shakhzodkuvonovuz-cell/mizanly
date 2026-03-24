@@ -470,6 +470,7 @@ export class FeedService {
       where: {
         locationName: { not: null },
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       select: {

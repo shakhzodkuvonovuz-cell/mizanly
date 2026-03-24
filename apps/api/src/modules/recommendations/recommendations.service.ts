@@ -467,6 +467,7 @@ export class RecommendationsService {
       createdAt: { gte: freshCutoff },
       viewsCount: { lt: 100 },
       isRemoved: false,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       visibility: 'PUBLIC',
       isChainHead: true,
       user: { isDeactivated: false },
@@ -656,6 +657,8 @@ export class RecommendationsService {
         const [reels, explorationReels] = await Promise.all([
           this.prisma.reel.findMany({
             where: { id: { in: rankedIds }, isRemoved: false, status: ReelStatus.READY },
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            isTrial: false,
             select: REEL_SELECT,
             take: 50,
           }),
@@ -754,6 +757,7 @@ export class RecommendationsService {
     const mainThreads = await this.prisma.thread.findMany({
       where: {
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         isChainHead: true,
         user: { isDeactivated: false },

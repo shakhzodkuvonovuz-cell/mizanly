@@ -192,6 +192,7 @@ export class SearchService {
             content: { contains: query, mode: 'insensitive' },
             visibility: 'PUBLIC',
             isRemoved: false,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           },
           select: POST_SEARCH_SELECT,
           take,
@@ -212,6 +213,7 @@ export class SearchService {
             visibility: 'PUBLIC',
             isChainHead: true,
             isRemoved: false,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           },
           select: THREAD_SEARCH_SELECT,
           take,
@@ -228,9 +230,9 @@ export class SearchService {
       } else if (type === 'videos') {
         const videos = await this.prisma.video.findMany({
           where: {
-            OR: [
-              { title: { contains: query, mode: 'insensitive' } },
-              { description: { contains: query, mode: 'insensitive' } },
+            AND: [
+              { OR: [{ title: { contains: query, mode: 'insensitive' } }, { description: { contains: query, mode: 'insensitive' } }] },
+              { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
             ],
             status: 'PUBLISHED',
             isRemoved: false,
@@ -276,6 +278,8 @@ export class SearchService {
             caption: { contains: query, mode: 'insensitive' },
             status: 'READY',
             isRemoved: false,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            isTrial: false,
           },
           select: REEL_SEARCH_SELECT,
           take,
@@ -325,6 +329,7 @@ export class SearchService {
           visibility: 'PUBLIC',
           isChainHead: true,
           isRemoved: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         },
         select: THREAD_SEARCH_SELECT,
         take: 5,
@@ -336,6 +341,7 @@ export class SearchService {
           content: { contains: query, mode: 'insensitive' },
           visibility: 'PUBLIC',
           isRemoved: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         },
         select: POST_SEARCH_SELECT,
         take: 5,
@@ -347,6 +353,8 @@ export class SearchService {
           caption: { contains: query, mode: 'insensitive' },
           status: 'READY',
           isRemoved: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+          isTrial: false,
         },
         select: REEL_SEARCH_SELECT,
         take: 5,
@@ -355,9 +363,9 @@ export class SearchService {
 
       results.videos = await this.prisma.video.findMany({
         where: {
-          OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
+          AND: [
+            { OR: [{ title: { contains: query, mode: 'insensitive' } }, { description: { contains: query, mode: 'insensitive' } }] },
+            { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
           ],
           status: 'PUBLISHED',
           isRemoved: false,
@@ -434,6 +442,7 @@ export class SearchService {
         visibility: 'PUBLIC',
         isChainHead: true,
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
       },
       select: THREAD_SEARCH_SELECT,
@@ -453,6 +462,7 @@ export class SearchService {
         hashtags: { has: tag.toLowerCase() },
         visibility: 'PUBLIC',
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       },
       select: POST_SEARCH_SELECT,
       take: limit + 1,
@@ -511,6 +521,7 @@ export class SearchService {
         content: { contains: query, mode: 'insensitive' },
         visibility: 'PUBLIC',
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       },
       select: POST_SEARCH_SELECT,
       take,
@@ -531,6 +542,7 @@ export class SearchService {
         visibility: 'PUBLIC',
         isChainHead: true,
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       },
       select: THREAD_SEARCH_SELECT,
       take,
@@ -547,12 +559,13 @@ export class SearchService {
     const take = safeLim + 1;
     const reels = await this.prisma.reel.findMany({
       where: {
-        OR: [
-          { caption: { contains: query, mode: 'insensitive' } },
-          { hashtags: { has: query.toLowerCase() } },
+        AND: [
+          { OR: [{ caption: { contains: query, mode: 'insensitive' } }, { hashtags: { has: query.toLowerCase() } }] },
+          { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
         ],
         status: 'READY',
         isRemoved: false,
+        isTrial: false,
       },
       select: REEL_SEARCH_SELECT,
       take,
@@ -598,6 +611,7 @@ export class SearchService {
         createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         visibility: 'PUBLIC',
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         user: { isDeactivated: false, ...userFilter },
         ...(userId ? { userId: { not: userId } } : {}),
       },

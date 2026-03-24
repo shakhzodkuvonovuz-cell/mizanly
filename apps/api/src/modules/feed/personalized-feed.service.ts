@@ -448,6 +448,7 @@ export class PersonalizedFeedService {
       const posts = await this.prisma.post.findMany({
         where: {
           isRemoved: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           visibility: PostVisibility.PUBLIC,
           hashtags: { hasSome: islamicTagArray },
           user: { isVerified: true, isDeactivated: false, ...userFilter },
@@ -463,6 +464,8 @@ export class PersonalizedFeedService {
       const reels = await this.prisma.reel.findMany({
         where: {
           isRemoved: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+          isTrial: false,
           status: ReelStatus.READY,
           hashtags: { hasSome: islamicTagArray },
           user: { isDeactivated: false, ...userFilter },
@@ -478,6 +481,7 @@ export class PersonalizedFeedService {
     const threads = await this.prisma.thread.findMany({
       where: {
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         isChainHead: true,
         hashtags: { hasSome: islamicTagArray },
@@ -583,6 +587,7 @@ export class PersonalizedFeedService {
     const threads = await this.prisma.thread.findMany({
       where: {
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         isChainHead: true,
         createdAt: { gte: since },

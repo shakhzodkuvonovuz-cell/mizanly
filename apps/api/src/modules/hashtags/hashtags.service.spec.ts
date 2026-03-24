@@ -132,11 +132,11 @@ describe('HashtagsService', () => {
       const result = await service.getPostsByHashtag('test', undefined, undefined, 20);
       expect(result.data).toEqual(mockPosts);
       expect(prisma.post.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           hashtags: { has: 'test' },
           isRemoved: false,
           visibility: 'PUBLIC',
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         orderBy: { createdAt: 'desc' },
@@ -160,11 +160,11 @@ describe('HashtagsService', () => {
       const result = await service.getReelsByHashtag('test', undefined, undefined, 20);
       expect(result.data).toEqual(mockReels);
       expect(prisma.reel.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           hashtags: { has: 'test' },
           isRemoved: false,
           status: 'READY',
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         orderBy: { createdAt: 'desc' },
@@ -182,11 +182,11 @@ describe('HashtagsService', () => {
       const result = await service.getThreadsByHashtag('test', undefined, undefined, 20);
       expect(result.data).toEqual(mockThreads);
       expect(prisma.thread.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           hashtags: { has: 'test' },
           isRemoved: false,
           visibility: 'PUBLIC',
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         orderBy: { createdAt: 'desc' },

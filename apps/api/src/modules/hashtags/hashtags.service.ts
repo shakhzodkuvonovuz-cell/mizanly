@@ -214,6 +214,7 @@ export class HashtagsService {
       where: {
         hashtags: { has: hashtagName },
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
       },
       select: POST_SELECT,
@@ -249,6 +250,8 @@ export class HashtagsService {
       where: {
         hashtags: { has: hashtagName },
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        isTrial: false,
         status: 'READY',
       },
       select: REEL_SELECT,
@@ -284,6 +287,7 @@ export class HashtagsService {
       where: {
         hashtags: { has: hashtagName },
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
       },
       select: THREAD_SELECT,
