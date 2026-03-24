@@ -50,6 +50,14 @@ export interface Post {
   viewsCount: number;
   hideLikesCount: boolean;
   commentsDisabled: boolean;
+  commentPermission?: 'EVERYONE' | 'FOLLOWERS' | 'NOBODY';
+  brandedContent?: boolean;
+  brandPartner?: string;
+  remixAllowed?: boolean;
+  shareToFeed?: boolean;
+  topics?: string[];
+  altText?: string;
+  scheduledAt?: string | null;
   isSensitive: boolean;
   isRemoved: boolean;
   isArchived?: boolean;
@@ -222,6 +230,8 @@ export interface Reel {
   brandPartner?: string;
   remixAllowed?: boolean;
   topics?: string[];
+  isTrial?: boolean;
+  scheduledAt?: string | null;
   likesCount: number;
   commentsCount: number;
   sharesCount: number;

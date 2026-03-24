@@ -145,6 +145,7 @@ export class ThreadsService {
       const where: Prisma.ThreadWhereInput = {
         isChainHead: true,
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         user: { isPrivate: false, isDeactivated: false },
         createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
@@ -206,6 +207,7 @@ export class ThreadsService {
       const where: Prisma.ThreadWhereInput = {
         isRemoved: false,
         isChainHead: true,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: allowedUserIds },
         user: { isDeactivated: false },
       };
@@ -241,6 +243,7 @@ export class ThreadsService {
       where: {
         isRemoved: false,
         isChainHead: true,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         createdAt: { gte: sevenDaysAgo },
         user: { isPrivate: false, isDeactivated: false },
@@ -295,6 +298,7 @@ export class ThreadsService {
       where: {
         isRemoved: false,
         isChainHead: true,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: allowedUserIds },
         user: { isDeactivated: false },
         ...(cursor ? { id: { lt: cursor } } : {}),
@@ -851,7 +855,7 @@ export class ThreadsService {
     }
 
     const threads = await this.prisma.thread.findMany({
-      where: { userId: user.id, isRemoved: false, isChainHead: true },
+      where: { userId: user.id, isRemoved: false, isChainHead: true, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
       select: THREAD_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
