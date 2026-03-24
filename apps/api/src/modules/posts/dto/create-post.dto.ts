@@ -1,5 +1,5 @@
 import {
-  IsString, IsOptional, IsEnum, IsArray,
+  IsString, IsOptional, IsEnum, IsArray, IsDateString,
   MaxLength, IsBoolean, IsUrl, ArrayMaxSize, IsNumber, Min, Max,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -172,6 +172,6 @@ export class CreatePostDto {
 
   @ApiProperty({ required: false, description: 'ISO 8601 datetime to schedule post for future publishing' })
   @IsOptional()
-  @IsString()
+  @IsDateString()
   scheduledAt?: string;
 }

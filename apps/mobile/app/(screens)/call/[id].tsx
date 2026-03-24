@@ -87,8 +87,7 @@ export default function CallScreen() {
   const targetUser = isIncomingCall ? call?.callerId : call?.calleeId;
 
   const webrtc = useWebRTC({
-    socket: socketRef.current,
-    sessionId: id,
+    socketRef,
     targetUserId: targetUser ?? '',
     callType: (call?.type ?? 'voice') as 'voice' | 'video',
     iceServers: (iceConfig as { iceServers?: IceServer[] })?.iceServers ?? [],

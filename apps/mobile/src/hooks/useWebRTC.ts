@@ -6,6 +6,8 @@ import {
   mediaDevices,
   MediaStream,
   type MediaStreamTrack,
+  type RTCPeerConnectionIceEvent,
+  type EventOnAddStream,
 } from 'react-native-webrtc';
 import type { Socket } from 'socket.io-client';
 
@@ -25,32 +27,31 @@ export interface WebRTCState {
   isVideoEnabled: boolean;
 }
 
+interface WebRTCSignal {
+  type: 'offer' | 'answer' | 'ice-candidate';
+  sdp?: RTCSessionDescription;
+  candidate?: RTCIceCandidate;
+}
+
 interface UseWebRTCOptions {
-  socket: Socket | null;
-  sessionId: string;
+  socketRef: React.RefObject<Socket | null>;
   targetUserId: string;
   callType: 'voice' | 'video';
   iceServers: IceServer[];
-  isInitiator: boolean; // true = caller, false = callee
+  isInitiator: boolean;
   onConnected?: () => void;
   onDisconnected?: () => void;
   onFailed?: () => void;
 }
 
 /**
- * useWebRTC — manages RTCPeerConnection, media streams, and signaling.
+ * useWebRTC — manages RTCPeerConnection lifecycle, media streams, and signaling.
  *
- * Flow:
- * 1. getUserMedia for local audio (+video if video call)
- * 2. Create RTCPeerConnection with TURN/STUN servers
- * 3. If initiator: createOffer → send via socket
- * 4. If callee: wait for offer → createAnswer → send via socket
- * 5. Exchange ICE candidates via socket
- * 6. Track connection state changes
+ * Takes a socketRef (not a socket value) to avoid stale closure issues — the ref
+ * always points to the current socket even when it connects after hook creation.
  */
 export function useWebRTC({
-  socket,
-  sessionId,
+  socketRef,
   targetUserId,
   callType,
   iceServers,
@@ -74,11 +75,16 @@ export function useWebRTC({
   // ── Create peer connection and get media ──
   const start = useCallback(async () => {
     if (pcRef.current) return;
+    const socket = socketRef.current;
+    if (!socket?.connected) {
+      console.warn('[WebRTC] Cannot start — socket not connected');
+      return;
+    }
 
     // Get local media
-    const constraints: Record<string, unknown> = {
+    const constraints = {
       audio: true,
-      video: callType === 'video' ? { facingMode: 'user', width: 640, height: 480 } : false,
+      video: callType === 'video' ? { facingMode: 'user' as const, width: 640, height: 480 } : false,
     };
 
     let stream: MediaStream;
@@ -95,24 +101,24 @@ export function useWebRTC({
     const pc = new RTCPeerConnection({ iceServers });
     pcRef.current = pc;
 
-    // Add local tracks to peer connection
+    // Add local tracks
     stream.getTracks().forEach((track: MediaStreamTrack) => {
       pc.addTrack(track, stream);
     });
 
-    // Handle remote stream
-    pc.addEventListener('track', (event: any) => {
+    // Handle remote stream via track event
+    pc.addEventListener('track', (event: { streams: MediaStream[] }) => {
       if (event.streams?.[0]) {
         setRemoteStream(event.streams[0]);
       }
     });
 
-    // ICE candidates → send to remote peer via socket
-    pc.addEventListener('icecandidate', (event: any) => {
-      if (event.candidate && socket) {
-        socket.emit('call_signal', {
+    // ICE candidates → relay via socket
+    pc.addEventListener('icecandidate', (event: RTCPeerConnectionIceEvent) => {
+      if (event.candidate && socketRef.current?.connected) {
+        socketRef.current.emit('call_signal', {
           targetUserId,
-          signal: { type: 'ice-candidate', candidate: event.candidate },
+          signal: { type: 'ice-candidate', candidate: event.candidate } satisfies WebRTCSignal,
         });
       }
     });
@@ -131,32 +137,31 @@ export function useWebRTC({
       try {
         const offer = await pc.createOffer({});
         await pc.setLocalDescription(offer);
-        socket?.emit('call_signal', {
+        socketRef.current?.emit('call_signal', {
           targetUserId,
-          signal: { type: 'offer', sdp: offer },
+          signal: { type: 'offer', sdp: offer } satisfies WebRTCSignal,
         });
       } catch (err) {
         console.error('[WebRTC] createOffer failed:', err);
       }
     }
-  }, [socket, targetUserId, callType, iceServers, isInitiator, onConnected, onDisconnected, onFailed]);
+  }, [socketRef, targetUserId, callType, iceServers, isInitiator, onConnected, onDisconnected, onFailed]);
 
   // ── Handle incoming signaling messages ──
   useEffect(() => {
+    const socket = socketRef.current;
     if (!socket) return;
 
-    const handleSignal = async (data: { fromUserId: string; signal: any }) => {
+    const handleSignal = async (data: { fromUserId: string; signal: WebRTCSignal }) => {
       const pc = pcRef.current;
       if (!pc) return;
 
       const { signal } = data;
 
-      if (signal.type === 'offer') {
+      if (signal.type === 'offer' && signal.sdp) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
           hasRemoteDescRef.current = true;
-
-          // Flush queued ICE candidates
           for (const candidate of iceCandidateQueue.current) {
             await pc.addIceCandidate(candidate);
           }
@@ -164,21 +169,19 @@ export function useWebRTC({
 
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
-          socket.emit('call_signal', {
+          socketRef.current?.emit('call_signal', {
             targetUserId: data.fromUserId,
-            signal: { type: 'answer', sdp: answer },
+            signal: { type: 'answer', sdp: answer } satisfies WebRTCSignal,
           });
         } catch (err) {
           console.error('[WebRTC] handleOffer failed:', err);
         }
       }
 
-      if (signal.type === 'answer') {
+      if (signal.type === 'answer' && signal.sdp) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
           hasRemoteDescRef.current = true;
-
-          // Flush queued ICE candidates
           for (const candidate of iceCandidateQueue.current) {
             await pc.addIceCandidate(candidate);
           }
@@ -188,16 +191,12 @@ export function useWebRTC({
         }
       }
 
-      if (signal.type === 'ice-candidate') {
+      if (signal.type === 'ice-candidate' && signal.candidate) {
         const candidate = new RTCIceCandidate(signal.candidate);
         if (hasRemoteDescRef.current) {
-          try {
-            await pc.addIceCandidate(candidate);
-          } catch (err) {
-            console.error('[WebRTC] addIceCandidate failed:', err);
-          }
+          try { await pc.addIceCandidate(candidate); }
+          catch (err) { console.error('[WebRTC] addIceCandidate failed:', err); }
         } else {
-          // Queue until remote description is set
           iceCandidateQueue.current.push(candidate);
         }
       }
@@ -205,38 +204,40 @@ export function useWebRTC({
 
     socket.on('call_signal', handleSignal);
     return () => { socket.off('call_signal', handleSignal); };
-  }, [socket, targetUserId]);
+  }, [socketRef, targetUserId]);
 
   // ── Media controls ──
   const toggleMute = useCallback(() => {
-    if (!localStream) return;
-    const audioTracks = localStream.getAudioTracks();
-    audioTracks.forEach((track: MediaStreamTrack) => {
+    const stream = localStreamRef.current;
+    if (!stream) return;
+    stream.getAudioTracks().forEach((track: MediaStreamTrack) => {
       track.enabled = !track.enabled;
     });
     setIsMuted((prev) => !prev);
-  }, [localStream]);
+  }, []);
 
   const toggleVideo = useCallback(() => {
-    if (!localStream) return;
-    const videoTracks = localStream.getVideoTracks();
-    videoTracks.forEach((track: MediaStreamTrack) => {
+    const stream = localStreamRef.current;
+    if (!stream) return;
+    stream.getVideoTracks().forEach((track: MediaStreamTrack) => {
       track.enabled = !track.enabled;
     });
     setIsVideoEnabled((prev) => !prev);
-  }, [localStream]);
+  }, []);
 
-  const flipCamera = useCallback(async () => {
-    if (!localStream) return;
-    const videoTracks = localStream.getVideoTracks();
+  const flipCamera = useCallback(() => {
+    const stream = localStreamRef.current;
+    if (!stream) return;
+    const videoTracks = stream.getVideoTracks();
     if (videoTracks.length > 0) {
-      const track = videoTracks[0] as any;
-      if (track._switchCamera) {
-        track._switchCamera();
+      // react-native-webrtc exposes _switchCamera on video tracks
+      const track = videoTracks[0];
+      if ('_switchCamera' in track && typeof (track as { _switchCamera: () => void })._switchCamera === 'function') {
+        (track as { _switchCamera: () => void })._switchCamera();
         setIsFrontCamera((prev) => !prev);
       }
     }
-  }, [localStream]);
+  }, []);
 
   // ── Cleanup ──
   const hangup = useCallback(() => {
@@ -251,7 +252,6 @@ export function useWebRTC({
     iceCandidateQueue.current = [];
   }, []);
 
-  // Cleanup on unmount — uses ref (not stale state closure)
   useEffect(() => {
     return () => {
       pcRef.current?.close();

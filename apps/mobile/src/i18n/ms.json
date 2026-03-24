@@ -4193,6 +4193,7 @@
     "selectFutureTime": "Select a future time",
     "changeDateTime": "Change date and time",
     "scheduled": "Post scheduled",
-    "scheduleButton": "Schedule"
+    "scheduleButton": "Schedule",
+    "today": "Today"
   }
 }

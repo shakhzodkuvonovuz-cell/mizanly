@@ -44,7 +44,7 @@ export function SchedulePostSheet({
       const d = new Date(now);
       d.setDate(d.getDate() + i);
       d.setHours(0, 0, 0, 0);
-      const label = i === 0 ? t('schedule.tonight') : i === 1 ? t('schedule.tomorrow') : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      const label = i === 0 ? t('schedule.today') : i === 1 ? t('schedule.tomorrow') : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
       options.push({ label, date: d });
     }
     return options;
@@ -58,9 +58,11 @@ export function SchedulePostSheet({
     return Math.min(TIME_SLOTS.findIndex((s) => s.hours >= nextHour) || 0, TIME_SLOTS.length - 1);
   });
 
-  // Memoize current time for past-time checks
+  // Refresh time reference when sheet opens (useEffect, not render body)
   const nowRef = useRef(Date.now());
-  if (visible) nowRef.current = Date.now(); // Refresh when sheet opens
+  useEffect(() => {
+    if (visible) nowRef.current = Date.now();
+  }, [visible]);
 
   const selectedDateTime = useMemo(() => {
     const d = new Date(dateOptions[selectedDateIdx].date);

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, FlatList,
   useWindowDimensions, Alert,
@@ -121,6 +121,11 @@ function CreateCarouselScreen() {
 
   // Refs
   const thumbListRef = useRef<FlatList<Slide>>(null);
+
+  // Cleanup upload on unmount (Rule 27)
+  useEffect(() => {
+    return () => { uploadAbortRef.current?.(); };
+  }, []);
 
   const currentSlide = slides[selectedIndex];
   const canPublish = slides.length >= 2 && !uploading;
