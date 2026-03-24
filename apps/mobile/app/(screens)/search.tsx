@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import {
@@ -40,7 +40,7 @@ type SearchListItem =
 
 const UserRow = memo(function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   return (
     <Pressable
@@ -69,7 +69,7 @@ const UserRow = memo(function UserRow({ user, onPress }: { user: User; onPress: 
 
 const VideoRow = memo(function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
@@ -105,7 +105,7 @@ const VideoRow = memo(function VideoRow({ video, onPress }: { video: Video; onPr
 
 const ChannelRow = memo(function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => void }) {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const { t, isRTL } = useTranslation();
   return (
     <Pressable
@@ -133,7 +133,7 @@ const ChannelRow = memo(function ChannelRow({ channel, onPress }: { channel: Cha
 
 export default function SearchScreen() {
   const tc = useThemeColors();
-  const styles = createStyles(tc);
+  const styles = useMemo(() => createStyles(tc), [tc]);
   const router = useRouter();
   const haptic = useContextualHaptic();
   const { t, isRTL } = useTranslation();

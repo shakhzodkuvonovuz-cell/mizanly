@@ -242,14 +242,17 @@ export default function CreatePostScreen() {
         let uploadUri = item.uri;
         let uploadWidth = item.width;
         let uploadHeight = item.height;
+        let contentType: string;
         if (item.type === 'image') {
           const resized = await resizeForUpload(item.uri, item.width, item.height);
           uploadUri = resized.uri;
           uploadWidth = resized.width;
           uploadHeight = resized.height;
+          contentType = resized.mimeType;
+        } else {
+          const ext = uploadUri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'mp4';
+          contentType = `video/${ext}`;
         }
-        const ext = uploadUri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'jpg';
-        const contentType = item.type === 'video' ? `video/${ext}` : 'image/jpeg'; // Always JPEG after resize
         const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'posts');
 
         const fileRes = await fetch(uploadUri);

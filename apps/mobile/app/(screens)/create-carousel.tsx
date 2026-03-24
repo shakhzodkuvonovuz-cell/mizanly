@@ -205,7 +205,7 @@ function CreateCarouselScreen() {
         const slide = slides[i];
         // Resize before upload (saves bandwidth + storage)
         const resized = await resizeForUpload(slide.uri, slide.width, slide.height);
-        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl('image/jpeg', 'posts'); // 'posts' folder allows images
+        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(resized.mimeType, 'posts');
 
         const fileRes = await fetch(resized.uri);
         const blob = await fileRes.blob();
@@ -215,7 +215,7 @@ function CreateCarouselScreen() {
         const { promise, abort } = uploadWithProgress(
           uploadUrl,
           blob,
-          'image/jpeg', // Always JPEG after resizeForUpload
+          resized.mimeType,
           (percent) => setUploadProgress(baseProgress + (percent / 100) * itemWeight),
         );
         uploadAbortRef.current = abort;
