@@ -237,7 +237,7 @@ describe('FeedService', () => {
       (prisma as any).restrict = { findMany: jest.fn().mockResolvedValue([]) };
     });
 
-    it('should include scheduledAt: null and filter blocked users when authenticated', async () => {
+    it('should include scheduledAt OR filter and filter blocked users when authenticated', async () => {
       (prisma as any).block.findMany.mockResolvedValue([{ blockerId: 'u1', blockedId: 'blocked1' }]);
       (prisma as any).mute.findMany.mockResolvedValue([]);
       (prisma as any).restrict.findMany.mockResolvedValue([]);
@@ -247,7 +247,9 @@ describe('FeedService', () => {
       expect((prisma as any).post.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            scheduledAt: null,
+            OR: expect.arrayContaining([
+              expect.objectContaining({ scheduledAt: null }),
+            ]),
             user: expect.objectContaining({
               id: { notIn: ['blocked1'] },
             }),

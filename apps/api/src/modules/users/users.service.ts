@@ -434,7 +434,7 @@ export class UsersService {
         : { visibility: PostVisibility.PUBLIC };
 
     const posts = await this.prisma.post.findMany({
-      where: { userId: user.id, isRemoved: false, scheduledAt: null, ...visibilityFilter },
+      where: { userId: user.id, isRemoved: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }], ...visibilityFilter },
       select: {
         id: true,
         content: true,

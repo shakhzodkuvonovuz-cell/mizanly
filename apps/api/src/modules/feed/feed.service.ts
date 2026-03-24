@@ -263,7 +263,7 @@ export class FeedService {
       where: {
         isRemoved: false,
         visibility: PostVisibility.PUBLIC,
-        scheduledAt: null,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
         user: { isDeactivated: false, isPrivate: false, ...userFilter },
         ...contentFilter,
@@ -351,7 +351,7 @@ export class FeedService {
         isFeatured: true,
         isRemoved: false,
         visibility: PostVisibility.PUBLIC,
-        scheduledAt: null,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         user: { isDeactivated: false, ...userFilter },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },

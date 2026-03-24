@@ -410,7 +410,7 @@ export class RecommendationsService {
       viewsCount: { lt: 100 },
       isRemoved: false,
       visibility: PostVisibility.PUBLIC,
-      scheduledAt: null,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       user: { isDeactivated: false, isPrivate: false },
     };
     if (userId) {
@@ -439,7 +439,7 @@ export class RecommendationsService {
       viewsCount: { lt: 100 },
       isRemoved: false,
       status: ReelStatus.READY,
-      scheduledAt: null,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       user: { isDeactivated: false, isPrivate: false },
     };
     if (userId) {
@@ -614,7 +614,7 @@ export class RecommendationsService {
     const where: Prisma.PostWhereInput = {
       isRemoved: false,
       visibility: PostVisibility.PUBLIC,
-      scheduledAt: null,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       user: { isDeactivated: false, isPrivate: false },
       createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
     };
@@ -674,7 +674,7 @@ export class RecommendationsService {
     const where: Prisma.ReelWhereInput = {
       isRemoved: false,
       status: ReelStatus.READY,
-      scheduledAt: null,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       user: { isDeactivated: false, isPrivate: false },
       createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
     };

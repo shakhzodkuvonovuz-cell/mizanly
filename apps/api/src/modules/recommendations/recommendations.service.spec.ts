@@ -159,7 +159,7 @@ describe('RecommendationsService', () => {
         where: expect.objectContaining({
           isRemoved: false,
           visibility: PostVisibility.PUBLIC,
-          scheduledAt: null,
+          OR: expect.arrayContaining([expect.objectContaining({ scheduledAt: null })]),
           createdAt: { gte: expect.any(Date) },
         }),
         orderBy: [
@@ -325,7 +325,7 @@ describe('RecommendationsService', () => {
         where: expect.objectContaining({
           isRemoved: false,
           status: ReelStatus.READY,
-          scheduledAt: null,
+          OR: expect.arrayContaining([expect.objectContaining({ scheduledAt: null })]),
           createdAt: { gte: expect.any(Date) },
         }),
         orderBy: [

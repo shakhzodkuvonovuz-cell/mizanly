@@ -509,7 +509,7 @@ export class PersonalizedFeedService {
         where: {
           isRemoved: false,
           visibility: PostVisibility.PUBLIC,
-          scheduledAt: null,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           createdAt: { gte: since },
           user: { isDeactivated: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
@@ -536,7 +536,7 @@ export class PersonalizedFeedService {
         where: {
           isRemoved: false,
           status: ReelStatus.READY,
-          scheduledAt: null,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           createdAt: { gte: since },
           user: { isDeactivated: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
