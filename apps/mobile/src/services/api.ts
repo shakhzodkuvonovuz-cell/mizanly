@@ -40,10 +40,22 @@ type CreatePostPayload = {
   visibility?: string;
   circleId?: string;
   locationName?: string;
+  locationLat?: number;
+  locationLng?: number;
   hashtags?: string[];
   hideLikesCount?: boolean;
   commentsDisabled?: boolean;
   scheduledAt?: string;
+  // Publish fields (session 5)
+  commentPermission?: 'EVERYONE' | 'FOLLOWERS' | 'NOBODY';
+  altText?: string;
+  taggedUserIds?: string[];
+  collaboratorUsername?: string;
+  brandedContent?: boolean;
+  brandPartner?: string;
+  remixAllowed?: boolean;
+  shareToFeed?: boolean;
+  topics?: string[];
 };
 
 type CreateStoryPayload = {
@@ -93,8 +105,19 @@ type CreateReelPayload = {
   isStitch?: boolean;
   isPhotoCarousel?: boolean;
   carouselUrls?: string[];
+  carouselTexts?: string[];
   normalizeAudio?: boolean;
   scheduledAt?: string;
+  // Publish fields (session 5)
+  altText?: string;
+  locationName?: string;
+  locationLat?: number;
+  locationLng?: number;
+  commentPermission?: 'EVERYONE' | 'FOLLOWERS' | 'NOBODY';
+  brandedContent?: boolean;
+  brandPartner?: string;
+  remixAllowed?: boolean;
+  topics?: string[];
 };
 
 type CreateVideoData = {

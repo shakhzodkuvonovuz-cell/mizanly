@@ -85,14 +85,29 @@ export class CreatePostDto {
   @IsString()
   locationName?: string;
 
+  @ApiProperty({ required: false, description: 'Latitude of the tagged location' })
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  locationLat?: number;
+
+  @ApiProperty({ required: false, description: 'Longitude of the tagged location' })
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  locationLng?: number;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsBoolean()
   isSensitive?: boolean;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, maxLength: 1000, description: 'Alt text for accessibility' })
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   altText?: string;
 
   @ApiProperty({ required: false })
@@ -104,4 +119,53 @@ export class CreatePostDto {
   @IsOptional()
   @IsBoolean()
   commentsDisabled?: boolean;
+
+  // ── Session 5: Publish fields wired to backend ──
+
+  @ApiProperty({ required: false, enum: ['EVERYONE', 'FOLLOWERS', 'NOBODY'], description: 'Who can comment on this post' })
+  @IsOptional()
+  @IsEnum(['EVERYONE', 'FOLLOWERS', 'NOBODY'])
+  commentPermission?: string;
+
+  @ApiProperty({ required: false, type: [String], maxItems: 20, description: 'User IDs to tag in this post (photo tags)' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(20)
+  taggedUserIds?: string[];
+
+  @ApiProperty({ required: false, maxLength: 50, description: 'Username to invite as collaborator' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  collaboratorUsername?: string;
+
+  @ApiProperty({ required: false, description: 'Whether this is branded/sponsored content' })
+  @IsOptional()
+  @IsBoolean()
+  brandedContent?: boolean;
+
+  @ApiProperty({ required: false, maxLength: 100, description: 'Brand partner name for branded content' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  brandPartner?: string;
+
+  @ApiProperty({ required: false, description: 'Whether others can remix this post' })
+  @IsOptional()
+  @IsBoolean()
+  remixAllowed?: boolean;
+
+  @ApiProperty({ required: false, description: 'Whether to show in main feed (vs story only)' })
+  @IsOptional()
+  @IsBoolean()
+  shareToFeed?: boolean;
+
+  @ApiProperty({ required: false, type: [String], maxItems: 3, description: 'Topic/category tags (max 3)' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(3)
+  @MaxLength(50, { each: true })
+  topics?: string[];
 }

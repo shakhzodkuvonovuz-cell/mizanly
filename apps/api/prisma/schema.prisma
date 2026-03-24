@@ -465,6 +465,18 @@ enum ReplyPermission {
   NONE
 }
 
+enum CommentPermission {
+  EVERYONE
+  FOLLOWERS
+  NOBODY
+}
+
+enum TagApprovalStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
 enum AutoPlaySetting {
   WIFI
   ALWAYS
@@ -703,6 +715,7 @@ model User {
 
   // Saf
   posts            Post[]
+  taggedInPosts    PostTaggedUser[]  @relation("taggedInPosts")
   stories          Story[]
   comments         Comment[]
   postReactions    PostReaction[]
@@ -979,8 +992,14 @@ model Post {
   altText          String?
   scheduledAt      DateTime?
   hideLikesCount   Boolean        @default(false)
-  commentsDisabled Boolean        @default(false)
-  isDownloadable   Boolean        @default(true)
+  commentsDisabled  Boolean           @default(false)
+  commentPermission CommentPermission @default(EVERYONE)
+  brandedContent    Boolean           @default(false)
+  brandPartner      String?
+  remixAllowed      Boolean           @default(true)
+  shareToFeed       Boolean           @default(true)
+  topics            String[]          @default([])
+  isDownloadable    Boolean           @default(true)
   isFeatured       Boolean        @default(false)
   featuredAt       DateTime?
   blurhash         String?
@@ -1006,6 +1025,7 @@ model Post {
   productTags       PostProductTag[]  @relation("productTags")
   reportedInReports Report[]          @relation("reportedPosts")
   seriesEpisodes    SeriesEpisode[]   @relation("seriesEpisodePosts")
+  taggedUsers       PostTaggedUser[]
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -1014,6 +1034,22 @@ model Post {
   @@index([hashtags])
   @@index([isFeatured, featuredAt(sort: Desc)])
   @@map("posts")
+}
+
+model PostTaggedUser {
+  id        String            @id @default(cuid())
+  postId    String
+  post      Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User              @relation("taggedInPosts", fields: [userId], references: [id], onDelete: Cascade)
+  positionX Float?
+  positionY Float?
+  status    TagApprovalStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("post_tagged_users")
 }
 
 model Story {
@@ -1099,10 +1135,20 @@ model Reel {
   stitchOf        Reel?             @relation("StitchOf", fields: [stitchOfId], references: [id], onDelete: SetNull)
   isDuet          Boolean           @default(false)
   isStitch        Boolean           @default(false)
-  isPhotoCarousel Boolean           @default(false)
-  carouselUrls    String[]          @default([])
-  scheduledAt     DateTime?
-  blurhash        String?
+  isPhotoCarousel   Boolean           @default(false)
+  carouselUrls      String[]          @default([])
+  carouselTexts     String[]          @default([])
+  altText           String?
+  locationName      String?
+  locationLat       Float?
+  locationLng       Float?
+  commentPermission CommentPermission @default(EVERYONE)
+  brandedContent    Boolean           @default(false)
+  brandPartner      String?
+  remixAllowed      Boolean           @default(true)
+  topics            String[]          @default([])
+  scheduledAt       DateTime?
+  blurhash          String?
   likesCount      Int               @default(0)
   commentsCount   Int               @default(0)
   sharesCount     Int               @default(0)

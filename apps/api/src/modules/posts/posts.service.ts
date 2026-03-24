@@ -15,7 +15,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
-import { Prisma, PostType, PostVisibility, ReactionType, ReportReason, ContentSpace } from '@prisma/client';
+import { Prisma, PostType, PostVisibility, CommentPermission, ReactionType, ReportReason, ContentSpace } from '@prisma/client';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
@@ -43,6 +43,13 @@ const POST_SELECT = {
   viewsCount: true,
   hideLikesCount: true,
   commentsDisabled: true,
+  commentPermission: true,
+  brandedContent: true,
+  brandPartner: true,
+  remixAllowed: true,
+  shareToFeed: true,
+  topics: true,
+  altText: true,
   isSensitive: true,
   createdAt: true,
   updatedAt: true,
@@ -462,12 +469,16 @@ export class PostsService {
         );
       }
 
+      // Map commentPermission → also set legacy commentsDisabled boolean for backward compat
+      const commentPerm = (dto.commentPermission as CommentPermission) ?? CommentPermission.EVERYONE;
+      const commentsOff = dto.commentsDisabled ?? (commentPerm === CommentPermission.NOBODY);
+
       const post = await tx.post.create({
         data: {
           userId,
-          postType: dto.postType as PostType, // Validated by CreatePostDto @IsEnum
+          postType: dto.postType as PostType,
           content: dto.content ? sanitizeText(dto.content) : dto.content,
-          visibility: (dto.visibility as PostVisibility) ?? PostVisibility.PUBLIC, // Validated by CreatePostDto @IsEnum
+          visibility: (dto.visibility as PostVisibility) ?? PostVisibility.PUBLIC,
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
           mediaTypes: dto.mediaTypes ?? [],
@@ -478,13 +489,57 @@ export class PostsService {
           hashtags: dto.hashtags ?? [],
           mentions: dto.mentions ?? [],
           locationName: dto.locationName,
+          locationLat: dto.locationLat,
+          locationLng: dto.locationLng,
           isSensitive: dto.isSensitive ?? false,
           altText: dto.altText,
           hideLikesCount: dto.hideLikesCount ?? false,
-          commentsDisabled: dto.commentsDisabled ?? false,
+          commentsDisabled: commentsOff,
+          commentPermission: commentPerm,
+          brandedContent: dto.brandedContent ?? false,
+          brandPartner: dto.brandedContent ? dto.brandPartner : null,
+          remixAllowed: dto.remixAllowed ?? true,
+          shareToFeed: dto.shareToFeed ?? true,
+          topics: dto.topics ?? [],
         },
         select: POST_SELECT,
       });
+
+      // Create tagged user records (photo tags — users need to approve)
+      if (dto.taggedUserIds?.length) {
+        const validUsers = await tx.user.findMany({
+          where: { id: { in: dto.taggedUserIds }, isDeleted: false, isBanned: false },
+          select: { id: true },
+        });
+        if (validUsers.length > 0) {
+          await tx.postTaggedUser.createMany({
+            data: validUsers.map((u) => ({
+              postId: post.id,
+              userId: u.id,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      // Create collaborator invite if username provided
+      if (dto.collaboratorUsername) {
+        const invitee = await tx.user.findUnique({
+          where: { username: dto.collaboratorUsername },
+          select: { id: true },
+        });
+        if (invitee && invitee.id !== userId) {
+          await tx.collabInvite.create({
+            data: {
+              postId: post.id,
+              inviterId: userId,
+              inviteeId: invitee.id,
+            },
+          }).catch(() => {
+            // Unique constraint — invite already exists, ignore
+          });
+        }
+      }
 
       await tx.user.update({
         where: { id: userId },
@@ -523,6 +578,50 @@ export class PostsService {
         }
       }
     }
+    // Tag notifications (photo tags — separate from @mentions in text)
+    if (dto.taggedUserIds?.length) {
+      const actor = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+      for (const taggedUserId of dto.taggedUserIds) {
+        if (taggedUserId !== userId) {
+          this.notifications.create({
+            userId: taggedUserId,
+            actorId: userId,
+            type: 'MENTION',
+            postId: post.id,
+            title: 'Tagged you',
+            body: `@${actor?.username ?? 'Someone'} tagged you in a post`,
+          }).then((n) => {
+            if (n) this.queueService.addPushNotificationJob({ notificationId: n.id });
+          }).catch((err) => {
+            this.logger.error('Failed to create tag notification', err instanceof Error ? err.message : err);
+          });
+        }
+      }
+    }
+
+    // Collaborator invite notification
+    if (dto.collaboratorUsername) {
+      const invitee = await this.prisma.user.findUnique({
+        where: { username: dto.collaboratorUsername },
+        select: { id: true },
+      });
+      if (invitee && invitee.id !== userId) {
+        const actor = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+        this.notifications.create({
+          userId: invitee.id,
+          actorId: userId,
+          type: 'COMMENT', // Using COMMENT type as closest match — could add COLLAB_INVITE type
+          postId: post.id,
+          title: 'Collaboration invite',
+          body: `@${actor?.username ?? 'Someone'} invited you to collaborate on a post`,
+        }).then((n) => {
+          if (n) this.queueService.addPushNotificationJob({ notificationId: n.id });
+        }).catch((err) => {
+          this.logger.error('Failed to create collab notification', err instanceof Error ? err.message : err);
+        });
+      }
+    }
+
     // Gamification: award XP + update streak (fire-and-forget)
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' });
     this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });

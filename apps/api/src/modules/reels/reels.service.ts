@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreateReelDto } from './dto/create-reel.dto';
-import { Prisma, ReelStatus, ReactionType, ReportReason } from '@prisma/client';
+import { Prisma, ReelStatus, CommentPermission, ReactionType, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
@@ -35,6 +35,16 @@ const REEL_SELECT = {
   hashtags: true,
   status: true,
   isRemoved: true,
+  isPhotoCarousel: true,
+  carouselUrls: true,
+  carouselTexts: true,
+  altText: true,
+  locationName: true,
+  commentPermission: true,
+  brandedContent: true,
+  brandPartner: true,
+  remixAllowed: true,
+  topics: true,
   audioTrackId: true,
   audioTitle: true,
   audioArtist: true,
@@ -88,6 +98,8 @@ export class ReelsService {
       );
     }
 
+    const commentPerm = (dto.commentPermission as CommentPermission) ?? CommentPermission.EVERYONE;
+
     const [reel] = await this.prisma.$transaction([
       this.prisma.reel.create({
         data: {
@@ -102,6 +114,18 @@ export class ReelsService {
           isDuet: dto.isDuet || false,
           isStitch: dto.isStitch || false,
           normalizeAudio: dto.normalizeAudio ?? false,
+          isPhotoCarousel: dto.isPhotoCarousel ?? false,
+          carouselUrls: dto.carouselUrls ?? [],
+          carouselTexts: dto.carouselTexts ?? [],
+          altText: dto.altText,
+          locationName: dto.locationName,
+          locationLat: dto.locationLat,
+          locationLng: dto.locationLng,
+          commentPermission: commentPerm,
+          brandedContent: dto.brandedContent ?? false,
+          brandPartner: dto.brandedContent ? dto.brandPartner : null,
+          remixAllowed: dto.remixAllowed ?? true,
+          topics: dto.topics ?? [],
           status: ReelStatus.PROCESSING,
         },
         select: REEL_SELECT,
