@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   ListRenderItemInfo,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ProgressiveImage } from './ProgressiveImage';
@@ -105,11 +106,22 @@ export const ImageCarousel = memo(function ImageCarousel({
   const flatListRef = useRef<FlatList<string>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Track last prefetch to avoid redundant calls
+  const lastPrefetchRef = useRef(-1);
+
   const onScroll = useCallback((event: { nativeEvent: { contentOffset: { x: number } } }) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / screenWidth);
     setCurrentIndex((prev) => (prev !== index ? index : prev));
-  }, [screenWidth]);
+
+    // Prefetch adjacent slides (side effect kept outside state updater)
+    if (index !== lastPrefetchRef.current && images.length > 1) {
+      lastPrefetchRef.current = index;
+      [index + 1, index + 2].filter((i) => i < images.length).forEach((i) => {
+        Image.prefetch(images[i]);
+      });
+    }
+  }, [screenWidth, images]);
 
   const goToIndex = useCallback((index: number) => {
     flatListRef.current?.scrollToIndex({ index, animated: true });

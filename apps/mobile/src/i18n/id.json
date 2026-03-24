@@ -4171,6 +4171,7 @@
     "removeSlideTitle": "Remove slide?",
     "removeSlideMessage": "This slide will be removed from the carousel.",
     "slideTiming": "Slide timing",
-    "totalDuration": "Total"
+    "totalDuration": "Total",
+    "slideLabel": "Slide"
   }
 }

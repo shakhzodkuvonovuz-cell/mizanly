@@ -724,6 +724,7 @@ model User {
 
   // Bakra
   reels                Reel[]
+  taggedInReels        ReelTaggedUser[]  @relation("taggedInReels")
   reelReactions        ReelReaction[]
   reelComments         ReelComment[]
   reelCommentReactions ReelCommentReaction[]
@@ -1170,12 +1171,27 @@ model Reel {
   stitches        Reel[]            @relation("StitchOf")
   templates       ReelTemplate[]    @relation("ReelTemplateSource")
   seriesEpisodes  SeriesEpisode[]   @relation("seriesEpisodeReels")
+  taggedUsers     ReelTaggedUser[]
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@index([viewsCount(sort: Desc)])
   @@index([hashtags])
   @@map("reels")
+}
+
+model ReelTaggedUser {
+  id        String            @id @default(cuid())
+  reelId    String
+  reel      Reel              @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User              @relation("taggedInReels", fields: [userId], references: [id], onDelete: Cascade)
+  status    TagApprovalStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  @@unique([reelId, userId])
+  @@index([userId])
+  @@map("reel_tagged_users")
 }
 
 model ReelReaction {

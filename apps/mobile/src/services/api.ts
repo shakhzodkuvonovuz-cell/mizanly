@@ -118,6 +118,7 @@ type CreateReelPayload = {
   brandPartner?: string;
   remixAllowed?: boolean;
   topics?: string[];
+  taggedUserIds?: string[];
 };
 
 type CreateVideoData = {

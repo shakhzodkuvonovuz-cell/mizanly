@@ -146,4 +146,11 @@ export class CreateReelDto {
   @ArrayMaxSize(3)
   @MaxLength(50, { each: true })
   topics?: string[];
+
+  @ApiProperty({ required: false, type: [String], maxItems: 20, description: 'User IDs to tag' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(20)
+  taggedUserIds?: string[];
 }

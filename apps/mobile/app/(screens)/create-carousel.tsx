@@ -73,7 +73,7 @@ function SlideThumb({ slide, index, isSelected, onSelect, onRemove, total, t }: 
         onPressIn={() => { scale.value = withSpring(0.92, { damping: 15, stiffness: 400 }); }}
         onPressOut={() => { scale.value = withSpring(1, { damping: 12, stiffness: 200 }); }}
         style={[animStyle, styles.thumbWrap, isSelected && { borderColor: colors.emerald, borderWidth: 2 }]}
-        accessibilityLabel={`Slide ${index + 1}`}
+        accessibilityLabel={`${t('carousel.slideLabel')} ${index + 1}`}
         accessibilityRole="button"
       >
         <Image source={{ uri: slide.uri }} style={styles.thumbImg} contentFit="cover" />

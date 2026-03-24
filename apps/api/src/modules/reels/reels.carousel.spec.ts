@@ -150,16 +150,19 @@ describe('ReelsService — Photo Carousel', () => {
       );
     });
 
-    it('should handle carousel with single slide URL (minimum)', async () => {
+    it('should reject carousel with fewer than 2 slides', async () => {
       const dto = {
         ...carouselDto,
         carouselUrls: ['https://r2.example.com/single.jpg'],
         carouselTexts: ['Only slide'],
       };
-      prisma.$transaction.mockResolvedValue([{ ...baseMockReel, carouselUrls: dto.carouselUrls }, undefined]);
 
-      const result = await service.create(userId, dto);
-      expect(result).toBeDefined();
+      await expect(service.create(userId, dto)).rejects.toThrow('at least 2 images');
+    });
+
+    it('should reject carousel with empty carouselUrls', async () => {
+      const dto = { ...carouselDto, carouselUrls: [] };
+      await expect(service.create(userId, dto)).rejects.toThrow('at least 2 images');
     });
 
     it('should handle carousel with 35 slides (maximum)', async () => {

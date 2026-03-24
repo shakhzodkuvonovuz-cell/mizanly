@@ -83,9 +83,12 @@ export class ReelsService {
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
-    // Validate carousel array parity
-    if (dto.isPhotoCarousel && dto.carouselUrls?.length && dto.carouselTexts?.length) {
-      if (dto.carouselTexts.length > dto.carouselUrls.length) {
+    // Validate carousel integrity
+    if (dto.isPhotoCarousel) {
+      if (!dto.carouselUrls?.length || dto.carouselUrls.length < 2) {
+        throw new BadRequestException('Photo carousel requires at least 2 images in carouselUrls');
+      }
+      if (dto.carouselTexts?.length && dto.carouselTexts.length > dto.carouselUrls.length) {
         throw new BadRequestException('carouselTexts cannot have more items than carouselUrls');
       }
     }
@@ -107,7 +110,9 @@ export class ReelsService {
       );
     }
 
-    const commentPerm = (dto.commentPermission as CommentPermission) ?? CommentPermission.EVERYONE;
+    const commentPerm = dto.commentPermission
+      ? CommentPermission[dto.commentPermission as keyof typeof CommentPermission] ?? CommentPermission.EVERYONE
+      : CommentPermission.EVERYONE;
 
     const [reel] = await this.prisma.$transaction([
       this.prisma.reel.create({
@@ -145,14 +150,45 @@ export class ReelsService {
       }),
     ]);
 
+    // Fetch actor username once for all notifications (tags + mentions)
+    const needsActor = (dto.taggedUserIds?.length && dto.taggedUserIds.some((id) => id !== userId)) || dto.mentions?.length;
+    const actorUsername = needsActor
+      ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }))?.username ?? 'Someone'
+      : undefined;
+
+    // Create tagged user records
+    if (dto.taggedUserIds?.length) {
+      const validUsers = await this.prisma.user.findMany({
+        where: { id: { in: dto.taggedUserIds }, isDeleted: false, isBanned: false },
+        select: { id: true },
+      });
+      if (validUsers.length > 0) {
+        await this.prisma.reelTaggedUser.createMany({
+          data: validUsers.map((u: { id: string }) => ({ reelId: reel.id, userId: u.id })),
+          skipDuplicates: true,
+        });
+        for (const u of validUsers) {
+          if (u.id !== userId) {
+            this.notifications.create({
+              userId: u.id,
+              actorId: userId,
+              type: 'MENTION',
+              reelId: reel.id,
+              title: 'Tagged you',
+              body: `@${actorUsername} tagged you in a reel`,
+            }).catch((err) => this.logger.error('Failed to create tag notification', err));
+          }
+        }
+      }
+    }
+
     // Mention notifications (skip self-mentions)
     if (dto.mentions?.length) {
-      const [mentionedUsers, actor] = await Promise.all([
-        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true },
-      take: 50,
-    }),
-        this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
-      ]);
+      const mentionedUsers = await this.prisma.user.findMany({
+        where: { username: { in: dto.mentions } },
+        select: { id: true },
+        take: 50,
+      });
       for (const mentioned of mentionedUsers) {
         if (mentioned.id !== userId) {
           this.notifications.create({
@@ -161,7 +197,7 @@ export class ReelsService {
             type: 'MENTION',
             reelId: reel.id,
             title: 'Mentioned you',
-            body: `@${actor?.username ?? 'Someone'} mentioned you in a reel`,
+            body: `@${actorUsername ?? 'Someone'} mentioned you in a reel`,
           }).catch((err) => this.logger.error('Failed to create mention notification', err));
         }
       }

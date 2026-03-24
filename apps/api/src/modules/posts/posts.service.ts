@@ -470,7 +470,10 @@ export class PostsService {
       }
 
       // Map commentPermission → also set legacy commentsDisabled boolean for backward compat
-      const commentPerm = (dto.commentPermission as CommentPermission) ?? CommentPermission.EVERYONE;
+      // DTO @IsEnum validates value — safe to index the enum directly
+      const commentPerm = dto.commentPermission
+        ? CommentPermission[dto.commentPermission as keyof typeof CommentPermission] ?? CommentPermission.EVERYONE
+        : CommentPermission.EVERYONE;
       const commentsOff = dto.commentsDisabled ?? (commentPerm === CommentPermission.NOBODY);
 
       const post = await tx.post.create({
