@@ -352,6 +352,7 @@ export default function ReelDetailScreen() {
           {reelQuery.data.isPhotoCarousel && reelQuery.data.carouselUrls?.length ? (
             <ImageCarousel
               images={reelQuery.data.carouselUrls}
+              texts={reelQuery.data.carouselTexts}
               height={VIDEO_HEIGHT}
               borderRadius={0}
               showIndicators

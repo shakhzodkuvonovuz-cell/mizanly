@@ -40,15 +40,15 @@ interface Slide {
   text: string; // Per-slide text overlay
 }
 
-function SlideThumb({ slide, index, isSelected, onSelect, onRemove, total }: {
+function SlideThumb({ slide, index, isSelected, onSelect, onRemove, total, t }: {
   slide: Slide;
   index: number;
   isSelected: boolean;
   onSelect: () => void;
   onRemove: () => void;
   total: number;
+  t: (key: string) => string;
 }) {
-  const tc = useThemeColors();
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -58,10 +58,14 @@ function SlideThumb({ slide, index, isSelected, onSelect, onRemove, total }: {
         onPress={onSelect}
         onLongPress={() => {
           if (total > 2) {
-            Alert.alert('Remove slide?', `Remove slide ${index + 1}?`, [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Remove', style: 'destructive', onPress: onRemove },
-            ]);
+            Alert.alert(
+              t('carousel.removeSlideTitle'),
+              t('carousel.removeSlideMessage'),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.remove'), style: 'destructive', onPress: onRemove },
+              ],
+            );
           }
         }}
         onPressIn={() => { scale.value = withSpring(0.92, { damping: 15, stiffness: 400 }); }}
@@ -103,9 +107,7 @@ function CreateCarouselScreen() {
 
   // Publish fields
   const [altText, setAltText] = useState('');
-  const [locationName, setLocationName] = useState('');
   const [brandedContent, setBrandedContent] = useState(false);
-  const [topics, setTopics] = useState<string[]>([]);
 
   const currentSlide = slides[selectedIndex];
   const canPublish = slides.length >= 2 && !uploading;
@@ -148,11 +150,13 @@ function CreateCarouselScreen() {
   // ── Remove slide ──
   const removeSlide = useCallback((index: number) => {
     haptic.delete();
-    setSlides((prev) => prev.filter((_, i) => i !== index));
-    if (selectedIndex >= slides.length - 1) {
-      setSelectedIndex(Math.max(0, slides.length - 2));
-    }
-  }, [selectedIndex, slides.length, haptic]);
+    setSlides((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      // Adjust selectedIndex if it would be out of bounds
+      setSelectedIndex((si) => (si >= next.length ? Math.max(0, next.length - 1) : si));
+      return next;
+    });
+  }, [haptic]);
 
   // ── Update per-slide text ──
   const updateSlideText = useCallback((text: string) => {
@@ -204,9 +208,7 @@ function CreateCarouselScreen() {
         carouselTexts,
         caption: caption.trim() || undefined,
         altText: altText.trim() || undefined,
-        locationName: locationName.trim() || undefined,
         brandedContent,
-        topics: topics.length > 0 ? topics : undefined,
       });
     },
     onSuccess: () => {
@@ -359,6 +361,7 @@ function CreateCarouselScreen() {
                 onSelect={() => setSelectedIndex(index)}
                 onRemove={() => removeSlide(index)}
                 total={slides.length}
+                t={t}
               />
             )}
             ListFooterComponent={

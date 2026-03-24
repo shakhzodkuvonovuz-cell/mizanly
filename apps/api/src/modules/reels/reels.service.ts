@@ -40,6 +40,8 @@ const REEL_SELECT = {
   carouselTexts: true,
   altText: true,
   locationName: true,
+  locationLat: true,
+  locationLng: true,
   commentPermission: true,
   brandedContent: true,
   brandPartner: true,

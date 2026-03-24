@@ -4142,6 +4142,8 @@
     "captionPlaceholder": "Write a caption for your carousel...",
     "movePrev": "Move slide left",
     "moveNext": "Move slide right",
-    "addMore": "Add more photos"
+    "addMore": "Add more photos",
+    "removeSlideTitle": "Remove slide?",
+    "removeSlideMessage": "This slide will be removed from the carousel."
   }
 }

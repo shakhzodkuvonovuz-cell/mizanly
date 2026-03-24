@@ -80,9 +80,10 @@ export class CreatePostDto {
   @MaxLength(50, { each: true })
   mentions?: string[];
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, maxLength: 200 })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   locationName?: string;
 
   @ApiProperty({ required: false, description: 'Latitude of the tagged location' })

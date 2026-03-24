@@ -106,6 +106,7 @@ describe('PostsService — Publish Fields', () => {
             report: { create: jest.fn().mockResolvedValue({}), findFirst: jest.fn().mockResolvedValue(null) },
             feedDismissal: { findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },
             user: { update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
+            postTaggedUser: { findMany: jest.fn().mockResolvedValue([]) },
             comment: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn() },
             commentReaction: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn() },
             savedPost: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },
@@ -207,6 +208,7 @@ describe('PostsService — Publish Fields', () => {
       // Only user-a passes the isDeleted: false, isBanned: false filter
       userFindManyMock.mockResolvedValue([{ id: 'user-a' }]);
       prisma.$transaction.mockImplementation(async (fn: any) => fn(tx));
+      prisma.postTaggedUser.findMany.mockResolvedValue([{ userId: 'user-a' }]);
 
       await service.create(userId, { ...baseDto, taggedUserIds: ['user-a', 'user-banned'] });
 
@@ -228,6 +230,8 @@ describe('PostsService — Publish Fields', () => {
       const { tx, userFindManyMock } = createMockTx();
       userFindManyMock.mockResolvedValue([{ id: 'user-a' }]);
       prisma.$transaction.mockImplementation(async (fn: any) => fn(tx));
+      // Mock the postTaggedUser.findMany (used for notification loop)
+      prisma.postTaggedUser.findMany.mockResolvedValue([{ userId: 'user-a' }]);
       prisma.user.findUnique.mockResolvedValue({ username: 'creator' });
 
       await service.create(userId, { ...baseDto, taggedUserIds: ['user-a'] });
@@ -248,11 +252,12 @@ describe('PostsService — Publish Fields', () => {
       const { tx, userFindManyMock } = createMockTx();
       userFindManyMock.mockResolvedValue([{ id: userId }]);
       prisma.$transaction.mockImplementation(async (fn: any) => fn(tx));
+      // The only tagged user is self — postTaggedUser still created but notif skipped
+      prisma.postTaggedUser.findMany.mockResolvedValue([{ userId }]);
 
       await service.create(userId, { ...baseDto, taggedUserIds: [userId] });
 
       await new Promise(resolve => setTimeout(resolve, 50));
-      // Notifications should not include the creator
       const tagCalls = (notifications.create as jest.Mock).mock.calls.filter(
         (c: any[]) => c[0]?.title === 'Tagged you',
       );
@@ -307,7 +312,10 @@ describe('PostsService — Publish Fields', () => {
       const { tx } = createMockTx();
       tx.user.findUnique = jest.fn().mockResolvedValue({ id: 'user-collab' });
       prisma.$transaction.mockImplementation(async (fn: any) => fn(tx));
-      prisma.user.findUnique.mockResolvedValue({ id: 'user-collab', username: 'creator' });
+      prisma.user.findUnique.mockImplementation(async (args: any) => {
+        if (args.where.username) return { id: 'user-collab' };
+        return { username: 'creator' };
+      });
 
       await service.create(userId, { ...baseDto, collaboratorUsername: 'collaborator' });
 
@@ -494,6 +502,7 @@ describe('PostsService — Publish Fields', () => {
       userFindManyMock.mockResolvedValue([{ id: 'user-tagged' }]);
       tx.user.findUnique = jest.fn().mockResolvedValue({ id: 'user-collab' });
       prisma.$transaction.mockImplementation(async (fn: any) => fn(tx));
+      prisma.postTaggedUser.findMany.mockResolvedValue([{ userId: 'user-tagged' }]);
       prisma.user.findUnique.mockResolvedValue({ username: 'creator' });
 
       const fullDto = {

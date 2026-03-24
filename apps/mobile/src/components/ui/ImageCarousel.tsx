@@ -16,6 +16,7 @@ import { Icon } from './Icon';
 
 export interface ImageCarouselProps {
   images: string[]; // Array of image URIs
+  texts?: string[]; // Per-slide text overlays (same length as images)
   height?: number; // Default 400
   showIndicators?: boolean; // Dot indicators, default true
   onImagePress?: (index: number) => void; // Opens gallery
@@ -25,6 +26,7 @@ export interface ImageCarouselProps {
 
 export const ImageCarousel = memo(function ImageCarousel({
   images,
+  texts,
   height = 400,
   showIndicators = true,
   onImagePress,
@@ -47,23 +49,35 @@ export const ImageCarousel = memo(function ImageCarousel({
     flatListRef.current?.scrollToIndex({ index, animated: true });
   };
 
-  const renderItem = useCallback(({ item, index }: ListRenderItemInfo<string>) => (
-    <Pressable
-      style={[styles.imageWrapper, { width: screenWidth, height }]}
-      onPress={() => onImagePress?.(index)}
-      disabled={!onImagePress}
-      accessibilityLabel={`Image ${index + 1} of ${images.length}`}
-      accessibilityRole="image"
-    >
-      <Image
-        source={{ uri: item }}
-        style={[styles.image, { borderRadius }, blurred && { opacity: 0.15 }]}
-        contentFit="cover"
-        transition={200}
-        blurRadius={blurred ? 30 : 0}
-      />
-    </Pressable>
-  ), [screenWidth, height, onImagePress, images.length, borderRadius, blurred]);
+  const renderItem = useCallback(({ item, index }: ListRenderItemInfo<string>) => {
+    const slideText = texts?.[index];
+    return (
+      <Pressable
+        style={[styles.imageWrapper, { width: screenWidth, height }]}
+        onPress={() => onImagePress?.(index)}
+        disabled={!onImagePress}
+        accessibilityLabel={`Image ${index + 1} of ${images.length}${slideText ? `. ${slideText}` : ''}`}
+        accessibilityRole="image"
+      >
+        <Image
+          source={{ uri: item }}
+          style={[styles.image, { borderRadius }, blurred && { opacity: 0.15 }]}
+          contentFit="cover"
+          transition={200}
+          blurRadius={blurred ? 30 : 0}
+        />
+        {slideText ? (
+          <View style={styles.textOverlay}>
+            <View style={styles.textOverlayBg}>
+              <Animated.Text style={styles.textOverlayText} numberOfLines={3}>
+                {slideText}
+              </Animated.Text>
+            </View>
+          </View>
+        ) : null}
+      </Pressable>
+    );
+  }, [screenWidth, height, onImagePress, images.length, borderRadius, blurred, texts]);
 
   const scrollSnapInterval = screenWidth;
 
@@ -187,5 +201,26 @@ const styles = StyleSheet.create({
   dotActive: {
     backgroundColor: colors.emerald,
     width: 24,
+  },
+  textOverlay: {
+    position: 'absolute',
+    bottom: 60,
+    start: spacing.lg,
+    end: spacing.lg,
+    alignItems: 'center',
+  },
+  textOverlayBg: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    maxWidth: '80%',
+  },
+  textOverlayText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'DMSans_500Medium',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });

@@ -62,15 +62,6 @@ const CREATE_OPTIONS: CreateOption[] = [
     descKey: 'createSheet.reelDesc',
   },
   {
-    id: 'carousel',
-    route: '/(screens)/create-carousel',
-    icon: 'layers',
-    color: colors.gold,
-    gradientColors: ['rgba(200,150,62,0.25)', 'rgba(200,150,62,0.05)'],
-    labelKey: 'createSheet.carousel',
-    descKey: 'createSheet.carouselDesc',
-  },
-  {
     id: 'thread',
     route: '/(screens)/create-thread',
     icon: 'message-circle',
@@ -78,6 +69,15 @@ const CREATE_OPTIONS: CreateOption[] = [
     gradientColors: ['rgba(88,166,255,0.25)', 'rgba(88,166,255,0.05)'],
     labelKey: 'createSheet.thread',
     descKey: 'createSheet.threadDesc',
+  },
+  {
+    id: 'carousel',
+    route: '/(screens)/create-carousel',
+    icon: 'layers',
+    color: colors.gold,
+    gradientColors: ['rgba(200,150,62,0.25)', 'rgba(200,150,62,0.05)'],
+    labelKey: 'createSheet.carousel',
+    descKey: 'createSheet.carouselDesc',
   },
   {
     id: 'video',

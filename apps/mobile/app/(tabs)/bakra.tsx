@@ -211,18 +211,19 @@ const ReelItem = memo(function ReelItem({
   };
 
   return (
-    <GestureDetector gesture={combinedGesture}>
-      <View style={[styles.videoContainer, { width: screenWidth, height: screenHeight }]}>
-        {item.isPhotoCarousel && item.carouselUrls?.length ? (
-          /* Photo carousel mode — swipeable images instead of video */
-          <ImageCarousel
-            images={item.carouselUrls}
-            height={screenHeight}
-            borderRadius={0}
-            showIndicators
-          />
-        ) : (
-          <>
+    <View style={[styles.videoContainer, { width: screenWidth, height: screenHeight }]}>
+      {item.isPhotoCarousel && item.carouselUrls?.length ? (
+        /* Photo carousel mode — no gesture detector (would block horizontal swipe) */
+        <ImageCarousel
+          images={item.carouselUrls}
+          texts={item.carouselTexts}
+          height={screenHeight}
+          borderRadius={0}
+          showIndicators
+        />
+      ) : (
+        <GestureDetector gesture={combinedGesture}>
+          <View style={{ width: screenWidth, height: screenHeight }}>
             <Video
               ref={handleVideoRef}
               source={{ uri: item.hlsUrl || item.videoUrl }}
@@ -254,8 +255,9 @@ const ReelItem = memo(function ReelItem({
                 <Icon name="play" size={48} color="rgba(255,255,255,0.7)" />
               </Animated.View>
             )}
-          </>
-        )}
+          </View>
+        </GestureDetector>
+      )}
 
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']}

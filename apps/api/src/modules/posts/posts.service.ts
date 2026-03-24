@@ -578,18 +578,27 @@ export class PostsService {
         }
       }
     }
-    // Tag notifications (photo tags — separate from @mentions in text)
+    // Tag + collab notifications (fetch actor once for both)
+    const needsActor = (dto.taggedUserIds?.length && dto.taggedUserIds.some((id) => id !== userId)) || dto.collaboratorUsername;
+    const actorUsername = needsActor
+      ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }))?.username ?? 'Someone'
+      : undefined;
+
+    // Tag notifications — use validated IDs from transaction, not raw DTO
     if (dto.taggedUserIds?.length) {
-      const actor = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
-      for (const taggedUserId of dto.taggedUserIds) {
-        if (taggedUserId !== userId) {
+      const taggedRecords = await this.prisma.postTaggedUser.findMany({
+        where: { postId: post.id },
+        select: { userId: true },
+      });
+      for (const record of taggedRecords) {
+        if (record.userId !== userId) {
           this.notifications.create({
-            userId: taggedUserId,
+            userId: record.userId,
             actorId: userId,
             type: 'MENTION',
             postId: post.id,
             title: 'Tagged you',
-            body: `@${actor?.username ?? 'Someone'} tagged you in a post`,
+            body: `@${actorUsername} tagged you in a post`,
           }).then((n) => {
             if (n) this.queueService.addPushNotificationJob({ notificationId: n.id });
           }).catch((err) => {
@@ -606,14 +615,13 @@ export class PostsService {
         select: { id: true },
       });
       if (invitee && invitee.id !== userId) {
-        const actor = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
         this.notifications.create({
           userId: invitee.id,
           actorId: userId,
-          type: 'COMMENT', // Using COMMENT type as closest match — could add COLLAB_INVITE type
+          type: 'COMMENT', // No COLLAB_INVITE type in enum — COMMENT is closest
           postId: post.id,
           title: 'Collaboration invite',
-          body: `@${actor?.username ?? 'Someone'} invited you to collaborate on a post`,
+          body: `@${actorUsername} invited you to collaborate on a post`,
         }).then((n) => {
           if (n) this.queueService.addPushNotificationJob({ notificationId: n.id });
         }).catch((err) => {
