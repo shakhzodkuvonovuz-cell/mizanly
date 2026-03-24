@@ -119,6 +119,8 @@ type CreateReelPayload = {
   remixAllowed?: boolean;
   topics?: string[];
   taggedUserIds?: string[];
+  isTrial?: boolean;
+  scheduledAt?: string;
 };
 
 type CreateVideoData = {

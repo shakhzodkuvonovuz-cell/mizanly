@@ -613,9 +613,10 @@ export class ReelsService {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
-    // Enforce commentPermission
+    // Enforce commentPermission — owner always allowed
     const perm = reel.commentPermission ?? 'EVERYONE';
-    if (perm === 'NOBODY') {
+    const isOwner = reel.userId && reel.userId === userId;
+    if (!isOwner && perm === 'NOBODY') {
       throw new ForbiddenException('Comments are disabled on this reel');
     }
     if (perm === 'FOLLOWERS' && reel.userId && reel.userId !== userId) {

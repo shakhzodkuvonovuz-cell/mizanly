@@ -36,6 +36,9 @@ const POST_SELECT = {
   hashtags: true,
   mentions: true,
   locationName: true,
+  locationLat: true,
+  locationLng: true,
+  scheduledAt: true,
   likesCount: true,
   commentsCount: true,
   sharesCount: true,
@@ -132,7 +135,7 @@ export class PostsService {
         where: {
           createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
           isRemoved: false,
-          scheduledAt: null,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           user: { isPrivate: false, isBanned: false },
           visibility: 'PUBLIC',
           ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
@@ -211,7 +214,7 @@ export class PostsService {
 
     const where: Prisma.PostWhereInput = {
       isRemoved: false,
-      scheduledAt: null,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       userId: { in: visibleUserIds },
     };
 
@@ -245,7 +248,7 @@ export class PostsService {
       where: {
         isRemoved: false,
         visibility: 'PUBLIC',
-        scheduledAt: null,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
         user: { isDeactivated: false, isPrivate: false },
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
@@ -287,7 +290,7 @@ export class PostsService {
     const followingPosts = await this.prisma.post.findMany({
       where: {
         isRemoved: false,
-        scheduledAt: null,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: visibleUserIds },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
@@ -303,7 +306,7 @@ export class PostsService {
       where: {
         isRemoved: false,
         visibility: 'PUBLIC',
-        scheduledAt: null,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
         user: { isDeactivated: false, isPrivate: false },
         id: { notIn: [...seenIds] },
@@ -368,11 +371,9 @@ export class PostsService {
       where: {
         userId: { in: visibleUserIds },
         isRemoved: false,
-        scheduledAt: null,
-        OR: [
-          { userId },
-          { visibility: 'PUBLIC' },
-          { visibility: 'FOLLOWERS' },
+        AND: [
+          { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+          { OR: [{ userId }, { visibility: 'PUBLIC' }, { visibility: 'FOLLOWERS' }] },
         ],
       },
       select: POST_SELECT,
@@ -416,7 +417,7 @@ export class PostsService {
       where: {
         userId: { in: favoriteIds },
         isRemoved: false,
-        scheduledAt: null,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: { in: ['PUBLIC', 'FOLLOWERS'] },
       },
       select: POST_SELECT,
@@ -1031,9 +1032,10 @@ export class PostsService {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
 
-    // Enforce commentPermission (supersedes legacy commentsDisabled)
+    // Enforce commentPermission — owner always allowed (supersedes legacy commentsDisabled)
     const perm = post.commentPermission ?? 'EVERYONE';
-    if (perm === 'NOBODY' || post.commentsDisabled) {
+    const isOwner = post.userId && post.userId === userId;
+    if (!isOwner && (perm === 'NOBODY' || post.commentsDisabled)) {
       throw new ForbiddenException('Comments are disabled on this post');
     }
     if (perm === 'FOLLOWERS' && post.userId && post.userId !== userId) {

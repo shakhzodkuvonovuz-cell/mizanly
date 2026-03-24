@@ -97,12 +97,12 @@ describe('PostsService — Comment Permission Enforcement', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('should block even the post owner from commenting', async () => {
+    it('should allow post owner to comment even when NOBODY', async () => {
       prisma.post.findUnique.mockResolvedValue(makePost({ commentPermission: 'NOBODY' }));
+      prisma.$transaction.mockResolvedValue([mockComment, {}]);
 
-      await expect(
-        service.addComment('post-1', postOwner, { content: 'My own post' }),
-      ).rejects.toThrow(ForbiddenException);
+      const result = await service.addComment('post-1', postOwner, { content: 'My own post' });
+      expect(result).toBeDefined();
     });
   });
 

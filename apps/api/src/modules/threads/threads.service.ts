@@ -744,15 +744,20 @@ export class ThreadsService {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
 
-    // Enforce reply permission
+    // Enforce reply permission — owner always allowed
     if (thread.replyPermission && thread.replyPermission !== 'EVERYONE' && thread.userId !== userId) {
       if (thread.replyPermission === 'FOLLOWING' && thread.userId) {
+        // Check: does the replier follow the author? (same direction as canReply)
         const isFollowing = await this.prisma.follow.findUnique({
-          where: { followerId_followingId: { followerId: thread.userId, followingId: userId } },
+          where: { followerId_followingId: { followerId: userId, followingId: thread.userId } },
         });
-        if (!isFollowing) throw new ForbiddenException('Only users followed by the author can reply');
+        if (!isFollowing) throw new ForbiddenException('Only followers can reply to this thread');
       } else if (thread.replyPermission === 'MENTIONED') {
-        throw new ForbiddenException('Only mentioned users can reply to this thread');
+        // Check if the replier is actually mentioned in the thread
+        const replier = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+        if (!replier || !thread.mentions.includes(replier.username)) {
+          throw new ForbiddenException('Only mentioned users can reply to this thread');
+        }
       } else if (thread.replyPermission === 'NONE') {
         throw new ForbiddenException('Replies are disabled for this thread');
       }

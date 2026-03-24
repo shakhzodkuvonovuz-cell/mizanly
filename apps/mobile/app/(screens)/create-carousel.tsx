@@ -37,7 +37,6 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const MAX_SLIDES = 35;
 const CAPTION_MAX = 500;
 const TOPIC_OPTIONS = ['islamic', 'education', 'technology', 'travel', 'food', 'fitness', 'art', 'nature', 'community', 'business'];
-const MIME_MAP: Record<string, string> = { png: 'image/png', webp: 'image/webp', gif: 'image/gif', heic: 'image/heic' };
 
 interface Slide {
   uri: string;
@@ -206,7 +205,7 @@ function CreateCarouselScreen() {
         const slide = slides[i];
         // Resize before upload (saves bandwidth + storage)
         const resized = await resizeForUpload(slide.uri, slide.width, slide.height);
-        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl('image/jpeg', 'reels');
+        const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl('image/jpeg', 'posts'); // 'posts' folder allows images
 
         const fileRes = await fetch(resized.uri);
         const blob = await fileRes.blob();
@@ -216,7 +215,7 @@ function CreateCarouselScreen() {
         const { promise, abort } = uploadWithProgress(
           uploadUrl,
           blob,
-          contentType,
+          'image/jpeg', // Always JPEG after resizeForUpload
           (percent) => setUploadProgress(baseProgress + (percent / 100) * itemWeight),
         );
         uploadAbortRef.current = abort;
