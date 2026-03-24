@@ -4180,7 +4180,8 @@
     "removeSlideMessage": "This slide will be removed from the carousel.",
     "slideTiming": "Slide timing",
     "totalDuration": "Total",
-    "slideLabel": "Slide"
+    "slideLabel": "Slide",
+    "addMusic": "Add music"
   },
   "calls": {
     "connectingVideo": "Connecting video...",

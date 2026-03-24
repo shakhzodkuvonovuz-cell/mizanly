@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, FlatList,
+  View, Text, StyleSheet, Pressable, ScrollView, FlatList, TextInput,
   useWindowDimensions, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -23,8 +23,10 @@ import { UploadProgressBar, uploadWithProgress } from '@/components/ui/UploadPro
 import { AnimatedAccordion } from '@/components/ui/AnimatedAccordion';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { MusicPicker } from '@/components/story/MusicPicker';
 import { colors, spacing, fontSize, radius, fonts, fontSizeExt } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
+import type { AudioTrack } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -43,7 +45,7 @@ interface Slide {
   text: string; // Per-slide text overlay
 }
 
-function SlideThumb({ slide, index, isSelected, onSelect, onRemove, total, t }: {
+const SlideThumb = memo(function SlideThumb({ slide, index, isSelected, onSelect, onRemove, total, t }: {
   slide: Slide;
   index: number;
   isSelected: boolean;
@@ -89,7 +91,7 @@ function SlideThumb({ slide, index, isSelected, onSelect, onRemove, total, t }: 
       </AnimatedPressable>
     </Animated.View>
   );
-}
+});
 
 function CreateCarouselScreen() {
   const tc = useThemeColors();
@@ -118,7 +120,9 @@ function CreateCarouselScreen() {
   const [brandPartner, setBrandPartner] = useState('');
   const [commentPermission, setCommentPermission] = useState<'EVERYONE' | 'FOLLOWERS' | 'NOBODY'>('EVERYONE');
   const [remixAllowed, setRemixAllowed] = useState(true);
-  const [slideDuration, setSlideDuration] = useState(5); // seconds per slide (3-10)
+  const [slideDuration, setSlideDuration] = useState(5);
+  const [showMusicPicker, setShowMusicPicker] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
 
   // Refs
   const thumbListRef = useRef<FlatList<Slide>>(null);
@@ -238,6 +242,7 @@ function CreateCarouselScreen() {
         remixAllowed,
         brandedContent,
         brandPartner: brandedContent ? brandPartner.trim() || undefined : undefined,
+        audioTrackId: selectedTrack?.id,
       });
     },
     onSuccess: () => {
@@ -462,6 +467,43 @@ function CreateCarouselScreen() {
             />
           </View>
 
+          {/* ── Music attachment ── */}
+          <Pressable
+            onPress={() => { setShowMusicPicker(true); haptic.tick(); }}
+            style={[styles.musicRow, { backgroundColor: tc.bgElevated, borderColor: tc.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('carousel.addMusic')}
+          >
+            <Icon name="volume-x" size="md" color={selectedTrack ? colors.emerald : tc.text.tertiary} />
+            <View style={{ flex: 1 }}>
+              {selectedTrack ? (
+                <>
+                  <Text style={[styles.musicTitle, { color: tc.text.primary }]} numberOfLines={1}>
+                    {selectedTrack.title}
+                  </Text>
+                  <Text style={[styles.musicArtist, { color: tc.text.secondary }]} numberOfLines={1}>
+                    {selectedTrack.artist}
+                  </Text>
+                </>
+              ) : (
+                <Text style={[styles.musicPlaceholder, { color: tc.text.tertiary }]}>
+                  {t('carousel.addMusic')}
+                </Text>
+              )}
+            </View>
+            {selectedTrack ? (
+              <Pressable
+                onPress={() => { setSelectedTrack(null); haptic.delete(); }}
+                hitSlop={8}
+                accessibilityLabel={t('common.remove')}
+              >
+                <Icon name="x" size="sm" color={tc.text.tertiary} />
+              </Pressable>
+            ) : (
+              <Icon name="chevron-right" size="sm" color={tc.text.tertiary} />
+            )}
+          </Pressable>
+
           {/* ── Publish fields ── */}
           <AnimatedAccordion title={t('compose.altText')} icon="eye" defaultExpanded={false}>
             <RichCaptionInput
@@ -509,13 +551,15 @@ function CreateCarouselScreen() {
                 </View>
               )}
               <View style={styles.tagInputRow}>
-                <RichCaptionInput
+                <TextInput
                   value={tagInput}
                   onChangeText={setTagInput}
                   placeholder={t('compose.tagPeoplePlaceholder')}
+                  placeholderTextColor={tc.text.tertiary}
                   maxLength={50}
-                  minHeight={40}
-                  multiline={false}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={[styles.tagTextInput, { color: tc.text.primary, borderColor: tc.border }]}
                 />
                 <Pressable
                   onPress={() => {
@@ -670,6 +714,16 @@ function CreateCarouselScreen() {
           <View style={{ height: spacing.xl * 2 }} />
         </ScrollView>
       </SafeAreaView>
+
+      <MusicPicker
+        visible={showMusicPicker}
+        onClose={() => setShowMusicPicker(false)}
+        onSelect={(track: AudioTrack) => {
+          setSelectedTrack(track);
+          setShowMusicPicker(false);
+          haptic.success();
+        }}
+      />
     </ScreenErrorBoundary>
   );
 }
@@ -771,6 +825,20 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   tagHint: { fontSize: fontSizeExt.tiny, fontFamily: fonts.body, marginTop: spacing.xs },
+  tagTextInput: {
+    flex: 1, height: 40, borderRadius: radius.md, borderWidth: 1,
+    paddingHorizontal: spacing.md, fontSize: fontSize.base, fontFamily: fonts.body,
+  },
+
+  // Music row
+  musicRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    padding: spacing.md, borderRadius: radius.lg, borderWidth: 1,
+    marginTop: spacing.md,
+  },
+  musicTitle: { fontSize: fontSize.base, fontFamily: fonts.bodyMedium, fontWeight: '500' },
+  musicArtist: { fontSize: fontSizeExt.caption, fontFamily: fonts.body },
+  musicPlaceholder: { fontSize: fontSize.base, fontFamily: fonts.body },
 
   // Publish field toggles + radio
   radioRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },

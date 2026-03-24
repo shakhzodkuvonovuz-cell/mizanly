@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  FlatList, Image,
+  FlatList,
 } from 'react-native';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { useRouter } from 'expo-router';
@@ -37,7 +38,7 @@ type SearchListItem =
   | { type: 'user'; data: User }
   | { type: 'hashtag'; data: { id: string; name: string; postsCount: number } };
 
-function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
+const UserRow = memo(function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
@@ -64,9 +65,9 @@ function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
       ) : null}
     </Pressable>
   );
-}
+});
 
-function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
+const VideoRow = memo(function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
@@ -81,10 +82,12 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={t('search.viewVideo', { title: video.title })}
     >
-      <Image
-        source={{ uri: video.thumbnailUrl || video.videoUrl }}
-        style={styles.videoThumbnail}
-        resizeMode="cover"
+      <ProgressiveImage
+        uri={video.thumbnailUrl || video.videoUrl}
+        width={120}
+        height={80}
+        borderRadius={radius.sm}
+        contentFit="cover"
       />
       <View style={styles.videoInfo}>
         <Text style={[styles.videoTitle, { textAlign: rtlTextAlign(isRTL) }]} numberOfLines={2}>{video.title}</Text>
@@ -98,9 +101,9 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
       </View>
     </Pressable>
   );
-}
+});
 
-function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => void }) {
+const ChannelRow = memo(function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => void }) {
   const tc = useThemeColors();
   const styles = createStyles(tc);
   const { t, isRTL } = useTranslation();
@@ -126,7 +129,7 @@ function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => voi
       </View>
     </Pressable>
   );
-}
+});
 
 export default function SearchScreen() {
   const tc = useThemeColors();
@@ -339,6 +342,8 @@ export default function SearchScreen() {
                   ) : (
                     <FlatList
           removeClippedSubviews={true}
+          windowSize={7}
+          maxToRenderPerBatch={8}
                       data={posts}
                       keyExtractor={(item) => item.id}
                       renderItem={({ item }) => (
@@ -378,6 +383,8 @@ export default function SearchScreen() {
                   ) : (
                     <FlatList
           removeClippedSubviews={true}
+          windowSize={7}
+          maxToRenderPerBatch={8}
                       data={threads}
                       keyExtractor={(item) => item.id}
                       renderItem={({ item }) => (
@@ -417,6 +424,8 @@ export default function SearchScreen() {
                   ) : (
                     <FlatList
           removeClippedSubviews={true}
+          windowSize={7}
+          maxToRenderPerBatch={8}
                       data={reels}
                       keyExtractor={(item) => item.id}
                       renderItem={({ item }) => (
@@ -427,10 +436,12 @@ export default function SearchScreen() {
                           router.push(`/(screens)/reel/${item.id}`);
                         }}
                         >
-                          <Image
-                            source={{ uri: item.thumbnailUrl || item.videoUrl }}
-                            style={styles.reelThumbnail}
-                            resizeMode="cover"
+                          <ProgressiveImage
+                            uri={item.thumbnailUrl || item.videoUrl}
+                            width={110}
+                            height={190}
+                            borderRadius={radius.sm}
+                            contentFit="cover"
                           />
                           <View style={styles.reelInfo}>
                             <Text style={styles.reelCaption} numberOfLines={2}>
@@ -490,6 +501,8 @@ export default function SearchScreen() {
                   ) : (
                     <FlatList
           removeClippedSubviews={true}
+          windowSize={7}
+          maxToRenderPerBatch={8}
                       data={videos}
                       keyExtractor={(item) => item.id}
                       renderItem={({ item }) => (
@@ -532,6 +545,8 @@ export default function SearchScreen() {
                   ) : (
                     <FlatList
           removeClippedSubviews={true}
+          windowSize={7}
+          maxToRenderPerBatch={8}
                       data={channels}
                       keyExtractor={(item) => item.id}
                       renderItem={({ item }) => (
@@ -569,6 +584,8 @@ export default function SearchScreen() {
           ) : (
             <FlatList<SearchListItem>
           removeClippedSubviews={true}
+          windowSize={7}
+          maxToRenderPerBatch={8}
               data={
                 activeTab === 'people'
                   ? people.map((p): SearchListItem => ({ type: 'user', data: p }))
@@ -626,6 +643,8 @@ export default function SearchScreen() {
             <>
               <FlatList
           removeClippedSubviews={true}
+          windowSize={7}
+          maxToRenderPerBatch={8}
                 data={searchHistory}
                 keyExtractor={(item, i) => `history-${i}`}
                 renderItem={({ item }) => (
@@ -677,6 +696,8 @@ export default function SearchScreen() {
           <View style={styles.exploreSection}>
             <FlatList
           removeClippedSubviews={true}
+          windowSize={7}
+          maxToRenderPerBatch={8}
               data={explorePosts}
               numColumns={3}
               keyExtractor={(item) => item.id}
@@ -688,10 +709,12 @@ export default function SearchScreen() {
                   accessibilityLabel={t('accessibility.viewPost')}
                 >
                   {item.mediaUrls[0] ? (
-                    <Image
-                      source={{ uri: item.mediaUrls[0] }}
-                      style={styles.exploreImage}
-                      resizeMode="cover"
+                    <ProgressiveImage
+                      uri={item.mediaUrls[0]}
+                      width={120}
+                      height={120}
+                      borderRadius={radius.md}
+                      contentFit="cover"
                     />
                   ) : (
                     <View style={[styles.exploreImage, { backgroundColor: tc.bgElevated }]}>

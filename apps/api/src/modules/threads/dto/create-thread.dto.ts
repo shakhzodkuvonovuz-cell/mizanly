@@ -102,4 +102,9 @@ export class CreateThreadDto {
   @ValidateNested()
   @Type(() => CreatePollDto)
   poll?: CreatePollDto;
+
+  @ApiProperty({ required: false, description: 'ISO 8601 datetime to schedule thread' })
+  @IsOptional()
+  @IsDateString()
+  scheduledAt?: string;
 }

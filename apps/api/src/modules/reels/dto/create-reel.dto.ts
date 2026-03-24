@@ -11,6 +11,7 @@ import {
   Min,
   Max,
   IsEnum,
+  IsDateString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -153,4 +154,9 @@ export class CreateReelDto {
   @IsString({ each: true })
   @ArrayMaxSize(20)
   taggedUserIds?: string[];
+
+  @ApiProperty({ required: false, description: 'ISO 8601 datetime to schedule reel' })
+  @IsOptional()
+  @IsDateString()
+  scheduledAt?: string;
 }

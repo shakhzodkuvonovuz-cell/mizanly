@@ -140,6 +140,7 @@ export class ReelsService {
           brandPartner: dto.brandedContent ? dto.brandPartner : null,
           remixAllowed: dto.remixAllowed ?? true,
           topics: dto.topics ?? [],
+          scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
           status: ReelStatus.PROCESSING,
         },
         select: REEL_SELECT,

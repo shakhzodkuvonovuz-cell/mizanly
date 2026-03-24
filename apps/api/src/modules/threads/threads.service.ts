@@ -394,6 +394,7 @@ export class ThreadsService {
                 },
               }
             : undefined,
+          scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
         },
         select: THREAD_SELECT,
       }),

@@ -181,6 +181,7 @@ describe('ThreadsService', () => {
           quoteText: undefined,
           repostOfId: undefined,
           poll: undefined,
+          scheduledAt: null,
         },
         select: expect.any(Object),
       });

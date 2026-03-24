@@ -652,7 +652,7 @@ export default function CreateStoryScreen() {
       case 'gif':
         return (
           <View style={{ alignItems: 'center' }}>
-            <Image source={{ uri: String(sticker.data.gifPreviewUrl) }} style={{ width: 120, height: 90, borderRadius: radius.sm }} contentFit="cover" />
+            <ProgressiveImage uri={String(sticker.data.gifPreviewUrl)} width={120} height={90} borderRadius={radius.sm} contentFit="cover" />
           </View>
         );
       case 'link':
@@ -815,7 +815,7 @@ export default function CreateStoryScreen() {
           </EidFrame>
         ) : mediaUri ? (
           <View style={{ flex: 1 }}>
-            <Image source={{ uri: mediaUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+            <ProgressiveImage uri={mediaUri} width={SCREEN_W} height={CANVAS_H} contentFit="cover" />
             {currentFilter.overlay && (
               <View style={[StyleSheet.absoluteFill, { backgroundColor: currentFilter.overlay }]} pointerEvents="none" />
             )}

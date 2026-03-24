@@ -16,6 +16,7 @@ import Animated, {
   FadeInDown,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
@@ -366,9 +367,11 @@ export function GifStickerDisplay({ data, style }: GifStickerDisplayProps) {
   const aspectRatio = data.gifWidth / data.gifHeight;
   return (
     <Animated.View entering={FadeIn.duration(300)} style={style}>
-      <Image
-        source={{ uri: data.gifUrl }}
-        style={[styles.displayGif, { aspectRatio: Math.max(0.5, Math.min(2, aspectRatio)) }]}
+      <ProgressiveImage
+        uri={data.gifUrl}
+        width={200}
+        height={Math.round(200 / Math.max(0.5, Math.min(2, aspectRatio)))}
+        borderRadius={radius.md}
         contentFit="contain"
         transition={200}
         accessibilityLabel={data.gifTitle}
