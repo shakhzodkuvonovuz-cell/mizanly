@@ -58,18 +58,22 @@ export function SchedulePostSheet({
     return Math.min(TIME_SLOTS.findIndex((s) => s.hours >= nextHour) || 0, TIME_SLOTS.length - 1);
   });
 
-  // Refresh time reference when sheet opens (useEffect, not render body)
-  const nowRef = useRef(Date.now());
+  // Reset selections when sheet opens (dates may have shifted)
   useEffect(() => {
-    if (visible) nowRef.current = Date.now();
+    if (visible) {
+      setSelectedDateIdx(0);
+      const now = new Date();
+      const nextHour = now.getHours() + 1;
+      setSelectedTimeIdx(Math.min(TIME_SLOTS.findIndex((s) => s.hours >= nextHour) || 0, TIME_SLOTS.length - 1));
+    }
   }, [visible]);
 
   const selectedDateTime = useMemo(() => {
-    const d = new Date(dateOptions[selectedDateIdx].date);
+    const d = new Date(dateOptions[selectedDateIdx]?.date ?? new Date());
     const time = TIME_SLOTS[selectedTimeIdx];
     d.setHours(time.hours, time.minutes, 0, 0);
     return d;
-  }, [selectedDateIdx, selectedTimeIdx]);
+  }, [selectedDateIdx, selectedTimeIdx, dateOptions]);
 
   const isInPast = selectedDateTime.getTime() <= Date.now();
 

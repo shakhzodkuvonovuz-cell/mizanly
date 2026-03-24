@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, FlatList,
   useWindowDimensions, Alert,
@@ -34,6 +34,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const MAX_SLIDES = 35;
 const CAPTION_MAX = 500;
 const TOPIC_OPTIONS = ['islamic', 'education', 'technology', 'travel', 'food', 'fitness', 'art', 'nature', 'community', 'business'];
+const MIME_MAP: Record<string, string> = { png: 'image/png', webp: 'image/webp', gif: 'image/gif', heic: 'image/heic' };
 
 interface Slide {
   uri: string;
@@ -128,6 +129,8 @@ function CreateCarouselScreen() {
   }, []);
 
   const currentSlide = slides[selectedIndex];
+  const slideUris = useMemo(() => slides.map((s) => s.uri), [slides]);
+  const slideTexts = useMemo(() => slides.map((s) => s.text), [slides]);
   const canPublish = slides.length >= 2 && !uploading;
 
   // ── Pick photos ──
@@ -196,7 +199,6 @@ function CreateCarouselScreen() {
         // Extract extension from URI, handling paths with multiple dots and query params
         const uriPath = slide.uri.split('?')[0];
         const ext = uriPath.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const MIME_MAP: Record<string, string> = { png: 'image/png', webp: 'image/webp', gif: 'image/gif', heic: 'image/heic' };
         const contentType = MIME_MAP[ext] ?? 'image/jpeg';
         const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(contentType, 'reels');
 
@@ -339,8 +341,8 @@ function CreateCarouselScreen() {
           {/* ── Preview: swipeable carousel preview ── */}
           <Animated.View entering={FadeInUp.duration(300)} style={[styles.previewWrap, { height: previewSize }]}>
             <ImageCarousel
-              images={slides.map((s) => s.uri)}
-              texts={slides.map((s) => s.text)}
+              images={slideUris}
+              texts={slideTexts}
               height={previewSize}
               borderRadius={radius.lg}
               showIndicators={slides.length > 1}

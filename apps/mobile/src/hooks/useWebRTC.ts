@@ -6,9 +6,12 @@ import {
   mediaDevices,
   MediaStream,
   type MediaStreamTrack,
-  type RTCPeerConnectionIceEvent,
-  type EventOnAddStream,
 } from 'react-native-webrtc';
+
+// Inline type — react-native-webrtc may not export RTCPeerConnectionIceEvent
+interface IceCandidateEvent {
+  candidate: RTCIceCandidate | null;
+}
 import type { Socket } from 'socket.io-client';
 
 export interface IceServer {
@@ -114,7 +117,7 @@ export function useWebRTC({
     });
 
     // ICE candidates → relay via socket
-    pc.addEventListener('icecandidate', (event: RTCPeerConnectionIceEvent) => {
+    pc.addEventListener('icecandidate', (event: IceCandidateEvent) => {
       if (event.candidate && socketRef.current?.connected) {
         socketRef.current.emit('call_signal', {
           targetUserId,

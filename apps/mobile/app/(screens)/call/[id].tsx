@@ -65,6 +65,7 @@ export default function CallScreen() {
   const [callStatus, setCallStatus] = useState<CallStatus>('ringing');
   const [duration, setDuration] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: call, isLoading } = useQuery({
     queryKey: ['call', id],
@@ -151,7 +152,7 @@ export default function CallScreen() {
       socket.on('call_ended', () => {
         setCallStatus('ended');
         if (intervalRef.current) clearInterval(intervalRef.current);
-        setTimeout(() => router.back(), 2000);
+        endedTimeoutRef.current = setTimeout(() => router.back(), 2000);
       });
       socket.on('incoming_call', () => {
         setCallStatus('ringing');
@@ -169,6 +170,7 @@ export default function CallScreen() {
       socketRef.current?.disconnect();
       socketRef.current = null;
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (endedTimeoutRef.current) clearTimeout(endedTimeoutRef.current);
     };
   }, [id, getToken]);
 
@@ -207,12 +209,12 @@ export default function CallScreen() {
   const toggleSpeaker = () => { haptic.tick(); }; // Speaker routing needs InCallManager — keep as UI state for now
   const toggleCamera = () => { haptic.tick(); webrtc.flipCamera(); };
 
-  // Start WebRTC when caller initiates (not incoming)
+  // Start WebRTC when caller initiates (not incoming) — waits for iceConfig
   useEffect(() => {
-    if (call && !isIncomingCall && callStatus === 'ringing' && socketRef.current) {
+    if (call && !isIncomingCall && callStatus === 'ringing' && socketRef.current && iceConfig) {
       webrtc.start();
     }
-  }, [call, isIncomingCall, callStatus]);
+  }, [call, isIncomingCall, callStatus, iceConfig]);
 
   // Pulsing ring animation for ringing state
   const pulseScale = useSharedValue(1);
