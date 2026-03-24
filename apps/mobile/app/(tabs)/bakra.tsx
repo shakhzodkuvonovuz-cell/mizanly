@@ -144,6 +144,7 @@ const ReelItem = memo(function ReelItem({
 
   const spin = useSharedValue(0);
   const marqueeAnim = useSharedValue(0);
+  const timeAgo = useMemo(() => formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() }), [item.createdAt]);
 
   // Tap-to-pause: toggle video playback
   const togglePause = useCallback(() => {
@@ -360,7 +361,7 @@ const ReelItem = memo(function ReelItem({
             <View style={styles.userText}>
               <Text style={styles.username}>{item.user.username}</Text>
               <Text style={styles.time}>
-                {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
+                {timeAgo}
               </Text>
             </View>
           </Pressable>

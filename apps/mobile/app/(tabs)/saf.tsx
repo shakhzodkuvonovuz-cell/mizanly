@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
@@ -92,7 +92,7 @@ function SuggestedUserCard({
   );
 }
 
-function SuggestedUserRow({
+const SuggestedUserRow = memo(function SuggestedUserRow({
   user,
   isRTL,
   onFollow,
@@ -161,7 +161,7 @@ function SuggestedUserRow({
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 // ── Explore First Banner ──
 function ExploreFirstBanner({ onDismiss }: { onDismiss: () => void }) {
