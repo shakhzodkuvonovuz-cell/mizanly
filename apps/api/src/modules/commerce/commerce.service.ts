@@ -468,15 +468,17 @@ export class CommerceService {
   }
 
   async donateZakat(userId: string, fundId: string, dto: { amount: number; isAnonymous?: boolean }) {
+    throw new BadRequestException('Zakat donations require payment integration. Coming soon.');
+
     if (!dto.amount || dto.amount <= 0 || dto.amount > 1_000_000) {
       throw new BadRequestException('Invalid donation amount');
     }
 
     const fund = await this.prisma.zakatFund.findUnique({ where: { id: fundId } });
-    if (!fund || fund.status !== 'active') throw new NotFoundException('Fund not found or closed');
+    if (!fund || fund!.status !== 'active') throw new NotFoundException('Fund not found or closed');
 
     // Prevent self-donation (fund creator donating to own fund)
-    if (fund.recipientId === userId) {
+    if (fund!.recipientId === userId) {
       throw new BadRequestException('Cannot donate to your own zakat fund');
     }
 
@@ -522,6 +524,8 @@ export class CommerceService {
   }
 
   async contributeTreasury(userId: string, treasuryId: string, amount: number) {
+    throw new BadRequestException('Treasury contributions require payment integration. Coming soon.');
+
     if (!amount || amount <= 0 || amount > 1_000_000) {
       throw new BadRequestException('Invalid contribution amount');
     }
@@ -529,18 +533,18 @@ export class CommerceService {
       where: { id: treasuryId },
       select: { id: true, status: true, circleId: true, goalAmount: true, raisedAmount: true },
     });
-    if (!treasury || treasury.status !== 'active') throw new NotFoundException();
+    if (!treasury || treasury!.status !== 'active') throw new NotFoundException();
 
     // Verify user is a member of the circle
     const membership = await this.prisma.circleMember.findUnique({
-      where: { circleId_userId: { circleId: treasury.circleId, userId } },
+      where: { circleId_userId: { circleId: treasury!.circleId, userId } },
     });
     if (!membership) {
       throw new ForbiddenException('You must be a member of the circle to contribute');
     }
 
     // Check if fund goal has already been reached
-    if (Number(treasury.raisedAmount) >= Number(treasury.goalAmount)) {
+    if (Number(treasury!.raisedAmount) >= Number(treasury!.goalAmount)) {
       throw new BadRequestException('Treasury goal has already been reached');
     }
 
@@ -596,15 +600,17 @@ export class CommerceService {
   }
 
   async contributeWaqf(userId: string, fundId: string, amount: number) {
+    throw new BadRequestException('Waqf contributions require payment integration. Coming soon.');
+
     if (!amount || amount <= 0 || amount > 1_000_000) {
       throw new BadRequestException('Invalid contribution amount');
     }
 
     const fund = await this.prisma.waqfFund.findUnique({ where: { id: fundId } });
-    if (!fund || !fund.isActive) throw new NotFoundException('Waqf fund not found or closed');
+    if (!fund || !fund!.isActive) throw new NotFoundException('Waqf fund not found or closed');
 
     // Prevent self-contribution
-    if (fund.createdById === userId) {
+    if (fund!.createdById === userId) {
       throw new BadRequestException('Cannot contribute to your own waqf fund');
     }
 

@@ -61,7 +61,7 @@ describe('RecommendationsService', () => {
       const result = await service.suggestedPeople(undefined, 20);
 
       expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { isDeactivated: false, isPrivate: false },
+        where: { isBanned: false, isDeactivated: false, isPrivate: false },
         orderBy: { followersCount: 'desc' },
         take: 20,
       }));
@@ -185,7 +185,7 @@ describe('RecommendationsService', () => {
       expect(prisma.post.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
-          user: { id: { notIn: ['blocked1', 'muted1'] }, isDeactivated: false, isPrivate: false },
+          user: { id: { notIn: ['blocked1', 'muted1'] }, isBanned: false, isDeactivated: false, isPrivate: false },
         }),
       }));
     });
@@ -350,7 +350,7 @@ describe('RecommendationsService', () => {
       expect(prisma.reel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
-          user: { id: { notIn: ['blocked1', 'muted1'] }, isDeactivated: false, isPrivate: false },
+          user: { id: { notIn: ['blocked1', 'muted1'] }, isBanned: false, isDeactivated: false, isPrivate: false },
         }),
       }));
     });
@@ -405,7 +405,7 @@ describe('RecommendationsService', () => {
       const result = await service.suggestedChannels(undefined, 20);
 
       expect(prisma.channel.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { user: { isDeactivated: false } },
+        where: { user: { isBanned: false, isDeactivated: false } },
         orderBy: [
           { subscribersCount: 'desc' },
           { totalViews: 'desc' },
@@ -426,7 +426,7 @@ describe('RecommendationsService', () => {
       expect(prisma.channel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
-          user: { id: { notIn: ['blocked1', 'muted1'] }, isDeactivated: false },
+          user: { id: { notIn: ['blocked1', 'muted1'] }, isBanned: false, isDeactivated: false },
         }),
       }));
     });
@@ -443,7 +443,7 @@ describe('RecommendationsService', () => {
 
       const callArgs = prisma.channel.findMany.mock.calls[0][0];
       // Channel where clause should only check isDeactivated, not isPrivate
-      expect(callArgs.where.user).toEqual({ isDeactivated: false });
+      expect(callArgs.where.user).toEqual({ isBanned: false, isDeactivated: false });
     });
   });
 
@@ -464,7 +464,7 @@ describe('RecommendationsService', () => {
           isRemoved: false,
           visibility: 'PUBLIC',
           isChainHead: true,
-          user: { isDeactivated: false },
+          user: { isBanned: false, isDeactivated: false },
           createdAt: { gte: expect.any(Date) },
         }),
         orderBy: [

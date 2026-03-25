@@ -125,20 +125,17 @@ export class GiftsService {
 
     const diamondsEarned = Math.floor(catalogItem.coins * DIAMOND_RATE);
 
-    // Use conditional updateMany with gte guard to prevent race conditions
-    // (same pattern as cashout — atomic balance check + decrement)
-    const deducted = await this.prisma.coinBalance.updateMany({
-      where: { userId: senderId, coins: { gte: catalogItem.coins } },
-      data: { coins: { decrement: catalogItem.coins } },
-    });
+    const giftRecord = await this.prisma.$transaction(async (tx) => {
+      const deducted = await tx.coinBalance.updateMany({
+        where: { userId: senderId, coins: { gte: catalogItem.coins } },
+        data: { coins: { decrement: catalogItem.coins } },
+      });
 
-    if (deducted.count === 0) {
-      throw new BadRequestException('Insufficient coins');
-    }
+      if (deducted.count === 0) {
+        throw new BadRequestException('Insufficient coins');
+      }
 
-    // Execute remaining operations in a transaction
-    const [giftRecord] = await this.prisma.$transaction([
-      this.prisma.giftRecord.create({
+      const gift = await tx.giftRecord.create({
         data: {
           senderId,
           receiverId,
@@ -147,29 +144,34 @@ export class GiftsService {
           contentId: contentId || null,
           contentType: contentType || null,
         },
-      }),
-      this.prisma.coinBalance.upsert({
+      });
+
+      await tx.coinBalance.upsert({
         where: { userId: receiverId },
         update: { diamonds: { increment: diamondsEarned } },
         create: { userId: receiverId, coins: 0, diamonds: diamondsEarned },
-      }),
-      this.prisma.coinTransaction.create({
+      });
+
+      await tx.coinTransaction.create({
         data: {
           userId: senderId,
           type: 'GIFT_SENT',
           amount: -catalogItem.coins,
           description: `Sent ${catalogItem.name} to user`,
         },
-      }),
-      this.prisma.coinTransaction.create({
+      });
+
+      await tx.coinTransaction.create({
         data: {
           userId: receiverId,
           type: 'GIFT_RECEIVED',
           amount: diamondsEarned,
           description: `Received ${catalogItem.name} (+${diamondsEarned} diamonds)`,
         },
-      }),
-    ]);
+      });
+
+      return gift;
+    });
 
     return {
       gift: giftRecord,
@@ -265,6 +267,8 @@ export class GiftsService {
   }
 
   async cashout(userId: string, diamonds: number): Promise<CashoutResult> {
+    throw new BadRequestException('Cashout is temporarily unavailable. Stripe payout integration coming soon.');
+
     if (!Number.isInteger(diamonds) || diamonds <= 0) {
       throw new BadRequestException('Diamonds must be a positive integer');
     }
@@ -278,7 +282,7 @@ export class GiftsService {
     const balance = await this.prisma.coinBalance.findUnique({
       where: { userId },
     });
-    if (!balance || balance.diamonds < diamonds) {
+    if (!balance || balance!.diamonds < diamonds) {
       throw new BadRequestException('Insufficient diamonds');
     }
 

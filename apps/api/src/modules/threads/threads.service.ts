@@ -143,16 +143,10 @@ export class ThreadsService {
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
-        user: { isPrivate: false, isDeactivated: false },
+        user: { isPrivate: false, isDeactivated: false, isBanned: false },
         createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
       };
       if (excludedIds.length) where.userId = { notIn: excludedIds };
-      if (cursor) {
-        where.createdAt = {
-          lt: new Date(cursor),
-          gte: new Date(Date.now() - 72 * 60 * 60 * 1000),
-        };
-      }
 
       const recentThreads = await this.prisma.thread.findMany({
         where,
@@ -205,7 +199,7 @@ export class ThreadsService {
         isChainHead: true,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: allowedUserIds },
-        user: { isDeactivated: false },
+        user: { isDeactivated: false, isBanned: false },
       };
 
       const threads = await this.prisma.thread.findMany({
@@ -242,9 +236,8 @@ export class ThreadsService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         createdAt: { gte: sevenDaysAgo },
-        user: { isPrivate: false, isDeactivated: false },
+        user: { isPrivate: false, isDeactivated: false, isBanned: false },
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
-        ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: THREAD_SELECT,
       take: 200,
@@ -266,7 +259,8 @@ export class ThreadsService {
     });
 
     scored.sort((a, b) => b._score - a._score);
-    const page = scored.slice(0, limit + 1);
+    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+    const page = scored.slice(offset, offset + limit + 1);
     const hasMore = page.length > limit;
     const data = (hasMore ? page.slice(0, limit) : page).map(
       ({ _score, ...t }) => t,
@@ -276,7 +270,7 @@ export class ThreadsService {
       data,
       meta: {
         hasMore,
-        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+        cursor: hasMore ? String(offset + limit) : undefined,
       },
     };
   }
@@ -296,7 +290,7 @@ export class ThreadsService {
         isChainHead: true,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: allowedUserIds },
-        user: { isDeactivated: false },
+        user: { isDeactivated: false, isBanned: false },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: THREAD_SELECT,

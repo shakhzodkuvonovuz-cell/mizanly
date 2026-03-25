@@ -231,7 +231,7 @@ describe('ClerkAuthGuard', () => {
       expect(result).toBe(true);
       expect(mockPrismaService.user.update).toHaveBeenCalledWith({
         where: { id: 'user-abc-123' },
-        data: { isBanned: false, banExpiresAt: null },
+        data: { isBanned: false, banExpiresAt: null, isDeactivated: false },
       });
       // User object is attached (even with the stale isBanned=true from findUnique,
       // the guard still allows access after unbanning)

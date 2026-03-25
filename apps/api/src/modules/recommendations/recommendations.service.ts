@@ -411,7 +411,7 @@ export class RecommendationsService {
       isRemoved: false,
       visibility: PostVisibility.PUBLIC,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isPrivate: false },
+      user: { isDeactivated: false, isBanned: false, isPrivate: false },
     };
     if (userId) {
       where.userId = { not: userId, notIn: excludedUserIds };
@@ -440,7 +440,7 @@ export class RecommendationsService {
       isRemoved: false,
       status: ReelStatus.READY,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isPrivate: false },
+      user: { isDeactivated: false, isBanned: false, isPrivate: false },
     };
     if (userId) {
       where.userId = { not: userId, notIn: excludedUserIds };
@@ -470,7 +470,7 @@ export class RecommendationsService {
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       visibility: 'PUBLIC',
       isChainHead: true,
-      user: { isDeactivated: false },
+      user: { isDeactivated: false, isBanned: false },
     };
     if (userId) {
       where.userId = { not: userId, notIn: excludedUserIds };
@@ -514,6 +514,7 @@ export class RecommendationsService {
       const users = await this.prisma.user.findMany({
         where: {
           isDeactivated: false,
+          isBanned: false,
           isPrivate: false,
         },
         select: {
@@ -565,6 +566,7 @@ export class RecommendationsService {
       where: {
         id: { in: sortedIds, notIn: excludedIds },
         isDeactivated: false,
+        isBanned: false,
         isPrivate: false,
       },
       select: {
@@ -615,7 +617,7 @@ export class RecommendationsService {
       isRemoved: false,
       visibility: PostVisibility.PUBLIC,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isPrivate: false },
+      user: { isDeactivated: false, isBanned: false, isPrivate: false },
       createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
     };
     if (userId) {
@@ -679,7 +681,7 @@ export class RecommendationsService {
       isRemoved: false,
       status: ReelStatus.READY,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isPrivate: false },
+      user: { isDeactivated: false, isBanned: false, isPrivate: false },
       createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
     };
     if (userId) {
@@ -710,7 +712,7 @@ export class RecommendationsService {
     const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
 
     const where: Prisma.ChannelWhereInput = {
-      user: { isDeactivated: false },
+      user: { isDeactivated: false, isBanned: false },
     };
     if (userId) {
       where.userId = { not: userId };
@@ -764,7 +766,7 @@ export class RecommendationsService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         isChainHead: true,
-        user: { isDeactivated: false },
+        user: { isDeactivated: false, isBanned: false },
         createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
       },
       select: THREAD_SELECT,

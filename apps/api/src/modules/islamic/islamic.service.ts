@@ -659,6 +659,8 @@ export class IslamicService {
   }
 
   async createDonation(userId: string, dto: CreateDonationDto) {
+    throw new BadRequestException('Charity donations require payment integration. Coming soon.');
+
     if (dto.amount <= 0 || dto.amount > 1000000) {
       throw new BadRequestException('Donation amount must be between $0.01 and $1,000,000');
     }

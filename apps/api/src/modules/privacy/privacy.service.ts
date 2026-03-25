@@ -17,7 +17,7 @@ export class PrivacyService {
     const now = new Date();
     const usersToDelete = await this.prisma.user.findMany({
       where: {
-        deletedAt: { lte: now },
+        scheduledDeletionAt: { lte: now },
         isDeactivated: true,
         isDeleted: false,
       },

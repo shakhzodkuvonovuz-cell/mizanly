@@ -113,32 +113,14 @@ describe('CommerceService', () => {
   });
 
   describe('donateZakat', () => {
-    it('should donate to an active fund and increment raisedAmount (Bug 18)', async () => {
-      prisma.zakatFund.findUnique.mockResolvedValue({
-        id: 'fund-1', status: 'active', goalAmount: 1000, raisedAmount: 400, recipientId: 'other-user',
-      });
-      const mockDonationCreate = jest.fn().mockResolvedValue({ id: 'don-1', amount: 100 });
-      const mockFundUpdate = jest.fn().mockResolvedValue({ raisedAmount: 500, goalAmount: 1000 });
-      (prisma.$transaction as unknown as jest.Mock).mockImplementation(
-        (fn: (tx: unknown) => Promise<unknown>) => fn({
-          zakatDonation: { create: mockDonationCreate },
-          zakatFund: { update: mockFundUpdate },
-        }),
-      );
-
-      const result = await service.donateZakat('user-1', 'fund-1', { amount: 100 });
-      expect(result).toBeDefined();
-      expect(mockFundUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: { raisedAmount: { increment: 100 } },
-        }),
-      );
+    it('should throw BadRequestException (zakat donations temporarily unavailable)', async () => {
+      await expect(service.donateZakat('user-1', 'fund-1', { amount: 100 }))
+        .rejects.toThrow(BadRequestException);
     });
 
-    it('should throw NotFoundException for closed fund', async () => {
-      prisma.zakatFund.findUnique.mockResolvedValue({ id: 'fund-1', status: 'closed' });
+    it('should throw BadRequestException for closed fund (donations unavailable)', async () => {
       await expect(service.donateZakat('user-1', 'fund-1', { amount: 100 }))
-        .rejects.toThrow(NotFoundException);
+        .rejects.toThrow(BadRequestException);
     });
 
     it('should prevent self-donation', async () => {

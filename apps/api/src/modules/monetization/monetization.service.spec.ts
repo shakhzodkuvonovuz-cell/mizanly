@@ -762,24 +762,10 @@ describe('MonetizationService', () => {
   describe('requestCashout', () => {
     const validDto = { amount: 200, payoutSpeed: 'standard' as const, paymentMethodId: 'acct_123' };
 
-    it('should deduct diamonds and create transaction', async () => {
-      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 500 });
-      mockPrismaService.coinBalance.updateMany.mockResolvedValue({ count: 1 });
-      mockPrismaService.coinTransaction.create.mockResolvedValue({});
-
-      const result = await service.requestCashout('user1', validDto);
-      expect(result).toEqual({ success: true });
-      expect(mockPrismaService.coinBalance.updateMany).toHaveBeenCalledWith({
-        where: { userId: 'user1', diamonds: { gte: 200 } },
-        data: { diamonds: { decrement: 200 } },
-      });
-      expect(mockPrismaService.coinTransaction.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          userId: 'user1',
-          type: 'CASHOUT',
-          amount: -200,
-        }),
-      });
+    it('should throw BadRequestException (cashout temporarily unavailable)', async () => {
+      await expect(
+        service.requestCashout('user1', validDto),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw for non-integer diamond amount', async () => {
@@ -840,27 +826,16 @@ describe('MonetizationService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should accept instant payout speed', async () => {
-      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 500 });
-      mockPrismaService.coinBalance.updateMany.mockResolvedValue({ count: 1 });
-      mockPrismaService.coinTransaction.create.mockResolvedValue({});
-
-      const result = await service.requestCashout('user1', { ...validDto, payoutSpeed: 'instant' });
-      expect(result).toEqual({ success: true });
-      expect(mockPrismaService.coinTransaction.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          description: expect.stringContaining('instant'),
-        }),
-      });
+    it('should throw for instant payout speed (cashout temporarily unavailable)', async () => {
+      await expect(
+        service.requestCashout('user1', { ...validDto, payoutSpeed: 'instant' }),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should accept exact minimum (100 diamonds)', async () => {
-      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 100 });
-      mockPrismaService.coinBalance.updateMany.mockResolvedValue({ count: 1 });
-      mockPrismaService.coinTransaction.create.mockResolvedValue({});
-
-      const result = await service.requestCashout('user1', { ...validDto, amount: 100 });
-      expect(result).toEqual({ success: true });
+    it('should throw for exact minimum (cashout temporarily unavailable)', async () => {
+      await expect(
+        service.requestCashout('user1', { ...validDto, amount: 100 }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

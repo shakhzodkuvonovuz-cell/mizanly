@@ -199,7 +199,7 @@ describe('Comprehensive Auth + Abuse — batch tests', () => {
               giftRecord: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
               coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
               user: { findUnique: jest.fn() },
-              $transaction: jest.fn().mockResolvedValue([{ id: 'g-1', senderId: 'u1', receiverId: 'u2' }, {}, {}, {}, {}]),
+              $transaction: jest.fn().mockImplementation(async (cb: any) => cb(prisma)),
             },
           },
         ],

@@ -314,7 +314,6 @@ export class ReelsService {
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       user: { isPrivate: false, isDeactivated: false, isBanned: false },
       createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) }, // last 72h
-      ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
     };
 
@@ -405,8 +404,7 @@ export class ReelsService {
         isTrial: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isPrivate: false },
-        ...(cursor ? { id: { lt: cursor } } : {}),
+        user: { isDeactivated: false, isBanned: false, isPrivate: false },
       },
       select: {
         ...REEL_SELECT,
@@ -434,7 +432,8 @@ export class ReelsService {
     });
 
     scored.sort((a, b) => b._score - a._score);
-    const page = scored.slice(0, limit + 1);
+    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+    const page = scored.slice(offset, offset + limit + 1);
     const hasMore = page.length > limit;
     const data = (hasMore ? page.slice(0, limit) : page).map(
       ({ _score, ...reel }) => reel,
@@ -444,7 +443,7 @@ export class ReelsService {
       data,
       meta: {
         hasMore,
-        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+        cursor: hasMore ? String(offset + limit) : undefined,
       },
     };
   }

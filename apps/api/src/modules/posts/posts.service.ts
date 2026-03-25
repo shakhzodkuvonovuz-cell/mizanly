@@ -173,7 +173,6 @@ export class PostsService {
           visibility: 'PUBLIC',
           ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
           ...(dismissedPostIds.length ? { id: { notIn: dismissedPostIds } } : {}),
-          ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
         },
         select: POST_SELECT,
         take: 200, // fetch more to score and rank
@@ -283,9 +282,8 @@ export class PostsService {
         visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isPrivate: false },
+        user: { isDeactivated: false, isBanned: false, isPrivate: false },
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
-        ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: POST_SELECT,
       take: 200,
@@ -299,14 +297,15 @@ export class PostsService {
     });
     scored.sort((a, b) => b._score - a._score);
 
-    const page = scored.slice(0, limit + 1);
+    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+    const page = scored.slice(offset, offset + limit + 1);
     const hasMore = page.length > limit;
     const data = (hasMore ? page.slice(0, limit) : page).map(({ _score, ...p }) => p);
     const enriched = await this.enrichPostsForUser(data, userId);
 
     return {
       data: enriched,
-      meta: { cursor: data.length > 0 ? data[data.length - 1].id : null, hasMore },
+      meta: { cursor: hasMore ? String(offset + limit) : null, hasMore },
     };
   }
 
@@ -341,7 +340,7 @@ export class PostsService {
         visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isPrivate: false },
+        user: { isDeactivated: false, isBanned: false, isPrivate: false },
         id: { notIn: [...seenIds] },
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       },

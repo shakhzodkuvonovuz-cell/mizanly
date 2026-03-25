@@ -57,11 +57,12 @@ export class ClerkAuthGuard implements CanActivate {
       if (user.banExpiresAt && user.banExpiresAt < new Date()) {
         await this.prisma.user.update({
           where: { id: user.id },
-          data: { isBanned: false, banExpiresAt: null },
+          data: { isBanned: false, banExpiresAt: null, isDeactivated: false },
         });
         // Reflect unbanned state in request.user so downstream code sees truth
         user.isBanned = false;
         user.banExpiresAt = null;
+        user.isDeactivated = false;
       } else {
         throw new ForbiddenException('Account has been banned');
       }

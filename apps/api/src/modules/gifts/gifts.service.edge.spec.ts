@@ -33,7 +33,7 @@ describe('GiftsService — edge cases', () => {
               findMany: jest.fn().mockResolvedValue([]),
             },
             user: { findUnique: jest.fn() },
-            $transaction: jest.fn(),
+            $transaction: jest.fn().mockImplementation(async (cb: any) => cb(prisma)),
           },
         },
       ],

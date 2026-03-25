@@ -73,55 +73,59 @@ export class StripeWebhookController {
       this.logger.debug(`Stripe webhook ${event.id} already processed — skipping`);
       return { received: true, deduplicated: true };
     }
-    // Mark as processed with 7-day TTL (Stripe retries for up to 3 days)
-    await this.redis.setex(dedupeKey, 604800, '1');
-
     this.logger.log(`Stripe webhook received: ${event.type}`);
 
-    switch (event.type) {
-      case 'payment_intent.succeeded': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        await this.paymentsService.handlePaymentIntentSucceeded(paymentIntent);
-        break;
+    try {
+      switch (event.type) {
+        case 'payment_intent.succeeded': {
+          const paymentIntent = event.data.object as Stripe.PaymentIntent;
+          await this.paymentsService.handlePaymentIntentSucceeded(paymentIntent);
+          break;
+        }
+        case 'payment_intent.payment_failed': {
+          const paymentIntent = event.data.object as Stripe.PaymentIntent;
+          await this.paymentsService.handlePaymentIntentFailed(paymentIntent);
+          break;
+        }
+        case 'invoice.paid': {
+          const invoice = event.data.object as Stripe.Invoice;
+          await this.paymentsService.handleInvoicePaid(invoice);
+          break;
+        }
+        case 'invoice.payment_failed': {
+          const invoice = event.data.object as Stripe.Invoice;
+          await this.paymentsService.handleInvoicePaymentFailed(invoice);
+          break;
+        }
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object as Stripe.Subscription;
+          await this.paymentsService.handleSubscriptionDeleted(subscription);
+          break;
+        }
+        case 'customer.subscription.updated': {
+          const subscription = event.data.object as Stripe.Subscription;
+          await this.paymentsService.handleSubscriptionUpdated(subscription);
+          break;
+        }
+        case 'charge.dispute.created': {
+          const dispute = event.data.object as unknown as Record<string, unknown>;
+          await this.paymentsService.handleDisputeCreated(dispute);
+          break;
+        }
+        case 'payment_method.attached': {
+          this.logger.debug(`Payment method attached: ${(event.data.object as Stripe.PaymentMethod).id}`);
+          break;
+        }
+        default:
+          this.logger.warn(`Unhandled Stripe event type: ${event.type}`);
       }
-      case 'payment_intent.payment_failed': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        await this.paymentsService.handlePaymentIntentFailed(paymentIntent);
-        break;
-      }
-      case 'invoice.paid': {
-        const invoice = event.data.object as Stripe.Invoice;
-        await this.paymentsService.handleInvoicePaid(invoice);
-        break;
-      }
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice;
-        await this.paymentsService.handleInvoicePaymentFailed(invoice);
-        break;
-      }
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-        await this.paymentsService.handleSubscriptionDeleted(subscription);
-        break;
-      }
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription;
-        await this.paymentsService.handleSubscriptionUpdated(subscription);
-        break;
-      }
-      case 'charge.dispute.created': {
-        const dispute = event.data.object as unknown as Record<string, unknown>;
-        await this.paymentsService.handleDisputeCreated(dispute);
-        break;
-      }
-      case 'payment_method.attached': {
-        // Informational only — no action needed
-        this.logger.debug(`Payment method attached: ${(event.data.object as Stripe.PaymentMethod).id}`);
-        break;
-      }
-      default:
-        this.logger.warn(`Unhandled Stripe event type: ${event.type}`);
+    } catch (error) {
+      this.logger.error(`Stripe webhook handler failed for ${event.type} (${event.id})`, error);
+      throw error;
     }
+
+    // Mark as processed ONLY after handler succeeds (7-day TTL, Stripe retries for up to 3 days)
+    await this.redis.setex(dedupeKey, 604800, '1');
 
     return { received: true };
   }

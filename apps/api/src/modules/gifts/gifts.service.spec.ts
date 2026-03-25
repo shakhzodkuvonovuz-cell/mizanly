@@ -20,7 +20,7 @@ describe('GiftsService', () => {
             coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             giftRecord: { create: jest.fn(), groupBy: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn().mockResolvedValue({ id: 'receiver' }) },
-            $transaction: jest.fn().mockResolvedValue([{ id: 'gift-1', senderId: 's', receiverId: 'r', giftType: 'rose', coinCost: 1 }]),
+            $transaction: jest.fn().mockImplementation(async (cb: any) => cb(prisma)),
           },
         },
       ],
@@ -116,16 +116,8 @@ describe('GiftsService', () => {
   });
 
   describe('cashout', () => {
-    it('should convert diamonds to USD', async () => {
-      prisma.coinBalance.findUnique
-        .mockResolvedValueOnce({ diamonds: 500 })  // initial balance check
-        .mockResolvedValueOnce({ diamonds: 300 });  // post-update re-read
-      prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
-      prisma.coinTransaction.create.mockResolvedValue({});
-      const result = await service.cashout('u1', 200);
-      expect(result.diamondsDeducted).toBe(200);
-      expect(result.usdAmount).toBeGreaterThan(0);
-      expect(result.remainingDiamonds).toBe(300);
+    it('should throw BadRequestException (cashout temporarily unavailable)', async () => {
+      await expect(service.cashout('u1', 200)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw for minimum cashout', async () => {

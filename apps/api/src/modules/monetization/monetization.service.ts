@@ -462,6 +462,8 @@ export class MonetizationService {
   }
 
   async requestCashout(userId: string, dto: CashoutRequestDto) {
+    throw new BadRequestException('Cashout is temporarily unavailable. Stripe payout integration coming soon.');
+
     const { amount: diamonds, payoutSpeed, paymentMethodId } = dto;
 
     if (!Number.isInteger(diamonds) || diamonds <= 0) {
@@ -485,7 +487,7 @@ export class MonetizationService {
     const balance = await this.prisma.coinBalance.findUnique({
       where: { userId },
     });
-    if (!balance || balance.diamonds < diamonds) {
+    if (!balance || balance!.diamonds < diamonds) {
       throw new BadRequestException('Insufficient diamonds');
     }
 

@@ -22,7 +22,7 @@ describe('GiftsService — authorization matrix', () => {
             giftRecord: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             coinTransaction: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn() },
-            $transaction: jest.fn(),
+            $transaction: jest.fn().mockImplementation(async (cb: any) => cb(prisma)),
           },
         },
       ],
@@ -40,12 +40,9 @@ describe('GiftsService — authorization matrix', () => {
   it('should deduct from sender balance and credit receiver', async () => {
     prisma.user.findUnique.mockResolvedValue({ id: userB });
     prisma.coinBalance.updateMany.mockResolvedValue({ count: 1 });
-    prisma.$transaction.mockResolvedValue([
-      { id: 'gift-1', senderId: userA, receiverId: userB },
-      {},
-      {},
-      {},
-    ]);
+    prisma.giftRecord.create.mockResolvedValue({ id: 'gift-1', senderId: userA, receiverId: userB });
+    prisma.coinBalance.upsert.mockResolvedValue({});
+    prisma.coinTransaction.create.mockResolvedValue({});
 
     const result = await service.sendGift(userA, { receiverId: userB, giftType: 'rose' });
     expect(result.gift.senderId).toBe(userA);

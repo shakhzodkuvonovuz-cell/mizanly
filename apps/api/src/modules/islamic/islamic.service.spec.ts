@@ -1432,22 +1432,14 @@ describe('IslamicService', () => {
   });
 
   describe('createDonation', () => {
-    it('should create donation without campaign', async () => {
-      prisma.charityDonation.create.mockResolvedValue({ id: 'don-1', amount: 100, status: 'completed' });
-
-      const result = await service.createDonation('user-1', { amount: 100 } as any);
-      expect(result.amount).toBe(100);
+    it('should throw BadRequestException (charity donations temporarily unavailable)', async () => {
+      await expect(service.createDonation('user-1', { amount: 100 } as any))
+        .rejects.toThrow(BadRequestException);
     });
 
-    it('should create donation with valid campaign as pending', async () => {
-      prisma.charityCampaign.findUnique.mockResolvedValue({ id: 'camp-1' });
-      prisma.charityDonation.create.mockResolvedValue({ id: 'don-1', amount: 50, campaignId: 'camp-1', status: 'pending' });
-
-      const result = await service.createDonation('user-1', { amount: 50, campaignId: 'camp-1' } as any);
-      expect(result.campaignId).toBe('camp-1');
-      expect(prisma.charityDonation.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'pending' }) }),
-      );
+    it('should throw BadRequestException with campaign (donations unavailable)', async () => {
+      await expect(service.createDonation('user-1', { amount: 50, campaignId: 'camp-1' } as any))
+        .rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for zero amount', async () => {
@@ -1462,10 +1454,9 @@ describe('IslamicService', () => {
       await expect(service.createDonation('user-1', { amount: -10 } as any)).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw NotFoundException for non-existent campaign', async () => {
-      prisma.charityCampaign.findUnique.mockResolvedValue(null);
+    it('should throw BadRequestException for non-existent campaign (donations unavailable)', async () => {
       await expect(service.createDonation('user-1', { amount: 100, campaignId: 'fake' } as any))
-        .rejects.toThrow(NotFoundException);
+        .rejects.toThrow(BadRequestException);
     });
   });
 

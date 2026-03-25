@@ -157,7 +157,9 @@ export class FeedService {
         hashtags: { hasSome: tagNames },
         createdAt: { gte: twentyFourHoursAgo },
         isRemoved: false,
+        visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        user: { isDeactivated: false, isBanned: false },
       },
       select: { id: true, content: true, mediaUrls: true, likesCount: true, commentsCount: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { likesCount: 'desc' },
@@ -347,7 +349,7 @@ export class FeedService {
         visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isPrivate: false, ...userFilter },
+        user: { isDeactivated: false, isBanned: false, isPrivate: false, ...userFilter },
         ...contentFilter,
       },
       select: FEED_POST_SELECT,
@@ -434,7 +436,7 @@ export class FeedService {
         isRemoved: false,
         visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, ...userFilter },
+        user: { isDeactivated: false, isBanned: false, isPrivate: false, ...userFilter },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: FEED_POST_SELECT,
@@ -500,6 +502,7 @@ export class FeedService {
     const users = await this.prisma.user.findMany({
       where: {
         isDeactivated: false,
+        isBanned: false,
         isPrivate: false,
         ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
       },
@@ -553,6 +556,7 @@ export class FeedService {
         locationName: { not: null },
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        user: { isDeactivated: false, isBanned: false, isPrivate: false },
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       select: {
@@ -622,7 +626,7 @@ export class FeedService {
     if (filteredIds.length === 0) return [];
 
     return this.prisma.user.findMany({
-      where: { id: { in: filteredIds } },
+      where: { id: { in: filteredIds }, isDeactivated: false, isBanned: false },
       select: {
         id: true,
         username: true,
