@@ -61,6 +61,15 @@ export class FeedController {
     return this.feed.undismiss(userId, id, t);
   }
 
+  // Finding #402: Trending in your community
+  @Get('community-trending')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Trending posts from hashtags you follow' })
+  async getCommunityTrending(@CurrentUser('id') userId: string) {
+    return this.feed.getCommunityTrending(userId);
+  }
+
   // Finding #406: On This Day memories
   @Get('on-this-day')
   @UseGuards(ClerkAuthGuard)

@@ -135,6 +135,32 @@ export class FeedService {
     }).slice(0, 5);
   }
 
+  /**
+   * Finding #402: Trending in your community — posts from followed hashtags trending in last 24h.
+   */
+  async getCommunityTrending(userId: string, limit = 10) {
+    const followedTags = await this.prisma.hashtagFollow.findMany({
+      where: { userId },
+      select: { hashtag: { select: { name: true } } },
+      take: 50,
+    });
+    const tagNames = followedTags.map(h => h.hashtag.name);
+    if (tagNames.length === 0) return [];
+
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return this.prisma.post.findMany({
+      where: {
+        hashtags: { hasSome: tagNames },
+        createdAt: { gte: twentyFourHoursAgo },
+        isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      },
+      select: { id: true, content: true, mediaUrls: true, likesCount: true, commentsCount: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+      orderBy: { likesCount: 'desc' },
+      take: limit,
+    });
+  }
+
   async getUserInterests(userId: string): Promise<{ bySpace: Record<string, number>; byHashtag: Record<string, number> }> {
     const interactions = await this.prisma.feedInteraction.findMany({
       where: { userId, OR: [{ liked: true }, { saved: true }, { viewDurationMs: { gte: 5000 } }] },
