@@ -108,6 +108,14 @@ export class CommerceController {
     return this.commerceService.updateOrderStatus(id, userId, dto.status);
   }
 
+  @Get('seller/analytics')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get seller analytics — total sales, revenue, top products' })
+  getSellerAnalytics(@CurrentUser('id') userId: string) {
+    return this.commerceService.getSellerAnalytics(userId);
+  }
+
   // ── Halal Business Directory ────────────────────────────
 
   @Post('businesses')

@@ -287,6 +287,32 @@ export class CommerceService {
     return { data: orders, meta: { cursor: orders[orders.length - 1]?.id || null, hasMore } };
   }
 
+  /**
+   * Finding #134: Seller analytics — total sales, revenue, top products.
+   */
+  async getSellerAnalytics(sellerId: string) {
+    const [products, orderCount, totalRevenue] = await Promise.all([
+      this.prisma.product.findMany({
+        where: { sellerId, status: 'ACTIVE' },
+        select: { id: true, title: true, salesCount: true, price: true, rating: true, images: true },
+        orderBy: { salesCount: 'desc' },
+        take: 10,
+      }),
+      this.prisma.order.count({ where: { product: { sellerId } } }),
+      this.prisma.order.aggregate({
+        where: { product: { sellerId }, status: 'PAID' },
+        _sum: { totalAmount: true },
+      }),
+    ]);
+
+    return {
+      totalProducts: products.length,
+      totalOrders: orderCount,
+      totalRevenue: Number(totalRevenue._sum.totalAmount ?? 0),
+      topProducts: products.slice(0, 5),
+    };
+  }
+
   async updateOrderStatus(orderId: string, sellerId: string, status: string) {
     const VALID_STATUSES = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
     if (!VALID_STATUSES.includes(status)) throw new BadRequestException('Invalid order status');

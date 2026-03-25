@@ -257,6 +257,19 @@ function CreatorDashboardContent() {
 
     return (
       <View style={styles.tabContent}>
+        {/* Scheduled Content Section */}
+        <Pressable
+          style={[styles.scheduledBanner, { backgroundColor: `${colors.emerald}10`, borderColor: `${colors.emerald}30` }]}
+          onPress={() => router.push('/(screens)/scheduled-content' as never)}
+          accessibilityLabel={t('creatorDashboard.viewScheduled', 'View scheduled content')}
+        >
+          <Icon name="clock" size="sm" color={colors.emerald} />
+          <Text style={[styles.scheduledBannerText, { color: tc.text.primary }]}>
+            {t('creatorDashboard.scheduledContent', 'Scheduled Content')}
+          </Text>
+          <Icon name="chevron-right" size="xs" color={tc.text.secondary} />
+        </Pressable>
+
         {/* Top Posts Grid */}
         {topPosts.length > 0 ? (
           <>
@@ -720,6 +733,20 @@ const styles = StyleSheet.create({
   overviewChange: {
     fontFamily: fonts.bodyMedium,
     fontSize: fontSize.xs,
+  },
+  scheduledBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.base,
+    marginBottom: spacing.base,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  scheduledBannerText: {
+    flex: 1,
+    fontFamily: fonts.bodyMedium,
+    fontSize: fontSize.sm,
   },
   tabSelectorContainer: {
     paddingHorizontal: spacing.base,

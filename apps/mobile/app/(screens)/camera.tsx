@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Dimensions,
+  View, Text, StyleSheet, Pressable, Dimensions, Alert,
   StatusBar, Animated as RNAnimated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -106,12 +106,19 @@ export default function CameraScreen() {
     opacity: interpolate(pulseAnim.value, [1, 1.1], [0.8, 1]),
   }));
 
-  // Request camera permission on mount if not yet determined
+  // Request camera permission on mount with rationale explanation
   useEffect(() => {
     if (!permission?.granted && permission?.canAskAgain !== false) {
-      requestPermission();
+      Alert.alert(
+        t('permissions.cameraTitle', 'Camera Access'),
+        t('permissions.cameraRationale', 'Mizanly needs camera access to take photos and record videos for your posts, stories, and reels.'),
+        [
+          { text: t('common.notNow', 'Not Now'), style: 'cancel' },
+          { text: t('common.allow', 'Allow'), onPress: () => requestPermission() },
+        ],
+      );
     }
-  }, [permission, requestPermission]);
+  }, [permission, requestPermission, t]);
 
   // Start pulse animation on mount
   useEffect(() => {

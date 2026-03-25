@@ -214,6 +214,17 @@ export default function SafScreen() {
   const [bannerDismissed, setBannerDismissed] = useState(true);
   const [dismissedUserIds, setDismissedUserIds] = useState<Set<string>>(new Set());
 
+  // First-visit coach mark
+  const [showCoachMark, setShowCoachMark] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem('saf_coach_seen').then(val => {
+      if (!val) {
+        setShowCoachMark(true);
+        AsyncStorage.setItem('saf_coach_seen', '1');
+      }
+    });
+  }, []);
+
   // Check if explore banner was previously dismissed
   useEffect(() => {
     AsyncStorage.getItem(EXPLORE_BANNER_KEY).then((val) => {
@@ -574,6 +585,18 @@ export default function SafScreen() {
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
+      {/* First-visit coach mark */}
+      {showCoachMark && (
+        <Animated.View entering={FadeInDown.duration(400)} style={{ backgroundColor: colors.emerald, padding: spacing.base, borderRadius: radius.md, margin: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Icon name="trending-up" size="sm" color="#FFF" />
+          <Text style={{ color: '#FFF', fontSize: fontSize.sm, flex: 1, fontFamily: 'DMSans_500Medium' }}>
+            {t('onboarding.safTip', 'Welcome to Saf! Swipe between Following and For You feeds. Double-tap to like!')}
+          </Text>
+          <Pressable onPress={() => setShowCoachMark(false)} hitSlop={8}>
+            <Icon name="x" size="xs" color="#FFF" />
+          </Pressable>
+        </Animated.View>
+      )}
       {/* Header — hides on scroll down, reveals on scroll up */}
       <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
         <Animated.View style={titleAnimatedStyle}>
