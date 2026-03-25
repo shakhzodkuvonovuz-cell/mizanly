@@ -698,9 +698,7 @@ model User {
   isScholarVerified Boolean @default(false)
   nasheedMode       Boolean @default(false)
 
-  // Monetization
-  coinBalance            Int      @default(0)
-  diamondBalance         Int      @default(0)
+  // Monetization — balance is in CoinBalance table (NOT on User model)
   stripeConnectAccountId String?
   madhab                 String?  @db.VarChar(20)
   lastActiveAt           DateTime @default(now())

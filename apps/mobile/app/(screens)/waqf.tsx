@@ -63,10 +63,8 @@ export default function WaqfScreen() {
         receiverId: creatorId ?? 'platform',
       });
 
-      // Step 2: Record the waqf contribution
-      // TODO: Backend needs a POST /community/waqf/:id/contribute endpoint.
-      // For now, the PaymentIntent is created and the contribution will be
-      // reconciled when the backend endpoint is added.
+      // Step 2: Record the waqf contribution on backend
+      await api.post(`/waqf/funds/${selectedFund.id}/contribute`, { amount: contributionAmount });
 
       haptic.success();
       setContributeSheet(false);
@@ -85,7 +83,7 @@ export default function WaqfScreen() {
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams();
       if (pageParam) params.set('cursor', pageParam);
-      return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/community/waqf?${params}`);
+      return api.get<{ data: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/waqf/funds?${params}`);
     },
     getNextPageParam: (lastPage: { meta?: { cursor: string | null; hasMore: boolean } }) =>
       lastPage?.meta?.hasMore ? lastPage.meta.cursor : undefined,
