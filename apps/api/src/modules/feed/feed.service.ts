@@ -89,6 +89,12 @@ export class FeedService {
   }
 
   async dismiss(userId: string, contentId: string, contentType: string) {
+    // Finding #300: Track negative signal for algorithm adjustment
+    await this.redis.lpush(`negative_signals:${userId}`, JSON.stringify({
+      contentId, contentType, action: 'dismiss', timestamp: Date.now(),
+    }));
+    await this.redis.ltrim(`negative_signals:${userId}`, 0, 199);
+
     return this.prisma.feedDismissal.upsert({
       where: { userId_contentId_contentType: { userId, contentId, contentType } },
       update: {},

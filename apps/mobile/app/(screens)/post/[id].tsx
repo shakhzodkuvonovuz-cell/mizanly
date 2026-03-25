@@ -231,6 +231,17 @@ function CommentRow({
             )}
           </View>
         )}
+        {/* Finding #410: View replies expansion */}
+        {(comment as Record<string, unknown>).repliesCount && ((comment as Record<string, unknown>).repliesCount as number) > 0 && (
+          <Pressable
+            onPress={() => onReply(comment.id, comment.user.username)}
+            style={{ paddingStart: 40, paddingVertical: 4 }}
+          >
+            <Text style={{ color: colors.emerald, fontSize: 12, fontFamily: 'DMSans_500Medium' }}>
+              {t('saf.viewReplies', { count: (comment as Record<string, unknown>).repliesCount })}
+            </Text>
+          </Pressable>
+        )}
         {showReactions && (
           <View style={styles.reactionPickerWrap}>
             <ReactionPicker
