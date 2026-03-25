@@ -1057,6 +1057,8 @@ model Post {
   @@index([space, createdAt(sort: Desc)])
   @@index([hashtags])
   @@index([isFeatured, featuredAt(sort: Desc)])
+  @@index([visibility, createdAt(sort: Desc)]) // P0: for-you/trending feeds filter visibility+sort
+  @@index([isRemoved, createdAt(sort: Desc)])  // P0: all feeds exclude removed posts
   @@map("posts")
 }
 
@@ -1201,6 +1203,8 @@ model Reel {
   @@index([createdAt(sort: Desc)])
   @@index([viewsCount(sort: Desc)])
   @@index([hashtags])
+  @@index([status, createdAt(sort: Desc)])   // P0: feed queries filter status=READY+sort
+  @@index([isRemoved, createdAt(sort: Desc)]) // P0: all feeds exclude removed reels
   @@map("reels")
 }
 
@@ -1315,6 +1319,7 @@ model Thread {
   @@index([chainId])
   @@index([circleId, createdAt(sort: Desc)])
   @@index([hashtags])
+  @@index([isChainHead, createdAt(sort: Desc)]) // P0: thread feeds filter chain heads+sort
   @@map("threads")
 }
 
@@ -2045,6 +2050,7 @@ model Block {
 
   @@id([blockerId, blockedId])
   @@index([blockedId])
+  @@index([blockerId]) // P0: feed exclusion queries filter by blockerId
   @@map("blocks")
 }
 
@@ -2057,6 +2063,7 @@ model Mute {
 
   @@id([userId, mutedId])
   @@index([mutedId])
+  @@index([userId]) // P0: feed exclusion queries filter by userId
   @@map("mutes")
 }
 
