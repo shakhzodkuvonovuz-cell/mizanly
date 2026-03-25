@@ -328,4 +328,26 @@ export class VideosController {
   deleteEndScreens(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.videosService.deleteEndScreens(id, userId);
   }
+
+  // Bug 22: DELETE video comment was unreachable (service existed, no controller route)
+  @Delete(':id/comments/:commentId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({ summary: 'Delete a video comment' })
+  deleteComment(
+    @Param('id') videoId: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.videosService.deleteComment(videoId, commentId, userId);
+  }
+
+  // Bug 23: GET chapters was unreachable (service existed, no controller route)
+  @Get(':id/chapters')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get video chapters (parsed from description)' })
+  getChapters(@Param('id') id: string) {
+    return this.videosService.getChapters(id);
+  }
 }

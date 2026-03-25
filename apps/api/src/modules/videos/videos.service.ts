@@ -7,6 +7,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { CountdownTheme, EndScreenType } from '@prisma/client';
 import { CreateVideoDto } from './dto/create-video.dto';
@@ -82,6 +83,7 @@ export class VideosService {
     private contentSafety: ContentSafetyService,
     private ai: AiService,
     private queueService: QueueService,
+    private configService: ConfigService,
   ) {}
 
   private async enhanceVideos(videos: VideoWithRelations[], userId?: string) {
@@ -839,7 +841,8 @@ export class VideosService {
       select: { id: true },
     });
     if (!video) throw new NotFoundException('Video not found');
-    return { url: `https://mizanly.app/video/${videoId}` };
+    const appUrl = this.configService.get<string>('APP_URL') || 'https://mizanly.app';
+    return { url: `${appUrl}/video/${videoId}` };
   }
 
   // ── Premiere ──────────────────────────────────────────
@@ -915,12 +918,27 @@ export class VideosService {
     const video = await this.prisma.video.findFirst({ where: { id: videoId, userId } });
     if (!video) throw new NotFoundException();
 
-    await this.prisma.videoPremiere.update({
-      where: { videoId },
-      data: { isLive: true },
-    });
+    // Bug 24: Also publish the video when premiere starts
+    await this.prisma.$transaction([
+      this.prisma.videoPremiere.update({
+        where: { videoId },
+        data: { isLive: true },
+      }),
+      this.prisma.video.update({
+        where: { id: videoId },
+        data: { status: VideoStatus.PUBLISHED, publishedAt: new Date() },
+      }),
+    ]);
 
     return { success: true };
+  }
+
+  // Bug 25: Add viewerCount increment for premieres
+  async incrementPremiereViewerCount(videoId: string) {
+    return this.prisma.videoPremiere.update({
+      where: { videoId },
+      data: { viewerCount: { increment: 1 } },
+    });
   }
 
   async getPremiereViewerCount(videoId: string) {

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -283,5 +284,19 @@ export class ThreadsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.threadsService.isBookmarked(id, userId);
+  }
+
+  // Bug 38: updateThread existed in service but had no controller route
+  @Patch(':id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Edit a thread' })
+  updateThread(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('content') content: string,
+  ) {
+    return this.threadsService.updateThread(id, userId, content);
   }
 }

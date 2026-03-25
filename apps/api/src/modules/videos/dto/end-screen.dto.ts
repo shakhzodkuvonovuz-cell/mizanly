@@ -12,6 +12,6 @@ export class EndScreenItemDto {
 }
 
 export class SetEndScreensDto {
-  @IsArray() @ArrayMaxSize(6) @ValidateNested({ each: true }) @Type(() => EndScreenItemDto)
+  @IsArray() @ArrayMaxSize(4) @ValidateNested({ each: true }) @Type(() => EndScreenItemDto)
   items: EndScreenItemDto[];
 }

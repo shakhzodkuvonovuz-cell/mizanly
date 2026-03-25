@@ -587,7 +587,14 @@ export class MessagesController {
     @Param('targetUserId') targetUserId: string,
     @CurrentUser('id') userId: string,
   ) {
-    return this.messagesService.banMember(conversationId, userId, targetUserId);
+    const result = await this.messagesService.banMember(conversationId, userId, targetUserId);
+    // Bug 44: Emit room_evicted to banned user's socket so client leaves the room
+    if (this.chatGateway?.server) {
+      this.chatGateway.server
+        .to(`user:${targetUserId}`)
+        .emit('room_evicted', { conversationId, removedBy: userId, reason: 'banned' });
+    }
+    return result;
   }
 
   @Patch(':conversationId/wallpaper')

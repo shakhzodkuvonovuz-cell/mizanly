@@ -630,7 +630,7 @@ export class PostsService {
         this.notifications.create({
           userId: invitee.id,
           actorId: userId,
-          type: 'COMMENT', // No COLLAB_INVITE type in enum — COMMENT is closest
+          type: 'COLLAB_INVITE',
           postId: post.id,
           title: 'Collaboration invite',
           body: `@${actorUsername} invited you to collaborate on a post`,

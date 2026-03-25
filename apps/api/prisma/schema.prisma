@@ -167,6 +167,8 @@ enum NotificationType {
   VIDEO_COMMENT
   STORY_REPLY
   POLL_VOTE
+  COLLAB_INVITE
+  TAG
   SYSTEM
 }
 

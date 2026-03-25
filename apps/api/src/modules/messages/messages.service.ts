@@ -269,7 +269,7 @@ export class MessagesService {
 
     // Trigger voice message transcription asynchronously
     if (
-      message.messageType === 'VOICE' &&
+      (message.messageType === 'VOICE' || message.messageType === 'AUDIO') &&
       message.mediaUrl &&
       message.id
     ) {
@@ -634,6 +634,27 @@ export class MessagesService {
     const results = [];
     for (const convId of targetConversationIds) {
       await this.requireMembership(convId, userId);
+
+      // Check if sender is blocked by any member in the target conversation
+      const targetMembers = await this.prisma.conversationMember.findMany({
+        where: { conversationId: convId, userId: { not: userId } },
+        select: { userId: true },
+      });
+      const memberIds = targetMembers.map(m => m.userId);
+      if (memberIds.length > 0) {
+        const blockExists = await this.prisma.block.findFirst({
+          where: {
+            OR: [
+              { blockerId: { in: memberIds }, blockedId: userId },
+              { blockerId: userId, blockedId: { in: memberIds } },
+            ],
+          },
+        });
+        if (blockExists) {
+          continue; // Skip this conversation silently — don't reveal the block
+        }
+      }
+
       const msg = await this.prisma.message.create({
         data: {
           conversationId: convId, senderId: userId,

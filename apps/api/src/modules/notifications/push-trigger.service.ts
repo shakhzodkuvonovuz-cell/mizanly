@@ -28,18 +28,16 @@ export class PushTriggerService {
 
     switch (notification.type) {
       case NotificationType.LIKE:
-      case NotificationType.REEL_LIKE:
-        if (notification.postId || notification.reelId) {
+        if (notification.postId) {
           await this.sendSafe(
             notification.userId,
-            this.push.buildLikeNotification(actorName, notification.postId || notification.reelId!),
+            this.push.buildLikeNotification(actorName, notification.postId),
           );
         }
         break;
 
       case NotificationType.COMMENT:
-      case NotificationType.REEL_COMMENT:
-        if (notification.postId || notification.reelId) {
+        if (notification.postId) {
           await this.sendSafe(
             notification.userId,
             this.push.buildCommentNotification(
