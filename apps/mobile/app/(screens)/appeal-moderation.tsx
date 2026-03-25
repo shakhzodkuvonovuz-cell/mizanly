@@ -294,7 +294,7 @@ export default function AppealModerationScreen() {
                 onPress={async () => {
                   try {
                     const ImagePicker = await import('expo-image-picker');
-                    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: 5 });
+                    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: 5, exif: false });
                     if (!result.canceled && result.assets.length > 0) {
                       setEvidenceImages(prev => [...prev, ...result.assets.map(a => a.uri)].slice(0, 5));
                     }

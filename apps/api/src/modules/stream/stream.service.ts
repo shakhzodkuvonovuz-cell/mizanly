@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
+import { assertNotPrivateUrl } from '../../common/utils/ssrf';
 
 interface UploadMeta {
   title: string;
@@ -71,10 +72,11 @@ export class StreamService {
     if (r2PublicDomain && !r2PublicUrl.startsWith(r2PublicDomain)) {
       throw new BadRequestException('Video URL must be from the application storage');
     }
-    // Block private/internal URLs
-    const blockedPatterns = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1'];
-    if (blockedPatterns.some(p => r2PublicUrl.includes(p))) {
-      throw new BadRequestException('Invalid video URL');
+    // SSRF protection: resolve hostname to IP and check against private CIDR ranges
+    try {
+      await assertNotPrivateUrl(r2PublicUrl, 'Video URL');
+    } catch (err) {
+      throw new BadRequestException(err instanceof Error ? err.message : 'Invalid video URL');
     }
 
     let response: Response;

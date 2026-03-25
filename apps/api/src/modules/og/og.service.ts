@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
+import { assertNotPrivateUrl, safeFetch } from '../../common/utils/ssrf';
 
 const APP_NAME = 'Mizanly';
 const APP_STORE_URL = 'https://apps.apple.com/app/mizanly';
@@ -263,23 +264,26 @@ Sitemap: ${this.appUrl}/sitemap.xml
     imageUrl: string | null;
     faviconUrl: string | null;
   }> {
-    // SSRF protection
+    // SSRF protection: resolve hostname to IP and check against private ranges
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       throw new NotFoundException('Invalid URL protocol');
     }
-    const blockedHosts = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
-    if (blockedHosts.some(h => parsed.hostname.includes(h))) {
-      throw new NotFoundException('URL not accessible');
-    }
     const domain = parsed.hostname.replace('www.', '');
 
     try {
-      const response = await fetch(url, {
-        headers: { 'User-Agent': 'MizanlyBot/1.0 (+https://mizanly.com)' },
-        signal: AbortSignal.timeout(5000),
-        redirect: 'follow',
-      });
+      await assertNotPrivateUrl(url, 'OG unfurl URL');
+
+      // Use safeFetch to manually follow redirects with SSRF re-validation on each hop
+      const response = await safeFetch(
+        url,
+        {
+          headers: { 'User-Agent': 'MizanlyBot/1.0 (+https://mizanly.com)' },
+          signal: AbortSignal.timeout(5000),
+        },
+        5,
+        'OG unfurl URL',
+      );
 
       if (!response.ok) {
         return { url, domain, title: null, description: null, imageUrl: null, faviconUrl: `https://www.google.com/s2/favicons?domain=${domain}&sz=64` };

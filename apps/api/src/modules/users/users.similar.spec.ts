@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../../config/prisma.service';
-import { mockRedis, mockConfigService } from '../../common/test/mock-providers';
+import { mockRedis, mockConfigService, mockPrivacyService } from '../../common/test/mock-providers';
 
 const mockPrisma = {
   provide: PrismaService,
@@ -29,7 +29,7 @@ describe('UsersService — Similar Accounts & Popular With Friends', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [UsersService, mockPrisma, mockRedis, mockConfigService],
+      providers: [UsersService, mockPrisma, mockRedis, mockConfigService, mockPrivacyService],
     }).compile();
 
     service = module.get(UsersService);

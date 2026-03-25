@@ -259,6 +259,7 @@ export default function CreateReelScreen() {
       aspect: [9, 16],
       quality: 1,
       videoMaxDuration: 60, // 60 seconds max
+      exif: false,
     });
 
     if (!result.canceled && result.assets[0]) {
@@ -809,6 +810,7 @@ export default function CreateReelScreen() {
                     const result = await ImagePicker.launchImageLibraryAsync({
                       mediaTypes: ['images'],
                       quality: 0.8,
+                      exif: false,
                     });
                     if (!result.canceled && result.assets[0]) {
                       setThumbnailUri(result.assets[0].uri);

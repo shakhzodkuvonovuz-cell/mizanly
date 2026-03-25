@@ -11,6 +11,8 @@ import { AiService } from '../../modules/ai/ai.service';
 import { StreamService } from '../../modules/stream/stream.service';
 import { QueueService } from '../queue/queue.service';
 import { ContentSafetyService } from '../../modules/moderation/content-safety.service';
+import { PrivacyService } from '../../modules/privacy/privacy.service';
+import { UploadService } from '../../modules/upload/upload.service';
 
 /**
  * Shared mock providers for test modules.
@@ -161,6 +163,24 @@ export const mockContentSafetyService = {
   },
 };
 
+export const mockPrivacyService = {
+  provide: PrivacyService,
+  useValue: {
+    exportUserData: jest.fn().mockResolvedValue({}),
+    deleteAllUserData: jest.fn().mockResolvedValue({ deleted: true }),
+    processScheduledDeletions: jest.fn().mockResolvedValue(undefined),
+    purgeOldIpAddresses: jest.fn().mockResolvedValue(undefined),
+  },
+};
+
+export const mockUploadService = {
+  provide: UploadService,
+  useValue: {
+    getPresignedUrl: jest.fn().mockResolvedValue({ url: 'https://mock-presigned-url.com', key: 'mock-key' }),
+    deleteFile: jest.fn().mockResolvedValue(undefined),
+  },
+};
+
 export const mockPrismaService = {
   provide: PrismaService,
   useValue: {
@@ -201,4 +221,6 @@ export const globalMockProviders = [
   mockAnalyticsService,
   mockFeatureFlagsService,
   mockContentSafetyService,
+  mockPrivacyService,
+  mockUploadService,
 ];

@@ -436,7 +436,7 @@ export default function CommunityPostsScreen() {
               label={t('communityPosts.addImage')}
               icon={<Icon name="image" size="md" color={tc.text.primary} />}
               onPress={async () => {
-                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsMultipleSelection: true });
+                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsMultipleSelection: true, exif: false });
                 if (!result.canceled && result.assets) {
                   const newMedia = result.assets.map(asset => ({ uri: asset.uri, type: 'image' as const }));
                   setSelectedMediaList(prev => [...prev, ...newMedia]);
@@ -448,7 +448,7 @@ export default function CommunityPostsScreen() {
               label={t('communityPosts.addVideo')}
               icon={<Icon name="video" size="md" color={tc.text.primary} />}
               onPress={async () => {
-                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8 });
+                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8, exif: false });
                 if (!result.canceled && result.assets[0]) {
                   setSelectedMediaList(prev => [...prev, { uri: result.assets[0].uri, type: 'video' }]);
                   setShowCreateSheet(false);

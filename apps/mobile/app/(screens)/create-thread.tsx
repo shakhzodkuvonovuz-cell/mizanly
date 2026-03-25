@@ -355,6 +355,7 @@ export default function CreateThreadScreen() {
       allowsMultipleSelection: true,
       selectionLimit: 4 - part.media.length,
       quality: 0.85,
+      exif: false,
     });
     if (!result.canceled) {
       const picked = result.assets.map((a) => ({ uri: a.uri, type: 'image' as const }));

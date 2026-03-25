@@ -212,6 +212,7 @@ function ProfileCustomizationScreen() {
       allowsEditing: true,
       aspect: [3, 2],
       quality: 0.9,
+      exif: false,
     });
     if (!result.canceled && result.assets[0]) {
       try {

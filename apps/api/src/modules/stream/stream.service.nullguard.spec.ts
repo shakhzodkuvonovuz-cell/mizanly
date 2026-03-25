@@ -4,6 +4,18 @@ import { StreamService } from './stream.service';
 import { PrismaService } from '../../config/prisma.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
+// Mock DNS for SSRF validation to resolve hostnames deterministically
+jest.mock('dns', () => {
+  const original = jest.requireActual('dns');
+  return {
+    ...original,
+    promises: {
+      ...original.promises,
+      lookup: jest.fn().mockResolvedValue({ address: '93.184.216.34', family: 4 }),
+    },
+  };
+});
+
 describe('StreamService — null guard on upload result', () => {
   let service: StreamService;
 

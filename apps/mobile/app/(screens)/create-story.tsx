@@ -309,6 +309,7 @@ export default function CreateStoryScreen() {
       allowsEditing: true,
       aspect: [9, 16],
       quality: 0.9,
+      exif: false,
     });
     if (!result.canceled && result.assets[0]) {
       setMediaUri(result.assets[0].uri);
@@ -324,6 +325,7 @@ export default function CreateStoryScreen() {
       allowsEditing: true,
       aspect: [9, 16],
       quality: 0.9,
+      exif: false,
     });
     if (!result.canceled && result.assets[0]) {
       setMediaUri(result.assets[0].uri);

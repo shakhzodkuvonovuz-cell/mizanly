@@ -167,6 +167,7 @@ export default function GreenScreenEditorScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
+      exif: false,
     });
     if (!result.canceled && result.assets[0]) {
       setSelectedBackground(result.assets[0].uri);
@@ -179,6 +180,7 @@ export default function GreenScreenEditorScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
       quality: 0.8,
+      exif: false,
     });
     if (!result.canceled && result.assets[0]) {
       setSelectedBackground(result.assets[0].uri);

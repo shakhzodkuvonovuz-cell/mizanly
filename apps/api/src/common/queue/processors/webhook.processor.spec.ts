@@ -4,6 +4,22 @@ import { PrismaService } from '../../../config/prisma.service';
 import { WebhookProcessor } from './webhook.processor';
 import { QueueService } from '../queue.service';
 
+// Mock DNS so SSRF validation resolves hostnames deterministically
+jest.mock('dns', () => {
+  const original = jest.requireActual('dns');
+  return {
+    ...original,
+    promises: {
+      ...original.promises,
+      lookup: jest.fn().mockImplementation((hostname: string) => {
+        if (hostname === 'localhost') return Promise.resolve({ address: '127.0.0.1', family: 4 });
+        // Default: public IP
+        return Promise.resolve({ address: '93.184.216.34', family: 4 });
+      }),
+    },
+  };
+});
+
 describe('WebhookProcessor', () => {
   let processor: WebhookProcessor;
 
@@ -39,7 +55,7 @@ describe('WebhookProcessor', () => {
         data: { url: 'http://example.com/hook', secret: 's', event: 'test', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('Only HTTPS allowed');
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('only HTTPS');
     });
 
     it('should reject localhost', async () => {
@@ -47,7 +63,7 @@ describe('WebhookProcessor', () => {
         data: { url: 'https://localhost:3000/admin', secret: 's', event: 'test', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('Internal URLs blocked');
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('private IP');
     });
 
     it('should reject private IPs', async () => {
@@ -55,7 +71,7 @@ describe('WebhookProcessor', () => {
         data: { url: 'https://192.168.1.1/hook', secret: 's', event: 'test', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('Internal URLs blocked');
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('private IP');
     });
 
     it('should reject cloud metadata URLs', async () => {
@@ -63,7 +79,7 @@ describe('WebhookProcessor', () => {
         data: { url: 'https://169.254.169.254/latest', secret: 's', event: 'test', payload: {}, webhookId: 'wh1' },
         attemptsMade: 0, opts: { attempts: 5 }, id: 'j1', updateProgress: jest.fn(),
       };
-      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('Internal URLs blocked');
+      await expect((processor as any).deliverWebhook(job)).rejects.toThrow('private IP');
     });
   });
 

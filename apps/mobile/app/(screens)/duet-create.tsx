@@ -162,6 +162,7 @@ export default function DuetCreateScreen() {
         allowsEditing: true,
         videoMaxDuration: 60,
         quality: 1,
+        exif: false,
       });
       if (!result.canceled && result.assets[0]) {
         setRecordedUri(result.assets[0].uri);

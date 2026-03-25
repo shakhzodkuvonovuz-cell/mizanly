@@ -3,6 +3,21 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { ContentSafetyService } from './content-safety.service';
 
+// Mock DNS for SSRF validation to resolve hostnames deterministically
+jest.mock('dns', () => {
+  const original = jest.requireActual('dns');
+  return {
+    ...original,
+    promises: {
+      ...original.promises,
+      lookup: jest.fn().mockImplementation((hostname: string) => {
+        if (hostname === 'localhost') return Promise.resolve({ address: '127.0.0.1', family: 4 });
+        return Promise.resolve({ address: '93.184.216.34', family: 4 });
+      }),
+    },
+  };
+});
+
 describe('ContentSafetyService', () => {
   let service: ContentSafetyService;
   let prisma: any;

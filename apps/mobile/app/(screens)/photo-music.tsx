@@ -91,6 +91,7 @@ function PhotoMusicScreen() {
       allowsMultipleSelection: true,
       selectionLimit: remaining,
       quality: 0.9,
+      exif: false,
     });
 
     if (!result.canceled && result.assets.length > 0) {

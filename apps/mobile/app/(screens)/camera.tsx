@@ -251,7 +251,7 @@ export default function CameraScreen() {
               accessibilityLabel={t('screens.camera.gallery')}
               onPress={async () => {
                 const ImagePicker = await import('expo-image-picker');
-                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'] });
+                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'], exif: false });
                 if (!result.canceled && result.assets[0]) {
                   router.push({ pathname: '/(screens)/create-post', params: { mediaUri: result.assets[0].uri } });
                 }

@@ -148,6 +148,7 @@ function CreateCarouselScreen() {
       selectionLimit: MAX_SLIDES - slides.length,
       quality: 0.9,
       orderedSelection: true,
+      exif: false,
     });
 
     if (!result.canceled && result.assets.length > 0) {

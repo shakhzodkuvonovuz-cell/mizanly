@@ -145,6 +145,7 @@ export default function StitchCreateScreen() {
         allowsEditing: true,
         videoMaxDuration: maxTime,
         quality: 1,
+        exif: false,
       });
       if (!result.canceled && result.assets[0]) {
         setRecordedUri(result.assets[0].uri);

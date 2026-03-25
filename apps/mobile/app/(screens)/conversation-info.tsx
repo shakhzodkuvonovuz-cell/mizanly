@@ -139,6 +139,7 @@ export default function ConversationInfoScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
+      exif: false,
     });
     if (!result.canceled) {
       setNewAvatarUri(result.assets[0].uri);

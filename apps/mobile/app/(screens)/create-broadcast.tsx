@@ -58,6 +58,7 @@ export default function CreateBroadcastScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.9,
+      exif: false,
     });
     if (!result.canceled) setAvatarUri(result.assets[0].uri);
   };

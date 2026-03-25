@@ -2,16 +2,50 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { PrivacyService } from './privacy.service';
+import { UploadService } from '../upload/upload.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
+
+const mockUploadService = {
+  provide: UploadService,
+  useValue: {
+    deleteFile: jest.fn().mockResolvedValue({ deleted: true, key: 'test' }),
+  },
+};
+
+const mockQueueService = {
+  provide: QueueService,
+  useValue: {
+    addSearchIndexJob: jest.fn().mockResolvedValue('job-id'),
+  },
+};
+
+/** Creates a Proxy that returns jest.fn() mocks for any model.method access */
+function createTxProxy(): any {
+  return new Proxy({}, {
+    get(_target, prop) {
+      // Return an object whose methods are all jest.fn() returning resolved values
+      return new Proxy({}, {
+        get(_t, method) {
+          return jest.fn().mockResolvedValue(method === 'update' ? {} : { count: 0 });
+        },
+      });
+    },
+  });
+}
 
 describe('PrivacyService', () => {
   let service: PrivacyService;
+  let module: TestingModule;
   let prisma: any;
+  let uploadService: any;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         ...globalMockProviders,
+        mockUploadService,
+        mockQueueService,
         PrivacyService,
         {
           provide: PrismaService,
@@ -29,7 +63,7 @@ describe('PrivacyService', () => {
             profileLink: { deleteMany: jest.fn() },
             twoFactorSecret: { deleteMany: jest.fn() },
             encryptionKey: { deleteMany: jest.fn() },
-            device: { deleteMany: jest.fn() },
+            device: { deleteMany: jest.fn(), updateMany: jest.fn() },
             block: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             mute: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             savedPost: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
@@ -50,36 +84,15 @@ describe('PrivacyService', () => {
             searchHistory: { findMany: jest.fn().mockResolvedValue([]) },
             conversationKeyEnvelope: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
             userStreak: { deleteMany: jest.fn() },
-            $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<void>) => fn({
-              user: { update: jest.fn() },
-              post: { updateMany: jest.fn() },
-              thread: { updateMany: jest.fn() },
-              comment: { updateMany: jest.fn() },
-              reel: { updateMany: jest.fn() },
-              video: { updateMany: jest.fn() },
-              story: { deleteMany: jest.fn() },
-              threadReply: { updateMany: jest.fn() },
-              profileLink: { deleteMany: jest.fn() },
-              twoFactorSecret: { deleteMany: jest.fn() },
-              encryptionKey: { deleteMany: jest.fn() },
-              conversationKeyEnvelope: { deleteMany: jest.fn() },
-              device: { deleteMany: jest.fn() },
-              follow: { deleteMany: jest.fn() },
-              block: { deleteMany: jest.fn() },
-              mute: { deleteMany: jest.fn() },
-              savedPost: { deleteMany: jest.fn() },
-              postReaction: { deleteMany: jest.fn() },
-              notification: { deleteMany: jest.fn() },
-              watchHistory: { deleteMany: jest.fn() },
-              userSettings: { deleteMany: jest.fn() },
-              userStreak: { deleteMany: jest.fn() },
-            })),
+            // $transaction uses a Proxy to mock any model access inside the callback
+            $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<void>) => fn(createTxProxy())),
           },
         },
       ],
     }).compile();
     service = module.get(PrivacyService);
     prisma = module.get(PrismaService) as any;
+    uploadService = module.get(UploadService) as any;
   });
 
   describe('exportUserData', () => {
@@ -105,8 +118,10 @@ describe('PrivacyService', () => {
   });
 
   describe('deleteAllUserData', () => {
+    const validUser = { id: 'u1', username: 'testuser', isDeleted: false, avatarUrl: null, coverUrl: null };
+
     it('should soft-delete user data', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isDeleted: false });
+      prisma.user.findUnique.mockResolvedValue(validUser);
       const result = await service.deleteAllUserData('u1');
       expect(result.deleted).toBe(true);
       expect(result.userId).toBe('u1');
@@ -118,14 +133,76 @@ describe('PrivacyService', () => {
     });
 
     it('should throw NotFoundException if already deleted', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isDeleted: true });
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', username: 'x', isDeleted: true });
       await expect(service.deleteAllUserData('u1')).rejects.toThrow(NotFoundException);
     });
 
     it('should call $transaction for soft-delete', async () => {
-      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isDeleted: false });
+      prisma.user.findUnique.mockResolvedValue(validUser);
       await service.deleteAllUserData('u1');
       expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should queue Meilisearch delete jobs for user content', async () => {
+      prisma.user.findUnique.mockResolvedValue(validUser);
+      prisma.post.findMany.mockResolvedValueOnce([{ id: 'p1', mediaUrls: [] }]);
+      prisma.reel.findMany.mockResolvedValueOnce([{ id: 'r1', videoUrl: null, thumbnailUrl: null }]);
+      prisma.story.findMany.mockResolvedValueOnce([]);
+      prisma.video.findMany.mockResolvedValueOnce([{ id: 'v1', videoUrl: null, thumbnailUrl: null }]);
+      prisma.thread.findMany.mockResolvedValueOnce([{ id: 't1' }]);
+
+      const queueService = module.get(QueueService) as any;
+      queueService.addSearchIndexJob.mockClear();
+
+      await service.deleteAllUserData('u1');
+
+      // Should queue delete jobs for: 1 post + 1 reel + 1 thread + 1 video + 1 user = 5
+      expect(queueService.addSearchIndexJob).toHaveBeenCalledTimes(5);
+      expect(queueService.addSearchIndexJob).toHaveBeenCalledWith({ action: 'delete', indexName: 'posts', documentId: 'p1' });
+      expect(queueService.addSearchIndexJob).toHaveBeenCalledWith({ action: 'delete', indexName: 'users', documentId: 'u1' });
+    });
+
+    it('should delete R2 media files for user content (FIX 2.2)', async () => {
+      uploadService.deleteFile.mockClear();
+      prisma.user.findUnique.mockResolvedValue({
+        ...validUser,
+        avatarUrl: 'https://media.mizanly.app/avatars/u1/abc.jpg',
+        coverUrl: 'https://media.mizanly.app/covers/u1/def.jpg',
+      });
+      prisma.post.findMany.mockResolvedValueOnce([{ id: 'p1', mediaUrls: ['https://media.mizanly.app/posts/u1/img1.jpg', 'https://media.mizanly.app/posts/u1/img2.jpg'] }]);
+      prisma.reel.findMany.mockResolvedValueOnce([{ id: 'r1', videoUrl: 'https://media.mizanly.app/reels/u1/vid.mp4', thumbnailUrl: 'https://media.mizanly.app/thumbnails/u1/thumb.jpg' }]);
+      prisma.story.findMany.mockResolvedValueOnce([{ mediaUrl: 'https://media.mizanly.app/stories/u1/story.jpg', thumbnailUrl: null }]);
+      prisma.video.findMany.mockResolvedValueOnce([{ id: 'v1', videoUrl: 'https://media.mizanly.app/videos/u1/vid.mp4', thumbnailUrl: 'https://media.mizanly.app/thumbnails/u1/vthumb.jpg' }]);
+      prisma.thread.findMany.mockResolvedValueOnce([]);
+
+      await service.deleteAllUserData('u1');
+
+      // Should have called deleteFile for: avatar, cover, 2 post images, reel video+thumb, story media, video url+thumb = 9
+      // Use setTimeout to let fire-and-forget Promise.allSettled resolve
+      await new Promise((r) => setTimeout(r, 50));
+      expect(uploadService.deleteFile).toHaveBeenCalledTimes(9);
+      expect(uploadService.deleteFile).toHaveBeenCalledWith('avatars/u1/abc.jpg');
+      expect(uploadService.deleteFile).toHaveBeenCalledWith('covers/u1/def.jpg');
+      expect(uploadService.deleteFile).toHaveBeenCalledWith('posts/u1/img1.jpg');
+      expect(uploadService.deleteFile).toHaveBeenCalledWith('reels/u1/vid.mp4');
+    });
+
+    it('should skip external URLs when deleting R2 media', async () => {
+      uploadService.deleteFile.mockClear();
+      prisma.user.findUnique.mockResolvedValue({
+        ...validUser,
+        avatarUrl: 'https://external.cdn.com/avatar.jpg',
+        coverUrl: null,
+      });
+      prisma.post.findMany.mockResolvedValueOnce([]);
+      prisma.reel.findMany.mockResolvedValueOnce([]);
+      prisma.story.findMany.mockResolvedValueOnce([]);
+      prisma.video.findMany.mockResolvedValueOnce([]);
+      prisma.thread.findMany.mockResolvedValueOnce([]);
+
+      await service.deleteAllUserData('u1');
+      await new Promise((r) => setTimeout(r, 50));
+      expect(uploadService.deleteFile).not.toHaveBeenCalled();
     });
   });
 

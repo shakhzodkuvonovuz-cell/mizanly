@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../config/prisma.service';
+import { PrivacyService } from '../privacy/privacy.service';
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -55,6 +56,7 @@ export class UsersService {
   private readonly logger = new Logger(UsersService.name);
   constructor(
     private prisma: PrismaService,
+    private privacyService: PrivacyService,
     @Inject('REDIS') private redis: Redis,
   ) {}
 
@@ -235,85 +237,12 @@ export class UsersService {
     };
   }
 
+  /**
+   * Permanently delete user account — delegates to the single comprehensive
+   * deletion function in PrivacyService.deleteAllUserData().
+   */
   async deleteAccount(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { username: true, isDeleted: true },
-    });
-    if (!user) throw new NotFoundException('User not found');
-    if (user.isDeleted) throw new NotFoundException('Account already deleted');
-
-    // Full transactional soft-delete: anonymize PII + mark all content as removed (GDPR Article 17)
-    await this.prisma.$transaction(async (tx) => {
-      // Anonymize user profile — use full userId to prevent collision
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          username: `deleted_${userId}`,
-          displayName: 'Deleted User',
-          bio: '',
-          avatarUrl: null,
-          coverUrl: null,
-          website: null,
-          email: `deleted_${userId}@deleted.local`,
-          phone: null,
-          expoPushToken: null,
-          notificationsOn: false,
-          isDeleted: true,
-          deletedAt: new Date(),
-          isDeactivated: true,
-          deactivatedAt: new Date(),
-        },
-      });
-
-      // Soft-delete all user content
-      await tx.post.updateMany({
-        where: { userId },
-        data: { isRemoved: true, removedReason: 'Account deleted by user', removedAt: new Date() },
-      });
-      await tx.thread.updateMany({
-        where: { userId },
-        data: { isRemoved: true },
-      });
-      await tx.comment.updateMany({
-        where: { userId },
-        data: { isRemoved: true },
-      });
-      await tx.reel.updateMany({
-        where: { userId },
-        data: { isRemoved: true },
-      });
-      await tx.video.updateMany({
-        where: { userId },
-        data: { isRemoved: true },
-      });
-      await tx.story.deleteMany({ where: { userId } });
-
-      // Delete sensitive personal data
-      await tx.profileLink.deleteMany({ where: { userId } });
-      await tx.twoFactorSecret.deleteMany({ where: { userId } });
-      await tx.encryptionKey.deleteMany({ where: { userId } });
-      await tx.device.deleteMany({ where: { userId } });
-
-      // Remove social graph
-      await tx.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } });
-      await tx.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } });
-
-      // Clean up circles, mutes, and restricts
-      await tx.circleMember.deleteMany({ where: { userId } });
-      await tx.mute.deleteMany({ where: { OR: [{ userId }, { mutedId: userId }] } });
-      await tx.restrict.deleteMany({ where: { OR: [{ restricterId: userId }, { restrictedId: userId }] } });
-      await tx.followRequest.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } });
-
-      // Delete bookmarks and reactions
-      await tx.savedPost.deleteMany({ where: { userId } });
-      await tx.threadBookmark.deleteMany({ where: { userId } });
-      await tx.videoBookmark.deleteMany({ where: { userId } });
-      await tx.postReaction.deleteMany({ where: { userId } });
-    });
-
-    await this.redis.del(`user:${user.username}`);
-    return { deleted: true };
+    return this.privacyService.deleteAllUserData(userId);
   }
 
   async getProfile(username: string, currentUserId?: string) {

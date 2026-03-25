@@ -142,6 +142,7 @@ function ChatWallpaperScreen() {
       allowsEditing: true,
       aspect: [9, 16],
       quality: 0.8,
+      exif: false,
     });
     if (!result.canceled && result.assets[0]) {
       haptic.tick();

@@ -3,12 +3,14 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { UsersService } from './users.service';
+import { PrivacyService } from '../privacy/privacy.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('UsersService', () => {
   let service: UsersService;
   let prisma: any;
   let redis: any;
+  let privacyService: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -124,6 +126,12 @@ describe('UsersService', () => {
           },
         },
         {
+          provide: PrivacyService,
+          useValue: {
+            deleteAllUserData: jest.fn().mockResolvedValue({ deleted: true, userId: 'user-123', deletedAt: new Date().toISOString() }),
+          },
+        },
+        {
           provide: 'REDIS',
           useValue: {
             get: jest.fn(),
@@ -137,6 +145,7 @@ describe('UsersService', () => {
     service = module.get<UsersService>(UsersService);
     prisma = module.get(PrismaService) as any;
     redis = module.get('REDIS');
+    privacyService = module.get(PrivacyService);
   });
 
   describe('getProfile', () => {
@@ -498,20 +507,13 @@ describe('UsersService', () => {
   });
 
   describe('deleteAccount', () => {
-    it('should anonymize user data and delete devices via transaction', async () => {
+    it('should delegate to privacyService.deleteAllUserData', async () => {
       const userId = 'user-123';
-      const mockUser = { username: 'testuser', isDeleted: false };
-      prisma.user.findUnique.mockResolvedValue(mockUser);
 
       const result = await service.deleteAccount(userId);
 
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: userId },
-        select: { username: true, isDeleted: true },
-      });
-      expect(prisma.$transaction).toHaveBeenCalled();
-      expect(redis.del).toHaveBeenCalledWith('user:testuser');
-      expect(result).toEqual({ deleted: true });
+      expect(privacyService.deleteAllUserData).toHaveBeenCalledWith(userId);
+      expect(result).toEqual(expect.objectContaining({ deleted: true }));
     });
   });
 

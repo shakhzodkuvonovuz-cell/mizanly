@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { TranslationContentType, AiCaptionStatus, AvatarStyle } from '@prisma/client';
 import Redis from 'ioredis';
+import { assertNotPrivateUrl } from '../../common/utils/ssrf';
 
 // AI response interfaces
 export interface CaptionSuggestion {
@@ -77,21 +78,19 @@ export class AiService {
 
   /**
    * Validate that a URL is safe to fetch (prevent SSRF).
-   * Only allows HTTPS URLs and blocks private/internal IPs.
+   * Enforces HTTPS-only for media URLs.
+   * Resolves hostname to IP and checks against private CIDR ranges.
    */
-  private validateMediaUrl(url: string): void {
+  private async validateMediaUrl(url: string): Promise<void> {
     try {
       const parsed = new URL(url);
       if (parsed.protocol !== 'https:') {
         throw new BadRequestException('Only HTTPS URLs are allowed');
       }
-      const blocked = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
-      if (blocked.some(p => parsed.hostname.includes(p))) {
-        throw new BadRequestException('Internal URLs are not allowed');
-      }
+      await assertNotPrivateUrl(url, 'Media URL');
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
-      throw new BadRequestException('Invalid URL');
+      throw new BadRequestException(err instanceof Error ? err.message : 'Invalid URL');
     }
   }
 
@@ -384,7 +383,7 @@ Summarize only the content between the tags. Only respond with the summary, noth
   // ── Video Caption Generation (Whisper) ──────────────────
 
   async generateVideoCaptions(videoId: string, audioUrl: string, language = 'en'): Promise<string> {
-    this.validateMediaUrl(audioUrl);
+    await this.validateMediaUrl(audioUrl);
     const whisperKey = this.config.get<string>('OPENAI_API_KEY');
 
     if (!whisperKey) {
@@ -451,7 +450,7 @@ Summarize only the content between the tags. Only respond with the summary, noth
    * Returns the transcription text or null on failure.
    */
   async transcribeVoiceMessage(messageId: string, audioUrl: string): Promise<string | null> {
-    this.validateMediaUrl(audioUrl);
+    await this.validateMediaUrl(audioUrl);
     const whisperKey = this.config.get<string>('OPENAI_API_KEY');
 
     if (!whisperKey) {
@@ -546,7 +545,7 @@ Summarize only the content between the tags. Only respond with the summary, noth
     reason: string | null;
     categories: string[];
   }> {
-    this.validateMediaUrl(imageUrl);
+    await this.validateMediaUrl(imageUrl);
 
     if (!this.apiAvailable || !this.apiKey) {
       this.logger.warn('AI not available for image moderation — flagging for manual review');
@@ -650,7 +649,7 @@ Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories":
    * Returns a concise, descriptive alt text for screen readers.
    */
   async generateAltText(imageUrl: string): Promise<string> {
-    this.validateMediaUrl(imageUrl);
+    await this.validateMediaUrl(imageUrl);
     if (!this.apiAvailable || !this.apiKey) {
       return 'Image';
     }

@@ -1248,6 +1248,7 @@ export class MessagesService {
   }
 
   // ── Message Expiry Job ──
+  @Cron(CronExpression.EVERY_MINUTE)
   async processExpiredMessages() {
     const now = new Date();
     // Delete expired disappearing messages

@@ -96,6 +96,7 @@ export default function ScheduleLiveScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.9,
+      exif: false,
     });
     if (!result.canceled) {
       const asset = result.assets[0];

@@ -2,6 +2,7 @@ import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
+import { assertNotPrivateUrl } from '../../common/utils/ssrf';
 
 /**
  * ContentSafetyService — Automated content safety pipeline (AI analysis, rate limiting, auto-removal).
@@ -43,27 +44,20 @@ export class ContentSafetyService {
 
   /**
    * Validate that a media URL points to our R2 storage domain (SSRF prevention).
-   * Only allows HTTPS URLs from the configured R2 public domain.
+   * Resolves hostname to IP and checks against private CIDR ranges.
+   * Also warns on non-R2 domains.
    */
-  private validateMediaUrl(url: string): void {
-    try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== 'https:') {
-        throw new Error('Only HTTPS URLs allowed');
-      }
-      // Block private/internal IPs
-      const blocked = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
-      if (blocked.some(p => parsed.hostname.includes(p))) {
-        throw new Error('Internal URLs blocked');
-      }
-      // Allow R2 public domain and Cloudflare Stream domain
-      const allowedDomains = ['media.mizanly.app', 'customer-', '.r2.cloudflarestorage.com', 'videodelivery.net'];
-      const isAllowed = allowedDomains.some(d => parsed.hostname.includes(d));
-      if (!isAllowed) {
-        this.logger.warn(`Media URL from non-R2 domain blocked: ${parsed.hostname}`);
-      }
-    } catch (err) {
-      throw new Error(`Invalid media URL: ${err instanceof Error ? err.message : 'malformed'}`);
+  private async validateMediaUrl(url: string): Promise<void> {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') {
+      throw new Error('Media URL: only HTTPS is allowed');
+    }
+    await assertNotPrivateUrl(url, 'Media URL');
+    // Allow R2 public domain and Cloudflare Stream domain — warn on others
+    const allowedDomains = ['media.mizanly.app', 'customer-', '.r2.cloudflarestorage.com', 'videodelivery.net'];
+    const isAllowed = allowedDomains.some(d => parsed.hostname.includes(d));
+    if (!isAllowed) {
+      this.logger.warn(`Media URL from non-R2 domain: ${parsed.hostname}`);
     }
   }
 
@@ -82,9 +76,9 @@ export class ContentSafetyService {
     flags: string[];
     action: 'allow' | 'flag' | 'remove';
   }> {
-    // SSRF prevention: validate URL before sending to external API
+    // SSRF prevention: resolve hostname to IP, check against private CIDR ranges
     try {
-      this.validateMediaUrl(imageUrl);
+      await this.validateMediaUrl(imageUrl);
     } catch {
       return { safe: false, confidence: 0, flags: ['invalid_url'], action: 'flag' };
     }

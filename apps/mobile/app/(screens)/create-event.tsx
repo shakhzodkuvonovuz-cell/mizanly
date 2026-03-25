@@ -77,6 +77,7 @@ export default function CreateEventScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
+      exif: false,
     });
     if (!result.canceled && result.assets[0]) {
       setCoverUri(result.assets[0].uri);

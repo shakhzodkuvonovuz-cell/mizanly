@@ -98,6 +98,10 @@ export class EmailService implements OnModuleInit {
 </html>`;
   }
 
+  async sendRawHtml(to: string, subject: string, html: string): Promise<boolean> {
+    return this.send({ to, subject, html });
+  }
+
   async sendWelcome(email: string, name: string): Promise<boolean> {
     const safeName = this.escapeHtml(name);
     const html = this.wrapTemplate(`

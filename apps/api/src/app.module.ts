@@ -91,6 +91,7 @@ import { ScholarQAModule } from './modules/scholar-qa/scholar-qa.module';
 import { CommunityNotesModule } from './modules/community-notes/community-notes.module';
 import { ChecklistsModule } from './modules/checklists/checklists.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { WaitlistModule } from './modules/waitlist/waitlist.module';
 import { EmailModule } from './common/services/email.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
@@ -191,6 +192,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     CommunityNotesModule,
     ChecklistsModule,
     WebhooksModule,
+    WaitlistModule,
     EmailModule,
   ],
   providers: [

@@ -108,6 +108,7 @@ export default function EditProfileScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.9,
+      exif: false,
     });
     if (!result.canceled) setAvatarUri(result.assets[0].uri);
   };
@@ -118,6 +119,7 @@ export default function EditProfileScreen() {
       allowsEditing: true,
       aspect: [3, 1],
       quality: 0.9,
+      exif: false,
     });
     if (!result.canceled) setCoverUri(result.assets[0].uri);
   };

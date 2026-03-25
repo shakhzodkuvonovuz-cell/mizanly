@@ -185,6 +185,7 @@ export default function CreateVideoScreen() {
       allowsEditing: false,
       quality: 1,
       videoMaxDuration: 0, // no limit (long-form)
+      exif: false,
     });
 
     if (!result.canceled) {
@@ -226,6 +227,7 @@ export default function CreateVideoScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
+      exif: false,
     });
 
     if (!result.canceled) {
@@ -417,6 +419,7 @@ export default function CreateVideoScreen() {
                     const result = await ImagePicker.launchImageLibraryAsync({
                       mediaTypes: ['images'],
                       quality: 0.8,
+                      exif: false,
                     });
                     if (!result.canceled && result.assets[0]) {
                       setThumbnailUri(result.assets[0].uri);
