@@ -161,6 +161,23 @@ interface AppState {
   addToast: (toast: { id: string; message: string; variant?: string; duration?: number; action?: { label: string; onPress: () => void } }) => void;
   dismissToast: (id: string) => void;
 
+  // Finding #414: Progressive disclosure — track which features user has discovered
+  discoveredFeatures: string[];
+  addDiscoveredFeature: (feature: string) => void;
+  hasDiscovered: (feature: string) => boolean;
+
+  // Finding #415: Role-based home — user's primary role affects home experience
+  userRole: 'viewer' | 'creator' | 'scholar' | 'business';
+  setUserRole: (role: 'viewer' | 'creator' | 'scholar' | 'business') => void;
+
+  // Finding #286: Offline cache
+  cachedFeedData: Record<string, unknown> | null;
+  setCachedFeedData: (data: Record<string, unknown> | null) => void;
+
+  // Finding #375: Last copied link for clipboard detection
+  lastDetectedLink: string | null;
+  setLastDetectedLink: (link: string | null) => void;
+
   logout: () => void;
 }
 
@@ -346,6 +363,25 @@ export const useStore = create<AppState>()(
         toasts: s.toasts.filter(t => t.id !== id),
       })),
 
+      // Finding #414: Progressive disclosure
+      discoveredFeatures: [],
+      addDiscoveredFeature: (feature) => set((s) => ({
+        discoveredFeatures: s.discoveredFeatures.includes(feature) ? s.discoveredFeatures : [...s.discoveredFeatures, feature],
+      })),
+      hasDiscovered: (feature) => useStore.getState().discoveredFeatures.includes(feature),
+
+      // Finding #415: Role-based home
+      userRole: 'viewer' as const,
+      setUserRole: (role) => set({ userRole: role }),
+
+      // Finding #286: Offline cache
+      cachedFeedData: null,
+      setCachedFeedData: (data) => set({ cachedFeedData: data }),
+
+      // Finding #375: Clipboard link detection
+      lastDetectedLink: null,
+      setLastDetectedLink: (link) => set({ lastDetectedLink: link }),
+
       // Auth actions
       logout: () => set({
         user: null,
@@ -383,6 +419,10 @@ export const useStore = create<AppState>()(
         majlisScrollOffset: 0,
         bakraScrollOffset: 0,
         toasts: [],
+        discoveredFeatures: [],
+        userRole: 'viewer' as const,
+        cachedFeedData: null,
+        lastDetectedLink: null,
       }),
     }),
     {
@@ -403,6 +443,8 @@ export const useStore = create<AppState>()(
         ambientModeEnabled: state.ambientModeEnabled,
         islamicThemeEnabled: state.islamicThemeEnabled,
         feedDismissedIds: state.feedDismissedIds,
+        discoveredFeatures: state.discoveredFeatures,
+        userRole: state.userRole,
       }),
     }
   )
@@ -440,6 +482,10 @@ export const useAmbientModeEnabled = () => useStore((s) => s.ambientModeEnabled)
 export const useIsChildAccount = () => useStore((s) => s.isChildAccount);
 export const useParentalRestrictions = () => useStore((s) => s.parentalRestrictions);
 export const useIslamicThemeEnabled = () => useStore((s) => s.islamicThemeEnabled);
+export const useDiscoveredFeatures = () => useStore((s) => s.discoveredFeatures);
+export const useUserRole = () => useStore((s) => s.userRole);
+export const useCachedFeedData = () => useStore((s) => s.cachedFeedData);
+export const useLastDetectedLink = () => useStore((s) => s.lastDetectedLink);
 export const useTTSActive = () => useStore((s) => !!s.ttsText);
 export const useTTSPlaying = () => useStore((s) => s.ttsPlaying);
 export const useSafScrollOffset = () => useStore((s) => s.safScrollOffset);
