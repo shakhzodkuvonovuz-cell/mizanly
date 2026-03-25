@@ -210,13 +210,14 @@ export class ModerationService {
 
     const limit = 20;
     const where: Prisma.ReportWhereInput = { status: 'PENDING' };
+    // Finding #254: Priority sorting — urgent reasons first, then oldest first (FIFO)
     const reports = await this.prisma.report.findMany({
       where,
       include: {
         reporter: { select: { id: true, displayName: true } },
-        reportedUser: { select: { id: true, displayName: true } },
+        reportedUser: { select: { id: true, displayName: true, warningsCount: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ reason: 'asc' }, { createdAt: 'asc' }],
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
