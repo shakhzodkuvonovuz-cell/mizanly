@@ -140,6 +140,7 @@ const ReelItem = memo(function ReelItem({
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const haptic = useContextualHaptic();
 
   const spin = useSharedValue(0);
@@ -235,6 +236,7 @@ const ReelItem = memo(function ReelItem({
               style={{ width: screenWidth, height: screenHeight }}
               resizeMode={ResizeMode.COVER}
               shouldPlay={isActive && !isPaused}
+              isMuted={isMuted}
               isLooping={item.isLooping ?? true}
               useNativeControls={false}
               onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
@@ -464,6 +466,13 @@ const ReelItem = memo(function ReelItem({
             accessibilityLabel={t('accessibility.moreOptions')}
           >
             <Icon name="more-horizontal" size="lg" color={colors.text.primary} style={styles.iconShadow} />
+          </ActionButton>
+          {/* Finding #269: Sound toggle */}
+          <ActionButton
+            onPress={() => setIsMuted(prev => !prev)}
+            accessibilityLabel={isMuted ? t('bakra.unmute', 'Unmute') : t('bakra.mute', 'Mute')}
+          >
+            <Icon name={isMuted ? 'volume-x' : 'volume-x'} size="sm" color={isMuted ? colors.text.tertiary : colors.text.primary} style={styles.iconShadow} />
           </ActionButton>
         </View>
 
