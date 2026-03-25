@@ -23,8 +23,9 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
   const haptic = useContextualHaptic();
   const writingDirection = detectWritingDirection(text);
 
-  const segments: { type: 'text' | 'hashtag' | 'mention' | 'url' | 'phone' | 'email'; value: string }[] = [];
-  const TOKEN_RE = /(https?:\/\/[^\s]+|#[\w\u0600-\u06FF]+|@[\w.]+|\+?\d{1,4}[-.\s]?\(?\d{1,3}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+  const segments: { type: 'text' | 'hashtag' | 'mention' | 'url' | 'phone' | 'email' | 'quran_ref'; value: string }[] = [];
+  // Finding #322: Added Quran citation pattern (\d{1,3}:\d{1,3}) for auto-linking surah:verse refs
+  const TOKEN_RE = /(https?:\/\/[^\s]+|#[\w\u0600-\u06FF]+|@[\w.]+|\b\d{1,3}:\d{1,3}\b|\+?\d{1,4}[-.\s]?\(?\d{1,3}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -42,6 +43,9 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
       segments.push({ type: 'mention', value: token.slice(1) });
     } else if (token.includes('@')) {
       segments.push({ type: 'email', value: token });
+    } else if (/^\d{1,3}:\d{1,3}$/.test(token)) {
+      // Quran citation: surah:verse (e.g., "2:255", "3:103")
+      segments.push({ type: 'quran_ref', value: token });
     } else {
       segments.push({ type: 'phone', value: token });
     }
@@ -96,6 +100,23 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
               }}
             >
               @{seg.value}
+            </Text>
+          );
+        }
+        // Finding #322: Quran citation auto-link
+        if (seg.type === 'quran_ref') {
+          const [surah, verse] = seg.value.split(':');
+          return (
+            <Text
+              key={i}
+              style={{ color: colors.emerald, fontWeight: '600' }}
+              onPress={(e) => {
+                e.stopPropagation?.();
+                haptic.navigate();
+                router.push(`/(screens)/tafsir-viewer?surah=${surah}&verse=${verse}` as never);
+              }}
+            >
+              📖 {seg.value}
             </Text>
           );
         }
