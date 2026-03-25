@@ -279,8 +279,16 @@ export class PersonalizedFeedService {
     }
 
     // Get session-viewed IDs to exclude (from Redis)
-    const session = await this.getSession(userId);
+    const [session, followedHashtags] = await Promise.all([
+      this.getSession(userId),
+      this.prisma.hashtagFollow.findMany({
+        where: { userId },
+        select: { hashtag: { select: { name: true } } },
+        take: 50,
+      }),
+    ]);
     const sessionViewedIds = session ? session.viewedIds : [];
+    const followedTagSet = new Set(followedHashtags.map(h => h.hashtag.name.toLowerCase()));
 
     // Stage 1: pgvector KNN — top 500 candidates across all interest centroids
     const candidates = await this.embeddingsService.findSimilarByMultipleVectors(
@@ -329,6 +337,14 @@ export class PersonalizedFeedService {
       const sessionBoost = this.getSessionBoostFromData(session, meta.hashtags || []);
       score += sessionBoost * 0.1;
       if (sessionBoost > 0) reasons.push('Trending in your session');
+
+      // Followed hashtag boost — content matching hashtags you follow gets a boost
+      const postTags = (meta.hashtags || []).map((t: string) => t.toLowerCase());
+      const hasFollowedTag = postTags.some((t: string) => followedTagSet.has(t));
+      if (hasFollowedTag) {
+        score += 0.15;
+        reasons.push('Matches a hashtag you follow');
+      }
 
       feedItems.push({
         id: candidate.contentId,

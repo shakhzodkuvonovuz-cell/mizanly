@@ -40,6 +40,28 @@ export class PrivacyService {
     }
   }
 
+  /**
+   * Finding #200: Purge IP addresses older than 90 days.
+   * Runs daily at 4 AM.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  async purgeOldIpAddresses() {
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    try {
+      // Clear IP from device records older than 90 days
+      const result = await this.prisma.device.updateMany({
+        where: { lastActiveAt: { lt: ninetyDaysAgo } },
+        data: { ipAddress: null },
+      });
+      if (result.count > 0) {
+        this.logger.log(`Purged IP addresses from ${result.count} old device records`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`IP purge failed: ${msg}`);
+    }
+  }
+
   // DONE: [PRIVACY] Status privacy fields (readReceipts, typingIndicators, lastSeenVisibility)
   // have been added to the UserSettings schema and are now persisted server-side via
   // settingsService.updatePrivacy(). The UpdatePrivacyDto accepts all three fields.
@@ -213,10 +235,10 @@ export class PrivacyService {
         },
       });
 
-      // Soft-delete all user content
+      // Soft-delete all user content + strip location data (GDPR: location is PII)
       await tx.post.updateMany({
         where: { userId },
-        data: { isRemoved: true, removedReason: 'Account deleted by user', removedAt: new Date() },
+        data: { isRemoved: true, removedReason: 'Account deleted by user', removedAt: new Date(), locationName: null, locationLat: null, locationLng: null },
       });
       await tx.thread.updateMany({
         where: { userId },
@@ -228,7 +250,7 @@ export class PrivacyService {
       });
       await tx.reel.updateMany({
         where: { userId },
-        data: { isRemoved: true },
+        data: { isRemoved: true, locationName: null, locationLat: null, locationLng: null },
       });
       await tx.video.updateMany({
         where: { userId },

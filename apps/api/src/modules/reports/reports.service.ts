@@ -70,6 +70,16 @@ export class ReportsService {
       if (message.senderId === userId) throw new BadRequestException('You cannot report your own content');
     }
 
+    // Mass-report abuse detection: flag if user submits >10 reports in 1 hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentReportCount = await this.prisma.report.count({
+      where: { reporterId: userId, createdAt: { gte: oneHourAgo } },
+    });
+    if (recentReportCount >= 10) {
+      this.logger.warn(`Mass-report abuse detected: user ${userId} submitted ${recentReportCount} reports in 1 hour`);
+      throw new BadRequestException('You are submitting too many reports. Please try again later.');
+    }
+
     // Build duplicate check filter — only include fields that are actually set
     const duplicateWhere: Prisma.ReportWhereInput = {
       reporterId: userId,

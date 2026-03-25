@@ -197,12 +197,25 @@ export class MessagesService {
         const isFollowing = await this.prisma.follow.findUnique({
           where: { followerId_followingId: { followerId: senderId, followingId: otherMemberId } },
         });
+        // Check messagePermission from privacy settings
+        const recipientPrivacy = await this.prisma.userSettings.findUnique({
+          where: { userId: otherMemberId },
+          select: { messagePermission: true },
+        });
+        const msgPerm = recipientPrivacy?.messagePermission || 'everyone';
+        if (msgPerm === 'nobody') {
+          throw new ForbiddenException('This user has disabled direct messages');
+        }
+        if (msgPerm === 'followers' && !isFollowing) {
+          throw new ForbiddenException('This user only accepts messages from followers');
+        }
+        // Fallback: also check isPrivate for users without explicit messagePermission
         if (!isFollowing) {
-          const recipientSettings = await this.prisma.user.findUnique({
+          const recipientUser = await this.prisma.user.findUnique({
             where: { id: otherMemberId },
             select: { isPrivate: true },
           });
-          if (recipientSettings?.isPrivate) {
+          if (recipientUser?.isPrivate) {
             throw new ForbiddenException('This user only accepts messages from followers');
           }
         }

@@ -48,6 +48,7 @@ describe('PersonalizedFeedService', () => {
             postReaction: { findMany: jest.fn().mockResolvedValue([]) },
             savedPost: { findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn() },
+            hashtagFollow: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
         {
