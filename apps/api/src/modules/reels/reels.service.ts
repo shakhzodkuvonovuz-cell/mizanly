@@ -238,6 +238,13 @@ export class ReelsService {
         this.prisma.reel.update({
           where: { id: reel.id },
           data: { status: 'READY' },
+        }).then(() => {
+          // Finding #377: Notify user their reel is ready
+          this.notifications.create({
+            userId, actorId: userId, type: 'SYSTEM', reelId: reel.id,
+            title: 'Reel ready!',
+            body: 'Your reel has finished processing and is now live.',
+          }).catch(() => {});
         }).catch((e) => this.logger.error('Failed to update reel status', e));
       });
 

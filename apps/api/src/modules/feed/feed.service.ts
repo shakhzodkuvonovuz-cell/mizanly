@@ -107,6 +107,34 @@ export class FeedService {
     return d.map(x => x.contentId);
   }
 
+  /**
+   * Finding #406: "On This Day" memories — find posts from same date in previous years.
+   */
+  async getOnThisDay(userId: string) {
+    const today = new Date();
+    const month = today.getMonth();
+    const day = today.getDate();
+
+    const memories = await this.prisma.post.findMany({
+      where: {
+        userId,
+        isRemoved: false,
+        createdAt: { lt: new Date(today.getFullYear(), 0, 1) },
+      },
+      select: {
+        id: true, content: true, mediaUrls: true, thumbnailUrl: true,
+        postType: true, likesCount: true, createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    return memories.filter(p => {
+      const d = new Date(p.createdAt);
+      return d.getMonth() === month && d.getDate() === day;
+    }).slice(0, 5);
+  }
+
   async getUserInterests(userId: string): Promise<{ bySpace: Record<string, number>; byHashtag: Record<string, number> }> {
     const interactions = await this.prisma.feedInteraction.findMany({
       where: { userId, OR: [{ liked: true }, { saved: true }, { viewDurationMs: { gte: 5000 } }] },

@@ -61,6 +61,15 @@ export class FeedController {
     return this.feed.undismiss(userId, id, t);
   }
 
+  // Finding #406: On This Day memories
+  @Get('on-this-day')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get posts from the same date in previous years ("On This Day")' })
+  async getOnThisDay(@CurrentUser('id') userId: string) {
+    return this.feed.getOnThisDay(userId);
+  }
+
   // Finding #295: Reset algorithm
   @Delete('reset-algorithm')
   @UseGuards(ClerkAuthGuard)
