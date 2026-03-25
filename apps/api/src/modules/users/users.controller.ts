@@ -340,7 +340,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get your referral code for sharing' })
   async getReferralCode(@CurrentUser('id') userId: string) {
-    const user = await this.usersService.getById(userId);
+    const user = await this.usersService.getMe(userId);
     return { referralCode: (user as Record<string, unknown>)?.referralCode, shareUrl: `https://mizanly.app/join?ref=${(user as Record<string, unknown>)?.referralCode}` };
   }
 

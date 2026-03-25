@@ -229,9 +229,15 @@ export class ReelsService {
       .then(async (streamId) => {
         await this.prisma.reel.update({
           where: { id: reel.id },
-          data: { streamId },
+          data: { streamId, status: 'READY' },
         });
         this.logger.log(`Reel ${reel.id} submitted to Stream as ${streamId}`);
+        // Finding #377: Notify user their reel is ready (success path)
+        this.notifications.create({
+          userId, actorId: userId, type: 'SYSTEM', reelId: reel.id,
+          title: 'Reel ready!',
+          body: 'Your reel has finished processing and is now live.',
+        }).catch(() => {});
       })
       .catch((err) => {
         this.logger.error(`Stream upload failed for reel ${reel.id}`, err);

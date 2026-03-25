@@ -277,7 +277,7 @@ export default function CallScreen() {
   }));
 
   const isIncoming = call?.callerId !== userId;
-  const isVideo = call?.type === 'video';
+  const isVideo = call?.type === 'VIDEO';
   const otherUser = isIncoming ? call?.caller : call?.callee;
   const displayName = otherUser?.displayName || t('common.user');
   const avatarUrl = otherUser?.avatarUrl;

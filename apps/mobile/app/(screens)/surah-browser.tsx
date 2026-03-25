@@ -134,7 +134,7 @@ function SurahBrowserContent() {
 
       {/* Finding #397: Gentle wudu reminder */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, margin: spacing.sm, padding: spacing.sm, backgroundColor: `${colors.gold}10`, borderRadius: radius.sm }}>
-        <Text style={{ fontSize: 16 }}>🤲</Text>
+        <Icon name="heart" size="sm" color={colors.gold} />
         <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, flex: 1, fontFamily: fonts.body }}>
           {t('quran.wuduReminder', 'It is recommended to be in a state of wudu (ablution) when reading the Quran.')}
         </Text>

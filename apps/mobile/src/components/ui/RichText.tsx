@@ -116,7 +116,7 @@ export const RichText = memo(function RichText({ text, style, numberOfLines, onP
                 router.push(`/(screens)/tafsir-viewer?surah=${surah}&verse=${verse}` as never);
               }}
             >
-              📖 {seg.value}
+              Quran {seg.value}
             </Text>
           );
         }
