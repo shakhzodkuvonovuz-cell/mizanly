@@ -139,7 +139,7 @@ export class MeilisearchService implements OnModuleInit {
     if (!this.available || documents.length === 0) return;
 
     try {
-      await fetch(`${this.host}/indexes/${indexName}/documents`, {
+      const response = await fetch(`${this.host}/indexes/${indexName}/documents`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,6 +147,9 @@ export class MeilisearchService implements OnModuleInit {
         },
         body: JSON.stringify(documents),
       });
+      if (!response.ok) {
+        this.logger.error(`Meilisearch addDocuments failed for ${indexName}: ${response.status} ${response.statusText}`);
+      }
     } catch (error) {
       this.logger.error(`Failed to index ${documents.length} docs to ${indexName}`, error);
     }

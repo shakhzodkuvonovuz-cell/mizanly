@@ -137,17 +137,10 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
   private async processCaptionGeneration(job: Job<CaptionJobData>): Promise<void> {
     const { contentId, contentType, mediaUrl } = job.data;
     this.logger.debug(`Caption generation for ${contentType}/${contentId} from ${mediaUrl}`);
-    // TODO: Implement caption generation pipeline:
-    // 1. Download media from mediaUrl (validate URL first via validateMediaUrl pattern)
-    // 2. For images: send to Claude Vision API via this.ai.moderateImage() style call
-    //    to generate a text description, then pass to this.ai.suggestCaptions()
-    // 3. For videos: extract keyframes with ffmpeg or Cloudflare Stream thumbnails,
-    //    describe each frame, concatenate descriptions, then suggestCaptions()
-    // 4. Write generated captions back to the content record:
-    //    - Post: prisma.post.update({ data: { content: caption } })
-    //    - Reel: prisma.reel.update({ data: { caption } })
-    // 5. Caller: wire QueueService.addCaptionGenerationJob() into content creation
-    //    flows in posts.service.ts and reels.service.ts
-    await job.updateProgress(100);
+    // Caption generation not yet implemented — fail honestly instead of faking success
+    throw new Error(
+      `Caption generation not implemented. contentType=${contentType}, contentId=${contentId}. `
+      + 'This job should not be enqueued until the pipeline is built.',
+    );
   }
 }

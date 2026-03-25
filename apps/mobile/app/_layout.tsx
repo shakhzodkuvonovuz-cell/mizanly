@@ -85,7 +85,13 @@ function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+if (!CLERK_KEY) {
+  throw new Error(
+    'EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set. The app cannot authenticate users without it. '
+    + 'Check your .env file or EAS build secrets.',
+  );
+}
 
 /**
  * Islamic calendar theme banner.

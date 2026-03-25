@@ -40,9 +40,15 @@ import {
 @WebSocketGateway({
   cors: {
     origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Dynamic CORS check — reads env at request time, not decorator evaluation time
       const allowed = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
-      if (!origin || allowed.length === 0 || allowed.includes(origin)) {
+      const isProduction = process.env.NODE_ENV === 'production';
+      // In production: reject if no origins configured (secure default)
+      // In development: allow all if no origins configured (convenience)
+      if (!origin) {
+        callback(null, !isProduction);
+      } else if (allowed.length === 0) {
+        callback(null, !isProduction);
+      } else if (allowed.includes(origin)) {
         callback(null, true);
       } else {
         callback(null, false);
@@ -259,7 +265,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       const memberships = await this.prisma.conversationMember.findMany({
         where: { userId: user.id },
         select: { conversationId: true },
-        take: 100,
+        take: 5000, // CODEX #50: presence must reach all conversations, not just first 100
       });
       for (const m of memberships) {
         client.to(`conversation:${m.conversationId}`).emit('user_online', { userId, isOnline: true });
@@ -340,7 +346,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       const memberships = await this.prisma.conversationMember.findMany({
         where: { userId },
         select: { conversationId: true },
-        take: 100,
+        take: 5000, // CODEX #50: presence must reach all conversations, not just first 100
       });
       for (const m of memberships) {
         this.server.to(`conversation:${m.conversationId}`).emit('user_offline', { userId, isOnline: false });

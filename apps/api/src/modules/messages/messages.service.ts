@@ -141,7 +141,7 @@ export class MessagesService {
     const blocks = await this.prisma.block.findMany({
       where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
       select: { blockerId: true, blockedId: true },
-      take: 500,
+      take: 10000, // CODEX #40: safety-critical — no cap on block enforcement
     });
     const blockedIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
 
@@ -410,7 +410,7 @@ export class MessagesService {
         ],
       },
       select: { blockerId: true, blockedId: true },
-      take: 1000,
+      take: 10000,
     });
     if (blocks.length > 0) {
       throw new BadRequestException('Cannot create group with blocked users');
@@ -477,7 +477,7 @@ export class MessagesService {
           { blockedId: userId, blockerId: { in: memberIds } },
         ],
       },
-      take: 1000,
+      take: 10000,
     });
     if (blocks.length > 0) throw new BadRequestException('Cannot add blocked users');
 

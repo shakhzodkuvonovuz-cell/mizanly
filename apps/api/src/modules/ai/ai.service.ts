@@ -68,9 +68,10 @@ export class AiService {
       }
       return count <= this.DAILY_AI_QUOTA;
     } catch {
-      // Redis down — allow request but log warning
-      this.logger.warn('Redis unavailable for AI quota check — allowing request');
-      return true;
+      // CODEX #18: Redis down = deny AI requests (fail-closed, not fail-open)
+      // Permissive fallback was allowing unlimited AI usage when Redis is unavailable
+      this.logger.error('Redis unavailable for AI quota check — DENYING request (fail-closed)');
+      return false;
     }
   }
 

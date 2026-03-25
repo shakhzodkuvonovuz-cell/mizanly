@@ -17,7 +17,8 @@ export const promotionsApi = {
   markBranded: (postId: string, partnerName: string) =>
     api.post('/promotions/branded', { postId, partnerName }),
 
-  // Note: removeBranded endpoint does not exist on backend yet (finding 64-020)
+  // CODEX #9: removeBranded endpoint does not exist on backend.
+  // Branded content is toggled via post update (PATCH /posts/:id with brandedContent: false).
   removeBranded: (postId: string) =>
-    api.delete(`/promotions/branded/${postId}`),
+    api.patch(`/posts/${postId}`, { brandedContent: false, brandPartner: null }),
 };

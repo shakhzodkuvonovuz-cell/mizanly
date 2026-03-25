@@ -70,13 +70,19 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api/v1');
 
-  // CORS — production origins set via CORS_ORIGINS env var
+  // CORS — unified policy (CODEX #26: same logic for HTTP and WebSocket)
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
+  const isProduction = process.env.NODE_ENV === 'production';
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || ['http://localhost:8081', 'http://localhost:8082'],
+    origin: corsOrigins.length > 0
+      ? corsOrigins
+      : isProduction
+        ? false // Production: reject all if no origins configured (secure default)
+        : ['http://localhost:8081', 'http://localhost:8082'], // Dev convenience
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
-    maxAge: 86400, // Cache preflight for 24 hours
+    maxAge: 86400,
   });
 
   app.use(helmet({
@@ -100,15 +106,14 @@ async function bootstrap() {
   const { MetricsInterceptor } = await import('./common/interceptors/metrics.interceptor');
   app.useGlobalInterceptors(new MetricsInterceptor());
 
-  // Validation
+  // Validation + Sanitization
+  const { SanitizePipe } = await import('./common/pipes/sanitize.pipe');
   app.useGlobalPipes(
+    new SanitizePipe(), // CODEX #7: sanitize all request body strings globally
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      // enableImplicitConversion: converts "true"→true, "123"→123 for query params.
-      // Required because NestJS query params arrive as strings. Without this,
-      // @IsNumber()/@IsBoolean() DTOs would always fail on query strings.
       transformOptions: { enableImplicitConversion: true },
     }),
   );

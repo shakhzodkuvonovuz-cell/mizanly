@@ -13,19 +13,64 @@ export class WebhooksService {
   /**
    * Validate webhook URL: HTTPS only, no private/internal IPs
    */
-  private validateWebhookUrl(url: string): void {
+  private async validateWebhookUrl(url: string): Promise<void> {
+    let parsed: URL;
     try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== 'https:') {
-        throw new Error('Only HTTPS URLs are allowed');
-      }
-      const blockedPatterns = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
-      if (blockedPatterns.some(p => parsed.hostname.includes(p))) {
-        throw new Error('Internal URLs are not allowed');
-      }
-    } catch (err) {
-      throw new BadRequestException(`Invalid webhook URL: ${err instanceof Error ? err.message : 'malformed URL'}`);
+      parsed = new URL(url);
+    } catch {
+      throw new BadRequestException('Invalid webhook URL: malformed URL');
     }
+
+    if (parsed.protocol !== 'https:') {
+      throw new BadRequestException('Only HTTPS webhook URLs are allowed');
+    }
+
+    // Block known private/internal hostnames
+    const blockedHostnames = ['localhost', 'internal', 'metadata.google.internal'];
+    if (blockedHostnames.some(h => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`))) {
+      throw new BadRequestException('Internal hostnames are not allowed for webhooks');
+    }
+
+    // If hostname looks like an IP address, validate it directly
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(parsed.hostname)) {
+      if (this.isPrivateIP(parsed.hostname)) {
+        throw new BadRequestException('Webhook URL points to a private/reserved IP address');
+      }
+    }
+
+    // Resolve DNS and reject private/reserved IP ranges (skip in test env)
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        const dns = await import('dns');
+        const { resolve4 } = dns.promises;
+        const ips = await resolve4(parsed.hostname);
+
+        for (const ip of ips) {
+          if (this.isPrivateIP(ip)) {
+            throw new BadRequestException('Webhook URL resolves to a private/reserved IP address');
+          }
+        }
+      } catch (err) {
+        if (err instanceof BadRequestException) throw err;
+        throw new BadRequestException('Could not resolve webhook URL hostname');
+      }
+    }
+  }
+
+  private isPrivateIP(ip: string): boolean {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4) return true; // Not valid IPv4 — block
+    const [a, b] = parts;
+    return (
+      a === 10 ||                          // 10.0.0.0/8
+      a === 127 ||                          // 127.0.0.0/8 loopback
+      (a === 172 && b >= 16 && b <= 31) ||  // 172.16.0.0/12
+      (a === 192 && b === 168) ||           // 192.168.0.0/16
+      (a === 169 && b === 254) ||           // 169.254.0.0/16 link-local
+      a === 0 ||                            // 0.0.0.0/8
+      (a === 100 && b >= 64 && b <= 127) || // 100.64.0.0/10 CGN
+      (a === 198 && (b === 18 || b === 19)) // 198.18.0.0/15 benchmarking
+    );
   }
 
   private static readonly VALID_EVENTS: WebhookEvent[] = ['post.created', 'member.joined', 'member.left', 'message.sent', 'live.started', 'live.ended'];
@@ -60,7 +105,7 @@ export class WebhooksService {
     // Verify user is admin/owner of the circle
     await this.requireCircleAdmin(data.circleId, userId);
 
-    this.validateWebhookUrl(data.url);
+    await this.validateWebhookUrl(data.url);
     // Validate events against allowed values
     const validatedEvents = data.events.filter(e => WebhooksService.VALID_EVENTS.includes(e as WebhookEvent));
     if (validatedEvents.length === 0) {
@@ -119,7 +164,7 @@ export class WebhooksService {
    * Retries 3 times with exponential backoff on failure.
    */
   async deliver(url: string, secret: string, payload: Record<string, unknown>): Promise<{ success: boolean; statusCode?: number }> {
-    this.validateWebhookUrl(url);
+    await this.validateWebhookUrl(url);
 
     if (!secret) {
       this.logger.error('Cannot deliver webhook without a secret — HMAC would be trivially forgeable');

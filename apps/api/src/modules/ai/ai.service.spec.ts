@@ -73,10 +73,10 @@ describe('AiService', () => {
       expect(result).toBe(true);
     });
 
-    it('should return true (allow) when Redis is unavailable', async () => {
+    it('should return false (deny) when Redis is unavailable — fail-closed', async () => {
       redis.incr.mockRejectedValue(new Error('Redis connection lost'));
       const result = await service.checkDailyQuota('user-1');
-      expect(result).toBe(true);
+      expect(result).toBe(false); // CODEX #18: fail-closed, not fail-open
     });
 
     it('should use per-user key to track quotas independently', async () => {

@@ -338,23 +338,32 @@ export class CommunityService {
 
   async getDataExport(userId: string) {
     // GDPR Article 15/20 — users have the right to ALL their data.
-    // Capped at 10K per table to prevent OOM on massive accounts;
-    // a true export pipeline would stream to a file.
-    const [user, posts, threads, messages] = await Promise.all([
+    // CODEX #45: raised from 10K to 100K to cover large accounts.
+    // True streaming export should be a background job for accounts exceeding this.
+    const EXPORT_LIMIT = 100000;
+    const [user, posts, threads, messages, reels, stories] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
       this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-      take: 10000,
-    }),
+      orderBy: { createdAt: 'desc' }, take: EXPORT_LIMIT }),
       this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-      take: 10000,
-    }),
+      orderBy: { createdAt: 'desc' }, take: EXPORT_LIMIT }),
       this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-      take: 10000,
-    }),
+      orderBy: { createdAt: 'desc' }, take: EXPORT_LIMIT }),
+      this.prisma.reel.findMany({ where: { userId }, select: { id: true, caption: true, videoUrl: true, createdAt: true },
+      orderBy: { createdAt: 'desc' }, take: EXPORT_LIMIT }),
+      this.prisma.story.findMany({ where: { userId }, select: { id: true, mediaUrl: true, createdAt: true },
+      orderBy: { createdAt: 'desc' }, take: EXPORT_LIMIT }),
     ]);
-    return { user, posts, threads, messages, exportedAt: new Date().toISOString() };
+    return {
+      user, posts, threads, messages, reels, stories,
+      exportedAt: new Date().toISOString(),
+      truncated: {
+        posts: posts.length >= EXPORT_LIMIT,
+        threads: threads.length >= EXPORT_LIMIT,
+        messages: messages.length >= EXPORT_LIMIT,
+        reels: reels.length >= EXPORT_LIMIT,
+        stories: stories.length >= EXPORT_LIMIT,
+      },
+    };
   }
 }
