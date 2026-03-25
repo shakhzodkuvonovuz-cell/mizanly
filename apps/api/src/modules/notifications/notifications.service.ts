@@ -228,11 +228,45 @@ export class NotificationsService {
       this.logger.debug('Redis dedup check failed, proceeding with creation', e);
     }
 
+    // Finding #204: Notification batching — group similar notifications
+    // If same type + same target content within 30 min, update existing instead of creating new
+    const batchableTypes = ['LIKE', 'REEL_LIKE', 'VIDEO_LIKE', 'COMMENT', 'REEL_COMMENT'];
+    const contentId = params.postId || params.reelId || params.videoId || params.threadId;
+    if (batchableTypes.includes(params.type) && contentId) {
+      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const existing = await this.prisma.notification.findFirst({
+        where: {
+          userId: params.userId,
+          type: params.type as NotificationType,
+          ...(params.postId ? { postId: params.postId } : {}),
+          ...(params.reelId ? { reelId: params.reelId } : {}),
+          ...(params.videoId ? { videoId: params.videoId } : {}),
+          createdAt: { gte: thirtyMinAgo },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (existing) {
+        // Batch: update the existing notification body to show aggregated count
+        const countKey = `notif_batch:${existing.id}`;
+        const count = await this.redis.incr(countKey);
+        if (count === 1) await this.redis.expire(countKey, 1800);
+        await this.prisma.notification.update({
+          where: { id: existing.id },
+          data: {
+            body: `${params.body || ''} and ${count} others`,
+            isRead: false, // Mark unread again
+            createdAt: new Date(), // Bump to top
+          },
+        });
+        return existing;
+      }
+    }
+
     const notification = await this.prisma.notification.create({
       data: {
         userId: params.userId,
         actorId: params.actorId,
-        type: params.type as NotificationType, // Validated above via Object.values check
+        type: params.type as NotificationType,
         postId: params.postId,
         threadId: params.threadId,
         commentId: params.commentId,

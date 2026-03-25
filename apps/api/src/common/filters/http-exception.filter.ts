@@ -37,22 +37,25 @@ export class HttpExceptionFilter implements ExceptionFilter {
         Sentry.captureException(exception);
       }
 
+      // Finding #370: Consistent error codes across API
+      const errorCode = this.deriveErrorCode(status, error['message'] as string | undefined);
+
       if (process.env.NODE_ENV === 'production') {
-        // In production, return generic message for server errors
         response.status(status).json({
           success: false,
           statusCode: status,
+          errorCode,
           error: HttpStatus[status] ?? 'Error',
           message: status >= 500 ? 'Internal server error' : error['message'] ?? exception.message,
           path: request.url,
           timestamp: new Date().toISOString(),
         });
       } else {
-        // In development, log stack to server but don't leak in API response
         this.logger.error(`[${status}] ${error['message'] ?? exception.message}`, exception.stack);
         response.status(status).json({
           success: false,
           statusCode: status,
+          errorCode,
           error: HttpStatus[status] ?? 'Error',
           message: error['message'] ?? exception.message,
           path: request.url,
@@ -61,6 +64,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     } else {
       this.logger.error('Unhandled exception', exception instanceof Error ? exception.stack : String(exception));
+      const errorCode = 'INTERNAL_ERROR';
 
       // Capture unhandled exceptions in Sentry
       if (process.env.SENTRY_DSN && exception instanceof Error) {
@@ -70,16 +74,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
         response.status(500).json({
           success: false,
           statusCode: 500,
+          errorCode,
           error: 'Internal Server Error',
           message: 'An unexpected error occurred',
           path: request.url,
           timestamp: new Date().toISOString(),
         });
       } else {
-        // Stack already logged above — never include in API response
         response.status(500).json({
           success: false,
           statusCode: 500,
+          errorCode,
           error: 'Internal Server Error',
           message: 'An unexpected error occurred',
           path: request.url,
@@ -87,5 +92,25 @@ export class HttpExceptionFilter implements ExceptionFilter {
         });
       }
     }
+  }
+
+  /**
+   * Derive a machine-readable error code from HTTP status and message.
+   */
+  private deriveErrorCode(status: number, message?: string): string {
+    const msg = (message || '').toLowerCase();
+    if (status === 400) {
+      if (msg.includes('duplicate')) return 'DUPLICATE_CONTENT';
+      if (msg.includes('flagged') || msg.includes('violation')) return 'CONTENT_FLAGGED';
+      if (msg.includes('validation')) return 'VALIDATION_ERROR';
+      return 'BAD_REQUEST';
+    }
+    if (status === 401) return 'UNAUTHORIZED';
+    if (status === 403) return 'FORBIDDEN';
+    if (status === 404) return 'NOT_FOUND';
+    if (status === 409) return 'CONFLICT';
+    if (status === 429) return 'RATE_LIMITED';
+    if (status >= 500) return 'INTERNAL_ERROR';
+    return `HTTP_${status}`;
   }
 }

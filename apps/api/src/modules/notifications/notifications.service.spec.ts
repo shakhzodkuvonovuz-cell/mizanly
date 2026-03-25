@@ -22,6 +22,7 @@ describe('NotificationsService', () => {
           useValue: {
             notification: {
               findMany: jest.fn(),
+              findFirst: jest.fn().mockResolvedValue(null),
               findUnique: jest.fn(),
               update: jest.fn(),
               updateMany: jest.fn(),
