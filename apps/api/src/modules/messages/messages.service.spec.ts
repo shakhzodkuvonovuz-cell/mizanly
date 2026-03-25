@@ -550,6 +550,7 @@ describe('MessagesService', () => {
         createdById: userId,
       };
       prisma.conversation.findUnique.mockResolvedValue(mockConversation);
+      prisma.conversationMember.count = jest.fn().mockResolvedValue(5);
       prisma.user.findMany.mockResolvedValue([{ id: 'user-456' }, { id: 'user-789' }]);
       prisma.block.findMany.mockResolvedValue([]);
       prisma.conversationMember.createMany.mockResolvedValue({} as any);

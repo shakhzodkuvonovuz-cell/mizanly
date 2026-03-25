@@ -440,6 +440,12 @@ export class MessagesService {
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
     if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can add members');
 
+    // Finding #219: Group size limit — max 1024 members
+    const memberCount = await this.prisma.conversationMember.count({ where: { conversationId } });
+    if (memberCount + memberIds.length > 1024) {
+      throw new BadRequestException(`Group cannot exceed 1024 members (current: ${memberCount})`);
+    }
+
     // Validate member IDs exist
     const existingUsers = await this.prisma.user.findMany({
       where: { id: { in: memberIds } },
