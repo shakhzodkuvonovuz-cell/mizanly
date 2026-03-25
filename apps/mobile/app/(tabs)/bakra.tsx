@@ -789,11 +789,28 @@ export default function BakraScreen() {
     />
   ), [feedQuery.isError, feedQuery.isLoading, t, router, SCREEN_W, SCREEN_H]);
 
-  const listFooter = useMemo(() => feedQuery.isFetchingNextPage ? (
-    <View style={[styles.footer, { width: SCREEN_W, height: SCREEN_H }]}>
-      <Skeleton.Rect width={SCREEN_W} height={SCREEN_H} borderRadius={0} />
-    </View>
-  ) : null, [feedQuery.isFetchingNextPage, SCREEN_W, SCREEN_H]);
+  const listFooter = useMemo(() => {
+    if (feedQuery.isFetchingNextPage) {
+      return (
+        <View style={[styles.footer, { width: SCREEN_W, height: SCREEN_H }]}>
+          <Skeleton.Rect width={SCREEN_W} height={SCREEN_H} borderRadius={0} />
+        </View>
+      );
+    }
+    // Finding #343: "You're all caught up" when no more reels
+    if (!feedQuery.hasNextPage && feedItems.length > 0) {
+      return (
+        <View style={[styles.footer, { width: SCREEN_W, height: SCREEN_H, justifyContent: 'center', alignItems: 'center' }]}>
+          <EmptyState
+            icon="check-circle"
+            title={t('bakra.allCaughtUp', "You're all caught up!")}
+            subtitle={t('bakra.allCaughtUpSub', 'Check back later for new reels')}
+          />
+        </View>
+      );
+    }
+    return null;
+  }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, feedItems.length, SCREEN_W, SCREEN_H, t]);
 
   return (
     <ScreenErrorBoundary>

@@ -645,6 +645,12 @@ export default function ProfileScreen() {
             <Text style={styles.websiteLink}>{profile.website}</Text>
           </Pressable>
         ) : null}
+        {/* Finding #288: Member since year */}
+        {(profile as Record<string, unknown>).createdAt && (
+          <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 4 }}>
+            <Icon name="clock" size={11} color={tc.text.tertiary} /> {t('profile.memberSince', 'Member since')} {new Date((profile as Record<string, unknown>).createdAt as string).getFullYear()}
+          </Text>
+        )}
         {profile.channel && (
           <Pressable
             style={[styles.channelRow, { flexDirection: rtlFlexRow(isRTL) }]}

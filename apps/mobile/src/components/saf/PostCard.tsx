@@ -376,6 +376,17 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
         </>
       ) : null}
 
+      {/* Finding #405: Topic badges */}
+      {(post as Record<string, unknown>).topics && ((post as Record<string, unknown>).topics as string[]).length > 0 && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4, marginBottom: 4, paddingHorizontal: spacing.base }}>
+          {((post as Record<string, unknown>).topics as string[]).slice(0, 3).map(topic => (
+            <Text key={topic} style={{ fontSize: 11, color: colors.emerald, backgroundColor: `${colors.emerald}12`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontFamily: 'DMSans_500Medium' }}>
+              {topic}
+            </Text>
+          ))}
+        </View>
+      )}
+
       {/* Link preview — show when post has a URL but no media */}
       {post.content && post.mediaUrls.length === 0 && (() => {
         const urlMatch = post.content.match(/https?:\/\/[^\s]+/);
