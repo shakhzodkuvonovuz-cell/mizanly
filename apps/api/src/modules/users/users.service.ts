@@ -841,21 +841,24 @@ export class UsersService {
       take: 50000,
     });
 
+    // Process in parallel batches of 100 instead of sequential
+    const BATCH_SIZE = 100;
     let created = 0;
-    for (const user of users) {
-      try {
-        await this.prisma.creatorStat.upsert({
-          where: { userId_date_space: { userId: user.id, date: today, space: 'SAF' } },
-          update: { followers: user.followersCount },
-          create: { userId: user.id, date: today, space: 'SAF', followers: user.followersCount },
-        });
-        created++;
-      } catch {
-        // Skip duplicates or errors silently
-      }
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+      const batch = users.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(user =>
+          this.prisma.creatorStat.upsert({
+            where: { userId_date_space: { userId: user.id, date: today, space: 'SAF' } },
+            update: { followers: user.followersCount },
+            create: { userId: user.id, date: today, space: 'SAF', followers: user.followersCount },
+          }),
+        ),
+      );
+      created += results.filter(r => r.status === 'fulfilled').length;
     }
 
-    this.logger.log(`Follower snapshot: ${created} users snapshotted`);
+    this.logger.log(`Follower snapshot: ${created} users snapshotted (batched)`);
   }
 
   /**
@@ -870,18 +873,24 @@ export class UsersService {
       take: 10000,
     });
 
-    for (const settings of usersWithLimits.slice(0, 5000)) {
-      await this.prisma.notification.create({
-        data: {
-          userId: settings.userId,
-          type: 'SYSTEM',
+    // Batched createMany instead of sequential individual creates
+    const BATCH_SIZE = 500;
+    let created = 0;
+    for (let i = 0; i < usersWithLimits.length; i += BATCH_SIZE) {
+      const batch = usersWithLimits.slice(i, i + BATCH_SIZE);
+      const result = await this.prisma.notification.createMany({
+        data: batch.map(s => ({
+          userId: s.userId,
+          type: 'SYSTEM' as const,
           title: 'Weekly Screen Time Summary',
-          body: `Your daily limit is ${settings.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
-        },
-      }).catch(() => {});
+          body: `Your daily limit is ${s.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
+        })),
+        skipDuplicates: true,
+      });
+      created += result.count;
     }
 
-    this.logger.log(`Weekly screen time digest sent to ${Math.min(usersWithLimits.length, 5000)} users`);
+    this.logger.log(`Weekly screen time digest sent to ${created} users (batched)`);
   }
 
   /**

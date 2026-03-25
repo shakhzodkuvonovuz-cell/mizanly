@@ -96,6 +96,10 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
+  // Phase 3: Request latency observability
+  const { MetricsInterceptor } = await import('./common/interceptors/metrics.interceptor');
+  app.useGlobalInterceptors(new MetricsInterceptor());
+
   // Validation
   app.useGlobalPipes(
     new ValidationPipe({

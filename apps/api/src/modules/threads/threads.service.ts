@@ -103,18 +103,14 @@ export class ThreadsService {
     private contentSafety: ContentSafetyService,
   ) {}
 
-  /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us) */
+  /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us).
+   *  Safety-critical: no artificial cap — blocks must enforce completely.
+   *  Upper bound of 10,000 to prevent DoS on pathological accounts. */
   private async getExcludedUserIds(userId: string): Promise<string[]> {
     const [blockedByMe, blockedMe, mutes] = await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
-    }),
-      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true },
-      take: 50,
-    }),
-      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
-      take: 50,
-    }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 10000 }),
+      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 10000 }),
+      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true }, take: 10000 }),
     ]);
     const ids = new Set<string>();
     for (const b of blockedByMe) ids.add(b.blockedId);

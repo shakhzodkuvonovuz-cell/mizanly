@@ -298,12 +298,8 @@ export class ReelsService {
     }
 
     const [blocks, mutes] = userId ? await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
-    }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 50,
-    }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 10000 }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 10000 }),
     ]) : [[], []];
 
     const excludedIds = [

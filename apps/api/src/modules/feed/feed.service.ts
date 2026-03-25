@@ -251,23 +251,24 @@ export class FeedService {
     return where;
   }
 
-  /** Get user IDs to exclude from feeds (blocked both directions + muted + restricted) */
+  /** Get user IDs to exclude from feeds (blocked both directions + muted + restricted).
+   *  Safety-critical: no artificial cap — blocks must enforce completely. */
   private async getExcludedUserIds(userId: string): Promise<string[]> {
     const [blocks, mutes, restricts] = await Promise.all([
       this.prisma.block.findMany({
         where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
         select: { blockerId: true, blockedId: true },
-        take: 50,
+        take: 10000,
       }),
       this.prisma.mute.findMany({
         where: { userId },
         select: { mutedId: true },
-        take: 50,
+        take: 10000,
       }),
       this.prisma.restrict.findMany({
         where: { restricterId: userId },
         select: { restrictedId: true },
-        take: 50,
+        take: 10000,
       }),
     ]);
     const excluded = new Set<string>();

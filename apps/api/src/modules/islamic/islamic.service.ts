@@ -2007,25 +2007,33 @@ export class IslamicService {
     if (dedup) return;
     await this.redis.setex(`islamic_event:${todayEvent.key}:${today.toISOString().slice(0, 10)}`, 86400, '1');
 
-    // Send notification to all users
+    // Send notification to all users — batched to avoid blocking event loop
     const users = await this.prisma.user.findMany({
       where: { isDeactivated: false, isBanned: false, isDeleted: false },
       select: { id: true },
       take: 10000,
     });
 
-    for (const user of users.slice(0, 5000)) {
-      await this.prisma.notification.create({
-        data: {
+    const BATCH_SIZE = 500;
+    const title = todayEvent.name;
+    const body = `Today is ${todayEvent.name}. May Allah bless you on this special day.`;
+    let created = 0;
+
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+      const batch = users.slice(i, i + BATCH_SIZE);
+      const result = await this.prisma.notification.createMany({
+        data: batch.map(user => ({
           userId: user.id,
-          type: 'SYSTEM',
-          title: `🌙 ${todayEvent.name}`,
-          body: `Today is ${todayEvent.name}. May Allah bless you on this special day.`,
-        },
-      }).catch(() => {});
+          type: 'SYSTEM' as const,
+          title,
+          body,
+        })),
+        skipDuplicates: true,
+      });
+      created += result.count;
     }
 
-    this.logger.log(`Islamic event reminder sent: ${todayEvent.name} to ${Math.min(users.length, 5000)} users`);
+    this.logger.log(`Islamic event reminder sent: ${title} to ${created} users (batched)`);
   }
 
   /**
