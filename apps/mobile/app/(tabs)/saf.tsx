@@ -137,6 +137,10 @@ const SuggestedUserRow = memo(function SuggestedUserRow({
           <Text style={suggestedStyles.bio} numberOfLines={1}>
             {user.bio || `${formatCount(user.followersCount)} ${t('common.followers').toLowerCase()}`}
           </Text>
+          {/* Finding #349: Suggestion reason */}
+          <Text style={{ color: tc.text.tertiary, fontSize: 10, marginTop: 1 }}>
+            {t('saf.suggestedForYou', 'Suggested based on people you follow')}
+          </Text>
         </View>
       </Pressable>
       <Pressable
@@ -710,6 +714,25 @@ export default function SafScreen() {
         scrollEventThrottle={16}
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+        onViewableItemsChanged={({ changed }) => {
+          // Finding #297: Dwell time tracking
+          changed.forEach(item => {
+            if (item.isViewable && item.item?.id) {
+              (globalThis as Record<string, unknown>)[`dwell_${item.item.id}`] = Date.now();
+            } else if (!item.isViewable && item.item?.id) {
+              const start = (globalThis as Record<string, unknown>)[`dwell_${item.item.id}`] as number;
+              if (start) {
+                const dwellMs = Date.now() - start;
+                delete (globalThis as Record<string, unknown>)[`dwell_${item.item.id}`];
+                // Only report meaningful dwell (>2s)
+                if (dwellMs > 2000 && user?.id) {
+                  feedApi.trackSessionSignal({ contentId: item.item.id, action: 'view', scrollPosition: dwellMs }).catch(() => {});
+                }
+              }
+            }
+          });
+        }}
         getItemType={(item: { _type?: string }) => (item._type === 'suggested' ? 'suggested' : 'post')}
       />
     </SafeAreaView>
