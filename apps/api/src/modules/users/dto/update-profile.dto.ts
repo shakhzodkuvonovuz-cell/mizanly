@@ -49,6 +49,24 @@ export class UpdateProfileDto {
   @MaxLength(100)
   location?: string;
 
+  @ApiProperty({ required: false, maxLength: 30, description: 'Pronouns (e.g., he/him, she/her, they/them)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  pronouns?: string;
+
+  @ApiProperty({ required: false, maxLength: 100, description: 'Custom status text' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  statusText?: string;
+
+  @ApiProperty({ required: false, description: 'Creator category (educator, entertainer, scholar, business, journalist)' })
+  @IsOptional()
+  @IsString()
+  @IsIn(['educator', 'entertainer', 'scholar', 'business', 'journalist'])
+  creatorCategory?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
