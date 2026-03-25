@@ -26,6 +26,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedIcon } from '@/hooks/useAnimatedIcon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PostMedia } from './PostMedia';
+import { LinkPreview } from '@/components/ui/LinkPreview';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { SocialProof } from '@/components/ui/SocialProof';
 import { colors, spacing, fontSize, animation, radius, lineHeight, letterSpacing } from '@/theme';
@@ -355,6 +356,12 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           )}
         </>
       ) : null}
+
+      {/* Link preview — show when post has a URL but no media */}
+      {post.content && post.mediaUrls.length === 0 && (() => {
+        const urlMatch = post.content.match(/https?:\/\/[^\s]+/);
+        return urlMatch ? <LinkPreview url={urlMatch[0]} /> : null;
+      })()}
 
       {/* Media with double-tap to like */}
       {post.mediaUrls.length > 0 && (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -425,9 +425,20 @@ export default function SafScreen() {
 
   const onEndReached = useCallback(() => {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
-      feedQuery.fetchNextPage();
+      feedQuery.fetchNextPage().then(() => {
+        // Prefetch next page thumbnails for instant image display
+        const pages = feedQuery.data?.pages;
+        const lastPage = pages?.[pages.length - 1];
+        if (lastPage?.data) {
+          const urls = lastPage.data
+            .flatMap((p: FeedItem) => (p as Record<string, unknown>).thumbnailUrl ? [(p as Record<string, unknown>).thumbnailUrl as string] : ((p as Record<string, unknown>).mediaUrls as string[] || []).slice(0, 1))
+            .filter(Boolean)
+            .slice(0, 10);
+          urls.forEach((url: string) => { try { Image.prefetch(url); } catch {} });
+        }
+      }).catch(() => {});
     }
-  }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
+  }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage, feedQuery.data?.pages]);
 
   const keyExtractor = useCallback((item: FeedItem) => {
     if (item._type === 'suggested') return item.id;

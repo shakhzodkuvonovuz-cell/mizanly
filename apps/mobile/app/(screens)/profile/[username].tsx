@@ -3,6 +3,8 @@ import {
   View, Text, StyleSheet,
   FlatList, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
 } from 'react-native';
+import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/i18n/date-fns-locale';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { navigate } from '@/utils/navigation';
@@ -623,6 +625,11 @@ export default function ProfileScreen() {
           {profile.isVerified && <VerifiedBadge size={18} />}
         </View>
         <Text style={[styles.handle, { textAlign: rtlTextAlign(isRTL) }]}>@{profile.username}</Text>
+        {!isOwnProfile && (profile as Record<string, unknown>).lastActiveAt && (
+          <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 2 }}>
+            {t('profile.lastSeen', 'Last seen')} {formatDistanceToNowStrict(new Date((profile as Record<string, unknown>).lastActiveAt as string), { addSuffix: true, locale: getDateFnsLocale() })}
+          </Text>
+        )}
         {profile.bio ? <RichText text={profile.bio} style={styles.bio} /> : null}
         {profile.website ? (
           <Pressable

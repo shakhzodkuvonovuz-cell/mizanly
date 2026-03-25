@@ -15,7 +15,7 @@ export class ScholarQAService {
   }) {
     // Verify the user is an approved scholar
     const verification = await this.prisma.scholarVerification.findFirst({
-      where: { userId: scholarId, status: 'APPROVED' },
+      where: { userId: scholarId, status: 'VERIFICATION_APPROVED' },
     });
     if (!verification) {
       throw new ForbiddenException('Only verified scholars can schedule Q&A sessions');

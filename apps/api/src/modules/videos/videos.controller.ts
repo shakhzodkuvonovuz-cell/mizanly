@@ -287,6 +287,15 @@ export class VideosController {
     return this.videosService.getPremiereViewerCount(id);
   }
 
+  @Post(':id/premiere/viewer')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Increment premiere viewer count (called when user joins premiere)' })
+  incrementPremiereViewerCount(@Param('id') id: string) {
+    return this.videosService.incrementPremiereViewerCount(id);
+  }
+
   // ── End Screens ───────────────────────────────────────
 
   @Put(':id/end-screens')

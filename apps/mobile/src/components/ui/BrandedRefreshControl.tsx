@@ -1,5 +1,7 @@
+import { useCallback } from 'react';
 import { RefreshControl, Platform } from 'react-native';
 import { colors } from '@/theme';
+import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 
 interface Props {
   refreshing: boolean;
@@ -7,10 +9,17 @@ interface Props {
 }
 
 export function BrandedRefreshControl({ refreshing, onRefresh }: Props) {
+  const haptic = useContextualHaptic();
+
+  const handleRefresh = useCallback(() => {
+    haptic.tick();
+    onRefresh();
+  }, [onRefresh, haptic]);
+
   return (
     <RefreshControl
       refreshing={refreshing}
-      onRefresh={onRefresh}
+      onRefresh={handleRefresh}
       tintColor={colors.emerald}
       colors={[colors.emerald, colors.gold]} // Android: alternating colors
       progressBackgroundColor={Platform.OS === 'android' ? colors.dark.bgElevated : undefined}
