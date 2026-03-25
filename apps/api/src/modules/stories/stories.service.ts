@@ -481,6 +481,8 @@ export class StoriesService {
 
   async createHighlight(userId: string, title: string, coverUrl?: string) {
     const count = await this.prisma.storyHighlightAlbum.count({ where: { userId } });
+    // Finding #220: Highlight album limit — max 100
+    if (count >= 100) throw new BadRequestException('Maximum 100 highlight albums');
     return this.prisma.storyHighlightAlbum.create({
       data: { userId, title, coverUrl, position: count },
     });

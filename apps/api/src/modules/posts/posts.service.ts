@@ -521,6 +521,8 @@ export class PostsService {
           shareToFeed: dto.shareToFeed ?? true,
           topics: dto.topics ?? [],
           scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+          // Finding #418: Content hash for legal evidence
+          contentHash: dto.content ? (await import('crypto')).createHash('sha256').update(dto.content).digest('hex') : undefined,
         },
         select: POST_SELECT,
       });

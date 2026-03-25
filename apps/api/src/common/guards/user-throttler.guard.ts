@@ -1,5 +1,5 @@
 import { Injectable, ExecutionContext, Logger } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerException } from '@nestjs/throttler';
 import { createHash } from 'crypto';
 
 /**
@@ -34,5 +34,15 @@ export class UserThrottlerGuard extends ThrottlerGuard {
     const hash = createHash('md5').update(fingerprint).digest('hex');
     this.logger.warn(`No IP or user for rate limiting — using header fingerprint: ${hash.slice(0, 8)}`);
     return `fingerprint:${hash}`;
+  }
+
+  /**
+   * Finding #369: Add rate limit headers to every response.
+   */
+  protected throwThrottlingException(context: ExecutionContext): Promise<void> {
+    const response = context.switchToHttp().getResponse();
+    response.header('X-RateLimit-Remaining', '0');
+    response.header('Retry-After', '60');
+    throw new ThrottlerException('Too many requests — please slow down');
   }
 }

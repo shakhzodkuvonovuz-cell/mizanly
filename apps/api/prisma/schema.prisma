@@ -1012,6 +1012,7 @@ model Post {
   isAltProfile     Boolean        @default(false)
 
   editedAt          DateTime?
+  contentHash       String?           @db.VarChar(64)
   isRemoved         Boolean           @default(false)
   removedReason     String?
   removedAt         DateTime?
