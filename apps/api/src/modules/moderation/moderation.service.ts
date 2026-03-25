@@ -87,6 +87,21 @@ export class ModerationService {
       }
     }
 
+    // Finding #207: Surface crisis resources when self-harm content detected
+    if (result.categories.includes('self_harm')) {
+      return {
+        ...result,
+        crisisResources: {
+          message: 'If you or someone you know is struggling, please reach out for help.',
+          helplines: [
+            { name: 'International Association for Suicide Prevention', url: 'https://www.iasp.info/resources/Crisis_Centres/' },
+            { name: 'Crisis Text Line', detail: 'Text HOME to 741741 (US)', url: 'https://www.crisistextline.org/' },
+            { name: 'Find A Helpline', url: 'https://findahelpline.com/' },
+          ],
+        },
+      };
+    }
+
     return result;
   }
 
