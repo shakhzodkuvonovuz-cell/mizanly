@@ -27,6 +27,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { PostCard } from '@/components/saf/PostCard';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { ReactionPicker, type ReactionType } from '@/components/ui/ReactionPicker';
+import { MentionAutocomplete } from '@/components/ui/MentionAutocomplete';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -788,17 +789,35 @@ export default function PostDetailScreen() {
             )}
             <View style={[styles.inputRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Avatar uri={user.imageUrl} name={user.fullName ?? t('common.me')} size="sm" />
-              <TextInput
-                ref={inputRef}
-                style={styles.input}
-                placeholder={replyTo ? t('saf.replyToUser', { username: replyTo.username }) : t('saf.addComment')}
-                placeholderTextColor={tc.text.tertiary}
-                value={commentText}
-                onChangeText={setCommentText}
-                multiline
-                maxLength={500}
-                accessibilityLabel={t('accessibility.commentTextInput')}
-              />
+              <View style={{ flex: 1 }}>
+                {/* Mention autocomplete dropdown */}
+                {(() => {
+                  const mentionMatch = commentText.match(/@(\w{1,30})$/);
+                  const mentionQuery = mentionMatch?.[1] || '';
+                  const showMentions = mentionQuery.length >= 1;
+                  return showMentions ? (
+                    <MentionAutocomplete
+                      query={mentionQuery}
+                      visible={showMentions}
+                      onSelect={(selected) => {
+                        const before = commentText.replace(/@\w{1,30}$/, '');
+                        setCommentText(`${before}@${selected.username} `);
+                      }}
+                    />
+                  ) : null;
+                })()}
+                <TextInput
+                  ref={inputRef}
+                  style={styles.input}
+                  placeholder={replyTo ? t('saf.replyToUser', { username: replyTo.username }) : t('saf.addComment')}
+                  placeholderTextColor={tc.text.tertiary}
+                  value={commentText}
+                  onChangeText={setCommentText}
+                  multiline
+                  maxLength={500}
+                  accessibilityLabel={t('accessibility.commentTextInput')}
+                />
+              </View>
               <AnimatedPressable
                 onPress={() => canSend && sendMutation.mutate()}
                 onPressIn={sendPress.onPressIn}
