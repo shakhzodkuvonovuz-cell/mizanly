@@ -420,6 +420,12 @@ export class StoriesService {
       },
     });
 
+    // Bug 46: Increment story repliesCount
+    await this.prisma.story.update({
+      where: { id: storyId },
+      data: { repliesCount: { increment: 1 } },
+    });
+
     // Update conversation last message
     await this.prisma.conversation.update({
       where: { id: conversation.id },

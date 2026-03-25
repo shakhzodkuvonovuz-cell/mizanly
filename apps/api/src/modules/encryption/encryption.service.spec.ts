@@ -20,7 +20,10 @@ describe('EncryptionService', () => {
             conversationMember: { findUnique: jest.fn().mockResolvedValue({ userId: 'u1' }), findMany: jest.fn().mockResolvedValue([]) },
             conversationKeyEnvelope: { findFirst: jest.fn(), upsert: jest.fn(), create: jest.fn() },
             $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<unknown>) => fn({
-              conversationKeyEnvelope: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn() },
+              conversationKeyEnvelope: {
+                findFirst: jest.fn().mockResolvedValue(null),
+                create: jest.fn().mockResolvedValue({ conversationId: 'c1', userId: 'u2', version: 1 }),
+              },
             })),
           },
         },

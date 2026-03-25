@@ -508,11 +508,12 @@ describe('PostsService', () => {
         id: postId,
         userId: 'owner',
         isRemoved: false,
+        postType: 'IMAGE',
       };
       const mockShared = {
         id: 'shared-789',
         userId,
-        postType: 'TEXT',
+        postType: 'IMAGE',
         content,
         sharedPostId: postId,
       };
@@ -527,7 +528,7 @@ describe('PostsService', () => {
       expect(prisma.post.create).toHaveBeenCalledWith({
         data: {
           userId,
-          postType: 'TEXT',
+          postType: 'IMAGE',
           content,
           sharedPostId: postId,
           visibility: 'PUBLIC',

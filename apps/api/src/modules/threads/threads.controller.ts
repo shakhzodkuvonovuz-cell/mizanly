@@ -286,6 +286,20 @@ export class ThreadsController {
     return this.threadsService.isBookmarked(id, userId);
   }
 
+  // Bug 59: Create continuation thread in a chain
+  @Post(':id/continue')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Add a continuation thread to a chain' })
+  createContinuation(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('content') content: string,
+  ) {
+    return this.threadsService.createContinuation(userId, id, content);
+  }
+
   // Bug 38: updateThread existed in service but had no controller route
   @Patch(':id')
   @UseGuards(ClerkAuthGuard)

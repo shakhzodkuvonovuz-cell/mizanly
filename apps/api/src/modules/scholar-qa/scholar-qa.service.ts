@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ScholarQACategory, ScholarQAStatus, ScholarVerificationStatus as SVStatus } from '@prisma/client';
 
@@ -15,7 +15,7 @@ export class ScholarQAService {
   }) {
     // Verify the user is an approved scholar
     const verification = await this.prisma.scholarVerification.findFirst({
-      where: { userId: scholarId, status: 'VERIFICATION_PENDING' },
+      where: { userId: scholarId, status: 'APPROVED' },
     });
     if (!verification) {
       throw new ForbiddenException('Only verified scholars can schedule Q&A sessions');
@@ -79,7 +79,15 @@ export class ScholarQAService {
     // Prevent self-voting
     if (question.userId === userId) throw new BadRequestException('Cannot vote on your own question');
 
-    // Note: proper vote dedup needs a ScholarQuestionVote join table (deferred to schema file)
+    // Use ScholarQuestionVote join table for dedup
+    const existingVote = await this.prisma.scholarQuestionVote.findUnique({
+      where: { userId_questionId: { userId, questionId } },
+    });
+    if (existingVote) throw new ConflictException('Already voted on this question');
+
+    await this.prisma.scholarQuestionVote.create({
+      data: { userId, questionId, voteType: 'UPVOTE' },
+    });
     return this.prisma.scholarQuestion.update({
       where: { id: questionId },
       data: { votes: { increment: 1 } },

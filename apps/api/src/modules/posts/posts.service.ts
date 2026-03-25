@@ -895,7 +895,7 @@ export class PostsService {
       this.prisma.post.create({
         data: {
           userId,
-          postType: 'TEXT',
+          postType: original.postType,
           content: content ? sanitizeText(content) : content,
           sharedPostId: postId,
           visibility: 'PUBLIC',

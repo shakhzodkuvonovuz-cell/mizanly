@@ -486,6 +486,45 @@ export class ThreadsService {
     });
   }
 
+  /**
+   * Bug 59: Create a continuation thread in a chain.
+   * The first thread becomes the chain head, subsequent threads share the same chainId.
+   */
+  async createContinuation(userId: string, parentThreadId: string, content: string) {
+    const parent = await this.prisma.thread.findUnique({ where: { id: parentThreadId } });
+    if (!parent) throw new NotFoundException('Thread not found');
+    if (parent.userId !== userId) throw new ForbiddenException('Only the author can add continuations');
+    if (parent.isRemoved) throw new BadRequestException('Thread has been removed');
+
+    // Determine chainId — if parent is already in a chain, use its chainId; otherwise start a new chain
+    const chainId = parent.chainId || parent.id;
+
+    // Set parent as chain head if not already
+    if (!parent.chainId) {
+      await this.prisma.thread.update({
+        where: { id: parentThreadId },
+        data: { chainId, chainPosition: 1, isChainHead: true },
+      });
+    }
+
+    // Count existing chain members to determine position
+    const chainCount = await this.prisma.thread.count({ where: { chainId } });
+
+    const continuation = await this.prisma.thread.create({
+      data: {
+        userId,
+        content: sanitizeText(content),
+        isChainHead: false,
+        chainId,
+        chainPosition: chainCount + 1,
+        visibility: parent.visibility,
+      },
+      select: THREAD_SELECT,
+    });
+
+    return continuation;
+  }
+
   async delete(threadId: string, userId: string) {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread) throw new NotFoundException('Thread not found');

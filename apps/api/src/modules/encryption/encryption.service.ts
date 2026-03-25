@@ -221,10 +221,8 @@ export class EncryptionService {
   }
 
   /**
-   * TODO: [ARCH/F22] storeEnvelope has a race condition:
-   * Two concurrent calls can read the same max version and create envelopes
-   * with the same version number. Fix: use $transaction with serializable
-   * isolation like rotateKey below, or use a DB sequence/auto-increment.
+   * Store a key envelope for a conversation recipient.
+   * Uses serializable transaction to prevent race condition on version number.
    */
   async storeEnvelope(senderId: string, data: StoreEnvelopeData) {
     // Verify sender is member of the conversation
@@ -240,25 +238,27 @@ export class EncryptionService {
       throw new ForbiddenException('Not a member of this conversation');
     }
 
-    // Get current max version for this conversation+recipient
-    const existing = await this.prisma.conversationKeyEnvelope.findFirst({
-      where: {
-        conversationId: data.conversationId,
-        userId: data.recipientId,
-      },
-      orderBy: { version: 'desc' },
-    });
-    const version = existing ? existing.version + 1 : 1;
+    // Use serializable transaction to prevent concurrent version collisions
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.conversationKeyEnvelope.findFirst({
+        where: {
+          conversationId: data.conversationId,
+          userId: data.recipientId,
+        },
+        orderBy: { version: 'desc' },
+      });
+      const version = existing ? existing.version + 1 : 1;
 
-    return this.prisma.conversationKeyEnvelope.create({
-      data: {
-        conversationId: data.conversationId,
-        userId: data.recipientId,
-        encryptedKey: data.encryptedKey,
-        nonce: data.nonce,
-        version,
-      },
-    });
+      return tx.conversationKeyEnvelope.create({
+        data: {
+          conversationId: data.conversationId,
+          userId: data.recipientId,
+          encryptedKey: data.encryptedKey,
+          nonce: data.nonce,
+          version,
+        },
+      });
+    }, { isolationLevel: 'Serializable' });
   }
 
   async getEnvelope(conversationId: string, userId: string) {

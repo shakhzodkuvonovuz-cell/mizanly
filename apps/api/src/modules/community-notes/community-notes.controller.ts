@@ -14,7 +14,7 @@ class CreateNoteDto {
 }
 
 class RateNoteDto {
-  @IsString() @IsIn(['helpful', 'somewhat_helpful', 'not_helpful']) rating: string;
+  @IsString() @IsIn(['NOTE_HELPFUL', 'NOTE_SOMEWHAT_HELPFUL', 'NOTE_NOT_HELPFUL']) rating: string;
 }
 
 @ApiTags('Community Notes')

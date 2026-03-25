@@ -131,14 +131,14 @@ export class UpdateEventDto {
   @IsUrl()
   onlineUrl?: string;
 
-  @ApiProperty({ description: 'Event type', enum: ['in_person', 'online', 'hybrid'], required: false })
+  @ApiProperty({ description: 'Event type', enum: ['IN_PERSON', 'ONLINE', 'HYBRID'], required: false })
   @IsOptional()
-  @IsEnum(['in_person', 'online', 'hybrid'])
+  @IsEnum(['IN_PERSON', 'ONLINE', 'HYBRID'])
   eventType?: string;
 
-  @ApiProperty({ description: 'Privacy level', enum: ['public', 'private', 'community'], required: false })
+  @ApiProperty({ description: 'Privacy level', enum: ['EVENT_PUBLIC', 'EVENT_PRIVATE'], required: false })
   @IsOptional()
-  @IsEnum(['public', 'private', 'community'])
+  @IsEnum(['EVENT_PUBLIC', 'EVENT_PRIVATE'])
   privacy?: string;
 
   @ApiProperty({ description: 'Community ID if event belongs to a community', required: false })

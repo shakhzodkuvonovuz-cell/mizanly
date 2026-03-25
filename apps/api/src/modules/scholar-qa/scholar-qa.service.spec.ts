@@ -85,13 +85,20 @@ describe('ScholarQAService', () => {
     beforeEach(() => {
       prisma.scholarQuestion.findUnique = jest.fn();
       prisma.scholarQuestion.update = jest.fn();
+      prisma.scholarQuestionVote = {
+        findUnique: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({}),
+      };
     });
 
     it('should increment vote count', async () => {
-      prisma.scholarQuestion.findUnique.mockResolvedValue({ id: 'q-1', votes: 5 });
+      prisma.scholarQuestion.findUnique.mockResolvedValue({ id: 'q-1', votes: 5, userId: 'other-user' });
       prisma.scholarQuestion.update.mockResolvedValue({ id: 'q-1', votes: 6 });
       const result = await service.voteQuestion('u1', 'q-1');
       expect(result.votes).toBe(6);
+      expect(prisma.scholarQuestionVote.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ userId: 'u1', questionId: 'q-1' }) }),
+      );
     });
 
     it('should throw NotFoundException for missing question', async () => {

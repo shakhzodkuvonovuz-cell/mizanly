@@ -2246,6 +2246,7 @@ model StoryStickerResponse {
   story        Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([storyId, userId, stickerType])
   @@index([storyId])
   @@map("story_sticker_responses")
 }
