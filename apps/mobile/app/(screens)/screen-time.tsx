@@ -372,6 +372,48 @@ export default function ScreenTimeScreen() {
               </View>
             </LinearGradient>
           </Pressable>
+          {/* Finding #313: Bedtime mode */}
+          <Pressable
+            onPress={() => {
+              haptic.tick();
+              AsyncStorage.getItem('bedtime_enabled').then(val => {
+                const next = val === '1' ? '0' : '1';
+                AsyncStorage.setItem('bedtime_enabled', next);
+                showToast({
+                  message: next === '1'
+                    ? t('screenTime.bedtimeEnabled', 'Bedtime mode enabled — reminders will show at your set time')
+                    : t('screenTime.bedtimeDisabled', 'Bedtime mode disabled'),
+                  variant: next === '1' ? 'success' : 'info',
+                });
+              });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('screenTime.bedtimeMode', 'Bedtime Mode')}
+          >
+            <LinearGradient
+              colors={['rgba(10,123,79,0.08)', 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.settingRow}
+            >
+              <View style={[styles.settingRowInner, { flexDirection: rtlFlexRow(isRTL) }]}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+                  style={styles.settingIcon}
+                >
+                  <Icon name="moon" size="sm" color={colors.emerald} />
+                </LinearGradient>
+                <View style={[styles.settingTextWrap, rtlMargin(isRTL, 0, spacing.md)]}>
+                  <Text style={[styles.settingLabel, { textAlign: rtlTextAlign(isRTL) }]}>
+                    {t('screenTime.bedtimeMode', 'Bedtime Mode')}
+                  </Text>
+                  <Text style={[styles.settingHint, { textAlign: rtlTextAlign(isRTL) }]}>
+                    {t('screenTime.bedtimeHint', 'Get a gentle reminder when it\'s time to sleep')}
+                  </Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </Pressable>
         </ScrollView>
 
         {/* Limit Picker BottomSheet */}
