@@ -137,8 +137,16 @@ export class MessagesService {
   ) {
     await this.requireMembership(conversationId, userId);
 
+    // Finding #355: Filter out messages from users who blocked or are blocked by the viewer
+    const blocks = await this.prisma.block.findMany({
+      where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+      select: { blockerId: true, blockedId: true },
+      take: 500,
+    });
+    const blockedIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
+
     const messages = await this.prisma.message.findMany({
-      where: { conversationId, isDeleted: false },
+      where: { conversationId, isDeleted: false, ...(blockedIds.length ? { senderId: { notIn: blockedIds } } : {}) },
       select: MESSAGE_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

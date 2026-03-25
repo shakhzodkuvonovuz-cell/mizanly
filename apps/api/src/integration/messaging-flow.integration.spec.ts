@@ -53,7 +53,7 @@ describe('Integration: Messaging Flow', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       user: { findUnique: jest.fn().mockResolvedValue(mockUser) },
-      block: { findFirst: jest.fn().mockResolvedValue(null) },
+      block: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
       $executeRaw: jest.fn().mockResolvedValue(1),
       $transaction: jest.fn().mockImplementation((fnOrArr: any) => {
         if (typeof fnOrArr === 'function') return fnOrArr(prismaValue);
