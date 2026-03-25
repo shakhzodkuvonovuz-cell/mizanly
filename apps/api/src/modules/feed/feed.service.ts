@@ -128,6 +128,23 @@ export class FeedService {
     return { bySpace, byHashtag };
   }
 
+  /**
+   * Finding #295: Reset algorithm — clear all feed interactions and interest data.
+   * Gives user a fresh start with the recommendation algorithm.
+   */
+  async resetAlgorithm(userId: string) {
+    await this.prisma.$transaction([
+      this.prisma.feedInteraction.deleteMany({ where: { userId } }),
+      this.prisma.feedDismissal.deleteMany({ where: { userId } }),
+    ]);
+    // Clear Redis session signals
+    await this.redis.del(`session:${userId}`);
+    // Clear cached foryou feeds
+    const keys = await this.redis.keys(`feed:foryou:${userId}:*`);
+    if (keys.length > 0) await this.redis.del(...keys);
+    return { reset: true, message: 'Your algorithm has been reset. Your feed will now show fresh content.' };
+  }
+
   async undismiss(userId: string, contentId: string, contentType: string) {
     try {
       await this.prisma.feedDismissal.delete({ where: { userId_contentId_contentType: { userId, contentId, contentType } } });

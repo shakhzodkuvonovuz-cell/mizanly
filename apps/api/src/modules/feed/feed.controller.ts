@@ -61,6 +61,15 @@ export class FeedController {
     return this.feed.undismiss(userId, id, t);
   }
 
+  // Finding #295: Reset algorithm
+  @Delete('reset-algorithm')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 1 } })
+  @ApiOperation({ summary: 'Reset your feed algorithm — clears all interactions and preferences' })
+  async resetAlgorithm(@CurrentUser('id') userId: string) {
+    return this.feed.resetAlgorithm(userId);
+  }
+
   @UseGuards(ClerkAuthGuard)
   @Get('explain/post/:postId')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
