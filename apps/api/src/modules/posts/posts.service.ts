@@ -1407,6 +1407,37 @@ export class PostsService {
   }
 
   /**
+   * Respond to a tag — tagged user can approve or decline being tagged.
+   */
+  async respondToTag(tagId: string, userId: string, status: 'APPROVED' | 'DECLINED') {
+    // Try PostTaggedUser first
+    const postTag = await this.prisma.postTaggedUser.findUnique({ where: { id: tagId } });
+    if (postTag) {
+      if (postTag.userId !== userId) {
+        throw new ForbiddenException('Only the tagged user can respond to a tag');
+      }
+      return this.prisma.postTaggedUser.update({
+        where: { id: tagId },
+        data: { status },
+      });
+    }
+
+    // Try ReelTaggedUser
+    const reelTag = await this.prisma.reelTaggedUser.findUnique({ where: { id: tagId } });
+    if (reelTag) {
+      if (reelTag.userId !== userId) {
+        throw new ForbiddenException('Only the tagged user can respond to a tag');
+      }
+      return this.prisma.reelTaggedUser.update({
+        where: { id: tagId },
+        data: { status },
+      });
+    }
+
+    throw new NotFoundException('Tag not found');
+  }
+
+  /**
    * Background image moderation via Claude Vision API.
    * If BLOCK: auto-remove post + notify user.
    * If WARNING: mark post as sensitive (blurred in feed).

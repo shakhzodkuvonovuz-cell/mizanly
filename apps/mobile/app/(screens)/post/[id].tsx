@@ -767,8 +767,14 @@ export default function PostDetailScreen() {
           </View>
         )}
 
-        {/* Comment Input */}
-        {user && (
+        {/* Comment Input — hidden when commentPermission is NOBODY (unless owner) */}
+        {user && (() => {
+          const post = postQuery.data as Record<string, unknown> | undefined;
+          const permission = post?.commentPermission as string | undefined;
+          const isPostOwner = post?.userId === user.id || (post?.user as Record<string, unknown> | undefined)?.id === user.id;
+          if (permission === 'NOBODY' && !isPostOwner) return null;
+          return true;
+        })() && (
           <View style={styles.inputWrap}>
             {replyTo && (
               <View style={[styles.replyBanner, { flexDirection: rtlFlexRow(isRTL) }]}>

@@ -565,8 +565,14 @@ export default function ReelDetailScreen() {
             contentContainerStyle={{ paddingBottom: 100 }}
           />
 
-          {/* Comment Input */}
-          {user && (
+          {/* Comment Input — hidden when commentPermission is NOBODY (unless owner) */}
+          {user && (() => {
+            const reel = reelQuery.data as Record<string, unknown> | undefined;
+            const permission = reel?.commentPermission as string | undefined;
+            const isReelOwner = reel?.userId === user.id || (reel?.user as Record<string, unknown> | undefined)?.id === user.id;
+            if (permission === 'NOBODY' && !isReelOwner) return null;
+            return true;
+          })() && (
             <View style={styles.inputWrap}>
               {replyTo && (
                 <View style={styles.replyBanner}>

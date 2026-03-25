@@ -34,6 +34,11 @@ class EditCommentDto {
   content: string;
 }
 
+class RespondToTagDto {
+  @IsEnum(['APPROVED', 'DECLINED'])
+  status: 'APPROVED' | 'DECLINED';
+}
+
 class ShareDto {
   @IsOptional()
   @IsString()
@@ -385,5 +390,18 @@ export class PostsController {
     @Body() dto: CrossPostDto,
   ) {
     return this.postsService.crossPost(userId, id, dto);
+  }
+
+  @Patch('tags/:tagId/respond')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Approve or decline a tag (tagged user responds)' })
+  respondToTag(
+    @Param('tagId') tagId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: RespondToTagDto,
+  ) {
+    return this.postsService.respondToTag(tagId, userId, dto.status);
   }
 }
