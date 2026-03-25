@@ -447,6 +447,20 @@ export class PostsService {
       }
     }
 
+    // Duplicate post detection — prevent same content posted twice within 5 minutes
+    if (dto.content) {
+      const crypto = await import('crypto');
+      const contentHash = crypto.createHash('sha256').update(dto.content.trim()).digest('hex');
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const duplicate = await this.prisma.post.findFirst({
+        where: { userId, content: dto.content.trim(), createdAt: { gte: fiveMinutesAgo }, isRemoved: false },
+        select: { id: true },
+      });
+      if (duplicate) {
+        throw new ConflictException('Duplicate post — you already posted this content recently');
+      }
+    }
+
     // Parse hashtags (upserts happen inside transaction below)
     const hashtagNames = extractHashtags(dto.content ?? '');
 

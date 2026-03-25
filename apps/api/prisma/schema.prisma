@@ -1605,6 +1605,7 @@ model Conversation {
   id                    String                    @id @default(cuid())
   isGroup               Boolean                   @default(false)
   groupName             String?
+  groupDescription      String?                   @db.VarChar(500)
   groupAvatarUrl        String?
   createdById           String?
   createdBy             User?                     @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: SetNull)

@@ -408,7 +408,7 @@ export class MessagesService {
   async updateGroup(
     conversationId: string,
     userId: string,
-    data: { groupName?: string; groupAvatarUrl?: string },
+    data: { groupName?: string; groupAvatarUrl?: string; groupDescription?: string },
   ) {
     const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
     if (!convo) throw new NotFoundException('Conversation not found');
@@ -467,6 +467,64 @@ export class MessagesService {
     });
     // Return targetUserId so controller/gateway can evict from socket room
     return { removed: true, conversationId, targetUserId };
+  }
+
+  /**
+   * Finding #167: Promote or demote a group member's role.
+   */
+  async changeGroupRole(conversationId: string, userId: string, targetUserId: string, role: 'admin' | 'member') {
+    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
+    if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can change roles');
+    if (targetUserId === userId) throw new BadRequestException('Cannot change your own role');
+
+    const target = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId: targetUserId } },
+    });
+    if (!target) throw new NotFoundException('Member not found');
+    if (target.role === 'owner') throw new ForbiddenException('Cannot change owner role');
+
+    return this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId: targetUserId } },
+      data: { role },
+    });
+  }
+
+  /**
+   * Finding #169: Generate a shareable invite link for a group.
+   */
+  async generateGroupInviteLink(conversationId: string, userId: string) {
+    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
+    await this.requireMembership(conversationId, userId);
+
+    // Generate a unique invite code using crypto
+    const crypto = await import('crypto');
+    const inviteCode = crypto.randomBytes(16).toString('base64url');
+
+    // Store in Redis with 7-day expiry
+    await this.redis.setex(`group_invite:${inviteCode}`, 7 * 24 * 60 * 60, conversationId);
+
+    return { inviteCode, expiresIn: '7 days' };
+  }
+
+  /**
+   * Finding #169: Join a group via invite link.
+   */
+  async joinViaInviteLink(inviteCode: string, userId: string) {
+    const conversationId = await this.redis.get(`group_invite:${inviteCode}`);
+    if (!conversationId) throw new NotFoundException('Invite link expired or invalid');
+
+    const existing = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId } },
+    });
+    if (existing) throw new ConflictException('Already a member of this group');
+
+    await this.prisma.conversationMember.create({
+      data: { conversationId, userId, role: 'member' },
+    });
+
+    return { joined: true, conversationId };
   }
 
   async setLockCode(conversationId: string, userId: string, code: string | null) {

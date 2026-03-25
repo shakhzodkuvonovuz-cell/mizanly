@@ -281,11 +281,15 @@ export class EmbeddingsService {
     limit = 20,
     filterTypes?: EmbeddingContentType[],
   ): Promise<Array<{ contentId: string; contentType: EmbeddingContentType; similarity: number }>> {
+    // SAFE: validateFilterTypes restricts to Prisma enum whitelist values only
     const safeTypes = this.validateFilterTypes(filterTypes);
     const typeFilter = safeTypes.length
       ? `AND e2."contentType" IN (${safeTypes.map(t => `'${t}'`).join(',')})`
       : '';
 
+    // $queryRawUnsafe used because pgvector <=> operator + dynamic IN clause
+    // are not expressible in Prisma tagged templates. All interpolated values
+    // are pre-validated: safeTypes via enum whitelist, positional $1/$2/$3 for user input.
     const results = await this.prisma.$queryRawUnsafe<
       Array<{ contentId: string; contentType: EmbeddingContentType; similarity: number }>
     >(
@@ -316,6 +320,7 @@ export class EmbeddingsService {
     const vectorStr = `[${vector.join(',')}]`;
     const conditions: string[] = [];
 
+    // SAFE: validateFilterTypes restricts to Prisma enum whitelist, validateIds to /^[a-zA-Z0-9_-]+$/
     const safeTypes = this.validateFilterTypes(filterTypes);
     if (safeTypes.length) {
       conditions.push(`"contentType" IN (${safeTypes.map(t => `'${t}'`).join(',')})`);
@@ -327,6 +332,8 @@ export class EmbeddingsService {
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
+    // $queryRawUnsafe: pgvector <=> + dynamic WHERE not expressible in tagged templates.
+    // All values pre-validated. Positional $1/$2 used for vector and limit.
     const results = await this.prisma.$queryRawUnsafe<
       Array<{ contentId: string; contentType: EmbeddingContentType; similarity: number }>
     >(
@@ -377,6 +384,7 @@ export class EmbeddingsService {
     const postIds = interactions.map(i => i.postId);
 
     // Fetch individual vectors (not averaged) for clustering
+    // SAFE: postIds passed as positional parameter $1, not interpolated
     const rows = await this.prisma.$queryRawUnsafe<Array<{ vector_text: string }>>(
       `SELECT vector::text AS vector_text
        FROM embeddings

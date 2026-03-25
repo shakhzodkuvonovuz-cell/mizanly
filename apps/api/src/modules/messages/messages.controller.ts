@@ -124,6 +124,12 @@ class UpdateGroupDto {
   @IsOptional()
   @IsUrl()
   groupAvatarUrl?: string;
+
+  @ApiProperty({ required: false, description: 'Group description', maxLength: 500 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  groupDescription?: string;
 }
 
 class AddMembersDto {
@@ -644,5 +650,40 @@ export class MessagesController {
   @ApiOperation({ summary: 'Get DM notes from your conversation contacts' })
   async getContactDMNotes(@CurrentUser('id') userId: string) {
     return this.messagesService.getDMNotesForContacts(userId);
+  }
+
+  // Finding #167: Promote/demote group member role
+  @Patch(':conversationId/members/:targetUserId/role')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Change group member role (admin/member)' })
+  async changeGroupRole(
+    @Param('conversationId') conversationId: string,
+    @Param('targetUserId') targetUserId: string,
+    @CurrentUser('id') userId: string,
+    @Body('role') role: 'admin' | 'member',
+  ) {
+    return this.messagesService.changeGroupRole(conversationId, userId, targetUserId, role);
+  }
+
+  // Finding #169: Generate group invite link
+  @Post(':conversationId/invite-link')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Generate shareable invite link for a group' })
+  async generateInviteLink(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.generateGroupInviteLink(conversationId, userId);
+  }
+
+  // Finding #169: Join group via invite link
+  @Post('join/:inviteCode')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Join a group via invite link' })
+  async joinViaInviteLink(
+    @Param('inviteCode') inviteCode: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.joinViaInviteLink(inviteCode, userId);
   }
 }

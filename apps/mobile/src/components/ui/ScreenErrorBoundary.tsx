@@ -24,8 +24,17 @@ export class ScreenErrorBoundary extends Component<ScreenErrorBoundaryProps, Scr
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    if (__DEV__) console.error('[ScreenErrorBoundary] Caught error:', error.message);
-    if (__DEV__) console.error('[ScreenErrorBoundary] Component stack:', info.componentStack);
+    if (__DEV__) {
+      console.error('[ScreenErrorBoundary] Caught error:', error.message);
+      console.error('[ScreenErrorBoundary] Component stack:', info.componentStack);
+    }
+    // Report to Sentry in production
+    try {
+      const Sentry = require('@sentry/react-native');
+      Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
+    } catch {
+      // Sentry not installed or unavailable — graceful degradation
+    }
   }
 
   handleRetry = () => {
