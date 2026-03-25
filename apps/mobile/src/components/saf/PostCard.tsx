@@ -75,6 +75,10 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   // Double-tap overlay heart
   const overlayHeartScale = useSharedValue(0);
   const overlayHeartOpacity = useSharedValue(0);
+  const likeCountScale = useSharedValue(1);
+  const likeCountAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: likeCountScale.value }],
+  }));
 
   const reactInFlight = useRef(false);
   const reactMutation = useMutation({
@@ -84,6 +88,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       const prev = { liked: localLiked, likes: localLikes };
       setLocalLiked((p) => !p);
       setLocalLikes((p) => localLiked ? p - 1 : p + 1);
+      // Animate like count bump
+      likeCountScale.value = withSpring(1.2, { damping: 8, stiffness: 300 });
+      setTimeout(() => { likeCountScale.value = withSpring(1, { damping: 10, stiffness: 200 }); }, 150);
       return prev;
     },
     onError: (_e, _v, ctx) => {
@@ -456,14 +463,16 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
         />
       </View>
 
-      {/* Social proof — "Liked by [avatar] name and N others" */}
+      {/* Social proof — "Liked by [avatar] name and N others" — with scale animation on like */}
       {!post.hideLikesCount && localLikes > 0 && (
-        <SocialProof
-          users={likers}
-          count={localLikes}
-          onPress={() => router.push(`/(screens)/post/${post.id}`)}
-          onUserPress={(username) => router.push(`/(screens)/profile/${username}`)}
-        />
+        <Animated.View style={likeCountAnimStyle}>
+          <SocialProof
+            users={likers}
+            count={localLikes}
+            onPress={() => router.push(`/(screens)/post/${post.id}`)}
+            onUserPress={(username) => router.push(`/(screens)/profile/${username}`)}
+          />
+        </Animated.View>
       )}
 
       {/* More menu */}

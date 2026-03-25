@@ -31,6 +31,7 @@ interface Props {
   thread: Thread;
   viewerId?: string;
   isOwn?: boolean;
+  isRead?: boolean;
 }
 
 function ImageGrid({ images, onPress }: { images: string[]; onPress: (index: number) => void }) {
@@ -94,7 +95,7 @@ function ImageGrid({ images, onPress }: { images: string[]; onPress: (index: num
   );
 }
 
-export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: Props) {
+export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn, isRead = true }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -241,6 +242,11 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
       onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
      
     >
+      {/* Unread indicator */}
+      {!isRead && (
+        <View style={{ position: 'absolute', top: 12, left: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.emerald, zIndex: 1 }} />
+      )}
+
       {/* Repost header */}
       {thread.repostOf && (
         <View style={styles.repostHeader}>

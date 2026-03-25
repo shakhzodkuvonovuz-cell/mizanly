@@ -149,6 +149,7 @@ export default function ReelDetailScreen() {
   const haptic = useContextualHaptic();
   const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
+  const lastTapRef = useRef<number>(0);
   const videoRef = useRef<Video>(null);
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
@@ -347,8 +348,24 @@ export default function ReelDetailScreen() {
   const listHeader = useMemo(() => (
     reelQuery.data ? (
       <View style={styles.reelContainer}>
-        {/* Video Player */}
-        <Pressable onPress={handleClearModeToggle} style={styles.videoContainer}>
+        {/* Video Player — double-tap to like */}
+        <Pressable
+          onPress={() => {
+            const now = Date.now();
+            if (lastTapRef.current && now - lastTapRef.current < 300) {
+              handleLike();
+              haptic.like();
+              lastTapRef.current = 0;
+            } else {
+              lastTapRef.current = now;
+              // Single tap: toggle clear mode after brief delay
+              setTimeout(() => {
+                if (lastTapRef.current !== 0) handleClearModeToggle();
+              }, 300);
+            }
+          }}
+          style={styles.videoContainer}
+        >
           {reelQuery.data.isPhotoCarousel && reelQuery.data.carouselUrls?.length ? (
             <ImageCarousel
               images={reelQuery.data.carouselUrls}

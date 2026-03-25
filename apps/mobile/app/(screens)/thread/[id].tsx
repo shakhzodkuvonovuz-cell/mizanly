@@ -187,6 +187,7 @@ export default function ThreadDetailScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const inputRef = useRef<TextInput>(null);
+  const lastThreadTapRef = useRef<number>(0);
   const [replyText, setReplyText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [replySort, setReplySort] = useState<'top' | 'latest'>('top');
@@ -355,7 +356,18 @@ export default function ThreadDetailScreen() {
   const listHeader = useMemo(() => (
     threadQuery.data ? (
       <View>
-        <ThreadCard thread={threadQuery.data} viewerId={user?.id} />
+        <Pressable onPress={() => {
+          const now = Date.now();
+          if (lastThreadTapRef.current && now - lastThreadTapRef.current < 300) {
+            threadLikeMutation.mutate();
+            haptic.like();
+            lastThreadTapRef.current = 0;
+          } else {
+            lastThreadTapRef.current = now;
+          }
+        }}>
+          <ThreadCard thread={threadQuery.data} viewerId={user?.id} />
+        </Pressable>
         {showListenButton && (
           <Pressable
             onPress={handleListen}

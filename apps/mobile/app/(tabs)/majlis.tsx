@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -46,9 +47,10 @@ interface AnimatedThreadCardProps {
   isOwn?: boolean;
   index: number;
   isRTL?: boolean;
+  isRead?: boolean;
 }
 
-const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, isOwn, index, isRTL: isRTLProp }: AnimatedThreadCardProps) {
+const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, isOwn, index, isRTL: isRTLProp, isRead }: AnimatedThreadCardProps) {
   // Entrance animation
   const translateY = useSharedValue(4);
   const opacity = useSharedValue(0);
@@ -73,7 +75,7 @@ const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, 
 
   return (
     <Animated.View style={[animStyle, hasHighEngagement && rtlBorderStart(!!isRTLProp, 2, colors.gold)]}>
-      <ThreadCard thread={thread} viewerId={viewerId} isOwn={isOwn} />
+      <ThreadCard thread={thread} viewerId={viewerId} isOwn={isOwn} isRead={isRead} />
     </Animated.View>
   );
 });
@@ -87,6 +89,18 @@ export default function MajlisScreen() {
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastReadAt, setLastReadAt] = useState<string | null>(null);
+
+  // Load last read timestamp on mount, update when tab gains focus
+  useEffect(() => {
+    AsyncStorage.getItem('majlis_last_read').then(setLastReadAt);
+  }, []);
+  useFocusEffect(useCallback(() => {
+    // Mark all current threads as read when user views the tab
+    const now = new Date().toISOString();
+    AsyncStorage.setItem('majlis_last_read', now);
+    setLastReadAt(now);
+  }, []));
 
   const { onScroll: headerOnScroll, headerAnimatedStyle, titleAnimatedStyle, scrollY } = useScrollLinkedHeader(56);
 
@@ -287,6 +301,7 @@ export default function MajlisScreen() {
       isOwn={user?.username === item.user.username}
       index={index}
       isRTL={isRTL}
+      isRead={!lastReadAt || new Date(item.createdAt) <= new Date(lastReadAt)}
     />
   ), [user?.id, user?.username, isRTL]);
   const onEndReached = useCallback(() => {
