@@ -314,6 +314,18 @@ export class ThreadsController {
     return this.threadsService.updateThread(id, userId, content);
   }
 
+  // Finding #263: Share thread content for story creation
+  @Get(':id/share-story')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get thread content formatted for story sharing' })
+  shareToStory(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.threadsService.shareToStory(id, userId);
+  }
+
   // Finding #381: Thread unroll — view full chain as a flat readable list
   @Get(':id/unroll')
   @UseGuards(OptionalClerkAuthGuard)

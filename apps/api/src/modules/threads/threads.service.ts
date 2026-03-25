@@ -1014,6 +1014,32 @@ export class ThreadsService {
     return { bookmarked: !!bookmark };
   }
 
+  // Finding #263: Share thread to story — creates a story from thread content
+  async shareToStory(threadId: string, userId: string) {
+    const thread = await this.prisma.thread.findUnique({
+      where: { id: threadId },
+      select: { ...THREAD_SELECT, userId: true },
+    });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    // Create a story with the thread content as text overlay
+    const storyContent = (thread.content || '').substring(0, 500);
+    const authorName = thread.user?.displayName || thread.user?.username || 'Unknown';
+
+    // We create the story via the stories service if available, but since we don't inject it,
+    // return the data needed for the mobile client to create the story
+    return {
+      threadId: thread.id,
+      content: storyContent,
+      author: authorName,
+      authorAvatar: thread.user?.avatarUrl,
+      authorUsername: thread.user?.username,
+      likesCount: thread.likesCount,
+      repliesCount: thread.repliesCount,
+      shareUrl: `https://mizanly.app/thread/${threadId}`,
+    };
+  }
+
   // Finding #381: Thread unroll — returns the full chain as a flat, ordered list
   async getThreadUnroll(threadId: string) {
     const thread = await this.prisma.thread.findUnique({

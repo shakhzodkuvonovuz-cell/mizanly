@@ -738,6 +738,8 @@ export const threadsApi = {
     api.get<{ url: string }>(`/threads/${id}/share-link`),
   isBookmarked: (threadId: string) =>
     api.get<{ bookmarked: boolean }>(`/threads/${threadId}/bookmarked`),
+  // Finding #263: Share thread to story
+  shareToStory: (id: string) => api.get<{ threadId: string; content: string; author: string; shareUrl: string }>(`/threads/${id}/share-story`),
   // Finding #381: Thread unroll
   getUnroll: (id: string) => api.get<{ data: Thread[]; meta: { totalParts: number } }>(`/threads/${id}/unroll`),
   // Finding #251: Thread analytics
