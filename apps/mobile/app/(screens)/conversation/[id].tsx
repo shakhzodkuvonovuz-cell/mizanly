@@ -48,6 +48,7 @@ import { RichText } from '@/components/ui/RichText';
 import { navigate } from '@/utils/navigation';
 import { TypingIndicator } from '@/components/risalah/TypingIndicator';
 
+// #region Types & Constants
 interface TenorGifResult {
   id: string;
   media_formats: { gif: { url: string } };
@@ -354,6 +355,9 @@ const getMessageStatus = (msg: Message, readByMembers: ConversationMember[], del
   return 'sent';
 };
 
+// #endregion
+
+// #region MessageBubble Component (~360 lines)
 const MessageBubble = memo(function MessageBubble({
   message, isOwn, isGroupStart, isGroupEnd, onLongPress, isNew = false,
   searchQuery = '', onSearchResultPress, readByMembers = [],
@@ -716,6 +720,9 @@ function PendingMessageRow({ pending }: { pending: PendingMessage }) {
   );
 }
 
+// #endregion
+
+// #region ConversationScreen — Main Screen Component
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();

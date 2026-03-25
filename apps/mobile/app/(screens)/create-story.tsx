@@ -106,7 +106,8 @@ const STICKER_TRAY_ITEMS: Array<{ type: StickerType; icon: IconName; labelKey: s
   { type: 'hashtag', icon: 'hash', labelKey: 'stories.hashtag', color: colors.gold },
 ];
 
-// ── Draggable sticker wrapper — extracted to avoid Rules of Hooks in .map() ──
+// #region DraggableSticker Component (~70 lines)
+// Draggable sticker wrapper — extracted to avoid Rules of Hooks in .map()
 function DraggableSticker({
   sticker,
   onRemove,
@@ -180,6 +181,9 @@ function DraggableSticker({
   );
 }
 
+// #endregion
+
+// #region CreateStoryScreen — Main Screen Component
 export default function CreateStoryScreen() {
   const router = useRouter();
   const tc = useThemeColors();

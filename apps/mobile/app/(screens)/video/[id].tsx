@@ -41,6 +41,7 @@ import { showToast } from '@/components/ui/Toast';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// #region Helpers & Sub-Components
 function formatTimeValue(seconds: number) {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
@@ -173,6 +174,9 @@ function UpNextSection({ videoId, tc }: { videoId: string; tc: ReturnType<typeof
   );
 }
 
+// #endregion
+
+// #region VideoDetailScreen — Main Screen Component
 export default function VideoDetailScreen() {
   const tc = useThemeColors();
   const styles = createStyles(tc);

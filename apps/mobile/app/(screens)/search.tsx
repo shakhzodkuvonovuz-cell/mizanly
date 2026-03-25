@@ -38,6 +38,7 @@ type SearchListItem =
   | { type: 'user'; data: User }
   | { type: 'hashtag'; data: { id: string; name: string; postsCount: number } };
 
+// #region Memoized Row Components
 const UserRow = memo(function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
   const tc = useThemeColors();
   const styles = useMemo(() => createStyles(tc), [tc]);
@@ -131,6 +132,9 @@ const ChannelRow = memo(function ChannelRow({ channel, onPress }: { channel: Cha
   );
 });
 
+// #endregion
+
+// #region SearchScreen — Main Screen Component
 export default function SearchScreen() {
   const tc = useThemeColors();
   const styles = useMemo(() => createStyles(tc), [tc]);
