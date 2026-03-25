@@ -232,16 +232,16 @@ function CommentRow({
           </View>
         )}
         {/* Finding #410: View replies expansion */}
-        {(comment as Record<string, unknown>).repliesCount && ((comment as Record<string, unknown>).repliesCount as number) > 0 && (
+        {((comment as unknown as Record<string, unknown>).repliesCount as number) > 0 ? (
           <Pressable
             onPress={() => onReply(comment.id, comment.user.username)}
             style={{ paddingStart: 40, paddingVertical: 4 }}
           >
             <Text style={{ color: colors.emerald, fontSize: 12, fontFamily: 'DMSans_500Medium' }}>
-              {t('saf.viewReplies', { count: (comment as Record<string, unknown>).repliesCount })}
+              {(t as (k: string, o?: Record<string, unknown>) => string)('saf.viewReplies', { count: (comment as unknown as Record<string, unknown>).repliesCount as number })}
             </Text>
           </Pressable>
-        )}
+        ) : null}
         {showReactions && (
           <View style={styles.reactionPickerWrap}>
             <ReactionPicker

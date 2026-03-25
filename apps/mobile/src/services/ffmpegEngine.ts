@@ -404,7 +404,7 @@ export function buildCommand(params: EditParams, outputPath: string): string {
   }
 
   // Rotation (clockwise: 90, 180, 270)
-  if (params.rotation && params.rotation !== 0) {
+  if (params.rotation) {
     const rotMap: Record<number, string> = {
       90: 'transpose=1',    // 90° clockwise
       180: 'transpose=1,transpose=1', // 180°
@@ -662,14 +662,14 @@ export async function getVideoInfo(uri: string): Promise<VideoInfo | null> {
     const info = session.getMediaInformation();
     if (!info) return null;
 
-    const duration = parseFloat(info.getDuration() || '0');
+    const duration = parseFloat(String(info.getDuration() || '0'));
     const streams = info.getStreams() || [];
     const videoStream = streams.find((s: { getType: () => string }) => s.getType() === 'video');
 
     return {
       duration,
-      width: videoStream ? parseInt(videoStream.getWidth() || '0', 10) : 0,
-      height: videoStream ? parseInt(videoStream.getHeight() || '0', 10) : 0,
+      width: videoStream ? parseInt(String(videoStream.getWidth() || '0'), 10) : 0,
+      height: videoStream ? parseInt(String(videoStream.getHeight() || '0'), 10) : 0,
       bitrate: info.getBitrate() ? parseInt(info.getBitrate(), 10) : undefined,
       codec: videoStream?.getCodec() || undefined,
     };

@@ -101,7 +101,7 @@ export function TypingIndicator({ label, dotSize = 5, variant = 'inline' }: Typi
   return (
     <Animated.View style={[styles.row, containerFade]}>
       {label ? (
-        <Text style={[styles.label, { color: tc.emerald }]}>{label}</Text>
+        <Text style={[styles.label, { color: colors.emerald }]}>{label}</Text>
       ) : null}
       <View style={styles.dots}>
         <Animated.View style={[dotStyle, s1]} />

@@ -32,8 +32,11 @@ export interface GlassHeaderProps {
   title?: string;
   titleComponent?: React.ReactNode;
   leftAction?: HeaderAction;
+  leftIcon?: string;
+  onLeftPress?: () => void;
   rightAction?: HeaderAction;
   rightActions?: HeaderAction[];
+  rightContent?: React.ReactNode;
   borderless?: boolean;
   showBackButton?: boolean;
   showBack?: boolean;

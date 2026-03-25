@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Pressable, Text, TextInput } from 'react-native';
-import Svg, { Path, G, Defs, Mask, Rect } from 'react-native-svg';
+import Svg, { Path, G, Defs, Rect } from 'react-native-svg';
+// Mask import — type declarations may be incomplete for some RN SVG versions
+const Mask = require('react-native-svg').Mask;
 import {
   PanGestureHandler,
   State,
@@ -53,7 +55,7 @@ const DRAW_COLORS: readonly string[] = [
 
 interface ToolConfig {
   label: string;
-  icon: 'pencil' | 'edit' | 'type' | 'sun';
+  icon: 'pencil' | 'edit' | 'type' | 'sun' | 'slash';
   defaultWidth: number;
   opacity: number;
 }
@@ -63,7 +65,7 @@ const TOOL_CONFIGS: Record<DrawTool, ToolConfig> = {
   marker:      { label: 'Marker',      icon: 'edit',   defaultWidth: 12, opacity: 0.6 },
   highlighter: { label: 'Highlighter', icon: 'type',   defaultWidth: 20, opacity: 0.3 },
   neon:        { label: 'Neon',        icon: 'sun',    defaultWidth: 4,  opacity: 1.0 },
-  eraser:      { label: 'Eraser',      icon: 'slash',  defaultWidth: 20, opacity: 1.0 },
+  eraser:      { label: 'Eraser',      icon: 'slash' as const,  defaultWidth: 20, opacity: 1.0 },
 };
 
 const TOOLS: readonly DrawTool[] = ['pen', 'marker', 'highlighter', 'neon', 'eraser'];
@@ -439,7 +441,7 @@ export function DrawingCanvas({
             </Defs>
 
             {/* Drawing paths — masked by eraser strokes */}
-            <G mask="url(#eraserMask)">
+            <G {...{ mask: "url(#eraserMask)" } as Record<string, string>}>
               {paths.filter((p) => p.tool !== 'eraser').map(renderPath)}
               {activeTool !== 'eraser' && renderCurrentPath()}
             </G>

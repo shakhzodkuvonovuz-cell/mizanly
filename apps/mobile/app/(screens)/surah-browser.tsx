@@ -69,7 +69,7 @@ function SurahBrowserContent() {
   });
 
   const filtered = useMemo(() => {
-    const surahs = (surahsQuery.data ?? []) as Surah[];
+    const surahs = (surahsQuery.data ?? []) as unknown as Surah[];
     if (!search.trim()) return surahs;
     const q = search.toLowerCase();
     return surahs.filter(s =>

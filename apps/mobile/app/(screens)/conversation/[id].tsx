@@ -536,13 +536,13 @@ const MessageBubble = memo(function MessageBubble({
           </Pressable>
         ) : message.messageType === 'VOICE' && message.mediaUrl ? (
           <VoicePlayer mediaUrl={message.mediaUrl} isOwn={isOwn} />
-        ) : message.messageType === 'CONTACT' ? (
+        ) : (message.messageType as string) === 'CONTACT' ? (
           <Pressable
             style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, backgroundColor: `${colors.emerald}10`, borderRadius: radius.sm }}
             onPress={() => {
               try {
                 const contact = JSON.parse(message.content || '{}');
-                if (contact.username) router.push(`/(screens)/profile/${contact.username}` as never);
+                if (contact.username) navigate(`/(screens)/profile/${contact.username}`);
               } catch {}
             }}
           >

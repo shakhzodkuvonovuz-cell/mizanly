@@ -244,7 +244,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
   // Show "Edited" label — prefer editedAt field (set by update endpoint), fall back to updatedAt heuristic
   const isEdited = useMemo(() => {
-    if ((post as Record<string, unknown>).editedAt) return true;
+    if ((post as unknown as Record<string, unknown>).editedAt) return true;
     if (!post.updatedAt || !post.createdAt) return false;
     return new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
   }, [post.updatedAt, post.createdAt]);
@@ -377,9 +377,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       ) : null}
 
       {/* Finding #405: Topic badges */}
-      {(post as Record<string, unknown>).topics && ((post as Record<string, unknown>).topics as string[]).length > 0 && (
+      {(post as unknown as Record<string, unknown>).topics && ((post as unknown as Record<string, unknown>).topics as string[]).length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4, marginBottom: 4, paddingHorizontal: spacing.base }}>
-          {((post as Record<string, unknown>).topics as string[]).slice(0, 3).map(topic => (
+          {((post as unknown as Record<string, unknown>).topics as string[]).slice(0, 3).map(topic => (
             <Text key={topic} style={{ fontSize: 11, color: colors.emerald, backgroundColor: `${colors.emerald}12`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontFamily: 'DMSans_500Medium' }}>
               {topic}
             </Text>
@@ -388,7 +388,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       )}
 
       {/* Finding #396: Islamic content disclaimer for fiqh/fatwa topics */}
-      {(post as Record<string, unknown>).topics && ((post as Record<string, unknown>).topics as string[]).some(t =>
+      {(post as unknown as Record<string, unknown>).topics && ((post as unknown as Record<string, unknown>).topics as string[]).some(t =>
         ['fiqh', 'fatwa', 'sharia', 'halal', 'haram'].includes(t.toLowerCase())
       ) && (
         <Text style={{ fontSize: 10, color: colors.gold, paddingHorizontal: spacing.base, marginBottom: 4, fontStyle: 'italic' }}>

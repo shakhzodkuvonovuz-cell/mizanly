@@ -139,7 +139,7 @@ const SuggestedUserRow = memo(function SuggestedUserRow({
           </Text>
           {/* Finding #349: Suggestion reason */}
           <Text style={{ color: tc.text.tertiary, fontSize: 10, marginTop: 1 }}>
-            {t('saf.suggestedForYou', 'Suggested based on people you follow')}
+            {(t as (key: string, opts?: Record<string, unknown>) => string)('saf.suggestedForYou', { defaultValue: 'Suggested based on people you follow' })}
           </Text>
         </View>
       </Pressable>
@@ -715,7 +715,7 @@ export default function SafScreen() {
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-        onViewableItemsChanged={({ changed }) => {
+        onViewableItemsChanged={({ changed }: { changed: Array<{ isViewable?: boolean; item: FeedItem; index: number | null }> }) => {
           // Finding #297: Dwell time tracking
           changed.forEach(item => {
             if (item.isViewable && item.item?.id) {

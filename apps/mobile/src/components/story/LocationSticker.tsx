@@ -19,7 +19,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { Icon } from '@/components/ui/Icon';
-import { colors, spacing, fontSize, radius, fonts, animation } from '@/theme';
+import { colors, spacing, fontSize, fontSizeExt, radius, fonts, animation } from '@/theme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';

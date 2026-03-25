@@ -668,11 +668,11 @@ export default function CreateStoryScreen() {
                 {String(sticker.data.url)}
               </Text>
             </View>
-            {sticker.data.title && (
+            {sticker.data.title ? (
               <Text style={{ color: tc.text.primary, fontSize: fontSize.sm, fontWeight: '600' }} numberOfLines={2}>
                 {String(sticker.data.title)}
               </Text>
-            )}
+            ) : null}
           </View>
         );
       case 'addYours':

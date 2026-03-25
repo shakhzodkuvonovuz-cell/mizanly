@@ -120,7 +120,10 @@ type CreateReelPayload = {
   topics?: string[];
   taggedUserIds?: string[];
   isTrial?: boolean;
-  scheduledAt?: string;
+  duetOfId?: string;
+  stitchOfId?: string;
+  audioTitle?: string;
+  audioArtist?: string;
 };
 
 type CreateVideoData = {

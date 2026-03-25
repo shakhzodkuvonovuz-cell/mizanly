@@ -332,7 +332,7 @@ export default function RisalahScreen() {
     const otherUserId = item.isGroup ? undefined : item.members.find(m => m.user.id !== user?.id)?.user.id;
     const isOnline = otherUserId ? onlineUsers.has(otherUserId) : false;
     const isTyping = (typingUsers.get(item.id)?.size ?? 0) > 0;
-    const isPinned = !!(item as Record<string, unknown>).isPinned;
+    const isPinned = !!(item as unknown as Record<string, unknown>).isPinned;
     const renderRightActions = () => (
       <View style={{ flexDirection: 'row' }}>
         <Pressable

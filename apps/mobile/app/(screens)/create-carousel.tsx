@@ -278,8 +278,7 @@ function CreateCarouselScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: tc.bg }]} edges={['top']}>
           <GlassHeader
             title={t('carousel.title')}
-            leftIcon="x"
-            onLeftPress={() => router.back()}
+            leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: 'Close' }}
           />
           <View style={styles.emptyContainer}>
             <Animated.View entering={FadeIn.duration(400)} style={styles.emptyContent}>

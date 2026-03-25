@@ -9,6 +9,14 @@ import {
 } from 'react-native-webrtc';
 import type { Socket } from 'socket.io-client';
 
+// react-native-webrtc types are incomplete — extend with event handlers
+type RTCPeerConnectionWithEvents = RTCPeerConnection & {
+  ontrack: ((event: { streams: MediaStream[]; track?: MediaStreamTrack }) => void) | null;
+  onicecandidate: ((event: { candidate: RTCIceCandidate | null }) => void) | null;
+  onconnectionstatechange: (() => void) | null;
+  oniceconnectionstatechange: (() => void) | null;
+};
+
 // ── Types ──
 
 export interface IceServer {
@@ -121,7 +129,7 @@ export function useWebRTC({
     setLocalStream(stream);
 
     // Create peer connection
-    const pc = new RTCPeerConnection({ iceServers });
+    const pc = new RTCPeerConnection({ iceServers }) as RTCPeerConnectionWithEvents;
     pcRef.current = pc;
     startingRef.current = false;
 
@@ -135,10 +143,10 @@ export function useWebRTC({
     remoteStreamRef.current = remote;
 
     // Use pc.ontrack (avoids event-target-shim TS compatibility issue with addEventListener)
-    pc.ontrack = (event) => {
+    pc.ontrack = (event: { streams: MediaStream[]; track?: MediaStreamTrack }) => {
       if (!mountedRef.current) return;
-      const incomingTrack = (event as { track?: MediaStreamTrack }).track;
-      const incomingStreams = (event as { streams?: MediaStream[] }).streams;
+      const incomingTrack = event.track;
+      const incomingStreams = event.streams;
 
       if (incomingTrack) {
         // Pattern B: manually add track to our controlled MediaStream
@@ -153,8 +161,8 @@ export function useWebRTC({
     };
 
     // ICE candidate trickle — send each immediately
-    pc.onicecandidate = (event) => {
-      const candidate = (event as { candidate: RTCIceCandidate | null }).candidate;
+    pc.onicecandidate = (event: { candidate: RTCIceCandidate | null }) => {
+      const candidate = event.candidate;
       if (candidate && socketRef.current?.connected) {
         socketRef.current.emit('call_signal', {
           targetUserId,
@@ -321,11 +329,12 @@ export function useWebRTC({
   const hangup = useCallback(() => {
     // Remove event handlers before closing to prevent setState after close
     if (pcRef.current) {
-      pcRef.current.ontrack = null;
-      pcRef.current.onicecandidate = null;
-      pcRef.current.onconnectionstatechange = null;
-      pcRef.current.oniceconnectionstatechange = null;
-      pcRef.current.close();
+      const pc = pcRef.current as RTCPeerConnectionWithEvents;
+      pc.ontrack = null;
+      pc.onicecandidate = null;
+      pc.onconnectionstatechange = null;
+      pc.oniceconnectionstatechange = null;
+      pc.close();
       pcRef.current = null;
     }
     releaseStream(localStreamRef.current);
@@ -345,11 +354,12 @@ export function useWebRTC({
     return () => {
       mountedRef.current = false;
       if (pcRef.current) {
-        pcRef.current.ontrack = null;
-        pcRef.current.onicecandidate = null;
-        pcRef.current.onconnectionstatechange = null;
-        pcRef.current.oniceconnectionstatechange = null;
-        pcRef.current.close();
+        const pc = pcRef.current as RTCPeerConnectionWithEvents;
+        pc.ontrack = null;
+        pc.onicecandidate = null;
+        pc.onconnectionstatechange = null;
+        pc.oniceconnectionstatechange = null;
+        pc.close();
         pcRef.current = null;
       }
       releaseStream(localStreamRef.current);

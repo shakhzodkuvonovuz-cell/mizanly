@@ -55,7 +55,6 @@ export default function GoLiveScreen() {
 
   // Schedule date time handling
   const [tempDate, setTempDate] = useState(new Date());
-  const tc = useThemeColors();
 
   const createMutation = useMutation({
     mutationFn: async () => {

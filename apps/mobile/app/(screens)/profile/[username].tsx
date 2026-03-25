@@ -4,7 +4,7 @@ import {
   FlatList, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
 } from 'react-native';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { getDateFnsLocale } from '@/i18n/date-fns-locale';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import { navigate } from '@/utils/navigation';
@@ -36,7 +36,7 @@ import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useAnimatedIcon } from '@/hooks/useAnimatedIcon';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { colors, spacing, fontSize, radius, animation, fontSizeExt, lineHeight, letterSpacing } from '@/theme';
+import { colors, spacing, fontSize, radius, animation, fontSizeExt, lineHeight, letterSpacing, fonts } from '@/theme';
 import { formatCount } from '@/utils/formatCount';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
@@ -625,11 +625,11 @@ export default function ProfileScreen() {
           {profile.isVerified && <VerifiedBadge size={18} />}
         </View>
         <Text style={[styles.handle, { textAlign: rtlTextAlign(isRTL) }]}>@{profile.username}</Text>
-        {!isOwnProfile && (profile as Record<string, unknown>).lastActiveAt && (
+        {!isOwnProfile && (profile as unknown as Record<string, unknown>).lastActiveAt ? (
           <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 2 }}>
-            {t('profile.lastSeen', 'Last seen')} {formatDistanceToNowStrict(new Date((profile as Record<string, unknown>).lastActiveAt as string), { addSuffix: true, locale: getDateFnsLocale() })}
+            {(t as (k: string, d?: string) => string)('profile.lastSeen', 'Last seen')} {formatDistanceToNowStrict(new Date((profile as unknown as Record<string, unknown>).lastActiveAt as string), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
-        )}
+        ) : null}
         {profile.bio ? <RichText text={profile.bio} style={styles.bio} /> : null}
         {profile.website ? (
           <Pressable
@@ -646,11 +646,11 @@ export default function ProfileScreen() {
           </Pressable>
         ) : null}
         {/* Finding #288: Member since year */}
-        {(profile as Record<string, unknown>).createdAt && (
+        {(profile as unknown as Record<string, unknown>).createdAt ? (
           <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 4 }}>
-            <Icon name="clock" size={11} color={tc.text.tertiary} /> {t('profile.memberSince', 'Member since')} {new Date((profile as Record<string, unknown>).createdAt as string).getFullYear()}
+            <Icon name="clock" size={11} color={tc.text.tertiary} /> {(t as (k: string, d?: string) => string)('profile.memberSince', 'Member since')} {new Date((profile as unknown as Record<string, unknown>).createdAt as string).getFullYear()}
           </Text>
-        )}
+        ) : null}
         {profile.channel && (
           <Pressable
             style={[styles.channelRow, { flexDirection: rtlFlexRow(isRTL) }]}

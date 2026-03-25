@@ -66,12 +66,12 @@ export default function WatchPartyScreen() {
     if (debouncedVideoSearch.trim().length >= 2) {
       const searchData = videoSearchResults.data;
       if (Array.isArray(searchData)) return searchData;
-      if (searchData && Array.isArray((searchData as Record<string, unknown>).data)) return (searchData as Record<string, unknown>).data as Video[];
+      if (searchData && Array.isArray((searchData as unknown as Record<string, unknown>).data)) return (searchData as unknown as Record<string, unknown>).data as Video[];
       return [];
     }
     const browseData = videoBrowseQuery.data;
     if (Array.isArray(browseData)) return browseData;
-    if (browseData && Array.isArray((browseData as Record<string, unknown>).data)) return (browseData as Record<string, unknown>).data as Video[];
+    if (browseData && Array.isArray((browseData as unknown as Record<string, unknown>).data)) return (browseData as unknown as Record<string, unknown>).data as Video[];
     return [];
   })();
 

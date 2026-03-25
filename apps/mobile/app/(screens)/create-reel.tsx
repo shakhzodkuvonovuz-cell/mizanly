@@ -23,7 +23,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useTranslation } from '@/hooks/useTranslation';

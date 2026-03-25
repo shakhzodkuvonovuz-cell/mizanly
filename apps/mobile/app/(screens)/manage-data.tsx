@@ -163,7 +163,7 @@ export default function ManageDataScreen() {
   };
 
   const exportDataMutation = useMutation({
-    mutationFn: () => accountApi.requestDataExport(),
+    mutationFn: () => accountApi.requestDataExport() as Promise<Record<string, unknown>>,
     onSuccess: (data: Record<string, unknown>) => {
       Alert.alert(
         t('manageData.exportTitle'),
