@@ -371,6 +371,7 @@ export const authApi = {
 // ── Users ──
 export const usersApi = {
   getMe: () => api.get<User>('/users/me'),
+  getReferralCode: () => api.get<{ referralCode: string; shareUrl: string }>('/users/me/referral-code'),
   updateMe: (data: UpdateUserPayload) => api.patch<User>('/users/me', data),
   deactivate: () => api.delete('/users/me/deactivate'),
   deleteAccount: () => api.delete('/users/me'),
