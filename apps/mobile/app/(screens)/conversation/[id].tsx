@@ -163,8 +163,11 @@ function DateSeparator({ label }: { label: string }) {
   );
 }
 
+const SPEED_OPTIONS = [1, 1.5, 2] as const;
+
 function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) {
   const [playing, setPlaying] = useState(false);
+  const [speedIndex, setSpeedIndex] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
 
   // Deterministic waveform bar heights — no Math.random to avoid re-render flicker
@@ -182,7 +185,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
       } else {
         const { sound } = await Audio.Sound.createAsync(
           { uri: mediaUrl },
-          { shouldPlay: true },
+          { shouldPlay: true, rate: SPEED_OPTIONS[speedIndex], shouldCorrectPitch: true },
         );
         soundRef.current = sound;
         sound.setOnPlaybackStatusUpdate((status) => {
@@ -215,6 +218,21 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
           />
         ))}
       </View>
+      {/* Speed control — tap to cycle 1x → 1.5x → 2x */}
+      <Pressable
+        onPress={() => {
+          const next = (speedIndex + 1) % SPEED_OPTIONS.length;
+          setSpeedIndex(next);
+          soundRef.current?.setRateAsync(SPEED_OPTIONS[next], true);
+        }}
+        hitSlop={8}
+        style={{ paddingHorizontal: 4 }}
+        accessibilityLabel={`Playback speed ${SPEED_OPTIONS[speedIndex]}x`}
+      >
+        <Text style={{ color: isOwn ? '#fff' : colors.emerald, fontSize: 11, fontFamily: 'DMSans_700Bold' }}>
+          {SPEED_OPTIONS[speedIndex]}x
+        </Text>
+      </Pressable>
     </Pressable>
   );
 }

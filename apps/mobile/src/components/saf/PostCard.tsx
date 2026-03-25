@@ -241,8 +241,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
   const timeAgo = useMemo(() => formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true, locale: getDateFnsLocale() }), [post.createdAt]);
 
-  // Show "Edited" label when post was modified after creation (>1min difference to account for rounding)
+  // Show "Edited" label — prefer editedAt field (set by update endpoint), fall back to updatedAt heuristic
   const isEdited = useMemo(() => {
+    if ((post as Record<string, unknown>).editedAt) return true;
     if (!post.updatedAt || !post.createdAt) return false;
     return new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
   }, [post.updatedAt, post.createdAt]);

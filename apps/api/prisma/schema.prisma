@@ -1011,6 +1011,7 @@ model Post {
   blurhash         String?
   isAltProfile     Boolean        @default(false)
 
+  editedAt          DateTime?
   isRemoved         Boolean           @default(false)
   removedReason     String?
   removedAt         DateTime?

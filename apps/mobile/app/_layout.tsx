@@ -214,7 +214,7 @@ const tokenCache = Platform.OS === 'web'
 
 // Handles auth redirect based on sign-in state
 function AuthGuard() {
-  const { isSignedIn, isLoaded, getToken } = useAuth();
+  const { isSignedIn, isLoaded, getToken, signOut } = useAuth();
   const { user } = useUser();
   const segments = useSegments();
   const router = useRouter();
@@ -248,6 +248,22 @@ function AuthGuard() {
       setSentryUser(user.id, user.username ?? undefined);
     }
   }, [isSignedIn, user?.id, user?.username]);
+
+  // Session timeout: sign out after 30 days of inactivity
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const checkTimeout = async () => {
+      const lastActive = await AsyncStorage.getItem('last_active_at');
+      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+      if (lastActive && Date.now() - parseInt(lastActive, 10) > thirtyDaysMs) {
+        try { await signOut(); } catch {}
+      }
+      await AsyncStorage.setItem('last_active_at', String(Date.now()));
+    };
+    checkTimeout();
+    const interval = setInterval(() => AsyncStorage.setItem('last_active_at', String(Date.now())), 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isSignedIn, signOut]);
 
   // Initialize GIPHY SDK (once, on mount)
   useEffect(() => {

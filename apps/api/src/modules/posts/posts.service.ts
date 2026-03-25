@@ -739,6 +739,13 @@ export class PostsService {
     if (post.userId !== userId) throw new ForbiddenException();
     if (post.isRemoved) throw new BadRequestException('Post has been removed');
 
+    // Finding #306: 15-minute edit window — prevent bait-and-switch on viral posts
+    const fifteenMinutesMs = 15 * 60 * 1000;
+    const postAge = Date.now() - new Date(post.createdAt).getTime();
+    if (postAge > fifteenMinutesMs && data.content !== undefined) {
+      throw new BadRequestException('Posts can only be edited within 15 minutes of creation');
+    }
+
     return this.prisma.post.update({
       where: { id: postId },
       data: {
@@ -747,6 +754,7 @@ export class PostsService {
         commentsDisabled: data.commentsDisabled,
         isSensitive: data.isSensitive,
         altText: data.altText,
+        editedAt: new Date(), // Finding #289: Track when post was edited
       },
       select: POST_SELECT,
     });
