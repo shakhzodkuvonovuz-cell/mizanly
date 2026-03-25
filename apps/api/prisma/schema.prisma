@@ -1021,6 +1021,8 @@ model Post {
   isAltProfile     Boolean        @default(false)
 
   editedAt          DateTime?
+  editHistory       Json?
+  hiddenFromUserIds String[]          @default([])
   expiresAt         DateTime?
   contentHash       String?           @db.VarChar(64)
   isRemoved         Boolean           @default(false)

@@ -30,6 +30,10 @@ const PROHIBITED_PATTERNS: { pattern: RegExp; category: string; severity: 'low' 
   { pattern: /\b(i('ll|m\s+going\s+to)\s+(kill|murder|hurt)\s+you)\b/i, category: 'harassment', severity: 'high' },
   // Self-harm patterns
   { pattern: /\b(self[\s-]*harm|suicid[ae]l?|cutting\s+myself|want\s+to\s+die|end\s+my\s+life)\b/i, category: 'self_harm', severity: 'high' },
+  // Finding #208: Bullying detection in comments
+  { pattern: /\b(you'?re?\s+(ugly|fat|stupid|dumb|worthless|pathetic|loser|nobody))\b/i, category: 'bullying', severity: 'medium' },
+  { pattern: /\b(go\s+away|nobody\s+likes\s+you|you\s+have\s+no\s+friends|you'?re?\s+a\s+joke)\b/i, category: 'bullying', severity: 'medium' },
+  { pattern: /\b(cry\s*baby|attention\s+seeker|drama\s+queen|pick\s+me)\b/i, category: 'bullying', severity: 'low' },
   // Terrorism/extremism patterns
   { pattern: /\b(jihad\s+against|caliphate|martyrdom\s+operation|lone\s+wolf\s+attack)\b/i, category: 'terrorism', severity: 'high' },
 ];

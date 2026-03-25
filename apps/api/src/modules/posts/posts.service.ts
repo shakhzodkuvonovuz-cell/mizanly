@@ -795,7 +795,12 @@ export class PostsService {
         commentsDisabled: data.commentsDisabled,
         isSensitive: data.isSensitive,
         altText: data.altText,
-        editedAt: new Date(), // Finding #289: Track when post was edited
+        editedAt: new Date(),
+        // Finding #307: Save edit history snapshot
+        editHistory: [
+          ...((post.editHistory as Array<{ content: string; editedAt: string }>) ?? []),
+          { content: post.content, editedAt: new Date().toISOString() },
+        ].slice(-10), // Keep last 10 edits
       },
       select: POST_SELECT,
     });

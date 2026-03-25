@@ -106,6 +106,14 @@ export class AuthService {
 
     const isMinor = age < PARENTAL_CONSENT_AGE;
 
+    // Finding #285: Prevent re-registration within 30 days of account deletion
+    const recentlyDeleted = await this.prisma.user.findFirst({
+      where: { email, isDeleted: true, deletedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+    });
+    if (recentlyDeleted) {
+      throw new BadRequestException('This account was recently deleted. Please wait 30 days before re-registering.');
+    }
+
     // Upsert: create on first call, update on subsequent calls
     const user = await this.prisma.user.upsert({
       where: { clerkId },

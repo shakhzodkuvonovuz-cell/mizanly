@@ -720,10 +720,11 @@ export class PaymentsService {
       return;
     }
 
-    // Mark subscription as past_due — user needs to update payment method
+    // Finding #368: Mark subscription as past_due with 3-day grace period
+    const graceDeadline = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     await this.prisma.membershipSubscription.update({
       where: { id: dbSubscriptionId },
-      data: { status: 'past_due' },
+      data: { status: 'past_due', endDate: graceDeadline },
     });
 
     this.logger.warn(`Subscription ${dbSubscriptionId} marked as past_due due to failed invoice payment`);
