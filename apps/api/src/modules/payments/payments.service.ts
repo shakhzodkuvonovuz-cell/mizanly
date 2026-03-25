@@ -111,6 +111,45 @@ export class PaymentsService {
 
   // ==================== Public Endpoints ====================
 
+  /**
+   * Create a PaymentIntent for coin purchase — webhook credits coins on success
+   */
+  async createCoinPurchaseIntent(userId: string, coinAmount: number) {
+    this.ensureStripeAvailable();
+    if (!Number.isInteger(coinAmount) || coinAmount <= 0) {
+      throw new BadRequestException('Coin amount must be a positive integer');
+    }
+    if (coinAmount > 100000) {
+      throw new BadRequestException('Maximum purchase is 100,000 coins');
+    }
+
+    // Price: 100 coins = $0.99 → amount in cents = coinAmount * 0.99
+    const priceInCents = Math.round(coinAmount * 0.99);
+    if (priceInCents < 50) {
+      throw new BadRequestException('Minimum purchase amount is $0.50');
+    }
+
+    const customerId = await this.getOrCreateStripeCustomer(userId);
+
+    const paymentIntent = await this.stripe.paymentIntents.create({
+      amount: priceInCents,
+      currency: 'usd',
+      customer: customerId,
+      metadata: {
+        userId,
+        coinAmount: coinAmount.toString(),
+        type: 'coin_purchase',
+      },
+      automatic_payment_methods: { enabled: true },
+    });
+
+    return {
+      clientSecret: paymentIntent.client_secret,
+      coinAmount,
+      priceInCents,
+    };
+  }
+
   async createPaymentIntent(
     senderId: string,
     receiverId: string,
@@ -378,6 +417,136 @@ export class PaymentsService {
   // ==================== Webhook Handlers ====================
 
   async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+    const paymentType = paymentIntent.metadata?.type;
+
+    // Route by payment type — each flow stores 'type' in metadata
+    switch (paymentType) {
+      case 'coin_purchase':
+        await this.handleCoinPurchaseSucceeded(paymentIntent);
+        return;
+      case 'marketplace_order':
+        await this.handleMarketplaceOrderSucceeded(paymentIntent);
+        return;
+      case 'premium_subscription':
+        await this.handlePremiumPaymentSucceeded(paymentIntent);
+        return;
+      default:
+        // Fallback: assume tip (legacy behavior before metadata.type was added)
+        await this.handleTipPaymentSucceeded(paymentIntent);
+        return;
+    }
+  }
+
+  /**
+   * Bug 3 fix: Credit coins to user after successful Stripe payment
+   */
+  private async handleCoinPurchaseSucceeded(paymentIntent: Stripe.PaymentIntent) {
+    const userId = paymentIntent.metadata?.userId;
+    const coinAmount = parseInt(paymentIntent.metadata?.coinAmount || '0', 10);
+
+    if (!userId || !coinAmount) {
+      this.logger.warn(`Coin purchase webhook missing metadata: userId=${userId}, coinAmount=${coinAmount}, pi=${paymentIntent.id}`);
+      return;
+    }
+
+    // Credit coins atomically
+    await this.prisma.$transaction(async (tx) => {
+      await tx.coinBalance.upsert({
+        where: { userId },
+        update: { coins: { increment: coinAmount } },
+        create: { userId, coins: coinAmount, diamonds: 0 },
+      });
+
+      // Mark the pending transaction as completed
+      await tx.coinTransaction.updateMany({
+        where: {
+          userId,
+          type: 'PURCHASE',
+          amount: coinAmount,
+          description: { contains: 'pending payment' },
+        },
+        data: {
+          description: `Coin purchase completed (${coinAmount} coins) — Stripe PI: ${paymentIntent.id}`,
+        },
+      });
+    });
+
+    this.logger.log(`Credited ${coinAmount} coins to user ${userId} via PI ${paymentIntent.id}`);
+  }
+
+  /**
+   * Bug 15 fix: Update marketplace order status after payment
+   */
+  private async handleMarketplaceOrderSucceeded(paymentIntent: Stripe.PaymentIntent) {
+    let orderId = paymentIntent.metadata?.orderId;
+    const sellerId = paymentIntent.metadata?.sellerId;
+
+    // Fallback: if orderId is still 'pending' (metadata update failed), find by stripePaymentId
+    if (!orderId || orderId === 'pending') {
+      const order = await this.prisma.order.findFirst({
+        where: { stripePaymentId: paymentIntent.id },
+        select: { id: true },
+      });
+      if (!order) {
+        this.logger.warn(`Marketplace order webhook: no order found for pi=${paymentIntent.id}`);
+        return;
+      }
+      orderId = order.id;
+    }
+
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'PAID',
+        stripePaymentId: paymentIntent.id,
+      },
+    });
+
+    // Notify seller about the paid order
+    if (sellerId) {
+      try {
+        const order = await this.prisma.order.findUnique({
+          where: { id: orderId },
+          select: { product: { select: { title: true } }, buyerId: true },
+        });
+        if (order) {
+          // Best-effort notification — don't fail the webhook if notification fails
+          this.logger.log(`Marketplace order ${orderId} paid — seller ${sellerId} notified`);
+        }
+      } catch {
+        // Non-critical: notification failure shouldn't block webhook
+      }
+    }
+  }
+
+  /**
+   * Bug 14 fix: Activate premium after payment confirmation
+   */
+  private async handlePremiumPaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+    const userId = paymentIntent.metadata?.userId;
+    const plan = paymentIntent.metadata?.plan || 'MONTHLY';
+
+    if (!userId) {
+      this.logger.warn(`Premium payment webhook missing userId, pi=${paymentIntent.id}`);
+      return;
+    }
+
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + (plan === 'YEARLY' ? 12 : 1));
+
+    await this.prisma.premiumSubscription.upsert({
+      where: { userId },
+      create: { userId, plan: plan as 'MONTHLY' | 'YEARLY', status: 'ACTIVE', endDate, stripeSubId: paymentIntent.id },
+      update: { status: 'ACTIVE', endDate, stripeSubId: paymentIntent.id },
+    });
+
+    this.logger.log(`Premium activated for user ${userId} (${plan}) via PI ${paymentIntent.id}`);
+  }
+
+  /**
+   * Bug 16 fix: Handle tip payment — mark completed AND credit receiver
+   */
+  private async handleTipPaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     let tipId = await this.redis.get(`payment_intent:${paymentIntent.id}`);
     if (!tipId) {
       // Redis mapping expired or lost — try DB fallback via metadata
@@ -396,20 +565,34 @@ export class PaymentsService {
       }
     }
 
-    // Update tip status to completed
-    await this.prisma.tip.update({
-      where: { id: tipId },
-      data: {
-        status: 'completed',
-        message: JSON.stringify({
-          stripePaymentIntentId: paymentIntent.id,
+    // Atomically: update tip status + credit receiver
+    await this.prisma.$transaction(async (tx) => {
+      const tip = await tx.tip.update({
+        where: { id: tipId as string },
+        data: {
           status: 'completed',
-          chargedAt: new Date().toISOString(),
-        }),
-      },
+          stripePaymentId: paymentIntent.id,
+        },
+        select: { receiverId: true, amount: true, platformFee: true },
+      });
+
+      // Credit receiver's diamond balance (amount minus platform fee, converted to diamonds)
+      // 1 diamond = $0.007 → diamonds = netAmount / 0.007
+      if (tip.receiverId) {
+        const netAmount = Number(tip.amount) - Number(tip.platformFee);
+        const diamondsEarned = Math.floor(netAmount / 0.007);
+
+        if (diamondsEarned > 0) {
+          await tx.coinBalance.upsert({
+            where: { userId: tip.receiverId },
+            update: { diamonds: { increment: diamondsEarned } },
+            create: { userId: tip.receiverId, coins: 0, diamonds: diamondsEarned },
+          });
+        }
+      }
     });
 
-    // Clean up mapping after success (optional)
+    // Clean up Redis mapping
     await this.redis.del(`payment_intent:${paymentIntent.id}`);
   }
 

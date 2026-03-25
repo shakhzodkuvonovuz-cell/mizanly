@@ -228,6 +228,16 @@ export class CommerceService {
       throw error;
     }
 
+    // Update PaymentIntent metadata with the real orderId so webhook can find it
+    try {
+      await this.stripe.paymentIntents.update(paymentIntent.id, {
+        metadata: { ...paymentIntent.metadata, orderId: order.id },
+      });
+    } catch {
+      // Non-critical: order still exists, webhook can fall back to querying by stripePaymentId
+      this.logger.warn(`Failed to update PI ${paymentIntent.id} metadata with orderId ${order.id}`);
+    }
+
     // Update the PaymentIntent metadata with the real orderId
     try {
       await this.stripe.paymentIntents.update(paymentIntent.id, {
@@ -455,13 +465,27 @@ export class CommerceService {
       throw new BadRequestException('Cannot donate to your own zakat fund');
     }
 
-    // Create donation as pending — fund amounts should only be updated
-    // after payment is confirmed via Stripe webhook
-    const donation = await this.prisma.zakatDonation.create({
-      data: { fundId, donorId: userId, amount: dto.amount, isAnonymous: dto.isAnonymous || false },
-    });
+    // Use transaction to atomically create donation + update raisedAmount
+    return this.prisma.$transaction(async (tx) => {
+      const donation = await tx.zakatDonation.create({
+        data: { fundId, donorId: userId, amount: dto.amount, isAnonymous: dto.isAnonymous || false },
+      });
 
-    return donation;
+      const updated = await tx.zakatFund.update({
+        where: { id: fundId },
+        data: { raisedAmount: { increment: dto.amount } },
+      });
+
+      // Auto-complete if goal reached
+      if (Number(updated.raisedAmount) >= Number(updated.goalAmount)) {
+        await tx.zakatFund.update({
+          where: { id: fundId },
+          data: { status: 'completed' },
+        });
+      }
+
+      return donation;
+    });
   }
 
   // ── Community Treasury ──────────────────────────────────
@@ -607,15 +631,39 @@ export class CommerceService {
     const existing = await this.prisma.premiumSubscription.findUnique({ where: { userId } });
     if (existing?.status === SubscriptionStatus.ACTIVE) throw new ConflictException('Already subscribed');
 
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + (plan === 'yearly' ? 12 : 1));
+    // Calculate price based on plan
+    const priceUsd = plan === 'yearly' ? 4999 : 499; // cents
 
-    // Premium created as pending — should be activated via payment webhook
-    return this.prisma.premiumSubscription.upsert({
+    // Create Stripe PaymentIntent for premium
+    let clientSecret: string | null = null;
+    if (this.stripeAvailable) {
+      try {
+        const paymentIntent = await this.stripe.paymentIntents.create({
+          amount: priceUsd,
+          currency: 'usd',
+          metadata: {
+            userId,
+            plan: plan.toUpperCase(),
+            type: 'premium_subscription',
+          },
+          automatic_payment_methods: { enabled: true },
+        });
+        clientSecret = paymentIntent.client_secret;
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Stripe PaymentIntent creation failed for premium: ${msg}`);
+        throw new BadRequestException('Payment processing failed — please try again');
+      }
+    }
+
+    // Premium created as PENDING — activated via payment webhook only
+    const sub = await this.prisma.premiumSubscription.upsert({
       where: { userId },
-      create: { userId, plan: plan as SubscriptionPlan, status: SubscriptionStatus.ACTIVE, endDate },
-      update: { plan: plan as SubscriptionPlan, status: SubscriptionStatus.ACTIVE, endDate },
+      create: { userId, plan: plan.toUpperCase() as SubscriptionPlan, status: SubscriptionStatus.PENDING },
+      update: { plan: plan.toUpperCase() as SubscriptionPlan, status: SubscriptionStatus.PENDING },
     });
+
+    return { ...sub, clientSecret };
   }
 
   async cancelPremium(userId: string) {

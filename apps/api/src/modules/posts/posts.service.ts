@@ -1365,6 +1365,14 @@ export class PostsService {
     if (!post) throw new NotFoundException('Post not found');
     if (post.isRemoved) throw new BadRequestException('Cannot cross-post a removed post');
 
+    // Moderate caption override if provided
+    if (dto.captionOverride) {
+      const modResult = await this.contentSafety.moderateText(dto.captionOverride);
+      if (!modResult.safe) {
+        throw new BadRequestException(`Content flagged: ${modResult.flags?.join(', ') || 'policy violation'}`);
+      }
+    }
+
     const validSpaces = ['SAF', 'MAJLIS', 'BAKRA', 'MINBAR'];
     const targets = dto.targetSpaces.filter(s => validSpaces.includes(s) && s !== post.space);
     if (targets.length === 0) throw new BadRequestException('No valid target spaces');

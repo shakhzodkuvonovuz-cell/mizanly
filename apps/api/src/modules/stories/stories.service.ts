@@ -203,8 +203,12 @@ export class StoriesService {
     try {
       const result = await this.ai.moderateImage(imageUrl);
       if (result.classification === 'BLOCK') {
-        await this.prisma.story.delete({ where: { id: storyId } });
-        this.logger.warn(`Story ${storyId} auto-removed: image blocked (${result.reason})`);
+        // Soft-remove: expire immediately + archive (preserves audit trail for appeals)
+        await this.prisma.story.update({
+          where: { id: storyId },
+          data: { expiresAt: new Date(), isArchived: true, isSensitive: true },
+        });
+        this.logger.warn(`Story ${storyId} soft-removed: image blocked (${result.reason})`);
       } else if (result.classification === 'WARNING') {
         await this.prisma.story.update({
           where: { id: storyId },

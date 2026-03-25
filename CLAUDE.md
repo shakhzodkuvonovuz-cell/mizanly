@@ -330,6 +330,38 @@ All use AnimatedAccordion (spring height animation):
 
 ---
 
+## Session 6 — Architecture Compilation (2026-03-25 continued)
+
+**0 code changes. docs/ARCHITECTURE.md compiled from 44 raw extraction files.**
+
+### What Was Produced
+- `docs/ARCHITECTURE.md` — 11,000+ line compiled architecture reference, 89 sections
+- 193 Prisma models documented field-by-field
+- 1000+ API endpoints cataloged
+- 82 bugs/gaps cataloged in Section 89 (the most important section for next session)
+- 10 end-to-end data flow diagrams
+- All 13 FFmpeg filter presets with exact commands
+- Full payment currency model with 7 broken flows documented
+- Complete notification pipeline (create → push → socket delivery)
+- Full moderation pipeline (11 word filter regexes, Claude AI prompt, appeal lifecycle)
+
+### ⚠️ CRITICAL FOR NEXT SESSION — Bug Registry
+**Section 89 of ARCHITECTURE.md contains 82 bugs across 4 severity levels.** This is the most actionable section. Priority order for fixing:
+1. P0 bugs 1-5 (WebRTC calls, coin purchase, dual balance)
+2. P1 bugs 6-19 (payments, moderation, scheduled content)
+3. Privacy bugs 63-69 (EXIF leak, phone number PII, GDPR gaps)
+4. P2 bugs 20-62 (unreachable code, DTO mismatches, missing endpoints)
+
+### What the Document Does NOT Cover (honest gaps)
+- ~35% of raw data not compiled (mobile screen internals, service method details for 10 modules)
+- Architecture decisions rationale (WHY each tech was chosen) — in bugs-decisions-gaps.md but not compiled
+- WebRTC Part 2 (ICE negotiation, TURN rotation) — not compiled
+- ParentalControls full service (PIN flow, child linking) — not compiled
+- 62 of 84 mobile component implementations — not compiled
+- Some values (XP amounts, level thresholds) may be from CLAUDE.md memory, not verified against code
+
+---
+
 ## Session 5 — What Was Built (2026-03-25)
 
 **31 commits. 5,226 tests (+133). 14-agent parallel audit + 40-agent architecture extraction. All pushed.**
@@ -387,9 +419,9 @@ All use AnimatedAccordion (spring height animation):
 - [ ] Architecture doc expansion to 10K lines (master prompt ready, needs dedicated session)
 
 ## Key Documentation
-- `docs/ARCHITECTURE.md` — **Technical blueprint (1,189 lines). Needs 10K expansion — use ARCHITECTURE_COMPILATION_PROMPT.md**
-- `docs/ARCHITECTURE_COMPILATION_PROMPT.md` — Master prompt for 10K-line architecture compilation in fresh session
-- `docs/architecture-raw-2026-03-25/` — Raw agent outputs (40 agents, 856 KB) — source data for architecture doc
+- `docs/ARCHITECTURE.md` — **Compiled architecture reference (~11K lines, 89 sections, 82 bugs cataloged). READ THE DISCLAIMER AT THE TOP — ~65% depth coverage, some values inferred. Raw files are ground truth.**
+- `docs/ARCHITECTURE_COMPILATION_PROMPT.md` — Master prompt used for the compilation (reference only)
+- `docs/architecture-raw-2026-03-25/` — **RAW AGENT OUTPUTS (44 files, 43,687 lines, 2.0 MB) — THESE ARE THE AUTHORITATIVE SOURCE. When ARCHITECTURE.md conflicts with raw data, trust raw data.**
 - `docs/DEPLOYMENT.md` — Production deployment guide (Railway, Neon, Cloudflare, Clerk, Stripe)
 - `docs/DEPLOY_CHECKLIST.md` — Pre-deployment verification checklist
 - `docs/TURN_SETUP.md` — WebRTC TURN/STUN server setup
@@ -413,6 +445,42 @@ All use AnimatedAccordion (spring height animation):
 - `docs/ralph-instructions.md` — Autonomous execution behavioral rules
 - `docs/plans/2026-03-23-video-editor-design.md` — Video editor FFmpeg integration design
 - `docs/plans/2026-03-23-video-editor-competitor-gap-analysis.md` — TikTok/Instagram/YouTube/CapCut feature comparison + build priority
+
+---
+
+## ⚠️ OPTION B — 428-Finding Gap List (NEXT SESSION)
+
+**The 82-bug registry (Section 89) is Option A. This section tracks Option B — the broader 428-finding master gap list from March 21 that is STILL MOSTLY UNFIXED.**
+
+Sessions 2-5 fixed ~240 audit items from the 72-agent deep audit. But the 428-finding gap list (`~/.claude/projects/C--dev-mizanly/memory/project_complete_gaps_audit_march21.md`) covers deeper UX, safety, and competitive gaps that remain unaddressed. Key categories:
+
+### HIGH PRIORITY (Next session after bug fixes)
+- **Transition states (337-341):** No upload progress, no "Publishing..." state, no follow button loading, no comment pending state — 0 across all screens
+- **Empty states (342-345):** No "you're caught up" on Bakra, no "say hello" in empty DMs, no "hasn't posted yet" on new profiles
+- **Confirmation dialogs (225-228):** No unfollow confirmation, no delete post confirmation, no leave group confirmation, no double-post prevention
+- **Content quality controls (122-126):** No hashtag limit per post, no mention limit, no duplicate post detection
+- **Abuse vectors (187-196):** No mass-report abuse detection, no bot/fake engagement detection, no self-gift prevention, no purchase verification server-side
+- **EXIF stripping (197):** GPS coordinates leak on every uploaded photo — ALSO in bug registry as #63
+- **Push notification templates (113-116):** "X liked your post" and "X started following you" push templates — the #1 and #2 vanity notifications — DO NOT EXIST
+- **Tab bar badges (117):** No unread badges on tab bar — users can't see unread messages/notifications
+
+### MEDIUM PRIORITY
+- **Keyboard handling (23):** Only 16/208 screens have KeyboardAvoidingView
+- **FlashList (24):** Only 5 screens use FlashList, 98 use FlatList — main feeds should use FlashList
+- **Double-tap like (19):** Only on Saf PostCard, not Bakra reels, Majlis threads, or Minbar videos
+- **Optimistic updates (20):** Only 6 files — most likes/follows/saves wait for API
+- **Report from content (26):** Only 2 screens have report — should be on every content type
+- **Islamic depth (210-216, 279-282):** No Arabic numeral formatting, no Hijri dates on posts, no gender-appropriate Arabic, no community dhikr counter, no Islamic event reminders
+- **Creator tools (250-259):** No follower growth chart, no pinned post, no content performance comparison
+- **Social proof (130-134):** No reaction picker on posts, no "follows you" badge, no follower count refresh after follow
+
+### LOWER PRIORITY (Post-launch)
+- **AR/Camera effects (419-428):** Zero AR exists — major competitive gap vs Instagram/TikTok
+- **Concurrency bugs (371-374):** Race conditions under load — need load testing
+- **Scale preparedness (233-240):** No trending cache, no write-behind, no read replica, no count caching
+- **Legal/compliance (229-232, 398-401):** DSA, DMCA, COPPA, GDPR rights to explanation/restriction
+
+**Full list:** `~/.claude/projects/C--dev-mizanly/memory/project_complete_gaps_audit_march21.md` (428 findings, 82 categories, A through BBBB)
 
 ---
 

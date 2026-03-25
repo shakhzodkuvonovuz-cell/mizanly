@@ -239,6 +239,7 @@ enum ProductStatus {
 }
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   CANCELLED
   EXPIRED
@@ -3815,7 +3816,7 @@ model PremiumSubscription {
   id          String             @id @default(uuid())
   userId      String             @unique
   plan        SubscriptionPlan   @default(MONTHLY)
-  status      SubscriptionStatus @default(ACTIVE)
+  status      SubscriptionStatus @default(PENDING)
   stripeSubId String?
   startDate   DateTime           @default(now())
   endDate     DateTime?

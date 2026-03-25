@@ -433,8 +433,10 @@ export class UsersService {
         ? { visibility: { in: [PostVisibility.PUBLIC, PostVisibility.FOLLOWERS] } }
         : { visibility: PostVisibility.PUBLIC };
 
+    // Owner sees ALL posts (including future-scheduled); others only see published
+    const scheduledFilter = isOwn ? {} : { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] };
     const posts = await this.prisma.post.findMany({
-      where: { userId: user.id, isRemoved: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }], ...visibilityFilter },
+      where: { userId: user.id, isRemoved: false, ...scheduledFilter, ...visibilityFilter },
       select: {
         id: true,
         content: true,
@@ -489,9 +491,10 @@ export class UsersService {
         ? { visibility: { in: [ThreadVisibility.PUBLIC, ThreadVisibility.FOLLOWERS] } }
         : { visibility: ThreadVisibility.PUBLIC };
 
+    // Owner sees ALL threads (including future-scheduled); others only see published
+    const threadScheduledFilter = isOwn ? {} : { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] };
     const threads = await this.prisma.thread.findMany({
-      where: { userId: user.id, isRemoved: false, isChainHead: true, ...visibilityFilter },
-      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      where: { userId: user.id, isRemoved: false, isChainHead: true, ...threadScheduledFilter, ...visibilityFilter },
       select: {
         id: true,
         content: true,

@@ -113,25 +113,40 @@ describe('CommerceService', () => {
   });
 
   describe('donateZakat', () => {
-    it('should donate to an active fund', async () => {
+    it('should donate to an active fund and increment raisedAmount (Bug 18)', async () => {
       prisma.zakatFund.findUnique.mockResolvedValue({
-        id: 'fund-1', status: 'active', goalAmount: 1000, raisedAmount: 400,
+        id: 'fund-1', status: 'active', goalAmount: 1000, raisedAmount: 400, recipientId: 'other-user',
       });
-      prisma.zakatDonation.create.mockResolvedValue({ id: 'don-1', amount: 100 });
-      prisma.zakatFund.update.mockResolvedValue({ raisedAmount: 500 });
-      (prisma.$transaction as unknown as jest.Mock).mockResolvedValue([
-        { id: 'don-1', amount: 100 },
-        { raisedAmount: 500 },
-      ]);
+      const mockDonationCreate = jest.fn().mockResolvedValue({ id: 'don-1', amount: 100 });
+      const mockFundUpdate = jest.fn().mockResolvedValue({ raisedAmount: 500, goalAmount: 1000 });
+      (prisma.$transaction as unknown as jest.Mock).mockImplementation(
+        (fn: (tx: unknown) => Promise<unknown>) => fn({
+          zakatDonation: { create: mockDonationCreate },
+          zakatFund: { update: mockFundUpdate },
+        }),
+      );
 
       const result = await service.donateZakat('user-1', 'fund-1', { amount: 100 });
       expect(result).toBeDefined();
+      expect(mockFundUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { raisedAmount: { increment: 100 } },
+        }),
+      );
     });
 
     it('should throw NotFoundException for closed fund', async () => {
       prisma.zakatFund.findUnique.mockResolvedValue({ id: 'fund-1', status: 'closed' });
       await expect(service.donateZakat('user-1', 'fund-1', { amount: 100 }))
         .rejects.toThrow(NotFoundException);
+    });
+
+    it('should prevent self-donation', async () => {
+      prisma.zakatFund.findUnique.mockResolvedValue({
+        id: 'fund-1', status: 'active', recipientId: 'user-1',
+      });
+      await expect(service.donateZakat('user-1', 'fund-1', { amount: 100 }))
+        .rejects.toThrow(BadRequestException);
     });
   });
 
@@ -152,6 +167,19 @@ describe('CommerceService', () => {
       prisma.premiumSubscription.findUnique.mockResolvedValue({ status: 'ACTIVE' });
       await expect(service.subscribePremium('user-1', 'monthly'))
         .rejects.toThrow(ConflictException);
+    });
+
+    it('should create premium subscription with PENDING status (Bug 14)', async () => {
+      prisma.premiumSubscription.findUnique.mockResolvedValue(null);
+      prisma.premiumSubscription.upsert.mockResolvedValue({ id: 'ps-1', status: 'PENDING' });
+      const result = await service.subscribePremium('user-1', 'monthly');
+      expect(prisma.premiumSubscription.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ status: 'PENDING' }),
+          update: expect.objectContaining({ status: 'PENDING' }),
+        }),
+      );
+      expect(result.clientSecret).toBeDefined();
     });
   });
 

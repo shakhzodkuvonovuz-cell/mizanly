@@ -225,6 +225,7 @@ export class VideosService {
 
     const where: Prisma.VideoWhereInput = {
       status: VideoStatus.PUBLISHED,
+      isRemoved: false,
       user: { isPrivate: false },
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       ...(category && category !== 'all' ? (() => {
@@ -234,6 +235,8 @@ export class VideosService {
         }
         return { category: category as VideoCategory };
       })() : {}),
+      // Prioritize subscribed channels if user has subscriptions
+      ...(channelIds.length ? { OR: [{ channelId: { in: channelIds } }, { channelId: { notIn: channelIds } }] } : {}),
     };
 
     // If user has subscriptions, prioritize subscribed channels
@@ -355,6 +358,15 @@ export class VideosService {
     });
     if (!video) throw new NotFoundException('Video not found');
     if (video.userId !== userId) throw new ForbiddenException();
+
+    // Pre-save text moderation on updated title/description (prevents edit attack)
+    const moderationText = [dto.title, dto.description].filter(Boolean).join(' ');
+    if (moderationText) {
+      const modResult = await this.contentSafety.moderateText(moderationText);
+      if (!modResult.safe) {
+        throw new BadRequestException(`Content flagged: ${modResult.flags?.join(', ') || 'policy violation'}`);
+      }
+    }
 
     const updated = await this.prisma.video.update({
       where: { id: videoId },

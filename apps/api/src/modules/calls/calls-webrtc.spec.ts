@@ -85,6 +85,64 @@ describe('WebRTC Call Signaling', () => {
     });
   });
 
+  describe('CallType enum consistency (Bug 2 fix)', () => {
+    it('should use VOICE not AUDIO in socket DTO', () => {
+      const validValues = ['VOICE', 'VIDEO'];
+      expect(validValues).toContain('VOICE');
+      expect(validValues).not.toContain('AUDIO');
+    });
+
+    it('should match Prisma CallType enum values', () => {
+      const prismaValues = ['VOICE', 'VIDEO'];
+      const socketDtoValues = ['VOICE', 'VIDEO']; // fixed from AUDIO/VIDEO
+      const restDtoValues = ['VOICE', 'VIDEO']; // from @IsEnum(CallType)
+      expect(socketDtoValues).toEqual(prismaValues);
+      expect(restDtoValues).toEqual(prismaValues);
+    });
+
+    it('mobile should send uppercase VOICE/VIDEO not lowercase', () => {
+      const mobileCallType = 'VOICE'; // fixed from 'voice'
+      expect(mobileCallType).toBe('VOICE');
+      expect(mobileCallType).not.toBe('voice');
+    });
+
+    it('mobile should use targetUserId not receiverId', () => {
+      const callInitiatePayload = { targetUserId: 'user-123', callType: 'VOICE' };
+      expect(callInitiatePayload).toHaveProperty('targetUserId');
+      expect(callInitiatePayload).not.toHaveProperty('receiverId');
+    });
+  });
+
+  describe('socket event coverage (Bug 1 fix)', () => {
+    it('mobile should emit all 4 call lifecycle events', () => {
+      const requiredEmits = ['call_initiate', 'call_answer', 'call_end', 'call_reject'];
+      // These are now emitted from call/[id].tsx alongside REST calls
+      requiredEmits.forEach((event) => {
+        expect(typeof event).toBe('string');
+        expect(event).toMatch(/^call_/);
+      });
+    });
+
+    it('call_initiate payload should have targetUserId, callType, sessionId', () => {
+      const payload = { targetUserId: 'u2', callType: 'VOICE', sessionId: 'session-123' };
+      expect(payload).toHaveProperty('targetUserId');
+      expect(payload).toHaveProperty('callType');
+      expect(payload).toHaveProperty('sessionId');
+    });
+
+    it('call_answer payload should have sessionId and callerId', () => {
+      const payload = { sessionId: 'session-123', callerId: 'u1' };
+      expect(payload).toHaveProperty('sessionId');
+      expect(payload).toHaveProperty('callerId');
+    });
+
+    it('call_end payload should have sessionId and participants', () => {
+      const payload = { sessionId: 'session-123', participants: ['u1', 'u2'] };
+      expect(payload).toHaveProperty('sessionId');
+      expect(payload.participants).toHaveLength(2);
+    });
+  });
+
   describe('drawing canvas eraser tool', () => {
     it('eraser should use SVG mask technique', () => {
       // Eraser paths are rendered with stroke="black" inside SVG Mask

@@ -33,7 +33,7 @@ import { useWebRTC, type IceServer } from '@/hooks/useWebRTC';
 import type { CallSession } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-type CallType = 'voice' | 'video';
+type CallType = 'VOICE' | 'VIDEO';
 type CallStatus = 'ringing' | 'connected' | 'ended' | 'missed' | 'declined';
 
 interface Call {
@@ -93,7 +93,7 @@ export default function CallScreen() {
     socketRef,
     socketReady,
     targetUserId: targetUser ?? '',
-    callType: (call?.type ?? 'voice') as 'voice' | 'video',
+    callType: (call?.type ?? 'VOICE') as 'VOICE' | 'VIDEO',
     iceServers: (iceConfig as { iceServers?: IceServer[] })?.iceServers ?? [],
     isInitiator: !isIncomingCall,
     onConnected: () => setCallStatus('connected'),
@@ -101,9 +101,29 @@ export default function CallScreen() {
     onFailed: () => { setCallStatus('ended'); showToast({ message: t('calls.connectionFailed'), variant: 'error' }); },
   });
 
+  // Emit call_initiate via socket so the callee gets real-time notification
+  const initiatedRef = useRef(false);
+  useEffect(() => {
+    if (!socketReady || !call || isIncomingCall || initiatedRef.current) return;
+    socketRef.current?.emit('call_initiate', {
+      targetUserId: call.calleeId,
+      callType: call.type,
+      sessionId: id,
+    });
+    initiatedRef.current = true;
+  }, [socketReady, call, isIncomingCall, id]);
+
   const answerMutation = useMutation({
     mutationFn: () => callsApi.answer(id),
-    onSuccess: () => { setCallStatus('connected'); haptic.success(); },
+    onSuccess: () => {
+      setCallStatus('connected');
+      haptic.success();
+      // Emit socket event so the caller gets real-time notification
+      socketRef.current?.emit('call_answer', {
+        sessionId: id,
+        callerId: call?.callerId,
+      });
+    },
     onError: (err: Error) => { showToast({ message: err.message, variant: 'error' }); haptic.error(); },
   });
 
@@ -112,6 +132,11 @@ export default function CallScreen() {
     onSuccess: () => {
       setCallStatus('ended');
       haptic.delete();
+      // Emit socket event so the other party gets real-time notification
+      socketRef.current?.emit('call_end', {
+        sessionId: id,
+        participants: [userId, targetUser].filter(Boolean),
+      });
       router.back();
     },
     onError: (err: Error) => { showToast({ message: err.message, variant: 'error' }); haptic.error(); },
@@ -122,6 +147,11 @@ export default function CallScreen() {
     onSuccess: () => {
       setCallStatus('declined');
       haptic.delete();
+      // Emit socket event so the caller gets real-time notification
+      socketRef.current?.emit('call_reject', {
+        sessionId: id,
+        callerId: call?.callerId,
+      });
       router.back();
     },
     onError: (err: Error) => { showToast({ message: err.message, variant: 'error' }); haptic.error(); },

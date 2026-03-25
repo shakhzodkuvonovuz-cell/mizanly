@@ -18,6 +18,7 @@ import { extractHashtags } from '@/common/utils/hashtag';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
+import { ContentSafetyService } from '../moderation/content-safety.service';
 
 const REEL_SELECT = {
   id: true,
@@ -82,9 +83,18 @@ export class ReelsService {
     private gamification: GamificationService,
     private ai: AiService,
     private queueService: QueueService,
+    private contentSafety: ContentSafetyService,
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
+    // Pre-save text moderation — blocks creation if content is flagged
+    if (dto.caption) {
+      const modResult = await this.contentSafety.moderateText(dto.caption);
+      if (!modResult.safe) {
+        throw new BadRequestException(`Content flagged: ${modResult.flags?.join(', ') || 'policy violation'}`);
+      }
+    }
+
     // Validate carousel integrity
     if (dto.isPhotoCarousel) {
       if (!dto.carouselUrls?.length || dto.carouselUrls.length < 2) {
@@ -891,8 +901,12 @@ export class ReelsService {
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) throw new NotFoundException('User not found');
 
+    const isOwn = userId === user.id;
+    // Owner sees all reels (including trial + scheduled); others see only published non-trial
+    const trialFilter = isOwn ? {} : { isTrial: false };
+    const scheduledFilter = isOwn ? {} : { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] };
     const reels = await this.prisma.reel.findMany({
-      where: { userId: user.id, status: ReelStatus.READY, isRemoved: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+      where: { userId: user.id, status: ReelStatus.READY, isRemoved: false, ...trialFilter, ...scheduledFilter },
       select: REEL_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

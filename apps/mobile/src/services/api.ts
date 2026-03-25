@@ -1119,7 +1119,7 @@ export const liveApi = {
 
 // ── Calls ──
 export const callsApi = {
-  initiate: (data: { receiverId: string; callType: 'voice' | 'video' }) =>
+  initiate: (data: { targetUserId: string; callType: 'VOICE' | 'VIDEO' }) =>
     api.post<CallSession>('/calls', data),
   answer: (id: string) =>
     api.post(`/calls/${id}/answer`),

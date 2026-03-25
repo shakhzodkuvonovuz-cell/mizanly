@@ -22,7 +22,7 @@ export class WsCallInitiateDto {
   @IsUUID()
   targetUserId: string;
 
-  @IsIn(['AUDIO', 'VIDEO'])
+  @IsIn(['VOICE', 'VIDEO'])
   callType: string;
 
   @IsUUID()

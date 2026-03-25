@@ -29,7 +29,7 @@ interface UseWebRTCOptions {
   socketRef: React.RefObject<Socket | null>;
   socketReady: boolean;
   targetUserId: string;
-  callType: 'voice' | 'video';
+  callType: 'VOICE' | 'VIDEO';
   iceServers: IceServer[];
   isInitiator: boolean;
   onConnected?: () => void;
@@ -83,7 +83,7 @@ export function useWebRTC({
   const [connectionState, setConnectionState] = useState<ConnectionState>('new');
   const [isMuted, setIsMuted] = useState(false);
   const [isFrontCamera, setIsFrontCamera] = useState(true);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(callType === 'video');
+  const [isVideoEnabled, setIsVideoEnabled] = useState(callType === 'VIDEO');
 
   // ── Start: create PC + get media + send offer (if initiator) ──
   const start = useCallback(async () => {
@@ -102,7 +102,7 @@ export function useWebRTC({
     try {
       stream = await mediaDevices.getUserMedia({
         audio: true,
-        video: callType === 'video' ? { facingMode: 'user' as const, width: 640, height: 480 } : false,
+        video: callType === 'VIDEO' ? { facingMode: 'user' as const, width: 640, height: 480 } : false,
       }) as MediaStream;
     } catch (err) {
       console.error('[WebRTC] getUserMedia failed:', err);
@@ -186,7 +186,7 @@ export function useWebRTC({
       try {
         const offer = await pc.createOffer({
           offerToReceiveAudio: true,
-          offerToReceiveVideo: callType === 'video',
+          offerToReceiveVideo: callType === 'VIDEO',
         });
         await pc.setLocalDescription(offer);
         socketRef.current?.emit('call_signal', {

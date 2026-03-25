@@ -31,6 +31,10 @@ class AttachPaymentMethodDto {
   @IsString() @MaxLength(100) paymentMethodId: string;
 }
 
+class CreateCoinPurchaseIntentDto {
+  @IsNumber() @Min(1) @Max(100000) coinAmount: number;
+}
+
 @ApiTags('Payments')
 @Controller('payments')
 @UseGuards(ClerkAuthGuard)
@@ -38,6 +42,19 @@ class AttachPaymentMethodDto {
 @Throttle({ default: { limit: 60, ttl: 60000 } })
 export class PaymentsController {
   constructor(private paymentsService: PaymentsService) {}
+
+  // === Coin Purchase ===
+  @Post('create-coin-purchase-intent')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Create Stripe PaymentIntent for coin purchase' })
+  @ApiResponse({ status: 201, description: 'PaymentIntent created for coin purchase' })
+  @ApiResponse({ status: 400, description: 'Invalid coin amount' })
+  createCoinPurchaseIntent(
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateCoinPurchaseIntentDto,
+  ) {
+    return this.paymentsService.createCoinPurchaseIntent(userId, dto.coinAmount);
+  }
 
   // === Payment Intents (one-time tips) ===
   @Post('create-payment-intent')
