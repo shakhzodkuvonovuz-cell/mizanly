@@ -699,6 +699,7 @@ model User {
   banExpiresAt  DateTime?
   warningsCount     Int       @default(0)
   reputationScore   Int       @default(100)
+  isMemorialized    Boolean   @default(false) // Finding #267: Deceased account memorialization
 
   isScholarVerified Boolean @default(false)
   nasheedMode       Boolean @default(false)
@@ -2558,6 +2559,10 @@ model UserSettings {
   dailyTimeLimit         Int?
   restrictedMode         Boolean  @default(false)
   sensitiveContent       Boolean  @default(false)
+  // Finding #265: Grief support mode — filters celebratory content
+  griefMode              Boolean  @default(false)
+  // Finding #266: Ramadan food filter during fasting hours
+  ramadanFoodFilter      Boolean  @default(false)
   // Screen Time & Playback
   screenTimeLimitMinutes Int?
   undoSendSeconds        Int      @default(5)
