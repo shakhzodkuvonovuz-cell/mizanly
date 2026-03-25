@@ -448,6 +448,20 @@ All use AnimatedAccordion (spring height animation):
 
 ---
 
+## TECHNICAL DEBT — Infrastructure-Dependent Bugs (Cannot Fix Via Code Alone)
+
+These 5 bugs from the 82-bug registry require infrastructure work, schema migrations, or legal decisions. They are NOT code laziness — they genuinely need external action.
+
+| Bug # | Title | Why It Can't Be Fixed in Code | What Needs to Happen |
+|-------|-------|------------------------------|---------------------|
+| **63** | EXIF data not stripped from uploads | Uploads go directly from mobile to R2 via presigned URL, bypassing the server. The `MediaProcessor` queue code exists but `QueueService` has no `addMediaJob()` method, so the processor is dead code. Mobile sets `exif: false` on image picker (iOS/Android), but other upload paths (web, API direct) are unprotected. | **Option A:** Add `addMediaJob()` to QueueService + call from upload service after presigned URL upload reports completion. **Option B:** Add a Cloudflare Worker on the R2 bucket that strips EXIF on upload via `sharp`. Option B is better (no app changes needed). |
+| **69** | BlurHash generated but not stored | Same root cause as Bug 63 — `processBlurHash` in MediaProcessor is dead code because the queue is never invoked. Additionally, the "blurhash" computation is just an average hex color (`#aabbcc`), not a real BlurHash encoding. | Install `blurhash` npm package on backend. Wire `addMediaJob()` in QueueService. Compute real BlurHash (not average color). Store in Post/Reel/Story/Video `blurhash` field. |
+| **68** | CSAM/terrorism/AU Online Safety Act reporting stubs | Content auto-hide works (NUDITY/VIOLENCE/TERRORISM reports auto-remove content). But mandatory external reporting to NCMEC CyberTipline, GIFCT hash-sharing, and AU eSafety Commissioner is TODO only. The ToS falsely claims NCMEC reporting is active. | **Legal:** Register with NCMEC as an Electronic Service Provider (requires US legal entity or representative). **Legal:** Register with GIFCT for terrorism hash-sharing. **Legal:** Register with AU eSafety Commissioner. **Code:** Implement API integrations after registration. **Urgent:** Remove false NCMEC claim from ToS before launch. |
+| **41** | Chat lock code is per-conversation, not per-user | `lockCode` field is on `Conversation` model, meaning all members share the same lock code. If Alice sets lock code "1234", Bob also needs "1234" to open it. Should be per-member on `ConversationMember`. | Schema migration: add `lockCode String?` to `ConversationMember`. Move existing lock codes. Update `messages.service.ts` to read/write per-member lock. This is a breaking change for any users who've set lock codes. |
+| **52** | Safety numbers use SHA-256 truncation instead of Signal SAS | Current implementation hashes public keys with SHA-256 and truncates to display a short verification code. Signal uses a proper Short Authentication String (SAS) protocol with double-ratchet key material. The current approach is cryptographically acceptable for MVP but not production-grade for E2E encryption verification. | Implement Signal SAS protocol or use libsignal's fingerprint comparison. This is a crypto engineering task that should be done when E2E encryption is hardened for production (currently E2E is functional but not audited). |
+
+---
+
 ## ⚠️ OPTION B — 428-Finding Gap List (NEXT SESSION)
 
 **The 82-bug registry (Section 89) is Option A. This section tracks Option B — the broader 428-finding master gap list from March 21 that is STILL MOSTLY UNFIXED.**

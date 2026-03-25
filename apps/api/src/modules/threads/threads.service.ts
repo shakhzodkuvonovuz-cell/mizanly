@@ -918,9 +918,9 @@ export class ThreadsService {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId }, select: { id: true, isRemoved: true } });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
 
-    // Prevent duplicate reports
+    // Prevent duplicate reports — use reportedThreadId FK instead of description string
     const existing = await this.prisma.report.findFirst({
-      where: { reporterId: userId, description: `thread:${threadId}` },
+      where: { reporterId: userId, reportedThreadId: threadId },
     });
     if (existing) return { reported: true };
 
@@ -931,7 +931,7 @@ export class ThreadsService {
     await this.prisma.report.create({
       data: {
         reporterId: userId,
-        description: `thread:${threadId}`,
+        reportedThreadId: threadId,
         reason: reasonMap[reason] ?? 'OTHER',
       },
     });

@@ -247,7 +247,7 @@ describe('PostsService — Publish Fields', () => {
         expect.objectContaining({
           userId: 'user-a',
           actorId: userId,
-          type: 'MENTION',
+          type: 'TAG',
           title: 'Tagged you',
         }),
       );

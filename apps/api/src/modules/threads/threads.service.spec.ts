@@ -482,7 +482,7 @@ describe('ThreadsService', () => {
       expect(prisma.report.create).toHaveBeenCalledWith({
         data: {
           reporterId: userId,
-          description: `thread:${threadId}`,
+          reportedThreadId: threadId,
           reason: 'SPAM',
         },
       });

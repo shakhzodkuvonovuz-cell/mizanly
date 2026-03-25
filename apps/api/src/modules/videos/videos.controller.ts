@@ -232,19 +232,6 @@ export class VideosController {
     return this.videosService.getRecommended(id, limitNum, userId);
   }
 
-  @Throttle({ default: { limit: 30, ttl: 60000 } })
-  @Post(':id/record-progress')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Record watch progress for a video' })
-  recordProgress(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-    @Body() dto: VideoProgressDto,
-  ) {
-    return this.videosService.recordProgress(id, userId, dto.progress);
-  }
-
   @Get(':id/share-link')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get shareable link for a video' })

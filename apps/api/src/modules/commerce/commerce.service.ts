@@ -238,17 +238,6 @@ export class CommerceService {
       this.logger.warn(`Failed to update PI ${paymentIntent.id} metadata with orderId ${order.id}`);
     }
 
-    // Update the PaymentIntent metadata with the real orderId
-    try {
-      await this.stripe.paymentIntents.update(paymentIntent.id, {
-        metadata: { orderId: order.id },
-      });
-    } catch (error: unknown) {
-      // Non-critical — the PaymentIntent still works, just metadata is stale
-      const msg = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`Failed to update PaymentIntent metadata with orderId: ${msg}`);
-    }
-
     // Notify seller about the new order (outside transaction, fire-and-forget)
     this.notificationsService.create({
       userId: product.sellerId,

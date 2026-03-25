@@ -182,9 +182,30 @@ export class VideosService {
         }).catch((e) => this.logger.error('Failed to update video status', e));
       });
 
+    // Add to Meilisearch index (guarded — only if Meilisearch is configured)
+    this.queueService.addSearchIndexJob({
+      action: 'upsert',
+      indexName: 'videos',
+      documentId: video[0].id,
+      document: {
+        id: video[0].id,
+        title: dto.title,
+        description: dto.description || '',
+        tags: dto.tags || [],
+        username: video[0].user?.username || '',
+        userId,
+        channelId: dto.channelId,
+        category: dto.category || 'OTHER',
+        status: 'PROCESSING',
+      },
+    }).catch(err => this.logger.warn('Failed to queue search index creation for video', err instanceof Error ? err.message : err));
+
     // Gamification: award XP + update streak
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' });
     this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+
+    // Invalidate video feed cache so new video appears immediately
+    this.invalidateVideoFeedCache().catch(() => {});
 
     return {
       ...video[0],
@@ -192,6 +213,21 @@ export class VideosService {
       isDisliked: false,
       isBookmarked: false,
     };
+  }
+
+  /**
+   * Invalidate video feed cache keys.
+   * Uses SCAN to find and delete matching keys without blocking Redis.
+   */
+  private async invalidateVideoFeedCache() {
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', 'feed:videos:*', 'COUNT', 100);
+      cursor = nextCursor;
+      if (keys.length > 0) {
+        await this.redis.del(...keys);
+      }
+    } while (cursor !== '0');
   }
 
   async getFeed(userId: string | undefined, category?: string, cursor?: string, limit = 20) {
@@ -427,6 +463,9 @@ export class VideosService {
     this.queueService.addSearchIndexJob({
       action: 'delete', indexName: 'videos', documentId: videoId,
     }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
+
+    // Invalidate video feed cache so deleted video disappears immediately
+    this.invalidateVideoFeedCache().catch(() => {});
 
     return { deleted: true };
   }
@@ -829,10 +868,6 @@ export class VideosService {
       data,
       meta: { cursor: hasMore ? data[data.length - 1].id : null, hasMore },
     };
-  }
-
-  async recordProgress(videoId: string, userId: string, progress: number) {
-    return this.updateProgress(videoId, userId, progress);
   }
 
   async getShareLink(videoId: string) {
