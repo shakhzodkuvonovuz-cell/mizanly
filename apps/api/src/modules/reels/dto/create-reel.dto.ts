@@ -37,11 +37,12 @@ export class CreateReelDto {
   @MaxLength(500)
   caption?: string;
 
-  @ApiProperty({ required: false, type: [String], maxItems: 20 })
+  @ApiProperty({ required: false, type: [String], maxItems: 50 })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @ArrayMaxSize(20)
+  @ArrayMaxSize(50)
+  @MaxLength(50, { each: true })
   mentions?: string[];
 
   @ApiProperty({ required: false, type: [String], maxItems: 20 })

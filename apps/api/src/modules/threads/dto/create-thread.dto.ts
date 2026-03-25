@@ -73,11 +73,12 @@ export class CreateThreadDto {
   @ArrayMaxSize(20)
   hashtags?: string[];
 
-  @ApiProperty({ required: false, type: [String], maxItems: 20 })
+  @ApiProperty({ required: false, type: [String], maxItems: 50 })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @ArrayMaxSize(20)
+  @ArrayMaxSize(50)
+  @MaxLength(50, { each: true })
   mentions?: string[];
 
   // For quote posts

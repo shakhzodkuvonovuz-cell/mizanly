@@ -603,6 +603,16 @@ export class MessagesController {
     return result;
   }
 
+  @Patch(':conversationId/pin')
+  @ApiOperation({ summary: 'Pin or unpin a conversation for the current user' })
+  async pinConversation(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+    @Body('isPinned') isPinned: boolean,
+  ) {
+    return this.messagesService.pinConversation(conversationId, userId, !!isPinned);
+  }
+
   @Patch(':conversationId/wallpaper')
   @ApiOperation({ summary: 'Set conversation wallpaper' })
   async setWallpaper(
@@ -660,8 +670,12 @@ export class MessagesController {
     @Param('conversationId') conversationId: string,
     @Param('targetUserId') targetUserId: string,
     @CurrentUser('id') userId: string,
-    @Body('role') role: 'admin' | 'member',
+    @Body('role') role: string,
   ) {
+    // Runtime validation — TypeScript types are erased at runtime
+    if (role !== 'admin' && role !== 'member') {
+      throw new BadRequestException('Role must be "admin" or "member"');
+    }
     return this.messagesService.changeGroupRole(conversationId, userId, targetUserId, role);
   }
 

@@ -27,6 +27,7 @@ import { useAnimatedIcon } from '@/hooks/useAnimatedIcon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PostMedia } from './PostMedia';
 import { LinkPreview } from '@/components/ui/LinkPreview';
+import { ReactionPicker } from '@/components/ui/ReactionPicker';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { SocialProof } from '@/components/ui/SocialProof';
 import { colors, spacing, fontSize, animation, radius, lineHeight, letterSpacing } from '@/theme';
@@ -508,6 +509,21 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           </>
         ) : (
           <>
+            {/* Reaction picker at top of long-press menu */}
+            <View style={{ paddingHorizontal: spacing.base, paddingVertical: spacing.sm }}>
+              <ReactionPicker
+                onReact={(type) => {
+                  setShowMenu(false);
+                  // Use the existing react mutation for like/unlike
+                  if (!reactInFlight.current) {
+                    reactInFlight.current = true;
+                    reactMutation.mutate();
+                  }
+                }}
+                userReaction={localLiked ? 'LIKE' : undefined}
+                compact
+              />
+            </View>
             <BottomSheetItem
               label={tr('common.notInterested')}
               icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}

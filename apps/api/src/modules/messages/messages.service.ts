@@ -486,6 +486,11 @@ export class MessagesService {
    * Finding #167: Promote or demote a group member's role.
    */
   async changeGroupRole(conversationId: string, userId: string, targetUserId: string, role: 'admin' | 'member') {
+    // Defense-in-depth: validate role at service level too (controller also validates)
+    const allowedRoles = ['admin', 'member'];
+    if (!allowedRoles.includes(role)) {
+      throw new BadRequestException('Role must be "admin" or "member"');
+    }
     const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
     if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can change roles');
@@ -531,6 +536,10 @@ export class MessagesService {
     const existing = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
     });
+    // Check if user was banned from this group
+    if (existing?.isBanned) {
+      throw new ForbiddenException('You are banned from this group');
+    }
     if (existing) throw new ConflictException('Already a member of this group');
 
     await this.prisma.conversationMember.create({
@@ -1056,6 +1065,14 @@ export class MessagesService {
     return this.prisma.conversationMember.update({
       where: { conversationId_userId: { conversationId, userId } },
       data: { wallpaperUrl },
+    });
+  }
+
+  async pinConversation(conversationId: string, userId: string, isPinned: boolean) {
+    await this.requireMembership(conversationId, userId);
+    return this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { isPinned },
     });
   }
 

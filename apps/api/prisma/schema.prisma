@@ -1637,6 +1637,7 @@ model ConversationMember {
   lastReadAt     DateTime     @default(now())
   unreadCount    Int          @default(0)
   isMuted        Boolean      @default(false)
+  isPinned       Boolean      @default(false)
   isArchived     Boolean      @default(false)
   role           String       @default("member") @db.VarChar(10)
   isBanned       Boolean      @default(false)

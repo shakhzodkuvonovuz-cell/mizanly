@@ -447,11 +447,20 @@ export class PostsService {
       }
     }
 
-    // Duplicate post detection — prevent same content posted twice within 5 minutes
-    if (dto.content) {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    // Duplicate post detection — prevent same post twice within 5 minutes
+    // Checks both text content AND media URLs to catch media-only dupes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const dupWhere: Record<string, unknown> = { userId, createdAt: { gte: fiveMinutesAgo }, isRemoved: false };
+    if (dto.content?.trim()) {
+      dupWhere.content = dto.content.trim();
+    }
+    if (dto.mediaUrls?.length) {
+      dupWhere.mediaUrls = { equals: dto.mediaUrls };
+    }
+    // Only check if we have something to match on (content or media)
+    if (dto.content?.trim() || dto.mediaUrls?.length) {
       const duplicate = await this.prisma.post.findFirst({
-        where: { userId, content: dto.content.trim(), createdAt: { gte: fiveMinutesAgo }, isRemoved: false },
+        where: dupWhere,
         select: { id: true },
       });
       if (duplicate) {
