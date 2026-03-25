@@ -889,6 +889,14 @@ export class PostsService {
         throw err;
       }
     }
+
+    // Finding #351: Publish real-time like event
+    this.redis.publish?.('content:update', JSON.stringify({
+      postId,
+      event: 'post_reaction',
+      data: { postId, userId, reaction, likesCount: (post.likesCount || 0) + (existing ? 0 : 1) },
+    }))?.catch?.(() => {});
+
     return { reaction };
   }
 
@@ -1179,6 +1187,23 @@ export class PostsService {
 
     // Gamification: award XP for commenting
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'comment_posted' });
+
+    // Finding #350: Publish real-time comment event
+    this.redis.publish?.('content:update', JSON.stringify({
+      postId,
+      event: 'post_comment',
+      data: {
+        postId,
+        comment: {
+          id: comment.id,
+          content: comment.content,
+          user: comment.user,
+          createdAt: comment.createdAt,
+          parentId: dto.parentId || null,
+        },
+        commentsCount: (post.commentsCount || 0) + 1,
+      },
+    }))?.catch?.(() => {});
 
     return comment;
   }
@@ -1609,6 +1634,82 @@ export class PostsService {
       const msg = error instanceof Error ? error.message : String(error);
       this.logger.error(`Image moderation error for post ${postId}: ${msg}`);
       // Non-blocking: post remains visible, flagged for manual review if moderation fails
+    }
+  }
+
+  // Finding #251: Content performance comparison — post analytics vs author average
+  async getPostAnalytics(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException('Only the author can view analytics');
+
+    const recentPosts = await this.prisma.post.findMany({
+      where: { userId, isRemoved: false },
+      select: { likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, savesCount: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    const count = recentPosts.length || 1;
+    const avg = {
+      likes: recentPosts.reduce((s, p) => s + p.likesCount, 0) / count,
+      comments: recentPosts.reduce((s, p) => s + p.commentsCount, 0) / count,
+      shares: recentPosts.reduce((s, p) => s + p.sharesCount, 0) / count,
+      views: recentPosts.reduce((s, p) => s + p.viewsCount, 0) / count,
+      saves: recentPosts.reduce((s, p) => s + p.savesCount, 0) / count,
+    };
+
+    const pctDiff = (val: number, avgVal: number) =>
+      avgVal > 0 ? Math.round(((val - avgVal) / avgVal) * 100) : 0;
+
+    return {
+      post: {
+        likes: post.likesCount,
+        comments: post.commentsCount,
+        shares: post.sharesCount,
+        views: post.viewsCount,
+        saves: post.savesCount,
+      },
+      average: {
+        likes: Math.round(avg.likes * 10) / 10,
+        comments: Math.round(avg.comments * 10) / 10,
+        shares: Math.round(avg.shares * 10) / 10,
+        views: Math.round(avg.views * 10) / 10,
+        saves: Math.round(avg.saves * 10) / 10,
+      },
+      comparison: {
+        likesVsAvg: pctDiff(post.likesCount, avg.likes),
+        commentsVsAvg: pctDiff(post.commentsCount, avg.comments),
+        sharesVsAvg: pctDiff(post.sharesCount, avg.shares),
+        viewsVsAvg: pctDiff(post.viewsCount, avg.views),
+        savesVsAvg: pctDiff(post.savesCount, avg.saves),
+      },
+    };
+  }
+
+  // Finding #173: Track post impression — called when post appears in feed viewport
+  async trackImpression(postId: string, userId: string) {
+    // Use Redis HyperLogLog for unique impression counting per post
+    try {
+      if (this.redis.pfadd) {
+        await this.redis.pfadd(`post:impressions:${postId}`, userId);
+      }
+    } catch {
+      // Redis failure non-blocking
+    }
+    return { tracked: true };
+  }
+
+  // Finding #173: Get impression count for a post
+  async getImpressionCount(postId: string) {
+    try {
+      if (this.redis.pfcount) {
+        const count = await this.redis.pfcount(`post:impressions:${postId}`);
+        return { impressions: count };
+      }
+      return { impressions: 0 };
+    } catch {
+      return { impressions: 0 };
     }
   }
 }

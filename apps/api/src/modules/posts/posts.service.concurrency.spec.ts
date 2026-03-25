@@ -40,7 +40,7 @@ describe('PostsService — concurrency (Task 86)', () => {
           },
         },
         { provide: NotificationsService, useValue: { create: jest.fn() } },
-        { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn() } },
+        { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
       ],
     }).compile();
 

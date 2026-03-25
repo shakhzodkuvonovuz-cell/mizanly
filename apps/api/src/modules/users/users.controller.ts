@@ -267,6 +267,15 @@ export class UsersController {
     return this.usersService.updateNasheedMode(userId, body.nasheedMode);
   }
 
+  // Finding #403: Popular with friends — must be before :username param route
+  @Get('popular-with-friends')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Posts popular with people you follow' })
+  getPopularWithFriends(@CurrentUser('id') userId: string) {
+    return this.usersService.getPopularWithFriends(userId);
+  }
+
   // currentUserId extracted from verified auth context — never from query params
   @Get(':username')
   @UseGuards(OptionalClerkAuthGuard)
@@ -355,6 +364,17 @@ export class UsersController {
     @Body() body: { category: string; reason: string; proofUrl?: string },
   ) {
     return this.usersService.requestVerification(userId, body);
+  }
+
+  // Finding #273: Similar accounts based on shared followers
+  @Get(':username/similar')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get similar accounts (collaborative filtering)' })
+  getSimilarAccounts(
+    @Param('username') username: string,
+    @CurrentUser('id') viewerId?: string,
+  ) {
+    return this.usersService.getSimilarAccounts(username, viewerId);
   }
 
   @Post(':id/report')

@@ -784,4 +784,31 @@ export class IslamicController {
   async getDailyTasksToday(@CurrentUser('id') userId: string) {
     return this.islamicService.getDailyTasksToday(userId);
   }
+
+  // Finding #247: Islamic glossary
+  @Get('glossary')
+  @ApiOperation({ summary: 'Get Islamic glossary terms with definitions' })
+  getGlossary(@Query('q') query?: string) {
+    return this.islamicService.getGlossary(query);
+  }
+
+  // Finding #319-321: Islamic content classification
+  @Post('classify-content')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Classify text into Islamic content categories' })
+  classifyContent(@Body('content') content: string) {
+    return this.islamicService.classifyIslamicContent(content || '');
+  }
+
+  // Finding #323: Hadith grade detection
+  @Post('detect-hadith-grade')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Detect hadith grade and collection from text' })
+  detectHadithGrade(@Body('content') content: string) {
+    return this.islamicService.detectHadithGrade(content || '');
+  }
 }

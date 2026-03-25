@@ -1220,4 +1220,162 @@ export class UsersService {
       .filter(u => !blockedSet.has(u.id))
       .map(u => ({ ...u, isFollowing: followedSet.has(u.id) }));
   }
+
+  // Finding #273: Similar accounts — collaborative filtering based on shared followers
+  async getSimilarAccounts(username: string, viewerId?: string, limit = 10) {
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Find users followed by people who also follow this user (collaborative filtering)
+    // "People who follow X also follow Y"
+    const followersOfUser = await this.prisma.follow.findMany({
+      where: { followingId: user.id },
+      select: { followerId: true },
+      take: 100,
+    });
+    const followerIds = followersOfUser.map(f => f.followerId);
+
+    if (followerIds.length === 0) {
+      return { data: [] };
+    }
+
+    // Find who those followers also follow (excluding the user themselves)
+    const alsoFollowed = await this.prisma.follow.groupBy({
+      by: ['followingId'],
+      where: {
+        followerId: { in: followerIds },
+        followingId: { not: user.id },
+        following: { isPrivate: false, isDeactivated: false, isBanned: false },
+      },
+      _count: { followerId: true },
+      orderBy: { _count: { followerId: 'desc' } },
+      take: limit + 5, // fetch a few extra in case some are blocked
+    });
+
+    const similarUserIds = alsoFollowed.map(a => a.followingId);
+    if (similarUserIds.length === 0) return { data: [] };
+
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: similarUserIds } },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        isVerified: true,
+        bio: true,
+        followersCount: true,
+      },
+    });
+
+    // Preserve the collaborative filtering order
+    const userMap = new Map(users.map(u => [u.id, u]));
+    let result = alsoFollowed
+      .map(a => {
+        const u = userMap.get(a.followingId);
+        return u ? { ...u, sharedFollowers: a._count.followerId } : null;
+      })
+      .filter((u): u is NonNullable<typeof u> => u !== null);
+
+    // Filter out viewer (if authenticated) and blocked users
+    if (viewerId) {
+      const blocks = await this.prisma.block.findMany({
+        where: {
+          OR: [
+            { blockerId: viewerId, blockedId: { in: result.map(u => u.id) } },
+            { blockedId: viewerId, blockerId: { in: result.map(u => u.id) } },
+          ],
+        },
+        select: { blockerId: true, blockedId: true },
+        take: 50,
+      });
+      const blockedSet = new Set<string>();
+      for (const b of blocks) {
+        blockedSet.add(b.blockerId === viewerId ? b.blockedId : b.blockerId);
+      }
+      result = result.filter(u => u.id !== viewerId && !blockedSet.has(u.id));
+    }
+
+    return { data: result.slice(0, limit) };
+  }
+
+  // Finding #403: Popular with friends — posts liked by people you follow
+  async getPopularWithFriends(userId: string, limit = 10) {
+    // Get who the user follows
+    const follows = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+      take: 200,
+    });
+    const followingIds = follows.map(f => f.followingId);
+    if (followingIds.length === 0) return { data: [] };
+
+    // Find posts recently liked by followed users (last 48h)
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const recentLikes = await this.prisma.reaction.findMany({
+      where: {
+        userId: { in: followingIds },
+        createdAt: { gte: twoDaysAgo },
+        post: { isRemoved: false, visibility: 'PUBLIC' },
+      },
+      select: {
+        postId: true,
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    // Group by postId, count friend likes
+    const postFriendLikes = new Map<string, { count: number; friends: Array<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }> }>();
+    for (const like of recentLikes) {
+      const existing = postFriendLikes.get(like.postId);
+      if (existing) {
+        existing.count++;
+        if (existing.friends.length < 3) existing.friends.push(like.user);
+      } else {
+        postFriendLikes.set(like.postId, { count: 1, friends: [like.user] });
+      }
+    }
+
+    // Sort by friend like count
+    const topPostIds = [...postFriendLikes.entries()]
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, limit)
+      .map(([id]) => id);
+
+    if (topPostIds.length === 0) return { data: [] };
+
+    const posts = await this.prisma.post.findMany({
+      where: { id: { in: topPostIds } },
+      select: {
+        id: true,
+        content: true,
+        mediaUrls: true,
+        likesCount: true,
+        commentsCount: true,
+        createdAt: true,
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+      },
+    });
+
+    const postMap = new Map(posts.map(p => [p.id, p]));
+    const result = topPostIds
+      .map(id => {
+        const post = postMap.get(id);
+        const friendData = postFriendLikes.get(id);
+        if (!post || !friendData) return null;
+        return {
+          ...post,
+          friendLikes: friendData.count,
+          likedByFriends: friendData.friends,
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+
+    return { data: result };
+  }
 }

@@ -313,4 +313,24 @@ export class ThreadsController {
   ) {
     return this.threadsService.updateThread(id, userId, content);
   }
+
+  // Finding #381: Thread unroll — view full chain as a flat readable list
+  @Get(':id/unroll')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get thread chain unrolled into flat ordered list' })
+  getThreadUnroll(@Param('id') id: string) {
+    return this.threadsService.getThreadUnroll(id);
+  }
+
+  // Finding #251: Content performance comparison
+  @Get(':id/analytics')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get thread analytics vs your average engagement' })
+  getThreadAnalytics(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.threadsService.getThreadAnalytics(id, userId);
+  }
 }

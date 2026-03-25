@@ -67,6 +67,16 @@ export class NotificationsController {
     return this.notificationsService.markAllRead(userId);
   }
 
+  // Finding #363: Grouped/aggregated notification summary
+  @Get('grouped')
+  @ApiOperation({ summary: 'Get notifications grouped by type+content (last 24h)' })
+  getGroupedNotifications(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.notificationsService.getGroupedNotifications(userId, cursor);
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a notification' })

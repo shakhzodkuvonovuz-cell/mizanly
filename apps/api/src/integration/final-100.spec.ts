@@ -39,7 +39,7 @@ describe('Final 100 — breaking 3800', () => {
             feedDismissal: { upsert: jest.fn(), findMany: jest.fn().mockResolvedValue([]) }, report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) }, circleMember: { findMany: jest.fn().mockResolvedValue([]) },
           }},
           { provide: NotificationsService, useValue: { create: jest.fn() } },
-          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn() } },
+          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
         ],
       }).compile();
       service = module.get(PostsService); prisma = module.get(PrismaService);

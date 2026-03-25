@@ -426,4 +426,30 @@ export class PostsController {
   ) {
     return this.postsService.pinPost(id, userId, !!isPinned);
   }
+
+  // Finding #251: Content performance comparison
+  @Get(':id/analytics')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get post analytics vs your average engagement' })
+  getPostAnalytics(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.getPostAnalytics(id, userId);
+  }
+
+  // Finding #173: Track post impression
+  @Post(':id/impression')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Track post impression (appeared in feed viewport)' })
+  trackImpression(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.trackImpression(id, userId);
+  }
 }

@@ -1261,4 +1261,99 @@ export class MessagesService {
       data: { isDeleted: true, content: null, mediaUrl: null },
     });
   }
+
+  // Finding #364: Group topics — Telegram-style discussion threads within groups
+  async createGroupTopic(conversationId: string, userId: string, name: string, iconEmoji?: string) {
+    const conv = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (!conv || !conv.isGroup) throw new NotFoundException('Group not found');
+
+    // Only admin or creator can create topics
+    const member = await this.prisma.conversationMember.findUnique({
+      where: { userId_conversationId: { userId, conversationId } },
+    });
+    if (!member) throw new ForbiddenException('Not a member');
+    if (member.role !== 'ADMIN' && conv.createdById !== userId) {
+      throw new ForbiddenException('Only admins can create topics');
+    }
+
+    // Store topic as a special system message that serves as a thread anchor
+    const topic = await this.prisma.message.create({
+      data: {
+        conversationId,
+        senderId: userId,
+        content: name,
+        messageType: 'SYSTEM',
+        metadata: { type: 'topic', iconEmoji: iconEmoji || null },
+      },
+      select: {
+        id: true,
+        content: true,
+        metadata: true,
+        createdAt: true,
+        sender: { select: { id: true, username: true, displayName: true } },
+      },
+    });
+
+    return { topic };
+  }
+
+  // Finding #364: Get group topics
+  async getGroupTopics(conversationId: string, userId: string) {
+    const member = await this.prisma.conversationMember.findUnique({
+      where: { userId_conversationId: { userId, conversationId } },
+    });
+    if (!member) throw new ForbiddenException('Not a member');
+
+    const topics = await this.prisma.message.findMany({
+      where: {
+        conversationId,
+        messageType: 'SYSTEM',
+        isDeleted: false,
+      },
+      select: {
+        id: true,
+        content: true,
+        metadata: true,
+        createdAt: true,
+        sender: { select: { id: true, username: true, displayName: true } },
+        _count: { select: { replies: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    // Filter to only topic-type system messages
+    const topicMessages = topics.filter(
+      t => t.metadata && typeof t.metadata === 'object' && (t.metadata as Record<string, unknown>).type === 'topic',
+    );
+
+    return { data: topicMessages };
+  }
+
+  // Finding #378: Content expiry — auto-delete messages after N days
+  async setMessageExpiry(conversationId: string, userId: string, expiryDays: number) {
+    const conv = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (!conv) throw new NotFoundException('Conversation not found');
+
+    const member = await this.prisma.conversationMember.findUnique({
+      where: { userId_conversationId: { userId, conversationId } },
+    });
+    if (!member) throw new ForbiddenException('Not a member');
+    if (conv.isGroup && member.role !== 'ADMIN' && conv.createdById !== userId) {
+      throw new ForbiddenException('Only admins can set message expiry');
+    }
+
+    // Valid options: 0 (off), 1, 7, 30, 90
+    const validDays = [0, 1, 7, 30, 90];
+    if (!validDays.includes(expiryDays)) {
+      throw new BadRequestException('Invalid expiry duration. Valid: 0, 1, 7, 30, 90 days');
+    }
+
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { disappearingTimer: expiryDays === 0 ? null : expiryDays * 24 * 60 },
+    });
+
+    return { expiryDays, message: expiryDays === 0 ? 'Message expiry disabled' : `Messages will expire after ${expiryDays} days` };
+  }
 }

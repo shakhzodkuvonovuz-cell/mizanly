@@ -708,4 +708,36 @@ export class MessagesController {
   ) {
     return this.messagesService.joinViaInviteLink(inviteCode, userId);
   }
+
+  // Finding #364: Group topics
+  @Post(':conversationId/topics')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Create a discussion topic in a group' })
+  async createGroupTopic(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+    @Body() body: { name: string; iconEmoji?: string },
+  ) {
+    return this.messagesService.createGroupTopic(conversationId, userId, body.name, body.iconEmoji);
+  }
+
+  @Get(':conversationId/topics')
+  @ApiOperation({ summary: 'Get discussion topics in a group' })
+  async getGroupTopics(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.getGroupTopics(conversationId, userId);
+  }
+
+  // Finding #378: Message expiry settings
+  @Patch(':conversationId/expiry')
+  @ApiOperation({ summary: 'Set message auto-delete timer (0, 1, 7, 30, 90 days)' })
+  async setMessageExpiry(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+    @Body('expiryDays') expiryDays: number,
+  ) {
+    return this.messagesService.setMessageExpiry(conversationId, userId, expiryDays);
+  }
 }

@@ -69,7 +69,7 @@ describe('PostsService — Comment Permission Enforcement', () => {
         },
         {
           provide: 'REDIS',
-          useValue: { get: jest.fn(), setex: jest.fn(), del: jest.fn() },
+          useValue: { get: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) },
         },
       ],
     }).compile();

@@ -83,20 +83,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     try {
       // Create a duplicate Redis connection for subscribing (pub/sub requires dedicated connection)
       const subscriber = this.redis.duplicate();
-      await subscriber.subscribe('notification:new');
-      subscriber.on('message', (_channel: string, message: string) => {
+      await subscriber.subscribe('notification:new', 'content:update');
+      subscriber.on('message', (channel: string, message: string) => {
         try {
-          const { userId, notification } = JSON.parse(message);
-          if (userId && notification) {
-            this.server.to(`user:${userId}`).emit('new_notification', notification);
+          if (channel === 'notification:new') {
+            const { userId, notification } = JSON.parse(message);
+            if (userId && notification) {
+              this.server.to(`user:${userId}`).emit('new_notification', notification);
+            }
+          } else if (channel === 'content:update') {
+            // Finding #350-351: Real-time content updates (new comments, likes)
+            const { postId, reelId, threadId, event, data } = JSON.parse(message);
+            const roomId = postId || reelId || threadId;
+            if (roomId && event) {
+              this.server.to(`content:${roomId}`).emit(event, data);
+            }
           }
         } catch (e) {
-          this.logger.debug('Failed to parse notification pub/sub message', e);
+          this.logger.debug('Failed to parse pub/sub message', e);
         }
       });
-      this.logger.log('Subscribed to notification:new Redis channel');
+      this.logger.log('Subscribed to notification:new + content:update Redis channels');
     } catch (e) {
-      this.logger.warn('Failed to subscribe to notification Redis channel — real-time notifications disabled', e);
+      this.logger.warn('Failed to subscribe to Redis channels — real-time updates disabled', e);
     }
   }
 
@@ -816,6 +825,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     this.server.to(`quran:${dto.roomId}`).emit('quran_reciter_updated', {
       reciterId: dto.reciterId,
     });
+  }
+
+  // Finding #350-351: Join/leave content rooms for real-time updates
+  @SubscribeMessage('join_content')
+  async handleJoinContent(
+    @MessageBody() data: { contentId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!data?.contentId) return;
+    client.join(`content:${data.contentId}`);
+    this.logger.debug(`Socket ${client.id} joined content room: ${data.contentId}`);
+  }
+
+  @SubscribeMessage('leave_content')
+  async handleLeaveContent(
+    @MessageBody() data: { contentId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!data?.contentId) return;
+    client.leave(`content:${data.contentId}`);
   }
 
   private extractToken(client: Socket): string | undefined {

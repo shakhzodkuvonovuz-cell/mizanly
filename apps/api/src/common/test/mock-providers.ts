@@ -98,6 +98,10 @@ export const mockRedis = {
     keys: jest.fn().mockResolvedValue([]),
     mget: jest.fn().mockResolvedValue([]),
     connect: jest.fn().mockResolvedValue(undefined),
+    publish: jest.fn().mockResolvedValue(1),
+    pfadd: jest.fn().mockResolvedValue(1),
+    pfcount: jest.fn().mockResolvedValue(0),
+    duplicate: jest.fn().mockReturnValue({ subscribe: jest.fn().mockResolvedValue(undefined), on: jest.fn() }),
   },
 };
 

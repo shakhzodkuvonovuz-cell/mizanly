@@ -339,6 +339,56 @@ export class NotificationsService {
     };
   }
 
+  // Finding #363: Group notification summary — aggregate notifications by type+content
+  async getGroupedNotifications(userId: string, cursor?: string, limit = 20) {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const notifications = await this.prisma.notification.findMany({
+      where: {
+        userId,
+        createdAt: { gte: oneDayAgo },
+        ...(cursor ? { createdAt: { lt: new Date(cursor), gte: oneDayAgo } } : {}),
+      },
+      include: {
+        actor: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    // Group by type + content target (postId/reelId/threadId)
+    const groups = new Map<string, { type: string; targetId: string | null; actors: Array<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }>; count: number; latestAt: Date; notificationId: string }>();
+
+    for (const n of notifications) {
+      const targetId = n.postId || n.reelId || n.threadId || n.videoId || '';
+      const key = `${n.type}:${targetId}`;
+      const existing = groups.get(key);
+      if (existing) {
+        existing.count++;
+        if (n.actor && existing.actors.length < 3) {
+          existing.actors.push(n.actor);
+        }
+      } else {
+        groups.set(key, {
+          type: n.type,
+          targetId: targetId || null,
+          actors: n.actor ? [n.actor] : [],
+          count: 1,
+          latestAt: n.createdAt,
+          notificationId: n.id,
+        });
+      }
+    }
+
+    const grouped = [...groups.values()]
+      .sort((a, b) => b.latestAt.getTime() - a.latestAt.getTime())
+      .slice(0, limit);
+
+    return {
+      data: grouped,
+      meta: { hasMore: groups.size > limit },
+    };
+  }
+
   /**
    * M-07: Notification cleanup/retention cron
    * Deletes read notifications older than 90 days.

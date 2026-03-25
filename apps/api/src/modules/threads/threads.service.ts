@@ -1014,6 +1014,72 @@ export class ThreadsService {
     return { bookmarked: !!bookmark };
   }
 
-  // Note: moderateThreadImage was dead code — thread create() already does inline
-  // image moderation at lines 346-356 via this.ai.moderateImage(). Removed to reduce confusion.
+  // Finding #381: Thread unroll — returns the full chain as a flat, ordered list
+  async getThreadUnroll(threadId: string) {
+    const thread = await this.prisma.thread.findUnique({
+      where: { id: threadId },
+      select: { ...THREAD_SELECT, chainId: true },
+    });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    // If no chain, return single thread
+    if (!thread.chainId) {
+      return { data: [thread], meta: { totalParts: 1 } };
+    }
+
+    // Fetch all threads in the chain, ordered by position
+    const chain = await this.prisma.thread.findMany({
+      where: { chainId: thread.chainId, isRemoved: false },
+      select: THREAD_SELECT,
+      orderBy: { chainPosition: 'asc' },
+      take: 50,
+    });
+
+    return {
+      data: chain,
+      meta: { totalParts: chain.length, chainId: thread.chainId },
+    };
+  }
+
+  // Finding #251: Content performance comparison — thread analytics vs author average
+  async getThreadAnalytics(threadId: string, userId: string) {
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    if (!thread) throw new NotFoundException('Thread not found');
+    if (thread.userId !== userId) throw new ForbiddenException('Only the author can view analytics');
+
+    // Get author's average engagement across their last 50 threads
+    const recentThreads = await this.prisma.thread.findMany({
+      where: { userId, isRemoved: false, isChainHead: true },
+      select: { likesCount: true, repliesCount: true, repostsCount: true, viewsCount: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    const count = recentThreads.length || 1;
+    const avgLikes = recentThreads.reduce((s, t) => s + t.likesCount, 0) / count;
+    const avgReplies = recentThreads.reduce((s, t) => s + t.repliesCount, 0) / count;
+    const avgReposts = recentThreads.reduce((s, t) => s + t.repostsCount, 0) / count;
+    const avgViews = recentThreads.reduce((s, t) => s + t.viewsCount, 0) / count;
+
+    return {
+      thread: {
+        likes: thread.likesCount,
+        replies: thread.repliesCount,
+        reposts: thread.repostsCount,
+        views: thread.viewsCount,
+      },
+      average: {
+        likes: Math.round(avgLikes * 10) / 10,
+        replies: Math.round(avgReplies * 10) / 10,
+        reposts: Math.round(avgReposts * 10) / 10,
+        views: Math.round(avgViews * 10) / 10,
+      },
+      comparison: {
+        likesVsAvg: avgLikes > 0 ? Math.round(((thread.likesCount - avgLikes) / avgLikes) * 100) : 0,
+        repliesVsAvg: avgReplies > 0 ? Math.round(((thread.repliesCount - avgReplies) / avgReplies) * 100) : 0,
+        repostsVsAvg: avgReposts > 0 ? Math.round(((thread.repostsCount - avgReposts) / avgReposts) * 100) : 0,
+        viewsVsAvg: avgViews > 0 ? Math.round(((thread.viewsCount - avgViews) / avgViews) * 100) : 0,
+      },
+    };
+  }
 }

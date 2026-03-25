@@ -2041,4 +2041,142 @@ export class IslamicService {
     const day = Math.floor(dayInYear % 29.5) + 1;
     return { year, month: Math.min(month, 12), day: Math.min(day, 30) };
   }
+
+  // Finding #247: Islamic glossary — returns definitions for common Islamic terms
+  getGlossary(query?: string) {
+    const glossary = [
+      { term: 'Sunnah', arabic: 'سنة', definition: 'The practices and traditions of Prophet Muhammad (PBUH)' },
+      { term: 'Fiqh', arabic: 'فقه', definition: 'Islamic jurisprudence — understanding of Sharia law' },
+      { term: 'Tafsir', arabic: 'تفسير', definition: 'Scholarly commentary and interpretation of the Quran' },
+      { term: 'Hadith', arabic: 'حديث', definition: 'Recorded sayings and actions of Prophet Muhammad (PBUH)' },
+      { term: 'Dawah', arabic: 'دعوة', definition: 'Invitation to Islam; sharing Islamic knowledge' },
+      { term: 'Seerah', arabic: 'سيرة', definition: 'Biography of Prophet Muhammad (PBUH)' },
+      { term: 'Aqeedah', arabic: 'عقيدة', definition: 'Islamic creed and core beliefs' },
+      { term: 'Halal', arabic: 'حلال', definition: 'Permissible according to Islamic law' },
+      { term: 'Haram', arabic: 'حرام', definition: 'Forbidden according to Islamic law' },
+      { term: 'Wudu', arabic: 'وضوء', definition: 'Ritual ablution before prayer' },
+      { term: 'Salah', arabic: 'صلاة', definition: 'The five daily obligatory prayers' },
+      { term: 'Zakat', arabic: 'زكاة', definition: 'Obligatory charity (2.5% of qualifying wealth annually)' },
+      { term: 'Sawm', arabic: 'صوم', definition: 'Fasting, especially during Ramadan' },
+      { term: 'Hajj', arabic: 'حج', definition: 'Annual pilgrimage to Makkah (one of the five pillars)' },
+      { term: 'Umrah', arabic: 'عمرة', definition: 'Lesser pilgrimage to Makkah (can be performed anytime)' },
+      { term: 'Dhikr', arabic: 'ذكر', definition: 'Remembrance of Allah through repeated phrases' },
+      { term: 'Dua', arabic: 'دعاء', definition: 'Personal supplication/prayer to Allah' },
+      { term: 'Taqwa', arabic: 'تقوى', definition: 'God-consciousness; being mindful of Allah in all actions' },
+      { term: 'Shura', arabic: 'شورى', definition: 'Consultation — making decisions through group counsel' },
+      { term: 'Iman', arabic: 'إيمان', definition: 'Faith; belief in the six articles of faith' },
+      { term: 'Ihsan', arabic: 'إحسان', definition: 'Excellence in worship; acting as though Allah sees you' },
+      { term: 'Sahih', arabic: 'صحيح', definition: 'Authentic — highest grade of hadith reliability' },
+      { term: 'Hasan', arabic: 'حسن', definition: 'Good — second grade of hadith reliability' },
+      { term: "Da'if", arabic: 'ضعيف', definition: 'Weak — hadith with reliability concerns' },
+      { term: 'Isnad', arabic: 'إسناد', definition: 'Chain of narrators transmitting a hadith' },
+      { term: 'Ijma', arabic: 'إجماع', definition: 'Scholarly consensus on an Islamic ruling' },
+      { term: 'Qiyas', arabic: 'قياس', definition: 'Analogical reasoning in Islamic jurisprudence' },
+      { term: 'Fatwa', arabic: 'فتوى', definition: 'Islamic legal ruling issued by a qualified scholar' },
+      { term: 'Khutbah', arabic: 'خطبة', definition: 'Sermon delivered during Friday prayers or Eid' },
+      { term: 'Masjid', arabic: 'مسجد', definition: 'Mosque — place of worship and community gathering' },
+      { term: 'Ummah', arabic: 'أمة', definition: 'The global Muslim community' },
+      { term: 'Barakah', arabic: 'بركة', definition: 'Blessings and divine grace from Allah' },
+      { term: 'Niyyah', arabic: 'نية', definition: 'Intention — required before every act of worship' },
+      { term: 'Sharia', arabic: 'شريعة', definition: 'Islamic law derived from Quran and Sunnah' },
+      { term: 'Qadr', arabic: 'قدر', definition: 'Divine decree — belief that everything happens by Allah\'s will' },
+      { term: 'Tawbah', arabic: 'توبة', definition: 'Repentance — sincerely returning to Allah after sin' },
+      { term: 'Sadaqah', arabic: 'صدقة', definition: 'Voluntary charity given for the sake of Allah' },
+      { term: 'Waqf', arabic: 'وقف', definition: 'Charitable endowment — assets dedicated to benefit the community' },
+      { term: 'Khatm', arabic: 'ختم', definition: 'Completion of reading the entire Quran' },
+      { term: 'Tajweed', arabic: 'تجويد', definition: 'Rules for correct pronunciation of Quran recitation' },
+    ];
+
+    if (query) {
+      const q = query.toLowerCase();
+      return {
+        data: glossary.filter(g =>
+          g.term.toLowerCase().includes(q) ||
+          g.arabic.includes(q) ||
+          g.definition.toLowerCase().includes(q),
+        ),
+      };
+    }
+
+    return { data: glossary };
+  }
+
+  // Finding #319-321, 323: Islamic content classification
+  // Auto-classifies content into Islamic categories based on keywords
+  classifyIslamicContent(content: string): { category: string | null; confidence: number; tags: string[] } {
+    if (!content) return { category: null, confidence: 0, tags: [] };
+
+    const text = content.toLowerCase();
+    const tags: string[] = [];
+    const scores: Record<string, number> = {};
+
+    // Quran/Tafsir indicators
+    const quranPatterns = [/surah/i, /ayah/i, /verse/i, /quran/i, /\d+:\d+/, /tafsir/i, /ibn kathir/i, /al-tabari/i];
+    const quranScore = quranPatterns.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+    if (quranScore > 0) { scores['quran_tafsir'] = quranScore; tags.push('quran'); }
+
+    // Hadith indicators
+    const hadithPatterns = [/hadith/i, /sahih/i, /bukhari/i, /muslim/i, /tirmidhi/i, /abu dawud/i, /narrated/i, /prophet.*said/i, /pbuh/i, /isnad/i];
+    const hadithScore = hadithPatterns.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+    if (hadithScore > 0) { scores['hadith'] = hadithScore; tags.push('hadith'); }
+
+    // Fiqh indicators
+    const fiqhPatterns = [/fiqh/i, /ruling/i, /fatwa/i, /halal/i, /haram/i, /makruh/i, /mustahab/i, /hanafi/i, /maliki/i, /shafi/i, /hanbali/i, /permissible/i, /impermissible/i];
+    const fiqhScore = fiqhPatterns.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+    if (fiqhScore > 0) { scores['fiqh'] = fiqhScore; tags.push('fiqh'); }
+
+    // Seerah indicators
+    const seerahPatterns = [/seerah/i, /prophet muhammad/i, /biography/i, /mecca/i, /medina/i, /hijrah/i, /companions/i, /sahaba/i];
+    const seerahScore = seerahPatterns.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+    if (seerahScore > 0) { scores['seerah'] = seerahScore; tags.push('seerah'); }
+
+    // Dawah indicators
+    const dawahPatterns = [/dawah/i, /invite/i, /revert/i, /convert/i, /shahada/i, /islam is/i, /new muslim/i];
+    const dawahScore = dawahPatterns.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+    if (dawahScore > 0) { scores['dawah'] = dawahScore; tags.push('dawah'); }
+
+    // Spirituality/worship indicators
+    const worshipPatterns = [/dhikr/i, /dua/i, /salah/i, /prayer/i, /fasting/i, /ramadan/i, /taqwa/i, /iman/i, /ihsan/i];
+    const worshipScore = worshipPatterns.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+    if (worshipScore > 0) { scores['worship'] = worshipScore; tags.push('worship'); }
+
+    // Lifestyle indicators
+    const lifestylePatterns = [/muslim lifestyle/i, /modest/i, /hijab/i, /halal food/i, /islamic finance/i, /nikah/i, /marriage/i];
+    const lifestyleScore = lifestylePatterns.reduce((s, p) => s + (p.test(text) ? 1 : 0), 0);
+    if (lifestyleScore > 0) { scores['lifestyle'] = lifestyleScore; tags.push('lifestyle'); }
+
+    // Determine primary category
+    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    if (sorted.length === 0) return { category: null, confidence: 0, tags: [] };
+
+    const [category, score] = sorted[0];
+    const maxPossible = 10; // rough max pattern matches
+    const confidence = Math.min(score / maxPossible, 1);
+
+    return { category, confidence: Math.round(confidence * 100) / 100, tags: [...new Set(tags)] };
+  }
+
+  // Finding #323: Detect hadith grade from known collections
+  detectHadithGrade(content: string): { grade: string | null; collection: string | null } {
+    if (!content) return { grade: null, collection: null };
+    const text = content.toLowerCase();
+
+    // Check for explicit grade mentions
+    if (/sahih(?!\s+al)/i.test(text) && !/sahih bukhari|sahih muslim/i.test(text)) {
+      return { grade: 'sahih', collection: null };
+    }
+
+    // Check for collection references which imply grade
+    if (/sahih bukhari/i.test(text) || /bukhari/i.test(text)) return { grade: 'sahih', collection: 'Sahih al-Bukhari' };
+    if (/sahih muslim/i.test(text)) return { grade: 'sahih', collection: 'Sahih Muslim' };
+    if (/tirmidhi/i.test(text)) return { grade: 'hasan', collection: 'Jami at-Tirmidhi' };
+    if (/abu dawud/i.test(text)) return { grade: 'hasan', collection: 'Sunan Abu Dawud' };
+    if (/ibn majah/i.test(text)) return { grade: 'hasan', collection: 'Sunan Ibn Majah' };
+    if (/nasai/i.test(text)) return { grade: 'sahih', collection: "Sunan an-Nasa'i" };
+    if (/muwatta/i.test(text)) return { grade: 'sahih', collection: 'Muwatta Malik' };
+    if (/da.?if/i.test(text) || /weak hadith/i.test(text)) return { grade: "da'if", collection: null };
+    if (/mawdu/i.test(text) || /fabricated/i.test(text)) return { grade: 'mawdu', collection: null };
+
+    return { grade: null, collection: null };
+  }
 }
