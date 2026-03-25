@@ -1419,9 +1419,16 @@ export default function ConversationScreen() {
               <Avatar uri={avatarUri} name={name} size="sm" showOnline />
               <View>
                 <Text style={[styles.headerName, { color: tc.text.primary }]} numberOfLines={1}>{name}</Text>
-                {otherTyping && (
+                {otherTyping ? (
                   <TypingIndicator label={t('messages.typing')} dotSize={5} variant="bubble" />
-                )}
+                ) : !convo?.isGroup && (() => {
+                  const other = convo?.members?.find((m: ConversationMember) => m.userId !== user?.id);
+                  const lastActive = (other as Record<string, unknown> | undefined)?.lastActiveAt as string | undefined;
+                  if (!lastActive) return null;
+                  const diffMs = Date.now() - new Date(lastActive).getTime();
+                  if (diffMs < 5 * 60 * 1000) return <Text style={{ color: colors.emerald, fontSize: 11 }}>{t('common.online', 'Online')}</Text>;
+                  return null;
+                })()}
               </View>
             </Pressable>
           }

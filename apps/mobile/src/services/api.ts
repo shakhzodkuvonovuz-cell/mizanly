@@ -737,6 +737,8 @@ export const messagesApi = {
     api.post(`/messages/conversations/${id}/mute`, { muted }),
   archive: (id: string, archived: boolean) =>
     api.post(`/messages/conversations/${id}/archive`, { archived }),
+  pinConversation: (id: string, pinned: boolean) =>
+    api.patch(`/messages/conversations/${id}/pin`, { isPinned: pinned }),
   createDM: (targetUserId: string) => api.post<Conversation>('/messages/dm', { targetUserId }),
   createGroup: (groupName: string, memberIds: string[], groupAvatarUrl?: string) =>
     api.post<Conversation>('/messages/groups', { groupName, memberIds, groupAvatarUrl }),

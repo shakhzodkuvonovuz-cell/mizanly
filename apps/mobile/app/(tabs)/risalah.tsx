@@ -332,15 +332,30 @@ export default function RisalahScreen() {
     const otherUserId = item.isGroup ? undefined : item.members.find(m => m.user.id !== user?.id)?.user.id;
     const isOnline = otherUserId ? onlineUsers.has(otherUserId) : false;
     const isTyping = (typingUsers.get(item.id)?.size ?? 0) > 0;
+    const isPinned = !!(item as Record<string, unknown>).isPinned;
     const renderRightActions = () => (
-      <Pressable
-        style={styles.archiveAction}
-        onPress={() => archiveMutation.mutate(item.id)}
-        accessibilityLabel={t('accessibility.archiveConversation')}
-        accessibilityRole="button"
-      >
-        <Icon name="archive" size="sm" color={tc.text.primary} />
-      </Pressable>
+      <View style={{ flexDirection: 'row' }}>
+        <Pressable
+          style={[styles.archiveAction, { backgroundColor: colors.emerald }]}
+          onPress={() => {
+            haptic.tick();
+            messagesApi.pinConversation(item.id, !isPinned);
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+          }}
+          accessibilityLabel={isPinned ? t('messages.unpin', 'Unpin') : t('messages.pin', 'Pin')}
+          accessibilityRole="button"
+        >
+          <Icon name="map-pin" size="sm" color={colors.text.onColor} />
+        </Pressable>
+        <Pressable
+          style={styles.archiveAction}
+          onPress={() => archiveMutation.mutate(item.id)}
+          accessibilityLabel={t('accessibility.archiveConversation')}
+          accessibilityRole="button"
+        >
+          <Icon name="archive" size="sm" color={tc.text.primary} />
+        </Pressable>
+      </View>
     );
 
     return (
