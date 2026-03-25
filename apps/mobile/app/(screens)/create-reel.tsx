@@ -346,8 +346,10 @@ export default function CreateReelScreen() {
               [
                 { text: t('common.discard', 'Discard'), style: 'destructive', onPress: () => AsyncStorage.removeItem('reel-draft') },
                 { text: t('common.restore', 'Restore'), onPress: () => {
-                  // Restore clips + caption from draft
-                  if (draft.caption) captionRef.current = draft.caption;
+                  // Restore clips + caption from draft to state
+                  if (draft.clips?.length > 0) setClips(draft.clips);
+                  if (draft.caption) setCaption(draft.caption);
+                  AsyncStorage.removeItem('reel-draft');
                 }},
               ],
             );

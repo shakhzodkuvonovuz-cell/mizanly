@@ -482,7 +482,11 @@ const ReelItem = memo(function ReelItem({
           <BottomSheetItem
             label={t('bakra.sendTo', 'Send to...')}
             icon={<Icon name="send" size="sm" color={colors.text.primary} />}
-            onPress={() => { setShowMoreMenu(false); onNavigate(`/(screens)/forward-content?type=reel&id=${item.id}&url=${encodeURIComponent(item.videoUrl)}`); }}
+            onPress={async () => {
+              setShowMoreMenu(false);
+              const { Share } = require('react-native');
+              try { await Share.share({ message: `Check out this reel on Mizanly: https://mizanly.app/reel/${item.id}` }); } catch {}
+            }}
           />
           <BottomSheetItem
             label={t('bakra.notInterested')}

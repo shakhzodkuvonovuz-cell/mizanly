@@ -58,6 +58,9 @@ describe('AdminService', () => {
             moderationLog: {
               create: jest.fn().mockResolvedValue({}),
             },
+            adminAuditLog: {
+              create: jest.fn().mockResolvedValue({}),
+            },
             comment: {
               update: jest.fn().mockResolvedValue({}),
             },

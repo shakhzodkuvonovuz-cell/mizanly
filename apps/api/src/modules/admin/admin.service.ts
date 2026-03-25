@@ -205,6 +205,11 @@ export class AdminService {
       }).catch(err => this.logger.warn('Failed to create moderation log', err instanceof Error ? err.message : err));
     }
 
+    // Finding #417: Admin audit trail
+    await this.prisma.adminAuditLog.create({
+      data: { adminId, action: `RESOLVE_REPORT_${action}`, targetType: 'report', targetId: reportId, details: { actionTaken, note } },
+    }).catch(() => {});
+
     return this.prisma.report.update({
       where: { id: reportId },
       data: {
@@ -273,6 +278,11 @@ export class AdminService {
         this.logger.warn(`Failed to revoke Clerk session for banned user ${targetId}: ${msg}`);
       }
     }
+
+    // Finding #417: Admin audit trail
+    await this.prisma.adminAuditLog.create({
+      data: { adminId, action: 'BAN_USER', targetType: 'user', targetId, details: { reason, duration } },
+    }).catch(() => {});
 
     return updatedUser;
   }
