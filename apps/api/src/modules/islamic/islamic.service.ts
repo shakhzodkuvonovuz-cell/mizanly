@@ -1,4 +1,5 @@
 import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import Redis from 'ioredis';
@@ -783,6 +784,10 @@ export class IslamicService {
     if (dto.target !== undefined && (dto.target <= 0 || dto.target > 100000)) {
       throw new BadRequestException('Target must be between 1 and 100,000');
     }
+    // Increment global community dhikr counter (Finding #280)
+    await this.redis.incrby('community:dhikr:total', dto.count);
+    await this.redis.incrby(`community:dhikr:today:${new Date().toISOString().slice(0, 10)}`, dto.count);
+
     return this.prisma.dhikrSession.create({
       data: {
         userId,
@@ -792,6 +797,20 @@ export class IslamicService {
         completedAt: dto.count >= (dto.target || 33) ? new Date() : null,
       },
     });
+  }
+
+  /**
+   * Finding #280: Get global community dhikr counter.
+   */
+  async getCommunityDhikrTotal() {
+    const [total, todayKey] = await Promise.all([
+      this.redis.get('community:dhikr:total'),
+      this.redis.get(`community:dhikr:today:${new Date().toISOString().slice(0, 10)}`),
+    ]);
+    return {
+      allTimeTotal: parseInt(total ?? '0', 10),
+      todayTotal: parseInt(todayKey ?? '0', 10),
+    };
   }
 
   async getDhikrStats(userId: string) {
@@ -1836,5 +1855,116 @@ export class IslamicService {
       orderBy: { lastReviewedAt: 'asc' },
       take: 10,
     });
+  }
+
+  /**
+   * Finding #215: Quran verse of the day — daily push notification at 6 AM.
+   * Sends a random verse to all users with push tokens.
+   */
+  @Cron('0 6 * * *') // 6:00 AM daily
+  async sendVerseOfTheDay() {
+    try {
+      // Pick a random verse (1-6236 total verses in Quran)
+      const verseNumber = Math.floor(Math.random() * 6236) + 1;
+      const surah = Math.ceil(verseNumber / 50); // approximate surah
+      const verse = Math.min(verseNumber % 50 || 1, 286); // approximate verse in surah
+
+      // Fetch from Quran.com API
+      const response = await fetch(`https://api.quran.com/api/v4/verses/by_key/${surah}:${verse}?language=en&translations=131`);
+      if (!response.ok) return;
+
+      const data = await response.json() as { verse?: { text_uthmani?: string; translations?: Array<{ text?: string }> } };
+      const arabicText = data.verse?.text_uthmani ?? '';
+      const translationText = data.verse?.translations?.[0]?.text?.replace(/<[^>]*>/g, '') ?? '';
+
+      if (!arabicText) return;
+
+      // Send to all users with push tokens
+      const usersWithTokens = await this.prisma.device.findMany({
+        where: { isActive: true, pushToken: { not: null } },
+        select: { userId: true },
+        take: 10000,
+      });
+      const userIds = [...new Set(usersWithTokens.map(d => d.userId))];
+
+      for (const userId of userIds.slice(0, 1000)) {
+        await this.prisma.notification.create({
+          data: {
+            userId,
+            type: 'SYSTEM',
+            title: `📖 Verse of the Day (${surah}:${verse})`,
+            body: translationText.slice(0, 200),
+          },
+        }).catch(() => {});
+      }
+
+      this.logger.log(`Verse of the day sent: ${surah}:${verse} to ${Math.min(userIds.length, 1000)} users`);
+    } catch (err: unknown) {
+      this.logger.error(`Verse of the day failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  /**
+   * Finding #279: Islamic event reminders — notify users about key dates.
+   * Runs daily at 8 AM, checks if today matches any Islamic event.
+   */
+  @Cron('0 8 * * *')
+  async checkIslamicEventReminders() {
+    // Key Islamic events with approximate Hijri month/day
+    const events = [
+      { month: 9, day: 1, name: 'Ramadan begins', key: 'ramadan_start' },
+      { month: 9, day: 27, name: 'Laylat al-Qadr (approximate)', key: 'laylat_al_qadr' },
+      { month: 10, day: 1, name: 'Eid al-Fitr', key: 'eid_al_fitr' },
+      { month: 12, day: 10, name: 'Eid al-Adha', key: 'eid_al_adha' },
+      { month: 1, day: 10, name: 'Ashura', key: 'ashura' },
+      { month: 3, day: 12, name: 'Mawlid al-Nabi', key: 'mawlid' },
+      { month: 7, day: 27, name: "Isra' Mi'raj", key: 'isra_miraj' },
+    ];
+
+    // Get today's Hijri date (approximate conversion)
+    const today = new Date();
+    const hijriApprox = this.approximateHijriDate(today);
+    const todayEvent = events.find(e => e.month === hijriApprox.month && e.day === hijriApprox.day);
+
+    if (!todayEvent) return;
+
+    // Dedup: check Redis to avoid sending same event twice
+    const dedup = await this.redis.get(`islamic_event:${todayEvent.key}:${today.toISOString().slice(0, 10)}`);
+    if (dedup) return;
+    await this.redis.setex(`islamic_event:${todayEvent.key}:${today.toISOString().slice(0, 10)}`, 86400, '1');
+
+    // Send notification to all users
+    const users = await this.prisma.user.findMany({
+      where: { isDeactivated: false, isBanned: false, isDeleted: false },
+      select: { id: true },
+      take: 10000,
+    });
+
+    for (const user of users.slice(0, 5000)) {
+      await this.prisma.notification.create({
+        data: {
+          userId: user.id,
+          type: 'SYSTEM',
+          title: `🌙 ${todayEvent.name}`,
+          body: `Today is ${todayEvent.name}. May Allah bless you on this special day.`,
+        },
+      }).catch(() => {});
+    }
+
+    this.logger.log(`Islamic event reminder sent: ${todayEvent.name} to ${Math.min(users.length, 5000)} users`);
+  }
+
+  /**
+   * Approximate Hijri date from Gregorian (rough calculation for event matching).
+   */
+  private approximateHijriDate(date: Date): { year: number; month: number; day: number } {
+    const epoch = new Date(622, 6, 16).getTime(); // Hijri epoch approximate
+    const daysSinceEpoch = Math.floor((date.getTime() - epoch) / (1000 * 60 * 60 * 24));
+    const lunarYear = 354.36667;
+    const year = Math.floor(daysSinceEpoch / lunarYear) + 1;
+    const dayInYear = daysSinceEpoch % Math.floor(lunarYear);
+    const month = Math.floor(dayInYear / 29.5) + 1;
+    const day = Math.floor(dayInYear % 29.5) + 1;
+    return { year, month: Math.min(month, 12), day: Math.min(day, 30) };
   }
 }

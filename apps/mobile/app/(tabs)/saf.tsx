@@ -601,7 +601,15 @@ export default function SafScreen() {
       <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
         <Animated.View style={titleAnimatedStyle}>
           <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Mizanly</Text>
-          <Text style={styles.hijriDate}>{formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}</Text>
+          <Text style={styles.hijriDate}>
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? t('islamic.sabahalKhair', 'Sabah al-Khair')
+                : hour < 17 ? t('islamic.masaAlKhair', 'Masa al-Khair')
+                : t('islamic.masaAlKhair', 'Masa al-Khair');
+              return `${greeting} · ${formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}`;
+            })()}
+          </Text>
         </Animated.View>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <CreateHeaderButton />

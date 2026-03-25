@@ -489,6 +489,12 @@ export class IslamicController {
     return this.islamicService.saveDhikrSession(userId, dto);
   }
 
+  @Get('dhikr/community')
+  @ApiOperation({ summary: 'Get global community dhikr counter (all-time + today)' })
+  async getCommunityDhikrTotal() {
+    return this.islamicService.getCommunityDhikrTotal();
+  }
+
   @Get('dhikr/stats')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

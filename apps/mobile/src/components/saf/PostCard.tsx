@@ -25,6 +25,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useAnimatedIcon } from '@/hooks/useAnimatedIcon';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatHijriDate } from '@/utils/hijri';
 import { PostMedia } from './PostMedia';
 import { LinkPreview } from '@/components/ui/LinkPreview';
 import { ReactionPicker } from '@/components/ui/ReactionPicker';
@@ -57,7 +58,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
-  const { t: tr } = useTranslation();
+  const { t: tr, isRTL } = useTranslation();
 
   // Sync local state when server data changes (e.g. after feed refetch or FlashList recycle)
   useEffect(() => {
@@ -311,7 +312,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
               )}
             </View>
             <Text style={styles.handle}>
-              @{post.user.username} · {timeAgo}
+              @{post.user.username} · {timeAgo}{isRTL ? ` · ${formatHijriDate(new Date(post.createdAt), 'ar')}` : ''}
               {isEdited && <Text style={styles.editedLabel}> · {tr('common.edited')}</Text>}
               {post.isPromoted && <Text style={styles.sponsoredLabel}> · {tr('saf.sponsored')}</Text>}
             </Text>

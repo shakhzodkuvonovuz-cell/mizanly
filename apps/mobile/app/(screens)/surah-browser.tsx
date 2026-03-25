@@ -132,6 +132,16 @@ function SurahBrowserContent() {
         )}
       </View>
 
+      {/* Bismillah header */}
+      <View style={{ alignItems: 'center', paddingVertical: spacing.base }}>
+        <Text style={{ fontFamily: fonts.arabicBold, fontSize: 22, color: tc.text.primary }}>
+          بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+        </Text>
+        <Text style={{ fontFamily: fonts.body, fontSize: fontSize.xs, color: tc.text.tertiary, marginTop: 4 }}>
+          {t('quran.bismillah', 'In the name of Allah, the Most Gracious, the Most Merciful')}
+        </Text>
+      </View>
+
       <FlashList
         data={filtered}
         renderItem={renderItem}
