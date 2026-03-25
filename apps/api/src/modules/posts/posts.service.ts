@@ -12,11 +12,9 @@ import Redis from 'ioredis';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { PushTriggerService } from '../notifications/push-trigger.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, PostType, PostVisibility, CommentPermission, ReactionType, ReportReason, ContentSpace } from '@prisma/client';
-import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
@@ -74,9 +72,7 @@ export class PostsService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
-    private pushTrigger: PushTriggerService,
     @Inject('REDIS') private redis: Redis,
-    private gamification: GamificationService,
     private ai: AiService,
     private contentSafety: ContentSafetyService,
     private queueService: QueueService,

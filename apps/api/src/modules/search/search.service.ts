@@ -411,12 +411,14 @@ export class SearchService {
         FROM "Post"
         WHERE "createdAt" >= ${twentyFourHoursAgo}
           AND array_length(hashtags, 1) > 0
+          AND ("scheduledAt" IS NULL OR "scheduledAt" <= NOW())
         GROUP BY tag
         UNION ALL
         SELECT unnest(hashtags) as tag, COUNT(*) as cnt
         FROM "Thread"
         WHERE "createdAt" >= ${twentyFourHoursAgo}
           AND array_length(hashtags, 1) > 0
+          AND ("scheduledAt" IS NULL OR "scheduledAt" <= NOW())
         GROUP BY tag
       ) combined
       GROUP BY tag

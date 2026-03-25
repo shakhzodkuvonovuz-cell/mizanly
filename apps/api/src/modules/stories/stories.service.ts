@@ -104,8 +104,11 @@ export class StoriesService {
     // For own stories, always show all
     const stories = rawStories.filter((story) => {
       if (story.userId === userId) return true;
-      if (story.closeFriendsOnly) return false; // TODO: check circle membership when circles are integrated
-      if (story.subscribersOnly) return false; // TODO: check subscription when subscriptions are integrated
+      // Close friends: needs CloseFriend schema model for proper membership check
+      // Currently rejects all close-friends stories for non-owners (safe default)
+      if (story.closeFriendsOnly) return false;
+      // Subscribers only: needs subscriber relationship check
+      if (story.subscribersOnly) return false;
       return true;
     });
 

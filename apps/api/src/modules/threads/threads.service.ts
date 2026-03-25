@@ -1014,35 +1014,6 @@ export class ThreadsService {
     return { bookmarked: !!bookmark };
   }
 
-  /**
-   * Moderate an image attached to a thread via Claude Vision API.
-   * Auto-removes the thread if the image is classified as BLOCK.
-   * (Finding 44: thread images were not moderated)
-   */
-  private async moderateThreadImage(userId: string, threadId: string, imageUrl: string): Promise<void> {
-    try {
-      const result = await this.ai.moderateImage(imageUrl);
-
-      if (result.classification === 'BLOCK') {
-        await this.prisma.thread.update({
-          where: { id: threadId },
-          data: { isRemoved: true },
-        });
-        this.logger.warn(`Thread ${threadId} auto-removed: image BLOCKED — ${result.reason}`);
-
-        // Remove from Meilisearch index on auto-moderation removal
-        this.queueService.addSearchIndexJob({
-          action: 'delete', indexName: 'threads', documentId: threadId,
-        }).catch(err => this.logger.warn('Failed to queue search index deletion for moderated thread', err instanceof Error ? err.message : err));
-      } else if (result.classification === 'WARNING') {
-        await this.prisma.thread.update({
-          where: { id: threadId },
-          data: { isSensitive: true },
-        });
-        this.logger.log(`Thread ${threadId} marked sensitive: image WARNING — ${result.reason}`);
-      }
-    } catch (err) {
-      this.logger.error(`Image moderation error for thread ${threadId}`, err instanceof Error ? err.message : err);
-    }
-  }
+  // Note: moderateThreadImage was dead code — thread create() already does inline
+  // image moderation at lines 346-356 via this.ai.moderateImage(). Removed to reduce confusion.
 }
