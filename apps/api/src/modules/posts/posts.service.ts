@@ -1476,6 +1476,29 @@ export class PostsService {
   }
 
   /**
+   * Finding #274: Get related posts based on shared hashtags.
+   */
+  async getRelatedPosts(postId: string, limit = 5) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { hashtags: true, userId: true },
+    });
+    if (!post || !post.hashtags.length) return [];
+
+    return this.prisma.post.findMany({
+      where: {
+        id: { not: postId },
+        hashtags: { hasSome: post.hashtags },
+        isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      },
+      select: POST_SELECT,
+      orderBy: { likesCount: 'desc' },
+      take: limit,
+    });
+  }
+
+  /**
    * Finding #252: Pin/unpin a post on your profile.
    * Only 1 post can be pinned at a time — unpins previous.
    */

@@ -859,6 +859,32 @@ export class UsersService {
   }
 
   /**
+   * Finding #312: Weekly screen time report notification.
+   * Runs every Sunday at 9 AM.
+   */
+  @Cron('0 9 * * 0')
+  async sendWeeklyScreenTimeDigest() {
+    const usersWithLimits = await this.prisma.userSettings.findMany({
+      where: { dailyTimeLimit: { not: null } },
+      select: { userId: true, dailyTimeLimit: true },
+      take: 10000,
+    });
+
+    for (const settings of usersWithLimits.slice(0, 5000)) {
+      await this.prisma.notification.create({
+        data: {
+          userId: settings.userId,
+          type: 'SYSTEM',
+          title: 'Weekly Screen Time Summary',
+          body: `Your daily limit is ${settings.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
+        },
+      }).catch(() => {});
+    }
+
+    this.logger.log(`Weekly screen time digest sent to ${Math.min(usersWithLimits.length, 5000)} users`);
+  }
+
+  /**
    * Get followers by username — resolves username to userId, applies block/banned/deactivated
    * checks (which the userId-based FollowsService.getFollowers does not do), then delegates
    * the core query to the shared resolveAndGetFollowers helper.

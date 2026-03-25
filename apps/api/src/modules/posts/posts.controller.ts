@@ -405,6 +405,14 @@ export class PostsController {
     return this.postsService.respondToTag(tagId, userId, dto.status);
   }
 
+  // Finding #274: Related posts
+  @Get(':id/related')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get related posts based on shared hashtags' })
+  getRelatedPosts(@Param('id') id: string) {
+    return this.postsService.getRelatedPosts(id);
+  }
+
   // Finding #252: Pin/unpin a post on profile
   @Patch(':id/pin')
   @UseGuards(ClerkAuthGuard)
