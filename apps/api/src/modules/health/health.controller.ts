@@ -143,6 +143,13 @@ export class HealthController {
       else if (userId) resolved[key] = await this.flags.isEnabledForUser(key, userId);
       else resolved[key] = false; // Anonymous users don't get percentage rollouts
     }
-    return { flags: resolved };
+    // Finding #413: Feature announcement banners — include active announcements
+    const announcementKey = await this.redis.get('active_announcement');
+    let announcement: { id: string; title: string; body: string; action?: string } | null = null;
+    if (announcementKey) {
+      try { announcement = JSON.parse(announcementKey); } catch {}
+    }
+
+    return { flags: resolved, announcement };
   }
 }

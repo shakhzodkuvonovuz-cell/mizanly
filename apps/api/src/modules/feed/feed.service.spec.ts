@@ -16,6 +16,9 @@ describe('FeedService', () => {
       hgetall: jest.fn().mockResolvedValue({}),
       hset: jest.fn().mockResolvedValue(1),
       expire: jest.fn().mockResolvedValue(1),
+      lpush: jest.fn().mockResolvedValue(1),
+      ltrim: jest.fn().mockResolvedValue('OK'),
+      keys: jest.fn().mockResolvedValue([]),
     };
     const module = await Test.createTestingModule({ providers: [
         ...globalMockProviders,FeedService, { provide: PrismaService, useValue: prisma }, { provide: 'REDIS', useValue: redis }] }).compile();
