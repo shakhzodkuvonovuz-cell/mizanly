@@ -102,6 +102,7 @@ export default function CreatePostScreen() {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   const [showScheduleSheet, setShowScheduleSheet] = useState(false);
+  const [showTopics, setShowTopics] = useState(false);
 
   const inputRef = useRef<RichCaptionInputRef>(null);
   const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);

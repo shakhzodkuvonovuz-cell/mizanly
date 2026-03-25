@@ -521,7 +521,6 @@ const ReelItem = memo(function ReelItem({
         </BottomSheet>
         <FloatingHearts trigger={heartTrigger} />
       </View>
-    </GestureDetector>
   );
 });
 

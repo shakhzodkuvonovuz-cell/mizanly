@@ -164,7 +164,6 @@ interface AppState {
   // Finding #414: Progressive disclosure — track which features user has discovered
   discoveredFeatures: string[];
   addDiscoveredFeature: (feature: string) => void;
-  hasDiscovered: (feature: string) => boolean;
 
   // Finding #415: Role-based home — user's primary role affects home experience
   userRole: 'viewer' | 'creator' | 'scholar' | 'business';
@@ -190,7 +189,7 @@ export const useStore = create<AppState>()(
       setUser: (user) => set({ user, isAuthenticated: !!user }),
 
       // Theme
-      theme: 'dark',
+      theme: 'dark' as const,
       setTheme: (theme) => set({ theme }),
 
       // Network
@@ -206,9 +205,9 @@ export const useStore = create<AppState>()(
       setUnreadMessages: (unreadMessages) => set({ unreadMessages }),
 
       // Feed state
-      safFeedType: 'following',
+      safFeedType: 'following' as const,
       setSafFeedType: (safFeedType) => set({ safFeedType }),
-      majlisFeedType: 'foryou',
+      majlisFeedType: 'foryou' as const,
       setMajlisFeedType: (majlisFeedType) => set({ majlisFeedType }),
 
       // Create sheet
@@ -280,7 +279,7 @@ export const useStore = create<AppState>()(
       setScreenTimeLimitMinutes: (screenTimeLimitMinutes) => set({ screenTimeLimitMinutes }),
 
       // Auto-play
-      autoPlaySetting: 'wifi',
+      autoPlaySetting: 'wifi' as const,
       setAutoPlaySetting: (autoPlaySetting) => set({ autoPlaySetting }),
 
       // Recording state
@@ -364,11 +363,10 @@ export const useStore = create<AppState>()(
       })),
 
       // Finding #414: Progressive disclosure
-      discoveredFeatures: [],
-      addDiscoveredFeature: (feature) => set((s) => ({
+      discoveredFeatures: [] as string[],
+      addDiscoveredFeature: (feature: string) => set((s) => ({
         discoveredFeatures: s.discoveredFeatures.includes(feature) ? s.discoveredFeatures : [...s.discoveredFeatures, feature],
       })),
-      hasDiscovered: (feature) => useStore.getState().discoveredFeatures.includes(feature),
 
       // Finding #415: Role-based home
       userRole: 'viewer' as const,
