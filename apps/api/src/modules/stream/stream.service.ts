@@ -202,4 +202,56 @@ export class StreamService {
       });
     }
   }
+
+  /**
+   * Create a Cloudflare Stream Live Input for real-time broadcasting.
+   * Returns RTMPS ingest URL and HLS playback URL.
+   */
+  async createLiveInput(title: string): Promise<{ rtmpsUrl: string; rtmpsKey: string; playbackUrl: string; liveInputId: string }> {
+    this.ensureConfigured();
+
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/stream/live_inputs`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          meta: { name: title },
+          recording: { mode: 'automatic', timeoutSeconds: 300 },
+        }),
+      },
+    );
+
+    const data = await response.json() as { success: boolean; result?: { uid: string; rtmps?: { url: string; streamKey: string }; webRTC?: { url: string }; srt?: { url: string } }; errors?: Array<{ message: string }> };
+    if (!data.success || !data.result?.rtmps) {
+      this.logger.error(`Failed to create live input: ${JSON.stringify(data.errors ?? [])}`);
+      throw new InternalServerErrorException('Failed to create live stream');
+    }
+
+    const uid = data.result.uid;
+    return {
+      rtmpsUrl: data.result.rtmps.url,
+      rtmpsKey: data.result.rtmps.streamKey,
+      playbackUrl: `https://customer-${this.accountId}.cloudflarestream.com/${uid}/manifest/video.m3u8`,
+      liveInputId: uid,
+    };
+  }
+
+  /**
+   * Delete a Cloudflare Stream Live Input.
+   */
+  async deleteLiveInput(liveInputId: string): Promise<void> {
+    this.ensureConfigured();
+
+    await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/stream/live_inputs/${liveInputId}`,
+      {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${this.apiToken}` },
+      },
+    );
+  }
 }

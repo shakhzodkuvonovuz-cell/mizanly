@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { StreamService } from '../stream/stream.service';
 import { LiveRole } from '@prisma/client';
 import { LiveStatus, LiveType, Prisma } from '@prisma/client';
 import { randomBytes } from 'crypto';
@@ -29,7 +30,10 @@ const LIVE_SESSION_LIST_SELECT = {
 
 @Injectable()
 export class LiveService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private stream: StreamService,
+  ) {}
 
   async create(userId: string, data: { title: string; description?: string; thumbnailUrl?: string; liveType: string; scheduledAt?: string; isRecorded?: boolean }) {
     const streamKey = randomBytes(16).toString('hex');
@@ -133,10 +137,39 @@ export class LiveService {
     if (session.status === LiveStatus.CANCELLED) throw new BadRequestException('Cannot start a cancelled session');
     if (session.status === LiveStatus.LIVE) throw new BadRequestException('Session is already live');
     if (session.status !== LiveStatus.SCHEDULED) throw new BadRequestException('Can only start a scheduled session');
-    return this.prisma.liveSession.update({
+
+    // Create Cloudflare Stream live input for real-time broadcasting
+    let rtmpsUrl: string | undefined;
+    let rtmpsKey: string | undefined;
+    let playbackUrl: string | undefined;
+    let liveInputId: string | undefined;
+    try {
+      const liveInput = await this.stream.createLiveInput(session.title);
+      rtmpsUrl = liveInput.rtmpsUrl;
+      rtmpsKey = liveInput.rtmpsKey;
+      playbackUrl = liveInput.playbackUrl;
+      liveInputId = liveInput.liveInputId;
+    } catch {
+      // Stream integration optional — continue without it for basic metadata-only live sessions
+    }
+
+    const updated = await this.prisma.liveSession.update({
       where: { id: sessionId },
-      data: { status: LiveStatus.LIVE, startedAt: new Date() },
+      data: {
+        status: LiveStatus.LIVE,
+        startedAt: new Date(),
+        ...(playbackUrl ? { playbackUrl } : {}),
+        ...(liveInputId ? { streamId: liveInputId } : {}),
+        ...(rtmpsKey ? { streamKey: rtmpsKey } : {}),
+      },
     });
+
+    return {
+      ...updated,
+      rtmpsUrl,
+      rtmpsKey,
+      playbackUrl,
+    };
   }
 
   async endLive(sessionId: string, userId: string) {
