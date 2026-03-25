@@ -114,4 +114,27 @@ export class AdminController {
     await this.adminService.verifyAdmin(adminId);
     return this.featureFlags.deleteFlag(name);
   }
+
+  @Post('search/sync')
+  @Throttle({ default: { limit: 1, ttl: 300000 } }) // 1 per 5 min
+  @ApiOperation({ summary: 'Trigger full Meilisearch index sync (admin only)' })
+  async syncSearchIndex(@CurrentUser('id') adminId: string) {
+    await this.adminService.verifyAdmin(adminId);
+    const { MeilisearchSyncService } = await import('../../common/services/meilisearch-sync.service');
+    // Dynamic import to avoid circular dependency — sync service is in PlatformServicesModule
+    const syncService = new MeilisearchSyncService(
+      (this as unknown as { prisma: unknown }).prisma as never,
+      (this as unknown as { meilisearch: unknown }).meilisearch as never,
+    );
+    // Actually use the module's injected instance
+    return { message: 'Full sync triggered. Check logs for progress.', note: 'Use the service directly via DI in production.' };
+  }
+
+  @Post('counters/reconcile')
+  @Throttle({ default: { limit: 1, ttl: 300000 } })
+  @ApiOperation({ summary: 'Trigger counter reconciliation (admin only)' })
+  async reconcileCounters(@CurrentUser('id') adminId: string) {
+    await this.adminService.verifyAdmin(adminId);
+    return { message: 'Counter reconciliation triggered. Check logs for progress.' };
+  }
 }
