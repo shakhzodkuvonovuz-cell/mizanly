@@ -373,6 +373,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
                 aspectRatio={post.mediaWidth && post.mediaHeight ? post.mediaWidth / post.mediaHeight : undefined}
                 blurred={post.isSensitive && !revealed}
                 blurhash={post.blurhash}
+                altText={post.altText}
               />
               {/* Overlay heart for double-tap */}
               <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">

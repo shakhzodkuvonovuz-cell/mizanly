@@ -428,6 +428,7 @@ export default function ThreadDetailScreen() {
         }}
         rightActions={[
           { icon: 'share', onPress: handleShare, accessibilityLabel: t('common.share') },
+          { icon: 'flag', onPress: () => router.push(`/(screens)/report?type=thread&id=${id}` as never), accessibilityLabel: t('common.report') },
         ]}
       />
 

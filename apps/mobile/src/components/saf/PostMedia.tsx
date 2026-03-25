@@ -12,9 +12,10 @@ interface Props {
   aspectRatio?: number;
   blurred?: boolean;
   blurhash?: string;
+  altText?: string;
 }
 
-export const PostMedia = memo(function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio, blurred, blurhash }: Props) {
+export const PostMedia = memo(function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio, blurred, blurhash, altText }: Props) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [galleryVisible, setGalleryVisible] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -44,6 +45,7 @@ export const PostMedia = memo(function PostMedia({ mediaUrls, mediaTypes, thumbn
             height={height}
             contentFit="cover"
             style={blurred ? { opacity: 0.15 } : undefined}
+            accessibilityLabel={altText || 'Post image'}
           />
         </Pressable>
       </View>

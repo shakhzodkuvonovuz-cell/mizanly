@@ -372,26 +372,23 @@ export class UsersService {
     }
 
     let isFollowing = false;
+    let isFollowedBy = false;
     let followRequestPending = false;
-    if (currentUserId) {
-      const follow = await this.prisma.follow.findUnique({
-        where: {
-          followerId_followingId: {
-            followerId: currentUserId,
-            followingId: user.id,
-          },
-        },
-      });
+    if (currentUserId && currentUserId !== user.id) {
+      const [follow, reverseFollow] = await Promise.all([
+        this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: currentUserId, followingId: user.id } },
+        }),
+        this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: user.id, followingId: currentUserId } },
+        }),
+      ]);
       isFollowing = !!follow;
+      isFollowedBy = !!reverseFollow;
 
       if (!isFollowing && user.isPrivate) {
         const req = await this.prisma.followRequest.findUnique({
-          where: {
-            senderId_receiverId: {
-              senderId: currentUserId,
-              receiverId: user.id,
-            },
-          },
+          where: { senderId_receiverId: { senderId: currentUserId, receiverId: user.id } },
         });
         followRequestPending = req?.status === 'PENDING';
       }
@@ -400,6 +397,7 @@ export class UsersService {
     return {
       ...user,
       isFollowing,
+      isFollowedBy,
       followRequestPending,
       ...(redirectedFromPreviousUsername ? { redirectedFrom: username } : {}),
     };

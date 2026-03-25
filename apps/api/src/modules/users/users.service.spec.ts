@@ -173,7 +173,7 @@ describe('UsersService', () => {
         300,
         JSON.stringify(mockUser),
       );
-      expect(result).toEqual({ ...mockUser, isFollowing: false, followRequestPending: false });
+      expect(result).toEqual({ ...mockUser, isFollowing: false, isFollowedBy: false, followRequestPending: false });
     });
 
     it('should return cached user if available', async () => {
@@ -188,7 +188,7 @@ describe('UsersService', () => {
 
       expect(redis.get).toHaveBeenCalledWith('user:testuser');
       expect(prisma.user.findUnique).not.toHaveBeenCalled();
-      expect(result).toEqual({ ...cachedUser, isFollowing: false, followRequestPending: false });
+      expect(result).toEqual({ ...cachedUser, isFollowing: false, isFollowedBy: false, followRequestPending: false });
     });
 
     it('should throw NotFoundException for nonexistent user', async () => {

@@ -257,6 +257,7 @@ export default function ProfileScreen() {
   });
   const profile = profileQuery.data;
   const isFollowing = profile?.isFollowing ?? false;
+  const isFollowedBy = (profile as Record<string, unknown> | undefined)?.isFollowedBy === true;
 
   const { data: mutualFollowersResponse } = useQuery({
     queryKey: ['mutual-followers', username],
@@ -580,13 +581,20 @@ export default function ProfileScreen() {
           </View>
         ) : (
           <View style={[styles.actionBtns, { flexDirection: rtlFlexRow(isRTL) }]}>
-            <Animated.View style={followPulse.animatedStyle}>
-              <FollowButton
-                isFollowing={isFollowing}
-                isPending={followMutation.isPending}
-                onPress={() => { haptic.follow(); handleFollowPress(); }}
-              />
-            </Animated.View>
+            <View style={{ alignItems: 'center', gap: 4 }}>
+              <Animated.View style={followPulse.animatedStyle}>
+                <FollowButton
+                  isFollowing={isFollowing}
+                  isPending={followMutation.isPending}
+                  onPress={() => { haptic.follow(); handleFollowPress(); }}
+                />
+              </Animated.View>
+              {isFollowedBy && (
+                <Text style={{ color: tc.text.secondary, fontSize: fontSize.xs, fontFamily: fonts.bodyMedium }}>
+                  {t('profile.followsYou', 'Follows you')}
+                </Text>
+              )}
+            </View>
             <Pressable
               style={styles.msgBtn}
               onPress={async () => {

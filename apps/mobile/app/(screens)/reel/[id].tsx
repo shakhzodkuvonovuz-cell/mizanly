@@ -523,6 +523,7 @@ export default function ReelDetailScreen() {
             { icon: 'layers', onPress: () => navigate('/(screens)/duet-create', { reelId: id }), accessibilityLabel: t('bakra.duet') },
             { icon: 'repeat', onPress: () => navigate('/(screens)/reel-remix', { reelId: id }), accessibilityLabel: t('bakra.remix') },
             { icon: 'share', onPress: () => navigate('/(screens)/stitch-create', { reelId: id }), accessibilityLabel: t('bakra.stitch') },
+            { icon: 'flag', onPress: () => router.push(`/(screens)/report?type=reel&id=${id}` as never), accessibilityLabel: t('common.report') },
           ]}
         />
 
