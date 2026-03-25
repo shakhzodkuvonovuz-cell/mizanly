@@ -285,6 +285,25 @@ function AuthGuard() {
     return () => clearInterval(interval);
   }, [isSignedIn, signOut]);
 
+  // Finding #375: Clipboard link detection — check for mizanly.app links on foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (state) => {
+      if (state !== 'active' || !isSignedIn) return;
+      try {
+        const Clipboard = (await import('expo-clipboard')).default;
+        const text = await Clipboard.getStringAsync();
+        if (text && text.includes('mizanly.app/')) {
+          const match = text.match(/mizanly\.app\/(post|reel|thread|video|profile)\/([a-zA-Z0-9_-]+)/);
+          if (match) {
+            const [, type, id] = match;
+            showToast({ message: `Open ${type}?`, variant: 'info', action: { label: 'Open', onPress: () => router.push(`/(screens)/${type}/${id}` as never) } });
+          }
+        }
+      } catch {}
+    });
+    return () => sub.remove();
+  }, [isSignedIn, router]);
+
   // Initialize GIPHY SDK (once, on mount)
   useEffect(() => {
     initGiphy();
