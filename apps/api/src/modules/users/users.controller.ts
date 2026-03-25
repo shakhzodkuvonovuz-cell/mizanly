@@ -334,6 +334,16 @@ export class UsersController {
     return this.usersService.getMutualFollowers(currentUserId, targetUsername, limit ?? 20);
   }
 
+  // Finding #326: Get referral code
+  @Get('me/referral-code')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get your referral code for sharing' })
+  async getReferralCode(@CurrentUser('id') userId: string) {
+    const user = await this.usersService.getById(userId);
+    return { referralCode: (user as Record<string, unknown>)?.referralCode, shareUrl: `https://mizanly.app/join?ref=${(user as Record<string, unknown>)?.referralCode}` };
+  }
+
   // Finding #287: Request verification
   @Post('me/request-verification')
   @UseGuards(ClerkAuthGuard)

@@ -707,6 +707,10 @@ model User {
   tosAcceptedAt     DateTime?
   tosVersion        String?   @db.VarChar(20)
 
+  // Referral system (Finding #326)
+  referralCode           String?  @unique @db.VarChar(12)
+  referredBy             String?  // userId of the person who referred this user
+
   // Monetization — balance is in CoinBalance table (NOT on User model)
   stripeConnectAccountId String?
   madhab                 String?  @db.VarChar(20)

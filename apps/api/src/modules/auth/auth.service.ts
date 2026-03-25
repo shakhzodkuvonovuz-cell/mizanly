@@ -122,6 +122,8 @@ export class AuthService {
         // Record ToS acceptance for GDPR Art 7 demonstrable consent
         tosAcceptedAt: new Date(),
         tosVersion: '1.0',
+        // Finding #326: Unique referral code
+        referralCode: (await import('crypto')).randomBytes(6).toString('base64url').slice(0, 8),
       },
       update: {
         username: dto.username.toLowerCase(),
