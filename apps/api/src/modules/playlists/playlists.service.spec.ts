@@ -33,6 +33,7 @@ describe('PlaylistsService', () => {
               findMany: jest.fn(),
               delete: jest.fn(),
               aggregate: jest.fn(),
+              count: jest.fn().mockResolvedValue(5),
             },
             channel: {
               findUnique: jest.fn(),

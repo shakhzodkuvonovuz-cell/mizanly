@@ -237,6 +237,12 @@ export class PlaylistsService {
   async addItem(playlistId: string, videoId: string, userId: string) {
     await this.requireOwnerOrEditor(playlistId, userId);
 
+    // Finding #221: Playlist item limit — max 500 items per playlist
+    const itemCount = await this.prisma.playlistItem.count({ where: { playlistId } });
+    if (itemCount >= 500) {
+      throw new BadRequestException('Playlist cannot exceed 500 items');
+    }
+
     // Use a transaction with idempotency: handle P2002 duplicate
     try {
       const maxPosition = await this.prisma.playlistItem.aggregate({

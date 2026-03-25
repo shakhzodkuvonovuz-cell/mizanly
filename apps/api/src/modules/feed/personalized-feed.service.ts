@@ -346,6 +346,18 @@ export class PersonalizedFeedService {
         reasons.push('Matches a hashtag you follow');
       }
 
+      // Finding #258: Verified scholar content boost
+      if (meta.isVerified && (meta as Record<string, unknown>).isScholarVerified) {
+        score += 0.1;
+        reasons.push('From a verified scholar');
+      }
+
+      // Finding #302: New creator cold start boost — first 10 posts get discovery help
+      if (meta.postsCount !== undefined && (meta.postsCount as number) <= 10) {
+        score += 0.05;
+        reasons.push('Supporting new creator');
+      }
+
       feedItems.push({
         id: candidate.contentId,
         type: this.contentTypeToFeedType(contentType),
@@ -662,8 +674,9 @@ export class PersonalizedFeedService {
     }
   }
 
-  private calculateEngagementScore(meta: { likesCount: number; commentsCount?: number; sharesCount?: number; viewsCount: number }): number {
-    const total = meta.likesCount + (meta.commentsCount || 0) * 2 + (meta.sharesCount || 0) * 3;
+  private calculateEngagementScore(meta: { likesCount: number; commentsCount?: number; sharesCount?: number; savesCount?: number; viewsCount: number }): number {
+    // Finding #299: Bookmarks/saves weighted 4x (strong quality signal)
+    const total = meta.likesCount + (meta.commentsCount || 0) * 2 + (meta.sharesCount || 0) * 3 + (meta.savesCount || 0) * 4;
     const rate = meta.viewsCount > 0 ? total / meta.viewsCount : 0;
     return Math.min(rate * 10, 1);
   }
