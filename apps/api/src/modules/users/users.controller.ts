@@ -276,6 +276,29 @@ export class UsersController {
     return this.usersService.getPopularWithFriends(userId);
   }
 
+  // Finding #326: Get referral code — must be before :username
+  @Get('me/referral-code')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get your referral code for sharing' })
+  async getReferralCode(@CurrentUser('id') userId: string) {
+    const user = await this.usersService.getMe(userId);
+    return { referralCode: (user as Record<string, unknown>)?.referralCode, shareUrl: `https://mizanly.app/join?ref=${(user as Record<string, unknown>)?.referralCode}` };
+  }
+
+  // Finding #287: Request verification — must be before :username
+  @Post('me/request-verification')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 1, ttl: 60000 } })
+  @ApiOperation({ summary: 'Request account verification' })
+  requestVerification(
+    @CurrentUser('id') userId: string,
+    @Body() body: { category: string; reason: string; proofUrl?: string },
+  ) {
+    return this.usersService.requestVerification(userId, body);
+  }
+
   // currentUserId extracted from verified auth context — never from query params
   @Get(':username')
   @UseGuards(OptionalClerkAuthGuard)
@@ -343,28 +366,7 @@ export class UsersController {
     return this.usersService.getMutualFollowers(currentUserId, targetUsername, limit ?? 20);
   }
 
-  // Finding #326: Get referral code
-  @Get('me/referral-code')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get your referral code for sharing' })
-  async getReferralCode(@CurrentUser('id') userId: string) {
-    const user = await this.usersService.getMe(userId);
-    return { referralCode: (user as Record<string, unknown>)?.referralCode, shareUrl: `https://mizanly.app/join?ref=${(user as Record<string, unknown>)?.referralCode}` };
-  }
-
-  // Finding #287: Request verification
-  @Post('me/request-verification')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @Throttle({ default: { limit: 1, ttl: 60000 } })
-  @ApiOperation({ summary: 'Request account verification' })
-  requestVerification(
-    @CurrentUser('id') userId: string,
-    @Body() body: { category: string; reason: string; proofUrl?: string },
-  ) {
-    return this.usersService.requestVerification(userId, body);
-  }
+  // NOTE: me/referral-code and me/request-verification moved above :username to avoid route collision
 
   // Finding #273: Similar accounts based on shared followers
   @Get(':username/similar')
