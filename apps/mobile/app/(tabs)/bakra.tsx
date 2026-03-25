@@ -57,10 +57,12 @@ function ActionButton({
   children,
   onPress,
   accessibilityLabel,
+  accessibilityHint,
 }: {
   children: React.ReactNode;
   onPress: () => void;
   accessibilityLabel: string;
+  accessibilityHint?: string;
 }) {
   const scale = useSharedValue(1);
 
@@ -80,7 +82,9 @@ function ActionButton({
     <Pressable
       style={styles.actionButton}
       onPress={handlePress}
+      hitSlop={8}
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityRole="button"
     >
       <Animated.View style={animatedStyle}>
@@ -338,6 +342,7 @@ const ReelItem = memo(function ReelItem({
                   }}
                   hitSlop={12}
                   accessibilityLabel={item.user?.isFollowing ? t('common.following') : t('common.follow')}
+                  accessibilityHint={item.user?.isFollowing ? 'Unfollow this creator' : 'Follow this creator'}
                   accessibilityRole="button"
                   style={[styles.followButtonOverlay, { borderColor: tc.bg }]}
                 >
@@ -398,6 +403,7 @@ const ReelItem = memo(function ReelItem({
           <ActionButton
             onPress={() => onLike(item)}
             accessibilityLabel={item.isLiked ? t('accessibility.unlikeReel') : t('accessibility.likeReel')}
+            accessibilityHint={item.isLiked ? 'Remove like from this reel' : 'Like this reel'}
           >
             <Icon
               name={item.isLiked ? 'heart-filled' : 'heart'}
@@ -410,6 +416,7 @@ const ReelItem = memo(function ReelItem({
           <ActionButton
             onPress={() => onComment(item)}
             accessibilityLabel={t('accessibility.commentReel')}
+            accessibilityHint="View or add comments on this reel"
           >
             <Icon name="message-circle" size="lg" color={colors.text.primary} style={styles.iconShadow} />
             <Text style={styles.actionCount}>{formatCount(item.commentsCount)}</Text>
@@ -417,6 +424,7 @@ const ReelItem = memo(function ReelItem({
           <ActionButton
             onPress={() => onShare(item)}
             accessibilityLabel={t('accessibility.shareReel')}
+            accessibilityHint="Share this reel with others"
           >
             <Icon name="share" size="lg" color={colors.text.primary} style={styles.iconShadow} />
             <Text style={styles.actionCount}>{formatCount(item.sharesCount)}</Text>
@@ -471,6 +479,7 @@ const ReelItem = memo(function ReelItem({
           <ActionButton
             onPress={() => setIsMuted(prev => !prev)}
             accessibilityLabel={isMuted ? t('bakra.unmute', 'Unmute') : t('bakra.mute', 'Mute')}
+            accessibilityHint={isMuted ? 'Turn sound on' : 'Turn sound off'}
           >
             <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="sm" color={isMuted ? colors.text.tertiary : colors.text.primary} style={styles.iconShadow} />
           </ActionButton>
@@ -1090,7 +1099,10 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
+    minHeight: 44,
+    minWidth: 44,
   },
   iconShadow: {
     shadowColor: '#000',

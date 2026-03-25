@@ -62,7 +62,7 @@ export const ActionButton = memo(function ActionButton({
       style={[styles.container, animatedStyle]}
       onPress={handlePress}
       disabled={disabled}
-      hitSlop={4}
+      hitSlop={8}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       accessibilityHint={accessibilityHint}
@@ -87,6 +87,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
   },
   count: {
     color: colors.text.secondary,
