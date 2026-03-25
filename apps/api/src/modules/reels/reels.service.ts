@@ -1161,6 +1161,13 @@ export class ReelsService {
         this.queueService.addSearchIndexJob({
           action: 'delete', indexName: 'reels', documentId: reelId,
         }).catch(err => this.logger.warn('Failed to queue search index deletion for moderated reel', err instanceof Error ? err.message : err));
+
+        // Notify user their content was removed
+        this.notifications.create({
+          userId, actorId: userId, type: 'SYSTEM', reelId,
+          title: 'Content removed',
+          body: 'Your reel was removed because it violates community guidelines.',
+        }).catch(() => {});
       } else if (result.classification === 'WARNING') {
         await this.prisma.reel.update({
           where: { id: reelId },

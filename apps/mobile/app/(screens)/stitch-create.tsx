@@ -527,7 +527,7 @@ export default function StitchCreateScreen() {
             <Pressable accessibilityRole="button" accessibilityLabel={t('common.cancel')} style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel={t('common.next')} style={styles.nextButton} onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '' } })}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.next')} style={styles.nextButton} onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '', isStitch: 'true', stitchOfId: reelId ?? '' } })}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.nextButtonGradient}

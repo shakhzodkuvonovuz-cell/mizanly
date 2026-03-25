@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -58,14 +58,17 @@ const VISIBILITY_KEYS: { value: Visibility; labelKey: string; iconName: VisIconN
 
 export default function CreatePostScreen() {
   const router = useRouter();
+  const { prefillContent, prefillMedia } = useLocalSearchParams<{ prefillContent?: string; prefillMedia?: string }>();
   const tc = useThemeColors();
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const haptic = useContextualHaptic();
 
-  const [content, setContent] = useState('');
-  const [media, setMedia] = useState<PickedMedia[]>([]);
+  const [content, setContent] = useState(prefillContent ?? '');
+  const [media, setMedia] = useState<PickedMedia[]>(
+    prefillMedia ? [{ uri: prefillMedia, type: prefillMedia.match(/\.(mp4|mov|avi)/i) ? 'video' : 'image' } as PickedMedia] : [],
+  );
   const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
   const [showVisibility, setShowVisibility] = useState(false);
   const [circleId, setCircleId] = useState<string | undefined>();

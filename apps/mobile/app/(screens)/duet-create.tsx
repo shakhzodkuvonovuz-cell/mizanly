@@ -601,7 +601,7 @@ export default function DuetCreateScreen() {
             <Pressable accessibilityRole="button"
               accessibilityLabel={t('common.next')}
               style={styles.nextButton}
-              onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '' } })}
+              onPress={() => router.push({ pathname: '/(screens)/create-reel', params: { videoUri: recordedUri ?? '', isDuet: 'true', duetOfId: reelId ?? '' } })}
             >
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}

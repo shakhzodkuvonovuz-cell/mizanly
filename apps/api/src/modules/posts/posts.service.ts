@@ -1486,6 +1486,16 @@ export class PostsService {
             actionTaken: 'CONTENT_REMOVED',
           },
         });
+
+        // Notify the user that their content was removed
+        this.notifications.create({
+          userId,
+          actorId: userId,
+          type: 'SYSTEM',
+          postId,
+          title: 'Content removed',
+          body: 'Your post was removed because it violates community guidelines. You can appeal this decision in Settings > Account > Appeals.',
+        }).catch(err => this.logger.warn('Failed to send content removal notification', err instanceof Error ? err.message : err));
       } else if (result.classification === 'WARNING') {
         // Mark as sensitive — blurred in feed, tap to reveal
         await this.prisma.post.update({

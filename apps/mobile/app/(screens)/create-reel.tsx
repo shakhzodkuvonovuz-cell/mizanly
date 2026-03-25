@@ -50,7 +50,7 @@ type ReelTransitionType = 'none' | 'fade' | 'dissolve' | 'wipeleft' | 'slideup';
 
 export default function CreateReelScreen() {
   const router = useRouter();
-  const routeParams = useLocalSearchParams<{ videoUri?: string; edited?: string }>();
+  const routeParams = useLocalSearchParams<{ videoUri?: string; edited?: string; isDuet?: string; duetOfId?: string; isStitch?: string; stitchOfId?: string }>();
   const tc = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
@@ -396,6 +396,10 @@ export default function CreateReelScreen() {
           mentions,
           normalizeAudio,
           audioTrackId: selectedTrack?.id,
+          isDuet: routeParams.isDuet === 'true',
+          duetOfId: routeParams.duetOfId || undefined,
+          isStitch: routeParams.isStitch === 'true',
+          stitchOfId: routeParams.stitchOfId || undefined,
         });
       } finally {
         setIsUploading(false);

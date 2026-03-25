@@ -54,6 +54,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   const [localLikes, setLocalLikes] = useState(post.likesCount);
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
   const [showMenu, setShowMenu] = useState(false);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const { t: tr } = useTranslation();
@@ -333,9 +334,17 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
           <RichText
             text={translatedText || post.content}
             style={styles.content}
-            numberOfLines={5}
+            numberOfLines={captionExpanded ? undefined : 5}
             onPostPress={() => router.push(`/(screens)/post/${post.id}`)}
           />
+          {/* Show more / less toggle for long captions */}
+          {post.content.length > 200 && (
+            <Pressable onPress={() => setCaptionExpanded(prev => !prev)} hitSlop={8}>
+              <Text style={{ color: tc.text.secondary, fontSize: fontSize.sm, marginTop: 2 }}>
+                {captionExpanded ? tr('common.showLess', 'Show less') : tr('common.showMore', '...more')}
+              </Text>
+            </Pressable>
+          )}
           {/* Translate button */}
           {post.content.length > 10 && (
             <Pressable
