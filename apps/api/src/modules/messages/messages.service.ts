@@ -1,11 +1,13 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { AiService } from '../ai/ai.service';
@@ -94,6 +96,7 @@ export class MessagesService {
     private prisma: PrismaService,
     private pushTrigger: PushTriggerService,
     private ai: AiService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   async getConversations(userId: string, limit = 50) {
@@ -763,6 +766,11 @@ export class MessagesService {
       where: { id: messageId },
       data: { forwardCount: { increment: targetConversationIds.length } },
     });
+
+    // Finding #298: Track DM share as algorithm signal (DM shares = strong interest)
+    if (original.content) {
+      await this.redis.incrby(`dm_shares:${messageId}`, results.length);
+    }
 
     return results;
   }
