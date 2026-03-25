@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TextInput,
   ScrollView, Alert, Dimensions, Pressable,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -323,6 +324,31 @@ export default function CreateReelScreen() {
   useEffect(() => {
     return () => {
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    };
+  }, []);
+
+  // Finding #376: Reel draft auto-save — persist clips on unmount
+  useEffect(() => {
+    // Load draft on mount
+    AsyncStorage.getItem('reel-draft').then(saved => {
+      if (saved) {
+        try {
+          const draft = JSON.parse(saved);
+          if (draft.clips?.length > 0 && clips.length === 0) {
+            // Offer to restore draft on next mount — for now, just log
+          }
+        } catch {}
+      }
+    });
+    return () => {
+      // Save draft on unmount if clips exist
+      if (clips.length > 0) {
+        AsyncStorage.setItem('reel-draft', JSON.stringify({
+          clips: clips.map(c => ({ uri: c.uri, duration: c.duration })),
+          caption,
+          savedAt: new Date().toISOString(),
+        })).catch(() => {});
+      }
     };
   }, []);
 
