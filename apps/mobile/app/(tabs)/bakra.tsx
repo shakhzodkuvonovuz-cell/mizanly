@@ -536,7 +536,6 @@ export default function BakraScreen() {
   const [bakraFeedType, setBakraFeedType] = useState<'foryou' | 'following'>('foryou');
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
-  const currentIndexRef = useRef(0);
   const reelsRef = useRef<Reel[]>([]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   const [commentsReel, setCommentsReel] = useState<Reel | null>(null);
@@ -825,7 +824,7 @@ export default function BakraScreen() {
       );
     }
     // Finding #343: "You're all caught up" when no more reels
-    if (!feedQuery.hasNextPage && feedItems.length > 0) {
+    if (!feedQuery.hasNextPage && reels.length > 0) {
       return (
         <View style={[styles.footer, { width: SCREEN_W, height: SCREEN_H, justifyContent: 'center', alignItems: 'center' }]}>
           <EmptyState
@@ -837,7 +836,7 @@ export default function BakraScreen() {
       );
     }
     return null;
-  }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, feedItems.length, SCREEN_W, SCREEN_H, t]);
+  }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, reels.length, SCREEN_W, SCREEN_H, t]);
 
   return (
     <ScreenErrorBoundary>

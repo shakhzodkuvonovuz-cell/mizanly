@@ -1,4 +1,4 @@
-import { Inject, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -53,7 +53,7 @@ import {
   pingInterval: 25000,
   pingTimeout: 60000,
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(ChatGateway.name);
   // Presence tracking via Redis (supports horizontal scaling)
@@ -66,6 +66,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   // Set:  quran:room:{roomId}:participants → socket IDs
   private readonly QURAN_ROOM_TTL = 3600; // 1 hour auto-cleanup
   private readonly MAX_QURAN_ROOM_PARTICIPANTS = 50;
+  private redisSubscriber: Redis | null = null; // For cleanup on destroy
 
   constructor(
     private messagesService: MessagesService,
@@ -83,6 +84,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     try {
       // Create a duplicate Redis connection for subscribing (pub/sub requires dedicated connection)
       const subscriber = this.redis.duplicate();
+      this.redisSubscriber = subscriber;
       await subscriber.subscribe('notification:new', 'content:update');
       subscriber.on('message', (channel: string, message: string) => {
         try {
@@ -107,6 +109,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     } catch (e) {
       this.logger.warn('Failed to subscribe to Redis channels — real-time updates disabled', e);
     }
+  }
+
+  async onModuleDestroy() {
+    // Clean up all heartbeat timers
+    for (const [socketId, timer] of this.heartbeatTimers) {
+      clearInterval(timer);
+    }
+    this.heartbeatTimers.clear();
+
+    // Unsubscribe Redis pub/sub
+    if (this.redisSubscriber) {
+      try {
+        await this.redisSubscriber.unsubscribe();
+        this.redisSubscriber.disconnect();
+      } catch {
+        // Already disconnected
+      }
+      this.redisSubscriber = null;
+    }
+
+    this.logger.log('ChatGateway cleaned up: timers cleared, Redis unsubscribed');
   }
 
   /** Get all socket IDs for a user from Redis presence */

@@ -815,8 +815,8 @@ export const messagesApi = {
   // Search, forward, delivered, media
   searchMessages: (conversationId: string, query: string, cursor?: string) =>
     api.get<PaginatedResponse<Message>>(`/messages/${conversationId}/search${qs({ q: query, cursor })}`),
-  forwardMessage: (messageId: string, targetConversationIds: string[]) =>
-    api.post(`/messages/forward/${messageId}`, { targetConversationIds }),
+  forwardMessage: (messageId: string, conversationIds: string[]) =>
+    api.post(`/messages/forward/${messageId}`, { conversationIds }),
   markDelivered: (messageId: string) =>
     api.post(`/messages/${messageId}/delivered`),
   getMediaGallery: (conversationId: string, cursor?: string) =>

@@ -12,7 +12,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "echo 'Lint: TypeScript checked via tsc --noEmit (ESLint TS parser not installed)'",
+    "lint": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:e2e": "jest --config ./test/jest-e2e.json",

@@ -11,6 +11,7 @@ import { AsyncJobsModule } from './common/services/async-jobs.module';
 import { QueueModule } from './common/queue/queue.module';
 import { FeatureFlagsModule } from './common/services/feature-flags.module';
 import { AnalyticsModule } from './common/services/analytics.module';
+import { PlatformServicesModule } from './common/services/platform-services.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { PostsModule } from './modules/posts/posts.module';
@@ -110,7 +111,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     ScheduleModule.forRoot(),
-    PrismaModule, RedisModule, AsyncJobsModule, QueueModule, FeatureFlagsModule, AnalyticsModule,
+    PrismaModule, RedisModule, AsyncJobsModule, QueueModule, FeatureFlagsModule, AnalyticsModule, PlatformServicesModule,
     AuthModule,
     UsersModule,
     PostsModule,
