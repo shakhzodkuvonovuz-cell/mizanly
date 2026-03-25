@@ -1089,8 +1089,21 @@ export default function ConversationScreen() {
     setUndoPending(null);
   }, [id, isOffline]);
 
+  const lastSentRef = useRef<number>(0);
   const handleSend = useCallback(async () => {
     if (!text.trim() || isSending) return;
+
+    // Finding #366: Slow mode enforcement — check client-side cooldown
+    const slowMode = (convo as Record<string, unknown> | undefined)?.slowModeSeconds as number | undefined;
+    if (slowMode && slowMode > 0) {
+      const elapsed = (Date.now() - lastSentRef.current) / 1000;
+      if (elapsed < slowMode) {
+        const remaining = Math.ceil(slowMode - elapsed);
+        showToast({ message: t('messages.slowMode', { seconds: remaining }), variant: 'info' });
+        return;
+      }
+    }
+
     // Edit mode
     if (editingMsg) {
       messagesApi.editMessage(id, editingMsg.id, text.trim())
@@ -1128,6 +1141,7 @@ export default function ConversationScreen() {
       replyToId: replyTo?.id,
     };
     setPendingMessages(prev => [...prev, pendingMessage]);
+    lastSentRef.current = Date.now(); // Slow mode: track last send time
     const savedReplyToId = replyTo?.id;
     setText('');
     setReplyTo(null);
