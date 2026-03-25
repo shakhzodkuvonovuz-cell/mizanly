@@ -216,6 +216,7 @@ const tokenCache = Platform.OS === 'web'
 function AuthGuard() {
   const { isSignedIn, isLoaded, getToken, signOut } = useAuth();
   const { user } = useUser();
+  const { t } = useTranslation();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
@@ -264,7 +265,7 @@ function AuthGuard() {
         // Finding #358: Welcome back after 7+ days absence
         const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
         if (elapsed > sevenDaysMs) {
-          showToast({ message: 'Welcome back! We missed you 🌙', variant: 'success' });
+          showToast({ message: t('common.welcomeBack', 'Welcome back! We missed you.'), variant: 'success' });
         }
       }
       await AsyncStorage.setItem('last_active_at', String(Date.now()));
@@ -274,7 +275,7 @@ function AuthGuard() {
         const nudgeSeen = await AsyncStorage.getItem('profile_nudge_seen');
         if (!nudgeSeen) {
           setTimeout(() => {
-            showToast({ message: 'Complete your profile — add a photo and bio to stand out!', variant: 'info' });
+            showToast({ message: t('common.completeProfile', 'Complete your profile — add a photo and bio to stand out!'), variant: 'info' });
           }, 3000);
           await AsyncStorage.setItem('profile_nudge_seen', '1');
         }

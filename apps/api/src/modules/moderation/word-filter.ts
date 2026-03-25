@@ -7,6 +7,10 @@ export interface TextCheckResult {
   categories: string[];
   severity: 'low' | 'medium' | 'high';
   matches: string[];
+  crisisResources?: {
+    message: string;
+    helplines: Array<{ name: string; detail?: string; url: string }>;
+  };
 }
 
 const PROHIBITED_PATTERNS: { pattern: RegExp; category: string; severity: 'low' | 'medium' | 'high' }[] = [

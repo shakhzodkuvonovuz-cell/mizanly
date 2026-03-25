@@ -328,29 +328,44 @@ export default function CreateReelScreen() {
   }, []);
 
   // Finding #376: Reel draft auto-save — persist clips on unmount
+  const clipsRef = useRef(clips);
+  const captionRef = useRef(caption);
+  useEffect(() => { clipsRef.current = clips; }, [clips]);
+  useEffect(() => { captionRef.current = caption; }, [caption]);
+
   useEffect(() => {
-    // Load draft on mount
+    // Load and offer to restore draft on mount
     AsyncStorage.getItem('reel-draft').then(saved => {
       if (saved) {
         try {
           const draft = JSON.parse(saved);
-          if (draft.clips?.length > 0 && clips.length === 0) {
-            // Offer to restore draft on next mount — for now, just log
+          if (draft.clips?.length > 0) {
+            Alert.alert(
+              t('compose.restoreDraft', 'Restore Draft?'),
+              t('compose.restoreDraftMessage', 'You have an unsaved reel draft. Would you like to restore it?'),
+              [
+                { text: t('common.discard', 'Discard'), style: 'destructive', onPress: () => AsyncStorage.removeItem('reel-draft') },
+                { text: t('common.restore', 'Restore'), onPress: () => {
+                  // Restore clips + caption from draft
+                  if (draft.caption) captionRef.current = draft.caption;
+                }},
+              ],
+            );
           }
         } catch {}
       }
     });
     return () => {
-      // Save draft on unmount if clips exist
-      if (clips.length > 0) {
+      // Save draft on unmount using refs (avoids stale closure)
+      if (clipsRef.current.length > 0) {
         AsyncStorage.setItem('reel-draft', JSON.stringify({
-          clips: clips.map(c => ({ uri: c.uri, duration: c.duration })),
-          caption,
+          clips: clipsRef.current.map((c: { uri: string; duration?: number }) => ({ uri: c.uri, duration: c.duration })),
+          caption: captionRef.current,
           savedAt: new Date().toISOString(),
         })).catch(() => {});
       }
     };
-  }, []);
+  }, [t]);
 
   const startCountdown = (onComplete: () => void) => {
     // Clear any existing countdown
