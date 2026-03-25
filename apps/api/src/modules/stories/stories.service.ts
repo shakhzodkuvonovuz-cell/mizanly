@@ -196,6 +196,27 @@ export class StoriesService {
       });
     }
 
+    // Finding #205: Story mention notifications
+    // Extract @mentions from textOverlay and stickerData
+    const mentionRegex = /@([a-zA-Z0-9_.]{1,30})/g;
+    const allText = [data.textOverlay || '', JSON.stringify(data.stickerData || {})].join(' ');
+    const mentions = [...allText.matchAll(mentionRegex)].map(m => m[1]);
+    if (mentions.length > 0) {
+      const mentionedUsers = await this.prisma.user.findMany({
+        where: { username: { in: mentions }, id: { not: userId } },
+        select: { id: true },
+        take: 20,
+      });
+      const actorUser = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+      for (const mu of mentionedUsers) {
+        this.notifications.create({
+          userId: mu.id, actorId: userId, type: 'MENTION',
+          title: 'Mentioned you in a story',
+          body: `@${actorUser?.username ?? 'Someone'} mentioned you in their story`,
+        }).catch(() => {});
+      }
+    }
+
     // Gamification: award XP for story creation
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'story_created' }).catch(err => this.logger.warn('Failed to queue gamification XP', err instanceof Error ? err.message : err));
 

@@ -687,6 +687,8 @@ model User {
   role            UserRole @default(USER)
   isVerified      Boolean  @default(false)
   isPrivate       Boolean  @default(false)
+  pronouns        String?  @db.VarChar(30)
+  statusText      String?  @db.VarChar(100)
   language        String   @default("en")
   theme           String   @default("system")
   expoPushToken   String?
@@ -699,6 +701,7 @@ model User {
 
   isScholarVerified Boolean @default(false)
   nasheedMode       Boolean @default(false)
+  creatorCategory   String?  @db.VarChar(30) // educator, entertainer, scholar, business, journalist
 
   // Legal/compliance
   tosAcceptedAt     DateTime?
@@ -934,6 +937,7 @@ model User {
   scholarQuestionVotes     ScholarQuestionVote[]        @relation("scholarQuestionVotes")
   halalVerifyVotes         HalalVerifyVote[]            @relation("halalVerifyVotes")
   starredMessageRecords    StarredMessage[]             @relation("starredMessages")
+  adminAuditLogs           AdminAuditLog[]              @relation("adminAuditLogs")
 
   @@index([username])
   @@index([clerkId])
@@ -1006,6 +1010,7 @@ model Post {
   shareToFeed       Boolean           @default(true)
   topics            String[]          @default([])
   isDownloadable    Boolean           @default(true)
+  isPinned         Boolean        @default(false)
   isFeatured       Boolean        @default(false)
   featuredAt       DateTime?
   blurhash         String?
@@ -4711,4 +4716,21 @@ model StarredMessage {
   @@index([userId, createdAt(sort: Desc)])
   @@index([messageId])
   @@map("starred_messages")
+}
+
+// Finding #417: Admin audit trail
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  admin       User     @relation("adminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  action      String   @db.VarChar(100)
+  targetType  String?  @db.VarChar(50)
+  targetId    String?
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([adminId, createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@map("admin_audit_logs")
 }

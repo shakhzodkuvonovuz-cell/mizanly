@@ -1432,6 +1432,30 @@ export class PostsService {
   }
 
   /**
+   * Finding #252: Pin/unpin a post on your profile.
+   * Only 1 post can be pinned at a time — unpins previous.
+   */
+  async pinPost(postId: string, userId: string, isPinned: boolean) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException();
+
+    if (isPinned) {
+      // Unpin all other posts first (only 1 pinned at a time)
+      await this.prisma.post.updateMany({
+        where: { userId, isPinned: true },
+        data: { isPinned: false },
+      });
+    }
+
+    return this.prisma.post.update({
+      where: { id: postId },
+      data: { isPinned },
+      select: POST_SELECT,
+    });
+  }
+
+  /**
    * Respond to a tag — tagged user can approve or decline being tagged.
    */
   async respondToTag(tagId: string, userId: string, status: 'APPROVED' | 'DECLINED') {

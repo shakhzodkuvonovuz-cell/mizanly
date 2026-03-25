@@ -404,4 +404,18 @@ export class PostsController {
   ) {
     return this.postsService.respondToTag(tagId, userId, dto.status);
   }
+
+  // Finding #252: Pin/unpin a post on profile
+  @Patch(':id/pin')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Pin or unpin a post on your profile' })
+  pinPost(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('isPinned') isPinned: boolean,
+  ) {
+    return this.postsService.pinPost(id, userId, !!isPinned);
+  }
 }
