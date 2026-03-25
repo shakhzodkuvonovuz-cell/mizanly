@@ -684,29 +684,31 @@ export class PersonalizedFeedService {
   private async getContentMetadata(
     ids: string[],
     contentType: EmbeddingContentType,
-  ): Promise<Map<string, { likesCount: number; commentsCount?: number; sharesCount?: number; viewsCount: number; hashtags: string[]; createdAt: Date; userId?: string }>> {
-    const map = new Map<string, { likesCount: number; commentsCount?: number; sharesCount?: number; viewsCount: number; hashtags: string[]; createdAt: Date; userId?: string }>();
+  ): Promise<Map<string, { likesCount: number; commentsCount?: number; sharesCount?: number; savesCount?: number; viewsCount: number; hashtags: string[]; createdAt: Date; userId?: string; isVerified?: boolean; isScholarVerified?: boolean; postsCount?: number }>> {
+    const map = new Map<string, { likesCount: number; commentsCount?: number; sharesCount?: number; savesCount?: number; viewsCount: number; hashtags: string[]; createdAt: Date; userId?: string; isVerified?: boolean; isScholarVerified?: boolean; postsCount?: number }>();
     if (ids.length === 0) return map;
 
-    // Fetch engagement data AND userId in a single query (merged from former getAuthorMap)
+    // Include user data for scholar boost (#258) and creator boost (#302)
+    const userSelect = { isVerified: true, isScholarVerified: true, postsCount: true };
+
     if (contentType === EmbeddingContentType.POST) {
       const items = await this.prisma.post.findMany({
         where: { id: { in: ids } },
-        select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, savesCount: true, viewsCount: true, hashtags: true, createdAt: true, user: { select: userSelect } },
         take: 500,
       });
-      items.forEach(i => map.set(i.id, { ...i, userId: i.userId ?? undefined }));
+      items.forEach(i => map.set(i.id, { ...i, userId: i.userId ?? undefined, isVerified: i.user?.isVerified, isScholarVerified: i.user?.isScholarVerified, postsCount: i.user?.postsCount }));
     } else if (contentType === EmbeddingContentType.REEL) {
       const items = await this.prisma.reel.findMany({
         where: { id: { in: ids } },
-        select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, savesCount: true, viewsCount: true, hashtags: true, createdAt: true, user: { select: userSelect } },
         take: 500,
       });
-      items.forEach(i => map.set(i.id, { ...i, userId: i.userId ?? undefined }));
+      items.forEach(i => map.set(i.id, { ...i, userId: i.userId ?? undefined, isVerified: i.user?.isVerified, isScholarVerified: i.user?.isScholarVerified, postsCount: i.user?.postsCount }));
     } else if (contentType === EmbeddingContentType.THREAD) {
       const items = await this.prisma.thread.findMany({
         where: { id: { in: ids } },
-        select: { id: true, userId: true, likesCount: true, repliesCount: true, repostsCount: true, viewsCount: true, hashtags: true, createdAt: true },
+        select: { id: true, userId: true, likesCount: true, repliesCount: true, repostsCount: true, viewsCount: true, hashtags: true, createdAt: true, user: { select: userSelect } },
         take: 500,
       });
       items.forEach(i => map.set(i.id, {
@@ -717,6 +719,9 @@ export class PersonalizedFeedService {
         hashtags: i.hashtags,
         createdAt: i.createdAt,
         userId: i.userId ?? undefined,
+        isVerified: i.user?.isVerified,
+        isScholarVerified: i.user?.isScholarVerified,
+        postsCount: i.user?.postsCount,
       }));
     }
 

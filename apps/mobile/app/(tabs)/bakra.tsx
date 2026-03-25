@@ -472,7 +472,7 @@ const ReelItem = memo(function ReelItem({
             onPress={() => setIsMuted(prev => !prev)}
             accessibilityLabel={isMuted ? t('bakra.unmute', 'Unmute') : t('bakra.mute', 'Mute')}
           >
-            <Icon name={isMuted ? 'volume-x' : 'volume-x'} size="sm" color={isMuted ? colors.text.tertiary : colors.text.primary} style={styles.iconShadow} />
+            <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="sm" color={isMuted ? colors.text.tertiary : colors.text.primary} style={styles.iconShadow} />
           </ActionButton>
         </View>
 

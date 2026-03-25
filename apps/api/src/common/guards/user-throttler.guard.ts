@@ -37,11 +37,15 @@ export class UserThrottlerGuard extends ThrottlerGuard {
   }
 
   /**
-   * Finding #369: Add rate limit headers to every response.
+   * Finding #369: Rate limit headers on 429 responses.
+   * Note: @nestjs/throttler v5 doesn't expose remaining count in non-throttled requests.
+   * Headers are only sent on 429 (throttled) responses. For full per-request headers,
+   * would need a custom interceptor reading the throttler storage directly.
    */
   protected throwThrottlingException(context: ExecutionContext): Promise<void> {
     const response = context.switchToHttp().getResponse();
     response.header('X-RateLimit-Remaining', '0');
+    response.header('X-RateLimit-Reset', String(Math.ceil(Date.now() / 1000) + 60));
     response.header('Retry-After', '60');
     throw new ThrottlerException('Too many requests — please slow down');
   }

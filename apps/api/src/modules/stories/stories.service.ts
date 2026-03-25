@@ -6,6 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { Prisma, MessageType } from '@prisma/client';
@@ -50,6 +51,7 @@ export class StoriesService {
     private prisma: PrismaService,
     private ai: AiService,
     private queueService: QueueService,
+    private notifications: NotificationsService,
   ) {}
 
   async getFeedStories(userId: string) {

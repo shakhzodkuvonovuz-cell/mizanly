@@ -63,6 +63,8 @@ export class FeedController {
 
   // Finding #295: Reset algorithm
   @Delete('reset-algorithm')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60000, limit: 1 } })
   @ApiOperation({ summary: 'Reset your feed algorithm — clears all interactions and preferences' })
