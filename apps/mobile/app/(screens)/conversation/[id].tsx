@@ -532,6 +532,26 @@ const MessageBubble = memo(function MessageBubble({
           </Pressable>
         ) : message.messageType === 'VOICE' && message.mediaUrl ? (
           <VoicePlayer mediaUrl={message.mediaUrl} isOwn={isOwn} />
+        ) : message.messageType === 'CONTACT' ? (
+          <Pressable
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, backgroundColor: `${colors.emerald}10`, borderRadius: radius.sm }}
+            onPress={() => {
+              try {
+                const contact = JSON.parse(message.content || '{}');
+                if (contact.username) router.push(`/(screens)/profile/${contact.username}` as never);
+              } catch {}
+            }}
+          >
+            <Icon name="user" size="sm" color={colors.emerald} />
+            <View>
+              <Text style={{ color: isOwn ? '#fff' : colors.text.primary, fontFamily: 'DMSans_500Medium', fontSize: 14 }}>
+                {(() => { try { return JSON.parse(message.content || '{}').displayName || 'Contact'; } catch { return 'Contact'; } })()}
+              </Text>
+              <Text style={{ color: isOwn ? 'rgba(255,255,255,0.7)' : colors.text.secondary, fontSize: 12 }}>
+                {t('messages.tapToViewProfile', 'Tap to view profile')}
+              </Text>
+            </View>
+          </Pressable>
         ) : (
           <>
             {message.mediaUrl && (
