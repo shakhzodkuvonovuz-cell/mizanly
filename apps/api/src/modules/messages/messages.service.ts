@@ -693,6 +693,36 @@ export class MessagesService {
     return member;
   }
 
+  /**
+   * Finding #310: Global message search across all user's conversations.
+   */
+  async searchAllMessages(userId: string, query: string, limit = 20) {
+    if (!query.trim()) throw new BadRequestException('Search query required');
+
+    // Get all conversation IDs the user is a member of
+    const memberships = await this.prisma.conversationMember.findMany({
+      where: { userId },
+      select: { conversationId: true },
+      take: 200,
+    });
+    const convIds = memberships.map(m => m.conversationId);
+    if (convIds.length === 0) return [];
+
+    return this.prisma.message.findMany({
+      where: {
+        conversationId: { in: convIds },
+        isDeleted: false,
+        content: { contains: query.trim(), mode: 'insensitive' },
+      },
+      select: {
+        id: true, content: true, conversationId: true, createdAt: true,
+        sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
   async searchMessages(conversationId: string, userId: string, query: string, cursor?: string, limit = 20) {
     if (!query?.trim()) throw new BadRequestException('Search query is required');
     await this.requireMembership(conversationId, userId);

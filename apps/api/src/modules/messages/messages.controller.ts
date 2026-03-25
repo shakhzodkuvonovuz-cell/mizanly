@@ -413,8 +413,16 @@ export class MessagesController {
     return this.messagesService.setMemberTag(id, userId, dto.tag ?? null);
   }
 
+  // Finding #310: Global message search
+  @Get('search')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Search messages across all conversations' })
+  async searchAllMessages(@CurrentUser('id') uid: string, @Query('q') q: string) {
+    return this.messagesService.searchAllMessages(uid, q);
+  }
+
   @Get(':conversationId/search')
-  @ApiOperation({ summary: 'Search messages' })
+  @ApiOperation({ summary: 'Search messages in a specific conversation' })
   async searchMessages(@Param('conversationId') cid: string, @CurrentUser('id') uid: string, @Query('q') q: string, @Query('cursor') cursor?: string) {
     return this.messagesService.searchMessages(cid, uid, q, cursor);
   }
