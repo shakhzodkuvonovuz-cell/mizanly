@@ -638,7 +638,7 @@ export class PostsService {
               body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
             });
             if (notification) {
-              this.queueService.addPushNotificationJob({ notificationId: notification.id });
+              // Push delivery owned by NotificationsService.create() — no duplicate enqueue
             }
           } catch (err) {
             this.logger.error('Failed to create mention notification', err instanceof Error ? err.message : err);
@@ -668,7 +668,7 @@ export class PostsService {
             title: 'Tagged you',
             body: `@${actorUsername} tagged you in a post`,
           }).then((n) => {
-            if (n) this.queueService.addPushNotificationJob({ notificationId: n.id });
+            // Push delivery owned by NotificationsService.create() — no duplicate enqueue
           }).catch((err) => {
             this.logger.error('Failed to create tag notification', err instanceof Error ? err.message : err);
           });
@@ -691,7 +691,7 @@ export class PostsService {
           title: 'Collaboration invite',
           body: `@${actorUsername} invited you to collaborate on a post`,
         }).then((n) => {
-          if (n) this.queueService.addPushNotificationJob({ notificationId: n.id });
+          // Push delivery owned by NotificationsService.create() — no duplicate enqueue
         }).catch((err) => {
           this.logger.error('Failed to create collab notification', err instanceof Error ? err.message : err);
         });
@@ -876,7 +876,7 @@ export class PostsService {
               type: 'LIKE', postId,
             });
             if (notification) {
-              this.queueService.addPushNotificationJob({ notificationId: notification.id });
+              // Push delivery owned by NotificationsService.create() — no duplicate enqueue
             }
           } catch (err) {
             this.logger.error('Failed to create notification', err);
@@ -1241,7 +1241,7 @@ export class PostsService {
             body: dto.content.substring(0, 100),
           });
           if (notification) {
-            this.queueService.addPushNotificationJob({ notificationId: notification.id });
+            // Push delivery owned by NotificationsService.create() — no duplicate enqueue
           }
         }
       } else if (post.userId && post.userId !== userId) {
@@ -1253,7 +1253,7 @@ export class PostsService {
           body: dto.content.substring(0, 100),
         });
         if (notification) {
-          this.queueService.addPushNotificationJob({ notificationId: notification.id });
+          // Push delivery owned by NotificationsService.create() — no duplicate enqueue
         }
       }
     } catch (err) {

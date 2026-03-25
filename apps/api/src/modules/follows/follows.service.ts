@@ -89,7 +89,7 @@ export class FollowsService {
         })
           .then((notification: Notification | null) => {
             if (notification) {
-              this.queueService.addPushNotificationJob({ notificationId: notification.id });
+              // Push delivery owned by NotificationsService.create() — no duplicate enqueue
             }
           })
           .catch((err) => this.logger.error('Failed to create notification', err));
@@ -127,7 +127,7 @@ export class FollowsService {
       })
         .then((notification: Notification | null) => {
           if (notification) {
-            this.queueService.addPushNotificationJob({ notificationId: notification.id });
+            // Push delivery owned by NotificationsService.create() — no duplicate enqueue
           }
         })
         .catch((err) => this.logger.error('Failed to create notification', err));
@@ -388,7 +388,7 @@ export class FollowsService {
     })
       .then((notification: Notification | null) => {
         if (notification) {
-          this.queueService.addPushNotificationJob({ notificationId: notification.id });
+          // Push delivery owned by NotificationsService.create() — no duplicate enqueue
         }
       })
       .catch((err) => this.logger.error('Failed to create notification', err));

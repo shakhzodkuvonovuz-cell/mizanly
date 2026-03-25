@@ -184,7 +184,7 @@ export class VideosService {
 
     // Add to Meilisearch index (guarded — only if Meilisearch is configured)
     this.queueService.addSearchIndexJob({
-      action: 'upsert',
+      action: 'index',
       indexName: 'videos',
       documentId: video[0].id,
       document: {

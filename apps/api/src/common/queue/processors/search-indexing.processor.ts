@@ -85,7 +85,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
         this.logger.debug(`Deleted document ${documentId} from ${indexName}`);
         break;
       default:
-        this.logger.warn(`Unknown search index action: ${action}`);
+        throw new Error(`Unknown search index action: '${action}'. Valid actions: index, update, delete. Fix the producer.`);
     }
 
     await job.updateProgress(100);
