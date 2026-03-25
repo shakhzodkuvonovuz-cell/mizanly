@@ -387,6 +387,15 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
         </View>
       )}
 
+      {/* Finding #396: Islamic content disclaimer for fiqh/fatwa topics */}
+      {(post as Record<string, unknown>).topics && ((post as Record<string, unknown>).topics as string[]).some(t =>
+        ['fiqh', 'fatwa', 'sharia', 'halal', 'haram'].includes(t.toLowerCase())
+      ) && (
+        <Text style={{ fontSize: 10, color: colors.gold, paddingHorizontal: spacing.base, marginBottom: 4, fontStyle: 'italic' }}>
+          {tr('islamic.consultScholar', 'This may contain religious content — consult a qualified scholar for guidance.')}
+        </Text>
+      )}
+
       {/* Link preview — show when post has a URL but no media */}
       {post.content && post.mediaUrls.length === 0 && (() => {
         const urlMatch = post.content.match(/https?:\/\/[^\s]+/);
