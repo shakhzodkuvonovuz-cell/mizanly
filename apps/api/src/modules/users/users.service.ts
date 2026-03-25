@@ -1,11 +1,13 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ForbiddenException,
   ConflictException,
   Logger,
   Inject,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
@@ -822,6 +824,38 @@ export class UsersService {
       take: 30,
     });
     return { stats };
+  }
+
+  /**
+   * Finding #250: Daily follower count snapshot for growth charts.
+   * Runs at 2 AM, snapshots follower counts for all users with >0 followers.
+   */
+  @Cron('0 2 * * *')
+  async snapshotFollowerCounts() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const users = await this.prisma.user.findMany({
+      where: { followersCount: { gt: 0 }, isDeleted: false, isBanned: false },
+      select: { id: true, followersCount: true },
+      take: 50000,
+    });
+
+    let created = 0;
+    for (const user of users) {
+      try {
+        await this.prisma.creatorStat.upsert({
+          where: { userId_date_space: { userId: user.id, date: today, space: 'SAF' } },
+          update: { followers: user.followersCount },
+          create: { userId: user.id, date: today, space: 'SAF', followers: user.followersCount },
+        });
+        created++;
+      } catch {
+        // Skip duplicates or errors silently
+      }
+    }
+
+    this.logger.log(`Follower snapshot: ${created} users snapshotted`);
   }
 
   /**

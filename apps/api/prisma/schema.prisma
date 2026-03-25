@@ -697,7 +697,8 @@ model User {
   isBanned      Boolean   @default(false)
   banReason     String?
   banExpiresAt  DateTime?
-  warningsCount Int       @default(0)
+  warningsCount     Int       @default(0)
+  reputationScore   Int       @default(100)
 
   isScholarVerified Boolean @default(false)
   nasheedMode       Boolean @default(false)

@@ -433,10 +433,14 @@ export class SearchService {
 
     // Merge recent count from SQL aggregation into hashtag records
     const freqMap = new Map(topTags.map(t => [t.tag, Number(t.cnt)]));
-    const hashtags = hashtagRecords.map(record => ({
-      ...record,
-      recentCount: freqMap.get(record.name) || 0,
-    })).sort((a, b) => b.recentCount - a.recentCount);
+    // Finding #278: Add trending velocity using postsCount delta vs recentCount
+    const hashtags = hashtagRecords.map(record => {
+      const recentCount = freqMap.get(record.name) || 0;
+      // Compare 24h SQL count vs all-time DB count for trend direction
+      const ratio = record.postsCount > 0 ? recentCount / record.postsCount : 0;
+      const trend = ratio > 0.1 ? 'rising' : ratio > 0.01 ? 'stable' : 'falling';
+      return { ...record, recentCount, trend };
+    }).sort((a, b) => b.recentCount - a.recentCount);
 
     // Threads stays the same (already engagement-sorted)
     const threads = await this.prisma.thread.findMany({

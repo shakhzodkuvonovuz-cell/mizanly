@@ -629,9 +629,10 @@ describe('SearchService', () => {
         orderBy: { likesCount: 'desc' },
       });
       // Hashtags should include recentCount and be sorted by it
+      // Hashtags include recentCount + trend velocity indicator
       expect(result.hashtags).toEqual([
-        { id: 'tag-1', name: 'trending', postsCount: 500, recentCount: 2 },
-        { id: 'tag-2', name: 'news', postsCount: 300, recentCount: 2 },
+        { id: 'tag-1', name: 'trending', postsCount: 500, recentCount: 2, trend: 'falling' },
+        { id: 'tag-2', name: 'news', postsCount: 300, recentCount: 2, trend: 'falling' },
       ]);
       expect(result.threads).toEqual(mockThreads);
     });
