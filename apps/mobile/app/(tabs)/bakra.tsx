@@ -478,6 +478,12 @@ const ReelItem = memo(function ReelItem({
 
         {/* More menu BottomSheet */}
         <BottomSheet visible={showMoreMenu} onClose={() => setShowMoreMenu(false)}>
+          {/* Finding #262: Share reel to DM */}
+          <BottomSheetItem
+            label={t('bakra.sendTo', 'Send to...')}
+            icon={<Icon name="send" size="sm" color={colors.text.primary} />}
+            onPress={() => { setShowMoreMenu(false); onNavigate(`/(screens)/forward-content?type=reel&id=${item.id}&url=${encodeURIComponent(item.videoUrl)}`); }}
+          />
           <BottomSheetItem
             label={t('bakra.notInterested')}
             icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}

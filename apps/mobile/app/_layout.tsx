@@ -255,10 +255,30 @@ function AuthGuard() {
     const checkTimeout = async () => {
       const lastActive = await AsyncStorage.getItem('last_active_at');
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-      if (lastActive && Date.now() - parseInt(lastActive, 10) > thirtyDaysMs) {
-        try { await signOut(); } catch {}
+      if (lastActive) {
+        const elapsed = Date.now() - parseInt(lastActive, 10);
+        if (elapsed > thirtyDaysMs) {
+          try { await signOut(); } catch {}
+          return;
+        }
+        // Finding #358: Welcome back after 7+ days absence
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        if (elapsed > sevenDaysMs) {
+          showToast({ message: 'Welcome back! We missed you 🌙', variant: 'success' });
+        }
       }
       await AsyncStorage.setItem('last_active_at', String(Date.now()));
+
+      // Finding #359: Gentle "complete your profile" nudge
+      if (user && (!user.imageUrl || !(user.unsafeMetadata as Record<string, unknown>)?.bio)) {
+        const nudgeSeen = await AsyncStorage.getItem('profile_nudge_seen');
+        if (!nudgeSeen) {
+          setTimeout(() => {
+            showToast({ message: 'Complete your profile — add a photo and bio to stand out!', variant: 'info' });
+          }, 3000);
+          await AsyncStorage.setItem('profile_nudge_seen', '1');
+        }
+      }
     };
     checkTimeout();
     const interval = setInterval(() => AsyncStorage.setItem('last_active_at', String(Date.now())), 5 * 60 * 1000);

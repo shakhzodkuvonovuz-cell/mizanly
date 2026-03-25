@@ -364,6 +364,12 @@ export default function CreatePostScreen() {
             >
               <Icon name="clock" size="md" color={scheduledAt ? colors.emerald : tc.text.tertiary} />
             </Pressable>
+            {/* Finding #384: Alt text reminder */}
+            {media.length > 0 && !altText.trim() && (
+              <Pressable onPress={() => {/* scroll to alt text field */}} hitSlop={8}>
+                <Text style={{ color: colors.gold, fontSize: 11, marginEnd: 8 }}>{t('compose.addAltTextReminder', 'Add alt text?')}</Text>
+              </Pressable>
+            )}
             <GradientButton
               label={scheduledAt ? t('schedule.confirm') : t('common.share')}
               size="sm"
