@@ -497,6 +497,10 @@ export const postsApi = {
   getRelatedPosts: (id: string) => api.get<{ data: Post[] }>(`/posts/${id}/related`),
   // Finding #252: Pin post
   pinPost: (id: string, isPinned: boolean) => api.patch(`/posts/${id}/pin`, { isPinned }),
+  // Finding #385: Engagement prediction
+  predictEngagement: () => api.get<{ prediction: Record<string, number> | null; insights: Record<string, unknown>; tips: string[] }>('/posts/predict-engagement'),
+  // Finding #386: Content repurpose
+  getRepurposeSuggestions: (id: string) => api.get<{ suggestions: Array<{ type: string; title: string; description: string }> }>(`/posts/${id}/repurpose`),
 };
 
 // ── Stories (Saf) ──

@@ -1787,4 +1787,138 @@ export class PostsService {
       return { impressions: 0 };
     }
   }
+
+  // Finding #385: Engagement prediction — estimate expected engagement for a new post
+  async predictEngagement(userId: string) {
+    // Get user's recent post stats to build prediction model
+    const recentPosts = await this.prisma.post.findMany({
+      where: { userId, isRemoved: false },
+      select: {
+        likesCount: true,
+        commentsCount: true,
+        sharesCount: true,
+        viewsCount: true,
+        savesCount: true,
+        hashtags: true,
+        mediaUrls: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    });
+
+    if (recentPosts.length < 3) {
+      return {
+        prediction: null,
+        tips: [
+          'Post at least 3 times to get engagement predictions',
+          'Posts with 3+ hashtags get more reach',
+          'Photos get 2x more engagement than text-only posts',
+        ],
+      };
+    }
+
+    const count = recentPosts.length;
+    const avgLikes = recentPosts.reduce((s, p) => s + p.likesCount, 0) / count;
+    const avgComments = recentPosts.reduce((s, p) => s + p.commentsCount, 0) / count;
+    const avgShares = recentPosts.reduce((s, p) => s + p.sharesCount, 0) / count;
+    const avgViews = recentPosts.reduce((s, p) => s + p.viewsCount, 0) / count;
+    const avgSaves = recentPosts.reduce((s, p) => s + p.savesCount, 0) / count;
+
+    // Calculate best posting patterns
+    const hourBuckets: Record<number, number[]> = {};
+    for (const p of recentPosts) {
+      const hour = new Date(p.createdAt).getHours();
+      if (!hourBuckets[hour]) hourBuckets[hour] = [];
+      hourBuckets[hour].push(p.likesCount + p.commentsCount * 2);
+    }
+
+    const bestHours = Object.entries(hourBuckets)
+      .map(([h, scores]) => ({ hour: parseInt(h), avgScore: scores.reduce((a, b) => a + b, 0) / scores.length }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 3)
+      .map(h => h.hour);
+
+    // Posts with media vs text-only performance
+    const withMedia = recentPosts.filter(p => p.mediaUrls.length > 0);
+    const textOnly = recentPosts.filter(p => p.mediaUrls.length === 0);
+    const mediaAvgLikes = withMedia.length > 0
+      ? withMedia.reduce((s, p) => s + p.likesCount, 0) / withMedia.length
+      : 0;
+    const textAvgLikes = textOnly.length > 0
+      ? textOnly.reduce((s, p) => s + p.likesCount, 0) / textOnly.length
+      : 0;
+
+    // Hashtag performance
+    const hashtagCounts = recentPosts.map(p => ({ count: p.hashtags.length, likes: p.likesCount }));
+    const optimalHashtags = hashtagCounts
+      .filter(h => h.count > 0)
+      .sort((a, b) => b.likes - a.likes)[0]?.count || 3;
+
+    // Generate tips
+    const tips: string[] = [];
+    if (mediaAvgLikes > textAvgLikes * 1.5) {
+      tips.push(`Posts with photos get ${Math.round((mediaAvgLikes / Math.max(textAvgLikes, 1) - 1) * 100)}% more likes`);
+    }
+    if (bestHours.length > 0) {
+      tips.push(`Your best posting hours are ${bestHours.map(h => `${h}:00`).join(', ')}`);
+    }
+    if (optimalHashtags > 0) {
+      tips.push(`Your top-performing posts use ~${optimalHashtags} hashtags`);
+    }
+
+    return {
+      prediction: {
+        expectedLikes: Math.round(avgLikes),
+        expectedComments: Math.round(avgComments),
+        expectedShares: Math.round(avgShares),
+        expectedViews: Math.round(avgViews),
+        expectedSaves: Math.round(avgSaves),
+      },
+      insights: {
+        bestHours,
+        optimalHashtagCount: optimalHashtags,
+        mediaVsTextLikeRatio: textAvgLikes > 0 ? Math.round((mediaAvgLikes / textAvgLikes) * 10) / 10 : null,
+        totalPostsAnalyzed: count,
+      },
+      tips,
+    };
+  }
+
+  // Finding #386: Content repurpose suggestions
+  async getRepurposeSuggestions(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { userId: true, content: true, mediaUrls: true, mediaTypes: true, likesCount: true, commentsCount: true, sharesCount: true, postType: true },
+    });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException();
+
+    const suggestions: Array<{ type: string; title: string; description: string }> = [];
+    const hasText = !!post.content && post.content.length > 50;
+    const hasImage = post.mediaUrls.length > 0 && (post.mediaTypes || []).some((t: string) => t.startsWith('image'));
+    const hasVideo = (post.mediaTypes || []).some((t: string) => t.startsWith('video'));
+    const isHighEngagement = post.likesCount >= 10 || post.commentsCount >= 5;
+
+    if (hasText && !hasVideo) {
+      suggestions.push({ type: 'reel', title: 'Turn into a Reel', description: 'Create a short video reading or narrating this post content' });
+    }
+    if (hasText && post.content && post.content.length > 200) {
+      suggestions.push({ type: 'thread', title: 'Expand as a Thread', description: 'Break this into a multi-part thread on Majlis for deeper discussion' });
+    }
+    if (hasImage) {
+      suggestions.push({ type: 'story', title: 'Share as a Story', description: 'Share this image as a 24-hour story with interactive stickers' });
+    }
+    if (hasVideo) {
+      suggestions.push({ type: 'carousel', title: 'Create photo carousel', description: 'Extract key frames from the video and create a swipeable carousel post' });
+    }
+    if (isHighEngagement) {
+      suggestions.push({ type: 'cross_post', title: 'Cross-post to other spaces', description: 'This content performed well — share it on Majlis, Bakra, or Minbar too' });
+    }
+    if (post.content && post.content.length < 100) {
+      suggestions.push({ type: 'video', title: 'Create a long-form video', description: 'Expand on this topic with a detailed video for Minbar' });
+    }
+
+    return { suggestions };
+  }
 }

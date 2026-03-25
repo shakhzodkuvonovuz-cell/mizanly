@@ -87,6 +87,15 @@ export class PostsController {
     return this.postsService.getCollections(userId);
   }
 
+  // Finding #385: Engagement prediction
+  @Get('predict-engagement')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Predict expected engagement for your next post' })
+  predictEngagement(@CurrentUser('id') userId: string) {
+    return this.postsService.predictEngagement(userId);
+  }
+
   @Get('collections/:name')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -472,6 +481,18 @@ export class PostsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.postsService.getPostAnalytics(id, userId);
+  }
+
+  // Finding #386: Content repurpose suggestions
+  @Get(':id/repurpose')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get suggestions to repurpose this content into other formats' })
+  getRepurposeSuggestions(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.getRepurposeSuggestions(id, userId);
   }
 
   // Finding #173: Track post impression
