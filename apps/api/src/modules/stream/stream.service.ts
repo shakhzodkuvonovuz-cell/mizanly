@@ -49,6 +49,12 @@ export class StreamService {
     }
   }
 
+  private ensureConfigured(): void {
+    if (!this.accountId || !this.apiToken) {
+      throw new InternalServerErrorException('Cloudflare Stream is not configured');
+    }
+  }
+
   private headers(): Record<string, string> {
     return {
       Authorization: `Bearer ${this.apiToken}`,

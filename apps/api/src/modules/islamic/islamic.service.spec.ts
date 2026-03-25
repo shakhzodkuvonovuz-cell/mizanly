@@ -1358,11 +1358,16 @@ describe('IslamicService', () => {
 
   describe('updateReadingPlan', () => {
     it('should update plan when owned by user', async () => {
-      prisma.quranReadingPlan.findFirst.mockResolvedValue({ id: 'plan-1', userId: 'user-1' });
+      prisma.quranReadingPlan.findFirst.mockResolvedValue({ id: 'plan-1', userId: 'user-1', isComplete: false });
       prisma.quranReadingPlan.update.mockResolvedValue({ id: 'plan-1', isComplete: true });
+      prisma.notification = { create: jest.fn().mockResolvedValue({}) } as any;
 
       const result = await service.updateReadingPlan('user-1', 'plan-1', { isComplete: true } as any);
       expect(result.isComplete).toBe(true);
+      // Khatm celebration notification should be sent
+      expect(prisma.notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ title: expect.stringContaining('Khatm') }) }),
+      );
     });
 
     it('should throw NotFoundException when plan not found', async () => {

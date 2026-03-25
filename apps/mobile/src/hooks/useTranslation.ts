@@ -16,8 +16,19 @@ export function useTranslation() {
     return i18n.changeLanguage(lang);
   };
 
+  /**
+   * Gender-aware translation for Arabic (Finding #211).
+   * Usage: tg('profile.welcomeBack', 'male') → looks up 'profile.welcomeBack_male' in ar.json
+   * Falls back to base key if gendered variant doesn't exist.
+   * i18next natively supports this via the `context` option.
+   */
+  const tg = (key: string, gender: 'male' | 'female', options?: Record<string, unknown>) => {
+    return t(key, { ...options, context: gender });
+  };
+
   return {
     t,
+    tg,
     language,
     changeLanguage,
     isRTL,

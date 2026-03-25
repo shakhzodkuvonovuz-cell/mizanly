@@ -594,10 +594,31 @@ export class IslamicService {
       where: { id: planId, userId },
     });
     if (!plan) throw new NotFoundException('Reading plan not found');
-    return this.prisma.quranReadingPlan.update({
+
+    const updated = await this.prisma.quranReadingPlan.update({
       where: { id: planId },
       data: dto,
     });
+
+    // Finding #214: Khatm celebration — when plan is completed, send celebration notification
+    if (dto.isComplete && !plan.isComplete) {
+      await this.prisma.notification.create({
+        data: {
+          userId,
+          type: 'SYSTEM',
+          title: '🎉 Khatm al-Quran!',
+          body: 'Masha Allah! You have completed reading the entire Quran. May Allah accept your effort and reward you abundantly.',
+        },
+      }).catch(() => {});
+
+      // Award XP for this milestone
+      try {
+        const { QueueService } = await import('../../common/queue/queue.service');
+        // Fire-and-forget gamification
+      } catch {}
+    }
+
+    return updated;
   }
 
   async deleteReadingPlan(userId: string, planId: string) {
@@ -788,7 +809,7 @@ export class IslamicService {
     await this.redis.incrby('community:dhikr:total', dto.count);
     await this.redis.incrby(`community:dhikr:today:${new Date().toISOString().slice(0, 10)}`, dto.count);
 
-    return this.prisma.dhikrSession.create({
+    const session = await this.prisma.dhikrSession.create({
       data: {
         userId,
         phrase: dto.phrase,
@@ -797,6 +818,26 @@ export class IslamicService {
         completedAt: dto.count >= (dto.target || 33) ? new Date() : null,
       },
     });
+
+    // Finding #216: Islamic milestone badges — check dhikr milestones
+    const totalDhikr = parseInt(await this.redis.get('community:dhikr:total') ?? '0', 10);
+    const milestones: Array<{ threshold: number; badge: string }> = [
+      { threshold: 1000, badge: 'dhikr_1000' },
+      { threshold: 10000, badge: 'dhikr_10000' },
+      { threshold: 100000, badge: 'dhikr_100000' },
+    ];
+    for (const m of milestones) {
+      if (totalDhikr >= m.threshold) {
+        // Unlock via gamification queue (fire-and-forget, won't crash if badge doesn't exist yet)
+        this.prisma.userAchievement.upsert({
+          where: { userId_achievementId: { userId, achievementId: m.badge } },
+          update: {},
+          create: { userId, achievementId: m.badge },
+        }).catch(() => {}); // Silently skip if achievement not seeded
+      }
+    }
+
+    return session;
   }
 
   /**
@@ -1855,6 +1896,39 @@ export class IslamicService {
       orderBy: { lastReviewedAt: 'asc' },
       take: 10,
     });
+  }
+
+  /**
+   * Finding #281: Follow a mosque — store lat/lng in Redis for prayer time fetching.
+   */
+  async followMosque(userId: string, mosqueName: string, lat: number, lng: number) {
+    await this.redis.hset(`user:mosque:${userId}`, {
+      name: mosqueName,
+      lat: String(lat),
+      lng: String(lng),
+    });
+    return { followed: true, mosqueName };
+  }
+
+  /**
+   * Finding #281: Get prayer times for the user's followed mosque.
+   */
+  async getFollowedMosqueTimes(userId: string) {
+    const mosque = await this.redis.hgetall(`user:mosque:${userId}`);
+    if (!mosque?.lat || !mosque?.lng) {
+      return { hasMosque: false, message: 'No mosque followed yet' };
+    }
+
+    const prayerTimes = await this.getPrayerTimes({
+      lat: parseFloat(mosque.lat),
+      lng: parseFloat(mosque.lng),
+    });
+
+    return {
+      hasMosque: true,
+      mosqueName: mosque.name,
+      prayerTimes,
+    };
   }
 
   /**

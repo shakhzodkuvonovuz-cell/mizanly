@@ -178,6 +178,25 @@ export class IslamicController {
     return this.islamicService.getNearbyMosques(query.lat, query.lng, query.radius);
   }
 
+  @Post('mosques/follow')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Follow a mosque to get its specific prayer times' })
+  async followMosque(
+    @CurrentUser('id') userId: string,
+    @Body() body: { mosqueName: string; lat: number; lng: number },
+  ) {
+    return this.islamicService.followMosque(userId, body.mosqueName, body.lat, body.lng);
+  }
+
+  @Get('mosques/my-mosque')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get prayer times for your followed mosque' })
+  async getMyMosqueTimes(@CurrentUser('id') userId: string) {
+    return this.islamicService.getFollowedMosqueTimes(userId);
+  }
+
   @Get('zakat/calculate')
   @ApiOperation({ summary: 'Calculate zakat obligation' })
   @ApiResponse({ status: 200, description: 'Zakat calculation result', type: Object })

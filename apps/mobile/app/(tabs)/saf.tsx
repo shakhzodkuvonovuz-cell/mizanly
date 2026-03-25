@@ -606,7 +606,7 @@ export default function SafScreen() {
               const hour = new Date().getHours();
               const greeting = hour < 12 ? t('islamic.sabahalKhair', 'Sabah al-Khair')
                 : hour < 17 ? t('islamic.masaAlKhair', 'Masa al-Khair')
-                : t('islamic.masaAlKhair', 'Masa al-Khair');
+                : t('islamic.masaAlNoor', 'Masa al-Noor');
               return `${greeting} · ${formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}`;
             })()}
           </Text>
