@@ -134,6 +134,21 @@ export class FollowsService {
 
       this.analytics.track('user_followed', currentUserId, { targetUserId });
       this.analytics.increment('follows:daily');
+
+      // Finding #357: First follower celebration — check if this is the target's first follower
+      this.prisma.user.findUnique({ where: { id: targetUserId }, select: { followersCount: true } })
+        .then(u => {
+          if (u && u.followersCount === 1) {
+            this.notifications.create({
+              userId: targetUserId, actorId: currentUserId,
+              type: 'SYSTEM',
+              title: '🎉 Your first follower!',
+              body: 'Congratulations! Someone is interested in your content. Keep posting!',
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+
       return { type: 'follow', follow };
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
