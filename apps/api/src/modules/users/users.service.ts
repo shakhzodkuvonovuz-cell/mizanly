@@ -915,6 +915,34 @@ export class UsersService {
     };
   }
 
+  /**
+   * Finding #287: Request account verification.
+   * Creates a verification request in the admin queue.
+   */
+  async requestVerification(userId: string, data: { category: string; reason: string; proofUrl?: string }) {
+    // Check if already verified
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { isVerified: true } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.isVerified) throw new ConflictException('Account is already verified');
+
+    // Check for existing pending request
+    const existing = await this.prisma.report.findFirst({
+      where: { reporterId: userId, description: { contains: 'verification_request' }, status: 'PENDING' },
+    });
+    if (existing) throw new ConflictException('Verification request already pending');
+
+    // Use report table to queue verification requests for admin review
+    return this.prisma.report.create({
+      data: {
+        reporterId: userId,
+        reportedUserId: userId,
+        reason: 'OTHER',
+        description: `[verification_request] Category: ${data.category}. Reason: ${data.reason}. Proof: ${data.proofUrl || 'none'}`,
+        status: 'PENDING',
+      },
+    });
+  }
+
   async report(reporterId: string, reportedUserId: string, reason: string) {
     if (reporterId === reportedUserId) return { reported: false };
     const reasonMap: Record<string, ReportReason> = {

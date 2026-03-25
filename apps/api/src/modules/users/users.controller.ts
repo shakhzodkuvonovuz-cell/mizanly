@@ -334,6 +334,19 @@ export class UsersController {
     return this.usersService.getMutualFollowers(currentUserId, targetUsername, limit ?? 20);
   }
 
+  // Finding #287: Request verification
+  @Post('me/request-verification')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 1, ttl: 60000 } })
+  @ApiOperation({ summary: 'Request account verification' })
+  requestVerification(
+    @CurrentUser('id') userId: string,
+    @Body() body: { category: string; reason: string; proofUrl?: string },
+  ) {
+    return this.usersService.requestVerification(userId, body);
+  }
+
   @Post(':id/report')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
