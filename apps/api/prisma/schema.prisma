@@ -700,6 +700,10 @@ model User {
   isScholarVerified Boolean @default(false)
   nasheedMode       Boolean @default(false)
 
+  // Legal/compliance
+  tosAcceptedAt     DateTime?
+  tosVersion        String?   @db.VarChar(20)
+
   // Monetization — balance is in CoinBalance table (NOT on User model)
   stripeConnectAccountId String?
   madhab                 String?  @db.VarChar(20)

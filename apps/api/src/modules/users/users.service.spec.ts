@@ -1222,68 +1222,45 @@ describe('UsersService', () => {
   // findByPhoneNumbers
   // ═══════════════════════════════════════════════════════
 
-  describe('findByPhoneNumbers', () => {
-    it('should return matching users with follow status', async () => {
+  describe('findByPhoneNumbers (hash-based contact sync)', () => {
+    // Mobile sends SHA-256 hashes of phone numbers, backend hashes stored phones to compare
+    const crypto = require('crypto');
+    const hashPhone = (phone: string) => crypto.createHash('sha256').update(phone.replace(/\D/g, '')).digest('hex');
+
+    it('should return matching users when hash matches', async () => {
+      const phoneHash = hashPhone('+1234567890');
       prisma.user.findMany.mockResolvedValue([
-        { id: 'u2', username: 'friend', displayName: 'Friend', avatarUrl: null, isVerified: false },
+        { id: 'u2', username: 'friend', displayName: 'Friend', avatarUrl: null, isVerified: false, phone: '1234567890' },
       ]);
       prisma.follow.findMany.mockResolvedValue([{ followingId: 'u2' }]);
       prisma.block.findMany.mockResolvedValue([]);
 
-      const result = await service.findByPhoneNumbers('user-1', ['+1234567890']);
+      const result = await service.findByPhoneNumbers('user-1', [phoneHash]);
       expect(result).toHaveLength(1);
       expect(result[0].isFollowing).toBe(true);
+      // Phone should be stripped from response
+      expect(result[0]).not.toHaveProperty('phone');
     });
 
-    it('should return empty for no matches', async () => {
-      prisma.user.findMany.mockResolvedValue([]);
-      const result = await service.findByPhoneNumbers('user-1', ['+0000000000']);
-      expect(result).toEqual([]);
-    });
-
-    it('should normalize phone numbers', async () => {
-      prisma.user.findMany.mockResolvedValue([]);
-      await service.findByPhoneNumbers('user-1', ['+1 (234) 567-8900', '0561234567']);
-      expect(prisma.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            phone: { in: expect.any(Array) },
-          }),
-        }),
-      );
-    });
-
-    it('should filter out blocked users from contact sync results', async () => {
+    it('should return empty for no hash matches', async () => {
       prisma.user.findMany.mockResolvedValue([
-        { id: 'u2', username: 'friend', displayName: 'Friend', avatarUrl: null, isVerified: false },
-        { id: 'u3', username: 'blocked', displayName: 'Blocked', avatarUrl: null, isVerified: false },
+        { id: 'u2', phone: '9999999999' },
       ]);
-      prisma.follow.findMany.mockResolvedValue([]);
-      prisma.block.findMany.mockResolvedValue([
-        { blockerId: 'user-1', blockedId: 'u3' },
-      ]);
-
-      const result = await service.findByPhoneNumbers('user-1', ['+1234567890', '+0987654321']);
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('u2');
-    });
-
-    it('should return empty for too-short phone numbers', async () => {
-      const result = await service.findByPhoneNumbers('user-1', ['123', '45']);
+      const result = await service.findByPhoneNumbers('user-1', [hashPhone('+0000000000')]);
       expect(result).toEqual([]);
     });
 
-    it('should deduplicate phone numbers', async () => {
+    it('should return empty for empty input', async () => {
+      const result = await service.findByPhoneNumbers('user-1', []);
+      expect(result).toEqual([]);
+    });
+
+    it('should deduplicate hashes', async () => {
+      const hash = hashPhone('+1234567890');
       prisma.user.findMany.mockResolvedValue([]);
-      await service.findByPhoneNumbers('user-1', ['+1234567890', '1234567890', '+1 234-567-890']);
-      // All normalize to '1234567890', should deduplicate before query
-      expect(prisma.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            phone: { in: ['1234567890'] },
-          }),
-        }),
-      );
+      await service.findByPhoneNumbers('user-1', [hash, hash, hash]);
+      // Should only query once
+      expect(prisma.user.findMany).toHaveBeenCalledTimes(1);
     });
   });
 

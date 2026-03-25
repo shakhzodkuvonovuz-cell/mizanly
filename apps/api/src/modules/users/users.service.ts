@@ -1077,22 +1077,29 @@ export class UsersService {
    * to avoid storing raw contact data in memory longer than necessary.
    * The actual DB query still uses normalized numbers since phone is stored in plaintext.
    */
-  async findByPhoneNumbers(userId: string, phoneNumbers: string[]) {
-    // Normalize: strip non-digits, take last 10 digits
-    const normalized = phoneNumbers
-      .map(p => p.replace(/\D/g, '').slice(-10))
-      .filter(p => p.length >= 7); // reject too-short numbers
+  async findByPhoneNumbers(userId: string, phoneHashes: string[]) {
+    // Mobile sends SHA-256 hashes of phone numbers (privacy-preserving).
+    // We hash stored phone numbers server-side and compare against client hashes.
+    if (phoneHashes.length === 0) return [];
 
-    if (normalized.length === 0) return [];
+    const uniqueHashes = [...new Set(phoneHashes)];
 
-    // Deduplicate
-    const uniqueNumbers = [...new Set(normalized)];
-
-    const users = await this.prisma.user.findMany({
-      where: { phone: { in: uniqueNumbers }, id: { not: userId }, isDeleted: false, isBanned: false },
-      select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
-      take: 50,
+    // Fetch all users with non-null phone (limited to reasonable set)
+    const usersWithPhone = await this.prisma.user.findMany({
+      where: { phone: { not: null }, id: { not: userId }, isDeleted: false, isBanned: false },
+      select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true, phone: true },
+      take: 10000,
     });
+
+    // Hash each user's phone server-side and match against client hashes
+    const crypto = await import('crypto');
+    const hashSet = new Set(uniqueHashes);
+    const users = usersWithPhone.filter(u => {
+      if (!u.phone) return false;
+      const normalized = u.phone.replace(/\D/g, '');
+      const hash = crypto.createHash('sha256').update(normalized).digest('hex');
+      return hashSet.has(hash);
+    }).map(({ phone: _phone, ...rest }) => rest); // strip phone from response
 
     if (users.length === 0) return [];
 

@@ -138,15 +138,18 @@ describe('UsersService — edge cases', () => {
       expect(result).toEqual([]);
     });
 
-    it('should normalize phone numbers (strip non-digits, take last 10)', async () => {
+    it('should query users with phone and hash server-side for matching', async () => {
       prisma.user.findMany.mockResolvedValue([]);
+      const crypto = require('crypto');
+      const hash = crypto.createHash('sha256').update('15551234567').digest('hex');
 
-      await service.findByPhoneNumbers(userId, ['+1 (555) 123-4567']);
+      await service.findByPhoneNumbers(userId, [hash]);
 
+      // Now queries all users with non-null phone (hash comparison is server-side)
       expect(prisma.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            phone: { in: ['5551234567'] },
+            phone: { not: null },
           }),
         }),
       );

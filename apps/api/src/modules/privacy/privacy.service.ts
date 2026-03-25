@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../config/prisma.service';
 
 @Injectable()
@@ -6,6 +7,38 @@ export class PrivacyService {
   private readonly logger = new Logger(PrivacyService.name);
 
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Bug 67: Process scheduled account deletions.
+   * Runs daily at 3 AM — finds users whose deletedAt has passed and purges their data.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async processScheduledDeletions() {
+    const now = new Date();
+    const usersToDelete = await this.prisma.user.findMany({
+      where: {
+        deletedAt: { lte: now },
+        isDeactivated: true,
+        isDeleted: false,
+      },
+      select: { id: true },
+      take: 50, // Process in batches to avoid OOM
+    });
+
+    if (usersToDelete.length === 0) return;
+
+    this.logger.log(`Processing ${usersToDelete.length} scheduled account deletions`);
+
+    for (const user of usersToDelete) {
+      try {
+        await this.deleteAllUserData(user.id);
+        this.logger.log(`Purged user ${user.id} (scheduled deletion completed)`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.error(`Failed to purge user ${user.id}: ${msg}`);
+      }
+    }
+  }
 
   // DONE: [PRIVACY] Status privacy fields (readReceipts, typingIndicators, lastSeenVisibility)
   // have been added to the UserSettings schema and are now persisted server-side via
@@ -48,6 +81,9 @@ export class PrivacyService {
       posts, threads, stories, reels, messages, follows, comments,
       postReactions, videos, bookmarks, blocks, mutes, notifications,
       threadReplies, userSettings, watchHistory,
+      reelComments, reelReactions, videoReactions, videoComments,
+      circleMemberships, reports, tips, coinTransactions,
+      dhikrSessions, fastingLogs, searchHistory,
     ] = await Promise.all([
       this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, postType: true, createdAt: true } }),
       this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true } }),
@@ -61,11 +97,22 @@ export class PrivacyService {
       this.prisma.savedPost.findMany({ where: { userId }, select: { postId: true, createdAt: true } }),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true, createdAt: true } }),
       this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true, createdAt: true } }),
-      // GDPR export cap: 5000 to prevent OOM on heavy users
-      this.prisma.notification.findMany({ where: { userId }, select: { id: true, type: true, isRead: true, createdAt: true }, take: 5000 }),
+      this.prisma.notification.findMany({ where: { userId }, select: { id: true, type: true, isRead: true, createdAt: true } }),
       this.prisma.threadReply.findMany({ where: { userId }, select: { id: true, content: true, threadId: true, createdAt: true } }),
       this.prisma.userSettings.findUnique({ where: { userId } }),
       this.prisma.watchHistory.findMany({ where: { userId }, select: { videoId: true, watchedAt: true } }),
+      // Additional categories for GDPR completeness
+      this.prisma.reelComment.findMany({ where: { userId }, select: { id: true, content: true, reelId: true, createdAt: true } }),
+      this.prisma.reelReaction.findMany({ where: { userId }, select: { reelId: true, reaction: true, createdAt: true } }),
+      this.prisma.videoReaction.findMany({ where: { userId }, select: { videoId: true, isLike: true, createdAt: true } }),
+      this.prisma.videoComment.findMany({ where: { userId }, select: { id: true, content: true, videoId: true, createdAt: true } }),
+      this.prisma.circleMember.findMany({ where: { userId }, select: { circleId: true, role: true, joinedAt: true } }),
+      this.prisma.report.findMany({ where: { reporterId: userId }, select: { id: true, reason: true, createdAt: true } }),
+      this.prisma.tip.findMany({ where: { senderId: userId }, select: { id: true, amount: true, receiverId: true, createdAt: true } }),
+      this.prisma.coinTransaction.findMany({ where: { userId }, select: { id: true, type: true, amount: true, createdAt: true } }),
+      this.prisma.dhikrSession.findMany({ where: { userId }, select: { id: true, count: true, dhikrType: true, createdAt: true } }),
+      this.prisma.fastingLog.findMany({ where: { userId }, select: { id: true, date: true, type: true } }),
+      this.prisma.searchHistory.findMany({ where: { userId }, select: { query: true, createdAt: true } }),
     ]);
 
     // Check which conversations have encryption envelopes to accurately mark messages
@@ -106,16 +153,18 @@ export class PrivacyService {
       following: follows.map(f => ({ userId: f.followingId, followedAt: f.createdAt })),
       notifications: { count: notifications.length, data: notifications },
       watchHistory,
+      reelComments,
+      reelReactions,
+      videoReactions,
+      videoComments,
+      circleMemberships,
+      reports: reports.map(r => ({ id: r.id, reason: r.reason, createdAt: r.createdAt })),
+      tips: tips.map(t => ({ amount: Number(t.amount), receiverId: t.receiverId, createdAt: t.createdAt })),
+      coinTransactions,
+      dhikrSessions,
+      fastingLogs,
+      searchHistory,
       exportedAt: new Date().toISOString(),
-      // TODO: [LEGAL/GDPR] Add these data categories to export when models are accessible:
-      // - Reel reactions, Video reactions
-      // - Event RSVPs
-      // - DM notes, saved messages, chat folders
-      // - Quran reading plans, HifzProgress, DhikrSession, FastingLog
-      // - ZakatCalculation, CharityDonation records
-      // - Community memberships, circle memberships
-      // - Gamification data (streaks, achievements, XP)
-      // - Watch history
     };
   }
 

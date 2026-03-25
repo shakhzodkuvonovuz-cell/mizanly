@@ -19,7 +19,7 @@ describe('UsersService — abuse vectors (Task 100)', () => {
             user: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn(), findFirst: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             report: { create: jest.fn() },
             device: { deleteMany: jest.fn() },
-            block: { findFirst: jest.fn() },
+            block: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             follow: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             followRequest: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             post: { findMany: jest.fn().mockResolvedValue([]) },
@@ -55,21 +55,25 @@ describe('UsersService — abuse vectors (Task 100)', () => {
     expect(result).toEqual([]);
   });
 
-  it('should normalize phone numbers — strip non-digits', async () => {
-    prisma.user.findMany.mockResolvedValue([]);
-    await service.findByPhoneNumbers('user-1', ['+1 (555) 123-4567']);
-    expect(prisma.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ phone: { in: ['5551234567'] } }),
-      }),
-    );
+  it('should match users by hashing stored phone numbers server-side', async () => {
+    const crypto = require('crypto');
+    const hash = crypto.createHash('sha256').update('15551234567').digest('hex');
+    prisma.user.findMany.mockResolvedValue([
+      { id: 'u2', username: 'friend', displayName: 'Friend', avatarUrl: null, isVerified: false, phone: '15551234567' },
+    ]);
+    prisma.follow.findMany.mockResolvedValue([]);
+    prisma.block.findMany.mockResolvedValue([]);
+    const result = await service.findByPhoneNumbers('user-1', [hash]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).not.toHaveProperty('phone'); // Phone stripped from response
   });
 
-  it('should deduplicate phone numbers', async () => {
+  it('should deduplicate hashes', async () => {
     prisma.user.findMany.mockResolvedValue([]);
-    await service.findByPhoneNumbers('user-1', ['5551234567', '5551234567', '5551234567']);
-    const call = prisma.user.findMany.mock.calls[0][0];
-    expect(call.where.phone.in.length).toBeLessThanOrEqual(3); // May be deduplicated
+    const crypto = require('crypto');
+    const hash = crypto.createHash('sha256').update('5551234567').digest('hex');
+    await service.findByPhoneNumbers('user-1', [hash, hash, hash]);
+    expect(prisma.user.findMany).toHaveBeenCalledTimes(1);
   });
 
   it('should throw NotFoundException for non-existent user profile', async () => {

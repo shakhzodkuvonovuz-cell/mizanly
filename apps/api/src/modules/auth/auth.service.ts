@@ -119,12 +119,9 @@ export class AuthService {
         language: dto.language ?? 'en',
         // Mark as child account if under 18 — triggers restrictive defaults (Finding 15, 30)
         isChildAccount: isMinor,
-        // TODO: [LEGAL] Add tosAcceptedAt, tosVersion, privacyPolicyAcceptedAt, dateOfBirth
-        // fields to User model (requires schema migration). Currently storing acceptance
-        // via the DTO validation + isChildAccount flag. Schema fields needed for:
-        // - Demonstrable consent record (GDPR Art 7)
-        // - ToS version tracking for re-acceptance on update
-        // - Age-based feature gating queries
+        // Record ToS acceptance for GDPR Art 7 demonstrable consent
+        tosAcceptedAt: new Date(),
+        tosVersion: '1.0',
       },
       update: {
         username: dto.username.toLowerCase(),
