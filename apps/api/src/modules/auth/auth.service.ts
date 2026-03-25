@@ -339,6 +339,13 @@ export class AuthService {
     });
   }
 
+  async trackLogin(clerkId: string) {
+    await this.prisma.user.updateMany({
+      where: { clerkId, isDeactivated: false, isDeleted: false },
+      data: { lastSeenAt: new Date() },
+    });
+  }
+
   async deactivateByClerkId(clerkId: string) {
     // Find the user first to clean up related data
     const user = await this.prisma.user.findFirst({ where: { clerkId } });

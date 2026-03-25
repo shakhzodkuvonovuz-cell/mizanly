@@ -59,6 +59,9 @@ export class ClerkAuthGuard implements CanActivate {
           where: { id: user.id },
           data: { isBanned: false, banExpiresAt: null },
         });
+        // Reflect unbanned state in request.user so downstream code sees truth
+        user.isBanned = false;
+        user.banExpiresAt = null;
       } else {
         throw new ForbiddenException('Account has been banned');
       }

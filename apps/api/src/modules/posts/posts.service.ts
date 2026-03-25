@@ -169,7 +169,7 @@ export class PostsService {
           createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
           isRemoved: false,
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-          user: { isPrivate: false, isBanned: false },
+          user: { isPrivate: false, isBanned: false, isDeactivated: false },
           visibility: 'PUBLIC',
           ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
           ...(dismissedPostIds.length ? { id: { notIn: dismissedPostIds } } : {}),

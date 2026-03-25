@@ -128,6 +128,15 @@ export class WebhooksController {
       });
     } else if (type === 'user.deleted') {
       await this.authService.deactivateByClerkId(data.id);
+    } else if (type === 'session.created') {
+      // Track login event — update lastSeenAt for the user
+      if (data.user_id) {
+        await this.authService.trackLogin(data.user_id).catch((err: Error) =>
+          this.logger.warn(`Failed to track login for ${data.user_id}: ${err.message}`),
+        );
+      }
+    } else if (type === 'session.ended') {
+      this.logger.debug(`Session ended for user ${data.user_id}`);
     } else if (ACKNOWLEDGED_EVENTS.has(type)) {
       this.logger.debug(`Clerk webhook acknowledged but no action: ${type}`);
     } else if (!HANDLED_EVENTS.has(type)) {

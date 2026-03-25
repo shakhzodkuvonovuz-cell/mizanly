@@ -1105,7 +1105,8 @@ export class UsersService {
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        deletedAt: scheduledDeletionDate,
+        scheduledDeletionAt: scheduledDeletionDate, // When it WILL be deleted (future)
+        // deletedAt stays null — only set when actually deleted
         isDeactivated: true,
         deactivatedAt: new Date(),
       },
@@ -1128,7 +1129,7 @@ export class UsersService {
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { deletedAt: null, isDeactivated: false, deactivatedAt: null },
+      data: { scheduledDeletionAt: null, deletedAt: null, isDeactivated: false, deactivatedAt: null },
     });
     return { cancelled: true };
   }
