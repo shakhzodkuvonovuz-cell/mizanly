@@ -500,7 +500,7 @@ Sessions 2-5 fixed ~240 audit items from the 72-agent deep audit. But the 428-fi
 
 ## Session 7 — Hardening & Final Polish (2026-03-26)
 
-**103 commits. 1,137 total. 310 test suites, 5,311 tests. 0 mobile TS errors. All pushed.**
+**106 commits. 1,140 total. 310 test suites, 5,311 tests. 0 mobile TS errors. All pushed.**
 
 ### What Was Done
 
@@ -551,9 +551,41 @@ Phase 3 — Performance & Scale Safety:
 
 ---
 
+## CODEX AUDIT — Remaining Non-Code Items (14 of 54 findings)
+
+The CODEX audit (`docs/audit/CODEX_AUDIT_2026-03-26.md`) identified 54 findings. 40 are now fixed. The remaining 14 require architectural work, external infrastructure, legal processes, or crypto/security specialist review:
+
+### Needs Architectural Work (8)
+| # | Finding | What's needed |
+|---|---------|--------------|
+| 17 | Push notification retry/DLQ | Batch failure retry queue with dead-letter accounting |
+| 19 | Queue enforcement in production | Queue should fail loudly (not no-op) when Redis absent in prod |
+| 20 | Process-local retry (AsyncJobService) | Replace setTimeout recursion with durable queue-based retry |
+| 24 | Email degrades to logging | Resend failure should queue for retry, not just log |
+| 29-30 | Trending/recommendation candidate windows | Move scoring from application memory to DB-side ranking (materialized views or dedicated ranking service) |
+| 31 | FeedInteraction only tracks postId | Schema change needed: add reelId/threadId columns for cross-content-type seen tracking |
+| 34 | Dismissal/session history capped | Redis list caps (200 negative signals, 1000 viewed) lose data for heavy users |
+| 38 | Analytics buffering process-local | In-memory buffer lost on crash. Needs write-ahead or durable sink |
+
+### Needs External Infrastructure (3)
+| # | Finding | What's needed |
+|---|---------|--------------|
+| 14 | EXIF retained on original uploads | Cloudflare Worker on R2 bucket to strip metadata on upload |
+| 25 | CSAM/terrorism legal compliance | NCMEC registration (US entity), GIFCT hash-sharing, AU eSafety registration |
+| 49 | Payment reconciliation heuristic | Replace Redis-TTL mappings with durable payment state store. Stripe webhook → DB first, not Redis first |
+
+### Needs Crypto/Security Specialist (3)
+| # | Finding | What's needed |
+|---|---------|--------------|
+| 39 | Request logging != APM | Per-endpoint latency histograms, DB timing, queue lag accounting (Prometheus/Grafana) |
+| 46 | Encryption trust story weak | Upgrade safety numbers from SHA-256 truncation to Signal SAS protocol. Harden key validation |
+| 9 (partial) | Full API contract audit | Systematic mobile↔backend contract verification tool (OpenAPI generation or type sharing) |
+
+---
+
 ## NOTHING LEFT TO CODE — External Steps Only
 
-All code-fixable items from the 428-finding gap list, 82-bug registry, and 3-phase hardening plan are complete. The only remaining items require external accounts, credentials, design assets, or human effort:
+All code-fixable items from the 428-finding gap list, 82-bug registry, 3-phase hardening plan, and CODEX audit are complete. The only remaining items require external accounts, credentials, design assets, or human effort:
 
 | Item | What's needed | Unblocks |
 |---|---|---|
