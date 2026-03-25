@@ -944,6 +944,7 @@ model User {
   halalVerifyVotes         HalalVerifyVote[]            @relation("halalVerifyVotes")
   starredMessageRecords    StarredMessage[]             @relation("starredMessages")
   adminAuditLogs           AdminAuditLog[]              @relation("adminAuditLogs")
+  savedSearches            SavedSearch[]                @relation("savedSearches")
 
   @@index([username])
   @@index([clerkId])
@@ -1632,6 +1633,7 @@ model Conversation {
   disappearingDuration  Int?
   slowModeSeconds       Int? // 0 = off, 30, 60, 300, 900, 3600
   lockCode              String? // Secret code to unlock this conversation
+  genderRestriction     String?                    @db.VarChar(10) // Finding #395: null=mixed, 'male', 'female'
   newMemberHistoryCount Int?                      @default(25) // Number of recent messages shown to new members (0-100)
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
@@ -2559,6 +2561,8 @@ model UserSettings {
   dailyTimeLimit         Int?
   restrictedMode         Boolean  @default(false)
   sensitiveContent       Boolean  @default(false)
+  // Finding #246: Islamic knowledge level for content filtering
+  islamicKnowledgeLevel  String   @default("all") @db.VarChar(20) // beginner, intermediate, advanced, all
   // Finding #265: Grief support mode — filters celebratory content
   griefMode              Boolean  @default(false)
   // Finding #266: Ramadan food filter during fasting hours
@@ -4729,6 +4733,20 @@ model StarredMessage {
   @@index([userId, createdAt(sort: Desc)])
   @@index([messageId])
   @@map("starred_messages")
+}
+
+// Finding #383: Saved search alerts
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("savedSearches", fields: [userId], references: [id], onDelete: Cascade)
+  query     String   @db.VarChar(200)
+  alertOn   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, query])
+  @@index([userId])
+  @@map("saved_searches")
 }
 
 // Finding #417: Admin audit trail
