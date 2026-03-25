@@ -26,6 +26,26 @@ export class ReelsController {
     return this.reelsService.create(userId, dto);
   }
 
+  // Finding #376: Save reel as draft
+  @Post('drafts')
+  @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Save reel as draft' })
+  saveDraft(
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateReelDto,
+  ) {
+    return this.reelsService.saveDraft(userId, dto);
+  }
+
+  // Finding #376: Get user's drafts
+  @Get('drafts')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Get your reel drafts' })
+  getDrafts(@CurrentUser('id') userId: string) {
+    return this.reelsService.getDrafts(userId);
+  }
+
   // --- Static GET routes MUST come before :id parameterized routes ---
 
   @Get('feed')
@@ -284,5 +304,28 @@ export class ReelsController {
     @Param('id') id: string,
   ) {
     return this.reelsService.getShareLink(id);
+  }
+
+  // Finding #317/318: Download URL with optional watermark
+  @Get(':id/download')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Get download URL for a reel (original quality, optional watermark)' })
+  getDownloadUrl(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Query('watermark') watermark?: string,
+  ) {
+    return this.reelsService.getDownloadUrl(id, userId, watermark !== 'false');
+  }
+
+  // Finding #376: Delete a draft reel
+  @Delete('drafts/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Delete a draft reel' })
+  deleteDraft(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.reelsService.deleteDraft(id, userId);
   }
 }

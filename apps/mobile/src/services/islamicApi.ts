@@ -192,4 +192,13 @@ export const islamicApi = {
     api.post<{ success: boolean }>('/islamic/daily-tasks/complete', { taskType }),
   getDailyTasksToday: () => api.get<Array<{ type: string; label: string; completed: boolean; xpReward: number }>>('/islamic/daily-tasks/today'),
   bookmarkHadith: (hadithId: string) => api.post<{ success: boolean }>(`/islamic/hadiths/${hadithId}/bookmark`, {}),
+
+  // Finding #247: Islamic glossary
+  getGlossary: (query?: string) => api.get<{ data: Array<{ term: string; arabic: string; definition: string }> }>(`/islamic/glossary${qs({ q: query })}`),
+
+  // Finding #319-321: Islamic content classification
+  classifyContent: (content: string) => api.post<{ category: string | null; confidence: number; tags: string[] }>('/islamic/classify-content', { content }),
+
+  // Finding #323: Hadith grade detection
+  detectHadithGrade: (content: string) => api.post<{ grade: string | null; collection: string | null }>('/islamic/detect-hadith-grade', { content }),
 };

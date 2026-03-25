@@ -428,6 +428,10 @@ export const followsApi = {
   declineRequest: (id: string) => api.post(`/follows/requests/${id}/decline`),
   cancelRequest: (id: string) => api.delete(`/follows/requests/${id}`),
   suggestions: () => api.get<User[]>('/follows/suggestions'),
+  // Finding #273: Similar accounts
+  getSimilarAccounts: (username: string) => api.get<{ data: Array<User & { sharedFollowers: number }> }>(`/users/${username}/similar`),
+  // Finding #403: Popular with friends
+  getPopularWithFriends: () => api.get<{ data: Array<Post & { friendLikes: number; likedByFriends: User[] }> }>('/users/popular-with-friends'),
 };
 
 // ── Posts (Saf) ──
@@ -481,6 +485,18 @@ export const postsApi = {
   shareAsStory: (id: string) => api.post(`/posts/${id}/share-as-story`),
   crossPost: (id: string, data: { targetSpaces: string[]; captionOverride?: string }) =>
     api.post<Post[]>(`/posts/${id}/cross-post`, data),
+  // Finding #251: Content analytics
+  getAnalytics: (id: string) => api.get<{ post: Record<string, number>; average: Record<string, number>; comparison: Record<string, number> }>(`/posts/${id}/analytics`),
+  // Finding #173: Track impression
+  trackImpression: (id: string) => api.post(`/posts/${id}/impression`),
+  // Finding #175: Bookmark collections
+  saveToCollection: (id: string, collection: string) => api.post(`/posts/${id}/save-to-collection`, { collection }),
+  getCollections: () => api.get<{ data: Array<{ name: string; count: number }> }>('/posts/collections'),
+  getCollection: (name: string, cursor?: string) => api.get<PaginatedResponse<Post>>(`/posts/collections/${name}${qs({ cursor })}`),
+  // Finding #274: Related posts
+  getRelatedPosts: (id: string) => api.get<{ data: Post[] }>(`/posts/${id}/related`),
+  // Finding #252: Pin post
+  pinPost: (id: string, isPinned: boolean) => api.patch(`/posts/${id}/pin`, { isPinned }),
 };
 
 // ── Stories (Saf) ──
@@ -551,6 +567,13 @@ export const reelsApi = {
     api.get<{ url: string }>(`/reels/${id}/share-link`),
   likeComment: (reelId: string, commentId: string) => api.post(`/reels/${reelId}/comments/${commentId}/like`),
   unlikeComment: (reelId: string, commentId: string) => api.delete(`/reels/${reelId}/comments/${commentId}/like`),
+  // Finding #376: Reel drafts
+  saveDraft: (data: CreateReelPayload) => api.post<Reel>('/reels/drafts', data),
+  getDrafts: () => api.get<{ data: Reel[] }>('/reels/drafts'),
+  deleteDraft: (id: string) => api.delete(`/reels/drafts/${id}`),
+  // Finding #317/318: Download
+  getDownloadUrl: (id: string, watermark = true) =>
+    api.get<{ url: string; watermarkText: string | null }>(`/reels/${id}/download${qs({ watermark: String(watermark) })}`),
 };
 
 // ── Channels (Minbar) ──
@@ -715,6 +738,14 @@ export const threadsApi = {
     api.get<{ url: string }>(`/threads/${id}/share-link`),
   isBookmarked: (threadId: string) =>
     api.get<{ bookmarked: boolean }>(`/threads/${threadId}/bookmarked`),
+  // Finding #381: Thread unroll
+  getUnroll: (id: string) => api.get<{ data: Thread[]; meta: { totalParts: number } }>(`/threads/${id}/unroll`),
+  // Finding #251: Thread analytics
+  getAnalytics: (id: string) => api.get<{ thread: Record<string, number>; average: Record<string, number>; comparison: Record<string, number> }>(`/threads/${id}/analytics`),
+  // Finding #59: Thread continuation
+  createContinuation: (id: string, content: string) => api.post<Thread>(`/threads/${id}/continue`, { content }),
+  // Finding #38: Edit thread
+  updateThread: (id: string, content: string) => api.patch<Thread>(`/threads/${id}`, { content }),
 };
 
 // ── Messages (Risalah) ──
@@ -806,6 +837,14 @@ export const messagesApi = {
   getMyDMNote: () => api.get<DMNote | null>('/messages/notes/me'),
   deleteDMNote: () => api.delete<{ deleted: boolean }>('/messages/notes/me'),
   getContactDMNotes: () => api.get<DMNote[]>('/messages/notes/contacts'),
+  // Finding #364: Group topics
+  createTopic: (conversationId: string, name: string, iconEmoji?: string) =>
+    api.post(`/messages/${conversationId}/topics`, { name, iconEmoji }),
+  getTopics: (conversationId: string) =>
+    api.get<{ data: Array<{ id: string; content: string; metadata: Record<string, unknown> }> }>(`/messages/${conversationId}/topics`),
+  // Finding #378: Message expiry
+  setMessageExpiry: (conversationId: string, expiryDays: number) =>
+    api.patch(`/messages/${conversationId}/expiry`, { expiryDays }),
 };
 
 // ── Notifications ──
@@ -817,6 +856,8 @@ export const notificationsApi = {
   markRead: (id: string) => api.post(`/notifications/${id}/read`),
   markAllRead: () => api.post('/notifications/read-all'),
   delete: (id: string) => api.delete(`/notifications/${id}`),
+  // Finding #363: Grouped notifications
+  getGrouped: (cursor?: string) => api.get<{ data: Array<{ type: string; targetId: string | null; actors: Array<{ id: string; username: string; displayName: string | null; avatarUrl: string | null }>; count: number; latestAt: string; notificationId: string }> }>(`/notifications/grouped${qs({ cursor })}`),
 };
 
 // ── Search ──

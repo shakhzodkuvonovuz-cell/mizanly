@@ -946,6 +946,81 @@ export class PostsService {
     return { saved: false };
   }
 
+  // Finding #175: Save to collection/folder
+  async saveToCollection(postId: string, userId: string, collectionName: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+
+    // Update or create the saved post with collection name
+    const existing = await this.prisma.savedPost.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+
+    if (existing) {
+      // Already saved — just update the collection
+      await this.prisma.savedPost.update({
+        where: { userId_postId: { userId, postId } },
+        data: { collectionName },
+      });
+    } else {
+      await this.prisma.$transaction([
+        this.prisma.savedPost.create({ data: { userId, postId, collectionName } }),
+        this.prisma.post.update({ where: { id: postId }, data: { savesCount: { increment: 1 } } }),
+      ]);
+    }
+    return { saved: true, collection: collectionName };
+  }
+
+  // Finding #175: Get user's bookmark collections
+  async getCollections(userId: string) {
+    const saved = await this.prisma.savedPost.groupBy({
+      by: ['collectionName'],
+      where: { userId },
+      _count: true,
+      orderBy: { _count: { collectionName: 'desc' } },
+    });
+
+    return {
+      data: saved.map(s => ({
+        name: s.collectionName,
+        count: s._count,
+      })),
+    };
+  }
+
+  // Finding #175: Get saved posts in a collection
+  async getCollection(userId: string, collectionName: string, cursor?: string) {
+    const saves = await this.prisma.savedPost.findMany({
+      where: { userId, collectionName },
+      include: {
+        post: {
+          select: {
+            id: true,
+            content: true,
+            mediaUrls: true,
+            likesCount: true,
+            commentsCount: true,
+            createdAt: true,
+            user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+          },
+        },
+      },
+      take: 21,
+      ...(cursor ? { cursor: { userId_postId: { userId, postId: cursor } }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = saves.length > 20;
+    const items = hasMore ? saves.slice(0, 20) : saves;
+    return {
+      data: items.map(s => s.post),
+      meta: {
+        cursor: hasMore && items.length > 0 ? items[items.length - 1].postId : null,
+        hasMore,
+      },
+    };
+  }
+
   async share(postId: string, userId: string, content?: string) {
     const original = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!original || original.isRemoved) throw new NotFoundException('Post not found');

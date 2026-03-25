@@ -1193,4 +1193,79 @@ export class ReelsService {
       this.logger.error(`Reel thumbnail moderation error for ${reelId}: ${msg}`);
     }
   }
+
+  // Finding #376: Reel draft — save draft state without publishing
+  async saveDraft(userId: string, dto: CreateReelDto) {
+    const draft = await this.prisma.reel.create({
+      data: {
+        userId,
+        videoUrl: dto.videoUrl || '',
+        caption: dto.caption ? sanitizeText(dto.caption) : '',
+        hashtags: dto.hashtags ?? [],
+        mentions: dto.mentions ?? [],
+        status: 'DRAFT' as ReelStatus,
+        audioTitle: dto.audioTitle,
+        audioArtist: dto.audioArtist,
+        altText: dto.altText,
+        topics: dto.topics ?? [],
+      },
+      select: REEL_SELECT,
+    });
+    return draft;
+  }
+
+  // Finding #376: Get user's draft reels
+  async getDrafts(userId: string) {
+    const drafts = await this.prisma.reel.findMany({
+      where: { userId, status: 'DRAFT' as ReelStatus, isRemoved: false },
+      select: REEL_SELECT,
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    return { data: drafts };
+  }
+
+  // Finding #376: Delete a draft
+  async deleteDraft(reelId: string, userId: string) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
+    if (!reel) throw new NotFoundException('Reel not found');
+    if (reel.userId !== userId) throw new ForbiddenException();
+    if (reel.status !== 'DRAFT') throw new BadRequestException('Only drafts can be deleted this way');
+
+    await this.prisma.reel.delete({ where: { id: reelId } });
+    return { deleted: true };
+  }
+
+  // Finding #317: Get download URL with optional watermark
+  async getDownloadUrl(reelId: string, userId: string, withWatermark = true) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
+    if (!reel || reel.isRemoved) throw new NotFoundException('Reel not found');
+
+    // Original quality URL (Finding #318)
+    const originalUrl = reel.videoUrl;
+
+    return {
+      url: originalUrl,
+      watermark: withWatermark,
+      // Watermark overlay is done client-side (mobile FFmpeg) — we provide the brand text
+      watermarkText: withWatermark ? '@' + (reel.user as Record<string, string>)?.username + ' • mizanly.app' : null,
+      quality: 'original',
+    };
+  }
+
+  // Finding #384: Content accessibility checker — remind creator about missing fields
+  getAccessibilityReport(reel: Record<string, unknown>) {
+    const issues: string[] = [];
+    if (!reel.altText) issues.push('Add alt text for visually impaired users');
+    if (!reel.caption) issues.push('Add a caption for better discoverability');
+    if (typeof reel.hashtags === 'object' && Array.isArray(reel.hashtags) && reel.hashtags.length === 0) {
+      issues.push('Add hashtags to help others find your content');
+    }
+
+    return {
+      score: issues.length === 0 ? 100 : Math.max(0, 100 - issues.length * 30),
+      issues,
+      isComplete: issues.length === 0,
+    };
+  }
 }

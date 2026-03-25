@@ -78,6 +78,27 @@ export class PostsController {
     return this.postsService.getArchived(userId, cursor);
   }
 
+  // Finding #175: Bookmark collections
+  @Get('collections')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get bookmark collection names with counts' })
+  getCollections(@CurrentUser('id') userId: string) {
+    return this.postsService.getCollections(userId);
+  }
+
+  @Get('collections/:name')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get saved posts in a named collection' })
+  getCollection(
+    @CurrentUser('id') userId: string,
+    @Param('name') name: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.postsService.getCollection(userId, name, cursor);
+  }
+
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   @UseGuards(ClerkAuthGuard)
@@ -403,6 +424,20 @@ export class PostsController {
     @Body() dto: RespondToTagDto,
   ) {
     return this.postsService.respondToTag(tagId, userId, dto.status);
+  }
+
+  // Finding #175: Save post to a named collection
+  @Post(':id/save-to-collection')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @ApiOperation({ summary: 'Save post to a named collection/folder' })
+  saveToCollection(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('collection') collection: string,
+  ) {
+    return this.postsService.saveToCollection(id, userId, collection || 'default');
   }
 
   // Finding #274: Related posts
