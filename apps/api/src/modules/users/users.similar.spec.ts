@@ -11,7 +11,7 @@ const mockPrisma = {
     block: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn() },
     mute: { findMany: jest.fn().mockResolvedValue([]) },
     restrict: { findMany: jest.fn().mockResolvedValue([]) },
-    reaction: { findMany: jest.fn().mockResolvedValue([]) },
+    postReaction: { findMany: jest.fn().mockResolvedValue([]) },
     post: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     notification: { create: jest.fn() },
     report: { findFirst: jest.fn(), create: jest.fn() },
@@ -83,7 +83,7 @@ describe('UsersService — Similar Accounts & Popular With Friends', () => {
   describe('getPopularWithFriends', () => {
     it('should return posts liked by friends', async () => {
       prisma.follow.findMany.mockResolvedValue([{ followingId: 'f1' }, { followingId: 'f2' }]);
-      prisma.reaction.findMany.mockResolvedValue([
+      prisma.postReaction.findMany.mockResolvedValue([
         { postId: 'p1', user: { id: 'f1', username: 'alice', displayName: 'Alice', avatarUrl: null } },
         { postId: 'p1', user: { id: 'f2', username: 'bob', displayName: 'Bob', avatarUrl: null } },
       ]);

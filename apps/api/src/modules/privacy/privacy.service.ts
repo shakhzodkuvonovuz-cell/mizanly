@@ -105,7 +105,7 @@ export class PrivacyService {
       threadReplies, userSettings, watchHistory,
       reelComments, reelReactions, videoReactions, videoComments,
       circleMemberships, reports, tips, coinTransactions,
-      dhikrSessions, fastingLogs, searchHistory,
+      dhikrSessions, fastingLogs,
     ] = await Promise.all([
       this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, postType: true, createdAt: true } }),
       this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true } }),
@@ -132,9 +132,8 @@ export class PrivacyService {
       this.prisma.report.findMany({ where: { reporterId: userId }, select: { id: true, reason: true, createdAt: true } }),
       this.prisma.tip.findMany({ where: { senderId: userId }, select: { id: true, amount: true, receiverId: true, createdAt: true } }),
       this.prisma.coinTransaction.findMany({ where: { userId }, select: { id: true, type: true, amount: true, createdAt: true } }),
-      this.prisma.dhikrSession.findMany({ where: { userId }, select: { id: true, count: true, dhikrType: true, createdAt: true } }),
-      this.prisma.fastingLog.findMany({ where: { userId }, select: { id: true, date: true, type: true } }),
-      this.prisma.searchHistory.findMany({ where: { userId }, select: { query: true, createdAt: true } }),
+      this.prisma.dhikrSession.findMany({ where: { userId }, select: { id: true, count: true, phrase: true, createdAt: true } }),
+      this.prisma.fastingLog.findMany({ where: { userId }, select: { id: true, date: true, fastType: true } }),
     ]);
 
     // Check which conversations have encryption envelopes to accurately mark messages
@@ -162,7 +161,7 @@ export class PrivacyService {
       videos,
       messages: {
         count: messages.length,
-        data: messages.map(m => ({
+        data: messages.map((m: { id: string; content: string | null; messageType: string; conversationId: string; createdAt: Date }) => ({
           ...m,
           encrypted: encryptedConversationIds.has(m.conversationId),
         })),
@@ -170,9 +169,9 @@ export class PrivacyService {
       comments,
       postReactions,
       bookmarks,
-      blocks: blocks.map(b => b.blockedId),
-      mutes: mutes.map(m => m.mutedId),
-      following: follows.map(f => ({ userId: f.followingId, followedAt: f.createdAt })),
+      blocks: blocks.map((b: { blockedId: string }) => b.blockedId),
+      mutes: mutes.map((m: { mutedId: string }) => m.mutedId),
+      following: follows.map((f: { followingId: string; createdAt: Date }) => ({ userId: f.followingId, followedAt: f.createdAt })),
       notifications: { count: notifications.length, data: notifications },
       watchHistory,
       reelComments,
@@ -180,12 +179,11 @@ export class PrivacyService {
       videoReactions,
       videoComments,
       circleMemberships,
-      reports: reports.map(r => ({ id: r.id, reason: r.reason, createdAt: r.createdAt })),
-      tips: tips.map(t => ({ amount: Number(t.amount), receiverId: t.receiverId, createdAt: t.createdAt })),
+      reports: reports.map((r: { id: string; reason: string; createdAt: Date }) => ({ id: r.id, reason: r.reason, createdAt: r.createdAt })),
+      tips: tips.map((t: { id: string; amount: { toNumber?: () => number }; receiverId: string | null; createdAt: Date }) => ({ amount: Number(t.amount), receiverId: t.receiverId, createdAt: t.createdAt })),
       coinTransactions,
       dhikrSessions,
       fastingLogs,
-      searchHistory,
       exportedAt: new Date().toISOString(),
     };
   }

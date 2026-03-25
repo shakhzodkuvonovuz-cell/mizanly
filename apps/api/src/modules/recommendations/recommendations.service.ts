@@ -656,9 +656,13 @@ export class RecommendationsService {
       if (rankedIds.length > 0) {
         const [reels, explorationReels] = await Promise.all([
           this.prisma.reel.findMany({
-            where: { id: { in: rankedIds }, isRemoved: false, status: ReelStatus.READY },
-            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-            isTrial: false,
+            where: {
+              id: { in: rankedIds },
+              isRemoved: false,
+              status: ReelStatus.READY,
+              OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+              isTrial: false,
+            },
             select: REEL_SELECT,
             take: 50,
           }),

@@ -264,7 +264,7 @@ export class VideosService {
     const where: Prisma.VideoWhereInput = {
       status: VideoStatus.PUBLISHED,
       isRemoved: false,
-      user: { isPrivate: false },
+      user: { isPrivate: false, isDeactivated: false, isBanned: false },
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       ...(category && category !== 'all' ? (() => {
         const validCategories = Object.values(VideoCategory);

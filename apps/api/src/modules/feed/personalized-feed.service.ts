@@ -284,12 +284,17 @@ export class PersonalizedFeedService {
       this.getSession(userId),
       this.prisma.hashtagFollow.findMany({
         where: { userId },
-        select: { hashtag: { select: { name: true } } },
+        select: { hashtagId: true },
         take: 50,
       }),
     ]);
     const sessionViewedIds = session ? session.viewedIds : [];
-    const followedTagSet = new Set(followedHashtags.map(h => h.hashtag.name.toLowerCase()));
+    // Resolve hashtag IDs to names
+    const hashtagIds = followedHashtags.map(h => h.hashtagId);
+    const resolvedHashtags = hashtagIds.length > 0
+      ? await this.prisma.hashtag.findMany({ where: { id: { in: hashtagIds } }, select: { name: true } })
+      : [];
+    const followedTagSet = new Set(resolvedHashtags.map(h => h.name.toLowerCase()));
 
     // Stage 1: pgvector KNN — top 500 candidates across all interest centroids
     const candidates = await this.embeddingsService.findSimilarByMultipleVectors(

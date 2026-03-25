@@ -94,7 +94,7 @@ export class MeilisearchSyncService {
       await this.meilisearch.addDocuments('posts', batch.map(p => ({
         id: p.id,
         type: 'post',
-        content: p.content,
+        content: p.content ?? undefined,
         hashtags: p.hashtags,
         userId: p.userId,
         username: p.user?.username,
@@ -178,7 +178,7 @@ export class MeilisearchSyncService {
       await this.meilisearch.addDocuments('reels', batch.map(r => ({
         id: r.id,
         type: 'reel',
-        content: r.caption,
+        content: r.caption ?? undefined,
         hashtags: r.hashtags,
         userId: r.userId,
         username: r.user?.username,

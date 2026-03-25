@@ -5,7 +5,6 @@ import {
   ForbiddenException,
   ConflictException,
   Logger,
-  Inject,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../config/prisma.service';
@@ -838,7 +837,7 @@ export class UsersService {
     const users = await this.prisma.user.findMany({
       where: { followersCount: { gt: 0 }, isDeleted: false, isBanned: false },
       select: { id: true, followersCount: true },
-      take: 50000,
+      take: 200000, // Snapshot all users — capped at 200K to prevent OOM
     });
 
     // Process in parallel batches of 100 instead of sequential
@@ -1325,7 +1324,7 @@ export class UsersService {
 
     // Find posts recently liked by followed users (last 48h)
     const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
-    const recentLikes = await this.prisma.reaction.findMany({
+    const recentLikes = await this.prisma.postReaction.findMany({
       where: {
         userId: { in: followingIds },
         createdAt: { gte: twoDaysAgo },

@@ -47,10 +47,9 @@ const DIAMONDS_PER_USD_CENT = 100 / 70; // for converting diamonds → cents
 const MIN_CASHOUT_DIAMONDS = 100;
 const DIAMOND_RATE = 0.7; // Creator receives 70% of coin cost as diamonds
 
-// IMPORTANT: The coin/diamond balance is stored in the CoinBalance table (this service).
-// The User model also has a legacy `coinBalance` Int field — that field is NOT used by this
-// service and should NOT be relied upon. All coin operations go through CoinBalance.
-// Reconciliation: if any code reads User.coinBalance, it gets a stale/wrong value.
+// BALANCE TRUTH: CoinBalance table is the SOLE source of truth for coin/diamond balances.
+// The legacy User.coinBalance field was REMOVED from the schema in Session 7.
+// All coin operations go through CoinBalance — no split, no ambiguity.
 
 @Injectable()
 export class GiftsService {

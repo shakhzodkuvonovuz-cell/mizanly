@@ -13,6 +13,7 @@ const mockPrisma = {
     message: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), update: jest.fn(), updateMany: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     user: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     block: { findFirst: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
+    groupTopic: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     $transaction: jest.fn().mockImplementation((fn: any) => typeof fn === 'function' ? fn(mockPrisma.useValue) : Promise.all(fn.map((f: any) => f))),
     $executeRaw: jest.fn(),
   },
@@ -38,13 +39,13 @@ describe('MessagesService — Group Topics & Message Expiry', () => {
     it('should create a topic in a group', async () => {
       prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: true, createdById: 'u1' });
       prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'u1', role: 'ADMIN' });
-      prisma.message.create.mockResolvedValue({
-        id: 'm1', content: 'General', metadata: { type: 'topic', iconEmoji: null },
-        createdAt: new Date(), sender: { id: 'u1', username: 'admin', displayName: 'Admin' },
+      prisma.groupTopic.create.mockResolvedValue({
+        id: 't1', name: 'General', iconEmoji: null,
+        conversationId: 'c1', createdById: 'u1', createdAt: new Date(),
       });
 
       const result = await service.createGroupTopic('c1', 'u1', 'General');
-      expect(result.topic.content).toBe('General');
+      expect(result.topic.name).toBe('General');
     });
 
     it('should throw for non-group', async () => {
@@ -66,15 +67,15 @@ describe('MessagesService — Group Topics & Message Expiry', () => {
   });
 
   describe('getGroupTopics', () => {
-    it('should return topic messages only', async () => {
+    it('should return topics for a group', async () => {
       prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'u1' });
-      prisma.message.findMany.mockResolvedValue([
-        { id: 't1', content: 'General', metadata: { type: 'topic' }, createdAt: new Date(), sender: { id: 'u1', username: 'a', displayName: 'A' }, _count: { replies: 5 } },
-        { id: 's1', content: 'System', metadata: { type: 'join' }, createdAt: new Date(), sender: null, _count: { replies: 0 } },
+      prisma.groupTopic.findMany.mockResolvedValue([
+        { id: 't1', name: 'General', iconEmoji: null, conversationId: 'c1', createdById: 'u1', createdAt: new Date() },
+        { id: 't2', name: 'Announcements', iconEmoji: null, conversationId: 'c1', createdById: 'u1', createdAt: new Date() },
       ]);
 
       const result = await service.getGroupTopics('c1', 'u1');
-      expect(result.data.length).toBe(1);
+      expect(result.data.length).toBe(2);
     });
   });
 

@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -293,7 +294,7 @@ export class MessagesService {
 
     // Trigger voice message transcription asynchronously
     if (
-      (message.messageType === 'VOICE' || message.messageType === 'AUDIO') &&
+      (message.messageType === 'VOICE') &&
       message.mediaUrl &&
       message.id
     ) {
@@ -1269,28 +1270,27 @@ export class MessagesService {
 
     // Only admin or creator can create topics
     const member = await this.prisma.conversationMember.findUnique({
-      where: { userId_conversationId: { userId, conversationId } },
+      where: { conversationId_userId: { conversationId, userId } },
     });
     if (!member) throw new ForbiddenException('Not a member');
     if (member.role !== 'ADMIN' && conv.createdById !== userId) {
       throw new ForbiddenException('Only admins can create topics');
     }
 
-    // Store topic as a special system message that serves as a thread anchor
-    const topic = await this.prisma.message.create({
+    // Store topic using the GroupTopic model
+    const topic = await this.prisma.groupTopic.create({
       data: {
         conversationId,
-        senderId: userId,
-        content: name,
-        messageType: 'SYSTEM',
-        metadata: { type: 'topic', iconEmoji: iconEmoji || null },
+        name,
+        iconColor: iconEmoji || null,
+        createdById: userId,
       },
       select: {
         id: true,
-        content: true,
-        metadata: true,
+        name: true,
+        iconColor: true,
         createdAt: true,
-        sender: { select: { id: true, username: true, displayName: true } },
+        createdBy: { select: { id: true, username: true, displayName: true } },
       },
     });
 
@@ -1300,34 +1300,30 @@ export class MessagesService {
   // Finding #364: Get group topics
   async getGroupTopics(conversationId: string, userId: string) {
     const member = await this.prisma.conversationMember.findUnique({
-      where: { userId_conversationId: { userId, conversationId } },
+      where: { conversationId_userId: { conversationId, userId } },
     });
     if (!member) throw new ForbiddenException('Not a member');
 
-    const topics = await this.prisma.message.findMany({
+    const topics = await this.prisma.groupTopic.findMany({
       where: {
         conversationId,
-        messageType: 'SYSTEM',
-        isDeleted: false,
       },
       select: {
         id: true,
-        content: true,
-        metadata: true,
+        name: true,
+        iconColor: true,
+        isPinned: true,
+        isClosed: true,
+        messageCount: true,
+        lastMessageAt: true,
         createdAt: true,
-        sender: { select: { id: true, username: true, displayName: true } },
-        _count: { select: { replies: true } },
+        createdBy: { select: { id: true, username: true, displayName: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
 
-    // Filter to only topic-type system messages
-    const topicMessages = topics.filter(
-      t => t.metadata && typeof t.metadata === 'object' && (t.metadata as Record<string, unknown>).type === 'topic',
-    );
-
-    return { data: topicMessages };
+    return { data: topics };
   }
 
   // Finding #378: Content expiry — auto-delete messages after N days
@@ -1336,7 +1332,7 @@ export class MessagesService {
     if (!conv) throw new NotFoundException('Conversation not found');
 
     const member = await this.prisma.conversationMember.findUnique({
-      where: { userId_conversationId: { userId, conversationId } },
+      where: { conversationId_userId: { conversationId, userId } },
     });
     if (!member) throw new ForbiddenException('Not a member');
     if (conv.isGroup && member.role !== 'ADMIN' && conv.createdById !== userId) {
@@ -1351,7 +1347,7 @@ export class MessagesService {
 
     await this.prisma.conversation.update({
       where: { id: conversationId },
-      data: { disappearingTimer: expiryDays === 0 ? null : expiryDays * 24 * 60 },
+      data: { disappearingDuration: expiryDays === 0 ? null : expiryDays * 24 * 60 },
     });
 
     return { expiryDays, message: expiryDays === 0 ? 'Message expiry disabled' : `Messages will expire after ${expiryDays} days` };

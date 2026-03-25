@@ -1955,7 +1955,7 @@ export class IslamicService {
 
       // Send to all users with push tokens
       const usersWithTokens = await this.prisma.device.findMany({
-        where: { isActive: true, pushToken: { not: null } },
+        where: { isActive: true, pushToken: { not: '' } },
         select: { userId: true },
         take: 10000,
       });

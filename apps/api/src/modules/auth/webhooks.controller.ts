@@ -130,9 +130,10 @@ export class WebhooksController {
       await this.authService.deactivateByClerkId(data.id);
     } else if (type === 'session.created') {
       // Track login event — update lastSeenAt for the user
-      if (data.user_id) {
-        await this.authService.trackLogin(data.user_id).catch((err: Error) =>
-          this.logger.warn(`Failed to track login for ${data.user_id}: ${err.message}`),
+      const sessionUserId = data.user_id as string | undefined;
+      if (sessionUserId) {
+        await this.authService.trackLogin(sessionUserId).catch((err: Error) =>
+          this.logger.warn(`Failed to track login for ${sessionUserId}: ${err.message}`),
         );
       }
     } else if (type === 'session.ended') {

@@ -312,7 +312,7 @@ export class ReelsService {
       isRemoved: false,
       isTrial: false,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isPrivate: false },
+      user: { isPrivate: false, isDeactivated: false, isBanned: false },
       createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) }, // last 72h
       ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
@@ -1196,12 +1196,11 @@ export class ReelsService {
       data: {
         userId,
         videoUrl: dto.videoUrl || '',
+        duration: dto.duration || 0,
         caption: dto.caption ? sanitizeText(dto.caption) : '',
         hashtags: dto.hashtags ?? [],
         mentions: dto.mentions ?? [],
-        status: 'DRAFT' as ReelStatus,
-        audioTitle: dto.audioTitle,
-        audioArtist: dto.audioArtist,
+        status: ReelStatus.PROCESSING,
         altText: dto.altText,
         topics: dto.topics ?? [],
       },
@@ -1213,7 +1212,7 @@ export class ReelsService {
   // Finding #376: Get user's draft reels
   async getDrafts(userId: string) {
     const drafts = await this.prisma.reel.findMany({
-      where: { userId, status: 'DRAFT' as ReelStatus, isRemoved: false },
+      where: { userId, status: ReelStatus.PROCESSING, isRemoved: false },
       select: REEL_SELECT,
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -1226,7 +1225,7 @@ export class ReelsService {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel) throw new NotFoundException('Reel not found');
     if (reel.userId !== userId) throw new ForbiddenException();
-    if (reel.status !== 'DRAFT') throw new BadRequestException('Only drafts can be deleted this way');
+    if (reel.status !== ReelStatus.PROCESSING) throw new BadRequestException('Only drafts can be deleted this way');
 
     await this.prisma.reel.delete({ where: { id: reelId } });
     return { deleted: true };
@@ -1234,7 +1233,10 @@ export class ReelsService {
 
   // Finding #317: Get download URL with optional watermark
   async getDownloadUrl(reelId: string, userId: string, withWatermark = true) {
-    const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
+    const reel = await this.prisma.reel.findUnique({
+      where: { id: reelId },
+      include: { user: { select: { username: true } } },
+    });
     if (!reel || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     // Original quality URL (Finding #318)
@@ -1244,7 +1246,7 @@ export class ReelsService {
       url: originalUrl,
       watermark: withWatermark,
       // Watermark overlay is done client-side (mobile FFmpeg) — we provide the brand text
-      watermarkText: withWatermark ? '@' + (reel.user as Record<string, string>)?.username + ' • mizanly.app' : null,
+      watermarkText: withWatermark ? '@' + (reel.user?.username ?? 'unknown') + ' • mizanly.app' : null,
       quality: 'original',
     };
   }

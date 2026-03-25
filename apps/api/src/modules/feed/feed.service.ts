@@ -141,10 +141,14 @@ export class FeedService {
   async getCommunityTrending(userId: string, limit = 10) {
     const followedTags = await this.prisma.hashtagFollow.findMany({
       where: { userId },
-      select: { hashtag: { select: { name: true } } },
+      select: { hashtagId: true },
       take: 50,
     });
-    const tagNames = followedTags.map(h => h.hashtag.name);
+    const hashtagIds = followedTags.map(h => h.hashtagId);
+    const hashtags = hashtagIds.length > 0
+      ? await this.prisma.hashtag.findMany({ where: { id: { in: hashtagIds } }, select: { name: true } })
+      : [];
+    const tagNames = hashtags.map(h => h.name);
     if (tagNames.length === 0) return [];
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
