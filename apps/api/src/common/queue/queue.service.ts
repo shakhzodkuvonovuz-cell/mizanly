@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleDestroy, Inject } from '@nestjs/common';
 import { Queue, Job } from 'bullmq';
 import * as Sentry from '@sentry/node';
 import Redis from 'ioredis';
+import { getCorrelationId } from '../middleware/correlation-id.store';
 
 /**
  * QueueService — high-level API for enqueuing jobs across all BullMQ queues.
@@ -10,8 +11,8 @@ import Redis from 'ioredis';
  * Workers are started in the corresponding processor classes.
  *
  * Correlation ID propagation: each job data payload includes an optional
- * `correlationId` field extracted from the current request context (if available).
- * Processors should log this ID for end-to-end traceability.
+ * `correlationId` field extracted from the current request context via AsyncLocalStorage.
+ * Processors extract this ID and attach to Sentry scope + log context.
  */
 @Injectable()
 export class QueueService implements OnModuleDestroy {
@@ -29,6 +30,12 @@ export class QueueService implements OnModuleDestroy {
     @Inject('QUEUE_AI_TASKS') private aiTasksQueue: Queue,
     @Inject('REDIS') private redis: Redis,
   ) {}
+
+  /** Attach correlationId from the current request context to job data */
+  private withCorrelation<T extends Record<string, unknown>>(data: T): T & { correlationId?: string } {
+    const correlationId = getCorrelationId();
+    return correlationId ? { ...data, correlationId } : data;
+  }
 
   async onModuleDestroy() {
     await Promise.allSettled([
@@ -48,7 +55,7 @@ export class QueueService implements OnModuleDestroy {
     // defined in NotificationProcessor.backoffStrategy (notification.processor.ts).
     // Using 'custom' type because the delays are non-standard exponential.
     // If switching to separate worker processes, change to 'exponential' with delay: 1000.
-    const job = await this.notificationsQueue.add('push-trigger', data, {
+    const job = await this.notificationsQueue.add('push-trigger', this.withCorrelation(data), {
       attempts: 3,
       backoff: { type: 'custom' },
     });
@@ -63,7 +70,7 @@ export class QueueService implements OnModuleDestroy {
     userId: string;
     action: string;
   }): Promise<string> {
-    const job = await this.analyticsQueue.add(data.type, data, {
+    const job = await this.analyticsQueue.add(data.type, this.withCorrelation(data), {
       attempts: 2,
       backoff: { type: 'exponential', delay: 1000 },
     });
@@ -83,7 +90,7 @@ export class QueueService implements OnModuleDestroy {
     // defined in WebhookProcessor.backoffStrategy (webhook.processor.ts).
     // Using 'custom' type for webhook-specific progressive delays.
     // If switching to separate worker processes, change to 'exponential' with delay: 1000.
-    const job = await this.webhooksQueue.add('deliver', data, {
+    const job = await this.webhooksQueue.add('deliver', this.withCorrelation(data), {
       attempts: 5,
       backoff: { type: 'custom' },
     });
@@ -98,7 +105,7 @@ export class QueueService implements OnModuleDestroy {
     documentId: string;
     document?: Record<string, unknown>;
   }): Promise<string> {
-    const job = await this.searchQueue.add(data.action, data, {
+    const job = await this.searchQueue.add(data.action, this.withCorrelation(data), {
       attempts: 3,
       backoff: { type: 'exponential', delay: 1000 },
     });
@@ -112,7 +119,7 @@ export class QueueService implements OnModuleDestroy {
     contentType: 'post' | 'thread' | 'comment' | 'message' | 'reel';
     contentId: string;
   }): Promise<string> {
-    const job = await this.aiTasksQueue.add('moderate', data, {
+    const job = await this.aiTasksQueue.add('moderate', this.withCorrelation(data), {
       attempts: 2,
       backoff: { type: 'exponential', delay: 3000 },
     });

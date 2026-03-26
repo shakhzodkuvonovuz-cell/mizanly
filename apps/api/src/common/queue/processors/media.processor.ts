@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../config/prisma.service';
 import { QueueService } from '../queue.service';
 import { assertNotPrivateUrl } from '../../utils/ssrf';
+import { attachCorrelationId } from '../with-correlation';
 
 interface MediaJobData {
   type: 'image-resize' | 'blurhash' | 'video-transcode';
@@ -54,6 +55,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'media-processing',
       async (job: Job<MediaJobData>) => {
+        attachCorrelationId(job, this.logger);
         switch (job.name) {
           case 'image-resize':
             await this.processImageResize(job);

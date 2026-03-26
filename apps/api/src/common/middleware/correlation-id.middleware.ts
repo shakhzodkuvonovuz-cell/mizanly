@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
+import { correlationStore } from './correlation-id.store';
 
 // Extend Express Request type to include id property for pino-http
 interface RequestWithId extends Request {
@@ -22,6 +23,8 @@ export class CorrelationIdMiddleware implements NestMiddleware {
     req.headers['x-correlation-id'] = correlationId;
     req.id = correlationId; // For pino-http integration
     res.setHeader('x-correlation-id', correlationId);
-    next();
+
+    // Store in AsyncLocalStorage so QueueService can propagate to job payloads
+    correlationStore.run(correlationId, () => next());
   }
 }

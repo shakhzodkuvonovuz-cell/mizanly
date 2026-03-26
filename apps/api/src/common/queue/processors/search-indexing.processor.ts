@@ -3,6 +3,7 @@ import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { MeilisearchService } from '../../../modules/search/meilisearch.service';
 import { QueueService } from '../queue.service';
+import { attachCorrelationId } from '../with-correlation';
 
 interface SearchIndexJobData {
   action: 'index' | 'update' | 'delete';
@@ -38,6 +39,7 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'search-indexing',
       async (job: Job<SearchIndexJobData>) => {
+        attachCorrelationId(job, this.logger);
         await this.processSearchIndex(job);
       },
       {

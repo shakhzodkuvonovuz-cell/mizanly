@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { AiService } from '../../../modules/ai/ai.service';
 import { PrismaService } from '../../../config/prisma.service';
 import { QueueService } from '../queue.service';
+import { attachCorrelationId } from '../with-correlation';
 
 interface ModerationJobData {
   content: string;
@@ -45,6 +46,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'ai-tasks',
       async (job: Job) => {
+        attachCorrelationId(job, this.logger);
         switch (job.name) {
           case 'moderate':
             await this.processModeration(job as Job<ModerationJobData>);

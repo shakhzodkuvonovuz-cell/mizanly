@@ -5,6 +5,7 @@ import { PushTriggerService } from '../../../modules/notifications/push-trigger.
 import { PushService } from '../../../modules/notifications/push.service';
 import { PrismaService } from '../../../config/prisma.service';
 import { QueueService } from '../queue.service';
+import { attachCorrelationId } from '../with-correlation';
 
 /**
  * Notification processor — handles push notification delivery via BullMQ worker.
@@ -36,6 +37,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'notifications',
       async (job: Job) => {
+        attachCorrelationId(job, this.logger);
         switch (job.name) {
           case 'push-trigger':
             await this.processPushTrigger(job);

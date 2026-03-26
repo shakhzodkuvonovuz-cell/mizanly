@@ -3,6 +3,7 @@ import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { GamificationService } from '../../../modules/gamification/gamification.service';
 import { QueueService } from '../queue.service';
+import { attachCorrelationId } from '../with-correlation';
 
 interface GamificationJobData {
   type: 'award-xp' | 'update-streak';
@@ -44,6 +45,7 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'analytics',
       async (job: Job) => {
+        attachCorrelationId(job, this.logger);
         switch (job.name) {
           case 'award-xp':
             await this.processAwardXP(job as Job<GamificationJobData>);

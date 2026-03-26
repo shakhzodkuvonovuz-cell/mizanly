@@ -5,6 +5,7 @@ import { PrismaService } from '../../../config/prisma.service';
 import { createHmac } from 'crypto';
 import { QueueService } from '../queue.service';
 import { assertNotPrivateUrl } from '../../utils/ssrf';
+import { attachCorrelationId } from '../with-correlation';
 
 interface WebhookJobData {
   url: string;
@@ -42,6 +43,7 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'webhooks',
       async (job: Job<WebhookJobData>) => {
+        attachCorrelationId(job, this.logger);
         await this.deliverWebhook(job);
       },
       {
