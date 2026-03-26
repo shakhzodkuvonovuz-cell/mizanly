@@ -95,7 +95,7 @@ export class StoriesService {
         userId: { in: ids },
         expiresAt: { gt: new Date() },
         isArchived: false,
-        user: { isDeactivated: false, isBanned: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false },
       },
       select: { ...STORY_SELECT, closeFriendsOnly: true, subscribersOnly: true },
       orderBy: { createdAt: 'desc' },

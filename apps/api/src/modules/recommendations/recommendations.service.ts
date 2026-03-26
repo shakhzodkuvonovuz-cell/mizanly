@@ -411,7 +411,7 @@ export class RecommendationsService {
       isRemoved: false,
       visibility: PostVisibility.PUBLIC,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isBanned: false, isPrivate: false },
+      user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
     };
     if (userId) {
       where.userId = { not: userId, notIn: excludedUserIds };
@@ -440,7 +440,7 @@ export class RecommendationsService {
       isRemoved: false,
       status: ReelStatus.READY,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isBanned: false, isPrivate: false },
+      user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
     };
     if (userId) {
       where.userId = { not: userId, notIn: excludedUserIds };
@@ -470,7 +470,7 @@ export class RecommendationsService {
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       visibility: 'PUBLIC',
       isChainHead: true,
-      user: { isDeactivated: false, isBanned: false },
+      user: { isDeactivated: false, isBanned: false, isDeleted: false },
     };
     if (userId) {
       where.userId = { not: userId, notIn: excludedUserIds };
@@ -515,6 +515,7 @@ export class RecommendationsService {
         where: {
           isDeactivated: false,
           isBanned: false,
+          isDeleted: false,
           isPrivate: false,
         },
         select: {
@@ -567,6 +568,7 @@ export class RecommendationsService {
         id: { in: sortedIds, notIn: excludedIds },
         isDeactivated: false,
         isBanned: false,
+        isDeleted: false,
         isPrivate: false,
       },
       select: {
@@ -603,6 +605,7 @@ export class RecommendationsService {
               id: { in: rankedIds },
               isRemoved: false,
               OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+              user: { isDeactivated: false, isBanned: false, isDeleted: false },
             },
             select: POST_SELECT,
             take: 50,
@@ -621,7 +624,7 @@ export class RecommendationsService {
       isRemoved: false,
       visibility: PostVisibility.PUBLIC,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isBanned: false, isPrivate: false },
+      user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
       createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
     };
     if (userId) {
@@ -668,6 +671,7 @@ export class RecommendationsService {
               status: ReelStatus.READY,
               OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
               isTrial: false,
+              user: { isDeactivated: false, isBanned: false, isDeleted: false },
             },
             select: REEL_SELECT,
             take: 50,
@@ -685,7 +689,7 @@ export class RecommendationsService {
       isRemoved: false,
       status: ReelStatus.READY,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isDeactivated: false, isBanned: false, isPrivate: false },
+      user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
       createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
     };
     if (userId) {
@@ -716,7 +720,7 @@ export class RecommendationsService {
     const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
 
     const where: Prisma.ChannelWhereInput = {
-      user: { isDeactivated: false, isBanned: false },
+      user: { isDeactivated: false, isBanned: false, isDeleted: false },
     };
     if (userId) {
       where.userId = { not: userId };
@@ -755,6 +759,7 @@ export class RecommendationsService {
               id: { in: rankedIds },
               isRemoved: false,
               OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+              user: { isDeactivated: false, isBanned: false, isDeleted: false },
             },
             select: THREAD_SELECT,
             take: 50,
@@ -774,7 +779,7 @@ export class RecommendationsService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         isChainHead: true,
-        user: { isDeactivated: false, isBanned: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false },
         createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
       },
       select: THREAD_SELECT,

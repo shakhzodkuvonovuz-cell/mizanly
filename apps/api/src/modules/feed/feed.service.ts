@@ -3,6 +3,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { ContentSpace, PostVisibility, Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 import { CANDIDATE_POOL_SIZE } from '../../common/constants/feed-scoring';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 const FEED_POST_SELECT = {
   id: true,
@@ -91,6 +92,7 @@ export class FeedService {
 
   async dismiss(userId: string, contentId: string, contentType: string) {
     // Finding #300: Track negative signal for algorithm adjustment
+    // NOTE: negative_signals stored but never consumed by feed algorithm. Consider removing.
     await this.redis.lpush(`negative_signals:${userId}`, JSON.stringify({
       contentId, contentType, action: 'dismiss', timestamp: Date.now(),
     }));
@@ -161,7 +163,7 @@ export class FeedService {
         isRemoved: false,
         visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, isBanned: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false },
       },
       select: { id: true, content: true, mediaUrls: true, likesCount: true, commentsCount: true, sharesCount: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       take: CANDIDATE_POOL_SIZE.COMMUNITY,
@@ -217,9 +219,13 @@ export class FeedService {
     ]);
     // Clear Redis session signals
     await this.redis.del(`session:${userId}`);
-    // Clear cached foryou feeds
-    const keys = await this.redis.keys(`feed:foryou:${userId}:*`);
-    if (keys.length > 0) await this.redis.del(...keys);
+    // Clear cached foryou feeds (SCAN is non-blocking unlike KEYS)
+    let scanCursor = '0';
+    do {
+      const [nextCursor, keys] = await this.redis.scan(scanCursor, 'MATCH', `feed:foryou:${userId}:*`, 'COUNT', 100);
+      scanCursor = nextCursor;
+      if (keys.length > 0) await this.redis.del(...keys);
+    } while (scanCursor !== '0');
     return { reset: true, message: 'Your algorithm has been reset. Your feed will now show fresh content.' };
   }
 
@@ -270,37 +276,9 @@ export class FeedService {
   }
 
   /** Get user IDs to exclude from feeds (blocked both directions + muted + restricted).
-   *  Safety-critical: no artificial cap — blocks must enforce completely. */
+   *  Delegates to shared cached utility — results cached in Redis for 60s per user. */
   private async getExcludedUserIds(userId: string): Promise<string[]> {
-    const [blocks, mutes, restricts] = await Promise.all([
-      this.prisma.block.findMany({
-        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
-        select: { blockerId: true, blockedId: true },
-        take: 10000,
-      }),
-      this.prisma.mute.findMany({
-        where: { userId },
-        select: { mutedId: true },
-        take: 10000,
-      }),
-      this.prisma.restrict.findMany({
-        where: { restricterId: userId },
-        select: { restrictedId: true },
-        take: 10000,
-      }),
-    ]);
-    const excluded = new Set<string>();
-    for (const b of blocks) {
-      if (b.blockerId === userId) excluded.add(b.blockedId);
-      else excluded.add(b.blockerId);
-    }
-    for (const m of mutes) {
-      excluded.add(m.mutedId);
-    }
-    for (const r of restricts) {
-      excluded.add(r.restrictedId);
-    }
-    return [...excluded];
+    return getExcludedUserIds(this.prisma, this.redis, userId);
   }
 
   /**
@@ -361,7 +339,7 @@ export class FeedService {
         visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isBanned: false, isPrivate: false, ...userFilter },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
         ...contentFilter,
       },
       select: FEED_POST_SELECT,
@@ -448,7 +426,7 @@ export class FeedService {
         isRemoved: false,
         visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, isBanned: false, isPrivate: false, ...userFilter },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: FEED_POST_SELECT,
@@ -503,7 +481,7 @@ export class FeedService {
         this.prisma.follow.findMany({
           where: { followerId: userId },
           select: { followingId: true },
-          take: 50,
+          take: 5000,
         }),
         this.getExcludedUserIds(userId),
       ]);
@@ -515,6 +493,7 @@ export class FeedService {
       where: {
         isDeactivated: false,
         isBanned: false,
+        isDeleted: false,
         isPrivate: false,
         ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
       },
@@ -568,7 +547,7 @@ export class FeedService {
         locationName: { not: null },
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, isBanned: false, isPrivate: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       select: {
@@ -639,7 +618,7 @@ export class FeedService {
     if (filteredIds.length === 0) return [];
 
     return this.prisma.user.findMany({
-      where: { id: { in: filteredIds }, isDeactivated: false, isBanned: false },
+      where: { id: { in: filteredIds }, isDeactivated: false, isBanned: false, isDeleted: false },
       select: {
         id: true,
         username: true,

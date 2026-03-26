@@ -342,7 +342,7 @@ export class ReelsService {
       isRemoved: false,
       isTrial: false,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isPrivate: false, isDeactivated: false, isBanned: false },
+      user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
       createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) }, // last 72h
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
     };
@@ -434,7 +434,7 @@ export class ReelsService {
         isTrial: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isBanned: false, isPrivate: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
       },
       select: {
         ...REEL_SELECT,

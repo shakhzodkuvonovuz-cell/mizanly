@@ -23,6 +23,7 @@ import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 import { enrichPostsForUser } from '../../common/utils/enrich';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 const POST_SELECT = {
   id: true,
@@ -155,19 +156,12 @@ export class PostsService {
     }
 
     if (type === 'foryou') {
-      // Get blocked/muted users to exclude (bidirectional for blocks) + dismissed posts
-      const [blocksOut, blocksIn, mutes, dismissals] = await Promise.all([
-        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 1000 }),
-        this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 1000 }),
-        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 1000 }),
+      // Get blocked/muted users to exclude (shared cached utility) + dismissed posts
+      const [excludedIds, dismissals] = await Promise.all([
+        getExcludedUserIds(this.prisma, this.redis, userId),
         this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'post' }, select: { contentId: true }, take: 200 }),
       ]);
       const dismissedPostIds = dismissals.map(d => d.contentId);
-      const excludedIds = [
-        ...blocksOut.map((b) => b.blockedId),
-        ...blocksIn.map((b) => b.blockerId),
-        ...mutes.map((m) => m.mutedId),
-      ];
 
       // For-you feed scores 200 candidates once, then caches result for 60s.
 
@@ -223,20 +217,13 @@ export class PostsService {
     }
 
     // Following feed — with zero-follow fallback to trending
-    const [follows, blocksOut, blocksIn, mutes] = await Promise.all([
-      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true }, take: 50 }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 1000 }),
-      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 1000 }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 1000 }),
+    const [follows, excludedIds] = await Promise.all([
+      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true }, take: 5000 }),
+      getExcludedUserIds(this.prisma, this.redis, userId),
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
     const followCount = followingIds.length;
-    const excludedIds = [
-      ...blocksOut.map((b) => b.blockedId),
-      ...blocksIn.map((b) => b.blockerId),
-      ...mutes.map((m) => m.mutedId),
-    ];
 
     // Zero follows → return trending content so feed is never empty
     if (followCount === 0) {
@@ -406,24 +393,15 @@ export class PostsService {
   }
 
   private async getChronologicalFeed(userId: string, cursor?: string, limit = 20) {
-    const [followingResult, blocks, mutes] = await Promise.all([
+    const [followingResult, excludedIds] = await Promise.all([
       this.prisma.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true },
-      take: 50,
-    }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 1000,
-    }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 1000,
-    }),
+        take: 5000,
+      }),
+      getExcludedUserIds(this.prisma, this.redis, userId),
     ]);
     const followIds = followingResult.map(f => f.followingId);
-    const excludedIds = [
-      ...blocks.map((b) => b.blockedId),
-      ...mutes.map((m) => m.mutedId),
-    ];
     const excludedSet = new Set(excludedIds);
     const visibleUserIds = [userId, ...followIds.filter(id => !excludedSet.has(id))];
 
@@ -453,23 +431,14 @@ export class PostsService {
   }
 
   private async getFavoritesFeed(userId: string, cursor?: string, limit = 20) {
-    const [circleMembers, blocks, mutes] = await Promise.all([
+    const [circleMembers, excludedIds] = await Promise.all([
       this.prisma.circleMember.findMany({
         where: { circle: { ownerId: userId } },
         select: { userId: true },
-      take: 50,
-    }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 1000,
-    }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
-      take: 1000,
-    }),
+        take: 50,
+      }),
+      getExcludedUserIds(this.prisma, this.redis, userId),
     ]);
-    const excludedIds = [
-      ...blocks.map((b) => b.blockedId),
-      ...mutes.map((m) => m.mutedId),
-    ];
     const excludedSet = new Set(excludedIds);
     const favoriteIds = circleMembers.map(m => m.userId).filter(id => !excludedSet.has(id));
     if (favoriteIds.length === 0) return { data: [], meta: { cursor: null, hasMore: false } };
@@ -1014,6 +983,8 @@ export class PostsService {
       }
       throw error;
     }
+    // NOTE: No notification on save (Instagram parity). Add if engagement data shows value.
+
     return { saved: true };
   }
 
@@ -1144,6 +1115,17 @@ export class PostsService {
         data: { sharesCount: { increment: 1 } },
       }),
     ]);
+
+    // Notify original post owner about the share (not self)
+    if (original.userId && original.userId !== userId) {
+      this.notifications.create({
+        userId: original.userId,
+        actorId: userId,
+        type: 'REPOST',
+        postId,
+      }).catch((err) => this.logger.error('Failed to create share notification', err));
+    }
+
     return shared;
   }
 
@@ -1858,11 +1840,12 @@ export class PostsService {
     try {
       if (this.redis.pfadd) {
         await this.redis.pfadd(`post:impressions:${postId}`, userId);
+        return { tracked: true };
       }
     } catch {
-      // Redis failure non-blocking
+      // Redis failure — report honestly instead of faking success
     }
-    return { tracked: true };
+    return { tracked: false };
   }
 
   // Finding #173: Get impression count for a post

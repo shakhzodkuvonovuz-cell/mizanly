@@ -20,6 +20,7 @@ import { AiService } from '../ai/ai.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 const THREAD_SELECT = {
   id: true,
@@ -110,19 +111,9 @@ export class ThreadsService {
   ) {}
 
   /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us).
-   *  Safety-critical: no artificial cap — blocks must enforce completely.
-   *  Upper bound of 10,000 to prevent DoS on pathological accounts. */
+   *  Delegates to shared cached utility — results cached in Redis for 60s per user. */
   private async getExcludedUserIds(userId: string): Promise<string[]> {
-    const [blockedByMe, blockedMe, mutes] = await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 10000 }),
-      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 10000 }),
-      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true }, take: 10000 }),
-    ]);
-    const ids = new Set<string>();
-    for (const b of blockedByMe) ids.add(b.blockedId);
-    for (const b of blockedMe) ids.add(b.blockerId);
-    for (const m of mutes) ids.add(m.mutedId);
-    return [...ids];
+    return getExcludedUserIds(this.prisma, this.redis, userId);
   }
 
   async getFeed(
@@ -134,7 +125,7 @@ export class ThreadsService {
     const [follows, excludedIds] = await Promise.all([
       type === 'following'
         ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true },
-      take: 50,
+      take: 5000,
     })
         : Promise.resolve([]),
       this.getExcludedUserIds(userId),

@@ -453,6 +453,7 @@ export class FollowsService {
         id: { notIn: [...followingIds, userId] },
         isDeactivated: false,
         isBanned: false,
+        isDeleted: false,
         followers: { some: { followerId: { in: followingIds } } },
       },
       select: {

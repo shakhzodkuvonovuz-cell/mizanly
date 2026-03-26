@@ -7,21 +7,29 @@ import {
   Logger,
   Optional,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { Prisma, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
+import { createClerkClient } from '@clerk/backend';
 
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
+  private clerk;
 
   constructor(
     private prisma: PrismaService,
     private queueService: QueueService,
+    private config: ConfigService,
     @Optional() private notificationsService: NotificationsService,
-  ) {}
+  ) {
+    this.clerk = createClerkClient({
+      secretKey: this.config.get('CLERK_SECRET_KEY'),
+    });
+  }
 
   /**
    * Report reasons that require urgent handling (Finding 2, 3, 14).
@@ -280,10 +288,11 @@ export class ReportsService {
     }
 
     // Actually ban user when action is PERMANENT_BAN or TEMP_BAN
+    // Match admin.service.ts pattern: set both isBanned + isDeactivated, then revoke Clerk sessions
     if ((actionTaken === ModerationAction.PERMANENT_BAN || actionTaken === ModerationAction.TEMP_BAN) && report.reportedUserId) {
       ops.push(this.prisma.user.update({
         where: { id: report.reportedUserId },
-        data: { isBanned: true, banReason: `Report ${reportId}: ${report.reason}` },
+        data: { isBanned: true, isDeactivated: true, banReason: `Report ${reportId}: ${report.reason}` },
       }));
     }
 
@@ -296,6 +305,23 @@ export class ReportsService {
     }
 
     const [updated] = await this.prisma.$transaction(ops);
+
+    // Revoke Clerk sessions so banned user is immediately logged out (matching admin.service.ts pattern)
+    if ((actionTaken === ModerationAction.PERMANENT_BAN || actionTaken === ModerationAction.TEMP_BAN) && report.reportedUserId) {
+      const bannedUser = await this.prisma.user.findUnique({
+        where: { id: report.reportedUserId },
+        select: { clerkId: true },
+      });
+      if (bannedUser?.clerkId) {
+        try {
+          await this.clerk.users.banUser(bannedUser.clerkId);
+          this.logger.log(`Clerk sessions revoked for banned user ${report.reportedUserId} (clerkId: ${bannedUser.clerkId})`);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.warn(`Failed to revoke Clerk session for banned user ${report.reportedUserId}: ${msg}`);
+        }
+      }
+    }
 
     // Finding 30 (Audit 13): Handle WARNING action — notify the reported user
     // Sent after transaction succeeds, routed through NotificationsService for push + dedup

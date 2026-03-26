@@ -4,6 +4,7 @@ import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { EmbeddingContentType, PostVisibility, ReelStatus } from '@prisma/client';
 import Redis from 'ioredis';
 import { calculatePrayerTimes } from '../islamic/prayer-calculator';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 export interface FeedItem {
   id: string;
@@ -64,38 +65,10 @@ export class PersonalizedFeedService {
     await this.redis.expire(key, PersonalizedFeedService.SESSION_TTL);
   }
 
-  /** Get user IDs to exclude from feeds (blocked in both directions + muted + restricted) */
-  /** Safety-critical: no artificial cap on block/mute enforcement */
+  /** Get user IDs to exclude from feeds (blocked in both directions + muted + restricted).
+   *  Delegates to shared cached utility — results cached in Redis for 60s per user. */
   private async getExcludedUserIds(userId: string): Promise<string[]> {
-    const [blocks, mutes, restricts] = await Promise.all([
-      this.prisma.block.findMany({
-        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
-        select: { blockerId: true, blockedId: true },
-        take: 10000,
-      }),
-      this.prisma.mute.findMany({
-        where: { userId },
-        select: { mutedId: true },
-        take: 10000,
-      }),
-      this.prisma.restrict.findMany({
-        where: { restricterId: userId },
-        select: { restrictedId: true },
-        take: 10000,
-      }),
-    ]);
-    const excluded = new Set<string>();
-    for (const b of blocks) {
-      if (b.blockerId === userId) excluded.add(b.blockedId);
-      else excluded.add(b.blockerId);
-    }
-    for (const m of mutes) {
-      excluded.add(m.mutedId);
-    }
-    for (const r of restricts) {
-      excluded.add(r.restrictedId);
-    }
-    return [...excluded];
+    return getExcludedUserIds(this.prisma, this.redis, userId);
   }
 
   // ── Session-aware adaptation (72.7) ───────────────────────
@@ -488,7 +461,7 @@ export class PersonalizedFeedService {
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           visibility: PostVisibility.PUBLIC,
           hashtags: { hasSome: islamicTagArray },
-          user: { isVerified: true, isDeactivated: false, isBanned: false, ...userFilter },
+          user: { isVerified: true, isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
         },
         select: { id: true },
         orderBy: { likesCount: 'desc' },
@@ -505,7 +478,7 @@ export class PersonalizedFeedService {
           isTrial: false,
           status: ReelStatus.READY,
           hashtags: { hasSome: islamicTagArray },
-          user: { isDeactivated: false, isBanned: false, ...userFilter },
+          user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
         },
         select: { id: true },
         orderBy: { viewsCount: 'desc' },
@@ -522,7 +495,7 @@ export class PersonalizedFeedService {
         visibility: 'PUBLIC',
         isChainHead: true,
         hashtags: { hasSome: islamicTagArray },
-        user: { isDeactivated: false, isBanned: false, ...userFilter },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
       },
       select: { id: true },
       orderBy: { likesCount: 'desc' },
@@ -548,7 +521,7 @@ export class PersonalizedFeedService {
           visibility: PostVisibility.PUBLIC,
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           createdAt: { gte: since },
-          user: { isDeactivated: false, isBanned: false, isPrivate: false, ...userFilter },
+          user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
         select: { id: true, hashtags: true, createdAt: true, likesCount: true },
@@ -575,7 +548,7 @@ export class PersonalizedFeedService {
           status: ReelStatus.READY,
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           createdAt: { gte: since },
-          user: { isDeactivated: false, isBanned: false, isPrivate: false, ...userFilter },
+          user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
         select: { id: true, hashtags: true, createdAt: true, viewsCount: true },
@@ -599,8 +572,9 @@ export class PersonalizedFeedService {
       const videos = await this.prisma.video.findMany({
         where: {
           status: 'PUBLISHED',
+          isRemoved: false,
           createdAt: { gte: since },
-          user: { isDeactivated: false, isBanned: false, ...userFilter },
+          user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
         select: { id: true, tags: true, createdAt: true, viewsCount: true },
@@ -628,7 +602,7 @@ export class PersonalizedFeedService {
         visibility: 'PUBLIC',
         isChainHead: true,
         createdAt: { gte: since },
-        user: { isDeactivated: false, isBanned: false, ...userFilter },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: { id: true, hashtags: true, createdAt: true, likesCount: true },

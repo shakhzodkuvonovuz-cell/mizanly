@@ -1152,7 +1152,7 @@ export class UsersService {
       where: {
         followerId: { in: followerIds },
         followingId: { not: user.id },
-        following: { isPrivate: false, isDeactivated: false, isBanned: false },
+        following: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
       },
       _count: { followerId: true },
       orderBy: { _count: { followerId: 'desc' } },
