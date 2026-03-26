@@ -33,6 +33,12 @@ export class PushTriggerService {
             notification.userId,
             this.push.buildLikeNotification(actorName, notification.postId),
           );
+        } else if (notification.threadId) {
+          await this.sendSafe(notification.userId, {
+            title: 'Like',
+            body: `${actorName} liked your thread`,
+            data: { type: 'like', threadId: notification.threadId, actorName },
+          });
         }
         break;
 
@@ -114,6 +120,12 @@ export class PushTriggerService {
             notification.userId,
             this.push.buildRepostNotification(actorName, notification.postId),
           );
+        } else if (notification.threadId) {
+          await this.sendSafe(notification.userId, {
+            title: 'Repost',
+            body: `${actorName} reposted your thread`,
+            data: { type: 'repost', threadId: notification.threadId, actorName },
+          });
         }
         break;
 

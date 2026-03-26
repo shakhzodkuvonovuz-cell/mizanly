@@ -21,6 +21,7 @@ import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 import { enrichPostsForUser } from '../../common/utils/enrich';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 
 const POST_SELECT = {
   id: true,
@@ -78,6 +79,7 @@ export class PostsService {
     private contentSafety: ContentSafetyService,
     private queueService: QueueService,
     private analytics: AnalyticsService,
+    private publishWorkflow: PublishWorkflowService,
   ) {}
 
   /**
@@ -248,6 +250,7 @@ export class PostsService {
       isRemoved: false,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       userId: { in: visibleUserIds },
+      user: { isBanned: false, isDeactivated: false },
     };
 
     const posts = await this.prisma.post.findMany({
@@ -274,6 +277,17 @@ export class PostsService {
    * Returns engagement-rate-scored posts from last 7 days.
    */
   private async getTrendingFallback(userId: string, excludedIds: string[], cursor?: string, limit = 20) {
+    // 60-second Redis cache for trending fallback (same pattern as ForYou feed)
+    const cacheKey = `feed:trending:${userId}:${cursor ?? 'first'}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        await this.redis.del(cacheKey);
+      }
+    }
+
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const posts = await this.prisma.post.findMany({
@@ -303,10 +317,14 @@ export class PostsService {
     const data = (hasMore ? page.slice(0, limit) : page).map(({ _score, ...p }) => p);
     const enriched = await this.enrichPostsForUser(data, userId);
 
-    return {
+    const result = {
       data: enriched,
       meta: { cursor: hasMore ? String(offset + limit) : null, hasMore },
     };
+
+    // Cache trending feed for 60 seconds
+    await this.redis.setex(cacheKey, 60, JSON.stringify(result));
+    return result;
   }
 
   /**
@@ -324,6 +342,7 @@ export class PostsService {
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: visibleUserIds },
+        user: { isBanned: false, isDeactivated: false },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: POST_SELECT,
@@ -508,16 +527,19 @@ export class PostsService {
 
     // Parse hashtags (upserts happen inside transaction below)
     const hashtagNames = extractHashtags(dto.content ?? '');
+    const isScheduled = !!dto.scheduledAt;
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Upsert hashtags inside transaction so counts stay consistent if post creation fails
+      // For scheduled content: create the hashtag record but don't increment count yet —
+      // counts are incremented when the scheduling cron publishes the content
       if (hashtagNames.length > 0) {
         await Promise.all(
           hashtagNames.map((name) =>
             tx.hashtag.upsert({
               where: { name },
-              create: { name, postsCount: 1 },
-              update: { postsCount: { increment: 1 } },
+              create: { name, postsCount: isScheduled ? 0 : 1 },
+              update: isScheduled ? {} : { postsCount: { increment: 1 } },
             }),
           ),
         );
@@ -617,96 +639,111 @@ export class PostsService {
     });
 
     const post = result;
-    // Mention notifications
-    if (dto.mentions?.length) {
-      const [mentionedUsers, actor] = await Promise.all([
-        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true },
-      take: 50,
-    }),
-        this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
-      ]);
-      for (const mentioned of mentionedUsers) {
-        if (mentioned.id !== userId) {
-          try {
-            const notification = await this.notifications.create({
-              userId: mentioned.id,
-              actorId: userId,
-              type: 'MENTION',
-              postId: post.id,
-              title: 'Mentioned you',
-              body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
-            });
-            if (notification) {
-              // Push delivery owned by NotificationsService.create() — no duplicate enqueue
+
+    // --- Side effects deferred for scheduled content ---
+    // Notifications, gamification XP, and analytics only fire when content is actually published.
+    // For scheduled content, these are triggered by the scheduling cron in publishOverdueContent().
+    if (!isScheduled) {
+      // Mention notifications
+      if (dto.mentions?.length) {
+        const [mentionedUsers, actor] = await Promise.all([
+          this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true },
+        take: 50,
+      }),
+          this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
+        ]);
+        for (const mentioned of mentionedUsers) {
+          if (mentioned.id !== userId) {
+            try {
+              const notification = await this.notifications.create({
+                userId: mentioned.id,
+                actorId: userId,
+                type: 'MENTION',
+                postId: post.id,
+                title: 'Mentioned you',
+                body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
+              });
+              if (notification) {
+                // Push delivery owned by NotificationsService.create() — no duplicate enqueue
+              }
+            } catch (err) {
+              this.logger.error('Failed to create mention notification', err instanceof Error ? err.message : err);
             }
-          } catch (err) {
-            this.logger.error('Failed to create mention notification', err instanceof Error ? err.message : err);
           }
         }
       }
-    }
-    // Tag + collab notifications (fetch actor once for both)
-    const needsActor = (dto.taggedUserIds?.length && dto.taggedUserIds.some((id) => id !== userId)) || dto.collaboratorUsername;
-    const actorUsername = needsActor
-      ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }))?.username ?? 'Someone'
-      : undefined;
+      // Tag + collab notifications (fetch actor once for both)
+      const needsActor = (dto.taggedUserIds?.length && dto.taggedUserIds.some((id) => id !== userId)) || dto.collaboratorUsername;
+      const actorUsername = needsActor
+        ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }))?.username ?? 'Someone'
+        : undefined;
 
-    // Tag notifications — use validated IDs from transaction, not raw DTO
-    if (dto.taggedUserIds?.length) {
-      const taggedRecords = await this.prisma.postTaggedUser.findMany({
-        where: { postId: post.id },
-        select: { userId: true },
-      });
-      for (const record of taggedRecords) {
-        if (record.userId !== userId) {
+      // Tag notifications — use validated IDs from transaction, not raw DTO
+      if (dto.taggedUserIds?.length) {
+        const taggedRecords = await this.prisma.postTaggedUser.findMany({
+          where: { postId: post.id },
+          select: { userId: true },
+        });
+        for (const record of taggedRecords) {
+          if (record.userId !== userId) {
+            this.notifications.create({
+              userId: record.userId,
+              actorId: userId,
+              type: 'TAG',
+              postId: post.id,
+              title: 'Tagged you',
+              body: `@${actorUsername} tagged you in a post`,
+            }).then((n) => {
+              // Push delivery owned by NotificationsService.create() — no duplicate enqueue
+            }).catch((err) => {
+              this.logger.error('Failed to create tag notification', err instanceof Error ? err.message : err);
+            });
+          }
+        }
+      }
+
+      // Collaborator invite notification
+      if (dto.collaboratorUsername) {
+        const invitee = await this.prisma.user.findUnique({
+          where: { username: dto.collaboratorUsername },
+          select: { id: true },
+        });
+        if (invitee && invitee.id !== userId) {
           this.notifications.create({
-            userId: record.userId,
+            userId: invitee.id,
             actorId: userId,
-            type: 'TAG',
+            type: 'COLLAB_INVITE',
             postId: post.id,
-            title: 'Tagged you',
-            body: `@${actorUsername} tagged you in a post`,
+            title: 'Collaboration invite',
+            body: `@${actorUsername} invited you to collaborate on a post`,
           }).then((n) => {
             // Push delivery owned by NotificationsService.create() — no duplicate enqueue
           }).catch((err) => {
-            this.logger.error('Failed to create tag notification', err instanceof Error ? err.message : err);
+            this.logger.error('Failed to create collab notification', err instanceof Error ? err.message : err);
           });
         }
       }
-    }
 
-    // Collaborator invite notification
-    if (dto.collaboratorUsername) {
-      const invitee = await this.prisma.user.findUnique({
-        where: { username: dto.collaboratorUsername },
-        select: { id: true },
+      // Gamification: award XP + update streak (fire-and-forget)
+      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' });
+      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+
+      // Track analytics
+      this.analytics.track('post_created', userId, {
+        postType: post.postType,
+        hasMedia: post.mediaUrls.length > 0,
+        visibility: post.visibility,
       });
-      if (invitee && invitee.id !== userId) {
-        this.notifications.create({
-          userId: invitee.id,
-          actorId: userId,
-          type: 'COLLAB_INVITE',
-          postId: post.id,
-          title: 'Collaboration invite',
-          body: `@${actorUsername} invited you to collaborate on a post`,
-        }).then((n) => {
-          // Push delivery owned by NotificationsService.create() — no duplicate enqueue
-        }).catch((err) => {
-          this.logger.error('Failed to create collab notification', err instanceof Error ? err.message : err);
-        });
-      }
+      this.analytics.increment('posts:daily');
     }
+    // --- End deferred side effects ---
 
-    // Gamification: award XP + update streak (fire-and-forget)
-    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' });
-    this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
-
-    // AI moderation: check content asynchronously via queue (flag for review, don't block)
+    // AI moderation: ALWAYS runs at creation time to catch violations early (even for scheduled content)
     if (dto.content) {
       this.queueService.addModerationJob({ content: dto.content, contentType: 'post', contentId: post.id });
     }
 
-    // Image moderation: check uploaded images via Claude Vision (async, don't block post creation)
+    // Image moderation: ALWAYS runs at creation time (even for scheduled content)
     if (dto.mediaUrls?.length && dto.mediaTypes?.some((t: string) => t.startsWith('image'))) {
       for (const [idx, url] of dto.mediaUrls.entries()) {
         if (dto.mediaTypes?.[idx]?.startsWith('image')) {
@@ -717,13 +754,24 @@ export class PostsService {
       }
     }
 
-    // Track analytics
-    this.analytics.track('post_created', userId, {
-      postType: post.postType,
-      hasMedia: post.mediaUrls.length > 0,
-      visibility: post.visibility,
-    });
-    this.analytics.increment('posts:daily');
+    // Publish workflow: search index, cache invalidation, real-time event
+    // Only trigger for immediately-published content (not scheduled)
+    if (!dto.scheduledAt) {
+      this.publishWorkflow.onPublish({
+        contentType: 'post',
+        contentId: post.id,
+        userId,
+        indexDocument: {
+          id: post.id,
+          content: dto.content || '',
+          hashtags: dto.hashtags || [],
+          username: post.user?.username || '',
+          userId,
+          postType: post.postType,
+          visibility: post.visibility,
+        },
+      }).catch(err => this.logger.warn('Publish workflow failed for post', err instanceof Error ? err.message : err));
+    }
 
     // Invalidate for-you feed cache for the author
     await this.redis.del(`feed:foryou:${userId}:first`);
@@ -740,6 +788,11 @@ export class PostsService {
       },
     });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+
+    // Hide future-scheduled content from non-owners
+    if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.user?.id !== viewerId) {
+      throw new NotFoundException('Post not found');
+    }
 
     // Check block status
     if (viewerId && post.user && viewerId !== post.user.id) {
@@ -829,10 +882,12 @@ export class PostsService {
 
     await this.redis.del(`feed:foryou:${userId}:first`);
 
-    // Remove from Meilisearch index on deletion
-    this.queueService.addSearchIndexJob({
-      action: 'delete', indexName: 'posts', documentId: postId,
-    }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
+    // Unpublish workflow: search index removal, cache invalidation, real-time event
+    this.publishWorkflow.onUnpublish({
+      contentType: 'post',
+      contentId: postId,
+      userId,
+    }).catch(err => this.logger.warn('Unpublish workflow failed for post', err instanceof Error ? err.message : err));
 
     return { deleted: true };
   }
@@ -1669,10 +1724,12 @@ export class PostsService {
         });
         this.logger.warn(`Post ${postId} auto-removed: image blocked (${result.reason})`);
 
-        // Remove from Meilisearch index on auto-moderation removal
-        this.queueService.addSearchIndexJob({
-          action: 'delete', indexName: 'posts', documentId: postId,
-        }).catch(err => this.logger.warn('Failed to queue search index deletion for moderated post', err instanceof Error ? err.message : err));
+        // Unpublish workflow on auto-moderation removal
+        this.publishWorkflow.onUnpublish({
+          contentType: 'post',
+          contentId: postId,
+          userId,
+        }).catch(err => this.logger.warn('Unpublish workflow failed for moderated post', err instanceof Error ? err.message : err));
 
         // Create a moderation report for the record
         await this.prisma.report.create({

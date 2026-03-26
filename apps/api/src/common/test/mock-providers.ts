@@ -13,6 +13,7 @@ import { QueueService } from '../queue/queue.service';
 import { ContentSafetyService } from '../../modules/moderation/content-safety.service';
 import { PrivacyService } from '../../modules/privacy/privacy.service';
 import { UploadService } from '../../modules/upload/upload.service';
+import { PublishWorkflowService } from '../services/publish-workflow.service';
 
 /**
  * Shared mock providers for test modules.
@@ -181,6 +182,14 @@ export const mockUploadService = {
   },
 };
 
+export const mockPublishWorkflowService = {
+  provide: PublishWorkflowService,
+  useValue: {
+    onPublish: jest.fn().mockResolvedValue(undefined),
+    onUnpublish: jest.fn().mockResolvedValue(undefined),
+  },
+};
+
 export const mockPrismaService = {
   provide: PrismaService,
   useValue: {
@@ -223,4 +232,5 @@ export const globalMockProviders = [
   mockContentSafetyService,
   mockPrivacyService,
   mockUploadService,
+  mockPublishWorkflowService,
 ];

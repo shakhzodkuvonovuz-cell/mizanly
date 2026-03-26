@@ -567,9 +567,9 @@ export const reelsApi = {
   getStitches: (reelId: string, cursor?: string) =>
     api.get<PaginatedResponse<Reel>>(`/reels/${reelId}/stitches${qs({ cursor })}`),
   archive: (reelId: string) =>
-    api.post(`/reels/${reelId}/archive`),
+    api.patch(`/reels/${reelId}/archive`),
   unarchive: (reelId: string) =>
-    api.post(`/reels/${reelId}/unarchive`),
+    api.patch(`/reels/${reelId}/unarchive`),
   getShareLink: (id: string) =>
     api.get<{ url: string }>(`/reels/${id}/share-link`),
   likeComment: (reelId: string, commentId: string) => api.post(`/reels/${reelId}/comments/${commentId}/like`),
@@ -779,7 +779,7 @@ export const messagesApi = {
   archive: (id: string, archived: boolean) =>
     api.post(`/messages/conversations/${id}/archive`, { archived }),
   pinConversation: (id: string, pinned: boolean) =>
-    api.patch(`/messages/conversations/${id}/pin`, { isPinned: pinned }),
+    api.patch(`/messages/${id}/pin`, { isPinned: pinned }),
   createDM: (targetUserId: string) => api.post<Conversation>('/messages/dm', { targetUserId }),
   createGroup: (groupName: string, memberIds: string[], groupAvatarUrl?: string) =>
     api.post<Conversation>('/messages/groups', { groupName, memberIds, groupAvatarUrl }),
@@ -981,7 +981,7 @@ export const settingsApi = {
   getAutoPlay: () =>
     api.get<{ autoPlaySetting: string }>('/settings/auto-play'),
   updateAutoPlay: (autoPlaySetting: 'wifi' | 'always' | 'never') =>
-    api.patch('/settings/auto-play', { autoPlaySetting }),
+    api.patch('/settings/auto-play', { autoPlaySetting: autoPlaySetting.toUpperCase() }),
 };
 
 // ── Admin ──

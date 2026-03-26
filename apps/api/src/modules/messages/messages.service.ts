@@ -11,6 +11,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { AiService } from '../ai/ai.service';
 import { MessageType } from '@prisma/client';
 import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
@@ -96,6 +97,7 @@ export class MessagesService {
   constructor(
     private prisma: PrismaService,
     private pushTrigger: PushTriggerService,
+    private notifications: NotificationsService,
     private ai: AiService,
     @Inject('REDIS') private redis: Redis,
   ) {}
@@ -303,7 +305,51 @@ export class MessagesService {
       });
     }
 
+    // Push notifications to all non-muted conversation members (except sender)
+    this.notifyConversationMembers(conversationId, senderId, data.content).catch((err) => {
+      this.logger.warn(`Message notification failed: ${err?.message}`);
+    });
+
     return message;
+  }
+
+  /**
+   * Notify all non-muted conversation members about a new message (except the sender).
+   * Uses NotificationsService.create() for full pipeline (settings, block/mute, dedup, push, socket).
+   */
+  private async notifyConversationMembers(
+    conversationId: string,
+    senderId: string,
+    content?: string,
+  ): Promise<void> {
+    const members = await this.prisma.conversationMember.findMany({
+      where: {
+        conversationId,
+        userId: { not: senderId },
+        isMuted: false,
+      },
+      select: { userId: true },
+      take: 500,
+    });
+    if (members.length === 0) return;
+
+    const truncatedBody = content
+      ? (content.length > 100 ? content.slice(0, 99) + '\u2026' : content)
+      : 'Sent a message';
+
+    await Promise.all(
+      members.map((member) =>
+        this.notifications.create({
+          userId: member.userId,
+          actorId: senderId,
+          type: 'MESSAGE',
+          conversationId,
+          body: truncatedBody,
+        }).catch((err) => {
+          this.logger.warn(`Notification to ${member.userId} failed: ${err?.message}`);
+        }),
+      ),
+    );
   }
 
   async deleteMessage(messageId: string, userId: string) {

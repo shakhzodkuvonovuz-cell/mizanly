@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { PostsService } from './posts.service';
 import { PrismaService } from '../../config/prisma.service';
-import { mockRedis, mockNotificationsService, mockGamificationService, mockAiService, mockConfigService, mockContentSafetyService } from '../../common/test/mock-providers';
+import { mockRedis, mockNotificationsService, mockGamificationService, mockAiService, mockConfigService, mockContentSafetyService, mockPublishWorkflowService } from '../../common/test/mock-providers';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 
@@ -56,6 +56,7 @@ describe('PostsService — Analytics & Impressions', () => {
         mockAiService,
         mockConfigService,
         mockContentSafetyService,
+        mockPublishWorkflowService,
         mockQueue,
         mockAnalytics,
       ],

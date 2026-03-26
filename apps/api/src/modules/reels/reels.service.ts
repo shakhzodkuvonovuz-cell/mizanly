@@ -19,6 +19,7 @@ import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 
 const REEL_SELECT = {
   id: true,
@@ -84,6 +85,7 @@ export class ReelsService {
     private ai: AiService,
     private queueService: QueueService,
     private contentSafety: ContentSafetyService,
+    private publishWorkflow: PublishWorkflowService,
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
@@ -110,13 +112,16 @@ export class ReelsService {
       ...extractHashtags(dto.caption ?? ''),
       ...(dto.hashtags || []).map((h) => h.toLowerCase()),
     ])];
+    const isScheduled = !!dto.scheduledAt;
+    // For scheduled content: create the hashtag record but don't increment count yet —
+    // counts are incremented when the scheduling cron publishes the content
     if (hashtagNames.length > 0) {
       await Promise.all(
         hashtagNames.map((name) =>
           this.prisma.hashtag.upsert({
             where: { name },
-            create: { name, reelsCount: 1 },
-            update: { reelsCount: { increment: 1 } },
+            create: { name, reelsCount: isScheduled ? 0 : 1 },
+            update: isScheduled ? {} : { reelsCount: { increment: 1 } },
           }),
         ),
       );
@@ -164,13 +169,8 @@ export class ReelsService {
       }),
     ]);
 
-    // Fetch actor username once for all notifications (tags + mentions)
-    const needsActor = (dto.taggedUserIds?.length && dto.taggedUserIds.some((id) => id !== userId)) || dto.mentions?.length;
-    const actorUsername = needsActor
-      ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }))?.username ?? 'Someone'
-      : undefined;
-
     // Create tagged user records (accepts user IDs or usernames — resolves both)
+    // Tag records are always created (even for scheduled content), but notifications are deferred
     if (dto.taggedUserIds?.length) {
       const validUsers = await this.prisma.user.findMany({
         where: {
@@ -188,10 +188,29 @@ export class ReelsService {
           data: validUsers.map((u: { id: string }) => ({ reelId: reel.id, userId: u.id })),
           skipDuplicates: true,
         });
-        for (const u of validUsers) {
-          if (u.id !== userId) {
+      }
+    }
+
+    // --- Side effects deferred for scheduled content ---
+    // Notifications, gamification XP only fire when content is actually published.
+    // For scheduled content, these are triggered by the scheduling cron in publishOverdueContent().
+    if (!isScheduled) {
+      // Fetch actor username once for all notifications (tags + mentions)
+      const needsActor = (dto.taggedUserIds?.length && dto.taggedUserIds.some((id) => id !== userId)) || dto.mentions?.length;
+      const actorUsername = needsActor
+        ? (await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }))?.username ?? 'Someone'
+        : undefined;
+
+      // Tag notifications
+      if (dto.taggedUserIds?.length) {
+        const taggedRecords = await this.prisma.reelTaggedUser.findMany({
+          where: { reelId: reel.id },
+          select: { userId: true },
+        });
+        for (const record of taggedRecords) {
+          if (record.userId !== userId) {
             this.notifications.create({
-              userId: u.id,
+              userId: record.userId,
               actorId: userId,
               type: 'MENTION',
               reelId: reel.id,
@@ -201,30 +220,36 @@ export class ReelsService {
           }
         }
       }
-    }
 
-    // Mention notifications (skip self-mentions)
-    if (dto.mentions?.length) {
-      const mentionedUsers = await this.prisma.user.findMany({
-        where: { username: { in: dto.mentions } },
-        select: { id: true },
-        take: 50,
-      });
-      for (const mentioned of mentionedUsers) {
-        if (mentioned.id !== userId) {
-          this.notifications.create({
-            userId: mentioned.id,
-            actorId: userId,
-            type: 'MENTION',
-            reelId: reel.id,
-            title: 'Mentioned you',
-            body: `@${actorUsername ?? 'Someone'} mentioned you in a reel`,
-          }).catch((err) => this.logger.error('Failed to create mention notification', err));
+      // Mention notifications (skip self-mentions)
+      if (dto.mentions?.length) {
+        const mentionedUsers = await this.prisma.user.findMany({
+          where: { username: { in: dto.mentions } },
+          select: { id: true },
+          take: 50,
+        });
+        for (const mentioned of mentionedUsers) {
+          if (mentioned.id !== userId) {
+            this.notifications.create({
+              userId: mentioned.id,
+              actorId: userId,
+              type: 'MENTION',
+              reelId: reel.id,
+              title: 'Mentioned you',
+              body: `@${actorUsername ?? 'Someone'} mentioned you in a reel`,
+            }).catch((err) => this.logger.error('Failed to create mention notification', err));
+          }
         }
       }
-    }
 
-    // Kick off Cloudflare Stream ingestion (async)
+      // Gamification: award XP + update streak
+      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' });
+      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+    }
+    // --- End deferred side effects ---
+
+    // Kick off Cloudflare Stream ingestion (async) — ALWAYS runs, even for scheduled content
+    // Video processing takes time, so we want it ready when the content publishes
     this.stream.uploadFromUrl(dto.videoUrl, { title: dto.caption ?? 'Reel', creatorId: userId })
       .then(async (streamId) => {
         await this.prisma.reel.update({
@@ -254,10 +279,6 @@ export class ReelsService {
         }).catch((e) => this.logger.error('Failed to update reel status', e));
       });
 
-    // Gamification: award XP + update streak
-    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' });
-    this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
-
     // Content moderation (if caption provided)
     if (reel.caption) {
       this.queueService.addModerationJob({ content: reel.caption, contentType: 'reel', contentId: reel.id }).catch((err: unknown) => {
@@ -272,15 +293,21 @@ export class ReelsService {
       });
     }
 
-    // Search indexing
-    this.queueService.addSearchIndexJob({
-      action: 'index',
-      indexName: 'reels',
-      documentId: reel.id,
-      document: { id: reel.id, description: reel.caption, userId, hashtags: reel.hashtags },
-    }).catch((err: unknown) => {
-      this.logger.error(`Search indexing failed for reel ${reel.id}`, err instanceof Error ? err.message : err);
-    });
+    // Publish workflow: search index, cache invalidation, real-time event
+    // Only trigger for immediately-published content (not scheduled)
+    if (!dto.scheduledAt) {
+      this.publishWorkflow.onPublish({
+        contentType: 'reel',
+        contentId: reel.id,
+        userId,
+        indexDocument: {
+          id: reel.id,
+          description: reel.caption,
+          userId,
+          hashtags: reel.hashtags,
+        },
+      }).catch(err => this.logger.warn('Publish workflow failed for reel', err instanceof Error ? err.message : err));
+    }
 
     return {
       ...reel,
@@ -472,6 +499,11 @@ export class ReelsService {
     });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
+    // Hide future-scheduled content from non-owners
+    if (reel.scheduledAt && new Date(reel.scheduledAt) > new Date() && reel.user?.id !== userId) {
+      throw new NotFoundException('Reel not found');
+    }
+
     // Check block status
     if (userId && reel.user && userId !== reel.user.id) {
       const blocked = await this.prisma.block.findFirst({
@@ -533,10 +565,12 @@ export class ReelsService {
       });
     }
 
-    // Remove from Meilisearch index on deletion
-    this.queueService.addSearchIndexJob({
-      action: 'delete', indexName: 'reels', documentId: reelId,
-    }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
+    // Unpublish workflow: search index removal, cache invalidation, real-time event
+    this.publishWorkflow.onUnpublish({
+      contentType: 'reel',
+      contentId: reelId,
+      userId,
+    }).catch(err => this.logger.warn('Unpublish workflow failed for reel', err instanceof Error ? err.message : err));
 
     return { deleted: true };
   }
@@ -581,11 +615,11 @@ export class ReelsService {
           WHERE id = ${reelId}
         `,
       ]);
-      // Notify reel owner (skip self-notification)
+      // Notify reel owner (skip self-notification) — use REEL_LIKE so PushTriggerService routes correctly
       if (reel.userId && reel.userId !== userId) {
         this.notifications.create({
           userId: reel.userId, actorId: userId,
-          type: 'LIKE', reelId,
+          type: 'REEL_LIKE', reelId,
         }).catch((err) => this.logger.error('Failed to create notification', err));
       }
     } catch (err: unknown) {
@@ -680,11 +714,11 @@ export class ReelsService {
         WHERE id = ${reelId}
       `,
     ]);
-    // Notify reel owner (skip self-notification)
+    // Notify reel owner (skip self-notification) — use REEL_COMMENT so PushTriggerService routes correctly
     if (reel.userId && reel.userId !== userId) {
       this.notifications.create({
         userId: reel.userId, actorId: userId,
-        type: 'COMMENT', reelId,
+        type: 'REEL_COMMENT', reelId,
         body: content.substring(0, 100),
       }).catch((err) => this.logger.error('Failed to create notification', err));
     }
@@ -1165,10 +1199,12 @@ export class ReelsService {
         });
         this.logger.warn(`Reel ${reelId} auto-removed: thumbnail blocked (${result.reason})`);
 
-        // Remove from Meilisearch index on auto-moderation removal
-        this.queueService.addSearchIndexJob({
-          action: 'delete', indexName: 'reels', documentId: reelId,
-        }).catch(err => this.logger.warn('Failed to queue search index deletion for moderated reel', err instanceof Error ? err.message : err));
+        // Unpublish workflow on auto-moderation removal
+        this.publishWorkflow.onUnpublish({
+          contentType: 'reel',
+          contentId: reelId,
+          userId,
+        }).catch(err => this.logger.warn('Unpublish workflow failed for moderated reel', err instanceof Error ? err.message : err));
 
         // Notify user their content was removed
         this.notifications.create({

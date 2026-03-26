@@ -8,6 +8,10 @@ import {
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../config/prisma.service';
 import { Post, Thread, Reel, Video } from '@prisma/client';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { QueueService } from '../../common/queue/queue.service';
+import { extractHashtags } from '../../common/utils/hashtag';
 
 export interface ScheduledItem {
   id: string;
@@ -27,7 +31,12 @@ type ContentModel = 'post' | 'thread' | 'reel' | 'video';
 export class SchedulingService {
   private readonly logger = new Logger(SchedulingService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private publishWorkflow: PublishWorkflowService,
+    private notifications: NotificationsService,
+    private queueService: QueueService,
+  ) {}
 
   private getModel(type: string): ContentModel {
     const validModels: ContentModel[] = ['post', 'thread', 'reel', 'video'];
@@ -181,7 +190,11 @@ export class SchedulingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    return this.updateContent(model, id, { scheduledAt: null });
+    // Clear scheduledAt AND mark as removed (draft state).
+    // Setting only scheduledAt: null would publish the content immediately,
+    // which is wrong — cancelling a schedule should revert to draft.
+    // The owner can later edit/reschedule or manually publish.
+    return this.updateContent(model, id, { scheduledAt: null, isRemoved: true });
   }
 
   async publishNow(
@@ -198,7 +211,125 @@ export class SchedulingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    return this.updateContent(model, id, { scheduledAt: null });
+    const result = await this.updateContent(model, id, { scheduledAt: null });
+
+    // Fire deferred side effects that were skipped at creation time
+    await this.fireDeferredSideEffects(type, id, userId);
+
+    return result;
+  }
+
+  /**
+   * Fire all deferred side effects for a single content item being published.
+   * Used by both publishNow() and publishOverdueContent().
+   */
+  private async fireDeferredSideEffects(
+    type: 'post' | 'thread' | 'reel' | 'video',
+    id: string,
+    userId: string,
+  ): Promise<void> {
+    try {
+      if (type === 'post') {
+        const post = await this.prisma.post.findUnique({
+          where: { id },
+          select: {
+            content: true, hashtags: true, mentions: true, postType: true,
+            visibility: true, mediaUrls: true,
+            taggedUsers: { select: { userId: true } },
+            collabInvites: { select: { inviteeId: true } },
+            user: { select: { username: true } },
+          },
+        });
+        if (!post) return;
+
+        // Publish workflow
+        this.publishWorkflow.onPublish({
+          contentType: 'post', contentId: id, userId,
+          indexDocument: { id, content: post.content || '', hashtags: post.hashtags || [], userId, postType: post.postType, visibility: post.visibility },
+        }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
+
+        // Hashtag counts
+        for (const name of extractHashtags(post.content ?? '')) {
+          this.prisma.hashtag.update({ where: { name }, data: { postsCount: { increment: 1 } } }).catch(() => {});
+        }
+
+        // Gamification
+        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' });
+        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+
+        // Notifications
+        await this.firePublishNotifications(id, userId, post.user?.username ?? null, 'post', {
+          mentions: post.mentions as string[],
+          taggedUserIds: post.taggedUsers?.map((t: { userId: string }) => t.userId) ?? [],
+          collabInviteeIds: post.collabInvites?.map((c: { inviteeId: string }) => c.inviteeId) ?? [],
+        });
+      } else if (type === 'thread') {
+        const thread = await this.prisma.thread.findUnique({
+          where: { id },
+          select: { content: true, hashtags: true, mentions: true, visibility: true, user: { select: { username: true } } },
+        });
+        if (!thread) return;
+
+        this.publishWorkflow.onPublish({
+          contentType: 'thread', contentId: id, userId,
+          indexDocument: { id, content: thread.content || '', hashtags: thread.hashtags || [], userId, visibility: thread.visibility },
+        }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
+
+        for (const name of extractHashtags(thread.content ?? '')) {
+          this.prisma.hashtag.update({ where: { name }, data: { threadsCount: { increment: 1 } } }).catch(() => {});
+        }
+
+        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' });
+        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+
+        await this.firePublishNotifications(id, userId, thread.user?.username ?? null, 'thread', {
+          mentions: thread.mentions as string[],
+        });
+      } else if (type === 'reel') {
+        const reel = await this.prisma.reel.findUnique({
+          where: { id },
+          select: {
+            caption: true, hashtags: true, mentions: true,
+            taggedUsers: { select: { userId: true } },
+            user: { select: { username: true } },
+          },
+        });
+        if (!reel) return;
+
+        this.publishWorkflow.onPublish({
+          contentType: 'reel', contentId: id, userId,
+          indexDocument: { id, description: reel.caption || '', hashtags: reel.hashtags || [], userId },
+        }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
+
+        for (const name of extractHashtags(reel.caption ?? '')) {
+          this.prisma.hashtag.update({ where: { name }, data: { reelsCount: { increment: 1 } } }).catch(() => {});
+        }
+
+        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' });
+        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+
+        await this.firePublishNotifications(id, userId, reel.user?.username ?? null, 'reel', {
+          mentions: reel.mentions as string[],
+          taggedUserIds: reel.taggedUsers?.map((t: { userId: string }) => t.userId) ?? [],
+        });
+      } else if (type === 'video') {
+        const video = await this.prisma.video.findUnique({
+          where: { id },
+          select: { title: true, description: true, tags: true },
+        });
+        if (!video) return;
+
+        this.publishWorkflow.onPublish({
+          contentType: 'video', contentId: id, userId,
+          indexDocument: { id, title: video.title || '', description: video.description || '', tags: video.tags || [], userId },
+        }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
+
+        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' });
+        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+      }
+    } catch (err) {
+      this.logger.error(`Deferred side effects failed for ${type} ${id}`, err instanceof Error ? err.message : err);
+    }
   }
 
   // Helper methods for type-safe dynamic access
@@ -220,7 +351,7 @@ export class SchedulingService {
   private async updateContent(
     model: ContentModel,
     id: string,
-    data: { scheduledAt: Date | null }
+    data: { scheduledAt: Date | null; isRemoved?: boolean }
   ): Promise<ScheduledContent> {
     switch (model) {
       case 'post':
@@ -248,25 +379,200 @@ export class SchedulingService {
   @Cron(CronExpression.EVERY_MINUTE)
   async publishOverdueContent(): Promise<{ posts: number; threads: number; reels: number; videos: number }> {
     const now = new Date();
+    const overdueWhere = { scheduledAt: { not: null, lte: now } as { not: null; lte: Date } };
 
+    // 1. Find items that are about to be published (need full data for deferred side effects)
+    const [overduePosts, overdueThreads, overdueReels, overdueVideos] = await Promise.all([
+      this.prisma.post.findMany({
+        where: overdueWhere,
+        select: {
+          id: true, userId: true, content: true, hashtags: true, mentions: true,
+          postType: true, visibility: true, mediaUrls: true,
+          taggedUsers: { select: { userId: true } },
+          collabInvites: { select: { inviteeId: true } },
+          user: { select: { username: true } },
+        },
+        take: 100,
+      }),
+      this.prisma.thread.findMany({
+        where: overdueWhere,
+        select: {
+          id: true, userId: true, content: true, hashtags: true, mentions: true, visibility: true,
+          user: { select: { username: true } },
+        },
+        take: 100,
+      }),
+      this.prisma.reel.findMany({
+        where: overdueWhere,
+        select: {
+          id: true, userId: true, caption: true, hashtags: true, mentions: true,
+          taggedUsers: { select: { userId: true } },
+          user: { select: { username: true } },
+        },
+        take: 100,
+      }),
+      this.prisma.video.findMany({
+        where: overdueWhere,
+        select: { id: true, userId: true, title: true, description: true, tags: true },
+        take: 100,
+      }),
+    ]);
+
+    // 2. Set scheduledAt to null (= published) for all overdue items
     const [posts, threads, reels, videos] = await Promise.all([
       this.prisma.post.updateMany({
-        where: { scheduledAt: { not: null, lte: now } },
+        where: overdueWhere,
         data: { scheduledAt: null },
       }),
       this.prisma.thread.updateMany({
-        where: { scheduledAt: { not: null, lte: now } },
+        where: overdueWhere,
         data: { scheduledAt: null },
       }),
       this.prisma.reel.updateMany({
-        where: { scheduledAt: { not: null, lte: now } },
+        where: overdueWhere,
         data: { scheduledAt: null },
       }),
       this.prisma.video.updateMany({
-        where: { scheduledAt: { not: null, lte: now } },
+        where: overdueWhere,
         data: { scheduledAt: null },
       }),
     ]);
+
+    // 3. Fire deferred side effects for each newly-published item.
+    //    These were skipped at creation time because the content was scheduled:
+    //    - Publish workflow (search index, cache invalidation, real-time event)
+    //    - Hashtag count increments
+    //    - Gamification XP + streak
+    //    - Mention / tag / collaborator notifications
+    for (const post of overduePosts) {
+      if (!post.userId) continue;
+
+      // Publish workflow
+      this.publishWorkflow.onPublish({
+        contentType: 'post',
+        contentId: post.id,
+        userId: post.userId,
+        indexDocument: {
+          id: post.id,
+          content: post.content || '',
+          hashtags: post.hashtags || [],
+          userId: post.userId,
+          postType: post.postType,
+          visibility: post.visibility,
+        },
+      }).catch(err => this.logger.warn(`Publish workflow failed for scheduled post ${post.id}`, err instanceof Error ? err.message : err));
+
+      // Deferred: Hashtag count increment
+      const postHashtags = extractHashtags(post.content ?? '');
+      for (const name of postHashtags) {
+        this.prisma.hashtag.update({
+          where: { name },
+          data: { postsCount: { increment: 1 } },
+        }).catch(() => {}); // Hashtag may have been deleted
+      }
+
+      // Deferred: Gamification XP
+      this.queueService.addGamificationJob({ type: 'award-xp', userId: post.userId, action: 'post_created' });
+      this.queueService.addGamificationJob({ type: 'update-streak', userId: post.userId, action: 'posting' });
+
+      // Deferred: Mention, tag, and collaborator notifications
+      this.firePublishNotifications(post.id, post.userId, post.user?.username ?? null, 'post', {
+        mentions: post.mentions as string[],
+        taggedUserIds: post.taggedUsers?.map((t: { userId: string }) => t.userId) ?? [],
+        collabInviteeIds: post.collabInvites?.map((c: { inviteeId: string }) => c.inviteeId) ?? [],
+      }).catch(err => this.logger.warn(`Notifications failed for scheduled post ${post.id}`, err instanceof Error ? err.message : err));
+    }
+
+    for (const thread of overdueThreads) {
+      if (!thread.userId) continue;
+
+      this.publishWorkflow.onPublish({
+        contentType: 'thread',
+        contentId: thread.id,
+        userId: thread.userId,
+        indexDocument: {
+          id: thread.id,
+          content: thread.content || '',
+          hashtags: thread.hashtags || [],
+          userId: thread.userId,
+          visibility: thread.visibility,
+        },
+      }).catch(err => this.logger.warn(`Publish workflow failed for scheduled thread ${thread.id}`, err instanceof Error ? err.message : err));
+
+      // Deferred: Hashtag count increment
+      const threadHashtags = extractHashtags(thread.content ?? '');
+      for (const name of threadHashtags) {
+        this.prisma.hashtag.update({
+          where: { name },
+          data: { threadsCount: { increment: 1 } },
+        }).catch(() => {});
+      }
+
+      // Deferred: Gamification XP
+      this.queueService.addGamificationJob({ type: 'award-xp', userId: thread.userId, action: 'thread_created' });
+      this.queueService.addGamificationJob({ type: 'update-streak', userId: thread.userId, action: 'posting' });
+
+      // Deferred: Mention notifications
+      this.firePublishNotifications(thread.id, thread.userId, thread.user?.username ?? null, 'thread', {
+        mentions: thread.mentions as string[],
+      }).catch(err => this.logger.warn(`Notifications failed for scheduled thread ${thread.id}`, err instanceof Error ? err.message : err));
+    }
+
+    for (const reel of overdueReels) {
+      if (!reel.userId) continue;
+
+      this.publishWorkflow.onPublish({
+        contentType: 'reel',
+        contentId: reel.id,
+        userId: reel.userId,
+        indexDocument: {
+          id: reel.id,
+          description: reel.caption || '',
+          hashtags: reel.hashtags || [],
+          userId: reel.userId,
+        },
+      }).catch(err => this.logger.warn(`Publish workflow failed for scheduled reel ${reel.id}`, err instanceof Error ? err.message : err));
+
+      // Deferred: Hashtag count increment
+      const reelHashtags = extractHashtags(reel.caption ?? '');
+      for (const name of reelHashtags) {
+        this.prisma.hashtag.update({
+          where: { name },
+          data: { reelsCount: { increment: 1 } },
+        }).catch(() => {});
+      }
+
+      // Deferred: Gamification XP
+      this.queueService.addGamificationJob({ type: 'award-xp', userId: reel.userId, action: 'reel_created' });
+      this.queueService.addGamificationJob({ type: 'update-streak', userId: reel.userId, action: 'posting' });
+
+      // Deferred: Tag + mention notifications
+      this.firePublishNotifications(reel.id, reel.userId, reel.user?.username ?? null, 'reel', {
+        mentions: reel.mentions as string[],
+        taggedUserIds: reel.taggedUsers?.map((t: { userId: string }) => t.userId) ?? [],
+      }).catch(err => this.logger.warn(`Notifications failed for scheduled reel ${reel.id}`, err instanceof Error ? err.message : err));
+    }
+
+    for (const video of overdueVideos) {
+      if (!video.userId) continue;
+
+      this.publishWorkflow.onPublish({
+        contentType: 'video',
+        contentId: video.id,
+        userId: video.userId,
+        indexDocument: {
+          id: video.id,
+          title: video.title || '',
+          description: video.description || '',
+          tags: video.tags || [],
+          userId: video.userId,
+        },
+      }).catch(err => this.logger.warn(`Publish workflow failed for scheduled video ${video.id}`, err instanceof Error ? err.message : err));
+
+      // Deferred: Gamification XP
+      this.queueService.addGamificationJob({ type: 'award-xp', userId: video.userId, action: 'video_created' });
+      this.queueService.addGamificationJob({ type: 'update-streak', userId: video.userId, action: 'posting' });
+    }
 
     const result = {
       posts: posts.count,
@@ -281,5 +587,83 @@ export class SchedulingService {
     }
 
     return result;
+  }
+
+  /**
+   * Fire deferred notifications when scheduled content is published.
+   * Handles mention, tag, and collaborator invite notifications.
+   */
+  private async firePublishNotifications(
+    contentId: string,
+    authorId: string,
+    authorUsername: string | null,
+    contentType: 'post' | 'thread' | 'reel',
+    opts: {
+      mentions?: string[];
+      taggedUserIds?: string[];
+      collabInviteeIds?: string[];
+    },
+  ): Promise<void> {
+    const actorName = authorUsername ?? 'Someone';
+
+    // Build the notification reference field based on content type
+    const refField = contentType === 'post'
+      ? { postId: contentId }
+      : contentType === 'reel'
+        ? { reelId: contentId }
+        : { threadId: contentId };
+
+    // Mention notifications
+    if (opts.mentions?.length) {
+      const mentionedUsers = await this.prisma.user.findMany({
+        where: { username: { in: opts.mentions } },
+        select: { id: true },
+        take: 50,
+      });
+      for (const mentioned of mentionedUsers) {
+        if (mentioned.id !== authorId) {
+          this.notifications.create({
+            userId: mentioned.id,
+            actorId: authorId,
+            type: 'MENTION',
+            ...refField,
+            title: 'Mentioned you',
+            body: `@${actorName} mentioned you in a ${contentType}`,
+          }).catch(err => this.logger.error('Deferred mention notification failed', err instanceof Error ? err.message : err));
+        }
+      }
+    }
+
+    // Tag notifications (posts and reels only)
+    if (opts.taggedUserIds?.length) {
+      for (const taggedUserId of opts.taggedUserIds) {
+        if (taggedUserId !== authorId) {
+          this.notifications.create({
+            userId: taggedUserId,
+            actorId: authorId,
+            type: 'TAG',
+            ...refField,
+            title: 'Tagged you',
+            body: `@${actorName} tagged you in a ${contentType}`,
+          }).catch(err => this.logger.error('Deferred tag notification failed', err instanceof Error ? err.message : err));
+        }
+      }
+    }
+
+    // Collaborator invite notifications (posts only)
+    if (opts.collabInviteeIds?.length) {
+      for (const inviteeId of opts.collabInviteeIds) {
+        if (inviteeId !== authorId) {
+          this.notifications.create({
+            userId: inviteeId,
+            actorId: authorId,
+            type: 'COLLAB_INVITE',
+            ...refField,
+            title: 'Collaboration invite',
+            body: `@${actorName} invited you to collaborate on a ${contentType}`,
+          }).catch(err => this.logger.error('Deferred collab notification failed', err instanceof Error ? err.message : err));
+        }
+      }
+    }
   }
 }

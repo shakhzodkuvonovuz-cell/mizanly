@@ -145,6 +145,7 @@ export default function RisalahScreen() {
     { key: 'groups', label: t('risalah.groups') },
   ], [t]);
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
+  const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const { getToken } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Map<string, Set<string>>>(new Map());
@@ -222,6 +223,13 @@ export default function RisalahScreen() {
       socket.on('new_message', () => {
         if (!mounted) return;
         queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      });
+
+      // Listen for new notifications to update badge count in real-time
+      socket.on('new_notification', () => {
+        if (!mounted) return;
+        const current = useStore.getState().unreadNotifications;
+        setUnreadNotifications(current + 1);
       });
 
       socketRef.current = socket;

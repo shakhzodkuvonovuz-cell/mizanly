@@ -812,6 +812,7 @@ model User {
   storyStickerResponses  StoryStickerResponse[]
   pollVotes              PollVote[]
   channelPosts           ChannelPost[]
+  channelPostLikes       ChannelPostLike[]
   reelInteractions       ReelInteraction[]
   videoInteractions      VideoInteraction[]
 
@@ -2612,10 +2613,24 @@ model ChannelPost {
   isPinned      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  likes         ChannelPostLike[]
 
   @@index([channelId, createdAt(sort: Desc)])
   @@index([userId])
   @@map("channel_posts")
+}
+
+model ChannelPostLike {
+  id        String      @id @default(cuid())
+  userId    String
+  postId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      ChannelPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@map("channel_post_likes")
 }
 
 model ReelInteraction {
@@ -4772,4 +4787,22 @@ model AdminAuditLog {
   @@index([adminId, createdAt(sort: Desc)])
   @@index([targetType, targetId])
   @@map("admin_audit_logs")
+}
+
+// ============================================================
+// WAITLIST — Pre-launch email collection with referral tracking
+// ============================================================
+
+model WaitlistEntry {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?  @db.VarChar(100)
+  referralCode String   @unique @default(cuid())
+  referredBy   String?  @db.VarChar(30) // referral code of referrer
+  source       String?  @db.VarChar(50) // utm_source or channel
+  createdAt    DateTime @default(now())
+
+  @@index([referralCode])
+  @@index([createdAt(sort: Desc)])
+  @@map("waitlist_entries")
 }

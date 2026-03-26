@@ -44,6 +44,8 @@ export class MonetizationService {
   constructor(private prisma: PrismaService) {}
 
   async sendTip(senderId: string, receiverId: string, amount: number, message?: string) {
+    throw new BadRequestException('Tips require payment integration. Coming soon.');
+
     // Validate amount — enforce real minimum ($0.50 is typical Stripe minimum)
     if (amount < MIN_TIP_AMOUNT || amount > MAX_TIP_AMOUNT) {
       throw new BadRequestException(`Tip amount must be between $${MIN_TIP_AMOUNT.toFixed(2)} and $${MAX_TIP_AMOUNT.toLocaleString()}`);

@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { MessagesService } from './messages.service';
 import { PrismaService } from '../../config/prisma.service';
-import { mockRedis, mockConfigService } from '../../common/test/mock-providers';
+import { mockRedis, mockConfigService, mockNotificationsService } from '../../common/test/mock-providers';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { AiService } from '../ai/ai.service';
 
@@ -28,7 +28,7 @@ describe('MessagesService — Group Topics & Message Expiry', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [MessagesService, mockPrisma, mockRedis, mockConfigService, mockPush, mockAi],
+      providers: [MessagesService, mockPrisma, mockRedis, mockConfigService, mockPush, mockAi, mockNotificationsService],
     }).compile();
 
     service = module.get(MessagesService);

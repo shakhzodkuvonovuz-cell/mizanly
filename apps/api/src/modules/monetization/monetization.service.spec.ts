@@ -60,47 +60,11 @@ describe('MonetizationService', () => {
   });
 
   describe('sendTip', () => {
-    it('should create tip as pending with platform fee', async () => {
-      const mockReceiver = { id: 'receiver1', username: 'receiver' };
-      const mockTip = {
-        id: 'tip1',
-        senderId: 'sender1',
-        receiverId: 'receiver1',
-        amount: 100,
-        currency: 'USD',
-        message: 'Thank you',
-        platformFee: 10,
-        status: 'pending',
-        sender: { id: 'sender1', username: 'sender', displayName: 'Sender', avatarUrl: null },
-        receiver: { id: 'receiver1', username: 'receiver', displayName: 'Receiver', avatarUrl: null },
-      };
-      mockPrismaService.user.findUnique.mockResolvedValue(mockReceiver);
-      mockPrismaService.tip.create.mockResolvedValue(mockTip);
-
-      const result = await service.sendTip('sender1', 'receiver1', 100, 'Thank you');
-      expect(result).toEqual(mockTip);
-      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { id: 'receiver1' },
-      });
-      expect(mockPrismaService.tip.create).toHaveBeenCalledWith({
-        data: {
-          senderId: 'sender1',
-          receiverId: 'receiver1',
-          amount: 100,
-          currency: 'USD',
-          message: 'Thank you',
-          platformFee: 10,
-          status: 'pending',
-        },
-        include: {
-          sender: {
-            select: { id: true, username: true, displayName: true, avatarUrl: true },
-          },
-          receiver: {
-            select: { id: true, username: true, displayName: true, avatarUrl: true },
-          },
-        },
-      });
+    it('should throw BadRequestException — tips disabled pending payment integration', async () => {
+      await expect(service.sendTip('sender1', 'receiver1', 100, 'Thank you'))
+        .rejects.toThrow(BadRequestException);
+      await expect(service.sendTip('sender1', 'receiver1', 100, 'Thank you'))
+        .rejects.toThrow('Tips require payment integration. Coming soon.');
     });
 
     it('should throw BadRequestException for zero amount', async () => {
@@ -123,35 +87,18 @@ describe('MonetizationService', () => {
       expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException for missing receiver', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      await expect(service.sendTip('sender1', 'receiver1', 50)).rejects.toThrow(NotFoundException);
-      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { id: 'receiver1' },
-      });
+    it('should throw BadRequestException for any tip — receiver lookup skipped', async () => {
+      // sendTip is disabled (throws before reaching receiver lookup)
+      await expect(service.sendTip('sender1', 'receiver1', 50)).rejects.toThrow(BadRequestException);
+      expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
     });
 
-    it('should compute platform fee with precise Decimal rounding', async () => {
-      const mockReceiver = { id: 'receiver1' };
-      mockPrismaService.user.findUnique.mockResolvedValue(mockReceiver);
-      mockPrismaService.tip.create.mockImplementation((args: any) => Promise.resolve(args.data));
-
-      await service.sendTip('sender1', 'receiver1', 10.01);
-      const createCall = mockPrismaService.tip.create.mock.calls[0][0];
-      // 10.01 * 0.10 = 1.001 → Decimal rounds to 1.00 at 2 decimal places
-      expect(createCall.data.platformFee).toBe(1);
-      expect(createCall.data.status).toBe('pending');
+    it('should throw BadRequestException for Decimal rounding path — disabled', async () => {
+      await expect(service.sendTip('sender1', 'receiver1', 10.01)).rejects.toThrow(BadRequestException);
     });
 
-    it('should handle tip at exact minimum amount ($0.50)', async () => {
-      const mockReceiver = { id: 'receiver1' };
-      mockPrismaService.user.findUnique.mockResolvedValue(mockReceiver);
-      mockPrismaService.tip.create.mockImplementation((args: any) => Promise.resolve(args.data));
-
-      await service.sendTip('sender1', 'receiver1', 0.50);
-      const createCall = mockPrismaService.tip.create.mock.calls[0][0];
-      expect(createCall.data.amount).toBe(0.5);
-      expect(createCall.data.platformFee).toBe(0.05);
+    it('should throw BadRequestException at exact minimum amount — disabled', async () => {
+      await expect(service.sendTip('sender1', 'receiver1', 0.50)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw for amount above maximum', async () => {

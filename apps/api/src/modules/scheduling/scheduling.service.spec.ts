@@ -236,7 +236,7 @@ describe('SchedulingService', () => {
       });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id },
-        data: { scheduledAt: null },
+        data: { scheduledAt: null, isRemoved: true },
       });
       expect(result.scheduledAt).toBe(null);
     });

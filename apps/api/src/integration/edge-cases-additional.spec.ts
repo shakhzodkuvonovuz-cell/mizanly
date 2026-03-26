@@ -446,6 +446,7 @@ describe('Additional Tests — reaching 3800+ total', () => {
       const module = await Test.createTestingModule({
         providers: [
           SchedulingService,
+          ...globalMockProviders,
           { provide: PrismaService, useValue: {
             post: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
             thread: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },

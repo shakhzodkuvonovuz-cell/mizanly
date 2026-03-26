@@ -9,7 +9,7 @@ export const encryptionApi = {
     api.get<EncryptionKeyInfo>(`/encryption/keys/${userId}`),
 
   getBulkKeys: (userIds: string[]) =>
-    api.post<EncryptionKeyInfo[]>('/encryption/keys/bulk', { userIds }),
+    api.get<EncryptionKeyInfo[]>(`/encryption/keys/bulk?userIds=${encodeURIComponent(userIds.join(','))}`),
 
   storeEnvelope: (data: { conversationId: string; recipientId: string; encryptedKey: string; nonce: string }) =>
     api.post('/encryption/envelopes', data),

@@ -125,7 +125,11 @@ export class StripeWebhookController {
     }
 
     // Mark as processed ONLY after handler succeeds (7-day TTL, Stripe retries for up to 3 days)
-    await this.redis.setex(dedupeKey, 604800, '1');
+    try {
+      await this.redis.setex(dedupeKey, 604800, '1');
+    } catch (redisErr) {
+      this.logger.error(`CRITICAL: Failed to set webhook dedup key ${dedupeKey} after successful processing. Event may be re-processed on retry.`, redisErr);
+    }
 
     return { received: true };
   }

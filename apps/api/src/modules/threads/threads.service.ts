@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ForbiddenException,
   ConflictException,
@@ -7,6 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import Redis from 'ioredis';
 import { ReplyPermission } from '@prisma/client';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -17,6 +19,7 @@ import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 
 const THREAD_SELECT = {
   id: true,
@@ -42,6 +45,7 @@ const THREAD_SELECT = {
   isPinned: true,
   isSensitive: true,
   isRemoved: true,
+  scheduledAt: true,
   replyPermission: true,
   createdAt: true,
   updatedAt: true,
@@ -96,11 +100,13 @@ export class ThreadsService {
   private readonly logger = new Logger(ThreadsService.name);
   constructor(
     private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
     private gamification: GamificationService,
     private ai: AiService,
     private queueService: QueueService,
     private contentSafety: ContentSafetyService,
+    private publishWorkflow: PublishWorkflowService,
   ) {}
 
   /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us).
@@ -347,13 +353,16 @@ export class ThreadsService {
 
     // Parse and upsert hashtags
     const hashtagNames = extractHashtags(dto.content ?? '');
+    const isScheduled = !!dto.scheduledAt;
+    // For scheduled content: create the hashtag record but don't increment count yet —
+    // counts are incremented when the scheduling cron publishes the content
     if (hashtagNames.length > 0) {
       await Promise.all(
         hashtagNames.map((name) =>
           this.prisma.hashtag.upsert({
             where: { name },
-            create: { name, threadsCount: 1 },
-            update: { threadsCount: { increment: 1 } },
+            create: { name, threadsCount: isScheduled ? 0 : 1 },
+            update: isScheduled ? {} : { threadsCount: { increment: 1 } },
           }),
         ),
       );
@@ -397,31 +406,55 @@ export class ThreadsService {
         data: { threadsCount: { increment: 1 } },
       }),
     ]);
-    // Mention notifications
-    if (dto.mentions?.length) {
-      const [mentionedUsers, actor] = await Promise.all([
-        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true },
-      take: 50,
-    }),
-        this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
-      ]);
-      for (const mentioned of mentionedUsers) {
-        if (mentioned.id !== userId) {
-          this.notifications.create({
-            userId: mentioned.id,
-            actorId: userId,
-            type: 'MENTION',
-            threadId: thread.id,
-            title: 'Mentioned you',
-            body: `@${actor?.username ?? 'Someone'} mentioned you in a thread`,
-          }).catch((err) => this.logger.error('Failed to create mention notification', err));
+    // --- Side effects deferred for scheduled content ---
+    // Notifications and gamification XP only fire when content is actually published.
+    // For scheduled content, these are triggered by the scheduling cron in publishOverdueContent().
+    if (!isScheduled) {
+      // Mention notifications
+      if (dto.mentions?.length) {
+        const [mentionedUsers, actor] = await Promise.all([
+          this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true },
+        take: 50,
+      }),
+          this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
+        ]);
+        for (const mentioned of mentionedUsers) {
+          if (mentioned.id !== userId) {
+            this.notifications.create({
+              userId: mentioned.id,
+              actorId: userId,
+              type: 'MENTION',
+              threadId: thread.id,
+              title: 'Mentioned you',
+              body: `@${actor?.username ?? 'Someone'} mentioned you in a thread`,
+            }).catch((err) => this.logger.error('Failed to create mention notification', err));
+          }
         }
       }
-    }
 
-    // Gamification: award XP + update streak
-    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' });
-    this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+      // Gamification: award XP + update streak
+      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' });
+      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+    }
+    // --- End deferred side effects ---
+
+    // Publish workflow: search index, cache invalidation, real-time event
+    // Only trigger for immediately-published content (not scheduled)
+    if (!dto.scheduledAt) {
+      this.publishWorkflow.onPublish({
+        contentType: 'thread',
+        contentId: thread.id,
+        userId,
+        indexDocument: {
+          id: thread.id,
+          content: thread.content,
+          hashtags: thread.hashtags,
+          username: thread.user?.username || '',
+          userId,
+          visibility: thread.visibility,
+        },
+      }).catch(err => this.logger.warn('Publish workflow failed for thread', err instanceof Error ? err.message : err));
+    }
 
     return thread;
   }
@@ -432,6 +465,11 @@ export class ThreadsService {
       select: THREAD_SELECT,
     });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    // Hide future-scheduled content from non-owners
+    if (thread.scheduledAt && new Date(thread.scheduledAt) > new Date() && thread.user?.id !== viewerId) {
+      throw new NotFoundException('Thread not found');
+    }
 
     let userReaction: string | null = null;
     let isBookmarked = false;
@@ -537,10 +575,12 @@ export class ThreadsService {
       );
     }
 
-    // Remove from Meilisearch index on deletion
-    this.queueService.addSearchIndexJob({
-      action: 'delete', indexName: 'threads', documentId: threadId,
-    }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
+    // Unpublish workflow: search index removal, cache invalidation, real-time event
+    this.publishWorkflow.onUnpublish({
+      contentType: 'thread',
+      contentId: threadId,
+      userId,
+    }).catch(err => this.logger.warn('Unpublish workflow failed for thread', err instanceof Error ? err.message : err));
 
     return { deleted: true };
   }

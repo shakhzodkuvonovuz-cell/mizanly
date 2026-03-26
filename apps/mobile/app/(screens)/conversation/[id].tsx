@@ -1021,6 +1021,17 @@ export default function ConversationScreen() {
           }
         }
       });
+      // Listen for read receipts — refetch conversation to update readByMembers timestamps
+      socket.on('messages_read', ({ userId: readerId }: { userId: string }) => {
+        if (readerId !== user?.id) {
+          queryClient.invalidateQueries({ queryKey: ['conversation', id] });
+        }
+      });
+      // Listen for new notifications to update badge count in real-time
+      socket.on('new_notification', () => {
+        const store = useStore.getState();
+        store.setUnreadNotifications(store.unreadNotifications + 1);
+      });
       socketRef.current = socket;
     };
     connect();

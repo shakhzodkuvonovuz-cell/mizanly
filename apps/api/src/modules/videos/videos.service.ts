@@ -21,6 +21,7 @@ import { GamificationService } from '../gamification/gamification.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 
 const VIDEO_SELECT = {
   id: true,
@@ -46,6 +47,7 @@ const VIDEO_SELECT = {
   commentsCount: true,
   status: true,
   isRemoved: true,
+  scheduledAt: true,
   publishedAt: true,
   createdAt: true,
   user: {
@@ -84,6 +86,7 @@ export class VideosService {
     private ai: AiService,
     private queueService: QueueService,
     private configService: ConfigService,
+    private publishWorkflow: PublishWorkflowService,
   ) {}
 
   private async enhanceVideos(videos: VideoWithRelations[], userId?: string) {
@@ -182,12 +185,12 @@ export class VideosService {
         }).catch((e) => this.logger.error('Failed to update video status', e));
       });
 
-    // Add to Meilisearch index (guarded — only if Meilisearch is configured)
-    this.queueService.addSearchIndexJob({
-      action: 'index',
-      indexName: 'videos',
-      documentId: video[0].id,
-      document: {
+    // Publish workflow: search index, cache invalidation, real-time event
+    this.publishWorkflow.onPublish({
+      contentType: 'video',
+      contentId: video[0].id,
+      userId,
+      indexDocument: {
         id: video[0].id,
         title: dto.title,
         description: dto.description || '',
@@ -198,7 +201,7 @@ export class VideosService {
         category: dto.category || 'OTHER',
         status: 'PROCESSING',
       },
-    }).catch(err => this.logger.warn('Failed to queue search index creation for video', err instanceof Error ? err.message : err));
+    }).catch(err => this.logger.warn('Publish workflow failed for video', err instanceof Error ? err.message : err));
 
     // Gamification: award XP + update streak
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' });
@@ -345,6 +348,11 @@ export class VideosService {
     });
     if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
 
+    // Hide future-scheduled content from non-owners
+    if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.user?.id !== userId) {
+      throw new NotFoundException('Video not found');
+    }
+
     // Check block status
     if (userId && video.user && userId !== video.user.id) {
       const blocked = await this.prisma.block.findFirst({
@@ -459,10 +467,12 @@ export class VideosService {
       });
     }
 
-    // Remove from Meilisearch index on deletion
-    this.queueService.addSearchIndexJob({
-      action: 'delete', indexName: 'videos', documentId: videoId,
-    }).catch(err => this.logger.warn('Failed to queue search index deletion', err instanceof Error ? err.message : err));
+    // Unpublish workflow: search index removal, cache invalidation, real-time event
+    this.publishWorkflow.onUnpublish({
+      contentType: 'video',
+      contentId: videoId,
+      userId,
+    }).catch(err => this.logger.warn('Unpublish workflow failed for video', err instanceof Error ? err.message : err));
 
     // Invalidate video feed cache so deleted video disappears immediately
     this.invalidateVideoFeedCache().catch(() => {});

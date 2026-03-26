@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { SchedulingService } from './scheduling.service';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { QueueService } from '../../common/queue/queue.service';
 
 describe('SchedulingService — authorization matrix', () => {
   let service: SchedulingService;
@@ -22,6 +25,9 @@ describe('SchedulingService — authorization matrix', () => {
             video: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), update: jest.fn() },
           },
         },
+        { provide: PublishWorkflowService, useValue: { onPublish: jest.fn(), onUnpublish: jest.fn() } },
+        { provide: NotificationsService, useValue: { create: jest.fn() } },
+        { provide: QueueService, useValue: { addSearchIndexJob: jest.fn(), addPushNotificationJob: jest.fn() } },
       ],
     }).compile();
 

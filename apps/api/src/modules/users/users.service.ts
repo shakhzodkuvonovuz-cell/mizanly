@@ -1082,7 +1082,7 @@ export class UsersService {
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { isDeactivated: false, deactivatedAt: null, deletedAt: null },
+      data: { isDeactivated: false, deactivatedAt: null, deletedAt: null, scheduledDeletionAt: null },
     });
     return { reactivated: true };
   }

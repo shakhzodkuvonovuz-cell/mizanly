@@ -155,7 +155,7 @@ export default function MediaSettingsScreen() {
   // Load auto-play setting
   useEffect(() => {
     settingsApi.getAutoPlay().then(res => {
-      if (res?.autoPlaySetting) setAutoPlay(res.autoPlaySetting as 'wifi' | 'always' | 'never');
+      if (res?.autoPlaySetting) setAutoPlay(res.autoPlaySetting.toLowerCase() as 'wifi' | 'always' | 'never');
     }).catch(__DEV__ ? (err) => console.warn('Failed to load auto-play setting:', err) : () => {});
   }, []);
 

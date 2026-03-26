@@ -64,20 +64,20 @@ export class ChannelPostsService {
     return this.prisma.channelPost.update({ where: { id: postId }, data: { isPinned: false } });
   }
 
-  // NOTE: Channel posts lack a per-user reaction junction table (ChannelPostReaction).
-  // Until the schema adds one (file 15 scope), likes cannot be properly deduplicated.
-  // The userId parameter is accepted for future dedup but currently only used for
-  // existence verification. A schema migration is required to fix this properly.
-
   async like(postId: string, userId: string) {
     const post = await this.prisma.channelPost.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Community post not found');
 
-    // Verify user exists
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
-    if (!user) throw new NotFoundException('User not found');
+    // Dedup: check if already liked via ChannelPostLike junction table
+    const existing = await this.prisma.channelPostLike.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+    if (existing) throw new ConflictException('Already liked');
 
-    await this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = "likesCount" + 1 WHERE id = ${postId}`;
+    await this.prisma.$transaction([
+      this.prisma.channelPostLike.create({ data: { userId, postId } }),
+      this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = "likesCount" + 1 WHERE id = ${postId}`,
+    ]);
     return { liked: true };
   }
 
@@ -85,11 +85,16 @@ export class ChannelPostsService {
     const post = await this.prisma.channelPost.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Community post not found');
 
-    // Verify user exists
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
-    if (!user) throw new NotFoundException('User not found');
+    // Check if the user has actually liked the post
+    const existing = await this.prisma.channelPostLike.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+    if (!existing) throw new NotFoundException('Like not found');
 
-    await this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`;
+    await this.prisma.$transaction([
+      this.prisma.channelPostLike.delete({ where: { userId_postId: { userId, postId } } }),
+      this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`,
+    ]);
     return { unliked: true };
   }
 }

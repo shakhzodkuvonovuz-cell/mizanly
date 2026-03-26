@@ -92,6 +92,7 @@ describe('ClerkAuthGuard', () => {
           isDeactivated: true,
           isDeleted: true,
           banExpiresAt: true,
+          deactivatedAt: true,
         },
       });
       expect(request.user).toEqual(activeUser);

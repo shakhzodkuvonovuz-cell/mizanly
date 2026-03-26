@@ -368,7 +368,7 @@ describe('ReelsService', () => {
       expect(notifications.create).toHaveBeenCalledWith({
         userId: mockReel.userId,
         actorId: userId,
-        type: 'LIKE',
+        type: 'REEL_LIKE',
         reelId,
       });
       expect(result).toEqual({ liked: true });

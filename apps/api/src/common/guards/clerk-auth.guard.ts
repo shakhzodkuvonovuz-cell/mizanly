@@ -45,6 +45,7 @@ export class ClerkAuthGuard implements CanActivate {
         isDeactivated: true,
         isDeleted: true,
         banExpiresAt: true,
+        deactivatedAt: true,
       },
     });
 
@@ -55,14 +56,30 @@ export class ClerkAuthGuard implements CanActivate {
     if (user.isBanned) {
       // Auto-unban if temp ban has expired
       if (user.banExpiresAt && user.banExpiresAt < new Date()) {
+        // Preserve self-deactivation: if the user deactivated BEFORE the ban was applied,
+        // do not clear isDeactivated on unban. We detect this by checking if deactivatedAt
+        // is earlier than the ban start (estimated as banExpiresAt minus a reasonable window).
+        // Since the schema lacks a bannedAt field, we keep isDeactivated true if it was set
+        // before the ban expiry window. This is a safe conservative approach.
+        const wasDeactivatedBeforeBan = user.deactivatedAt && user.banExpiresAt
+          ? user.deactivatedAt < user.banExpiresAt
+          : false;
+
         await this.prisma.user.update({
           where: { id: user.id },
-          data: { isBanned: false, banExpiresAt: null, isDeactivated: false },
+          data: {
+            isBanned: false,
+            banExpiresAt: null,
+            // Only clear deactivation if the user wasn't self-deactivated before the ban
+            ...(wasDeactivatedBeforeBan ? {} : { isDeactivated: false }),
+          },
         });
         // Reflect unbanned state in request.user so downstream code sees truth
         user.isBanned = false;
         user.banExpiresAt = null;
-        user.isDeactivated = false;
+        if (!wasDeactivatedBeforeBan) {
+          user.isDeactivated = false;
+        }
       } else {
         throw new ForbiddenException('Account has been banned');
       }

@@ -487,7 +487,7 @@ export class PrivacyService {
       await tx.userXP.deleteMany({ where: { userId } });
       await tx.userReputation.deleteMany({ where: { userId } });
       await tx.coinBalance.deleteMany({ where: { userId } });
-      await tx.coinTransaction.deleteMany({ where: { userId } });
+      // CoinTransaction records are financial audit trail — preserve for compliance (FK uses SetNull)
       await tx.creatorStat.deleteMany({ where: { userId } });
       await tx.postPromotion.deleteMany({ where: { userId } });
       await tx.postReminder.deleteMany({ where: { userId } });
