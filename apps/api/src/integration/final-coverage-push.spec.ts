@@ -56,7 +56,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
             feedDismissal: { upsert: jest.fn(), findMany: jest.fn().mockResolvedValue([]) }, report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) }, circleMember: { findMany: jest.fn().mockResolvedValue([]) },
           }},
           { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({}) } },
-          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
+          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0), zadd: jest.fn().mockResolvedValue(0), zcard: jest.fn().mockResolvedValue(0), zrevrange: jest.fn().mockResolvedValue([]), pipeline: jest.fn().mockReturnValue({ del: jest.fn().mockReturnThis(), zadd: jest.fn().mockReturnThis(), expire: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }), keys: jest.fn().mockResolvedValue([]) } },
         ],
       }).compile();
       service = module.get(PostsService); prisma = module.get(PrismaService);
@@ -356,7 +356,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
             $transaction: jest.fn().mockResolvedValue([{}, {}]), $executeRaw: jest.fn(),
           }},
           { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'n-1' }) } },
-          { provide: 'REDIS', useValue: { get: jest.fn(), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
+          { provide: 'REDIS', useValue: { get: jest.fn(), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0), zadd: jest.fn().mockResolvedValue(0), zcard: jest.fn().mockResolvedValue(0), zrevrange: jest.fn().mockResolvedValue([]), pipeline: jest.fn().mockReturnValue({ del: jest.fn().mockReturnThis(), zadd: jest.fn().mockReturnThis(), expire: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }), keys: jest.fn().mockResolvedValue([]) } },
         ],
       }).compile();
       service = module.get(ThreadsService); prisma = module.get(PrismaService);

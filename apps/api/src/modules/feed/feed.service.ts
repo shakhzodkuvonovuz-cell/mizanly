@@ -219,13 +219,15 @@ export class FeedService {
     ]);
     // Clear Redis session signals
     await this.redis.del(`session:${userId}`);
-    // Clear cached foryou feeds (SCAN is non-blocking unlike KEYS)
-    let scanCursor = '0';
-    do {
-      const [nextCursor, keys] = await this.redis.scan(scanCursor, 'MATCH', `feed:foryou:${userId}:*`, 'COUNT', 100);
-      scanCursor = nextCursor;
-      if (keys.length > 0) await this.redis.del(...keys);
-    } while (scanCursor !== '0');
+    // Clear cached foryou feeds and scored feed sorted sets (SCAN is non-blocking unlike KEYS)
+    for (const pattern of [`feed:foryou:${userId}:*`, `sfeed:*:${userId}`]) {
+      let scanCursor = '0';
+      do {
+        const [nextCursor, keys] = await this.redis.scan(scanCursor, 'MATCH', pattern, 'COUNT', 100);
+        scanCursor = nextCursor;
+        if (keys.length > 0) await this.redis.del(...keys);
+      } while (scanCursor !== '0');
+    }
     return { reset: true, message: 'Your algorithm has been reset. Your feed will now show fresh content.' };
   }
 

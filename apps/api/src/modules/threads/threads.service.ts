@@ -21,6 +21,7 @@ import { ContentSafetyService } from '../moderation/content-safety.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
+import { ScoredFeedCache, ScoredItem } from '../../common/utils/scored-feed-cache';
 
 const THREAD_SELECT = {
   id: true,
@@ -99,6 +100,7 @@ const REPLY_SELECT = {
 @Injectable()
 export class ThreadsService {
   private readonly logger = new Logger(ThreadsService.name);
+  private readonly scoredFeedCache: ScoredFeedCache;
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
@@ -108,7 +110,9 @@ export class ThreadsService {
     private queueService: QueueService,
     private contentSafety: ContentSafetyService,
     private publishWorkflow: PublishWorkflowService,
-  ) {}
+  ) {
+    this.scoredFeedCache = new ScoredFeedCache(redis);
+  }
 
   /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us).
    *  Delegates to shared cached utility — results cached in Redis for 60s per user. */
@@ -133,46 +137,49 @@ export class ThreadsService {
 
     const followingIds = follows.map((f) => f.followingId);
 
-    // For You feed: engagement-weighted scoring
+    // For You feed: materialized scoring via Redis sorted set
     if (type === 'foryou') {
-      const where: Prisma.ThreadWhereInput = {
-        isChainHead: true,
-        isRemoved: false,
-        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        visibility: 'PUBLIC',
-        user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
-        createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
-      };
-      if (excludedIds.length) where.userId = { notIn: excludedIds };
+      const sfeedKey = `sfeed:majlis:foryou:${userId}`;
+      const pageNum = cursor ? parseInt(cursor, 10) || 0 : 0;
 
-      const recentThreads = await this.prisma.thread.findMany({
-        where,
-        select: THREAD_SELECT,
-        take: 500, // wider candidate pool for better scoring diversity
-        orderBy: { createdAt: 'desc' },
-      });
+      const { items, hasMore } = await this.scoredFeedCache.getPage(
+        sfeedKey,
+        pageNum,
+        limit,
+        120,
+        async (): Promise<ScoredItem[]> => {
+          const where: Prisma.ThreadWhereInput = {
+            isChainHead: true,
+            isRemoved: false,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            visibility: 'PUBLIC',
+            user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
+            createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+          };
+          if (excludedIds.length) where.userId = { notIn: excludedIds };
 
-      // Score each thread: engagement weighted by recency
-      const scored = recentThreads.map(thread => {
-        const ageHours = Math.max(1, (Date.now() - new Date(thread.createdAt).getTime()) / 3600000);
-        const engagement = (thread.likesCount * 3) + (thread.repliesCount * 5) + (thread.repostsCount * 4);
-        const score = engagement / Math.pow(ageHours, 1.5);
-        return { ...thread, _score: score };
-      });
+          const recentThreads = await this.prisma.thread.findMany({
+            where,
+            select: THREAD_SELECT,
+            take: 500,
+            orderBy: { createdAt: 'desc' },
+          });
 
-      scored.sort((a, b) => b._score - a._score);
-      const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
-      const page = scored.slice(offset, offset + limit + 1);
+          return recentThreads.map(thread => {
+            const ageHours = Math.max(1, (Date.now() - new Date(thread.createdAt).getTime()) / 3600000);
+            const engagement = (thread.likesCount * 3) + (thread.repliesCount * 5) + (thread.repostsCount * 4);
+            const score = engagement / Math.pow(ageHours, 1.5);
+            return { ...thread, score, id: thread.id };
+          });
+        },
+      );
 
-      const hasMore = page.length > limit;
-      const result = hasMore ? page.slice(0, limit) : page;
-
-      const data = result.map(({ _score, ...thread }) => thread);
+      const data = items.map(({ score, ...thread }) => thread);
 
       return {
         data,
         meta: {
-          cursor: hasMore ? String(offset + limit) : null,
+          cursor: hasMore ? String(pageNum + 1) : null,
           hasMore,
         },
       };
@@ -227,67 +234,55 @@ export class ThreadsService {
    * Threads with deep reply chains score higher.
    */
   private async getTrendingThreads(excludedIds: string[], cursor?: string, limit = 20) {
-    // 60-second Redis cache for trending threads (same pattern as posts.service.ts getTrendingFallback)
-    const cacheKey = `threads:trending:${cursor ?? 'first'}:${limit}`;
-    const cached = await this.redis.get(cacheKey);
-    if (cached) {
-      try {
-        return JSON.parse(cached) as { data: Record<string, unknown>[]; meta: { hasMore: boolean; cursor?: string } };
-      } catch {
-        await this.redis.del(cacheKey);
-      }
-    }
+    const sfeedKey = 'sfeed:majlis:trending';
+    const pageNum = cursor ? parseInt(cursor, 10) || 0 : 0;
 
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const { items, hasMore } = await this.scoredFeedCache.getPage(
+      sfeedKey,
+      pageNum,
+      limit,
+      120,
+      async (): Promise<ScoredItem[]> => {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const threads = await this.prisma.thread.findMany({
-      where: {
-        isRemoved: false,
-        isChainHead: true,
-        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        visibility: 'PUBLIC',
-        createdAt: { gte: sevenDaysAgo },
-        user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
-        ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+        const threads = await this.prisma.thread.findMany({
+          where: {
+            isRemoved: false,
+            isChainHead: true,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            visibility: 'PUBLIC',
+            createdAt: { gte: sevenDaysAgo },
+            user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
+            ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+          },
+          select: THREAD_SELECT,
+          take: 500,
+          orderBy: { createdAt: 'desc' },
+        });
+
+        return threads.map((thread) => {
+          const ageHours = Math.max(1, (Date.now() - thread.createdAt.getTime()) / 3600000);
+          const replyDepthScore = thread.repliesCount * 3;
+          const engagementScore =
+            thread.likesCount * 1.0 +
+            replyDepthScore +
+            thread.repostsCount * 2.0 +
+            thread.quotesCount * 2.5;
+          const engagementRate = engagementScore / ageHours;
+          return { ...thread, score: engagementRate, id: thread.id };
+        });
       },
-      select: THREAD_SELECT,
-      take: 500, // wider candidate pool for better trending diversity
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // Score by reply depth + engagement rate
-    const scored = threads.map((thread) => {
-      const ageHours = Math.max(1, (Date.now() - thread.createdAt.getTime()) / 3600000);
-      // Reply depth is the strongest signal for threads (conversation depth > likes)
-      const replyDepthScore = thread.repliesCount * 3;
-      const engagementScore =
-        thread.likesCount * 1.0 +
-        replyDepthScore +
-        thread.repostsCount * 2.0 +
-        thread.quotesCount * 2.5;
-      const engagementRate = engagementScore / ageHours;
-      return { ...thread, _score: engagementRate };
-    });
-
-    scored.sort((a, b) => b._score - a._score);
-    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
-    const page = scored.slice(offset, offset + limit + 1);
-    const hasMore = page.length > limit;
-    const data = (hasMore ? page.slice(0, limit) : page).map(
-      ({ _score, ...t }) => t,
     );
 
-    const result = {
+    const data = items.map(({ score, ...t }) => t);
+
+    return {
       data,
       meta: {
         hasMore,
-        cursor: hasMore ? String(offset + limit) : undefined,
+        cursor: hasMore ? String(pageNum + 1) : undefined,
       },
     };
-
-    // Cache trending threads for 60 seconds
-    await this.redis.setex(cacheKey, 60, JSON.stringify(result));
-    return result;
   }
 
   /**

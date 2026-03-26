@@ -108,7 +108,19 @@ describe('ThreadsService — edge cases', () => {
         },
         {
           provide: 'REDIS',
-          useValue: { get: jest.fn(), set: jest.fn(), setex: jest.fn(), del: jest.fn() },
+          useValue: (() => {
+            const sortedSets = new Map<string, { score: number; member: string }[]>();
+            const redisMock: Record<string, unknown> = {
+              get: jest.fn(), set: jest.fn(), setex: jest.fn(),
+              del: jest.fn(async (...keys: string[]) => { for (const k of keys) sortedSets.delete(k); return keys.length; }),
+              zcard: jest.fn(async (key: string) => sortedSets.get(key)?.length ?? 0),
+              zadd: jest.fn(async (key: string, ...args: (string | number)[]) => { if (!sortedSets.has(key)) sortedSets.set(key, []); const set = sortedSets.get(key)!; for (let i = 0; i < args.length; i += 2) set.push({ score: Number(args[i]), member: String(args[i + 1]) }); return args.length / 2; }),
+              zrevrange: jest.fn(async (key: string, start: number, stop: number) => { const set = sortedSets.get(key); if (!set) return []; const sorted = [...set].sort((a, b) => b.score - a.score); return sorted.slice(start, stop + 1).map(s => s.member); }),
+              expire: jest.fn().mockResolvedValue(1),
+              pipeline: jest.fn(() => { const cmds: (() => Promise<unknown>)[] = []; const pipe: Record<string, unknown> = { del: (...keys: string[]) => { cmds.push(() => (redisMock.del as any)(...keys)); return pipe; }, zadd: (key: string, ...args: (string | number)[]) => { cmds.push(() => (redisMock.zadd as any)(key, ...args)); return pipe; }, expire: (key: string, s: number) => { cmds.push(() => (redisMock.expire as any)(key, s)); return pipe; }, exec: async () => { const r: [null, unknown][] = []; for (const c of cmds) { r.push([null, await c()]); } return r; } }; return pipe; }),
+            };
+            return redisMock;
+          })(),
         },
       ],
     }).compile();

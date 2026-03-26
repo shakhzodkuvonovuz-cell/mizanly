@@ -104,15 +104,43 @@ describe('PostsService', () => {
         },
         {
           provide: 'REDIS',
-          useValue: {
-            get: jest.fn(),
-            set: jest.fn(),
-            setex: jest.fn(),
-            del: jest.fn(),
-            publish: jest.fn().mockResolvedValue(1),
-            pfadd: jest.fn().mockResolvedValue(1),
-            pfcount: jest.fn().mockResolvedValue(0),
-          },
+          useValue: (() => {
+            const sortedSets = new Map<string, { score: number; member: string }[]>();
+            const redisMock = {
+              get: jest.fn(),
+              set: jest.fn(),
+              setex: jest.fn(),
+              del: jest.fn(async (...keys: string[]) => { for (const k of keys) sortedSets.delete(k); return keys.length; }),
+              publish: jest.fn().mockResolvedValue(1),
+              pfadd: jest.fn().mockResolvedValue(1),
+              pfcount: jest.fn().mockResolvedValue(0),
+              zcard: jest.fn(async (key: string) => sortedSets.get(key)?.length ?? 0),
+              zadd: jest.fn(async (key: string, ...args: (string | number)[]) => {
+                if (!sortedSets.has(key)) sortedSets.set(key, []);
+                const set = sortedSets.get(key)!;
+                for (let i = 0; i < args.length; i += 2) set.push({ score: Number(args[i]), member: String(args[i + 1]) });
+                return args.length / 2;
+              }),
+              zrevrange: jest.fn(async (key: string, start: number, stop: number) => {
+                const set = sortedSets.get(key);
+                if (!set) return [];
+                const sorted = [...set].sort((a, b) => b.score - a.score);
+                return sorted.slice(start, stop + 1).map(s => s.member);
+              }),
+              expire: jest.fn().mockResolvedValue(1),
+              pipeline: jest.fn(() => {
+                const cmds: (() => Promise<unknown>)[] = [];
+                const pipe: Record<string, unknown> = {
+                  del: (...keys: string[]) => { cmds.push(() => redisMock.del(...keys)); return pipe; },
+                  zadd: (key: string, ...args: (string | number)[]) => { cmds.push(() => redisMock.zadd(key, ...args)); return pipe; },
+                  expire: (key: string, s: number) => { cmds.push(() => redisMock.expire(key, s)); return pipe; },
+                  exec: async () => { const r: [null, unknown][] = []; for (const c of cmds) { r.push([null, await c()]); } return r; },
+                };
+                return pipe;
+              }),
+            };
+            return redisMock;
+          })(),
         },
       ],
     }).compile();
@@ -308,19 +336,22 @@ describe('PostsService', () => {
       expect(userIds).not.toContain('user-muted');
     });
 
-    it('should cache "for you" feed', async () => {
+    it('should use scored feed cache for "for you" feed', async () => {
       const userId = 'user-123';
-      const cachedData = {
-        data: [],
-        meta: { cursor: null, hasMore: false },
-      };
-      redis.get.mockResolvedValue(JSON.stringify(cachedData));
+      // zcard returns 0 → cache miss → scoreFn is called
+      redis.zcard.mockResolvedValue(0);
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.feedDismissal.findMany.mockResolvedValue([]);
+      prisma.post.findMany.mockResolvedValue([]);
 
       const result = await service.getFeed(userId, 'foryou');
 
-      expect(redis.get).toHaveBeenCalledWith('feed:foryou:user-123:first');
-      expect(prisma.post.findMany).not.toHaveBeenCalled();
-      expect(result).toEqual(cachedData);
+      // Should check the scored feed sorted set
+      expect(redis.zcard).toHaveBeenCalledWith(`sfeed:saf:foryou:${userId}`);
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
     });
   });
 
@@ -951,10 +982,11 @@ describe('PostsService', () => {
   });
 
   describe('getFeed — foryou', () => {
-    it('should return empty array and cache the result when no posts in DB', async () => {
-      redis.get.mockResolvedValue(null);
+    it('should return empty array when no posts in DB (scored feed cache)', async () => {
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.feedDismissal.findMany.mockResolvedValue([]);
       prisma.post.findMany.mockResolvedValue([]);
       prisma.postReaction.findMany.mockResolvedValue([]);
       prisma.savedPost.findMany.mockResolvedValue([]);
@@ -962,8 +994,8 @@ describe('PostsService', () => {
       const result = await service.getFeed('user-123', 'foryou');
       expect(result.data).toEqual([]);
       expect(result.meta.hasMore).toBe(false);
-      // Should have attempted to cache the result
-      expect(redis.setex).toHaveBeenCalled();
+      // With scored feed cache, empty results return early without populating Redis
+      expect(redis.zcard).toHaveBeenCalledWith('sfeed:saf:foryou:user-123');
     });
   });
 

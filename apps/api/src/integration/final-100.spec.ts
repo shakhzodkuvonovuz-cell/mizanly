@@ -40,7 +40,7 @@ describe('Final 100 — breaking 3800', () => {
             feedDismissal: { upsert: jest.fn(), findMany: jest.fn().mockResolvedValue([]) }, report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) }, circleMember: { findMany: jest.fn().mockResolvedValue([]) },
           }},
           { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({}) } },
-          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
+          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0), zadd: jest.fn().mockResolvedValue(0), zcard: jest.fn().mockResolvedValue(0), zrevrange: jest.fn().mockResolvedValue([]), pipeline: jest.fn().mockReturnValue({ del: jest.fn().mockReturnThis(), zadd: jest.fn().mockReturnThis(), expire: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }), keys: jest.fn().mockResolvedValue([]) } },
         ],
       }).compile();
       service = module.get(PostsService); prisma = module.get(PrismaService);
@@ -49,17 +49,21 @@ describe('Final 100 — breaking 3800', () => {
     // 20 targeted tests
     it('foryou feed caches result in Redis', async () => {
       prisma.block.findMany.mockResolvedValue([]); prisma.mute.findMany.mockResolvedValue([]);
-      prisma.post.findMany.mockResolvedValue([]);
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1', createdAt: new Date(), likesCount: 5, commentsCount: 2, sharesCount: 1, savesCount: 0, viewsCount: 10, user: { id: 'u2', username: 'test' } }]);
+      prisma.postReaction.findMany.mockResolvedValue([]); prisma.savedPost.findMany.mockResolvedValue([]);
       await service.getFeed('u1', 'foryou');
       const redis = (service as any).redis;
-      expect(redis.setex).toHaveBeenCalled();
+      expect(redis.pipeline).toHaveBeenCalled();
     });
 
     it('foryou feed returns cached result', async () => {
       const redis = (service as any).redis;
-      redis.get.mockResolvedValue(JSON.stringify({ data: [], meta: { cursor: null, hasMore: false } }));
+      // Simulate cache hit: zcard > 0 means sorted set exists, zrevrange returns cached items
+      redis.zcard.mockResolvedValue(2);
+      redis.zrevrange.mockResolvedValue([JSON.stringify({ id: 'p1', score: 50 }), JSON.stringify({ id: 'p2', score: 30 })]);
+      prisma.postReaction.findMany.mockResolvedValue([]); prisma.savedPost.findMany.mockResolvedValue([]);
       const result = await service.getFeed('u1', 'foryou');
-      expect(result.data).toEqual([]);
+      expect(result.data).toHaveLength(2);
     });
 
     it('delete invalidates foryou cache', async () => {

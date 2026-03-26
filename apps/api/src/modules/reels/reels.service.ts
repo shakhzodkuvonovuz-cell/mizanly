@@ -20,6 +20,7 @@ import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
+import { ScoredFeedCache, ScoredItem } from '../../common/utils/scored-feed-cache';
 
 const REEL_SELECT = {
   id: true,
@@ -75,6 +76,7 @@ const REEL_SELECT = {
 @Injectable()
 export class ReelsService {
   private readonly logger = new Logger(ReelsService.name);
+  private readonly scoredFeedCache: ScoredFeedCache;
 
   constructor(
     private prisma: PrismaService,
@@ -86,7 +88,9 @@ export class ReelsService {
     private queueService: QueueService,
     private contentSafety: ContentSafetyService,
     private publishWorkflow: PublishWorkflowService,
-  ) {}
+  ) {
+    this.scoredFeedCache = new ScoredFeedCache(redis);
+  }
 
   async create(userId: string, dto: CreateReelDto) {
     // Pre-save text moderation — blocks creation if content is flagged
@@ -317,81 +321,73 @@ export class ReelsService {
   }
 
   async getFeed(userId: string | undefined, cursor?: string, limit = 20) {
-    // Cache for 30 seconds if user is logged in
-    if (userId) {
-      const cacheKey = `feed:reels:${userId}:${cursor ?? 'first'}`;
-      const cached = await this.redis.get(cacheKey);
-      if (cached) return JSON.parse(cached);
-    }
+    const sfeedKey = userId ? `sfeed:bakra:foryou:${userId}` : `sfeed:bakra:foryou:anon`;
+    const page = cursor ? parseInt(cursor, 10) || 0 : 0;
 
-    const [blocks, mutes] = userId ? await Promise.all([
-      this.prisma.block.findMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] }, select: { blockerId: true, blockedId: true }, take: 10000 }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 10000 }),
-    ]) : [[], []];
+    const { items, hasMore } = await this.scoredFeedCache.getPage(
+      sfeedKey,
+      page,
+      limit,
+      60,
+      async (): Promise<ScoredItem[]> => {
+        const [blocks, mutes] = userId ? await Promise.all([
+          this.prisma.block.findMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] }, select: { blockerId: true, blockedId: true }, take: 10000 }),
+          this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 10000 }),
+        ]) : [[], []];
 
-    const excludedSet = new Set<string>();
-    for (const b of blocks) {
-      if (b.blockerId === userId) excludedSet.add(b.blockedId);
-      else excludedSet.add(b.blockerId);
-    }
-    for (const m of mutes) excludedSet.add(m.mutedId);
-    const excludedIds = [...excludedSet];
+        const excludedSet = new Set<string>();
+        for (const b of blocks) {
+          if (b.blockerId === userId) excludedSet.add(b.blockedId);
+          else excludedSet.add(b.blockerId);
+        }
+        for (const m of mutes) excludedSet.add(m.mutedId);
+        const excludedIds = [...excludedSet];
 
-    const where: Prisma.ReelWhereInput = {
-      status: ReelStatus.READY,
-      isRemoved: false,
-      isTrial: false,
-      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-      user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
-      createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) }, // last 72h
-      ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
-    };
+        const where: Prisma.ReelWhereInput = {
+          status: ReelStatus.READY,
+          isRemoved: false,
+          isTrial: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+          user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
+          createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+          ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+        };
 
-    // Fetch up to 500 recent reels to score and rank (wider candidate pool)
-    const recentReels = await this.prisma.reel.findMany({
-      where,
-      select: REEL_SELECT,
-      take: 500,
-      orderBy: { createdAt: 'desc' },
-    });
+        const recentReels = await this.prisma.reel.findMany({
+          where,
+          select: REEL_SELECT,
+          take: 500,
+          orderBy: { createdAt: 'desc' },
+        });
 
-    // Score each reel: engagement weighted by recency
-    const scored = recentReels.map(reel => {
-      const ageHours = Math.max(1, (Date.now() - new Date(reel.createdAt).getTime()) / 3600000);
-      const engagement = (reel.likesCount * 2) + (reel.commentsCount * 4) + (reel.sharesCount * 6) + (reel.viewsCount * 0.1);
-      const score = engagement / Math.pow(ageHours, 1.2);
-      return { ...reel, _score: score };
-    });
+        return recentReels.map(reel => {
+          const ageHours = Math.max(1, (Date.now() - new Date(reel.createdAt).getTime()) / 3600000);
+          const engagement = (reel.likesCount * 2) + (reel.commentsCount * 4) + (reel.sharesCount * 6) + (reel.viewsCount * 0.1);
+          const score = engagement / Math.pow(ageHours, 1.2);
+          return { ...reel, score, id: reel.id };
+        });
+      },
+    );
 
-    // Sort by score descending
-    scored.sort((a, b) => b._score - a._score);
-
-    // Paginate using offset (score-sorted array can't use createdAt cursor)
-    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
-    const page = scored.slice(offset, offset + limit + 1);
-
-    const hasMore = page.length > limit;
-    const data = hasMore ? page.slice(0, limit) : page;
-
-    // Strip internal _score field
-    const plainData = data.map(({ _score, ...reel }) => reel);
+    // Strip score field
+    const plainData = items.map(({ score, ...reel }) => reel);
 
     let likedReelIds: string[] = [];
     let bookmarkedReelIds: string[] = [];
 
     if (userId && plainData.length > 0) {
-      const reelIds = plainData.map(r => r.id);
+      const reelIds = plainData.map(r => r.id as string);
       const [reactions, interactions] = await Promise.all([
         this.prisma.reelReaction.findMany({
           where: { userId, reelId: { in: reelIds } },
           select: { reelId: true },
-      take: 50,
-    }),
+          take: 50,
+        }),
         this.prisma.reelInteraction.findMany({
           where: { userId, reelId: { in: reelIds }, saved: true },
           select: { reelId: true },
-      take: 50,
-    }),
+          take: 50,
+        }),
       ]);
       likedReelIds = reactions.map(r => r.reelId);
       bookmarkedReelIds = interactions.map(i => i.reelId);
@@ -399,24 +395,17 @@ export class ReelsService {
 
     const enhancedData = plainData.map(reel => ({
       ...reel,
-      isLiked: userId ? likedReelIds.includes(reel.id) : false,
-      isBookmarked: userId ? bookmarkedReelIds.includes(reel.id) : false,
+      isLiked: userId ? likedReelIds.includes(reel.id as string) : false,
+      isBookmarked: userId ? bookmarkedReelIds.includes(reel.id as string) : false,
     }));
 
-    const result = {
+    return {
       data: enhancedData,
       meta: {
-        cursor: hasMore ? String(offset + limit) : null,
+        cursor: hasMore ? String(page + 1) : null,
         hasMore,
       },
     };
-
-    if (userId) {
-      const cacheKey = `feed:reels:${userId}:${cursor ?? 'first'}`;
-      await this.redis.setex(cacheKey, 30, JSON.stringify(result));
-    }
-
-    return result;
   }
 
   /**
@@ -425,55 +414,57 @@ export class ReelsService {
    * Works without auth for anonymous browsing.
    */
   async getTrendingReels(cursor?: string, limit = 20) {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const sfeedKey = 'sfeed:bakra:trending';
+    const page = cursor ? parseInt(cursor, 10) || 0 : 0;
 
-    const reels = await this.prisma.reel.findMany({
-      where: {
-        status: ReelStatus.READY,
-        isRemoved: false,
-        isTrial: false,
-        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
+    const { items, hasMore } = await this.scoredFeedCache.getPage(
+      sfeedKey,
+      page,
+      limit,
+      120,
+      async (): Promise<ScoredItem[]> => {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+        const reels = await this.prisma.reel.findMany({
+          where: {
+            status: ReelStatus.READY,
+            isRemoved: false,
+            isTrial: false,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            createdAt: { gte: sevenDaysAgo },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
+          },
+          select: {
+            ...REEL_SELECT,
+            savesCount: true,
+          },
+          take: 500,
+          orderBy: { createdAt: 'desc' },
+        });
+
+        return reels.map((reel) => {
+          const ageHours = Math.max(1, (Date.now() - reel.createdAt.getTime()) / 3600000);
+          const completionProxy = reel.viewsCount > 0
+            ? Math.min(1, (reel.likesCount + reel.commentsCount) / reel.viewsCount * 5)
+            : 0;
+          const engagement =
+            completionProxy * 2.0 +
+            reel.likesCount * 1.0 +
+            reel.sharesCount * 3.0 +
+            (reel.commentsCount * 1.5);
+          const engagementRate = engagement / ageHours;
+          return { ...reel, score: engagementRate, id: reel.id };
+        });
       },
-      select: {
-        ...REEL_SELECT,
-        savesCount: true,
-      },
-      take: 500, // wider candidate pool for better trending diversity
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // Score by completion rate (heavily weighted) + engagement
-    const scored = reels.map((reel) => {
-      const ageHours = Math.max(1, (Date.now() - reel.createdAt.getTime()) / 3600000);
-      // Estimate completion rate from view-to-like ratio (proxy — real completion rate
-      // would come from view tracking). Higher like/view ratio = people watched longer.
-      const completionProxy = reel.viewsCount > 0
-        ? Math.min(1, (reel.likesCount + reel.commentsCount) / reel.viewsCount * 5)
-        : 0;
-      const engagement =
-        completionProxy * 2.0 +
-        reel.likesCount * 1.0 +
-        reel.sharesCount * 3.0 +
-        (reel.commentsCount * 1.5);
-      const engagementRate = engagement / ageHours;
-      return { ...reel, _score: engagementRate };
-    });
-
-    scored.sort((a, b) => b._score - a._score);
-    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
-    const page = scored.slice(offset, offset + limit + 1);
-    const hasMore = page.length > limit;
-    const data = (hasMore ? page.slice(0, limit) : page).map(
-      ({ _score, ...reel }) => reel,
     );
+
+    const data = items.map(({ score, ...reel }) => reel);
 
     return {
       data,
       meta: {
         hasMore,
-        cursor: hasMore ? String(offset + limit) : undefined,
+        cursor: hasMore ? String(page + 1) : undefined,
       },
     };
   }

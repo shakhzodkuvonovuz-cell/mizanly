@@ -24,6 +24,7 @@ import { AnalyticsService } from '../../common/services/analytics.service';
 import { enrichPostsForUser } from '../../common/utils/enrich';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
+import { ScoredFeedCache, ScoredItem } from '../../common/utils/scored-feed-cache';
 
 const POST_SELECT = {
   id: true,
@@ -73,6 +74,7 @@ const POST_SELECT = {
 @Injectable()
 export class PostsService {
   private readonly logger = new Logger(PostsService.name);
+  private readonly scoredFeedCache: ScoredFeedCache;
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
@@ -82,7 +84,9 @@ export class PostsService {
     private queueService: QueueService,
     private analytics: AnalyticsService,
     private publishWorkflow: PublishWorkflowService,
-  ) {}
+  ) {
+    this.scoredFeedCache = new ScoredFeedCache(redis);
+  }
 
   /**
    * Finding #360: Notify users when their scheduled posts go live.
@@ -141,79 +145,59 @@ export class PostsService {
       return this.getFavoritesFeed(userId, cursor, limit);
     }
 
-    // Cache only "for you" feed for 30 seconds
+    // For-you feed: materialized scoring via Redis sorted set.
+    // Scores 500 candidates once, caches in sorted set for 120s, paginates from cache.
     if (type === 'foryou') {
-      const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
-      const cached = await this.redis.get(cacheKey);
-      if (cached) {
-        try {
-          return JSON.parse(cached);
-        } catch {
-          // Corrupted cache — delete and fall through to DB
-          await this.redis.del(cacheKey);
-        }
-      }
-    }
+      const sfeedKey = `sfeed:saf:foryou:${userId}`;
+      const page = cursor ? parseInt(cursor, 10) || 0 : 0;
 
-    if (type === 'foryou') {
-      // Get blocked/muted users to exclude (shared cached utility) + dismissed posts
-      const [excludedIds, dismissals] = await Promise.all([
-        getExcludedUserIds(this.prisma, this.redis, userId),
-        this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'post' }, select: { contentId: true }, take: 200 }),
-      ]);
-      const dismissedPostIds = dismissals.map(d => d.contentId);
+      const { items, hasMore } = await this.scoredFeedCache.getPage(
+        sfeedKey,
+        page,
+        limit,
+        120,
+        async (): Promise<ScoredItem[]> => {
+          const [excludedIds, dismissals] = await Promise.all([
+            getExcludedUserIds(this.prisma, this.redis, userId),
+            this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'post' }, select: { contentId: true }, take: 200 }),
+          ]);
+          const dismissedPostIds = dismissals.map(d => d.contentId);
 
-      // For-you feed scores 200 candidates once, then caches result for 60s.
+          const recentPosts = await this.prisma.post.findMany({
+            where: {
+              createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+              isRemoved: false,
+              OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+              user: { isPrivate: false, isBanned: false, isDeactivated: false, isDeleted: false },
+              visibility: 'PUBLIC',
+              ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+              ...(dismissedPostIds.length ? { id: { notIn: dismissedPostIds } } : {}),
+            },
+            select: POST_SELECT,
+            take: 500,
+            orderBy: { createdAt: 'desc' },
+          });
 
-      // Fetch recent posts from last 72 hours
-      const recentPosts = await this.prisma.post.findMany({
-        where: {
-          createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
-          isRemoved: false,
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-          user: { isPrivate: false, isBanned: false, isDeactivated: false, isDeleted: false },
-          visibility: 'PUBLIC',
-          ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
-          ...(dismissedPostIds.length ? { id: { notIn: dismissedPostIds } } : {}),
+          return recentPosts.map(post => {
+            const ageHours = Math.max(1, (Date.now() - new Date(post.createdAt).getTime()) / 3600000);
+            const engagement = (post.likesCount * 3) + (post.commentsCount * 5) + (post.sharesCount * 7) + (post.savesCount * 2) + (post.viewsCount * 0.1);
+            const score = engagement / Math.pow(ageHours, 1.5);
+            return { ...post, score, id: post.id };
+          });
         },
-        select: POST_SELECT,
-        take: 500, // wider candidate pool for better scoring diversity
-        orderBy: { createdAt: 'desc' },
-      });
+      );
 
-      // Score each post: engagement weighted by recency
-      const scored = recentPosts.map(post => {
-        const ageHours = Math.max(1, (Date.now() - new Date(post.createdAt).getTime()) / 3600000);
-        const engagement = (post.likesCount * 3) + (post.commentsCount * 5) + (post.sharesCount * 7) + (post.savesCount * 2) + (post.viewsCount * 0.1);
-        const score = engagement / Math.pow(ageHours, 1.5);
-        return { ...post, _score: score };
-      });
+      // Strip score field and enrich with user-specific data (isLiked, isSaved)
+      const data = items.map(({ score, ...post }) => post);
+      const enriched = await this.enrichPostsForUser(data as { id: string }[], userId);
 
-      // Sort by score descending, paginate using offset (not createdAt cursor)
-      scored.sort((a, b) => b._score - a._score);
-      const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
-      const page = scored.slice(offset, offset + limit + 1);
-
-      const hasMore = page.length > limit;
-      const result = hasMore ? page.slice(0, limit) : page;
-
-      // Strip internal score field
-      const data = result.map(({ _score, ...post }) => post);
-      const enriched = await this.enrichPostsForUser(data, userId);
-
-      const finalResult = {
+      return {
         data: enriched,
         meta: {
-          cursor: hasMore ? String(offset + limit) : null,
+          cursor: hasMore ? String(page + 1) : null,
           hasMore,
         },
       };
-
-      // Cache "for you" feed for 60 seconds (reduced from per-request scoring)
-      const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
-      await this.redis.setex(cacheKey, 60, JSON.stringify(finalResult));
-
-      return finalResult;
     }
 
     // Following feed — with zero-follow fallback to trending
@@ -273,54 +257,46 @@ export class PostsService {
    * Returns engagement-rate-scored posts from last 7 days.
    */
   private async getTrendingFallback(userId: string, excludedIds: string[], cursor?: string, limit = 20) {
-    // 60-second Redis cache for trending fallback (same pattern as ForYou feed)
-    const cacheKey = `feed:trending:${userId}:${cursor ?? 'first'}`;
-    const cached = await this.redis.get(cacheKey);
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch {
-        await this.redis.del(cacheKey);
-      }
-    }
+    const sfeedKey = `sfeed:saf:trending:${userId}`;
+    const page = cursor ? parseInt(cursor, 10) || 0 : 0;
 
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const { items, hasMore } = await this.scoredFeedCache.getPage(
+      sfeedKey,
+      page,
+      limit,
+      120,
+      async (): Promise<ScoredItem[]> => {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const posts = await this.prisma.post.findMany({
-      where: {
-        isRemoved: false,
-        visibility: 'PUBLIC',
-        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
-        ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+        const posts = await this.prisma.post.findMany({
+          where: {
+            isRemoved: false,
+            visibility: 'PUBLIC',
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            createdAt: { gte: sevenDaysAgo },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
+            ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+          },
+          select: POST_SELECT,
+          take: 500,
+          orderBy: { createdAt: 'desc' },
+        });
+
+        return posts.map(post => {
+          const ageHours = Math.max(1, (Date.now() - post.createdAt.getTime()) / 3600000);
+          const engagement = post.likesCount + post.commentsCount * 2 + post.sharesCount * 3 + post.savesCount * 2;
+          return { ...post, score: engagement / ageHours, id: post.id };
+        });
       },
-      select: POST_SELECT,
-      take: 500, // wider candidate pool for better trending diversity
-      orderBy: { createdAt: 'desc' },
-    });
+    );
 
-    const scored = posts.map(post => {
-      const ageHours = Math.max(1, (Date.now() - post.createdAt.getTime()) / 3600000);
-      const engagement = post.likesCount + post.commentsCount * 2 + post.sharesCount * 3 + post.savesCount * 2;
-      return { ...post, _score: engagement / ageHours };
-    });
-    scored.sort((a, b) => b._score - a._score);
+    const data = items.map(({ score, ...p }) => p);
+    const enriched = await this.enrichPostsForUser(data as { id: string }[], userId);
 
-    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
-    const page = scored.slice(offset, offset + limit + 1);
-    const hasMore = page.length > limit;
-    const data = (hasMore ? page.slice(0, limit) : page).map(({ _score, ...p }) => p);
-    const enriched = await this.enrichPostsForUser(data, userId);
-
-    const result = {
+    return {
       data: enriched,
-      meta: { cursor: hasMore ? String(offset + limit) : null, hasMore },
+      meta: { cursor: hasMore ? String(page + 1) : null, hasMore },
     };
-
-    // Cache trending feed for 60 seconds
-    await this.redis.setex(cacheKey, 60, JSON.stringify(result));
-    return result;
   }
 
   /**
@@ -752,8 +728,11 @@ export class PostsService {
       }).catch(err => this.logger.warn('Publish workflow failed for post', err instanceof Error ? err.message : err));
     }
 
-    // Invalidate for-you feed cache for the author
-    await this.redis.del(`feed:foryou:${userId}:first`);
+    // Invalidate scored feed caches for the author
+    await Promise.all([
+      this.scoredFeedCache.invalidate(`sfeed:saf:foryou:${userId}`),
+      this.scoredFeedCache.invalidate(`sfeed:saf:trending:${userId}`),
+    ]);
     return post;
   }
 
@@ -888,7 +867,10 @@ export class PostsService {
       );
     }
 
-    await this.redis.del(`feed:foryou:${userId}:first`);
+    await Promise.all([
+      this.scoredFeedCache.invalidate(`sfeed:saf:foryou:${userId}`),
+      this.scoredFeedCache.invalidate(`sfeed:saf:trending:${userId}`),
+    ]);
 
     // Unpublish workflow: search index removal, cache invalidation, real-time event
     this.publishWorkflow.onUnpublish({

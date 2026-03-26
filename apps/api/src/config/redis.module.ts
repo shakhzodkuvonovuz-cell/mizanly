@@ -61,13 +61,13 @@ const REDIS_PROVIDER = {
         get(target, prop) {
           const val = target[prop as keyof typeof target];
           if (typeof val === 'function' && target.status !== 'ready') {
-            if (['get', 'hget', 'hgetall', 'mget', 'lrange', 'smembers', 'sismember', 'exists', 'ttl', 'type'].includes(prop as string)) {
+            if (['get', 'hget', 'hgetall', 'mget', 'lrange', 'smembers', 'sismember', 'exists', 'ttl', 'type', 'zrevrange'].includes(prop as string)) {
               return noOpRead;
             }
-            if (['set', 'setex', 'del', 'hdel', 'hset', 'hmset', 'lpush', 'rpush', 'ltrim', 'lrem', 'sadd', 'srem', 'expire', 'pexpire', 'persist', 'publish', 'pfadd', 'pfcount'].includes(prop as string)) {
+            if (['set', 'setex', 'del', 'hdel', 'hset', 'hmset', 'lpush', 'rpush', 'ltrim', 'lrem', 'sadd', 'srem', 'expire', 'pexpire', 'persist', 'publish', 'pfadd', 'pfcount', 'zadd'].includes(prop as string)) {
               return noOpWrite;
             }
-            if (['incr', 'incrby', 'decr', 'decrby', 'scard', 'llen', 'dbsize'].includes(prop as string)) {
+            if (['incr', 'incrby', 'decr', 'decrby', 'scard', 'llen', 'dbsize', 'zcard'].includes(prop as string)) {
               return noOpNum;
             }
             if (prop === 'pipeline') {

@@ -52,14 +52,17 @@ export class PublishWorkflowService {
       );
     }
 
-    // 2. Cache invalidation — clear user's feed cache (SCAN is non-blocking unlike KEYS)
+    // 2. Cache invalidation — clear user's feed caches (SCAN is non-blocking unlike KEYS)
     try {
-      let scanCursor = '0';
-      do {
-        const [nextCursor, keys] = await this.redis.scan(scanCursor, 'MATCH', `feed:*:${userId}:*`, 'COUNT', 100);
-        scanCursor = nextCursor;
-        if (keys.length > 0) await this.redis.del(...keys);
-      } while (scanCursor !== '0');
+      // Invalidate both old per-page caches and new scored feed sorted sets
+      for (const pattern of [`feed:*:${userId}:*`, `sfeed:*:${userId}`]) {
+        let scanCursor = '0';
+        do {
+          const [nextCursor, keys] = await this.redis.scan(scanCursor, 'MATCH', pattern, 'COUNT', 100);
+          scanCursor = nextCursor;
+          if (keys.length > 0) await this.redis.del(...keys);
+        } while (scanCursor !== '0');
+      }
     } catch {
       // Redis failure non-blocking
     }
