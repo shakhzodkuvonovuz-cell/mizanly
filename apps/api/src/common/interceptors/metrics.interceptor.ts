@@ -23,11 +23,14 @@ export class MetricsInterceptor implements NestInterceptor {
     const url = req.url;
     const start = Date.now();
 
+    const response = context.switchToHttp().getResponse();
+
     return next.handle().pipe(
       tap({
         next: () => {
           const duration = Date.now() - start;
-          this.logMetric(method, url, duration, 200);
+          const status = response?.statusCode ?? 200;
+          this.logMetric(method, url, duration, status);
         },
         error: (err) => {
           const duration = Date.now() - start;

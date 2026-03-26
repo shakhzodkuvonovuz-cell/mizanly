@@ -8,6 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
@@ -1248,66 +1249,72 @@ export class MessagesService {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async publishScheduledMessages(): Promise<number> {
-    const now = new Date();
+    try {
+      const now = new Date();
 
-    const overdue = await this.prisma.message.findMany({
-      where: {
-        isScheduled: true,
-        scheduledAt: { lte: now },
-        isDeleted: false,
-      },
-      take: 50,
-      orderBy: { scheduledAt: 'asc' },
-    });
+      const overdue = await this.prisma.message.findMany({
+        where: {
+          isScheduled: true,
+          scheduledAt: { lte: now },
+          isDeleted: false,
+        },
+        take: 50,
+        orderBy: { scheduledAt: 'asc' },
+      });
 
-    if (overdue.length === 0) return 0;
+      if (overdue.length === 0) return 0;
 
-    let published = 0;
-    for (const msg of overdue) {
-      try {
-        await this.prisma.$transaction(async (tx) => {
-          // Mark message as sent
-          await tx.message.update({
-            where: { id: msg.id },
-            data: { isScheduled: false, scheduledAt: null },
+      let published = 0;
+      for (const msg of overdue) {
+        try {
+          await this.prisma.$transaction(async (tx) => {
+            // Mark message as sent
+            await tx.message.update({
+              where: { id: msg.id },
+              data: { isScheduled: false, scheduledAt: null },
+            });
+
+            // Update conversation last-message metadata
+            await tx.conversation.update({
+              where: { id: msg.conversationId },
+              data: {
+                lastMessageAt: now,
+                lastMessageText: msg.content?.slice(0, 100) ?? null,
+                lastMessageById: msg.senderId,
+              },
+            });
+
+            // Increment unread count for other members
+            if (msg.senderId) {
+              await tx.conversationMember.updateMany({
+                where: { conversationId: msg.conversationId, userId: { not: msg.senderId } },
+                data: { unreadCount: { increment: 1 } },
+              });
+            }
           });
+          published++;
 
-          // Update conversation last-message metadata
-          await tx.conversation.update({
-            where: { id: msg.conversationId },
-            data: {
-              lastMessageAt: now,
-              lastMessageText: msg.content?.slice(0, 100) ?? null,
-              lastMessageById: msg.senderId,
-            },
-          });
-
-          // Increment unread count for other members
+          // Notify conversation members about the now-published scheduled message
           if (msg.senderId) {
-            await tx.conversationMember.updateMany({
-              where: { conversationId: msg.conversationId, userId: { not: msg.senderId } },
-              data: { unreadCount: { increment: 1 } },
+            this.notifyConversationMembers(msg.conversationId, msg.senderId, msg.content?.slice(0, 100) ?? 'Sent a message').catch((err) => {
+              this.logger.warn(`Scheduled message notification failed for msg ${msg.id}: ${err?.message}`);
             });
           }
-        });
-        published++;
-
-        // Notify conversation members about the now-published scheduled message
-        if (msg.senderId) {
-          this.notifyConversationMembers(msg.conversationId, msg.senderId, msg.content?.slice(0, 100) ?? 'Sent a message').catch((err) => {
-            this.logger.warn(`Scheduled message notification failed for msg ${msg.id}: ${err?.message}`);
-          });
+        } catch (error) {
+          this.logger.error(`Failed to publish scheduled message ${msg.id}`, error instanceof Error ? error.message : error);
         }
-      } catch (error) {
-        this.logger.error(`Failed to publish scheduled message ${msg.id}`, error instanceof Error ? error.message : error);
       }
-    }
 
-    if (published > 0) {
-      this.logger.log(`Auto-sent ${published} scheduled message(s)`);
-    }
+      if (published > 0) {
+        this.logger.log(`Auto-sent ${published} scheduled message(s)`);
+      }
 
-    return published;
+      return published;
+    } catch (error) {
+      this.logger.error('publishScheduledMessages cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
   }
 
   // ── Message Expiry Job ──
@@ -1346,6 +1353,7 @@ export class MessagesService {
       });
     } catch (error) {
       this.logger.error('Failed to process expired messages', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
     }
   }
 

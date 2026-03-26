@@ -73,7 +73,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
             await job.updateProgress(100);
             break;
           default:
-            this.logger.warn(`Unknown media job type: ${job.name}`);
+            throw new Error(`Unknown media job type: ${job.name}`);
         }
       },
       {

@@ -380,6 +380,7 @@ export class PaymentsService {
   }
 
   async listPaymentMethods(userId: string) {
+    this.ensureStripeAvailable();
     const customerId = await this.getOrCreateStripeCustomer(userId);
 
     try {
@@ -403,6 +404,7 @@ export class PaymentsService {
   }
 
   async attachPaymentMethod(userId: string, paymentMethodId: string) {
+    this.ensureStripeAvailable();
     const customerId = await this.getOrCreateStripeCustomer(userId);
     try {
       await this.stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
@@ -534,6 +536,7 @@ export class PaymentsService {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + (plan === 'YEARLY' ? 12 : 1));
 
+    // NOTE: stripeSubId stores PaymentIntent ID (pi_xxx), not Subscription ID (sub_xxx). Field name is misleading.
     await this.prisma.premiumSubscription.upsert({
       where: { userId },
       create: { userId, plan: plan as 'MONTHLY' | 'YEARLY', status: 'ACTIVE', endDate, stripeSubId: paymentIntent.id },
@@ -714,10 +717,22 @@ export class PaymentsService {
     const subscriptionId = 'subscription' in invoice ? String(invoice.subscription ?? '') : '';
     if (!subscriptionId) return;
 
-    const dbSubscriptionId = await this.redis.get(`subscription:${subscriptionId}`);
+    let dbSubscriptionId = await this.redis.get(`subscription:${subscriptionId}`);
     if (!dbSubscriptionId) {
-      this.logger.warn(`No subscription found for failed invoice on Stripe subscription ${subscriptionId}`);
-      return;
+      // DB fallback: Redis mapping may have expired — try finding via Stripe metadata
+      const userId = invoice.metadata?.userId || invoice.metadata?.mizanlyUserId;
+      const tierId = invoice.metadata?.tierId || invoice.metadata?.mizanlyTierId;
+      if (userId && tierId) {
+        const sub = await this.prisma.membershipSubscription.findUnique({
+          where: { tierId_userId: { tierId, userId } },
+          select: { id: true },
+        });
+        dbSubscriptionId = sub?.id ?? null;
+      }
+      if (!dbSubscriptionId) {
+        this.logger.warn(`No subscription found for failed invoice on Stripe subscription ${subscriptionId} (Redis + DB fallback failed)`);
+        return;
+      }
     }
 
     // Finding #368: Mark subscription as past_due with 3-day grace period

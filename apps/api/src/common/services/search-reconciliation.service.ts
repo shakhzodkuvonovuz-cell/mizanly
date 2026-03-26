@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import { QueueService } from '../queue/queue.service';
 
@@ -26,6 +27,7 @@ export class SearchReconciliationService {
 
   @Cron('0 5 * * 0') // Every Sunday at 5 AM
   async reconcileSearchIndex() {
+    try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     let indexed = 0;
     let deleted = 0;
@@ -102,5 +104,10 @@ export class SearchReconciliationService {
     }
 
     return { indexed, deleted };
+    } catch (error) {
+      this.logger.error('reconcileSearchIndex cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return { indexed: 0, deleted: 0 };
+    }
   }
 }

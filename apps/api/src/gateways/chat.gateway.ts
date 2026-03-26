@@ -272,6 +272,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       }
 
       client.join(`user:${user.id}`);
+      this.logger.log(`Socket connected: userId=${userId}`);
     } catch {
       // Clean up heartbeat timer if connection setup fails partway through
       const existingTimer = this.heartbeatTimers.get(client.id);
@@ -331,6 +332,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     const userId = client.data.userId;
     if (!userId) return;
 
+    this.logger.log(`Socket disconnected: userId=${userId}`);
     const presenceKey = `presence:${userId}`;
     await this.redis.srem(presenceKey, client.id);
     const remaining = await this.redis.scard(presenceKey);

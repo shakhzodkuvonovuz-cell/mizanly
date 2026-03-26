@@ -42,7 +42,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
             await this.processBulkPush(job);
             break;
           default:
-            this.logger.warn(`Unknown notification job type: ${job.name}`);
+            throw new Error(`Unknown notification job type: ${job.name}`);
         }
       },
       {

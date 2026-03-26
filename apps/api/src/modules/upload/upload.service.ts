@@ -42,6 +42,7 @@ export class UploadService {
   private s3: S3Client;
   private bucket: string;
   private publicUrl: string;
+  private readonly configured: boolean;
 
   private readonly logger = new Logger(UploadService.name);
 
@@ -51,7 +52,9 @@ export class UploadService {
     const accessKeyId = this.config.get('R2_ACCESS_KEY_ID') || this.config.get('CLOUDFLARE_R2_ACCESS_KEY');
     const secretAccessKey = this.config.get('R2_SECRET_ACCESS_KEY') || this.config.get('CLOUDFLARE_R2_SECRET_KEY');
 
-    if (!accountId || !accessKeyId || !secretAccessKey) {
+    this.configured = !!(accountId && accessKeyId && secretAccessKey);
+
+    if (!this.configured) {
       this.logger.warn('R2 credentials not configured — file uploads will fail. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY');
     } else {
       // Log which naming convention was resolved so operators know which env vars are active
@@ -74,6 +77,14 @@ export class UploadService {
     this.publicUrl = this.config.get('R2_PUBLIC_URL') ?? 'https://media.mizanly.app';
   }
 
+  private ensureR2Configured(): void {
+    if (!this.configured) {
+      throw new BadRequestException(
+        'File upload service is not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY environment variables.',
+      );
+    }
+  }
+
   async getPresignedUrl(
     userId: string,
     contentType: string,
@@ -81,6 +92,8 @@ export class UploadService {
     expiresIn = 300,
     maxFileSize?: number,
   ) {
+    this.ensureR2Configured();
+
     // Validate content type is allowed globally
     this.validateContentType(contentType);
 
@@ -127,6 +140,7 @@ export class UploadService {
   }
 
   async deleteFile(key: string) {
+    this.ensureR2Configured();
     const command = new DeleteObjectCommand({ Bucket: this.bucket, Key: key });
     try {
       await this.s3.send(command);

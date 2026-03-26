@@ -8,6 +8,7 @@ import { Request, Response, NextFunction } from 'express';
 @Injectable()
 export class RequestLoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger('RequestLogger');
+  // NOTE: Counters reset on deploy (process-local). For persistent metrics, export to external store.
   private requestCount = 0;
   private errorCount = 0;
   private slowCount = 0;

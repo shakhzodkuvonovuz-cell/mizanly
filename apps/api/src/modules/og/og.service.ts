@@ -29,7 +29,7 @@ export class OgService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
-    this.appUrl = this.config.get<string>('APP_URL') || 'https://mizanly.com';
+    this.appUrl = this.config.get<string>('APP_URL') || 'https://mizanly.app';
   }
 
   async getPostOg(postId: string): Promise<string> {

@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import { Post, Thread, Reel, Video } from '@prisma/client';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
@@ -378,6 +379,7 @@ export class SchedulingService {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async publishOverdueContent(): Promise<{ posts: number; threads: number; reels: number; videos: number }> {
+    try {
     const now = new Date();
     const overdueWhere = { scheduledAt: { not: null, lte: now } as { not: null; lte: Date } };
 
@@ -587,6 +589,11 @@ export class SchedulingService {
     }
 
     return result;
+    } catch (error) {
+      this.logger.error('publishOverdueContent cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return { posts: 0, threads: 0, reels: 0, videos: 0 };
+    }
   }
 
   /**

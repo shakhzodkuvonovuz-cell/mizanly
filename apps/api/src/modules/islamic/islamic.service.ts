@@ -1,9 +1,11 @@
-import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ConflictException, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { FastingType, HifzStatus, DailyTaskType, AdhanStyle, ContentStrictnessLevel, MadhhabType as MType } from '@prisma/client';
 import { UpdatePrayerNotificationDto } from './dto/prayer-notification.dto';
 import { CreateQuranPlanDto, UpdateQuranPlanDto } from './dto/quran-plan.dto';
@@ -157,6 +159,7 @@ export class IslamicService {
     private readonly prisma: PrismaService,
     @Inject('REDIS') private readonly redis: Redis,
     private readonly config: ConfigService,
+    @Optional() private readonly notificationsService: NotificationsService,
   ) {}
 
   private readonly hadiths: Hadith[] = hadiths;
@@ -602,20 +605,24 @@ export class IslamicService {
 
     // Finding #214: Khatm celebration — when plan is completed, send celebration notification
     if (dto.isComplete && !plan.isComplete) {
-      await this.prisma.notification.create({
-        data: {
+      if (this.notificationsService) {
+        await this.notificationsService.create({
           userId,
+          actorId: null,
           type: 'SYSTEM',
           title: '🎉 Khatm al-Quran!',
           body: 'Masha Allah! You have completed reading the entire Quran. May Allah accept your effort and reward you abundantly.',
-        },
-      }).catch(() => {});
-
-      // Award XP for this milestone
-      try {
-        const { QueueService } = await import('../../common/queue/queue.service');
-        // Fire-and-forget gamification
-      } catch {}
+        }).catch((err: unknown) => this.logger.warn('Failed to send Khatm notification', err instanceof Error ? err.message : err));
+      } else {
+        await this.prisma.notification.create({
+          data: {
+            userId,
+            type: 'SYSTEM',
+            title: '🎉 Khatm al-Quran!',
+            body: 'Masha Allah! You have completed reading the entire Quran. May Allah accept your effort and reward you abundantly.',
+          },
+        }).catch(() => {});
+      }
     }
 
     return updated;
@@ -1955,7 +1962,7 @@ export class IslamicService {
 
       if (!arabicText) return;
 
-      // Send to all users with push tokens
+      // Send to all users with push tokens — batched createMany
       const usersWithTokens = await this.prisma.device.findMany({
         where: { isActive: true, pushToken: { not: '' } },
         select: { userId: true },
@@ -1963,20 +1970,28 @@ export class IslamicService {
       });
       const userIds = [...new Set(usersWithTokens.map(d => d.userId))];
 
-      for (const userId of userIds.slice(0, 1000)) {
-        await this.prisma.notification.create({
-          data: {
-            userId,
-            type: 'SYSTEM',
-            title: `📖 Verse of the Day (${surah}:${verse})`,
-            body: translationText.slice(0, 200),
-          },
-        }).catch(() => {});
+      const title = `📖 Verse of the Day (${surah}:${verse})`;
+      const body = translationText.slice(0, 200);
+      const BATCH_SIZE = 500;
+      let created = 0;
+      for (let i = 0; i < Math.min(userIds.length, 10000); i += BATCH_SIZE) {
+        const batch = userIds.slice(i, i + BATCH_SIZE);
+        const result = await this.prisma.notification.createMany({
+          data: batch.map(uid => ({
+            userId: uid,
+            type: 'SYSTEM' as const,
+            title,
+            body,
+          })),
+          skipDuplicates: true,
+        });
+        created += result.count;
       }
 
-      this.logger.log(`Verse of the day sent: ${surah}:${verse} to ${Math.min(userIds.length, 1000)} users`);
+      this.logger.log(`Verse of the day sent: ${surah}:${verse} to ${created} users (batched)`);
     } catch (err: unknown) {
       this.logger.error(`Verse of the day failed: ${err instanceof Error ? err.message : String(err)}`);
+      Sentry.captureException(err);
     }
   }
 
@@ -1986,6 +2001,7 @@ export class IslamicService {
    */
   @Cron('0 8 * * *')
   async checkIslamicEventReminders() {
+    try {
     // Key Islamic events with approximate Hijri month/day
     const events = [
       { month: 9, day: 1, name: 'Ramadan begins', key: 'ramadan_start' },
@@ -2036,6 +2052,10 @@ export class IslamicService {
     }
 
     this.logger.log(`Islamic event reminder sent: ${title} to ${created} users (batched)`);
+    } catch (error) {
+      this.logger.error('checkIslamicEventReminders cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+    }
   }
 
   /**

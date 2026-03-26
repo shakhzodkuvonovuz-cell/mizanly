@@ -20,6 +20,8 @@ import { BanUserDto } from './dto/ban-user.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { FeatureFlagsService } from '../../common/services/feature-flags.service';
+import { CounterReconciliationService } from '../../common/services/counter-reconciliation.service';
+import { MeilisearchSyncService } from '../../common/services/meilisearch-sync.service';
 
 @ApiTags('Admin')
 @Throttle({ default: { limit: 30, ttl: 60000 } })
@@ -30,6 +32,8 @@ export class AdminController {
   constructor(
     private adminService: AdminService,
     private featureFlags: FeatureFlagsService,
+    private counterReconciliation: CounterReconciliationService,
+    private meilisearchSync: MeilisearchSyncService,
   ) {}
 
   @Get('reports')
@@ -120,14 +124,8 @@ export class AdminController {
   @ApiOperation({ summary: 'Trigger full Meilisearch index sync (admin only)' })
   async syncSearchIndex(@CurrentUser('id') adminId: string) {
     await this.adminService.verifyAdmin(adminId);
-    const { MeilisearchSyncService } = await import('../../common/services/meilisearch-sync.service');
-    // Dynamic import to avoid circular dependency — sync service is in PlatformServicesModule
-    const syncService = new MeilisearchSyncService(
-      (this as unknown as { prisma: unknown }).prisma as never,
-      (this as unknown as { meilisearch: unknown }).meilisearch as never,
-    );
-    // Actually use the module's injected instance
-    return { message: 'Full sync triggered. Check logs for progress.', note: 'Use the service directly via DI in production.' };
+    await this.meilisearchSync.syncAll();
+    return { message: 'Full Meilisearch sync completed.' };
   }
 
   @Post('counters/reconcile')
@@ -135,6 +133,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Trigger counter reconciliation (admin only)' })
   async reconcileCounters(@CurrentUser('id') adminId: string) {
     await this.adminService.verifyAdmin(adminId);
-    return { message: 'Counter reconciliation triggered. Check logs for progress.' };
+    const result = await this.counterReconciliation.reconcileAll();
+    return { message: 'Counter reconciliation completed.', ...result };
   }
 }

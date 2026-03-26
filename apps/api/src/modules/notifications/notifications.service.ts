@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger, Inject } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from './push-trigger.service';
 import { NotificationType, Prisma } from '@prisma/client';
@@ -149,7 +150,7 @@ export class NotificationsService {
   // Internal helper — used by other services to create notifications
   async create(params: {
     userId: string;
-    actorId: string;
+    actorId: string | null;
     type: string;
     postId?: string;
     threadId?: string;
@@ -161,7 +162,8 @@ export class NotificationsService {
     title?: string;
     body?: string;
   }) {
-    if (params.userId === params.actorId) return null; // No self-notifications
+    // No self-notifications — but allow null actorId for system notifications
+    if (params.userId === params.actorId && params.actorId !== null) return null;
 
     // Validate notification type at runtime (internal callers pass string literals)
     const validTypes = Object.values(NotificationType);
@@ -171,6 +173,7 @@ export class NotificationsService {
     }
 
     // Fetch all pre-creation checks in parallel: settings, user prefs, block/mute
+    // Skip block/mute checks for system notifications (actorId is null)
     const [settings, user, blockExists, muteExists] = await Promise.all([
       this.prisma.userSettings.findUnique({
         where: { userId: params.userId },
@@ -180,17 +183,21 @@ export class NotificationsService {
         where: { id: params.userId },
         select: { notificationsOn: true },
       }),
-      this.prisma.block.findFirst({
-        where: {
-          OR: [
-            { blockerId: params.userId, blockedId: params.actorId },
-            { blockedId: params.userId, blockerId: params.actorId },
-          ],
-        },
-      }),
-      this.prisma.mute.findFirst({
-        where: { userId: params.userId, mutedId: params.actorId },
-      }),
+      params.actorId
+        ? this.prisma.block.findFirst({
+            where: {
+              OR: [
+                { blockerId: params.userId, blockedId: params.actorId },
+                { blockedId: params.userId, blockerId: params.actorId },
+              ],
+            },
+          })
+        : Promise.resolve(null),
+      params.actorId
+        ? this.prisma.mute.findFirst({
+            where: { userId: params.userId, mutedId: params.actorId },
+          })
+        : Promise.resolve(null),
     ]);
 
     // Check user's per-type notification settings
@@ -396,20 +403,26 @@ export class NotificationsService {
    */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async cleanupOldNotifications(): Promise<number> {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 90);
+    try {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 90);
 
-    const result = await this.prisma.notification.deleteMany({
-      where: {
-        isRead: true,
-        createdAt: { lt: cutoff },
-      },
-    });
+      const result = await this.prisma.notification.deleteMany({
+        where: {
+          isRead: true,
+          createdAt: { lt: cutoff },
+        },
+      });
 
-    if (result.count > 0) {
-      this.logger.log(`Cleaned up ${result.count} old read notification(s)`);
+      if (result.count > 0) {
+        this.logger.log(`Cleaned up ${result.count} old read notification(s)`);
+      }
+
+      return result.count;
+    } catch (error) {
+      this.logger.error('cleanupOldNotifications cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
     }
-
-    return result.count;
   }
 }

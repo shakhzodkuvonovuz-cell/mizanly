@@ -5,9 +5,11 @@ import {
   ConflictException,
   ForbiddenException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { QueueService } from '../../common/queue/queue.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { Prisma, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 
@@ -18,6 +20,7 @@ export class ReportsService {
   constructor(
     private prisma: PrismaService,
     private queueService: QueueService,
+    @Optional() private notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -292,20 +295,31 @@ export class ReportsService {
       }));
     }
 
+    const [updated] = await this.prisma.$transaction(ops);
+
     // Finding 30 (Audit 13): Handle WARNING action — notify the reported user
+    // Sent after transaction succeeds, routed through NotificationsService for push + dedup
     if (actionTaken === ModerationAction.WARNING && report.reportedUserId) {
-      ops.push(this.prisma.notification.create({
-        data: {
+      if (this.notificationsService) {
+        this.notificationsService.create({
           userId: report.reportedUserId,
-          actorId: adminId,
-          type: 'SYSTEM' as any,
+          actorId: null,
+          type: 'SYSTEM',
           title: 'Content Warning',
           body: `Your content was flagged for ${report.reason}. Repeated violations may result in account restrictions.`,
-        },
-      }));
+        }).catch(err => this.logger.warn('Failed to send warning notification', err instanceof Error ? err.message : err));
+      } else {
+        this.prisma.notification.create({
+          data: {
+            userId: report.reportedUserId,
+            type: 'SYSTEM' as any,
+            title: 'Content Warning',
+            body: `Your content was flagged for ${report.reason}. Repeated violations may result in account restrictions.`,
+          },
+        }).catch(err => this.logger.warn('Failed to send warning notification', err instanceof Error ? err.message : err));
+      }
     }
 
-    const [updated] = await this.prisma.$transaction(ops);
     return updated;
   }
 

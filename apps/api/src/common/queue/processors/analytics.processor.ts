@@ -55,7 +55,7 @@ export class AnalyticsProcessor implements OnModuleInit, OnModuleDestroy {
             await this.processEngagementTracking(job as Job<EngagementJobData>);
             break;
           default:
-            this.logger.warn(`Unknown analytics job type: ${job.name}`);
+            throw new Error(`Unknown analytics job type: ${job.name}`);
         }
       },
       {
