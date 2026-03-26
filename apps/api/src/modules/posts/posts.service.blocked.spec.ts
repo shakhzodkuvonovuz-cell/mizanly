@@ -54,6 +54,9 @@ describe('PostsService — Blocked User Content Access', () => {
             circleMember: {
               findMany: jest.fn().mockResolvedValue([]),
             },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
             user: {
               findUnique: jest.fn(),
               findMany: jest.fn().mockResolvedValue([]),
@@ -257,10 +260,10 @@ describe('PostsService — Blocked User Content Access', () => {
         { followingId: otherUserId },
       ]);
 
-      // User has blocked blockedUserId (outbound)
-      prisma.block.findMany
-        .mockResolvedValueOnce([{ blockedId: blockedUserId }])  // blocksOut (blockerId = viewer)
-        .mockResolvedValueOnce([]);                               // blocksIn (blockedId = viewer)
+      // getExcludedUserIds makes a single block.findMany call with OR
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: blockerUserId, blockedId: blockedUserId },
+      ]);
 
       prisma.mute.findMany.mockResolvedValue([]);
 
@@ -313,10 +316,11 @@ describe('PostsService — Blocked User Content Access', () => {
         { followingId: reverseBlockerId },
       ]);
 
-      // No outbound blocks
-      prisma.block.findMany
-        .mockResolvedValueOnce([])                                  // blocksOut
-        .mockResolvedValueOnce([{ blockerId: reverseBlockerId }]);  // blocksIn — reverse blocker
+      // getExcludedUserIds makes a single block.findMany call with OR
+      // Reverse block: reverseBlockerId blocked blockerUserId
+      prisma.block.findMany.mockResolvedValue([
+        { blockerId: reverseBlockerId, blockedId: blockerUserId },
+      ]);
 
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.post.findMany.mockResolvedValue([]);

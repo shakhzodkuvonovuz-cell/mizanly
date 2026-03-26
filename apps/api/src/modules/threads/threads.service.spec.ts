@@ -74,6 +74,9 @@ describe('ThreadsService', () => {
             feedDismissal: {
               upsert: jest.fn(),
             },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
             pollOption: {
               findUnique: jest.fn(),
               update: jest.fn(),
@@ -100,6 +103,7 @@ describe('ThreadsService', () => {
           provide: 'REDIS',
           useValue: {
             get: jest.fn(),
+            set: jest.fn(),
             setex: jest.fn(),
             del: jest.fn(),
           },

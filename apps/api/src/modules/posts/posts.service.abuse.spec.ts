@@ -39,10 +39,11 @@ describe('PostsService — abuse vectors (Task 101, 103)', () => {
             feedDismissal: { upsert: jest.fn() },
             report: { create: jest.fn() },
             circleMember: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
-        { provide: NotificationsService, useValue: { create: jest.fn() } },
-        { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
+        { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({}) } },
+        { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0) } },
       ],
     }).compile();
 

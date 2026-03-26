@@ -49,6 +49,7 @@ describe('NotificationsService', () => {
           useValue: {
             get: jest.fn().mockResolvedValue(null),
             set: jest.fn().mockReturnValue({ catch: jest.fn() }),
+            del: jest.fn().mockReturnValue({ catch: jest.fn() }),
             publish: jest.fn().mockReturnValue({ catch: jest.fn() }),
           },
         },
@@ -743,20 +744,22 @@ describe('NotificationsService', () => {
 
   describe('cleanupOldNotifications', () => {
     it('should delete read notifications older than 90 days', async () => {
+      const mockIds = Array.from({ length: 42 }, (_, i) => ({ id: `notif-${i}` }));
+      prisma.notification.findMany.mockResolvedValueOnce(mockIds);
       prisma.notification.deleteMany.mockResolvedValue({ count: 42 });
 
       const result = await service.cleanupOldNotifications();
 
-      expect(prisma.notification.deleteMany).toHaveBeenCalledWith({
-        where: {
-          isRead: true,
-          createdAt: { lt: expect.any(Date) },
-        },
-      });
+      // Verify findMany queries for read notifications with 90-day cutoff
+      expect(prisma.notification.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { isRead: true, createdAt: { lt: expect.any(Date) } },
+        select: { id: true },
+        take: 10000,
+      }));
 
       // Verify the cutoff date is approximately 90 days ago
-      const callArgs = prisma.notification.deleteMany.mock.calls[0][0];
-      const cutoffDate = callArgs.where.createdAt.lt as Date;
+      const findArgs = prisma.notification.findMany.mock.calls[0][0];
+      const cutoffDate = findArgs.where.createdAt.lt as Date;
       const now = new Date();
       const diffDays = Math.round((now.getTime() - cutoffDate.getTime()) / (1000 * 60 * 60 * 24));
       expect(diffDays).toBe(90);
@@ -765,7 +768,7 @@ describe('NotificationsService', () => {
     });
 
     it('should return 0 when no old notifications exist', async () => {
-      prisma.notification.deleteMany.mockResolvedValue({ count: 0 });
+      prisma.notification.findMany.mockResolvedValueOnce([]);
 
       const result = await service.cleanupOldNotifications();
 
@@ -773,15 +776,17 @@ describe('NotificationsService', () => {
     });
 
     it('should only target read notifications (not unread)', async () => {
-      prisma.notification.deleteMany.mockResolvedValue({ count: 5 });
+      prisma.notification.findMany.mockResolvedValueOnce([{ id: 'n1' }]);
+      prisma.notification.deleteMany.mockResolvedValue({ count: 1 });
 
       await service.cleanupOldNotifications();
 
-      const callArgs = prisma.notification.deleteMany.mock.calls[0][0];
-      expect(callArgs.where.isRead).toBe(true);
+      const findArgs = prisma.notification.findMany.mock.calls[0][0];
+      expect(findArgs.where.isRead).toBe(true);
     });
 
     it('should log when notifications are cleaned up', async () => {
+      prisma.notification.findMany.mockResolvedValueOnce([{ id: 'n1' }, { id: 'n2' }]);
       prisma.notification.deleteMany.mockResolvedValue({ count: 10 });
       const loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 

@@ -219,6 +219,7 @@ describe('ChatGateway', () => {
         ...mockSocket,
         data: { userId: 'user-123' },
         emit: jest.fn(),
+        to: jest.fn().mockReturnValue({ emit: jest.fn() }),
       };
       const mockMessage = { id: 'msg-789', content: 'Hello' };
       messagesService.sendMessage.mockResolvedValue(mockMessage);
@@ -233,8 +234,8 @@ describe('ChatGateway', () => {
         'user-123',
         { content: 'Hello' }
       );
-      expect(gateway.server.to as jest.Mock).toHaveBeenCalledWith(`conversation:${UUID1}`);
-      expect(gateway.server.emit).toHaveBeenCalledWith('new_message', mockMessage);
+      expect(client.to).toHaveBeenCalledWith(`conversation:${UUID1}`);
+      expect(client.to(`conversation:${UUID1}`).emit).toHaveBeenCalledWith('new_message', mockMessage);
       expect(result).toEqual(mockMessage);
     });
 

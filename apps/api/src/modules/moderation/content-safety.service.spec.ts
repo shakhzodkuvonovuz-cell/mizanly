@@ -268,71 +268,76 @@ describe('ContentSafetyService', () => {
   // ── autoRemoveContent ───────────────────────────────────────
 
   describe('autoRemoveContent', () => {
+    const makeTx = (overrides: Record<string, any> = {}) => ({
+      post: { update: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
+      reel: { update: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
+      thread: { update: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
+      comment: { update: jest.fn().mockResolvedValue({ userId: 'owner-1' }) },
+      moderationLog: { create: jest.fn().mockResolvedValue({ id: 'log-1' }) },
+      notification: { create: jest.fn().mockResolvedValue({ id: 'notif-1' }) },
+      ...overrides,
+    });
+
     it('should mark post as removed via transaction', async () => {
-      const txPost = { update: jest.fn() };
-      const txLog = { create: jest.fn().mockResolvedValue({ id: 'log-1' }) };
-      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) =>
-        fn({ post: txPost, reel: { update: jest.fn() }, thread: { update: jest.fn() }, comment: { update: jest.fn() }, moderationLog: txLog }),
-      );
+      const txPost = { update: jest.fn().mockResolvedValue({ userId: 'owner-1' }) };
+      const tx = makeTx({ post: txPost });
+      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) => fn(tx));
 
       await service.autoRemoveContent('post-1', 'post', 'NSFW content detected', ['nudity']);
 
       expect(txPost.update).toHaveBeenCalledWith({
         where: { id: 'post-1' },
         data: { isRemoved: true },
+        select: { userId: true },
       });
     });
 
     it('should mark reel as removed via transaction', async () => {
-      const txReel = { update: jest.fn() };
-      const txLog = { create: jest.fn().mockResolvedValue({ id: 'log-1' }) };
-      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) =>
-        fn({ post: { update: jest.fn() }, reel: txReel, thread: { update: jest.fn() }, comment: { update: jest.fn() }, moderationLog: txLog }),
-      );
+      const txReel = { update: jest.fn().mockResolvedValue({ userId: 'owner-1' }) };
+      const tx = makeTx({ reel: txReel });
+      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) => fn(tx));
 
       await service.autoRemoveContent('reel-1', 'reel', 'Violence detected', ['violence']);
 
       expect(txReel.update).toHaveBeenCalledWith({
         where: { id: 'reel-1' },
         data: { isRemoved: true },
+        select: { userId: true },
       });
     });
 
     it('should mark thread as removed via transaction', async () => {
-      const txThread = { update: jest.fn() };
-      const txLog = { create: jest.fn().mockResolvedValue({ id: 'log-1' }) };
-      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) =>
-        fn({ post: { update: jest.fn() }, reel: { update: jest.fn() }, thread: txThread, comment: { update: jest.fn() }, moderationLog: txLog }),
-      );
+      const txThread = { update: jest.fn().mockResolvedValue({ userId: 'owner-1' }) };
+      const tx = makeTx({ thread: txThread });
+      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) => fn(tx));
 
       await service.autoRemoveContent('thread-1', 'thread', 'Hate speech', ['hate']);
 
       expect(txThread.update).toHaveBeenCalledWith({
         where: { id: 'thread-1' },
         data: { isRemoved: true },
+        select: { userId: true },
       });
     });
 
     it('should mark comment as removed via transaction', async () => {
-      const txComment = { update: jest.fn() };
-      const txLog = { create: jest.fn().mockResolvedValue({ id: 'log-1' }) };
-      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) =>
-        fn({ post: { update: jest.fn() }, reel: { update: jest.fn() }, thread: { update: jest.fn() }, comment: txComment, moderationLog: txLog }),
-      );
+      const txComment = { update: jest.fn().mockResolvedValue({ userId: 'owner-1' }) };
+      const tx = makeTx({ comment: txComment });
+      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) => fn(tx));
 
       await service.autoRemoveContent('comment-1', 'comment', 'Harassment', ['harassment']);
 
       expect(txComment.update).toHaveBeenCalledWith({
         where: { id: 'comment-1' },
         data: { isRemoved: true },
+        select: { userId: true },
       });
     });
 
     it('should create moderation log entry with reason and flags in explanation', async () => {
       const txLog = { create: jest.fn().mockResolvedValue({ id: 'log-1' }) };
-      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) =>
-        fn({ post: { update: jest.fn() }, reel: { update: jest.fn() }, thread: { update: jest.fn() }, comment: { update: jest.fn() }, moderationLog: txLog }),
-      );
+      const tx = makeTx({ moderationLog: txLog });
+      prisma.$transaction.mockImplementation((fn: (tx: any) => Promise<void>) => fn(tx));
 
       await service.autoRemoveContent('post-1', 'post', 'NSFW detected', ['nudity', 'suggestive']);
 

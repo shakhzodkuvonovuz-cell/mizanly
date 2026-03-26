@@ -94,6 +94,7 @@ describe('ThreadsService — edge cases', () => {
             hashtag: { upsert: jest.fn() },
             report: { create: jest.fn() },
             feedDismissal: { upsert: jest.fn() },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
             pollOption: { findUnique: jest.fn(), update: jest.fn() },
             pollVote: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn() },
             poll: { update: jest.fn() },
@@ -107,7 +108,7 @@ describe('ThreadsService — edge cases', () => {
         },
         {
           provide: 'REDIS',
-          useValue: { get: jest.fn(), setex: jest.fn(), del: jest.fn() },
+          useValue: { get: jest.fn(), set: jest.fn(), setex: jest.fn(), del: jest.fn() },
         },
       ],
     }).compile();

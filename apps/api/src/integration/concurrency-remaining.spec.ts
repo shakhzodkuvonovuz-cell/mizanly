@@ -32,14 +32,15 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
             post: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
             follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
             hashtag: { upsert: jest.fn() }, user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             comment: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             commentReaction: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn() },
             savedPost: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },
             feedDismissal: { upsert: jest.fn(), findMany: jest.fn().mockResolvedValue([]) }, report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) }, circleMember: { findMany: jest.fn().mockResolvedValue([]) },
           }},
-          { provide: NotificationsService, useValue: { create: jest.fn() } },
-          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn() } },
+          { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({}) } },
+          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn() } },
         ],
       }).compile();
       service = module.get(PostsService);
@@ -145,6 +146,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
             follow: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn() },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
             hashtag: { upsert: jest.fn() }, report: { create: jest.fn() }, feedDismissal: { upsert: jest.fn() },
             pollOption: { findUnique: jest.fn(), update: jest.fn() },
             pollVote: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn() },
@@ -152,7 +154,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
             $transaction: jest.fn().mockResolvedValue([{}, {}]), $executeRaw: jest.fn(),
           }},
           { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'n-1' }) } },
-          { provide: 'REDIS', useValue: { get: jest.fn(), setex: jest.fn(), del: jest.fn() } },
+          { provide: 'REDIS', useValue: { get: jest.fn(), set: jest.fn(), setex: jest.fn(), del: jest.fn() } },
         ],
       }).compile();
       service = module.get(ThreadsService);
@@ -402,6 +404,7 @@ describe('Concurrency + Error Recovery — remaining tests', () => {
     it('should award XP with atomic upsert', async () => {
       prisma.userXP.upsert.mockResolvedValue({ id: 'xp-1', userId: 'u1', totalXP: 10, level: 1 });
       prisma.xPHistory.create.mockResolvedValue({});
+      prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
       const result = await service.awardXP('u1', 'post_created');
       expect(result).toBeDefined();
       expect(prisma.userXP.upsert).toHaveBeenCalled();

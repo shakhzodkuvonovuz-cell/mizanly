@@ -94,6 +94,7 @@ describe('PostsService — edge cases', () => {
             feedDismissal: { upsert: jest.fn() },
             report: { create: jest.fn() },
             circleMember: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
         {
@@ -104,6 +105,7 @@ describe('PostsService — edge cases', () => {
           provide: 'REDIS',
           useValue: {
             get: jest.fn().mockResolvedValue(null),
+            set: jest.fn().mockResolvedValue('OK'),
             setex: jest.fn().mockResolvedValue('OK'),
             del: jest.fn().mockResolvedValue(1),
           },

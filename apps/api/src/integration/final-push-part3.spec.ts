@@ -45,11 +45,11 @@ describe('Final Push Part 3 — breaking 3800', () => {
             premiere: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
             premiereReminder: { create: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             endScreen: { createMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn() },
-            $transaction: jest.fn().mockResolvedValue([{}, {}, {}]), $executeRaw: jest.fn(),
+            $transaction: jest.fn().mockImplementation(async (cb: any) => { if (typeof cb === 'function') return cb(prisma); return cb; }), $executeRaw: jest.fn(),
           }},
           { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'n-1' }) } },
           { provide: StreamService, useValue: { uploadFromUrl: jest.fn(), deleteVideo: jest.fn() } },
-          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn(), del: jest.fn() } },
+          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn() } },
         ],
       }).compile();
       service = module.get(VideosService); prisma = module.get(PrismaService);

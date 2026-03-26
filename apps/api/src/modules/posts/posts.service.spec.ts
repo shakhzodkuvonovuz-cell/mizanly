@@ -89,6 +89,9 @@ describe('PostsService', () => {
             circleMember: {
               findMany: jest.fn().mockResolvedValue([]),
             },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
           },
         },
         {
@@ -96,13 +99,14 @@ describe('PostsService', () => {
           useValue: {
             notifyLike: jest.fn(),
             notifyComment: jest.fn(),
-            create: jest.fn(),
+            create: jest.fn().mockResolvedValue({}),
           },
         },
         {
           provide: 'REDIS',
           useValue: {
             get: jest.fn(),
+            set: jest.fn(),
             setex: jest.fn(),
             del: jest.fn(),
             publish: jest.fn().mockResolvedValue(1),
@@ -284,16 +288,18 @@ describe('PostsService', () => {
         { followingId },
       ]);
       prisma.block.findMany.mockResolvedValue([
-        { blockedId: 'user-blocked' },
+        { blockerId: userId, blockedId: 'user-blocked' },
       ]);
       prisma.mute.findMany.mockResolvedValue([
         { mutedId: 'user-muted' },
       ]);
+      prisma.restrict.findMany.mockResolvedValue([]);
       prisma.post.findMany.mockResolvedValue([]);
 
       await service.getFeed(userId, 'following');
 
-      // Verify the userId.in list does NOT include blocked/muted users
+      // With < 10 follows, getBlendedFeed is used which calls post.findMany twice
+      // First call is for following posts
       const callArgs = prisma.post.findMany.mock.calls[0][0];
       const userIds = callArgs.where.userId.in;
       expect(userIds).toContain(userId);

@@ -159,7 +159,7 @@ describe('StoriesService', () => {
           userId: { in: ['user-123', 'user-456'] },
           expiresAt: { gt: expect.any(Date) },
           isArchived: false,
-          user: { isBanned: false, isDeactivated: false },
+          user: { isBanned: false, isDeactivated: false, isDeleted: false },
         },
         select: expect.any(Object),
         orderBy: { createdAt: 'desc' },

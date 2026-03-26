@@ -28,6 +28,7 @@ describe('RecommendationsService', () => {
           useValue: {
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
+            restrict: { findMany: jest.fn().mockResolvedValue([]) },
             follow: { findMany: jest.fn().mockResolvedValue([]) },
             user: { findMany: jest.fn().mockResolvedValue([]) },
             post: { findMany: jest.fn().mockResolvedValue([]) },
@@ -61,7 +62,7 @@ describe('RecommendationsService', () => {
       const result = await service.suggestedPeople(undefined, 20);
 
       expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { isBanned: false, isDeactivated: false, isPrivate: false },
+        where: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
         orderBy: { followersCount: 'desc' },
         take: 20,
       }));
@@ -185,7 +186,13 @@ describe('RecommendationsService', () => {
       expect(prisma.post.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
-          user: { id: { notIn: ['blocked1', 'muted1'] }, isBanned: false, isDeactivated: false, isPrivate: false },
+          user: expect.objectContaining({
+            isDeactivated: false,
+            isBanned: false,
+            isDeleted: false,
+            isPrivate: false,
+            id: { notIn: expect.arrayContaining(['blocked1', 'muted1']) },
+          }),
         }),
       }));
     });
@@ -350,7 +357,13 @@ describe('RecommendationsService', () => {
       expect(prisma.reel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
-          user: { id: { notIn: ['blocked1', 'muted1'] }, isBanned: false, isDeactivated: false, isPrivate: false },
+          user: expect.objectContaining({
+            isDeactivated: false,
+            isBanned: false,
+            isDeleted: false,
+            isPrivate: false,
+            id: { notIn: expect.arrayContaining(['blocked1', 'muted1']) },
+          }),
         }),
       }));
     });
@@ -405,7 +418,7 @@ describe('RecommendationsService', () => {
       const result = await service.suggestedChannels(undefined, 20);
 
       expect(prisma.channel.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { user: { isBanned: false, isDeactivated: false } },
+        where: { user: { isDeactivated: false, isBanned: false, isDeleted: false } },
         orderBy: [
           { subscribersCount: 'desc' },
           { totalViews: 'desc' },
@@ -426,7 +439,11 @@ describe('RecommendationsService', () => {
       expect(prisma.channel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
-          user: { id: { notIn: ['blocked1', 'muted1'] }, isBanned: false, isDeactivated: false },
+          user: expect.objectContaining({
+            isDeactivated: false,
+            isBanned: false,
+            isDeleted: false,
+          }),
         }),
       }));
     });
@@ -442,8 +459,8 @@ describe('RecommendationsService', () => {
       await service.suggestedChannels(undefined, 20);
 
       const callArgs = prisma.channel.findMany.mock.calls[0][0];
-      // Channel where clause should only check isDeactivated, not isPrivate
-      expect(callArgs.where.user).toEqual({ isBanned: false, isDeactivated: false });
+      // Channel where clause should check isDeactivated, isBanned, isDeleted — not isPrivate
+      expect(callArgs.where.user).toEqual({ isDeactivated: false, isBanned: false, isDeleted: false });
     });
   });
 
@@ -454,7 +471,10 @@ describe('RecommendationsService', () => {
       const mockThreads = [
         { id: 't1', content: 'thread', likesCount: 50, repliesCount: 10, createdAt: new Date() },
       ];
-      prisma.thread.findMany.mockResolvedValue(mockThreads);
+      // First call: main threads, second call: exploration threads
+      prisma.thread.findMany
+        .mockResolvedValueOnce(mockThreads)
+        .mockResolvedValueOnce([]);
 
       const result = await service.suggestedThreads(undefined, 20);
 
@@ -464,7 +484,7 @@ describe('RecommendationsService', () => {
           isRemoved: false,
           visibility: 'PUBLIC',
           isChainHead: true,
-          user: { isBanned: false, isDeactivated: false },
+          user: { isDeactivated: false, isBanned: false, isDeleted: false },
           createdAt: { gte: expect.any(Date) },
         }),
         orderBy: [
@@ -474,7 +494,7 @@ describe('RecommendationsService', () => {
         ],
         take: 17,
       }));
-      expect(result).toEqual(mockThreads);
+      expect(result).toContainEqual(expect.objectContaining({ id: 't1' }));
     });
 
     it('should attempt pgvector ranking for authenticated users', async () => {

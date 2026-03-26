@@ -42,6 +42,8 @@ describe('GamificationService — concurrency (Task 90)', () => {
   it('should handle concurrent XP awards from different actions', async () => {
     prisma.userXP.upsert.mockResolvedValue({ id: 'xp-1', userId: 'user-1', totalXP: 50, level: 1 });
     prisma.xPHistory.create.mockResolvedValue({});
+    prisma.$executeRaw.mockResolvedValue(0);
+    prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
 
     const [r1, r2, r3] = await Promise.allSettled([
       service.awardXP('user-1', 'post_created'),
@@ -90,6 +92,8 @@ describe('GamificationService — concurrency (Task 90)', () => {
     prisma.userXP.upsert.mockResolvedValue({ id: 'xp-1', userId: 'user-1', totalXP: 100, level: 1 });
     prisma.userXP.update.mockResolvedValue({});
     prisma.xPHistory.create.mockResolvedValue({});
+    prisma.$executeRaw.mockResolvedValue(0);
+    prisma.$transaction.mockImplementation((fn: any) => fn(prisma));
 
     const result = await service.awardXP('user-1', 'post_created');
     expect(result).toBeDefined();

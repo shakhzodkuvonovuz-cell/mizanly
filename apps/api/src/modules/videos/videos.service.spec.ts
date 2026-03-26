@@ -97,7 +97,7 @@ describe('VideosService', () => {
         {
           provide: NotificationsService,
           useValue: {
-            create: jest.fn(),
+            create: jest.fn().mockResolvedValue({}),
           },
         },
         {
@@ -493,6 +493,7 @@ describe('VideosService', () => {
       const existingReaction = { userId: 'user-123', videoId: 'video-123', isLike: true };
       prisma.video.findUnique.mockResolvedValue(video as any);
       prisma.videoReaction.findUnique.mockResolvedValue(existingReaction);
+      prisma.$transaction.mockImplementation((callback: any) => callback(prisma));
       await expect(service.like('video-123', 'user-123')).rejects.toThrow(ConflictException);
     });
   });

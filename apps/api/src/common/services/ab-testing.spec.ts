@@ -8,6 +8,7 @@ const mockRedis = {
   keys: jest.fn().mockResolvedValue([]),
   mget: jest.fn().mockResolvedValue([]),
   incr: jest.fn().mockResolvedValue(1),
+  scan: jest.fn().mockResolvedValue(['0', []]),
 };
 
 describe('ABTestingService', () => {
@@ -62,14 +63,14 @@ describe('ABTestingService', () => {
 
   describe('getExperiments', () => {
     it('should return all experiments', async () => {
-      mockRedis.keys.mockResolvedValue(['ab:experiment:exp1']);
+      mockRedis.scan.mockResolvedValue(['0', ['ab:experiment:exp1']]);
       mockRedis.mget.mockResolvedValue([JSON.stringify(testExperiment)]);
       const result = await service.getExperiments();
       expect(result).toHaveLength(1);
     });
 
     it('should return empty array when no experiments', async () => {
-      mockRedis.keys.mockResolvedValue([]);
+      mockRedis.scan.mockResolvedValue(['0', []]);
       const result = await service.getExperiments();
       expect(result).toHaveLength(0);
     });
@@ -123,7 +124,7 @@ describe('ABTestingService', () => {
 
   describe('getUserAssignments', () => {
     it('should return assignments for all enabled experiments', async () => {
-      mockRedis.keys.mockResolvedValue(['ab:experiment:exp1']);
+      mockRedis.scan.mockResolvedValue(['0', ['ab:experiment:exp1']]);
       mockRedis.mget.mockResolvedValue([JSON.stringify(testExperiment)]);
       mockRedis.get.mockResolvedValue(JSON.stringify(testExperiment));
 
@@ -149,9 +150,9 @@ describe('ABTestingService', () => {
         .mockResolvedValueOnce(JSON.stringify(testExperiment))
         .mockResolvedValueOnce('5'); // conversion count
 
-      mockRedis.keys
-        .mockResolvedValueOnce(['ab:conversions:feed_ranking_v2:control:click'])
-        .mockResolvedValueOnce(['ab:conversions:feed_ranking_v2:treatment:click']);
+      mockRedis.scan
+        .mockResolvedValueOnce(['0', ['ab:conversions:feed_ranking_v2:control:click']])
+        .mockResolvedValueOnce(['0', ['ab:conversions:feed_ranking_v2:treatment:click']]);
 
       const result = await service.getMetrics('feed_ranking_v2');
       expect(result).toHaveProperty('control');
@@ -167,7 +168,9 @@ describe('ABTestingService', () => {
 
   describe('deleteExperiment', () => {
     it('should delete experiment and assignments', async () => {
-      mockRedis.keys.mockResolvedValue(['ab:assignment:exp1:u1']);
+      mockRedis.scan
+        .mockResolvedValueOnce(['0', ['ab:assignment:exp1:u1']])
+        .mockResolvedValueOnce(['0', []]);
       await service.deleteExperiment('exp1');
       expect(mockRedis.del).toHaveBeenCalled();
     });
