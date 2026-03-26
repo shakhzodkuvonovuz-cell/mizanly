@@ -53,7 +53,7 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
             await this.processCaptionGeneration(job as Job<CaptionJobData>);
             break;
           default:
-            this.logger.warn(`Unknown AI task type: ${job.name}`);
+            throw new Error(`Unknown AI task job type: ${job.name}`);
         }
       },
       {

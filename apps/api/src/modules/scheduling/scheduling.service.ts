@@ -255,8 +255,8 @@ export class SchedulingService {
         }
 
         // Gamification
-        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' });
-        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
 
         // Notifications
         await this.firePublishNotifications(id, userId, post.user?.username ?? null, 'post', {
@@ -280,8 +280,8 @@ export class SchedulingService {
           this.prisma.hashtag.update({ where: { name }, data: { threadsCount: { increment: 1 } } }).catch(() => {});
         }
 
-        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' });
-        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
 
         await this.firePublishNotifications(id, userId, thread.user?.username ?? null, 'thread', {
           mentions: thread.mentions as string[],
@@ -306,8 +306,8 @@ export class SchedulingService {
           this.prisma.hashtag.update({ where: { name }, data: { reelsCount: { increment: 1 } } }).catch(() => {});
         }
 
-        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' });
-        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
 
         await this.firePublishNotifications(id, userId, reel.user?.username ?? null, 'reel', {
           mentions: reel.mentions as string[],
@@ -325,8 +325,8 @@ export class SchedulingService {
           indexDocument: { id, title: video.title || '', description: video.description || '', tags: video.tags || [], userId },
         }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
 
-        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' });
-        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+        this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+        this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
       }
     } catch (err) {
       this.logger.error(`Deferred side effects failed for ${type} ${id}`, err instanceof Error ? err.message : err);
@@ -474,8 +474,8 @@ export class SchedulingService {
       }
 
       // Deferred: Gamification XP
-      this.queueService.addGamificationJob({ type: 'award-xp', userId: post.userId, action: 'post_created' });
-      this.queueService.addGamificationJob({ type: 'update-streak', userId: post.userId, action: 'posting' });
+      this.queueService.addGamificationJob({ type: 'award-xp', userId: post.userId, action: 'post_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+      this.queueService.addGamificationJob({ type: 'update-streak', userId: post.userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
 
       // Deferred: Mention, tag, and collaborator notifications
       this.firePublishNotifications(post.id, post.userId, post.user?.username ?? null, 'post', {
@@ -511,8 +511,8 @@ export class SchedulingService {
       }
 
       // Deferred: Gamification XP
-      this.queueService.addGamificationJob({ type: 'award-xp', userId: thread.userId, action: 'thread_created' });
-      this.queueService.addGamificationJob({ type: 'update-streak', userId: thread.userId, action: 'posting' });
+      this.queueService.addGamificationJob({ type: 'award-xp', userId: thread.userId, action: 'thread_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+      this.queueService.addGamificationJob({ type: 'update-streak', userId: thread.userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
 
       // Deferred: Mention notifications
       this.firePublishNotifications(thread.id, thread.userId, thread.user?.username ?? null, 'thread', {
@@ -545,8 +545,8 @@ export class SchedulingService {
       }
 
       // Deferred: Gamification XP
-      this.queueService.addGamificationJob({ type: 'award-xp', userId: reel.userId, action: 'reel_created' });
-      this.queueService.addGamificationJob({ type: 'update-streak', userId: reel.userId, action: 'posting' });
+      this.queueService.addGamificationJob({ type: 'award-xp', userId: reel.userId, action: 'reel_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+      this.queueService.addGamificationJob({ type: 'update-streak', userId: reel.userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
 
       // Deferred: Tag + mention notifications
       this.firePublishNotifications(reel.id, reel.userId, reel.user?.username ?? null, 'reel', {
@@ -572,8 +572,8 @@ export class SchedulingService {
       }).catch(err => this.logger.warn(`Publish workflow failed for scheduled video ${video.id}`, err instanceof Error ? err.message : err));
 
       // Deferred: Gamification XP
-      this.queueService.addGamificationJob({ type: 'award-xp', userId: video.userId, action: 'video_created' });
-      this.queueService.addGamificationJob({ type: 'update-streak', userId: video.userId, action: 'posting' });
+      this.queueService.addGamificationJob({ type: 'award-xp', userId: video.userId, action: 'video_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+      this.queueService.addGamificationJob({ type: 'update-streak', userId: video.userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
     }
 
     const result = {
