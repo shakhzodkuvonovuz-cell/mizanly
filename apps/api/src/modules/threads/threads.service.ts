@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
+import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
 import { ReplyPermission } from '@prisma/client';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -154,7 +155,7 @@ export class ThreadsService {
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
             visibility: 'PUBLIC',
             user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
-            createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+            createdAt: { gte: new Date(Date.now() - TIME_WINDOWS.FORYOU_HOURS * 3600000) },
           };
           if (excludedIds.length) where.userId = { notIn: excludedIds };
 
@@ -243,7 +244,7 @@ export class ThreadsService {
       limit,
       120,
       async (): Promise<ScoredItem[]> => {
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const trendingCutoff = new Date(Date.now() - TIME_WINDOWS.TRENDING_HOURS * 3600000);
 
         const threads = await this.prisma.thread.findMany({
           where: {
@@ -251,7 +252,7 @@ export class ThreadsService {
             isChainHead: true,
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
             visibility: 'PUBLIC',
-            createdAt: { gte: sevenDaysAgo },
+            createdAt: { gte: trendingCutoff },
             user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
             ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
           },

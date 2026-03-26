@@ -8,6 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
 import { CreateReelDto } from './dto/create-reel.dto';
 import { Prisma, ReelStatus, CommentPermission, ReactionType, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
@@ -349,7 +350,7 @@ export class ReelsService {
           isTrial: false,
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
-          createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+          createdAt: { gte: new Date(Date.now() - TIME_WINDOWS.FORYOU_HOURS * 3600000) },
           ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
         };
 
@@ -423,7 +424,7 @@ export class ReelsService {
       limit,
       120,
       async (): Promise<ScoredItem[]> => {
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const trendingCutoff = new Date(Date.now() - TIME_WINDOWS.TRENDING_HOURS * 3600000);
 
         const reels = await this.prisma.reel.findMany({
           where: {
@@ -431,7 +432,7 @@ export class ReelsService {
             isRemoved: false,
             isTrial: false,
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-            createdAt: { gte: sevenDaysAgo },
+            createdAt: { gte: trendingCutoff },
             user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
           },
           select: {

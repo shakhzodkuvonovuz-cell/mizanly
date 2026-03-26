@@ -96,12 +96,36 @@ export const DECAY_FORMULAS = {
 
 /**
  * Time windows for content eligibility.
- * Content older than the window is excluded from scoring (already decayed to near-zero).
+ * Standardized 3-tier system used by ALL feed services:
+ *
+ * Tier 1: ForYou (personalized, scored) — 48 hours
+ *   Posts, reels, threads ForYou feeds + recommendations fallback.
+ *   Rationale: Personalized content should feel fresh. 48h keeps quality high.
+ *
+ * Tier 2: Trending (engagement-sorted) — 24 hours
+ *   Trending reels, trending threads, community trending, personalized trending.
+ *   Rationale: Trending should be TODAY's conversation, not this week's.
+ *   24h matches Instagram/TikTok trending windows.
+ *
+ * Tier 3: Fallback/Exploration — 7 days
+ *   Zero-follow users (trending fallback), blended feeds, global trending feed.
+ *   Rationale: When there aren't enough candidates in 24-48h windows,
+ *   fall back to the wider 7-day window.
  */
 export const TIME_WINDOWS = {
-  FORYOU_FEED_HOURS: 48,           // Posts/threads: 48 hours
-  REEL_FEED_HOURS: 72,             // Reels: 72 hours (rewatchable)
-  TRENDING_HOURS: 24,              // Trending: 24 hours only
+  // Tier 1: ForYou (personalized, scored) — 48 hours
+  FORYOU_HOURS: 48,
+
+  // Tier 2: Trending (engagement-sorted) — 24 hours
+  TRENDING_HOURS: 24,
+
+  // Tier 3: Fallback/Exploration — 7 days
+  FALLBACK_HOURS: 168, // 7 days
+
+  // Exploration slots: fresh content < 6 hours
+  EXPLORATION_FRESH_HOURS: 6,
+
+  // Hashtag-specific (unchanged)
   TRENDING_HASHTAGS_HOURS: 24,     // Hashtag trending: 24 hours
   TRENDING_DECAY_HALF_LIFE_HOURS: 12, // Hashtag 12h half-life decay
   EXPLORATION_SLOT_PERCENTAGE: 15, // 15% of feed slots reserved for exploration/serendipity

@@ -2,7 +2,7 @@ import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ContentSpace, PostVisibility, Prisma } from '@prisma/client';
 import Redis from 'ioredis';
-import { CANDIDATE_POOL_SIZE } from '../../common/constants/feed-scoring';
+import { CANDIDATE_POOL_SIZE, TIME_WINDOWS } from '../../common/constants/feed-scoring';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 const FEED_POST_SELECT = {
@@ -155,11 +155,11 @@ export class FeedService {
     const tagNames = hashtags.map(h => h.name);
     if (tagNames.length === 0) return [];
 
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const trendingCutoff = new Date(Date.now() - TIME_WINDOWS.TRENDING_HOURS * 3600000);
     const posts = await this.prisma.post.findMany({
       where: {
         hashtags: { hasSome: tagNames },
-        createdAt: { gte: twentyFourHoursAgo },
+        createdAt: { gte: trendingCutoff },
         isRemoved: false,
         visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
@@ -302,7 +302,7 @@ export class FeedService {
       }
     }
 
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const fallbackCutoff = new Date(Date.now() - TIME_WINDOWS.FALLBACK_HOURS * 3600000);
 
     // Build block/mute filter + content filter when authenticated
     let userFilter = {};
@@ -340,7 +340,7 @@ export class FeedService {
         isRemoved: false,
         visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        createdAt: { gte: sevenDaysAgo },
+        createdAt: { gte: fallbackCutoff },
         user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
         ...contentFilter,
       },

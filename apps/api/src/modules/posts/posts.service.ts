@@ -11,6 +11,7 @@ import { Cron } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
+import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -165,7 +166,7 @@ export class PostsService {
 
           const recentPosts = await this.prisma.post.findMany({
             where: {
-              createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+              createdAt: { gte: new Date(Date.now() - TIME_WINDOWS.FORYOU_HOURS * 3600000) },
               isRemoved: false,
               OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
               user: { isPrivate: false, isBanned: false, isDeactivated: false, isDeleted: false },
@@ -266,14 +267,14 @@ export class PostsService {
       limit,
       120,
       async (): Promise<ScoredItem[]> => {
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const fallbackCutoff = new Date(Date.now() - TIME_WINDOWS.FALLBACK_HOURS * 3600000);
 
         const posts = await this.prisma.post.findMany({
           where: {
             isRemoved: false,
             visibility: 'PUBLIC',
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-            createdAt: { gte: sevenDaysAgo },
+            createdAt: { gte: fallbackCutoff },
             user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
             ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
           },
@@ -324,13 +325,13 @@ export class PostsService {
 
     // Get trending content to fill the rest
     const seenIds = new Set(followingPosts.map(p => p.id));
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const fallbackCutoff = new Date(Date.now() - TIME_WINDOWS.FALLBACK_HOURS * 3600000);
     const trendingPosts = await this.prisma.post.findMany({
       where: {
         isRemoved: false,
         visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        createdAt: { gte: sevenDaysAgo },
+        createdAt: { gte: fallbackCutoff },
         user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
         id: { notIn: [...seenIds] },
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),

@@ -5,6 +5,7 @@ import { EmbeddingContentType, PostVisibility, ReelStatus } from '@prisma/client
 import Redis from 'ioredis';
 import { calculatePrayerTimes } from '../islamic/prayer-calculator';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
+import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
 
 export interface FeedItem {
   id: string;
@@ -511,7 +512,7 @@ export class PersonalizedFeedService {
     excludedUserIds: string[] = [],
   ): Promise<{ data: FeedItem[]; meta: { cursor?: string; hasMore: boolean } }> {
     // 24-hour window prevents "popular-get-more-popular" loop (was 48h)
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const since = new Date(Date.now() - TIME_WINDOWS.TRENDING_HOURS * 3600000);
     const userFilter = excludedUserIds.length > 0 ? { id: { notIn: excludedUserIds } } : {};
 
     if (space === 'saf') {

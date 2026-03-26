@@ -4,6 +4,7 @@ import { Prisma, ReelStatus, PostVisibility, EmbeddingContentType } from '@prism
 import { EmbeddingsService } from '../embeddings/embeddings.service';
 import Redis from 'ioredis';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
+import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
 
 const POST_SELECT = {
   id: true,
@@ -379,7 +380,7 @@ export class RecommendationsService {
     count: number,
   ) {
     if (count <= 0) return [];
-    const freshCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000); // 6 hours
+    const freshCutoff = new Date(Date.now() - TIME_WINDOWS.EXPLORATION_FRESH_HOURS * 3600000); // 6 hours
     const where: Prisma.PostWhereInput = {
       createdAt: { gte: freshCutoff },
       viewsCount: { lt: 100 },
@@ -408,7 +409,7 @@ export class RecommendationsService {
     count: number,
   ) {
     if (count <= 0) return [];
-    const freshCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const freshCutoff = new Date(Date.now() - TIME_WINDOWS.EXPLORATION_FRESH_HOURS * 3600000);
     const where: Prisma.ReelWhereInput = {
       createdAt: { gte: freshCutoff },
       viewsCount: { lt: 100 },
@@ -437,7 +438,7 @@ export class RecommendationsService {
     count: number,
   ) {
     if (count <= 0) return [];
-    const freshCutoff = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const freshCutoff = new Date(Date.now() - TIME_WINDOWS.EXPLORATION_FRESH_HOURS * 3600000);
     const where: Prisma.ThreadWhereInput = {
       createdAt: { gte: freshCutoff },
       viewsCount: { lt: 100 },
@@ -600,7 +601,7 @@ export class RecommendationsService {
       visibility: PostVisibility.PUBLIC,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
-      createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+      createdAt: { gte: new Date(Date.now() - TIME_WINDOWS.FORYOU_HOURS * 3600000) },
     };
     if (userId) {
       where.userId = { not: userId };
@@ -665,7 +666,7 @@ export class RecommendationsService {
       status: ReelStatus.READY,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
-      createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+      createdAt: { gte: new Date(Date.now() - TIME_WINDOWS.FORYOU_HOURS * 3600000) },
     };
     if (userId) {
       where.userId = { not: userId };
@@ -755,7 +756,7 @@ export class RecommendationsService {
         visibility: 'PUBLIC',
         isChainHead: true,
         user: { isDeactivated: false, isBanned: false, isDeleted: false },
-        createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        createdAt: { gte: new Date(Date.now() - TIME_WINDOWS.FORYOU_HOURS * 3600000) },
       },
       select: THREAD_SELECT,
       orderBy: [

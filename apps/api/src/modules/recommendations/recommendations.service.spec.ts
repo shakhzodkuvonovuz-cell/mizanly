@@ -374,7 +374,7 @@ describe('RecommendationsService', () => {
       expect(result).toEqual([]);
     });
 
-    it('should use 72-hour window for reel freshness', async () => {
+    it('should use 48-hour window for reel freshness (aligned with posts)', async () => {
       prisma.reel.findMany.mockResolvedValue([]);
       await service.suggestedReels(undefined, 20);
 
@@ -382,9 +382,9 @@ describe('RecommendationsService', () => {
       const gteDate = callArgs.where.createdAt.gte;
       const ageMs = Date.now() - gteDate.getTime();
       const ageHours = ageMs / (1000 * 60 * 60);
-      // Should be approximately 72 hours (with small tolerance for test execution time)
-      expect(ageHours).toBeGreaterThan(71.9);
-      expect(ageHours).toBeLessThan(72.1);
+      // Should be approximately 48 hours (aligned with posts via TIME_WINDOWS.FORYOU_HOURS)
+      expect(ageHours).toBeGreaterThan(47.9);
+      expect(ageHours).toBeLessThan(48.1);
     });
 
     it('should reserve 15% of slots for reel exploration', async () => {
