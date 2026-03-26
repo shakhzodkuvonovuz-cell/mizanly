@@ -94,8 +94,8 @@ export class PushTriggerService {
         break;
 
       case NotificationType.MENTION: {
-        const targetId = notification.postId || notification.threadId || '';
-        const targetType = notification.postId ? 'post' : 'thread';
+        const targetId = notification.postId || notification.threadId || notification.reelId || '';
+        const targetType = notification.postId ? 'post' : notification.reelId ? 'reel' : 'thread';
         await this.sendSafe(
           notification.userId,
           this.push.buildMentionNotification(actorName, targetId, targetType),
