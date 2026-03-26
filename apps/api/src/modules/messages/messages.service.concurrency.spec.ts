@@ -13,7 +13,7 @@ describe('MessagesService — concurrency (Task 88)', () => {
     const txPrisma = {
       message: { create: jest.fn().mockResolvedValue({ id: 'msg-tx', content: 'test', messageType: 'TEXT' }) },
       conversation: { update: jest.fn() },
-      conversationMember: { updateMany: jest.fn() },
+      conversationMember: { update: jest.fn(), updateMany: jest.fn() },
     };
 
     const module = await Test.createTestingModule({

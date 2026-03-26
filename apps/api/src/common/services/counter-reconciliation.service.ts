@@ -292,6 +292,56 @@ export class CounterReconciliationService {
   }
 
   /**
+   * Reconcile coin balances — detect and reset any negative balances to 0.
+   * Prisma doesn't support DB-level CHECK constraints, so this is the safety net.
+   * Also logs any discrepancies for investigation.
+   */
+  @Cron('0 5 * * *') // Daily at 5 AM
+  async reconcileCoinBalances() {
+    try {
+      // Find any negative coin or diamond balances (should never happen, but guard against bugs)
+      const negative = await this.prisma.coinBalance.findMany({
+        where: {
+          OR: [
+            { coins: { lt: 0 } },
+            { diamonds: { lt: 0 } },
+          ],
+        },
+        select: { userId: true, coins: true, diamonds: true },
+        take: 500,
+      });
+
+      if (negative.length === 0) return 0;
+
+      this.logger.error(
+        `CRITICAL: Found ${negative.length} CoinBalance record(s) with negative values — resetting to 0`,
+      );
+
+      for (const record of negative) {
+        const updateData: { coins?: number; diamonds?: number } = {};
+        if (record.coins < 0) updateData.coins = 0;
+        if (record.diamonds < 0) updateData.diamonds = 0;
+
+        await this.prisma.coinBalance.update({
+          where: { userId: record.userId },
+          data: updateData,
+        });
+
+        Sentry.captureMessage(
+          `Negative CoinBalance reset: userId=${record.userId} coins=${record.coins} diamonds=${record.diamonds}`,
+          'error',
+        );
+      }
+
+      return negative.length;
+    } catch (error) {
+      this.logger.error('reconcileCoinBalances cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
+  /**
    * Manual trigger for immediate reconciliation (admin use).
    */
   async reconcileAll() {
@@ -301,6 +351,7 @@ export class CounterReconciliationService {
     const saves = await this.reconcilePostSavesCounts();
     const shares = await this.reconcilePostSharesCounts();
     const unread = await this.reconcileUnreadCounts();
+    const coinBalances = await this.reconcileCoinBalances();
     return {
       reconciled: {
         followCounts: follows,
@@ -309,6 +360,7 @@ export class CounterReconciliationService {
         postSavesCounts: saves,
         postSharesCounts: shares,
         unreadCounts: unread,
+        coinBalances,
       },
     };
   }

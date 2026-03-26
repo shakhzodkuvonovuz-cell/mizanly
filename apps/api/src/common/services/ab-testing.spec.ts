@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { ABTestingService, Experiment } from './ab-testing.service';
+import { ABTestingService, ExperimentConfig } from './ab-testing.service';
+import { PrismaService } from '../../config/prisma.service';
 
 const mockRedis = {
   get: jest.fn().mockResolvedValue(null),
@@ -11,6 +12,15 @@ const mockRedis = {
   scan: jest.fn().mockResolvedValue(['0', []]),
 };
 
+const mockPrisma = {
+  experiment: {
+    findMany: jest.fn().mockResolvedValue([]),
+    findUnique: jest.fn().mockResolvedValue(null),
+    upsert: jest.fn().mockResolvedValue({}),
+    delete: jest.fn().mockResolvedValue({}),
+  },
+};
+
 describe('ABTestingService', () => {
   let service: ABTestingService;
 
@@ -20,13 +30,14 @@ describe('ABTestingService', () => {
       providers: [
         ABTestingService,
         { provide: 'REDIS', useValue: mockRedis },
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
     service = module.get(ABTestingService);
   });
 
-  const testExperiment: Experiment = {
+  const testExperiment: ExperimentConfig = {
     id: 'feed_ranking_v2',
     name: 'Feed Ranking V2',
     variants: [

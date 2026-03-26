@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy, Inject } from '@nestjs/common';
 import { Queue, Job } from 'bullmq';
+import * as Sentry from '@sentry/node';
 import Redis from 'ioredis';
 
 /**
@@ -7,6 +8,10 @@ import Redis from 'ioredis';
  *
  * Each method maps to a specific queue with typed job data.
  * Workers are started in the corresponding processor classes.
+ *
+ * Correlation ID propagation: each job data payload includes an optional
+ * `correlationId` field extracted from the current request context (if available).
+ * Processors should log this ID for end-to-end traceability.
  */
 @Injectable()
 export class QueueService implements OnModuleDestroy {
@@ -144,8 +149,20 @@ export class QueueService implements OnModuleDestroy {
       this.logger.error(
         `Job ${job.id} (${queueName}/${job.name}) moved to DLQ after ${job.attemptsMade} attempts: ${error.message}`,
       );
-    } catch {
-      // DLQ storage failure should not crash the worker
+    } catch (dlqError) {
+      // DLQ Redis storage failed — ensure the failed job is at least visible in Sentry
+      Sentry.captureException(error, {
+        tags: { queue: queueName, jobName: job.name },
+        extra: {
+          jobId: job.id,
+          jobData: job.data,
+          attempts: job.attemptsMade,
+          dlqError: dlqError instanceof Error ? dlqError.message : 'Unknown DLQ error',
+        },
+      });
+      this.logger.error(
+        `CRITICAL: DLQ storage failed for job ${job.id} (${queueName}/${job.name}). Captured in Sentry as fallback.`,
+      );
     }
   }
 

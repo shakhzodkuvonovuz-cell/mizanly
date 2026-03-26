@@ -66,7 +66,7 @@ describe('MessagesService', () => {
               if (typeof fn === 'function') return fn({
                 message: { create: jest.fn().mockResolvedValue({ id: 'msg-tx', content: 'test' }) },
                 conversation: { update: jest.fn() },
-                conversationMember: { updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), findUnique: jest.fn() },
+                conversationMember: { update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), findUnique: jest.fn() },
               });
               return Promise.all(fn as Promise<unknown>[]);
             }),
@@ -229,7 +229,7 @@ describe('MessagesService', () => {
       const mockTx = {
         message: { create: jest.fn().mockResolvedValue(mockMessage) },
         conversation: { update: jest.fn().mockResolvedValue({}) },
-        conversationMember: { updateMany: jest.fn().mockResolvedValue({}) },
+        conversationMember: { update: jest.fn().mockResolvedValue({}), updateMany: jest.fn().mockResolvedValue({}) },
       };
       prisma.$transaction.mockImplementation((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx));
 

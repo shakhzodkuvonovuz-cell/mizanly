@@ -507,6 +507,17 @@ export class MonetizationService {
       throw new BadRequestException('Insufficient diamonds');
     }
 
+    // Application-level guard: verify balance never went negative
+    const postCashoutBalance = await this.prisma.coinBalance.findUnique({ where: { userId } });
+    const postCashoutDiamonds = postCashoutBalance?.diamonds ?? 0;
+    if (postCashoutDiamonds < 0) {
+      await this.prisma.coinBalance.update({
+        where: { userId },
+        data: { diamonds: { increment: diamonds } },
+      });
+      throw new BadRequestException('Balance integrity violation — cashout reversed');
+    }
+
     // Record the cashout transaction
     await this.prisma.coinTransaction.create({
       data: {

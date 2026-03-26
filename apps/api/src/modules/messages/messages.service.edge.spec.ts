@@ -39,7 +39,7 @@ describe('MessagesService — edge cases', () => {
     const txPrisma = {
       message: { create: jest.fn().mockResolvedValue(mockMessage) },
       conversation: { update: jest.fn(), findFirst: jest.fn() },
-      conversationMember: { updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), findUnique: jest.fn() },
+      conversationMember: { update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), findUnique: jest.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({

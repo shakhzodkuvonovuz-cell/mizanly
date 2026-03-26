@@ -6,7 +6,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
-    super();
+    // Enable Prisma query event logging for slow query detection
+    super({
+      log: [
+        { emit: 'event', level: 'query' },
+      ],
+    });
+
+    // Log queries taking >500ms for performance investigation
+    // Prisma 6 uses event-based logging instead of middleware
+    (this as any).$on('query', (e: { query: string; duration: number; params: string }) => {
+      if (e.duration > 500) {
+        this.logger.warn(
+          `Slow query (${e.duration}ms): ${e.query.slice(0, 200)}`,
+        );
+      }
+    });
   }
 
   async onModuleInit() {

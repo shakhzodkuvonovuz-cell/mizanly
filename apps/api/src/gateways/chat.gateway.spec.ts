@@ -355,8 +355,8 @@ describe('ChatGateway', () => {
       expect((client.data as any).userId).toBe('user-123');
       expect(redis.sadd).toHaveBeenCalledWith('presence:user-123', 'socket-123');
       expect(redis.expire).toHaveBeenCalledWith('presence:user-123', expect.any(Number));
-      // user_online is now broadcast to conversation rooms, not globally
-      expect(prisma.conversationMember.findMany).toHaveBeenCalled();
+      // Presence is now broadcast via user's own room (O(1) emit, not O(N) per-conversation)
+      expect(gateway.server.to).toHaveBeenCalledWith('user:user-123');
     });
 
     it('initializes quranRooms array on connection', async () => {
@@ -386,8 +386,8 @@ describe('ChatGateway', () => {
       expect(redis.srem).toHaveBeenCalledWith('presence:user-123', 'socket-123');
       expect(redis.scard).toHaveBeenCalledWith('presence:user-123');
       expect(redis.del).toHaveBeenCalledWith('presence:user-123');
-      // user_offline is now broadcast to conversation rooms, not globally
-      expect(prisma.conversationMember.findMany).toHaveBeenCalled();
+      // Presence is now broadcast via user's own room (O(1) emit, not O(N) per-conversation)
+      expect(gateway.server.to).toHaveBeenCalledWith('user:user-123');
     });
 
     it('responds to get_online_status via Redis pipeline', async () => {

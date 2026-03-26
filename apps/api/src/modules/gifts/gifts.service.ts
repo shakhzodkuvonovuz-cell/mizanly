@@ -135,6 +135,12 @@ export class GiftsService {
         throw new BadRequestException('Insufficient coins');
       }
 
+      // Application-level guard: verify balance never went negative
+      const senderBalance = await tx.coinBalance.findUnique({ where: { userId: senderId } });
+      if (senderBalance && senderBalance.coins < 0) {
+        throw new BadRequestException('Balance integrity violation — transaction rolled back');
+      }
+
       const gift = await tx.giftRecord.create({
         data: {
           senderId,
@@ -300,6 +306,18 @@ export class GiftsService {
       throw new BadRequestException('Insufficient diamonds');
     }
 
+    // Application-level guard: verify balance never went negative
+    const postBalance = await this.prisma.coinBalance.findUnique({ where: { userId } });
+    const postDiamonds = postBalance?.diamonds ?? 0;
+    if (postDiamonds < 0) {
+      // This should never happen due to the conditional update, but guard against race conditions
+      await this.prisma.coinBalance.update({
+        where: { userId },
+        data: { diamonds: { increment: diamonds } },
+      });
+      throw new BadRequestException('Balance integrity violation — cashout reversed');
+    }
+
     await this.prisma.coinTransaction.create({
       data: {
         userId,
@@ -309,15 +327,10 @@ export class GiftsService {
       },
     });
 
-    // Re-read balance to get the actual post-update value
-    const updatedBalance = await this.prisma.coinBalance.findUnique({
-      where: { userId },
-    });
-
     return {
       diamondsDeducted: diamonds,
       usdAmount,
-      remainingDiamonds: updatedBalance?.diamonds ?? 0,
+      remainingDiamonds: postDiamonds,
     };
   }
 

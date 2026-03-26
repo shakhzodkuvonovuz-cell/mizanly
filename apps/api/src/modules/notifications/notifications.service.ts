@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, Inject, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from './push-trigger.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { NotificationType, Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 
@@ -12,6 +13,7 @@ export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     private pushTrigger: PushTriggerService,
+    @Optional() private queueService: QueueService | null,
     @Inject('REDIS') private redis: Redis,
   ) {}
 
@@ -318,8 +320,16 @@ export class NotificationsService {
       this.logger.debug('Redis dedup set failed', e),
     );
 
-    // Fire push notification (non-blocking, logged on failure)
-    this.pushTrigger.triggerPush(notification.id).catch((e) => this.logger.error('Push trigger failed', e));
+    // Fire push notification via queue (durable retry) or direct fallback
+    if (this.queueService) {
+      this.queueService.addPushNotificationJob({ notificationId: notification.id })
+        .catch((e) => {
+          this.logger.warn('Queue push job failed, falling back to direct push', e instanceof Error ? e.message : e);
+          this.pushTrigger.triggerPush(notification.id).catch((e2) => this.logger.error('Direct push fallback failed', e2));
+        });
+    } else {
+      this.pushTrigger.triggerPush(notification.id).catch((e) => this.logger.error('Push trigger failed', e));
+    }
 
     // Emit real-time socket notification to the user's room (C-03: socket delivery)
     // The ChatGateway joins users to `user:{userId}` rooms on connect.

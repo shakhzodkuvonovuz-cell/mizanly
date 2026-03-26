@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { PaymentsService } from './payments.service';
+import { PrismaService } from '../../config/prisma.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 // Mock Stripe — default import needs __esModule + default
@@ -63,6 +64,7 @@ describe('StripeWebhookController', () => {
       providers: [
         { provide: PaymentsService, useValue: service },
         { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(null) } },
+        { provide: PrismaService, useValue: { processedWebhookEvent: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn() } } },
         { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), setex: jest.fn().mockResolvedValue('OK') } },
       ],
     }).compile();

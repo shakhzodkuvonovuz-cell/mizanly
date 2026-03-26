@@ -1,21 +1,20 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import Redis from 'ioredis';
+import { PrismaService } from '../../config/prisma.service';
 
 /**
  * Finding #47: A/B Testing Framework
  *
- * Simple Redis-backed A/B testing service. Supports:
- * - Creating experiments with named variants
- * - Deterministic user assignment (consistent across sessions)
- * - Redis-stored experiment config (hot-reloadable without deploy)
- * - Variant weight distribution
+ * Redis-backed A/B testing service with DB durability.
+ * Redis is primary (fast reads), DB is backup (survives Redis flushes).
+ * On startup, loads experiments from DB into Redis if Redis is empty.
  *
  * Usage:
  *   const variant = await abTesting.getVariant('feed_ranking_v2', userId);
  *   if (variant === 'control') { ... } else if (variant === 'treatment') { ... }
  */
 
-export interface Experiment {
+export interface ExperimentConfig {
   id: string;
   name: string;
   variants: Array<{ name: string; weight: number }>;
@@ -25,12 +24,45 @@ export interface Experiment {
 }
 
 @Injectable()
-export class ABTestingService {
+export class ABTestingService implements OnModuleInit {
   private readonly logger = new Logger(ABTestingService.name);
   private readonly EXPERIMENT_KEY_PREFIX = 'ab:experiment:';
   private readonly ASSIGNMENT_KEY_PREFIX = 'ab:assignment:';
 
-  constructor(@Inject('REDIS') private redis: Redis) {}
+  constructor(
+    @Inject('REDIS') private redis: Redis,
+    private prisma: PrismaService,
+  ) {}
+
+  /**
+   * On startup, hydrate Redis from DB if any experiments exist in DB but not in Redis.
+   * This ensures experiments survive Redis restarts.
+   */
+  async onModuleInit() {
+    try {
+      const dbExperiments = await this.prisma.experiment.findMany();
+      if (dbExperiments.length === 0) return;
+
+      for (const exp of dbExperiments) {
+        const key = `${this.EXPERIMENT_KEY_PREFIX}${exp.id}`;
+        const existing = await this.redis.get(key);
+        if (!existing) {
+          const config: ExperimentConfig = {
+            id: exp.id,
+            name: exp.name,
+            variants: exp.variants as Array<{ name: string; weight: number }>,
+            enabled: exp.enabled,
+            startDate: exp.startDate?.toISOString(),
+            endDate: exp.endDate?.toISOString(),
+          };
+          await this.redis.set(key, JSON.stringify(config));
+        }
+      }
+      this.logger.log(`Hydrated ${dbExperiments.length} experiment(s) from DB into Redis`);
+    } catch (error) {
+      this.logger.warn('Failed to hydrate experiments from DB — Redis will be authoritative', error instanceof Error ? error.message : error);
+    }
+  }
 
   /** SCAN-based key collection (non-blocking alternative to KEYS) */
   private async scanKeys(pattern: string): Promise<string[]> {
@@ -46,34 +78,89 @@ export class ABTestingService {
 
   /**
    * Create or update an experiment definition.
-   * Stored in Redis for hot-reload without deployments.
+   * Stored in Redis for hot-reload, mirrored to DB for durability.
    */
-  async createExperiment(experiment: Experiment): Promise<Experiment> {
+  async createExperiment(experiment: ExperimentConfig): Promise<ExperimentConfig> {
     const key = `${this.EXPERIMENT_KEY_PREFIX}${experiment.id}`;
     await this.redis.set(key, JSON.stringify(experiment));
+
+    // Mirror to DB for durability (non-blocking — Redis is authoritative)
+    this.prisma.experiment.upsert({
+      where: { id: experiment.id },
+      update: {
+        name: experiment.name,
+        variants: experiment.variants as any,
+        enabled: experiment.enabled,
+        startDate: experiment.startDate ? new Date(experiment.startDate) : null,
+        endDate: experiment.endDate ? new Date(experiment.endDate) : null,
+      },
+      create: {
+        id: experiment.id,
+        name: experiment.name,
+        variants: experiment.variants as any,
+        enabled: experiment.enabled,
+        startDate: experiment.startDate ? new Date(experiment.startDate) : null,
+        endDate: experiment.endDate ? new Date(experiment.endDate) : null,
+      },
+    }).catch(err => this.logger.warn(`Failed to mirror experiment ${experiment.id} to DB`, err instanceof Error ? err.message : err));
+
     this.logger.log(`Experiment created/updated: ${experiment.id}`);
     return experiment;
   }
 
   /**
-   * Get all experiments.
+   * Get all experiments. Falls back to DB if Redis is empty.
    */
-  async getExperiments(): Promise<Experiment[]> {
+  async getExperiments(): Promise<ExperimentConfig[]> {
     const keys = await this.scanKeys(`${this.EXPERIMENT_KEY_PREFIX}*`);
-    if (keys.length === 0) return [];
+    if (keys.length > 0) {
+      const values = await this.redis.mget(...keys);
+      return values
+        .filter((v): v is string => v !== null)
+        .map(v => JSON.parse(v) as ExperimentConfig);
+    }
 
-    const values = await this.redis.mget(...keys);
-    return values
-      .filter((v): v is string => v !== null)
-      .map(v => JSON.parse(v) as Experiment);
+    // DB fallback: Redis may have been flushed
+    try {
+      const dbExperiments = await this.prisma.experiment.findMany();
+      return dbExperiments.map(exp => ({
+        id: exp.id,
+        name: exp.name,
+        variants: exp.variants as Array<{ name: string; weight: number }>,
+        enabled: exp.enabled,
+        startDate: exp.startDate?.toISOString(),
+        endDate: exp.endDate?.toISOString(),
+      }));
+    } catch {
+      return [];
+    }
   }
 
   /**
-   * Get a specific experiment by ID.
+   * Get a specific experiment by ID. Falls back to DB if not in Redis.
    */
-  async getExperiment(experimentId: string): Promise<Experiment | null> {
+  async getExperiment(experimentId: string): Promise<ExperimentConfig | null> {
     const raw = await this.redis.get(`${this.EXPERIMENT_KEY_PREFIX}${experimentId}`);
-    return raw ? JSON.parse(raw) : null;
+    if (raw) return JSON.parse(raw);
+
+    // DB fallback
+    try {
+      const exp = await this.prisma.experiment.findUnique({ where: { id: experimentId } });
+      if (!exp) return null;
+      const config: ExperimentConfig = {
+        id: exp.id,
+        name: exp.name,
+        variants: exp.variants as Array<{ name: string; weight: number }>,
+        enabled: exp.enabled,
+        startDate: exp.startDate?.toISOString(),
+        endDate: exp.endDate?.toISOString(),
+      };
+      // Re-populate Redis
+      await this.redis.set(`${this.EXPERIMENT_KEY_PREFIX}${experimentId}`, JSON.stringify(config));
+      return config;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -172,6 +259,10 @@ export class ABTestingService {
     if (conversionKeys.length > 0) {
       await this.redis.del(...conversionKeys);
     }
+
+    // Remove from DB
+    this.prisma.experiment.delete({ where: { id: experimentId } })
+      .catch(() => {}); // May not exist in DB — that's fine
   }
 
   /** Simple deterministic hash for variant assignment */

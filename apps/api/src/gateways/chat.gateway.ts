@@ -282,16 +282,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       });
       const showActivity = !settings || settings.activityStatus !== false;
 
-      // Broadcast online status only to user's conversations, not globally
+      // Broadcast online status via user's own room (O(1) emit instead of O(N) per-conversation)
+      // Clients subscribe to `user:{userId}` rooms for users they care about (followed, conversation members)
       if (showActivity) {
-        const memberships = await this.prisma.conversationMember.findMany({
-          where: { userId: user.id },
-          select: { conversationId: true },
-          take: 5000, // CODEX #50: presence must reach all conversations, not just first 100
-        });
-        for (const m of memberships) {
-          client.to(`conversation:${m.conversationId}`).emit('user_online', { userId, isOnline: true });
-        }
+        this.server.to(`user:${user.id}`).emit('presence', { userId, isOnline: true });
       }
 
       client.join(`user:${user.id}`);
@@ -367,21 +361,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         where: { id: userId },
         data: { lastSeenAt: new Date() },
       }).catch((e) => this.logger.error('Failed to update lastSeenAt', e));
-      // Check activityStatus — only broadcast offline if user allows activity visibility
+      // Broadcast offline status via user's own room (O(1) emit instead of O(N) per-conversation)
       const settings = await this.prisma.userSettings.findUnique({
         where: { userId },
         select: { activityStatus: true },
       });
       const showActivity = !settings || settings.activityStatus !== false;
       if (showActivity) {
-        const memberships = await this.prisma.conversationMember.findMany({
-          where: { userId },
-          select: { conversationId: true },
-          take: 5000,
-        });
-        for (const m of memberships) {
-          this.server.to(`conversation:${m.conversationId}`).emit('user_offline', { userId, isOnline: false });
-        }
+        this.server.to(`user:${userId}`).emit('presence', { userId, isOnline: false });
       }
     }
   }
@@ -931,6 +918,48 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     if (!client.data.userId || !data?.contentId) return;
     if (!(await this.checkRateLimit(client.data.userId, 'content_leave', 30, 60))) return;
     client.leave(`content:${data.contentId}`);
+  }
+
+  /**
+   * Subscribe to presence updates for specific users.
+   * Clients join `user:{targetUserId}` rooms to receive presence events.
+   * This replaces per-conversation fan-out with targeted subscriptions.
+   */
+  @SubscribeMessage('subscribe_presence')
+  async handleSubscribePresence(
+    @MessageBody() data: { userIds: string[] },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!client.data.userId) return;
+    if (!Array.isArray(data?.userIds)) return;
+    if (!(await this.checkRateLimit(client.data.userId, 'sub_presence', 10, 60))) return;
+
+    // Limit to 200 subscriptions per request to prevent abuse
+    const ids = data.userIds.slice(0, 200);
+    for (const targetId of ids) {
+      if (typeof targetId === 'string' && targetId.length > 0) {
+        client.join(`user:${targetId}`);
+      }
+    }
+  }
+
+  /**
+   * Unsubscribe from presence updates for specific users.
+   */
+  @SubscribeMessage('unsubscribe_presence')
+  async handleUnsubscribePresence(
+    @MessageBody() data: { userIds: string[] },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!client.data.userId) return;
+    if (!Array.isArray(data?.userIds)) return;
+    if (!(await this.checkRateLimit(client.data.userId, 'unsub_presence', 10, 60))) return;
+
+    for (const targetId of data.userIds) {
+      if (typeof targetId === 'string' && targetId.length > 0) {
+        client.leave(`user:${targetId}`);
+      }
+    }
   }
 
   private extractToken(client: Socket): string | undefined {

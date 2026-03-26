@@ -278,18 +278,25 @@ export class MessagesService {
         select: MESSAGE_SELECT,
       });
 
+      const now = new Date();
       await tx.conversation.update({
         where: { id: conversationId },
         data: {
-          lastMessageAt: new Date(),
+          lastMessageAt: now,
           lastMessageText: data.content?.slice(0, 100) ?? null,
           lastMessageById: senderId,
         },
       });
 
+      // Update sender's per-member lastMessageAt for conversation ordering
+      await tx.conversationMember.update({
+        where: { conversationId_userId: { conversationId, userId: senderId } },
+        data: { lastMessageAt: now },
+      });
+
       await tx.conversationMember.updateMany({
         where: { conversationId, userId: { not: senderId } },
-        data: { unreadCount: { increment: 1 } },
+        data: { unreadCount: { increment: 1 }, lastMessageAt: now },
       });
 
       return msg;

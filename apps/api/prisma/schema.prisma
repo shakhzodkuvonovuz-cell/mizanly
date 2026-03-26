@@ -1662,6 +1662,7 @@ model ConversationMember {
   conversationId String
   userId         String
   lastReadAt     DateTime     @default(now())
+  lastMessageAt  DateTime?    // Denormalized for per-member conversation ordering
   unreadCount    Int          @default(0)
   isMuted        Boolean      @default(false)
   isPinned       Boolean      @default(false)
@@ -1677,6 +1678,7 @@ model ConversationMember {
 
   @@id([conversationId, userId])
   @@index([userId])
+  @@index([userId, lastMessageAt(sort: Desc)])
   @@map("conversation_members")
 }
 
@@ -4808,4 +4810,36 @@ model WaitlistEntry {
   @@index([referralCode])
   @@index([createdAt(sort: Desc)])
   @@map("waitlist_entries")
+}
+
+// ============================================================
+// PROCESSED WEBHOOK EVENTS — DB-backed deduplication for Stripe webhooks
+// Redis is primary dedup (fast), DB is secondary (durable across Redis restarts)
+// ============================================================
+
+model ProcessedWebhookEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  processedAt DateTime @default(now())
+
+  @@index([eventId])
+  @@map("processed_webhook_events")
+}
+
+// ============================================================
+// EXPERIMENTS — DB backup for Redis-stored A/B test definitions
+// Ensures experiments survive Redis flushes/restarts
+// ============================================================
+
+model Experiment {
+  id        String   @id
+  name      String   @db.VarChar(200)
+  variants  Json     // Array<{ name: string; weight: number }>
+  enabled   Boolean  @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("experiments")
 }

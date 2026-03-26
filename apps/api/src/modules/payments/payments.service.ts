@@ -576,22 +576,37 @@ export class PaymentsService {
   private async handleTipPaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     let tipId = await this.redis.get(`payment_intent:${paymentIntent.id}`);
     if (!tipId) {
-      // Redis mapping expired or lost — try DB fallback via metadata
-      const senderId = paymentIntent.metadata?.senderId;
-      const metaAmount = paymentIntent.metadata?.amount ? parseFloat(paymentIntent.metadata.amount) : undefined;
-      if (senderId) {
-        // Try matching by senderId + amount for better precision
-        const tip = await this.prisma.tip.findFirst({
-          where: {
-            senderId,
-            status: 'pending',
-            ...(metaAmount !== undefined ? { amount: metaAmount } : {}),
-          },
-          orderBy: { createdAt: 'desc' },
-          select: { id: true },
-        });
-        tipId = tip?.id ?? null;
+      // Redis mapping expired or lost — try DB fallback by stripePaymentId first (durable)
+      const tipByPI = await this.prisma.tip.findFirst({
+        where: { stripePaymentId: paymentIntent.id },
+        select: { id: true, status: true },
+      });
+      if (tipByPI) {
+        if (tipByPI.status === 'completed') {
+          this.logger.log(`Tip already completed for PI ${paymentIntent.id} — skipping (idempotent)`);
+          return;
+        }
+        tipId = tipByPI.id;
       }
+
+      // Fallback: try matching by senderId + amount from metadata
+      if (!tipId) {
+        const senderId = paymentIntent.metadata?.senderId;
+        const metaAmount = paymentIntent.metadata?.amount ? parseFloat(paymentIntent.metadata.amount) : undefined;
+        if (senderId) {
+          const tip = await this.prisma.tip.findFirst({
+            where: {
+              senderId,
+              status: 'pending',
+              ...(metaAmount !== undefined ? { amount: metaAmount } : {}),
+            },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true },
+          });
+          tipId = tip?.id ?? null;
+        }
+      }
+
       if (!tipId) {
         this.logger.warn(`No tip found for payment intent ${paymentIntent.id} (Redis + DB fallback failed)`);
         return;

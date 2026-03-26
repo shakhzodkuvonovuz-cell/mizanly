@@ -63,7 +63,7 @@ describe('MessagesService — View-Once Message Security', () => {
               if (typeof fn === 'function') return fn({
                 message: { create: jest.fn().mockResolvedValue({ id: 'msg-tx', content: 'test', isViewOnce: true }) },
                 conversation: { update: jest.fn(), findFirst: jest.fn() },
-                conversationMember: { updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), findUnique: jest.fn() },
+                conversationMember: { update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), findUnique: jest.fn() },
               });
               return Promise.all(fn as Promise<unknown>[]);
             }),

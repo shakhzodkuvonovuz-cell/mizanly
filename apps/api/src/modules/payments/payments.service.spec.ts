@@ -49,7 +49,7 @@ describe('PaymentsService', () => {
           provide: PrismaService,
           useValue: {
             user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', email: 'test@test.com', username: 'test', displayName: 'Test' }) },
-            tip: { create: jest.fn().mockResolvedValue({ id: 'tip-1' }), update: jest.fn() },
+            tip: { create: jest.fn().mockResolvedValue({ id: 'tip-1' }), update: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
             membershipTier: { findUnique: jest.fn() },
             membershipSubscription: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
             coinTransaction: { findFirst: jest.fn().mockResolvedValue(null) },

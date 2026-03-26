@@ -16,6 +16,7 @@ import { Request } from 'express';
 import Stripe from 'stripe';
 import Redis from 'ioredis';
 import { PaymentsService } from './payments.service';
+import { PrismaService } from '../../config/prisma.service';
 
 interface RawBodyRequest extends Request {
   rawBody?: Buffer;
@@ -32,6 +33,7 @@ export class StripeWebhookController {
   constructor(
     private paymentsService: PaymentsService,
     private config: ConfigService,
+    private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
   ) {
     const secretKey = this.config.get<string>('STRIPE_SECRET_KEY') || '';
@@ -66,11 +68,21 @@ export class StripeWebhookController {
       throw new BadRequestException('Invalid webhook signature');
     }
 
-    // Idempotency: check if this event ID has already been processed
+    // Idempotency: check if this event ID has already been processed (Redis first, DB fallback)
     const dedupeKey = `stripe_webhook:${event.id}`;
     const alreadyProcessed = await this.redis.get(dedupeKey);
     if (alreadyProcessed) {
-      this.logger.debug(`Stripe webhook ${event.id} already processed — skipping`);
+      this.logger.debug(`Stripe webhook ${event.id} already processed (Redis) — skipping`);
+      return { received: true, deduplicated: true };
+    }
+    // DB fallback: Redis may have been flushed
+    const dbEvent = await this.prisma.processedWebhookEvent.findUnique({
+      where: { eventId: event.id },
+    });
+    if (dbEvent) {
+      // Re-populate Redis from DB so future retries are fast
+      await this.redis.setex(dedupeKey, 604800, '1').catch(() => {});
+      this.logger.debug(`Stripe webhook ${event.id} already processed (DB) — skipping`);
       return { received: true, deduplicated: true };
     }
     this.logger.log(`Stripe webhook received: ${event.type}`);
@@ -124,11 +136,21 @@ export class StripeWebhookController {
       throw error;
     }
 
-    // Mark as processed ONLY after handler succeeds (7-day TTL, Stripe retries for up to 3 days)
+    // Mark as processed ONLY after handler succeeds — write to both Redis (fast) AND DB (durable)
     try {
       await this.redis.setex(dedupeKey, 604800, '1');
     } catch (redisErr) {
-      this.logger.error(`CRITICAL: Failed to set webhook dedup key ${dedupeKey} after successful processing. Event may be re-processed on retry.`, redisErr);
+      this.logger.error(`Failed to set webhook dedup key in Redis: ${dedupeKey}`, redisErr);
+    }
+    try {
+      await this.prisma.processedWebhookEvent.create({
+        data: { eventId: event.id },
+      });
+    } catch (dbErr) {
+      // Unique constraint violation is fine (already exists), other errors are logged
+      if (!(dbErr instanceof Error && dbErr.message.includes('Unique constraint'))) {
+        this.logger.error(`Failed to persist webhook dedup to DB: ${event.id}`, dbErr);
+      }
     }
 
     return { received: true };
