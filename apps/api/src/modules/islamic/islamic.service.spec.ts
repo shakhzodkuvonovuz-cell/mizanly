@@ -3,6 +3,7 @@ import { NotFoundException, BadRequestException, ConflictException } from '@nest
 import { Prisma } from '@prisma/client';
 import { IslamicService } from './islamic.service';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 
@@ -57,6 +58,7 @@ global.fetch = mockFetch as any;
 describe('IslamicService', () => {
   let service: IslamicService;
   let prisma: Record<string, any>;
+  let notificationsService: any;
 
   beforeEach(async () => {
     prisma = {
@@ -95,6 +97,7 @@ describe('IslamicService', () => {
     }).compile();
 
     service = module.get<IslamicService>(IslamicService);
+    notificationsService = module.get(NotificationsService);
     jest.clearAllMocks();
     // Re-set fetch mock after clearAllMocks
     mockFetch.mockRejectedValue(new Error('Network disabled in tests'));
@@ -1360,13 +1363,12 @@ describe('IslamicService', () => {
     it('should update plan when owned by user', async () => {
       prisma.quranReadingPlan.findFirst.mockResolvedValue({ id: 'plan-1', userId: 'user-1', isComplete: false });
       prisma.quranReadingPlan.update.mockResolvedValue({ id: 'plan-1', isComplete: true });
-      prisma.notification = { create: jest.fn().mockResolvedValue({}) } as any;
 
       const result = await service.updateReadingPlan('user-1', 'plan-1', { isComplete: true } as any);
       expect(result.isComplete).toBe(true);
-      // Khatm celebration notification should be sent
-      expect(prisma.notification.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ title: expect.stringContaining('Khatm') }) }),
+      // Khatm celebration notification should be sent via NotificationsService
+      expect(notificationsService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ title: expect.stringContaining('Khatm') }),
       );
     });
 

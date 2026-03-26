@@ -290,7 +290,7 @@ describe('VideosService', () => {
     it('should exclude blocked/muted users', async () => {
       const userId = 'user-123';
       redis.get.mockResolvedValue(null);
-      prisma.block.findMany.mockResolvedValue([{ blockedId: 'blocked-user' }]);
+      prisma.block.findMany.mockResolvedValue([{ blockerId: userId, blockedId: 'blocked-user' }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted-user' }]);
       prisma.subscription.findMany.mockResolvedValue([]);
       prisma.video.findMany.mockResolvedValue([]);

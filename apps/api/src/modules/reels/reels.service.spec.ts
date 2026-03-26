@@ -288,7 +288,7 @@ describe('ReelsService', () => {
       expect(prisma.reel.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { createdAt: 'desc' }, // Initial fetch by recency before scoring
-          take: 200,          // We fetch up to 200 to score
+          take: 500,          // We fetch up to 500 to score
         })
       );
     });
@@ -325,7 +325,7 @@ describe('ReelsService', () => {
         },
       ];
 
-      prisma.block.findMany.mockResolvedValue([{ blockedId: blockedUser }]);
+      prisma.block.findMany.mockResolvedValue([{ blockerId: userId, blockedId: blockedUser }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: mutedUser }]);
       prisma.reel.findMany.mockResolvedValue(mockReels);
       prisma.reelReaction.findMany.mockResolvedValue([]);

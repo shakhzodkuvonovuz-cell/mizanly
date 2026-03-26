@@ -43,6 +43,7 @@ describe('AuthService', () => {
             },
             userSettings: {
               upsert: jest.fn(),
+              create: jest.fn().mockResolvedValue({}),
             },
             userInterest: {
               deleteMany: jest.fn(),
@@ -173,7 +174,13 @@ describe('AuthService', () => {
       expect(prisma.user.findFirst).toHaveBeenCalledWith({ where: { clerkId } });
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        data: { isDeactivated: true, deactivatedAt: expect.any(Date) },
+        data: {
+          isDeactivated: true,
+          deactivatedAt: expect.any(Date),
+          isDeleted: true,
+          deletedAt: expect.any(Date),
+          scheduledDeletionAt: expect.any(Date),
+        },
       });
       expect(prisma.device.deleteMany).toHaveBeenCalledWith({ where: { userId: mockUser.id } });
       expect(result).toEqual({ count: 1 });

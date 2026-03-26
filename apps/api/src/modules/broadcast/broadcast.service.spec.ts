@@ -31,7 +31,7 @@ describe('BroadcastService', () => {
         update: jest.fn(),
         delete: jest.fn(),
       },
-      $transaction: jest.fn((fn: any) => fn(prisma)),
+      $transaction: jest.fn((arg: any) => Array.isArray(arg) ? Promise.all(arg) : arg(prisma)),
       $executeRaw: jest.fn(),
     };
 

@@ -201,9 +201,9 @@ describe('OgService', () => {
   });
 
   describe('ConfigService usage', () => {
-    it('should use APP_URL from ConfigService (defaults to mizanly.com)', async () => {
+    it('should use APP_URL from ConfigService (defaults to mizanly.app)', async () => {
       const result = await service.getPostOg('p1');
-      expect(result).toContain('mizanly.com');
+      expect(result).toContain('mizanly.app');
     });
 
     it('should use custom APP_URL when configured', async () => {

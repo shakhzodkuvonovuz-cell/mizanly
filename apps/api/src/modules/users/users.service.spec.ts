@@ -129,6 +129,21 @@ describe('UsersService', () => {
           provide: PrivacyService,
           useValue: {
             deleteAllUserData: jest.fn().mockResolvedValue({ deleted: true, userId: 'user-123', deletedAt: new Date().toISOString() }),
+            exportUserData: jest.fn().mockResolvedValue({
+              profile: { id: 'user-1', username: 'testuser' },
+              posts: [{ id: 'p1', content: 'test' }],
+              threads: [],
+              stories: [],
+              reels: [],
+              videos: [],
+              comments: [],
+              messages: [{ id: 'm1', content: 'hello', conversationId: 'c1' }],
+              followers: ['f1'],
+              following: ['f2'],
+              postReactions: [],
+              savedPosts: [],
+              exportedAt: new Date().toISOString(),
+            }),
           },
         },
         {
@@ -700,7 +715,7 @@ describe('UsersService', () => {
 
       expect(prisma.savedPost.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId },
+          where: { userId, post: { isRemoved: false } },
           include: { post: expect.any(Object) },
         }),
       );
@@ -726,7 +741,7 @@ describe('UsersService', () => {
 
       expect(prisma.threadBookmark.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId },
+          where: { userId, thread: { isRemoved: false } },
           include: { thread: expect.any(Object) },
         }),
       );
@@ -786,7 +801,7 @@ describe('UsersService', () => {
       const result = await service.getSavedReels(userId);
 
       expect(prisma.reelInteraction.findMany).toHaveBeenCalledWith({
-        where: { userId, saved: true },
+        where: { userId, saved: true, reel: { isRemoved: false } },
         include: {
           reel: {
             select: {
@@ -853,7 +868,7 @@ describe('UsersService', () => {
       const result = await service.getSavedReels(userId, cursor, 20);
 
       expect(prisma.reelInteraction.findMany).toHaveBeenCalledWith({
-        where: { userId, saved: true },
+        where: { userId, saved: true, reel: { isRemoved: false } },
         include: {
           reel: {
             select: {
@@ -952,7 +967,7 @@ describe('UsersService', () => {
       const result = await service.getSavedVideos(userId);
 
       expect(prisma.videoBookmark.findMany).toHaveBeenCalledWith({
-        where: { userId },
+        where: { userId, video: { isRemoved: false } },
         include: {
           video: {
             select: {
@@ -1028,7 +1043,7 @@ describe('UsersService', () => {
       const result = await service.getSavedVideos(userId, cursor, 20);
 
       expect(prisma.videoBookmark.findMany).toHaveBeenCalledWith({
-        where: { userId },
+        where: { userId, video: { isRemoved: false } },
         include: {
           video: {
             select: {

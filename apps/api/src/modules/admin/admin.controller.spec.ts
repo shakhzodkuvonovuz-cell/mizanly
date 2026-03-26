@@ -6,6 +6,8 @@ import { AdminService } from './admin.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { FeatureFlagsService } from '../../common/services/feature-flags.service';
+import { CounterReconciliationService } from '../../common/services/counter-reconciliation.service';
+import { MeilisearchSyncService } from '../../common/services/meilisearch-sync.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('AdminController', () => {
@@ -39,6 +41,14 @@ describe('AdminController', () => {
             setFlag: jest.fn(),
             deleteFlag: jest.fn(),
           },
+        },
+        {
+          provide: CounterReconciliationService,
+          useValue: { reconcileAll: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: MeilisearchSyncService,
+          useValue: { fullSync: jest.fn().mockResolvedValue(undefined) },
         },
         { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
       ],

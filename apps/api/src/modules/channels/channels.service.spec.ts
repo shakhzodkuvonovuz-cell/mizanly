@@ -395,9 +395,11 @@ describe('ChannelsService', () => {
       const channelId = 'channel-456';
       const channel = { id: channelId };
       prisma.channel.findUnique.mockResolvedValue(channel as any);
-      prisma.block.findMany.mockResolvedValue([{ blockedId: 'blocked-user' }]);
+      prisma.block.findMany.mockResolvedValue([{ blockerId: 'user-123', blockedId: 'blocked-user' }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted-user' }]);
       prisma.video.findMany.mockResolvedValue([]);
+      prisma.videoReaction.findMany.mockResolvedValue([]);
+      prisma.videoBookmark.findMany.mockResolvedValue([]);
 
       await service.getVideos(handle, 'user-123');
 

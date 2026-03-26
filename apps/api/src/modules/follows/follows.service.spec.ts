@@ -97,7 +97,7 @@ describe('FollowsService', () => {
 
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: targetUserId },
-        select: { id: true, isPrivate: true, isDeactivated: true, isBanned: true },
+        select: { id: true, username: true, isPrivate: true, isDeactivated: true, isBanned: true },
       });
       expect(prisma.block.findFirst).toHaveBeenCalledWith({
         where: {

@@ -61,20 +61,21 @@ describe('FeedService', () => {
       expect((prisma as any).post.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ locationName: { not: null } }),
-          take: 20,
+          take: 21,
         }),
       );
     });
 
     it('should paginate with cursor', async () => {
-      const twentyPosts = Array.from({ length: 20 }, (_, i) => ({
+      // Need 21 posts so hasMore = posts.length(21) > limit(20) = true
+      const twentyOnePosts = Array.from({ length: 21 }, (_, i) => ({
         id: `p${i}`,
         content: `Post ${i}`,
         locationName: `Location ${i}`,
         createdAt: new Date(Date.now() - i * 60000),
         user: { id: 'u1', username: 'user1' },
       }));
-      (prisma as any).post.findMany.mockResolvedValue(twentyPosts);
+      (prisma as any).post.findMany.mockResolvedValue(twentyOnePosts);
 
       const result = await service.getNearbyContent(40.7128, -74.006, 25);
       expect(result.meta.hasMore).toBe(true);
