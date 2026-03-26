@@ -38,6 +38,7 @@ import { useIslamicTheme, useIsEidToday } from '@/hooks/useIslamicTheme';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { initSentry, setSentryUser } from '@/config/sentry';
 import { navigate } from '@/utils/navigation';
+import { SocketProvider } from '@/providers/SocketProvider';
 
 // Allow the OS to flip layouts to RTL for Arabic and Urdu.
 I18nManager.allowRTL(true);
@@ -551,6 +552,7 @@ export default function RootLayout() {
         <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
           <ClerkLoaded>
             <QueryClientProvider client={queryClient}>
+              <SocketProvider>
               <ThemeAwareStatusBar />
               <OfflineBanner />
               <IslamicThemeBanner />
@@ -574,6 +576,7 @@ export default function RootLayout() {
               <MiniPlayer />
               <TTSMiniPlayer />
               <ToastContainer />
+              </SocketProvider>
             </QueryClientProvider>
           </ClerkLoaded>
         </ClerkProvider>

@@ -6,10 +6,10 @@ import { useRouter } from 'expo-router';
 import { navigate } from '@/utils/navigation';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
-import { useUser, useAuth } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
-import { io, Socket } from 'socket.io-client';
+import { useSocket } from '@/providers/SocketProvider';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -27,7 +27,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { colors, spacing, fontSize, radius, animation, fonts, tabBar } from '@/theme';
 import { useStore } from '@/store';
-import { messagesApi, SOCKET_URL } from '@/services/api';
+import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -145,11 +145,9 @@ export default function RisalahScreen() {
     { key: 'groups', label: t('risalah.groups') },
   ], [t]);
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
-  const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
-  const { getToken } = useAuth();
+  const { socket, isConnected: socketConnected } = useSocket();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Map<string, Set<string>>>(new Map());
-  const socketRef = useRef<Socket | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('chats');
   const [filterChip, setFilterChip] = useState<'all' | 'unread' | 'groups'>('all');
   const [openNewConvoSheet, setOpenNewConvoSheet] = useState(false);
@@ -160,100 +158,75 @@ export default function RisalahScreen() {
   // useScrollToTop handles scroll-to-top on tab press — no need for a separate focus listener
   // which would reset scroll position when returning from sub-screens
 
+  // Register event listeners on the shared socket for conversation list updates
   useEffect(() => {
-    let mounted = true;
-    let socket: Socket | null = null;
-    // SOCKET_URL imported from @/services/api
+    if (!socket) return;
 
-    const connect = async () => {
-      const token = await getToken();
-      if (!token || !mounted) return;
-
-      socket = io(SOCKET_URL, {
-        auth: { token },
-        transports: ['websocket'],
-        reconnection: true,
-        reconnectionAttempts: 10,
-        reconnectionDelay: 1000,
-      });
-
-      // Refresh token on reconnect attempt (handles expired tokens)
-      socket.on('connect_error', async () => {
-        if (!mounted || !socket) return;
-        const freshToken = await getToken({ skipCache: true });
-        if (freshToken && socket) {
-          socket.auth = { token: freshToken };
-        }
-      });
-
-      socket.on('user_online', ({ userId }: { userId: string }) => {
-        if (!mounted) return;
-        setOnlineUsers(prev => new Set(prev).add(userId));
-      });
-
-      socket.on('user_offline', ({ userId }: { userId: string }) => {
-        if (!mounted) return;
-        setOnlineUsers(prev => {
-          const next = new Set(prev);
-          next.delete(userId);
-          return next;
-        });
-      });
-
-      socket.on('user_typing', ({ conversationId, userId, isTyping }: { conversationId: string; userId: string; isTyping: boolean }) => {
-        if (!mounted) return;
-        setTypingUsers(prev => {
-          const next = new Map(prev);
-          const currentSet = next.get(conversationId) ?? new Set();
-          if (isTyping) {
-            currentSet.add(userId);
-          } else {
-            currentSet.delete(userId);
-          }
-          if (currentSet.size === 0) {
-            next.delete(conversationId);
-          } else {
-            next.set(conversationId, currentSet);
-          }
-          return next;
-        });
-      });
-
-      // On reconnect, re-join all conversation rooms (fixes stale presence after network drop)
-      socket.on('connect', () => {
-        if (!mounted) return;
-        const convos = queryClient.getQueryData<Conversation[]>(['conversations']);
-        if (convos) {
-          for (const convo of convos) {
-            socket?.emit('join_conversation', { conversationId: convo.id });
-          }
-        }
-        queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      });
-
-      // Refetch conversations on new messages so list stays fresh
-      socket.on('new_message', () => {
-        if (!mounted) return;
-        queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      });
-
-      // Listen for new notifications to update badge count in real-time
-      socket.on('new_notification', () => {
-        if (!mounted) return;
-        const current = useStore.getState().unreadNotifications;
-        setUnreadNotifications(current + 1);
-      });
-
-      socketRef.current = socket;
+    const handleUserOnline = ({ userId }: { userId: string }) => {
+      setOnlineUsers(prev => new Set(prev).add(userId));
     };
 
-    connect();
+    const handleUserOffline = ({ userId }: { userId: string }) => {
+      setOnlineUsers(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    };
+
+    const handleUserTyping = ({ conversationId, userId, isTyping }: { conversationId: string; userId: string; isTyping: boolean }) => {
+      setTypingUsers(prev => {
+        const next = new Map(prev);
+        const currentSet = next.get(conversationId) ?? new Set();
+        if (isTyping) {
+          currentSet.add(userId);
+        } else {
+          currentSet.delete(userId);
+        }
+        if (currentSet.size === 0) {
+          next.delete(conversationId);
+        } else {
+          next.set(conversationId, currentSet);
+        }
+        return next;
+      });
+    };
+
+    // On reconnect, re-join all conversation rooms (fixes stale presence after network drop)
+    const handleConnect = () => {
+      const convos = queryClient.getQueryData<Conversation[]>(['conversations']);
+      if (convos) {
+        for (const convo of convos) {
+          socket.emit('join_conversation', { conversationId: convo.id });
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    };
+
+    // Refetch conversations on new messages so list stays fresh
+    const handleNewMessage = () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    };
+
+    socket.on('user_online', handleUserOnline);
+    socket.on('user_offline', handleUserOffline);
+    socket.on('user_typing', handleUserTyping);
+    socket.on('connect', handleConnect);
+    socket.on('new_message', handleNewMessage);
+
+    // If already connected when this effect runs, do initial room joins
+    if (socket.connected) {
+      handleConnect();
+    }
+
     return () => {
-      mounted = false;
-      socket?.disconnect();
-      socketRef.current = null;
+      socket.off('user_online', handleUserOnline);
+      socket.off('user_offline', handleUserOffline);
+      socket.off('user_typing', handleUserTyping);
+      socket.off('connect', handleConnect);
+      socket.off('new_message', handleNewMessage);
     };
-  }, [getToken, queryClient]);
+  }, [socket, queryClient]);
 
   const { data: conversations, isLoading, isError, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
@@ -263,13 +236,12 @@ export default function RisalahScreen() {
 
   // Join conversation rooms so we receive typing events
   useEffect(() => {
-    const socket = socketRef.current;
     if (!socket?.connected || !conversations) return;
     const convos = conversations as Conversation[];
     for (const convo of convos) {
       socket.emit('join_conversation', { conversationId: convo.id });
     }
-  }, [conversations]);
+  }, [socket, socketConnected, conversations]);
 
   const archiveMutation = useMutation({
     mutationFn: (conversationId: string) => messagesApi.archiveConversation(conversationId),

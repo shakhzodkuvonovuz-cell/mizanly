@@ -4,10 +4,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useUser, useAuth } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/clerk-expo';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { io, Socket } from 'socket.io-client';
+import { useSocket } from '@/providers/SocketProvider';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -24,7 +24,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { showToast } from '@/components/ui/Toast';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
-import { api, callsApi, SOCKET_URL } from '@/services/api';
+import { api, callsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
@@ -48,21 +48,19 @@ interface Call {
   callee?: { id: string; username: string; displayName: string; avatarUrl?: string };
 }
 
-// SOCKET_URL imported from @/services/api
-
 export default function CallScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
-  const { getToken } = useAuth();
   const userId = user?.id;
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const tc = useThemeColors();
   const haptic = useContextualHaptic();
-  const socketRef = useRef<Socket | null>(null);
-  const [socketReady, setSocketReady] = useState(false);
+  const { socket, isConnected: socketReady } = useSocket();
+  const socketRef = useRef(socket);
+  useEffect(() => { socketRef.current = socket; }, [socket]);
   const [callStatus, setCallStatus] = useState<CallStatus>('ringing');
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -157,58 +155,39 @@ export default function CallScreen() {
     onError: (err: Error) => { showToast({ message: err.message, variant: 'error' }); haptic.error(); },
   });
 
-  // Setup socket connection with JWT auth (matches /chat namespace pattern)
+  // Register call-specific event listeners on the shared socket
   useEffect(() => {
-    let mounted = true;
-    const connect = async () => {
-      const token = await getToken();
-      if (!token || !mounted) return;
-      const socket = io(SOCKET_URL, {
-        transports: ['websocket'],
-        auth: { token },
-        reconnection: true,
-        reconnectionAttempts: 10,
-        reconnectionDelay: 1000,
-      });
+    if (!socket) return;
 
-      socket.on('connect_error', async () => {
-        if (!mounted) return;
-        const freshToken = await getToken({ skipCache: true });
-        if (freshToken && socket) {
-          socket.auth = { token: freshToken };
-        }
-      });
-
-      socket.on('call_answered', () => {
-        setCallStatus('connected');
-      });
-      socket.on('call_ended', () => {
-        setCallStatus('ended');
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        endedTimeoutRef.current = setTimeout(() => router.back(), 2000);
-      });
-      socket.on('incoming_call', () => {
-        setCallStatus('ringing');
-      });
-      socket.on('call_rejected', () => {
-        setCallStatus('missed');
-      });
-
-      socketRef.current = socket;
-      socket.on('connect', () => setSocketReady(true));
-      socket.on('disconnect', () => setSocketReady(false));
+    const handleCallAnswered = () => {
+      setCallStatus('connected');
     };
-    connect();
+    const handleCallEnded = () => {
+      setCallStatus('ended');
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      endedTimeoutRef.current = setTimeout(() => router.back(), 2000);
+    };
+    const handleIncomingCall = () => {
+      setCallStatus('ringing');
+    };
+    const handleCallRejected = () => {
+      setCallStatus('missed');
+    };
+
+    socket.on('call_answered', handleCallAnswered);
+    socket.on('call_ended', handleCallEnded);
+    socket.on('incoming_call', handleIncomingCall);
+    socket.on('call_rejected', handleCallRejected);
 
     return () => {
-      setSocketReady(false);
-      mounted = false;
-      socketRef.current?.disconnect();
-      socketRef.current = null;
+      socket.off('call_answered', handleCallAnswered);
+      socket.off('call_ended', handleCallEnded);
+      socket.off('incoming_call', handleIncomingCall);
+      socket.off('call_rejected', handleCallRejected);
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (endedTimeoutRef.current) clearTimeout(endedTimeoutRef.current);
     };
-  }, [id, getToken]);
+  }, [socket, id, router]);
 
   // Duration timer
   useEffect(() => {

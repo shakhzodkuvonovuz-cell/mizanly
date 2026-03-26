@@ -21,7 +21,7 @@ import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/clerk-expo';
 import { format, isToday, isYesterday, isSameDay, differenceInMinutes, formatDistanceToNowStrict } from 'date-fns';
 import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Avatar } from '@/components/ui/Avatar';
@@ -37,11 +37,11 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation, fontSizeExt } from '@/theme';
-import { messagesApi, uploadApi, aiApi, SOCKET_URL } from '@/services/api';
+import { messagesApi, uploadApi, aiApi } from '@/services/api';
 import { encryptionService } from '@/services/encryption';
 import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
-import { io, Socket } from 'socket.io-client';
+import { useSocket } from '@/providers/SocketProvider';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { RichText } from '@/components/ui/RichText';
@@ -726,7 +726,6 @@ function PendingMessageRow({ pending }: { pending: PendingMessage }) {
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { getToken } = useAuth();
   const { user } = useUser();
   const queryClient = useQueryClient();
   const isOffline = useStore((s) => s.isOffline);
@@ -734,7 +733,9 @@ export default function ConversationScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const flatListRef = useRef<FlatList>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const { socket, isConnected: socketConnected } = useSocket();
+  const socketRef = useRef(socket);
+  useEffect(() => { socketRef.current = socket; }, [socket]);
   const inputRef = useRef<TextInput>(null);
   const newMessageIdsRef = useRef(new Set<string>());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -940,109 +941,108 @@ export default function ConversationScreen() {
     : combinedMessages;
   // We'll need to adjust buildMessageList to handle pending vs real messages
 
+  // Register event listeners on the shared socket for this conversation
   useEffect(() => {
-    let mounted = true;
-    const connect = async () => {
-      const token = await getToken();
-      if (!token || !mounted) return;
-      const socket = io(SOCKET_URL, {
-        auth: { token },
-        transports: ['websocket'],
-        reconnection: true,
-        reconnectionAttempts: 10,
-        reconnectionDelay: 1000,
-      });
-      socket.on('connect_error', async () => {
-        if (!mounted) return;
-        const freshToken = await getToken({ skipCache: true });
-        if (freshToken && socket) {
-          socket.auth = { token: freshToken };
-        }
-      });
-      socket.on('connect', () => {
-        socket.emit('join_conversation', { conversationId: id });
-        // Refetch messages to catch any missed during disconnection
-        queryClient.invalidateQueries({ queryKey: ['messages', id] });
-        // Retry pending messages on reconnect
-        const pending = pendingMessagesRef.current.filter(p => p.status === 'pending');
-        pending.forEach(pending => {
-          socket.emit('send_message', {
-            conversationId: id,
-            content: pending.content,
-            replyToId: pending.replyToId,
-            messageType: 'TEXT',
-            clientId: pending.id,
-          });
+    if (!socket) return;
+
+    const handleConnect = () => {
+      socket.emit('join_conversation', { conversationId: id });
+      // Refetch messages to catch any missed during disconnection
+      queryClient.invalidateQueries({ queryKey: ['messages', id] });
+      // Retry pending messages on reconnect
+      const pending = pendingMessagesRef.current.filter(p => p.status === 'pending');
+      pending.forEach(p => {
+        socket.emit('send_message', {
+          conversationId: id,
+          content: p.content,
+          replyToId: p.replyToId,
+          messageType: 'TEXT',
+          clientId: p.id,
         });
       });
-      socket.on('new_message', (msg: Message & { clientId?: string }) => {
-        // Note: LayoutAnimation removed to avoid conflicts with react-native-reanimated
-        newMessageIdsRef.current.add(msg.id);
-        // Remove any pending message that matches this incoming message
-        const pending = pendingMessagesRef.current;
-        const matchedIndex = pending.findIndex(p =>
-          p.id === msg.clientId ||
-          (p.content === msg.content && Date.now() - new Date(p.createdAt).getTime() < 30000)
-        );
-        if (matchedIndex >= 0) {
-          setPendingMessages(prev => prev.filter((_, i) => i !== matchedIndex));
-        }
-        queryClient.setQueryData<{ pages: { data: Message[]; meta: { cursor: string | null; hasMore: boolean } }[]; pageParams: (string | undefined)[] }>(['messages', id], (old) => {
-          if (!old) return old;
-          const pages = [...old.pages];
-          const lastPage = { ...pages[pages.length - 1] };
-          lastPage.data = [...lastPage.data, msg];
-          pages[pages.length - 1] = lastPage;
-          return { ...old, pages };
-        });
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-        // Remove from new message set after animation completes
-        setTimeout(() => {
-          newMessageIdsRef.current.delete(msg.id);
-        }, 500);
-        // Emit delivery receipt so the sender gets confirmation
-        if (msg.senderId !== user?.id) {
-          socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
-        }
-      });
-      socket.on('delivery_receipt', ({ messageId, deliveredAt, deliveredTo }: { messageId: string; deliveredAt: string; deliveredTo: string }) => {
-        setDeliveredMessages(prev => {
-          const next = new Set(prev);
-          next.add(messageId);
-          return next;
-        });
-      });
-      socket.on('user_typing', ({ userId, isTyping: typing }: { userId: string; isTyping: boolean }) => {
-        if (userId !== user?.id) {
-          setOtherTyping(typing);
-          // Auto-clear typing indicator after 5 seconds in case isTyping:false is never sent
-          if (typing) {
-            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-            typingTimeoutRef.current = setTimeout(() => setOtherTyping(false), 5000);
-          } else if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-            typingTimeoutRef.current = null;
-          }
-        }
-      });
-      // Listen for read receipts — refetch conversation to update readByMembers timestamps
-      socket.on('messages_read', ({ userId: readerId }: { userId: string }) => {
-        if (readerId !== user?.id) {
-          queryClient.invalidateQueries({ queryKey: ['conversation', id] });
-        }
-      });
-      socketRef.current = socket;
     };
-    connect();
-    return () => {
-      mounted = false;
-      if (socketRef.current) {
-        socketRef.current.emit('leave_conversation', { conversationId: id });
-        socketRef.current.disconnect();
-        socketRef.current = null;
+
+    const handleNewMessage = (msg: Message & { clientId?: string }) => {
+      // Note: LayoutAnimation removed to avoid conflicts with react-native-reanimated
+      newMessageIdsRef.current.add(msg.id);
+      // Remove any pending message that matches this incoming message
+      const pending = pendingMessagesRef.current;
+      const matchedIndex = pending.findIndex(p =>
+        p.id === msg.clientId ||
+        (p.content === msg.content && Date.now() - new Date(p.createdAt).getTime() < 30000)
+      );
+      if (matchedIndex >= 0) {
+        setPendingMessages(prev => prev.filter((_, i) => i !== matchedIndex));
+      }
+      queryClient.setQueryData<{ pages: { data: Message[]; meta: { cursor: string | null; hasMore: boolean } }[]; pageParams: (string | undefined)[] }>(['messages', id], (old) => {
+        if (!old) return old;
+        const pages = [...old.pages];
+        const lastPage = { ...pages[pages.length - 1] };
+        lastPage.data = [...lastPage.data, msg];
+        pages[pages.length - 1] = lastPage;
+        return { ...old, pages };
+      });
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      // Remove from new message set after animation completes
+      setTimeout(() => {
+        newMessageIdsRef.current.delete(msg.id);
+      }, 500);
+      // Emit delivery receipt so the sender gets confirmation
+      if (msg.sender?.id !== user?.id) {
+        socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
       }
     };
-  }, [id, getToken, user?.id, queryClient]);
+
+    const handleDeliveryReceipt = ({ messageId }: { messageId: string; deliveredAt: string; deliveredTo: string }) => {
+      setDeliveredMessages(prev => {
+        const next = new Set(prev);
+        next.add(messageId);
+        return next;
+      });
+    };
+
+    const handleUserTyping = ({ userId, isTyping: typing }: { userId: string; isTyping: boolean }) => {
+      if (userId !== user?.id) {
+        setOtherTyping(typing);
+        // Auto-clear typing indicator after 5 seconds in case isTyping:false is never sent
+        if (typing) {
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setOtherTyping(false), 5000);
+        } else if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
+      }
+    };
+
+    // Listen for read receipts — refetch conversation to update readByMembers timestamps
+    const handleMessagesRead = ({ userId: readerId }: { userId: string }) => {
+      if (readerId !== user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['conversation', id] });
+      }
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('new_message', handleNewMessage);
+    socket.on('delivery_receipt', handleDeliveryReceipt);
+    socket.on('user_typing', handleUserTyping);
+    socket.on('messages_read', handleMessagesRead);
+
+    // If already connected when this effect runs, join the room
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    return () => {
+      // Leave conversation room on unmount
+      socket.emit('leave_conversation', { conversationId: id });
+      socket.off('connect', handleConnect);
+      socket.off('new_message', handleNewMessage);
+      socket.off('delivery_receipt', handleDeliveryReceipt);
+      socket.off('user_typing', handleUserTyping);
+      socket.off('messages_read', handleMessagesRead);
+    };
+  }, [socket, id, user?.id, queryClient]);
 
   useEffect(() => {
     messagesApi.markRead(id)

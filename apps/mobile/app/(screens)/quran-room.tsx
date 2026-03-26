@@ -8,8 +8,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth, useUser } from '@clerk/clerk-expo';
-import { io, Socket } from 'socket.io-client';
+import { useUser } from '@clerk/clerk-expo';
+import { useSocket } from '@/providers/SocketProvider';
 import { Audio } from 'expo-av';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -26,12 +26,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { islamicApi } from '@/services/islamicApi';
-import { SOCKET_URL } from '@/services/api';
+// Socket connection now handled by SocketProvider
 import type { QuranRoomState } from '@/types/islamic';
 import { navigate } from '@/utils/navigation';
 import type { QuranVerse } from '@/types/islamic';
-
-// SOCKET_URL imported from @/services/api
 
 interface VerseChangeEvent {
   surahNumber: number;
@@ -72,14 +70,12 @@ export default function QuranRoomScreen() {
   const { t } = useTranslation();
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const router = useRouter();
-  const { getToken } = useAuth();
   const { user } = useUser();
   const haptic = useContextualHaptic();
 
-  const socketRef = useRef<Socket | null>(null);
-  const getTokenRef = useRef(getToken);
-  getTokenRef.current = getToken;
-  const [isConnected, setIsConnected] = useState(false);
+  const { socket, isConnected } = useSocket();
+  const socketRef = useRef(socket);
+  useEffect(() => { socketRef.current = socket; }, [socket]);
   const [roomState, setRoomState] = useState<QuranRoomState | null>(null);
   const [verseText, setVerseText] = useState<QuranVerse | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
@@ -142,88 +138,57 @@ export default function QuranRoomScreen() {
     }
   }, [roomState?.currentSurah, roomState?.currentVerse]);
 
-  // Socket connection
+  // Register Quran room event listeners on the shared socket
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !socket) return;
 
-    let mounted = true;
-
-    const connect = async () => {
-      try {
-        const token = await getTokenRef.current();
-        if (!token || !mounted) return;
-
-        const socket = io(SOCKET_URL, {
-          auth: { token },
-          transports: ['websocket'],
-          reconnection: true,
-          reconnectionAttempts: 10,
-          reconnectionDelay: 1000,
-        });
-
-        socket.on('connect_error', async () => {
-          if (!mounted) return;
-          const freshToken = await getTokenRef.current();
-          if (freshToken && socket) {
-            socket.auth = { token: freshToken };
-          }
-        });
-
-        socket.on('connect', () => {
-          if (!mounted) return;
-          setIsConnected(true);
-          socket.emit('join_quran_room', { roomId });
-        });
-
-        socket.on('disconnect', () => {
-          if (!mounted) return;
-          setIsConnected(false);
-        });
-
-        socket.on('quran_room_update', (data: QuranRoomState & { roomId: string }) => {
-          if (!mounted) return;
-          setRoomState({
-            hostId: data.hostId,
-            currentSurah: data.currentSurah,
-            currentVerse: data.currentVerse,
-            reciterId: data.reciterId,
-            participantCount: data.participantCount,
-          });
-        });
-
-        socket.on('quran_verse_changed', (data: VerseChangeEvent) => {
-          if (!mounted) return;
-          setRoomState(prev =>
-            prev
-              ? { ...prev, currentSurah: data.surahNumber, currentVerse: data.verseNumber }
-              : prev,
-          );
-        });
-
-        socket.on('quran_reciter_updated', (data: ReciterUpdateEvent) => {
-          if (!mounted) return;
-          setRoomState(prev =>
-            prev ? { ...prev, reciterId: data.reciterId } : prev,
-          );
-        });
-
-        socketRef.current = socket;
-      } catch {
-        if (mounted) setError(t('common.error'));
-      }
+    const handleConnect = () => {
+      socket.emit('join_quran_room', { roomId });
     };
 
-    connect();
+    const handleRoomUpdate = (data: QuranRoomState & { roomId: string }) => {
+      setRoomState({
+        hostId: data.hostId,
+        currentSurah: data.currentSurah,
+        currentVerse: data.currentVerse,
+        reciterId: data.reciterId,
+        participantCount: data.participantCount,
+      });
+    };
+
+    const handleVerseChanged = (data: VerseChangeEvent) => {
+      setRoomState(prev =>
+        prev
+          ? { ...prev, currentSurah: data.surahNumber, currentVerse: data.verseNumber }
+          : prev,
+      );
+    };
+
+    const handleReciterUpdated = (data: ReciterUpdateEvent) => {
+      setRoomState(prev =>
+        prev ? { ...prev, reciterId: data.reciterId } : prev,
+      );
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('quran_room_update', handleRoomUpdate);
+    socket.on('quran_verse_changed', handleVerseChanged);
+    socket.on('quran_reciter_updated', handleReciterUpdated);
+
+    // If already connected when this effect runs, join the room
+    if (socket.connected) {
+      handleConnect();
+    }
 
     return () => {
-      mounted = false;
-      if (socketRef.current) {
-        socketRef.current.emit('leave_quran_room', { roomId });
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      // Leave room on unmount
+      socket.emit('leave_quran_room', { roomId });
+      socket.off('connect', handleConnect);
+      socket.off('quran_room_update', handleRoomUpdate);
+      socket.off('quran_verse_changed', handleVerseChanged);
+      socket.off('quran_reciter_updated', handleReciterUpdated);
     };
-  }, [roomId]);
+  }, [roomId, socket]);
 
   // Fetch verse when it changes
   useEffect(() => {
