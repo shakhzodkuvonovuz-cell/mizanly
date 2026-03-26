@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import * as qrcode from 'qrcode';
-import { createHash, createHmac, randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+import { createHash, createHmac, randomBytes, createCipheriv, createDecipheriv, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
 
 // ── Native TOTP implementation (replaces otplib) ──
@@ -132,7 +132,10 @@ export function tryDecryptSecret(stored: string, encryptionKey: string | undefin
     const key = Buffer.from(encryptionKey, 'hex');
     const decipher = createDecipheriv('aes-256-gcm', key, iv);
     decipher.setAuthTag(authTag);
-    return decipher.update(encrypted) + decipher.final('utf8');
+    // Explicit UTF-8 encoding on both calls — decipher.update() without encoding
+    // returns a Buffer, and Buffer + string concatenation relies on implicit toString()
+    // which is fragile. Using explicit encoding on update() ensures deterministic string output.
+    return decipher.update(encrypted, undefined, 'utf8') + decipher.final('utf8');
   } catch {
     // Wrong key or corrupt ciphertext — GCM auth tag mismatch
     return null;
@@ -463,16 +466,20 @@ export class TwoFactorService {
     let totalProcessed = 0;
     let totalMigrated = 0;
     let totalErrors = 0;
-    let skip = 0;
+    let lastId: string | undefined;
 
     this.logger.log('TOTP key rotation cron started');
 
+    // Use cursor-based pagination (not skip) to handle table modifications during rotation.
+    // Skip-based pagination can miss or double-process records if rows are inserted/deleted
+    // between batches. Cursor-based is safe because IDs are immutable and ordered.
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const records = await this.prisma.twoFactorSecret.findMany({
         take: batchSize,
-        skip,
+        ...(lastId ? { skip: 1, cursor: { id: lastId } } : {}),
         select: { id: true, userId: true, secret: true },
+        orderBy: { id: 'asc' },
       });
 
       if (records.length === 0) break;
@@ -481,10 +488,14 @@ export class TwoFactorService {
         totalProcessed++;
 
         try {
-          // 1. Check if already encrypted with current key
+          // 1. Check if already encrypted with current key.
+          // AES-256-GCM guarantees that a ciphertext encrypted with key A CANNOT be
+          // decrypted with key B — the auth tag mismatch causes tryDecryptSecret to
+          // return null. So if tryDecryptSecret succeeds with the current key AND the
+          // stored value starts with 'enc:', this secret is definitively already
+          // encrypted with the current key. Safe to skip.
           const currentResult = tryDecryptSecret(record.secret, this.encryptionKey);
           if (currentResult !== null && record.secret.startsWith('enc:')) {
-            // Already encrypted with current key — skip
             continue;
           }
 
@@ -560,7 +571,7 @@ export class TwoFactorService {
         }
       }
 
-      skip += records.length;
+      lastId = records[records.length - 1].id;
     }
 
     this.logger.log(
@@ -611,12 +622,17 @@ export class TwoFactorService {
    */
   private verifyBackupCode(backupCode: string, storedHash: string): boolean {
     if (storedHash.includes(':')) {
-      // New format: salt:hmac
+      // New format: salt:hmac — use timing-safe comparison to prevent timing attacks
       const [salt, hash] = storedHash.split(':');
-      const hmac = createHmac('sha256', salt).update(backupCode).digest('hex');
-      return hmac === hash;
+      const computed = createHmac('sha256', salt).update(backupCode).digest();
+      const stored = Buffer.from(hash, 'hex');
+      if (computed.length !== stored.length) return false;
+      return timingSafeEqual(computed, stored);
     }
-    // Legacy format: plain SHA-256 (for backward compatibility during migration)
-    return createHash('sha256').update(backupCode).digest('hex') === storedHash;
+    // Legacy format: plain SHA-256 — timing-safe comparison
+    const computed = createHash('sha256').update(backupCode).digest();
+    const stored = Buffer.from(storedHash, 'hex');
+    if (computed.length !== stored.length) return false;
+    return timingSafeEqual(computed, stored);
   }
 }

@@ -391,10 +391,10 @@ describe('TwoFactorService — key rotation cron', () => {
     await service.rotateEncryptionKeys();
 
     expect(mockPrisma.twoFactorSecret.findMany).toHaveBeenCalledTimes(3);
-    // Verify batch sizes
-    expect(mockPrisma.twoFactorSecret.findMany).toHaveBeenNthCalledWith(1, expect.objectContaining({ take: 50, skip: 0 }));
-    expect(mockPrisma.twoFactorSecret.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ take: 50, skip: 50 }));
-    expect(mockPrisma.twoFactorSecret.findMany).toHaveBeenNthCalledWith(3, expect.objectContaining({ take: 50, skip: 60 }));
+    // Verify cursor-based pagination: first call has no cursor, subsequent calls use last ID
+    expect(mockPrisma.twoFactorSecret.findMany).toHaveBeenNthCalledWith(1, expect.objectContaining({ take: 50, orderBy: { id: 'asc' } }));
+    expect(mockPrisma.twoFactorSecret.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ take: 50, cursor: { id: 'rec-49' }, skip: 1 }));
+    expect(mockPrisma.twoFactorSecret.findMany).toHaveBeenNthCalledWith(3, expect.objectContaining({ take: 50, cursor: { id: 'rec-59' }, skip: 1 }));
   });
 
   it('should log "rotation complete" when all secrets are migrated and rotation mode is active', async () => {
