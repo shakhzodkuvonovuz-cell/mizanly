@@ -5,6 +5,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import * as qrcode from 'qrcode';
 import { createHash, createHmac, randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
@@ -86,7 +88,7 @@ function buildOtpauthUri(issuer: string, label: string, secret: string): string 
 
 // ── AES-256-GCM encryption for TOTP secrets at rest (Finding 3) ──
 
-function encryptSecret(plaintext: string, encryptionKey: string | undefined): string {
+export function encryptSecret(plaintext: string, encryptionKey: string | undefined): string {
   if (!encryptionKey) {
     // If no encryption key configured, store as-is with prefix for identification
     return `plain:${plaintext}`;
@@ -100,7 +102,17 @@ function encryptSecret(plaintext: string, encryptionKey: string | undefined): st
   return `enc:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`;
 }
 
-function decryptSecret(stored: string, encryptionKey: string | undefined): string {
+/**
+ * Attempt to decrypt a stored TOTP secret with a single key.
+ * Returns the plaintext on success, or null if:
+ *   - the key is undefined
+ *   - the stored value is not an `enc:` ciphertext
+ *   - decryption fails (wrong key / corrupt data)
+ *
+ * For `plain:` or legacy unformatted values, returns the plaintext directly
+ * regardless of which key is supplied (they are not encrypted).
+ */
+export function tryDecryptSecret(stored: string, encryptionKey: string | undefined): string | null {
   if (stored.startsWith('plain:')) {
     return stored.slice(6);
   }
@@ -109,33 +121,98 @@ function decryptSecret(stored: string, encryptionKey: string | undefined): strin
     return stored;
   }
   if (!encryptionKey) {
-    throw new BadRequestException('TOTP encryption key not configured — cannot decrypt');
+    return null;
   }
-  const parts = stored.split(':');
-  // enc:iv:authTag:ciphertext
-  const iv = Buffer.from(parts[1], 'hex');
-  const authTag = Buffer.from(parts[2], 'hex');
-  const encrypted = Buffer.from(parts[3], 'hex');
-  const key = Buffer.from(encryptionKey, 'hex');
-  const decipher = createDecipheriv('aes-256-gcm', key, iv);
-  decipher.setAuthTag(authTag);
-  return decipher.update(encrypted) + decipher.final('utf8');
+  try {
+    const parts = stored.split(':');
+    // enc:iv:authTag:ciphertext
+    const iv = Buffer.from(parts[1], 'hex');
+    const authTag = Buffer.from(parts[2], 'hex');
+    const encrypted = Buffer.from(parts[3], 'hex');
+    const key = Buffer.from(encryptionKey, 'hex');
+    const decipher = createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    return decipher.update(encrypted) + decipher.final('utf8');
+  } catch {
+    // Wrong key or corrupt ciphertext — GCM auth tag mismatch
+    return null;
+  }
 }
 
+/**
+ * Decrypt a stored TOTP secret, trying the current key first, then falling
+ * back to the old key (for key-rotation transitions).
+ * Throws if neither key can decrypt the value.
+ */
+export function decryptSecretWithFallback(
+  stored: string,
+  currentKey: string | undefined,
+  oldKey: string | undefined,
+): string {
+  const result = tryDecryptSecret(stored, currentKey);
+  if (result !== null) return result;
+
+  if (oldKey) {
+    const fallback = tryDecryptSecret(stored, oldKey);
+    if (fallback !== null) return fallback;
+  }
+
+  throw new BadRequestException(
+    'TOTP secret decryption failed — neither current nor old encryption key can decrypt the stored value',
+  );
+}
+
+/**
+ * TOTP Encryption Key Rotation Process
+ * =====================================
+ *
+ * The TOTP secrets are encrypted at rest with AES-256-GCM using the
+ * `TOTP_ENCRYPTION_KEY` environment variable (64-char hex = 32 bytes).
+ *
+ * To rotate the encryption key without locking out users:
+ *
+ *   1. Generate a new key:
+ *      node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+ *
+ *   2. Set `TOTP_ENCRYPTION_KEY_OLD` to the CURRENT value of `TOTP_ENCRYPTION_KEY`.
+ *
+ *   3. Set `TOTP_ENCRYPTION_KEY` to the newly generated key.
+ *
+ *   4. Deploy. From this point:
+ *      - All NEW secrets are encrypted with the new key.
+ *      - Decryption tries the new key first; if it fails, falls back to the old key.
+ *      - The daily cron (`rotateEncryptionKeys`, 5:30 AM) re-encrypts old secrets
+ *        with the new key in batches of 50.
+ *
+ *   5. Monitor logs for "TOTP key rotation complete" message.
+ *
+ *   6. Once all secrets are migrated, remove `TOTP_ENCRYPTION_KEY_OLD` from env.
+ *
+ * The cron also encrypts any `plain:` prefixed secrets (stored when no key was
+ * configured) if `TOTP_ENCRYPTION_KEY` is now set.
+ */
 @Injectable()
 export class TwoFactorService {
   private readonly logger = new Logger(TwoFactorService.name);
   private readonly encryptionKey: string | undefined;
+  private readonly oldEncryptionKey: string | undefined;
 
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
   ) {
     this.encryptionKey = this.config.get<string>('TOTP_ENCRYPTION_KEY');
+    this.oldEncryptionKey = this.config.get<string>('TOTP_ENCRYPTION_KEY_OLD');
     if (!this.encryptionKey) {
       this.logger.warn(
         'TOTP_ENCRYPTION_KEY not set — TOTP secrets will be stored unencrypted. ' +
         'Generate a 32-byte hex key: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      );
+    }
+    if (this.oldEncryptionKey) {
+      this.logger.log(
+        'TOTP_ENCRYPTION_KEY_OLD is set — key rotation mode active. ' +
+        'The daily cron will re-encrypt old secrets with the new key.',
       );
     }
   }
@@ -215,7 +292,7 @@ export class TwoFactorService {
     }
 
     // Validate the TOTP token (decrypt stored secret first)
-    const plaintextSecret = decryptSecret(secretRecord.secret, this.encryptionKey);
+    const plaintextSecret = decryptSecretWithFallback(secretRecord.secret, this.encryptionKey, this.oldEncryptionKey);
     const isValid = verifyTotp(code, plaintextSecret);
     if (!isValid) {
       return false;
@@ -254,7 +331,7 @@ export class TwoFactorService {
       return true;
     }
 
-    const plaintextSecret = decryptSecret(secretRecord.secret, this.encryptionKey);
+    const plaintextSecret = decryptSecretWithFallback(secretRecord.secret, this.encryptionKey, this.oldEncryptionKey);
     return verifyTotp(code, plaintextSecret);
   }
 
@@ -269,7 +346,7 @@ export class TwoFactorService {
     if (!secretRecord || !secretRecord.isEnabled) {
       return false; // 2FA not enabled — cannot verify
     }
-    const plaintextSecret = decryptSecret(secretRecord.secret, this.encryptionKey);
+    const plaintextSecret = decryptSecretWithFallback(secretRecord.secret, this.encryptionKey, this.oldEncryptionKey);
     return verifyTotp(code, plaintextSecret);
   }
 
@@ -283,7 +360,7 @@ export class TwoFactorService {
     if (!secretRecord) {
       throw new BadRequestException('Two-factor authentication not set up');
     }
-    const plaintextSecret = decryptSecret(secretRecord.secret, this.encryptionKey);
+    const plaintextSecret = decryptSecretWithFallback(secretRecord.secret, this.encryptionKey, this.oldEncryptionKey);
     return verifyTotp(code, plaintextSecret);
   }
 
@@ -357,6 +434,149 @@ export class TwoFactorService {
     });
 
     return true;
+  }
+
+  /**
+   * Daily cron: re-encrypts TOTP secrets that are still encrypted with the old key
+   * (or stored as `plain:` prefixed) using the current encryption key.
+   *
+   * Only runs when both TOTP_ENCRYPTION_KEY and TOTP_ENCRYPTION_KEY_OLD are set,
+   * indicating a key rotation is in progress. Also encrypts `plain:` secrets when
+   * TOTP_ENCRYPTION_KEY is set (regardless of old key).
+   *
+   * Processes in batches of 50 with per-record error isolation.
+   * Idempotent — re-running has no effect on already-migrated secrets.
+   */
+  @Cron('0 30 5 * * *')
+  async rotateEncryptionKeys(): Promise<void> {
+    const hasCurrentKey = !!this.encryptionKey;
+    const hasOldKey = !!this.oldEncryptionKey;
+
+    // Nothing to do if no current key is configured
+    if (!hasCurrentKey) return;
+
+    // Only run rotation if old key is present (rotation in progress)
+    // OR if we need to encrypt plain: secrets (current key present but no old key)
+    const rotationMode = hasCurrentKey && hasOldKey;
+
+    const batchSize = 50;
+    let totalProcessed = 0;
+    let totalMigrated = 0;
+    let totalErrors = 0;
+    let skip = 0;
+
+    this.logger.log('TOTP key rotation cron started');
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const records = await this.prisma.twoFactorSecret.findMany({
+        take: batchSize,
+        skip,
+        select: { id: true, userId: true, secret: true },
+      });
+
+      if (records.length === 0) break;
+
+      for (const record of records) {
+        totalProcessed++;
+
+        try {
+          // 1. Check if already encrypted with current key
+          const currentResult = tryDecryptSecret(record.secret, this.encryptionKey);
+          if (currentResult !== null && record.secret.startsWith('enc:')) {
+            // Already encrypted with current key — skip
+            continue;
+          }
+
+          // 2. Handle plain: prefixed secrets (needs encryption)
+          if (record.secret.startsWith('plain:')) {
+            const plaintext = record.secret.slice(6);
+            const reEncrypted = encryptSecret(plaintext, this.encryptionKey);
+            await this.prisma.twoFactorSecret.update({
+              where: { id: record.id },
+              data: { secret: reEncrypted },
+            });
+            totalMigrated++;
+            Sentry.captureMessage('TOTP secret migrated (plain → encrypted)', {
+              level: 'info',
+              extra: { userId: record.userId, type: 'plain_to_encrypted' },
+            });
+            continue;
+          }
+
+          // 3. Handle legacy unformatted secrets (neither enc: nor plain:)
+          if (!record.secret.startsWith('enc:')) {
+            const reEncrypted = encryptSecret(record.secret, this.encryptionKey);
+            await this.prisma.twoFactorSecret.update({
+              where: { id: record.id },
+              data: { secret: reEncrypted },
+            });
+            totalMigrated++;
+            Sentry.captureMessage('TOTP secret migrated (legacy → encrypted)', {
+              level: 'info',
+              extra: { userId: record.userId, type: 'legacy_to_encrypted' },
+            });
+            continue;
+          }
+
+          // 4. enc: prefixed but current key failed — try old key (rotation scenario)
+          if (rotationMode) {
+            const oldResult = tryDecryptSecret(record.secret, this.oldEncryptionKey);
+            if (oldResult !== null) {
+              // Re-encrypt with current key
+              const reEncrypted = encryptSecret(oldResult, this.encryptionKey);
+              await this.prisma.twoFactorSecret.update({
+                where: { id: record.id },
+                data: { secret: reEncrypted },
+              });
+              totalMigrated++;
+              Sentry.captureMessage('TOTP secret rotated (old key → new key)', {
+                level: 'info',
+                extra: { userId: record.userId, type: 'key_rotation' },
+              });
+              continue;
+            }
+          }
+
+          // 5. Neither key works on an enc: secret — data corruption or unknown key
+          this.logger.error(
+            `TOTP key rotation: cannot decrypt secret for user ${record.userId} — ` +
+            'neither current nor old key works. Manual investigation required.',
+          );
+          Sentry.captureMessage('TOTP secret undecryptable during rotation', {
+            level: 'error',
+            extra: { userId: record.userId, secretId: record.id },
+          });
+          totalErrors++;
+        } catch (error) {
+          totalErrors++;
+          this.logger.error(
+            `TOTP key rotation: error processing record ${record.id}: ${error}`,
+          );
+          Sentry.captureException(error, {
+            extra: { userId: record.userId, secretId: record.id, phase: 'totp_key_rotation' },
+          });
+          // Continue to next record — error isolation
+        }
+      }
+
+      skip += records.length;
+    }
+
+    this.logger.log(
+      `TOTP key rotation cron complete — processed: ${totalProcessed}, migrated: ${totalMigrated}, errors: ${totalErrors}`,
+    );
+
+    if (totalMigrated === 0 && totalErrors === 0 && rotationMode) {
+      this.logger.log(
+        'TOTP key rotation complete — all secrets are encrypted with the current key. ' +
+        'Safe to remove TOTP_ENCRYPTION_KEY_OLD from environment variables.',
+      );
+      Sentry.captureMessage('TOTP key rotation complete — safe to remove TOTP_ENCRYPTION_KEY_OLD', {
+        level: 'info',
+        extra: { totalProcessed },
+      });
+    }
   }
 
   /**
