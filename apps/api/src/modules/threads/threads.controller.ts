@@ -91,8 +91,11 @@ export class ThreadsController {
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get thread by ID' })
-  getById(@Param('id') id: string, @CurrentUser('id') viewerId?: string) {
-    return this.threadsService.getById(id, viewerId);
+  async getById(@Param('id') id: string, @CurrentUser('id') viewerId?: string) {
+    const thread = await this.threadsService.getById(id, viewerId);
+    // Fire-and-forget view count increment
+    this.threadsService.recordView(id);
+    return thread;
   }
 
   @Delete(':id')

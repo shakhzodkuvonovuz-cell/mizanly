@@ -110,6 +110,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
       },
     }),
     ConfigModule.forRoot({ isGlobal: true }),
+    // TODO: Switch to @nestjs/throttler-storage-redis for multi-instance rate limiting
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     ScheduleModule.forRoot(),
     PrismaModule, RedisModule, AsyncJobsModule, QueueModule, FeatureFlagsModule, AnalyticsModule, PlatformServicesModule,

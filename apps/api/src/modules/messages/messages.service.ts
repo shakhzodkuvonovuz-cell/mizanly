@@ -203,12 +203,14 @@ export class MessagesService {
       }
     }
 
-    // DM restriction: prevent non-followers from messaging private accounts (1:1 only)
-    const convoForDmCheck = await this.prisma.conversation.findUnique({
+    // Single query for DM check + slow mode + disappearing (merged from two separate findUnique calls)
+    const convo = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
-      select: { isGroup: true },
+      select: { isGroup: true, slowModeSeconds: true, disappearingDuration: true },
     });
-    if (convoForDmCheck && !convoForDmCheck.isGroup) {
+
+    // DM restriction: prevent non-followers from messaging private accounts (1:1 only)
+    if (convo && !convo.isGroup) {
       const otherMemberId = otherUserIds.length === 1 ? otherUserIds[0] : undefined;
       if (otherMemberId) {
         const isFollowing = await this.prisma.follow.findUnique({
@@ -243,11 +245,7 @@ export class MessagesService {
       throw new BadRequestException('Message must have content or media');
     }
 
-    // Fetch conversation settings for slow mode and disappearing messages
-    const convo = await this.prisma.conversation.findUnique({
-      where: { id: conversationId },
-      select: { slowModeSeconds: true, disappearingDuration: true },
-    });
+    // Slow mode check (using convo from merged query above)
     if (convo?.slowModeSeconds && convo.slowModeSeconds > 0) {
       const lastMsg = await this.prisma.message.findFirst({
         where: { conversationId, senderId },

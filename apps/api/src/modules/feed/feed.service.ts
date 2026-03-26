@@ -92,7 +92,7 @@ export class FeedService {
 
   async dismiss(userId: string, contentId: string, contentType: string) {
     // Finding #300: Track negative signal for algorithm adjustment
-    // NOTE: negative_signals stored but never consumed by feed algorithm. Consider removing.
+    // DEAD DATA: These signals are stored but never consumed by any feed algorithm. Consider removing.
     await this.redis.lpush(`negative_signals:${userId}`, JSON.stringify({
       contentId, contentType, action: 'dismiss', timestamp: Date.now(),
     }));

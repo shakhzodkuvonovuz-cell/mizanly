@@ -123,8 +123,9 @@ describe('PostsService — concurrency (Task 86)', () => {
       service.react('post-1', 'user-1'),
     ]);
 
-    expect(deleteResult.status).toBeDefined();
-    expect(likeResult.status).toBeDefined();
+    // Both operations should settle (fulfilled or rejected) without crashing
+    expect(['fulfilled', 'rejected']).toContain(deleteResult.status);
+    expect(['fulfilled', 'rejected']).toContain(likeResult.status);
   });
 
   it('should handle rapid like → unlike → like producing consistent state', async () => {
@@ -136,12 +137,12 @@ describe('PostsService — concurrency (Task 86)', () => {
     prisma.$transaction.mockResolvedValue([{}, {}]);
 
     const r1 = await service.react('post-1', 'user-1');
-    expect(r1.reaction).toBeDefined();
+    expect(r1.reaction).toBeTruthy(); // Should return a reaction type string
 
     const r2 = await service.unreact('post-1', 'user-1');
     expect(r2.reaction).toBeNull();
 
     const r3 = await service.react('post-1', 'user-1');
-    expect(r3.reaction).toBeDefined();
+    expect(r3.reaction).toBeTruthy(); // Should return a reaction type string
   });
 });

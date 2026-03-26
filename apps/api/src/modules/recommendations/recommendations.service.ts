@@ -234,11 +234,9 @@ export class RecommendationsService {
     scored.sort((a, b) => b.finalScore - a.finalScore);
 
     // Stage 3: Diversity injection — no same-author back-to-back + hashtag cluster diversity
+    // Single query for author + hashtag data (merged from two separate queries)
     const topCandidateIds = scored.slice(0, limit * 3).map(s => s.contentId);
-    const [authorMap, hashtagMap] = await Promise.all([
-      this.getAuthorMap(topCandidateIds, contentType),
-      this.getHashtagMap(topCandidateIds, contentType),
-    ]);
+    const { authorMap, hashtagMap } = await this.getAuthorAndHashtagMaps(topCandidateIds, contentType);
 
     // Pass 1: Author dedup — no same author back-to-back
     const authorDeduped: ScoredCandidate[] = [];
@@ -341,40 +339,32 @@ export class RecommendationsService {
     return map;
   }
 
-  private async getAuthorMap(contentIds: string[], contentType: EmbeddingContentType): Promise<Map<string, string>> {
-    const map = new Map<string, string>();
-    if (contentIds.length === 0) return map;
+  /**
+   * Merged author + hashtag lookup — single DB query per content type instead of two separate queries.
+   * Both maps are needed for diversity injection (author dedup + hashtag cluster diversity).
+   */
+  private async getAuthorAndHashtagMaps(
+    contentIds: string[],
+    contentType: EmbeddingContentType,
+  ): Promise<{ authorMap: Map<string, string>; hashtagMap: Map<string, string[]> }> {
+    const authorMap = new Map<string, string>();
+    const hashtagMap = new Map<string, string[]>();
+    if (contentIds.length === 0) return { authorMap, hashtagMap };
+
+    const select = { id: true, userId: true, hashtags: true };
 
     if (contentType === EmbeddingContentType.POST) {
-      const items = await this.prisma.post.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => { if (i.userId) map.set(i.id, i.userId); });
+      const items = await this.prisma.post.findMany({ where: { id: { in: contentIds } }, select, take: 500 });
+      items.forEach(i => { if (i.userId) authorMap.set(i.id, i.userId); hashtagMap.set(i.id, i.hashtags); });
     } else if (contentType === EmbeddingContentType.REEL) {
-      const items = await this.prisma.reel.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => { if (i.userId) map.set(i.id, i.userId); });
+      const items = await this.prisma.reel.findMany({ where: { id: { in: contentIds } }, select, take: 500 });
+      items.forEach(i => { if (i.userId) authorMap.set(i.id, i.userId); hashtagMap.set(i.id, i.hashtags); });
     } else if (contentType === EmbeddingContentType.THREAD) {
-      const items = await this.prisma.thread.findMany({ where: { id: { in: contentIds } }, select: { id: true, userId: true }, take: 500 });
-      items.forEach(i => { if (i.userId) map.set(i.id, i.userId); });
+      const items = await this.prisma.thread.findMany({ where: { id: { in: contentIds } }, select, take: 500 });
+      items.forEach(i => { if (i.userId) authorMap.set(i.id, i.userId); hashtagMap.set(i.id, i.hashtags); });
     }
 
-    return map;
-  }
-
-  private async getHashtagMap(contentIds: string[], contentType: EmbeddingContentType): Promise<Map<string, string[]>> {
-    const map = new Map<string, string[]>();
-    if (contentIds.length === 0) return map;
-
-    if (contentType === EmbeddingContentType.POST) {
-      const items = await this.prisma.post.findMany({ where: { id: { in: contentIds } }, select: { id: true, hashtags: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.hashtags));
-    } else if (contentType === EmbeddingContentType.REEL) {
-      const items = await this.prisma.reel.findMany({ where: { id: { in: contentIds } }, select: { id: true, hashtags: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.hashtags));
-    } else if (contentType === EmbeddingContentType.THREAD) {
-      const items = await this.prisma.thread.findMany({ where: { id: { in: contentIds } }, select: { id: true, hashtags: true }, take: 500 });
-      items.forEach(i => map.set(i.id, i.hashtags));
-    }
-
-    return map;
+    return { authorMap, hashtagMap };
   }
 
   // ── Exploration helpers ──────────────────────────────────

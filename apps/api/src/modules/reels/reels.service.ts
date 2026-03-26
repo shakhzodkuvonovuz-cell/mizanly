@@ -1260,6 +1260,8 @@ export class ReelsService {
   }
 
   // Finding #376: Reel draft — save draft state without publishing
+  // NOTE: ReelStatus enum lacks a DRAFT value (only PROCESSING/READY/FAILED).
+  // Using PROCESSING as the draft marker until a schema migration adds DRAFT.
   async saveDraft(userId: string, dto: CreateReelDto) {
     const draft = await this.prisma.reel.create({
       data: {
@@ -1278,7 +1280,7 @@ export class ReelsService {
     return draft;
   }
 
-  // Finding #376: Get user's draft reels
+  // Finding #376: Get user's draft reels (uses PROCESSING as draft marker)
   async getDrafts(userId: string) {
     const drafts = await this.prisma.reel.findMany({
       where: { userId, status: ReelStatus.PROCESSING, isRemoved: false },

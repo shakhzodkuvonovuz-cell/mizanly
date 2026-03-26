@@ -12,6 +12,8 @@ import { Logger } from '@nestjs/common';
  */
 export class RedisIoAdapter extends IoAdapter {
   private adapterConstructor: ((...args: unknown[]) => unknown) | undefined;
+  private pubClient: Redis | null = null;
+  private subClient: Redis | null = null;
   private readonly logger = new Logger('RedisIoAdapter');
 
   async connectToRedis(): Promise<void> {
@@ -23,16 +25,28 @@ export class RedisIoAdapter extends IoAdapter {
 
     try {
       const { createAdapter } = await import('@socket.io/redis-adapter');
-      const pubClient = new Redis(redisUrl, { lazyConnect: true });
-      const subClient = pubClient.duplicate();
+      this.pubClient = new Redis(redisUrl, { lazyConnect: true });
+      this.subClient = this.pubClient.duplicate();
 
-      await Promise.all([pubClient.connect(), subClient.connect()]);
+      await Promise.all([this.pubClient.connect(), this.subClient.connect()]);
 
-      this.adapterConstructor = createAdapter(pubClient, subClient) as unknown as (...args: unknown[]) => unknown;
+      this.adapterConstructor = createAdapter(this.pubClient, this.subClient) as unknown as (...args: unknown[]) => unknown;
       this.logger.log('Socket.io Redis adapter connected — horizontal scaling enabled');
     } catch (error) {
       this.logger.error('Failed to connect Socket.io Redis adapter — falling back to in-memory');
     }
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.pubClient) {
+      this.pubClient.disconnect();
+      this.pubClient = null;
+    }
+    if (this.subClient) {
+      this.subClient.disconnect();
+      this.subClient = null;
+    }
+    this.logger.log('Socket.io Redis adapter disconnected');
   }
 
   createIOServer(port: number, options?: Record<string, unknown>) {

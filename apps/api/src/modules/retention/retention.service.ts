@@ -147,7 +147,7 @@ export class RetentionService {
   /**
    * Record session depth metrics (scroll depth, time, interactions).
    * Stored in Redis for real-time analytics.
-   * NOTE: session depth data is stored but never consumed by any analytics pipeline. Consider removing.
+   * DEAD DATA: These session depth metrics are stored but never consumed by any analytics pipeline. Consider removing.
    */
   async trackSessionDepth(
     userId: string,

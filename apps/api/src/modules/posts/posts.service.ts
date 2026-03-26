@@ -805,6 +805,17 @@ export class PostsService {
     return { ...post, userReaction, isSaved };
   }
 
+  /**
+   * Increment view count for a post (simple counter, no dedup — matches Instagram behavior).
+   * Called fire-and-forget from the controller after returning the post.
+   */
+  async recordView(postId: string): Promise<void> {
+    await this.prisma.post.update({
+      where: { id: postId },
+      data: { viewsCount: { increment: 1 } },
+    }).catch(err => this.logger.warn(`Failed to record view for post ${postId}`, err instanceof Error ? err.message : err));
+  }
+
   async update(postId: string, userId: string, data: Partial<CreatePostDto>) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');

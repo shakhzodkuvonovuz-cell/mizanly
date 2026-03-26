@@ -510,6 +510,17 @@ export class ThreadsService {
     return { ...thread, userReaction, isBookmarked };
   }
 
+  /**
+   * Increment view count for a thread (simple counter, no dedup — matches Instagram behavior).
+   * Called fire-and-forget from the controller after returning the thread.
+   */
+  async recordView(threadId: string): Promise<void> {
+    await this.prisma.thread.update({
+      where: { id: threadId },
+      data: { viewsCount: { increment: 1 } },
+    }).catch(err => this.logger.warn(`Failed to record view for thread ${threadId}`, err instanceof Error ? err.message : err));
+  }
+
   async updateThread(threadId: string, userId: string, content: string) {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread) throw new NotFoundException('Thread not found');

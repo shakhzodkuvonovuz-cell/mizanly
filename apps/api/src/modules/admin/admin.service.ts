@@ -3,7 +3,6 @@ import {
   Logger,
   ForbiddenException,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
@@ -20,7 +19,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
-    @Optional() private notificationsService: NotificationsService,
+    private notificationsService: NotificationsService,
     private publishWorkflow: PublishWorkflowService,
   ) {
     this.clerk = createClerkClient({
@@ -182,24 +181,13 @@ export class AdminService {
 
     // Finding 30 (Audit 13): Handle WARNING — notify the reported user
     if (actionTaken === 'WARNING' && report.reportedUserId) {
-      if (this.notificationsService) {
-        await this.notificationsService.create({
-          userId: report.reportedUserId,
-          actorId: null,
-          type: 'SYSTEM',
-          title: 'Content Warning',
-          body: `Your content was flagged. Repeated violations may result in account restrictions.`,
-        }).catch(err => this.logger.warn('Failed to send resolution notification', err instanceof Error ? err.message : err));
-      } else {
-        await this.prisma.notification.create({
-          data: {
-            userId: report.reportedUserId,
-            type: 'SYSTEM' as any,
-            title: 'Content Warning',
-            body: `Your content was flagged. Repeated violations may result in account restrictions.`,
-          },
-        }).catch(err => this.logger.warn('Failed to send resolution notification', err instanceof Error ? err.message : err));
-      }
+      await this.notificationsService.create({
+        userId: report.reportedUserId,
+        actorId: null,
+        type: 'SYSTEM',
+        title: 'Content Warning',
+        body: `Your content was flagged. Repeated violations may result in account restrictions.`,
+      }).catch(err => this.logger.warn('Failed to send resolution notification', err instanceof Error ? err.message : err));
     }
 
     // Create moderation log for audit trail (Finding 21, Audit 13)

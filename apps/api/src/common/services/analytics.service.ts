@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 
 /**
@@ -20,10 +20,11 @@ export interface AnalyticsEvent {
 }
 
 @Injectable()
-export class AnalyticsService {
+export class AnalyticsService implements OnModuleDestroy {
   private readonly logger = new Logger(AnalyticsService.name);
   private readonly EVENTS_KEY = 'analytics:events';
   private readonly COUNTERS_PREFIX = 'analytics:counter:';
+  private readonly MAX_BUFFER_SIZE = 10_000; // Cap to prevent unbounded memory growth if Redis is unavailable
   private buffer: AnalyticsEvent[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -36,6 +37,11 @@ export class AnalyticsService {
    * Track an analytics event (buffered, non-blocking).
    */
   track(event: string, userId?: string, properties?: Record<string, string | number | boolean | null>): void {
+    // Drop oldest events if buffer exceeds cap (prevents OOM if Redis is down)
+    if (this.buffer.length >= this.MAX_BUFFER_SIZE) {
+      this.buffer.splice(0, this.buffer.length - this.MAX_BUFFER_SIZE + 1);
+    }
+
     this.buffer.push({
       event,
       userId,

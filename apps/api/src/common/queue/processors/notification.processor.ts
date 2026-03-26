@@ -3,6 +3,7 @@ import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PushTriggerService } from '../../../modules/notifications/push-trigger.service';
 import { PushService } from '../../../modules/notifications/push.service';
+import { PrismaService } from '../../../config/prisma.service';
 import { QueueService } from '../queue.service';
 
 /**
@@ -21,6 +22,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
     private config: ConfigService,
     private pushTrigger: PushTriggerService,
     private pushService: PushService,
+    private prisma: PrismaService,
     @Inject(forwardRef(() => QueueService)) private queueService: QueueService,
   ) {}
 
@@ -83,6 +85,20 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
 
   private async processBulkPush(job: Job<{ userIds: string[]; title: string; body: string; pushData?: Record<string, string> }>): Promise<void> {
     const { userIds, title, body, pushData } = job.data;
+
+    // Persist notification records in DB before sending push (so they appear in notification feed)
+    if (userIds.length > 0) {
+      await this.prisma.notification.createMany({
+        data: userIds.map(userId => ({
+          userId,
+          type: 'SYSTEM' as any,
+          title,
+          body,
+        })),
+        skipDuplicates: true,
+      }).catch(err => this.logger.warn('Failed to persist bulk notification records', err instanceof Error ? err.message : err));
+    }
+
     await this.pushService.sendToUsers(userIds, { title, body, data: pushData });
   }
 }

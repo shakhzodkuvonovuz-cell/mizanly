@@ -15,6 +15,7 @@ describe('PostsController', () => {
     getFeed: jest.fn(),
     create: jest.fn(),
     getById: jest.fn(),
+    recordView: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
     react: jest.fn(),

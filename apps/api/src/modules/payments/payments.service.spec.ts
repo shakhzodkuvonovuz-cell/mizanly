@@ -224,8 +224,10 @@ describe('PaymentsService', () => {
     });
 
     it('should log warning if no tip found (legacy path)', async () => {
+      const loggerSpy = jest.spyOn(service['logger'], 'warn');
       redis.get.mockResolvedValue(null);
       await service.handlePaymentIntentSucceeded({ id: 'pi_unknown', metadata: {} } as any);
+      expect(loggerSpy).toHaveBeenCalled();
     });
   });
 

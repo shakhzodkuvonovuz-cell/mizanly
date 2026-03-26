@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ConflictException, Optional } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { ConfigService } from '@nestjs/config';
@@ -159,7 +159,7 @@ export class IslamicService {
     private readonly prisma: PrismaService,
     @Inject('REDIS') private readonly redis: Redis,
     private readonly config: ConfigService,
-    @Optional() private readonly notificationsService: NotificationsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private readonly hadiths: Hadith[] = hadiths;
@@ -605,24 +605,13 @@ export class IslamicService {
 
     // Finding #214: Khatm celebration — when plan is completed, send celebration notification
     if (dto.isComplete && !plan.isComplete) {
-      if (this.notificationsService) {
-        await this.notificationsService.create({
-          userId,
-          actorId: null,
-          type: 'SYSTEM',
-          title: '🎉 Khatm al-Quran!',
-          body: 'Masha Allah! You have completed reading the entire Quran. May Allah accept your effort and reward you abundantly.',
-        }).catch((err: unknown) => this.logger.warn('Failed to send Khatm notification', err instanceof Error ? err.message : err));
-      } else {
-        await this.prisma.notification.create({
-          data: {
-            userId,
-            type: 'SYSTEM',
-            title: '🎉 Khatm al-Quran!',
-            body: 'Masha Allah! You have completed reading the entire Quran. May Allah accept your effort and reward you abundantly.',
-          },
-        }).catch(() => {});
-      }
+      await this.notificationsService.create({
+        userId,
+        actorId: null,
+        type: 'SYSTEM',
+        title: '🎉 Khatm al-Quran!',
+        body: 'Masha Allah! You have completed reading the entire Quran. May Allah accept your effort and reward you abundantly.',
+      }).catch((err: unknown) => this.logger.warn('Failed to send Khatm notification', err instanceof Error ? err.message : err));
     }
 
     return updated;

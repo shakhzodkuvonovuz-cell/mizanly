@@ -556,21 +556,16 @@ describe('RecommendationsService', () => {
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.feedInteraction.findMany.mockResolvedValue([]);
-      // Engagement scores query, author map query, hashtag map query, hydration query, exploration query
+      // Engagement scores query, merged author+hashtag query, hydration query, exploration query
       prisma.post.findMany
         .mockResolvedValueOnce([
           { id: 'p1', likesCount: 100, commentsCount: 10, sharesCount: 5, savesCount: 3, viewsCount: 500, createdAt: new Date() },
           { id: 'p2', likesCount: 50, commentsCount: 5, sharesCount: 2, savesCount: 1, viewsCount: 200, createdAt: new Date() },
         ])
-        // Author map query
+        // Merged author + hashtag map query
         .mockResolvedValueOnce([
-          { id: 'p1', userId: 'author1' },
-          { id: 'p2', userId: 'author2' },
-        ])
-        // Hashtag map query
-        .mockResolvedValueOnce([
-          { id: 'p1', hashtags: ['islam', 'quran'] },
-          { id: 'p2', hashtags: ['cooking', 'recipe'] },
+          { id: 'p1', userId: 'author1', hashtags: ['islam', 'quran'] },
+          { id: 'p2', userId: 'author2', hashtags: ['cooking', 'recipe'] },
         ])
         // Final hydration query
         .mockResolvedValueOnce([
@@ -631,17 +626,11 @@ describe('RecommendationsService', () => {
           { id: 'p2', likesCount: 10, commentsCount: 1, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
           { id: 'p3', likesCount: 10, commentsCount: 1, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
         ])
-        // Author map
+        // Merged author + hashtag map (single query)
         .mockResolvedValueOnce([
-          { id: 'p1', userId: 'a1' },
-          { id: 'p2', userId: 'a2' },
-          { id: 'p3', userId: 'a3' },
-        ])
-        // Hashtag map — this is the new query
-        .mockResolvedValueOnce([
-          { id: 'p1', hashtags: ['islam', 'quran'] },
-          { id: 'p2', hashtags: ['islam', 'quran'] },
-          { id: 'p3', hashtags: ['cooking'] },
+          { id: 'p1', userId: 'a1', hashtags: ['islam', 'quran'] },
+          { id: 'p2', userId: 'a2', hashtags: ['islam', 'quran'] },
+          { id: 'p3', userId: 'a3', hashtags: ['cooking'] },
         ])
         // Hydration
         .mockResolvedValueOnce([
@@ -654,11 +643,11 @@ describe('RecommendationsService', () => {
 
       const result = await service.suggestedPosts(userId, 20);
 
-      // Hashtag map query should have been called (3rd post.findMany call)
-      expect(prisma.post.findMany).toHaveBeenCalledTimes(5);
-      // The hashtag query selects id + hashtags
-      const hashtagCall = prisma.post.findMany.mock.calls[2][0];
-      expect(hashtagCall.select).toEqual({ id: true, hashtags: true });
+      // Merged author+hashtag map query should have been called (2nd post.findMany call)
+      expect(prisma.post.findMany).toHaveBeenCalledTimes(4);
+      // The merged query selects id + userId + hashtags
+      const mergedCall = prisma.post.findMany.mock.calls[1][0];
+      expect(mergedCall.select).toEqual({ id: true, userId: true, hashtags: true });
       expect(result.length).toBeGreaterThan(0);
     });
 
@@ -684,19 +673,12 @@ describe('RecommendationsService', () => {
           { id: 'p3', likesCount: 10, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
           { id: 'p4', likesCount: 10, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 100, createdAt: new Date() },
         ])
-        // Author map — all different authors
+        // Merged author + hashtag map — all different authors, p1-p3 share tags, p4 different
         .mockResolvedValueOnce([
-          { id: 'p1', userId: 'a1' },
-          { id: 'p2', userId: 'a2' },
-          { id: 'p3', userId: 'a3' },
-          { id: 'p4', userId: 'a4' },
-        ])
-        // Hashtag map — p1, p2, p3 share same tags, p4 is different
-        .mockResolvedValueOnce([
-          { id: 'p1', hashtags: ['islam', 'quran'] },
-          { id: 'p2', hashtags: ['islam', 'quran'] },
-          { id: 'p3', hashtags: ['islam', 'quran'] },
-          { id: 'p4', hashtags: ['cooking', 'recipe'] },
+          { id: 'p1', userId: 'a1', hashtags: ['islam', 'quran'] },
+          { id: 'p2', userId: 'a2', hashtags: ['islam', 'quran'] },
+          { id: 'p3', userId: 'a3', hashtags: ['islam', 'quran'] },
+          { id: 'p4', userId: 'a4', hashtags: ['cooking', 'recipe'] },
         ])
         // Hydration
         .mockResolvedValueOnce([

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NotificationProcessor } from './notification.processor';
 import { PushTriggerService } from '../../../modules/notifications/push-trigger.service';
 import { PushService } from '../../../modules/notifications/push.service';
+import { PrismaService } from '../../../config/prisma.service';
 import { QueueService } from '../queue.service';
 
 // Mock bullmq Worker so onModuleInit doesn't create a real Redis connection
@@ -18,6 +19,7 @@ describe('NotificationProcessor', () => {
   let processor: NotificationProcessor;
   let pushTrigger: any;
   let pushService: any;
+  let prisma: any;
   let configGet: jest.Mock;
 
   const buildModule = async (redisUrl: string | null) => {
@@ -39,6 +41,14 @@ describe('NotificationProcessor', () => {
           },
         },
         {
+          provide: PrismaService,
+          useValue: {
+            notification: {
+              createMany: jest.fn().mockResolvedValue({ count: 0 }),
+            },
+          },
+        },
+        {
           provide: QueueService,
           useValue: {
             moveToDlq: jest.fn().mockResolvedValue(undefined),
@@ -50,6 +60,7 @@ describe('NotificationProcessor', () => {
     processor = module.get(NotificationProcessor);
     pushTrigger = module.get(PushTriggerService);
     pushService = module.get(PushService);
+    prisma = module.get(PrismaService);
   };
 
   afterEach(() => {
@@ -78,7 +89,7 @@ describe('NotificationProcessor', () => {
   });
 
   describe('processBulkPush (via reflection)', () => {
-    it('should call pushService.sendToUsers with correct payload', async () => {
+    it('should persist notification records and call pushService.sendToUsers', async () => {
       await buildModule(null);
       const job = {
         data: {
@@ -89,6 +100,15 @@ describe('NotificationProcessor', () => {
         },
       };
       await (processor as any).processBulkPush(job);
+      // Verify DB records created before push
+      expect(prisma.notification.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({ userId: 'u1', title: 'New Feature', body: 'Check out the latest update' }),
+          expect.objectContaining({ userId: 'u2' }),
+          expect.objectContaining({ userId: 'u3' }),
+        ]),
+        skipDuplicates: true,
+      });
       expect(pushService.sendToUsers).toHaveBeenCalledWith(
         ['u1', 'u2', 'u3'],
         { title: 'New Feature', body: 'Check out the latest update', data: { screen: 'settings' } },
@@ -105,6 +125,7 @@ describe('NotificationProcessor', () => {
         },
       };
       await (processor as any).processBulkPush(job);
+      expect(prisma.notification.createMany).toHaveBeenCalled();
       expect(pushService.sendToUsers).toHaveBeenCalledWith(
         ['u1'],
         { title: 'Alert', body: 'Something happened', data: undefined },

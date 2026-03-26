@@ -15,6 +15,7 @@ describe('ThreadsController', () => {
     getFeed: jest.fn(),
     create: jest.fn(),
     getById: jest.fn(),
+    recordView: jest.fn(),
     delete: jest.fn(),
     like: jest.fn(),
     unlike: jest.fn(),

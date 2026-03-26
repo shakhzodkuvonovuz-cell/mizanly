@@ -120,12 +120,15 @@ export class PostsController {
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get post by ID' })
-  getById(
+  async getById(
     @Param('id') id: string,
     // viewerId is taken from the verified auth context, not from query params
     @CurrentUser('id') viewerId?: string,
   ) {
-    return this.postsService.getById(id, viewerId);
+    const post = await this.postsService.getById(id, viewerId);
+    // Fire-and-forget view count increment
+    this.postsService.recordView(id);
+    return post;
   }
 
   @Patch(':id')

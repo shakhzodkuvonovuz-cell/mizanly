@@ -5,7 +5,6 @@ import {
   ConflictException,
   ForbiddenException,
   Logger,
-  Optional,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
@@ -24,7 +23,7 @@ export class ReportsService {
     private prisma: PrismaService,
     private queueService: QueueService,
     private config: ConfigService,
-    @Optional() private notificationsService: NotificationsService,
+    private notificationsService: NotificationsService,
   ) {
     this.clerk = createClerkClient({
       secretKey: this.config.get('CLERK_SECRET_KEY'),
@@ -326,24 +325,13 @@ export class ReportsService {
     // Finding 30 (Audit 13): Handle WARNING action — notify the reported user
     // Sent after transaction succeeds, routed through NotificationsService for push + dedup
     if (actionTaken === ModerationAction.WARNING && report.reportedUserId) {
-      if (this.notificationsService) {
-        this.notificationsService.create({
-          userId: report.reportedUserId,
-          actorId: null,
-          type: 'SYSTEM',
-          title: 'Content Warning',
-          body: `Your content was flagged for ${report.reason}. Repeated violations may result in account restrictions.`,
-        }).catch(err => this.logger.warn('Failed to send warning notification', err instanceof Error ? err.message : err));
-      } else {
-        this.prisma.notification.create({
-          data: {
-            userId: report.reportedUserId,
-            type: 'SYSTEM' as any,
-            title: 'Content Warning',
-            body: `Your content was flagged for ${report.reason}. Repeated violations may result in account restrictions.`,
-          },
-        }).catch(err => this.logger.warn('Failed to send warning notification', err instanceof Error ? err.message : err));
-      }
+      this.notificationsService.create({
+        userId: report.reportedUserId,
+        actorId: null,
+        type: 'SYSTEM',
+        title: 'Content Warning',
+        body: `Your content was flagged for ${report.reason}. Repeated violations may result in account restrictions.`,
+      }).catch(err => this.logger.warn('Failed to send warning notification', err instanceof Error ? err.message : err));
     }
 
     return updated;
