@@ -3,6 +3,7 @@ import { Queue, Job } from 'bullmq';
 import * as Sentry from '@sentry/node';
 import Redis from 'ioredis';
 import { getCorrelationId } from '../middleware/correlation-id.store';
+import { CircuitBreakerService } from '../services/circuit-breaker.service';
 
 /**
  * QueueService — high-level API for enqueuing jobs across all BullMQ queues.
@@ -13,6 +14,9 @@ import { getCorrelationId } from '../middleware/correlation-id.store';
  * Correlation ID propagation: each job data payload includes an optional
  * `correlationId` field extracted from the current request context via AsyncLocalStorage.
  * Processors extract this ID and attach to Sentry scope + log context.
+ *
+ * All queue.add() calls go through the 'redis' circuit breaker so that when
+ * Redis is down, callers fail-fast instead of waiting for connection timeout.
  */
 @Injectable()
 export class QueueService implements OnModuleDestroy {
@@ -29,6 +33,7 @@ export class QueueService implements OnModuleDestroy {
     @Inject('QUEUE_SEARCH_INDEXING') private searchQueue: Queue,
     @Inject('QUEUE_AI_TASKS') private aiTasksQueue: Queue,
     @Inject('REDIS') private redis: Redis,
+    private circuitBreaker: CircuitBreakerService,
   ) {}
 
   /** Attach correlationId from the current request context to job data */
@@ -55,10 +60,12 @@ export class QueueService implements OnModuleDestroy {
     // defined in NotificationProcessor.backoffStrategy (notification.processor.ts).
     // Using 'custom' type because the delays are non-standard exponential.
     // If switching to separate worker processes, change to 'exponential' with delay: 1000.
-    const job = await this.notificationsQueue.add('push-trigger', this.withCorrelation(data), {
-      attempts: 3,
-      backoff: { type: 'custom' },
-    });
+    const job = await this.circuitBreaker.exec('redis', () =>
+      this.notificationsQueue.add('push-trigger', this.withCorrelation(data), {
+        attempts: 3,
+        backoff: { type: 'custom' },
+      }),
+    );
     this.logger.debug(`Enqueued push notification job ${job.id}`);
     return job.id!;
   }
@@ -70,10 +77,12 @@ export class QueueService implements OnModuleDestroy {
     userId: string;
     action: string;
   }): Promise<string> {
-    const job = await this.analyticsQueue.add(data.type, this.withCorrelation(data), {
-      attempts: 2,
-      backoff: { type: 'exponential', delay: 1000 },
-    });
+    const job = await this.circuitBreaker.exec('redis', () =>
+      this.analyticsQueue.add(data.type, this.withCorrelation(data), {
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 1000 },
+      }),
+    );
     return job.id!;
   }
 
@@ -90,10 +99,12 @@ export class QueueService implements OnModuleDestroy {
     // defined in WebhookProcessor.backoffStrategy (webhook.processor.ts).
     // Using 'custom' type for webhook-specific progressive delays.
     // If switching to separate worker processes, change to 'exponential' with delay: 1000.
-    const job = await this.webhooksQueue.add('deliver', this.withCorrelation(data), {
-      attempts: 5,
-      backoff: { type: 'custom' },
-    });
+    const job = await this.circuitBreaker.exec('redis', () =>
+      this.webhooksQueue.add('deliver', this.withCorrelation(data), {
+        attempts: 5,
+        backoff: { type: 'custom' },
+      }),
+    );
     return job.id!;
   }
 
@@ -105,10 +116,12 @@ export class QueueService implements OnModuleDestroy {
     documentId: string;
     document?: Record<string, unknown>;
   }): Promise<string> {
-    const job = await this.searchQueue.add(data.action, this.withCorrelation(data), {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 1000 },
-    });
+    const job = await this.circuitBreaker.exec('redis', () =>
+      this.searchQueue.add(data.action, this.withCorrelation(data), {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+      }),
+    );
     return job.id!;
   }
 
@@ -119,10 +132,12 @@ export class QueueService implements OnModuleDestroy {
     contentType: 'post' | 'thread' | 'comment' | 'message' | 'reel';
     contentId: string;
   }): Promise<string> {
-    const job = await this.aiTasksQueue.add('moderate', this.withCorrelation(data), {
-      attempts: 2,
-      backoff: { type: 'exponential', delay: 3000 },
-    });
+    const job = await this.circuitBreaker.exec('redis', () =>
+      this.aiTasksQueue.add('moderate', this.withCorrelation(data), {
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 3000 },
+      }),
+    );
     return job.id!;
   }
 

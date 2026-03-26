@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 
 // Expo push notification API (no SDK needed, just HTTP)
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
@@ -68,7 +69,10 @@ interface ExpoPushTicket {
 export class PushService {
   private readonly logger = new Logger(PushService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private circuitBreaker: CircuitBreakerService,
+  ) {}
 
   // Send push to a specific user (fetches their device tokens)
   async sendToUser(userId: string, notification: { title: string; body: string; data?: Record<string, string> }): Promise<void> {
@@ -130,15 +134,18 @@ export class PushService {
         if (EXPO_ACCESS_TOKEN) {
           headers['Authorization'] = `Bearer ${EXPO_ACCESS_TOKEN}`;
         }
-        const response = await fetch(EXPO_PUSH_URL, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(batch),
-        });
-        if (!response.ok) {
-          this.logger.error(`Expo push API responded with status ${response.status}: ${await response.text()}`);
-          continue;
-        }
+        const response = await this.circuitBreaker.exec('expo-push', () =>
+          fetch(EXPO_PUSH_URL, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(batch),
+          }).then(async (r) => {
+            if (!r.ok) {
+              throw new Error(`Expo push API responded with status ${r.status}: ${await r.text()}`);
+            }
+            return r;
+          }),
+        );
         // Expo returns { data: ExpoPushTicket[] }
         const result: { data?: Array<{ status: string; id?: string; message?: string; details?: { error: string } }> } = await response.json();
         const tickets: ExpoPushTicket[] = (result.data ?? []) as ExpoPushTicket[];

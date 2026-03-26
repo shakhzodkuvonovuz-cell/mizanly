@@ -7,6 +7,7 @@ import Redis from 'ioredis';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { FeatureFlagsService } from '../../common/services/feature-flags.service';
+import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -25,6 +26,7 @@ export class HealthController {
     private queueService: QueueService,
     private flags: FeatureFlagsService,
     private configService: ConfigService,
+    private circuitBreakers: CircuitBreakerService,
   ) {
     this.r2PublicUrl = this.configService.get<string>('R2_PUBLIC_URL') || 'https://media.mizanly.app';
     this.cfStreamToken = this.configService.get<string>('CF_STREAM_API_TOKEN') || '';
@@ -121,6 +123,7 @@ export class HealthController {
       counts: { users: userCount, posts: postCount, threads: threadCount, reels: reelCount },
       inProcessJobs: this.jobs.getStats(),
       queues: await this.queueService.getStats(),
+      circuitBreakers: this.circuitBreakers.getStatus(),
       uptime: Math.round(process.uptime()),
       memory: {
         heapUsedMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),

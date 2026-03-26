@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { MeilisearchService } from './meilisearch.service';
+import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 
 describe('MeilisearchService', () => {
   const TEST_HOST = 'http://meili.test:7700';
@@ -23,6 +24,17 @@ describe('MeilisearchService', () => {
     };
   }
 
+  const mockCircuitBreakerService = {
+    exec: jest.fn().mockImplementation((_name: string, fn: () => Promise<unknown>, fallback?: () => unknown) => {
+      return fn().catch((err: unknown) => {
+        if (fallback) return fallback();
+        throw err;
+      });
+    }),
+    getBreaker: jest.fn(),
+    getStatus: jest.fn().mockReturnValue({}),
+  };
+
   async function buildService(host: string, apiKey: string): Promise<MeilisearchService> {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -30,6 +42,10 @@ describe('MeilisearchService', () => {
         {
           provide: ConfigService,
           useValue: createMockConfigService(host, apiKey),
+        },
+        {
+          provide: CircuitBreakerService,
+          useValue: mockCircuitBreakerService,
         },
       ],
     }).compile();
@@ -54,6 +70,7 @@ describe('MeilisearchService', () => {
         providers: [
           MeilisearchService,
           { provide: ConfigService, useValue: mockConfig },
+          { provide: CircuitBreakerService, useValue: mockCircuitBreakerService },
         ],
       }).compile();
       const service = module.get<MeilisearchService>(MeilisearchService);

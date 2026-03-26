@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import { PushService } from './push.service';
+import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch as any;
@@ -24,6 +25,14 @@ describe('PushService', () => {
           useValue: {
             device: { findMany: jest.fn().mockResolvedValue([]) },
             notification: { count: jest.fn().mockResolvedValue(0) },
+          },
+        },
+        {
+          provide: CircuitBreakerService,
+          useValue: {
+            exec: jest.fn().mockImplementation((_name: string, fn: () => Promise<unknown>) => fn()),
+            getBreaker: jest.fn(),
+            getStatus: jest.fn().mockReturnValue({}),
           },
         },
       ],

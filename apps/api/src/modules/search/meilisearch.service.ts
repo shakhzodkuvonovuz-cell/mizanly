@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { CircuitBreakerService } from '../../common/services/circuit-breaker.service';
 
 export interface MeilisearchDocument {
   id: string;
@@ -34,7 +35,10 @@ export class MeilisearchService implements OnModuleInit {
   private readonly apiKey: string;
   private readonly available: boolean;
 
-  constructor(private config: ConfigService) {
+  constructor(
+    private config: ConfigService,
+    private circuitBreaker: CircuitBreakerService,
+  ) {
     this.host = this.config.get<string>('MEILISEARCH_HOST') || '';
     this.apiKey = this.config.get<string>('MEILISEARCH_API_KEY') || '';
     this.available = !!this.host;
@@ -108,27 +112,32 @@ export class MeilisearchService implements OnModuleInit {
     if (!this.available) return null;
 
     try {
-      const response = await fetch(`${this.host}/indexes/${indexName}/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          q: query,
-          limit: options?.limit ?? 20,
-          offset: options?.offset ?? 0,
-          filter: options?.filter,
-          sort: options?.sort,
-        }),
-        signal: AbortSignal.timeout(10000),
-      });
+      return await this.circuitBreaker.exec(
+        'meilisearch',
+        async () => {
+          const response = await fetch(`${this.host}/indexes/${indexName}/search`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${this.apiKey}`,
+            },
+            body: JSON.stringify({
+              q: query,
+              limit: options?.limit ?? 20,
+              offset: options?.offset ?? 0,
+              filter: options?.filter,
+              sort: options?.sort,
+            }),
+            signal: AbortSignal.timeout(10000),
+          });
 
-      if (!response.ok) {
-        this.logger.warn(`Meilisearch search failed for ${indexName}: ${response.status}`);
-        return null;
-      }
-      return response.json() as Promise<MeilisearchSearchResult>;
+          if (!response.ok) {
+            throw new Error(`Meilisearch search failed for ${indexName}: ${response.status}`);
+          }
+          return response.json() as Promise<MeilisearchSearchResult>;
+        },
+        () => null,
+      );
     } catch (error) {
       this.logger.error(`Meilisearch search error for ${indexName}`, error instanceof Error ? error.message : error);
       return null;
@@ -139,19 +148,21 @@ export class MeilisearchService implements OnModuleInit {
     if (!this.available || documents.length === 0) return;
 
     try {
-      const response = await fetch(`${this.host}/indexes/${indexName}/documents`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify(documents),
+      await this.circuitBreaker.exec('meilisearch', async () => {
+        const response = await fetch(`${this.host}/indexes/${indexName}/documents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+          body: JSON.stringify(documents),
+        });
+        if (!response.ok) {
+          throw new Error(`Meilisearch addDocuments failed for ${indexName}: ${response.status} ${response.statusText}`);
+        }
       });
-      if (!response.ok) {
-        this.logger.error(`Meilisearch addDocuments failed for ${indexName}: ${response.status} ${response.statusText}`);
-      }
     } catch (error) {
-      this.logger.error(`Failed to index ${documents.length} docs to ${indexName}`, error);
+      this.logger.error(`Failed to index ${documents.length} docs to ${indexName}`, error instanceof Error ? error.message : error);
     }
   }
 
@@ -159,10 +170,12 @@ export class MeilisearchService implements OnModuleInit {
     if (!this.available) return;
 
     try {
-      await fetch(`${this.host}/indexes/${encodeURIComponent(indexName)}/documents/${encodeURIComponent(documentId)}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${this.apiKey}` },
-      });
+      await this.circuitBreaker.exec('meilisearch', () =>
+        fetch(`${this.host}/indexes/${encodeURIComponent(indexName)}/documents/${encodeURIComponent(documentId)}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${this.apiKey}` },
+        }),
+      );
     } catch (error) {
       this.logger.warn(`Meilisearch delete failed for ${indexName}/${documentId}`, error instanceof Error ? error.message : error);
     }

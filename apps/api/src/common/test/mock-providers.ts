@@ -14,6 +14,7 @@ import { ContentSafetyService } from '../../modules/moderation/content-safety.se
 import { PrivacyService } from '../../modules/privacy/privacy.service';
 import { UploadService } from '../../modules/upload/upload.service';
 import { PublishWorkflowService } from '../services/publish-workflow.service';
+import { CircuitBreakerService } from '../services/circuit-breaker.service';
 
 /**
  * Shared mock providers for test modules.
@@ -198,6 +199,24 @@ export const mockPublishWorkflowService = {
   },
 };
 
+export const mockCircuitBreakerService = {
+  provide: CircuitBreakerService,
+  useValue: {
+    getBreaker: jest.fn().mockReturnValue({
+      fire: jest.fn().mockImplementation((fn: () => Promise<unknown>) => fn()),
+      on: jest.fn().mockReturnThis(),
+      shutdown: jest.fn(),
+      opened: false,
+      halfOpen: false,
+      closed: true,
+      stats: { fires: 0, successes: 0, failures: 0, rejects: 0, timeouts: 0, fallbacks: 0, latencyMean: 0 },
+    }),
+    exec: jest.fn().mockImplementation((_name: string, fn: () => Promise<unknown>) => fn()),
+    getStatus: jest.fn().mockReturnValue({}),
+    onModuleDestroy: jest.fn(),
+  },
+};
+
 export const mockPrismaService = {
   provide: PrismaService,
   useValue: {
@@ -254,4 +273,5 @@ export const globalMockProviders = [
   mockPrivacyService,
   mockUploadService,
   mockPublishWorkflowService,
+  mockCircuitBreakerService,
 ];
