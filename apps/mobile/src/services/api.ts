@@ -484,7 +484,6 @@ export const postsApi = {
     api.get<PaginatedResponse<Comment>>(`/posts/${postId}/comments/hidden${qs({ cursor })}`),
   getShareLink: (id: string) =>
     api.get<{ url: string }>(`/posts/${id}/share-link`),
-  // Note: share-as-story endpoint does not exist on backend yet (finding 64-020)
   shareAsStory: (id: string) => api.post(`/posts/${id}/share-as-story`),
   crossPost: (id: string, data: { targetSpaces: string[]; captionOverride?: string }) =>
     api.post<Post[]>(`/posts/${id}/cross-post`, data),

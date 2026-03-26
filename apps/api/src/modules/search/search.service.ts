@@ -628,12 +628,12 @@ export class SearchService {
         this.prisma.block.findMany({
           where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
           select: { blockerId: true, blockedId: true },
-          take: 50,
+          take: 10000,
         }),
         this.prisma.mute.findMany({
           where: { userId },
           select: { mutedId: true },
-          take: 50,
+          take: 10000,
         }),
       ]);
       const excluded = new Set<string>();

@@ -64,6 +64,8 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm test --workspace=apps/api -- --passWithNoTests
+      - name: Run integration tests (real PostgreSQL)
+        run: npm run test:integration --workspace=apps/api -- --passWithNoTests
 
   build-api:
     runs-on: ubuntu-latest

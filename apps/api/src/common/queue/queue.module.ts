@@ -41,8 +41,16 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
   provide: token,
   useFactory: (config: ConfigService) => {
     const redisUrl = config.get<string>('REDIS_URL');
+    const nodeEnv = config.get<string>('NODE_ENV') || 'development';
     if (!redisUrl) {
-      // Return a no-op queue stub when Redis is unavailable (dev without Redis)
+      if (nodeEnv === 'production' || nodeEnv === 'staging') {
+        throw new Error(
+          `REDIS_URL is not set. Queue '${name}' cannot start in ${nodeEnv}. ` +
+          'BullMQ queues require Redis for durable job processing. ' +
+          'Notifications, media processing, analytics, webhooks, search indexing, and AI tasks will not function.',
+        );
+      }
+      // Development only: no-op queue stub (Redis not required locally)
       const logger = new (require('@nestjs/common').Logger)(`Queue:${name}`);
       logger.warn(`Queue '${name}' running in no-op mode — REDIS_URL not set. Jobs will be silently dropped.`);
       return {

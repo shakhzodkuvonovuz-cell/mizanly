@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { FastingType, HifzStatus, DailyTaskType, AdhanStyle, ContentStrictnessLevel, MadhhabType as MType } from '@prisma/client';
 import { UpdatePrayerNotificationDto } from './dto/prayer-notification.dto';
 import { CreateQuranPlanDto, UpdateQuranPlanDto } from './dto/quran-plan.dto';
@@ -160,6 +161,7 @@ export class IslamicService {
     @Inject('REDIS') private readonly redis: Redis,
     private readonly config: ConfigService,
     private readonly notificationsService: NotificationsService,
+    private readonly queueService: QueueService,
   ) {}
 
   private readonly hadiths: Hadith[] = hadiths;
@@ -1988,6 +1990,16 @@ export class IslamicService {
           skipDuplicates: true,
         });
         created += result.count;
+
+        // Queue push delivery for created notifications
+        const recentNotifs = await this.prisma.notification.findMany({
+          where: { userId: { in: batch }, type: 'SYSTEM', title, createdAt: { gte: new Date(Date.now() - 60000) } },
+          select: { id: true },
+          take: BATCH_SIZE,
+        });
+        for (const n of recentNotifs) {
+          this.queueService.addPushNotificationJob({ notificationId: n.id }).catch(() => {});
+        }
       }
 
       this.logger.log(`Verse of the day sent: ${surah}:${verse} to ${created} users (batched)`);
@@ -2041,6 +2053,7 @@ export class IslamicService {
 
     for (let i = 0; i < users.length; i += BATCH_SIZE) {
       const batch = users.slice(i, i + BATCH_SIZE);
+      const batchIds = batch.map(u => u.id);
       const result = await this.prisma.notification.createMany({
         data: batch.map(user => ({
           userId: user.id,
@@ -2051,6 +2064,16 @@ export class IslamicService {
         skipDuplicates: true,
       });
       created += result.count;
+
+      // Queue push delivery for created notifications
+      const recentNotifs = await this.prisma.notification.findMany({
+        where: { userId: { in: batchIds }, type: 'SYSTEM', title, createdAt: { gte: new Date(Date.now() - 60000) } },
+        select: { id: true },
+        take: BATCH_SIZE,
+      });
+      for (const n of recentNotifs) {
+        this.queueService.addPushNotificationJob({ notificationId: n.id }).catch(() => {});
+      }
     }
 
     this.logger.log(`Islamic event reminder sent: ${title} to ${created} users (batched)`);

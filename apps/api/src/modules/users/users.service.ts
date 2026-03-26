@@ -18,6 +18,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PostVisibility, ThreadVisibility, ReportReason } from '@prisma/client';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { PublishWorkflowService } from '@/common/services/publish-workflow.service';
+import { QueueService } from '@/common/queue/queue.service';
 
 const PUBLIC_USER_FIELDS = {
   id: true,
@@ -64,6 +65,7 @@ export class UsersService {
     @Inject('REDIS') private redis: Redis,
     @Optional() private notificationsService: NotificationsService,
     private publishWorkflow: PublishWorkflowService,
+    private queueService: QueueService,
   ) {}
 
   touchLastSeen(userId: string) {
@@ -765,18 +767,30 @@ export class UsersService {
           created++;
         }
       } else {
+        const digestTitle = 'Weekly Screen Time Summary';
         for (let i = 0; i < usersWithLimits.length; i += BATCH_SIZE) {
           const batch = usersWithLimits.slice(i, i + BATCH_SIZE);
+          const batchIds = batch.map(s => s.userId);
           const result = await this.prisma.notification.createMany({
             data: batch.map(s => ({
               userId: s.userId,
               type: 'SYSTEM' as const,
-              title: 'Weekly Screen Time Summary',
+              title: digestTitle,
               body: `Your daily limit is ${s.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
             })),
             skipDuplicates: true,
           });
           created += result.count;
+
+          // Queue push delivery for batch
+          const recentNotifs = await this.prisma.notification.findMany({
+            where: { userId: { in: batchIds }, type: 'SYSTEM', title: digestTitle, createdAt: { gte: new Date(Date.now() - 60000) } },
+            select: { id: true },
+            take: BATCH_SIZE,
+          });
+          for (const n of recentNotifs) {
+            this.queueService.addPushNotificationJob({ notificationId: n.id }).catch(() => {});
+          }
         }
       }
 

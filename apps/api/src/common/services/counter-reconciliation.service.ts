@@ -342,14 +342,252 @@ export class CounterReconciliationService {
   }
 
   /**
+   * Reconcile user threadsCount and reelsCount.
+   */
+  @Cron('35 4 * * 0') // Every Sunday at 4:35 AM
+  async reconcileUserContentCounts() {
+    try {
+      // threadsCount
+      const driftedThreads = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT u.id, COUNT(t.id)::bigint as actual
+        FROM "User" u
+        LEFT JOIN "Thread" t ON t."userId" = u.id AND t."isRemoved" = false
+        WHERE u."isDeleted" = false
+        GROUP BY u.id
+        HAVING COUNT(t.id) != u."threadsCount"
+        LIMIT 500
+      `;
+      if (driftedThreads.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "User" SET "threadsCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(driftedThreads.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "User".id = v.id
+        `;
+      }
+
+      // reelsCount
+      const driftedReels = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT u.id, COUNT(r.id)::bigint as actual
+        FROM "User" u
+        LEFT JOIN "Reel" r ON r."userId" = u.id AND r."isRemoved" = false
+        WHERE u."isDeleted" = false
+        GROUP BY u.id
+        HAVING COUNT(r.id) != u."reelsCount"
+        LIMIT 500
+      `;
+      if (driftedReels.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "User" SET "reelsCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(driftedReels.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "User".id = v.id
+        `;
+      }
+
+      const fixed = driftedThreads.length + driftedReels.length;
+      if (fixed > 0) this.logger.warn(`Reconciled threadsCount/reelsCount for ${fixed} user(s)`);
+      return fixed;
+    } catch (error) {
+      this.logger.error('reconcileUserContentCounts cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
+  /**
+   * Reconcile reel engagement counters (likesCount, commentsCount).
+   */
+  @Cron('0 5 15 * *') // 15th of each month at 5 AM
+  async reconcileReelCounts() {
+    try {
+      const driftedLikes = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT r.id, COUNT(rr."reelId")::bigint as actual
+        FROM "Reel" r
+        LEFT JOIN "ReelReaction" rr ON rr."reelId" = r.id
+        WHERE r."isRemoved" = false
+        GROUP BY r.id
+        HAVING COUNT(rr."reelId") != r."likesCount"
+        LIMIT 500
+      `;
+      if (driftedLikes.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "Reel" SET "likesCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(driftedLikes.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "Reel".id = v.id
+        `;
+      }
+
+      const driftedComments = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT r.id, COUNT(rc.id)::bigint as actual
+        FROM "Reel" r
+        LEFT JOIN "ReelComment" rc ON rc."reelId" = r.id
+        WHERE r."isRemoved" = false
+        GROUP BY r.id
+        HAVING COUNT(rc.id) != r."commentsCount"
+        LIMIT 500
+      `;
+      if (driftedComments.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "Reel" SET "commentsCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(driftedComments.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "Reel".id = v.id
+        `;
+      }
+
+      const fixed = driftedLikes.length + driftedComments.length;
+      if (fixed > 0) this.logger.warn(`Reconciled ${fixed} reel counter(s)`);
+      return fixed;
+    } catch (error) {
+      this.logger.error('reconcileReelCounts cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
+  /**
+   * Reconcile thread engagement counters (likesCount, repliesCount).
+   */
+  @Cron('15 5 15 * *') // 15th of each month at 5:15 AM
+  async reconcileThreadCounts() {
+    try {
+      const driftedLikes = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT t.id, COUNT(tr."threadId")::bigint as actual
+        FROM "Thread" t
+        LEFT JOIN "ThreadReaction" tr ON tr."threadId" = t.id
+        WHERE t."isRemoved" = false
+        GROUP BY t.id
+        HAVING COUNT(tr."threadId") != t."likesCount"
+        LIMIT 500
+      `;
+      if (driftedLikes.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "Thread" SET "likesCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(driftedLikes.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "Thread".id = v.id
+        `;
+      }
+
+      const driftedReplies = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT t.id, COUNT(r.id)::bigint as actual
+        FROM "Thread" t
+        LEFT JOIN "ThreadReply" r ON r."threadId" = t.id
+        WHERE t."isRemoved" = false
+        GROUP BY t.id
+        HAVING COUNT(r.id) != t."repliesCount"
+        LIMIT 500
+      `;
+      if (driftedReplies.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "Thread" SET "repliesCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(driftedReplies.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "Thread".id = v.id
+        `;
+      }
+
+      const fixed = driftedLikes.length + driftedReplies.length;
+      if (fixed > 0) this.logger.warn(`Reconciled ${fixed} thread counter(s)`);
+      return fixed;
+    } catch (error) {
+      this.logger.error('reconcileThreadCounts cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
+  /**
+   * Reconcile video engagement counters (likesCount, commentsCount).
+   */
+  @Cron('30 5 15 * *') // 15th of each month at 5:30 AM
+  async reconcileVideoCounts() {
+    try {
+      const driftedLikes = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT v.id, COUNT(vr."videoId")::bigint as actual
+        FROM "Video" v
+        LEFT JOIN "VideoReaction" vr ON vr."videoId" = v.id AND vr."isLike" = true
+        WHERE v."isRemoved" = false
+        GROUP BY v.id
+        HAVING COUNT(vr."videoId") != v."likesCount"
+        LIMIT 500
+      `;
+      if (driftedLikes.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "Video" SET "likesCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(driftedLikes.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "Video".id = v.id
+        `;
+      }
+
+      const driftedComments = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
+        SELECT v.id, COUNT(vc.id)::bigint as actual
+        FROM "Video" v
+        LEFT JOIN "VideoComment" vc ON vc."videoId" = v.id
+        WHERE v."isRemoved" = false
+        GROUP BY v.id
+        HAVING COUNT(vc.id) != v."commentsCount"
+        LIMIT 500
+      `;
+      if (driftedComments.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "Video" SET "commentsCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(driftedComments.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "Video".id = v.id
+        `;
+      }
+
+      const fixed = driftedLikes.length + driftedComments.length;
+      if (fixed > 0) this.logger.warn(`Reconciled ${fixed} video counter(s)`);
+      return fixed;
+    } catch (error) {
+      this.logger.error('reconcileVideoCounts cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
+  /**
+   * Reconcile hashtag postsCount.
+   */
+  @Cron('45 5 15 * *') // 15th of each month at 5:45 AM
+  async reconcileHashtagCounts() {
+    try {
+      // Count posts that contain each hashtag (PostgreSQL array containment)
+      const drifted = await this.prisma.$queryRaw<Array<{ id: string; name: string; actual: bigint }>>`
+        SELECT h.id, h.name, COUNT(p.id)::bigint as actual
+        FROM "Hashtag" h
+        LEFT JOIN "Post" p ON p."hashtags" @> ARRAY[h."name"] AND p."isRemoved" = false
+        GROUP BY h.id, h.name
+        HAVING COUNT(p.id) != h."postsCount"
+        LIMIT 500
+      `;
+      if (drifted.length > 0) {
+        await this.prisma.$executeRaw`
+          UPDATE "Hashtag" SET "postsCount" = v.actual::int
+          FROM (VALUES ${Prisma.join(drifted.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
+          WHERE "Hashtag".id = v.id
+        `;
+        this.logger.warn(`Reconciled postsCount for ${drifted.length} hashtag(s)`);
+      }
+      return drifted.length;
+    } catch (error) {
+      this.logger.error('reconcileHashtagCounts cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
+  /**
    * Manual trigger for immediate reconciliation (admin use).
    */
   async reconcileAll() {
     const follows = await this.reconcileUserFollowCounts();
     const posts = await this.reconcilePostCounts();
     const userPosts = await this.reconcileUserPostCounts();
+    const userContent = await this.reconcileUserContentCounts();
     const saves = await this.reconcilePostSavesCounts();
     const shares = await this.reconcilePostSharesCounts();
+    const reels = await this.reconcileReelCounts();
+    const threads = await this.reconcileThreadCounts();
+    const videos = await this.reconcileVideoCounts();
+    const hashtags = await this.reconcileHashtagCounts();
     const unread = await this.reconcileUnreadCounts();
     const coinBalances = await this.reconcileCoinBalances();
     return {
@@ -357,8 +595,13 @@ export class CounterReconciliationService {
         followCounts: follows,
         postCounts: posts,
         userPostCounts: userPosts,
+        userContentCounts: userContent,
         postSavesCounts: saves,
         postSharesCounts: shares,
+        reelCounts: reels,
+        threadCounts: threads,
+        videoCounts: videos,
+        hashtagCounts: hashtags,
         unreadCounts: unread,
         coinBalances,
       },

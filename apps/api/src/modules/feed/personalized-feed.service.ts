@@ -259,7 +259,7 @@ export class PersonalizedFeedService {
       this.prisma.hashtagFollow.findMany({
         where: { userId },
         select: { hashtagId: true },
-        take: 50,
+        take: 10000,
       }),
     ]);
     const sessionViewedIds = session ? session.viewedIds : [];
@@ -511,24 +511,31 @@ export class PersonalizedFeedService {
     limit = 20,
     excludedUserIds: string[] = [],
   ): Promise<{ data: FeedItem[]; meta: { cursor?: string; hasMore: boolean } }> {
-    // 24-hour window prevents "popular-get-more-popular" loop (was 48h)
-    const since = new Date(Date.now() - TIME_WINDOWS.TRENDING_HOURS * 3600000);
     const userFilter = excludedUserIds.length > 0 ? { id: { notIn: excludedUserIds } } : {};
+    // Adaptive window: start with 24h trending, expand to 48h/7d if too few candidates.
+    // Candidate pool raised from (limit+1)*2 (~42) to 200 for better ranking quality.
+    const TRENDING_POOL = 200;
+    const tiers = [TIME_WINDOWS.TRENDING_HOURS, TIME_WINDOWS.FORYOU_HOURS, TIME_WINDOWS.FALLBACK_HOURS];
 
     if (space === 'saf') {
-      const posts = await this.prisma.post.findMany({
-        where: {
-          isRemoved: false,
-          visibility: PostVisibility.PUBLIC,
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-          createdAt: { gte: since },
-          user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
-          ...(cursor ? { id: { lt: cursor } } : {}),
-        },
-        select: { id: true, hashtags: true, createdAt: true, likesCount: true },
-        orderBy: [{ likesCount: 'desc' }, { createdAt: 'desc' }],
-        take: (limit + 1) * 2, // Fetch extra to account for re-ranking after decay
-      });
+      let posts: { id: string; hashtags: string[]; createdAt: Date; likesCount: number }[] = [];
+      for (const windowHours of tiers) {
+        const since = new Date(Date.now() - windowHours * 3600000);
+        posts = await this.prisma.post.findMany({
+          where: {
+            isRemoved: false,
+            visibility: PostVisibility.PUBLIC,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            createdAt: { gte: since },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
+            ...(cursor ? { id: { lt: cursor } } : {}),
+          },
+          select: { id: true, hashtags: true, createdAt: true, likesCount: true },
+          orderBy: [{ likesCount: 'desc' }, { createdAt: 'desc' }],
+          take: TRENDING_POOL,
+        });
+        if (posts.length >= 50) break;
+      }
       const scored = posts.map(p => ({
         id: p.id,
         type: 'post' as const,
@@ -543,19 +550,24 @@ export class PersonalizedFeedService {
     }
 
     if (space === 'bakra') {
-      const reels = await this.prisma.reel.findMany({
-        where: {
-          isRemoved: false,
-          status: ReelStatus.READY,
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-          createdAt: { gte: since },
-          user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
-          ...(cursor ? { id: { lt: cursor } } : {}),
-        },
-        select: { id: true, hashtags: true, createdAt: true, viewsCount: true },
-        orderBy: [{ viewsCount: 'desc' }, { createdAt: 'desc' }],
-        take: (limit + 1) * 2,
-      });
+      let reels: { id: string; hashtags: string[]; createdAt: Date; viewsCount: number }[] = [];
+      for (const windowHours of tiers) {
+        const since = new Date(Date.now() - windowHours * 3600000);
+        reels = await this.prisma.reel.findMany({
+          where: {
+            isRemoved: false,
+            status: ReelStatus.READY,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            createdAt: { gte: since },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
+            ...(cursor ? { id: { lt: cursor } } : {}),
+          },
+          select: { id: true, hashtags: true, createdAt: true, viewsCount: true },
+          orderBy: [{ viewsCount: 'desc' }, { createdAt: 'desc' }],
+          take: TRENDING_POOL,
+        });
+        if (reels.length >= 50) break;
+      }
       const scored = reels.map(r => ({
         id: r.id,
         type: 'reel' as const,
@@ -570,18 +582,23 @@ export class PersonalizedFeedService {
     }
 
     if (space === 'minbar') {
-      const videos = await this.prisma.video.findMany({
-        where: {
-          status: 'PUBLISHED',
-          isRemoved: false,
-          createdAt: { gte: since },
-          user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
-          ...(cursor ? { id: { lt: cursor } } : {}),
-        },
-        select: { id: true, tags: true, createdAt: true, viewsCount: true },
-        orderBy: [{ viewsCount: 'desc' }, { createdAt: 'desc' }],
-        take: (limit + 1) * 2,
-      });
+      let videos: { id: string; tags: string[]; createdAt: Date; viewsCount: number }[] = [];
+      for (const windowHours of tiers) {
+        const since = new Date(Date.now() - windowHours * 3600000);
+        videos = await this.prisma.video.findMany({
+          where: {
+            status: 'PUBLISHED',
+            isRemoved: false,
+            createdAt: { gte: since },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
+            ...(cursor ? { id: { lt: cursor } } : {}),
+          },
+          select: { id: true, tags: true, createdAt: true, viewsCount: true },
+          orderBy: [{ viewsCount: 'desc' }, { createdAt: 'desc' }],
+          take: TRENDING_POOL,
+        });
+        if (videos.length >= 50) break;
+      }
       const scored = videos.map(v => ({
         id: v.id,
         type: 'video' as const,
@@ -596,20 +613,25 @@ export class PersonalizedFeedService {
     }
 
     // majlis
-    const threads = await this.prisma.thread.findMany({
-      where: {
-        isRemoved: false,
-        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        visibility: 'PUBLIC',
-        isChainHead: true,
-        createdAt: { gte: since },
-        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
-        ...(cursor ? { id: { lt: cursor } } : {}),
-      },
-      select: { id: true, hashtags: true, createdAt: true, likesCount: true },
-      orderBy: [{ likesCount: 'desc' }, { createdAt: 'desc' }],
-      take: (limit + 1) * 2,
-    });
+    let threads: { id: string; hashtags: string[]; createdAt: Date; likesCount: number }[] = [];
+    for (const windowHours of tiers) {
+      const since = new Date(Date.now() - windowHours * 3600000);
+      threads = await this.prisma.thread.findMany({
+        where: {
+          isRemoved: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+          visibility: 'PUBLIC',
+          isChainHead: true,
+          createdAt: { gte: since },
+          user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
+          ...(cursor ? { id: { lt: cursor } } : {}),
+        },
+        select: { id: true, hashtags: true, createdAt: true, likesCount: true },
+        orderBy: [{ likesCount: 'desc' }, { createdAt: 'desc' }],
+        take: TRENDING_POOL,
+      });
+      if (threads.length >= 50) break;
+    }
     const scored = threads.map(t => ({
       id: t.id,
       type: 'thread' as const,

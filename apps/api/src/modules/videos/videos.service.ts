@@ -512,6 +512,7 @@ export class VideosService {
   async like(videoId: string, userId: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
 
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -569,6 +570,7 @@ export class VideosService {
   async dislike(videoId: string, userId: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
 
     const existingReaction = await this.prisma.videoReaction.findUnique({
       where: { userId_videoId: { userId, videoId } },
@@ -631,6 +633,7 @@ export class VideosService {
   async comment(videoId: string, userId: string, content: string, parentId?: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
 
     const [comment] = await this.prisma.$transaction([
       this.prisma.videoComment.create({
@@ -737,6 +740,7 @@ export class VideosService {
   async bookmark(videoId: string, userId: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
 
     const existing = await this.prisma.videoBookmark.findUnique({
       where: { userId_videoId: { userId, videoId } },

@@ -96,7 +96,7 @@ export class FeedService {
     await this.redis.lpush(`negative_signals:${userId}`, JSON.stringify({
       contentId, contentType, action: 'dismiss', timestamp: Date.now(),
     }));
-    await this.redis.ltrim(`negative_signals:${userId}`, 0, 199);
+    await this.redis.ltrim(`negative_signals:${userId}`, 0, 9999);
 
     return this.prisma.feedDismissal.upsert({
       where: { userId_contentId_contentType: { userId, contentId, contentType } },
@@ -106,7 +106,7 @@ export class FeedService {
   }
 
   async getDismissedIds(userId: string, contentType: string): Promise<string[]> {
-    const d = await this.prisma.feedDismissal.findMany({ where: { userId, contentType }, select: { contentId: true }, take: 1000 });
+    const d = await this.prisma.feedDismissal.findMany({ where: { userId, contentType }, select: { contentId: true }, take: 10000 });
     return d.map(x => x.contentId);
   }
 
@@ -302,8 +302,6 @@ export class FeedService {
       }
     }
 
-    const fallbackCutoff = new Date(Date.now() - TIME_WINDOWS.FALLBACK_HOURS * 3600000);
-
     // Build block/mute filter + content filter when authenticated
     let userFilter = {};
     let contentFilter = {};
@@ -335,21 +333,37 @@ export class FeedService {
       }
     }
 
-    const posts = await this.prisma.post.findMany({
-      where: {
-        isRemoved: false,
-        visibility: PostVisibility.PUBLIC,
-        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        createdAt: { gte: fallbackCutoff },
-        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
-        ...contentFilter,
-      },
-      select: FEED_POST_SELECT,
-      orderBy: { createdAt: 'desc' },
-      // Wider candidate pool for scoring (raised from 200 for better diversity).
-      // No offset — we filter by score/id cursor below.
-      take: 500,
-    });
+    // Adaptive multi-tier candidate fetch: start with tight window, expand if too few candidates.
+    // Phase 1: 24h window, ordered by engagement (uses composite index on isRemoved+visibility+likesCount).
+    // Phase 2: If < 100 results, expand to 48h then 7d.
+    // This ensures trending surfaces the most ENGAGED content, not just the most RECENT.
+    const baseWhere = {
+      isRemoved: false,
+      visibility: PostVisibility.PUBLIC,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
+      ...contentFilter,
+    };
+
+    const tiers = [
+      TIME_WINDOWS.TRENDING_HOURS,    // 24h — tight trending window
+      TIME_WINDOWS.FORYOU_HOURS,      // 48h — expanded if sparse
+      TIME_WINDOWS.FALLBACK_HOURS,    // 7d — last resort
+    ];
+
+    let posts: any[] = [];
+    for (const windowHours of tiers) {
+      const cutoff = new Date(Date.now() - windowHours * 3600000);
+      posts = await this.prisma.post.findMany({
+        where: { ...baseWhere, createdAt: { gte: cutoff } },
+        select: FEED_POST_SELECT,
+        // Order by likesCount DESC to get the most engaged content first (uses composite index).
+        // This is better than createdAt DESC because it surfaces viral older content.
+        orderBy: [{ likesCount: 'desc' }, { createdAt: 'desc' }],
+        take: CANDIDATE_POOL_SIZE.MAIN_FEED,
+      });
+      if (posts.length >= 100) break; // Enough candidates — don't expand further
+    }
 
     // Scoring formula: engagementRate = engagementTotal / ageHours
     // where engagementTotal = likes*1 + comments*2 + shares*3 + saves*2

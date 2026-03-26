@@ -1067,6 +1067,7 @@ model Post {
   @@index([isFeatured, featuredAt(sort: Desc)])
   @@index([visibility, createdAt(sort: Desc)]) // P0: for-you/trending feeds filter visibility+sort
   @@index([isRemoved, createdAt(sort: Desc)])  // P0: all feeds exclude removed posts
+  @@index([isRemoved, visibility, likesCount(sort: Desc)]) // Trending: engagement-sorted candidates
   @@map("posts")
 }
 
@@ -1329,6 +1330,7 @@ model Thread {
   @@index([circleId, createdAt(sort: Desc)])
   @@index([hashtags])
   @@index([isChainHead, createdAt(sort: Desc)]) // P0: thread feeds filter chain heads+sort
+  @@index([isRemoved, visibility, likesCount(sort: Desc)]) // Trending: engagement-sorted candidates
   @@map("threads")
 }
 

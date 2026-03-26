@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { IslamicService } from './islamic.service';
 import { PrismaService } from '../../config/prisma.service';
-import { mockRedis, mockConfigService, mockNotificationsService } from '../../common/test/mock-providers';
+import { mockRedis, mockConfigService, mockNotificationsService, mockQueueService } from '../../common/test/mock-providers';
 
 // Minimal prisma mock — glossary/classification methods don't use prisma
 const mockPrisma = {
@@ -36,6 +36,7 @@ describe('IslamicService — Glossary, Classification & Hadith Grade', () => {
         mockRedis,
         mockConfigService,
         mockNotificationsService,
+        mockQueueService,
       ],
     }).compile();
 
