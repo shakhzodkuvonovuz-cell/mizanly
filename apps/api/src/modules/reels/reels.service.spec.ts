@@ -130,10 +130,12 @@ describe('ReelsService', () => {
           useValue: (() => {
             // Functional sorted-set mock that stores ZADD data and returns via ZREVRANGE
             const sortedSets = new Map<string, { score: number; member: string }[]>();
+            const hashStore = new Map<string, Map<string, string>>();
             const redisMock = {
               get: jest.fn(),
+              set: jest.fn().mockResolvedValue('OK'),
               setex: jest.fn(),
-              del: jest.fn(async (...keys: string[]) => { for (const k of keys) sortedSets.delete(k); return keys.length; }),
+              del: jest.fn(async (...keys: string[]) => { for (const k of keys) { sortedSets.delete(k); hashStore.delete(k); } return keys.length; }),
               zcard: jest.fn(async (key: string) => sortedSets.get(key)?.length ?? 0),
               zadd: jest.fn(async (key: string, ...args: (string | number)[]) => {
                 if (!sortedSets.has(key)) sortedSets.set(key, []);
@@ -147,12 +149,23 @@ describe('ReelsService', () => {
                 const sorted = [...set].sort((a, b) => b.score - a.score);
                 return sorted.slice(start, stop + 1).map(s => s.member);
               }),
+              hset: jest.fn(async (key: string, ...args: string[]) => {
+                if (!hashStore.has(key)) hashStore.set(key, new Map());
+                const h = hashStore.get(key)!;
+                for (let i = 0; i < args.length; i += 2) h.set(args[i], args[i + 1]);
+                return args.length / 2;
+              }),
+              hmget: jest.fn(async (key: string, ...fields: string[]) => {
+                const h = hashStore.get(key);
+                return fields.map(f => h?.get(f) ?? null);
+              }),
               expire: jest.fn().mockResolvedValue(1),
               pipeline: jest.fn(() => {
                 const cmds: (() => Promise<unknown>)[] = [];
                 const pipe: Record<string, unknown> = {
                   del: (...keys: string[]) => { cmds.push(() => redisMock.del(...keys)); return pipe; },
                   zadd: (key: string, ...args: (string | number)[]) => { cmds.push(() => redisMock.zadd(key, ...args)); return pipe; },
+                  hset: (key: string, ...args: string[]) => { cmds.push(() => redisMock.hset(key, ...args)); return pipe; },
                   expire: (key: string, s: number) => { cmds.push(() => redisMock.expire(key, s)); return pipe; },
                   exec: async () => { const r: [null, unknown][] = []; for (const c of cmds) { r.push([null, await c()]); } return r; },
                 };

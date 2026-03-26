@@ -40,7 +40,7 @@ describe('Final 100 — breaking 3800', () => {
             feedDismissal: { upsert: jest.fn(), findMany: jest.fn().mockResolvedValue([]) }, report: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) }, circleMember: { findMany: jest.fn().mockResolvedValue([]) },
           }},
           { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({}) } },
-          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn(), setex: jest.fn(), del: jest.fn(), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0), zadd: jest.fn().mockResolvedValue(0), zcard: jest.fn().mockResolvedValue(0), zrevrange: jest.fn().mockResolvedValue([]), pipeline: jest.fn().mockReturnValue({ del: jest.fn().mockReturnThis(), zadd: jest.fn().mockReturnThis(), expire: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }), keys: jest.fn().mockResolvedValue([]) } },
+          { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue('OK'), setex: jest.fn(), del: jest.fn().mockResolvedValue(1), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0), zadd: jest.fn().mockResolvedValue(0), zcard: jest.fn().mockResolvedValue(0), zrevrange: jest.fn().mockResolvedValue([]), hmget: jest.fn().mockResolvedValue([]), hset: jest.fn().mockResolvedValue(1), pipeline: jest.fn().mockReturnValue({ del: jest.fn().mockReturnThis(), zadd: jest.fn().mockReturnThis(), hset: jest.fn().mockReturnThis(), expire: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }), keys: jest.fn().mockResolvedValue([]) } },
         ],
       }).compile();
       service = module.get(PostsService); prisma = module.get(PrismaService);
@@ -58,9 +58,11 @@ describe('Final 100 — breaking 3800', () => {
 
     it('foryou feed returns cached result', async () => {
       const redis = (service as any).redis;
-      // Simulate cache hit: zcard > 0 means sorted set exists, zrevrange returns cached items
+      // Simulate cache hit: zcard > 0 means sorted set exists
+      // zrevrange returns member IDs, hmget returns full JSON payloads
       redis.zcard.mockResolvedValue(2);
-      redis.zrevrange.mockResolvedValue([JSON.stringify({ id: 'p1', score: 50 }), JSON.stringify({ id: 'p2', score: 30 })]);
+      redis.zrevrange.mockResolvedValue(['p1', 'p2']);
+      redis.hmget.mockResolvedValue([JSON.stringify({ id: 'p1', score: 50 }), JSON.stringify({ id: 'p2', score: 30 })]);
       prisma.postReaction.findMany.mockResolvedValue([]); prisma.savedPost.findMany.mockResolvedValue([]);
       const result = await service.getFeed('u1', 'foryou');
       expect(result.data).toHaveLength(2);
