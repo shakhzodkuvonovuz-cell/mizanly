@@ -13,6 +13,7 @@ import { createClerkClient } from '@clerk/backend';
 import { RegisterDto } from './dto/register.dto';
 import { SetInterestsDto } from './dto/set-interests.dto';
 import { AnalyticsService } from '../../common/services/analytics.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
 
@@ -30,6 +31,7 @@ export class AuthService {
     private prisma: PrismaService,
     private config: ConfigService,
     private analytics: AnalyticsService,
+    private queueService: QueueService,
     @Inject('REDIS') private redis: Redis,
   ) {
     this.clerk = createClerkClient({
@@ -308,7 +310,7 @@ export class AuthService {
     // Check if this clerkId already exists (update case) — keep existing username
     const existingByClerk = await this.prisma.user.findUnique({ where: { clerkId } });
     if (existingByClerk) {
-      return this.prisma.user.update({
+      const updatedUser = await this.prisma.user.update({
         where: { clerkId },
         data: {
           email: data.email,
@@ -317,6 +319,21 @@ export class AuthService {
           ...(data.phone ? { phone: data.phone } : {}),
         },
       });
+
+      // Re-index updated user in search
+      this.queueService.addSearchIndexJob({
+        action: 'index',
+        indexName: 'users',
+        documentId: updatedUser.id,
+        document: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          displayName: updatedUser.displayName,
+          bio: updatedUser.bio,
+        },
+      }).catch(() => {});
+
+      return updatedUser;
     }
 
     // New user — generate cryptographically random username (not derived from clerkId)
@@ -344,6 +361,19 @@ export class AuthService {
 
     // Ensure UserSettings record exists for new webhook-created users
     await this.prisma.userSettings.create({ data: { userId: user.id } }).catch(() => {});
+
+    // Index new user in search
+    this.queueService.addSearchIndexJob({
+      action: 'index',
+      indexName: 'users',
+      documentId: user.id,
+      document: {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        bio: user.bio ?? '',
+      },
+    }).catch(() => {});
 
     return user;
   }

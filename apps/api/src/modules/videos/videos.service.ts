@@ -437,6 +437,24 @@ export class VideosService {
       select: VIDEO_SELECT,
     });
 
+    // Re-index updated video in search
+    this.publishWorkflow.onPublish({
+      contentType: 'video',
+      contentId: videoId,
+      userId,
+      indexDocument: {
+        id: videoId,
+        title: updated.title || '',
+        description: updated.description || '',
+        tags: updated.tags || [],
+        username: updated.user?.username || '',
+        userId,
+        channelId: updated.channelId,
+        category: updated.category || 'OTHER',
+        status: updated.status,
+      },
+    }).catch(err => this.logger.warn('Publish workflow failed for video update', err instanceof Error ? err.message : err));
+
     // Re-fetch flags
     const [reaction, bookmark] = await Promise.all([
       this.prisma.videoReaction.findUnique({
@@ -495,16 +513,16 @@ export class VideosService {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
 
-    const existingReaction = await this.prisma.videoReaction.findUnique({
-      where: { userId_videoId: { userId, videoId } },
-    });
-    if (existingReaction?.isLike === true) throw new ConflictException('Already liked');
-    // If existing reaction is dislike, we'll replace it
-
     try {
       await this.prisma.$transaction(async (tx) => {
+        // Read existing reaction INSIDE the transaction to prevent race condition
+        const existingReaction = await tx.videoReaction.findUnique({
+          where: { userId_videoId: { userId, videoId } },
+        });
+        if (existingReaction?.isLike === true) throw new ConflictException('Already liked');
+
         if (existingReaction) {
-          // Update existing reaction
+          // Update existing reaction (dislike → like flip)
           await tx.videoReaction.update({
             where: { userId_videoId: { userId, videoId } },
             data: { isLike: true },
@@ -756,36 +774,34 @@ export class VideosService {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
 
-    // Deduplicate: only count view if user hasn't watched this video today
-    const existing = await this.prisma.watchHistory.findUnique({
-      where: { userId_videoId: { userId, videoId } },
-    });
-
     const now = new Date();
-    const isNewView = !existing || (now.getTime() - existing.watchedAt.getTime() > 24 * 60 * 60 * 1000);
 
-    const ops = [
-      this.prisma.watchHistory.upsert({
+    // Deduplicate inside transaction to prevent race condition double-counting
+    await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.watchHistory.findUnique({
+        where: { userId_videoId: { userId, videoId } },
+      });
+
+      const isNewView = !existing || (now.getTime() - existing.watchedAt.getTime() > 24 * 60 * 60 * 1000);
+
+      await tx.watchHistory.upsert({
         where: { userId_videoId: { userId, videoId } },
         create: { userId, videoId, watchedAt: now },
         update: { watchedAt: now },
-      }),
-    ];
+      });
 
-    if (isNewView) {
-      ops.push(
-        this.prisma.video.update({
+      if (isNewView) {
+        await tx.video.update({
           where: { id: videoId },
           data: { viewsCount: { increment: 1 } },
-        }) as any,
-        this.prisma.channel.update({
+        });
+        await tx.channel.update({
           where: { id: video.channelId },
           data: { totalViews: { increment: 1 } },
-        }) as any,
-      );
-    }
+        });
+      }
+    });
 
-    await this.prisma.$transaction(ops);
     return { viewed: true };
   }
 

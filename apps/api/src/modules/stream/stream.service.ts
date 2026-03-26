@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { assertNotPrivateUrl } from '../../common/utils/ssrf';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 
 interface UploadMeta {
   title: string;
@@ -41,6 +42,7 @@ export class StreamService {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
+    private publishWorkflow: PublishWorkflowService,
   ) {
     this.accountId = this.config.get('CF_STREAM_ACCOUNT_ID') ?? '';
     this.apiToken = this.config.get('CF_STREAM_API_TOKEN') ?? '';
@@ -158,7 +160,7 @@ export class StreamService {
 
     const video = await this.prisma.video.findFirst({
       where: { streamId },
-      select: { id: true, status: true, channelId: true },
+      select: { id: true, status: true, channelId: true, userId: true, title: true, description: true, tags: true, category: true, user: { select: { username: true } } },
     });
     if (video) {
       const previousStatus = video.status;
@@ -183,6 +185,26 @@ export class StreamService {
           const msg = err instanceof Error ? err.message : String(err);
           this.logger.warn(`Failed to increment channel videosCount for channel ${video.channelId}: ${msg}`);
         });
+      }
+
+      // Index the now-published video in search
+      if (video.userId) {
+        this.publishWorkflow.onPublish({
+          contentType: 'video',
+          contentId: video.id,
+          userId: video.userId,
+          indexDocument: {
+            id: video.id,
+            title: video.title || '',
+            description: video.description || '',
+            tags: video.tags || [],
+            username: video.user?.username || '',
+            userId: video.userId,
+            channelId: video.channelId,
+            category: video.category || 'OTHER',
+            status: 'PUBLISHED',
+          },
+        }).catch(err => this.logger.warn(`Failed to index published video ${video.id}`, err instanceof Error ? err.message : err));
       }
 
       this.logger.log(`Video ${video.id} ready for streaming (was ${previousStatus})`);

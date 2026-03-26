@@ -299,7 +299,7 @@ export class SchedulingService {
 
         this.publishWorkflow.onPublish({
           contentType: 'reel', contentId: id, userId,
-          indexDocument: { id, description: reel.caption || '', hashtags: reel.hashtags || [], userId },
+          indexDocument: { id, caption: reel.caption || '', hashtags: reel.hashtags || [], userId },
         }).catch(err => this.logger.warn(`Publish workflow failed`, err instanceof Error ? err.message : err));
 
         for (const name of extractHashtags(reel.caption ?? '')) {
@@ -381,7 +381,7 @@ export class SchedulingService {
   async publishOverdueContent(): Promise<{ posts: number; threads: number; reels: number; videos: number }> {
     try {
     const now = new Date();
-    const overdueWhere = { scheduledAt: { not: null, lte: now } as { not: null; lte: Date } };
+    const overdueWhere = { scheduledAt: { not: null, lte: now } as { not: null; lte: Date }, isRemoved: false };
 
     // 1. Find items that are about to be published (need full data for deferred side effects)
     const [overduePosts, overdueThreads, overdueReels, overdueVideos] = await Promise.all([
@@ -529,7 +529,7 @@ export class SchedulingService {
         userId: reel.userId,
         indexDocument: {
           id: reel.id,
-          description: reel.caption || '',
+          caption: reel.caption || '',
           hashtags: reel.hashtags || [],
           userId: reel.userId,
         },

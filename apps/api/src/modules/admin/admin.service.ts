@@ -10,6 +10,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { ReportStatus, ModerationAction } from '@prisma/client';
 import { createClerkClient } from '@clerk/backend';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 
 @Injectable()
 export class AdminService {
@@ -20,6 +21,7 @@ export class AdminService {
     private prisma: PrismaService,
     private config: ConfigService,
     @Optional() private notificationsService: NotificationsService,
+    private publishWorkflow: PublishWorkflowService,
   ) {
     this.clerk = createClerkClient({
       secretKey: this.config.get('CLERK_SECRET_KEY'),
@@ -291,6 +293,16 @@ export class AdminService {
       }
     }
 
+    // Remove banned user from search index
+    this.publishWorkflow.onUnpublish({
+      contentType: 'user',
+      contentId: targetId,
+      userId: targetId,
+    }).catch(err => {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Failed to remove banned user ${targetId} from search index: ${msg}`);
+    });
+
     // Finding #417: Admin audit trail
     await this.prisma.adminAuditLog.create({
       data: { adminId, action: 'BAN_USER', targetType: 'user', targetId, details: { reason, duration } },
@@ -328,6 +340,22 @@ export class AdminService {
         this.logger.warn(`Failed to lift Clerk ban for user ${targetId}: ${msg}`);
       }
     }
+
+    // Re-add unbanned user to search index
+    this.publishWorkflow.onPublish({
+      contentType: 'user',
+      contentId: targetId,
+      userId: targetId,
+      indexDocument: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        displayName: updatedUser.displayName,
+        bio: updatedUser.bio,
+      },
+    }).catch(err => {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Failed to re-index unbanned user ${targetId}: ${msg}`);
+    });
 
     return updatedUser;
   }

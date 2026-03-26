@@ -302,7 +302,7 @@ export class ReelsService {
         userId,
         indexDocument: {
           id: reel.id,
-          description: reel.caption,
+          caption: reel.caption,
           userId,
           hashtags: reel.hashtags,
         },
@@ -484,7 +484,7 @@ export class ReelsService {
     if (reel.userId !== userId) throw new ForbiddenException();
     if (reel.isRemoved) throw new BadRequestException('Reel has been removed');
 
-    return this.prisma.reel.update({
+    const updated = await this.prisma.reel.update({
       where: { id: reelId },
       data: {
         ...(data.caption !== undefined ? { caption: data.caption } : {}),
@@ -493,6 +493,22 @@ export class ReelsService {
       },
       select: REEL_SELECT,
     });
+
+    // Re-index updated reel in search (use 'caption' to match Meilisearch searchableAttributes)
+    this.publishWorkflow.onPublish({
+      contentType: 'reel',
+      contentId: reelId,
+      userId,
+      indexDocument: {
+        id: reelId,
+        caption: updated.caption || '',
+        hashtags: updated.hashtags || [],
+        username: updated.user?.username || '',
+        userId,
+      },
+    }).catch(err => this.logger.warn('Publish workflow failed for reel update', err instanceof Error ? err.message : err));
+
+    return updated;
   }
 
   async getById(reelId: string, userId?: string) {
@@ -589,6 +605,19 @@ export class ReelsService {
       where: { id: reelId },
       data: { isTrial: false },
     });
+
+    // Index the now-public reel in search
+    this.publishWorkflow.onPublish({
+      contentType: 'reel',
+      contentId: reelId,
+      userId,
+      indexDocument: {
+        id: reelId,
+        caption: reel.caption || '',
+        hashtags: reel.hashtags || [],
+        userId,
+      },
+    }).catch(err => this.logger.warn('Publish workflow failed for trial reel publish', err instanceof Error ? err.message : err));
 
     return { published: true };
   }

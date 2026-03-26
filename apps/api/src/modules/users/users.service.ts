@@ -17,6 +17,7 @@ import { createHash } from 'crypto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PostVisibility, ThreadVisibility, ReportReason } from '@prisma/client';
 import { sanitizeText } from '@/common/utils/sanitize';
+import { PublishWorkflowService } from '@/common/services/publish-workflow.service';
 
 const PUBLIC_USER_FIELDS = {
   id: true,
@@ -62,6 +63,7 @@ export class UsersService {
     private privacyService: PrivacyService,
     @Inject('REDIS') private redis: Redis,
     @Optional() private notificationsService: NotificationsService,
+    private publishWorkflow: PublishWorkflowService,
   ) {}
 
   touchLastSeen(userId: string) {
@@ -135,6 +137,20 @@ export class UsersService {
       await this.redis.del(`user:${oldUsername}`);
     }
     await this.redis.del(`user:${updated.username}`);
+
+    // Re-index user in search after profile update
+    this.publishWorkflow.onPublish({
+      contentType: 'user',
+      contentId: userId,
+      userId,
+      indexDocument: {
+        id: userId,
+        username: updated.username,
+        displayName: updated.displayName,
+        bio: updated.bio,
+      },
+    }).catch(err => this.logger.warn('Publish workflow failed for user profile update', err instanceof Error ? err.message : err));
+
     return updated;
   }
 

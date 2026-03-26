@@ -177,7 +177,7 @@ export class PostsService {
           createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
           isRemoved: false,
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-          user: { isPrivate: false, isBanned: false, isDeactivated: false },
+          user: { isPrivate: false, isBanned: false, isDeactivated: false, isDeleted: false },
           visibility: 'PUBLIC',
           ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
           ...(dismissedPostIds.length ? { id: { notIn: dismissedPostIds } } : {}),
@@ -256,7 +256,10 @@ export class PostsService {
       isRemoved: false,
       OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       userId: { in: visibleUserIds },
-      user: { isBanned: false, isDeactivated: false },
+      user: { isBanned: false, isDeactivated: false, isDeleted: false },
+      AND: [
+        { OR: [{ visibility: 'PUBLIC' }, { visibility: 'FOLLOWERS' }, { userId }] },
+      ],
     };
 
     const posts = await this.prisma.post.findMany({
@@ -302,7 +305,7 @@ export class PostsService {
         visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isBanned: false, isPrivate: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       },
       select: POST_SELECT,
@@ -348,7 +351,7 @@ export class PostsService {
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: visibleUserIds },
-        user: { isBanned: false, isDeactivated: false },
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: POST_SELECT,
@@ -365,7 +368,7 @@ export class PostsService {
         visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isBanned: false, isPrivate: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
         id: { notIn: [...seenIds] },
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       },
@@ -428,6 +431,7 @@ export class PostsService {
       where: {
         userId: { in: visibleUserIds },
         isRemoved: false,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
         AND: [
           { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
           { OR: [{ userId }, { visibility: 'PUBLIC' }, { visibility: 'FOLLOWERS' }] },
@@ -845,7 +849,7 @@ export class PostsService {
       throw new BadRequestException('Posts can only be edited within 15 minutes of creation');
     }
 
-    return this.prisma.post.update({
+    const updated = await this.prisma.post.update({
       where: { id: postId },
       data: {
         content: data.content ? sanitizeText(data.content) : data.content,
@@ -862,6 +866,24 @@ export class PostsService {
       },
       select: POST_SELECT,
     });
+
+    // Re-index updated post in search
+    this.publishWorkflow.onPublish({
+      contentType: 'post',
+      contentId: postId,
+      userId,
+      indexDocument: {
+        id: postId,
+        content: updated.content || '',
+        hashtags: updated.hashtags || [],
+        username: updated.user?.username || '',
+        userId,
+        postType: updated.postType,
+        visibility: updated.visibility,
+      },
+    }).catch(err => this.logger.warn('Publish workflow failed for post update', err instanceof Error ? err.message : err));
+
+    return updated;
   }
 
   async delete(postId: string, userId: string) {
@@ -1654,7 +1676,9 @@ export class PostsService {
         id: { not: postId },
         hashtags: { hasSome: post.hashtags },
         isRemoved: false,
+        visibility: 'PUBLIC',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        user: { isDeactivated: false, isBanned: false, isDeleted: false },
       },
       select: POST_SELECT,
       orderBy: { likesCount: 'desc' },

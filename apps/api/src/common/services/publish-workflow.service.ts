@@ -33,7 +33,7 @@ export class PublishWorkflowService {
    * Handles all downstream side effects in a single, explicit pipeline.
    */
   async onPublish(params: {
-    contentType: 'post' | 'reel' | 'thread' | 'video';
+    contentType: 'post' | 'reel' | 'thread' | 'video' | 'user';
     contentId: string;
     userId: string;
     indexDocument?: Record<string, unknown>;
@@ -82,7 +82,7 @@ export class PublishWorkflowService {
    * Handles cleanup side effects.
    */
   async onUnpublish(params: {
-    contentType: 'post' | 'reel' | 'thread' | 'video';
+    contentType: 'post' | 'reel' | 'thread' | 'video' | 'user';
     contentId: string;
     userId: string;
   }): Promise<void> {

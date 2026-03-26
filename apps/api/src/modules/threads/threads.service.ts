@@ -149,7 +149,7 @@ export class ThreadsService {
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
-        user: { isPrivate: false, isDeactivated: false, isBanned: false },
+        user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
         createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
       };
       if (excludedIds.length) where.userId = { notIn: excludedIds };
@@ -205,7 +205,10 @@ export class ThreadsService {
         isChainHead: true,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: allowedUserIds },
-        user: { isDeactivated: false, isBanned: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false },
+        AND: [
+          { OR: [{ visibility: 'PUBLIC' }, { visibility: 'FOLLOWERS' }, { userId }] },
+        ],
       };
 
       const threads = await this.prisma.thread.findMany({
@@ -253,7 +256,7 @@ export class ThreadsService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: 'PUBLIC',
         createdAt: { gte: sevenDaysAgo },
-        user: { isPrivate: false, isDeactivated: false, isBanned: false },
+        user: { isPrivate: false, isDeactivated: false, isBanned: false, isDeleted: false },
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       },
       select: THREAD_SELECT,
@@ -311,7 +314,7 @@ export class ThreadsService {
         isChainHead: true,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: allowedUserIds },
-        user: { isDeactivated: false, isBanned: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: THREAD_SELECT,
@@ -522,11 +525,28 @@ export class ThreadsService {
     if (thread.userId !== userId) throw new ForbiddenException();
     if (thread.isRemoved) throw new BadRequestException('Thread has been removed');
 
-    return this.prisma.thread.update({
+    const updated = await this.prisma.thread.update({
       where: { id: threadId },
       data: { content: sanitizeText(content) },
       select: THREAD_SELECT,
     });
+
+    // Re-index updated thread in search
+    this.publishWorkflow.onPublish({
+      contentType: 'thread',
+      contentId: threadId,
+      userId,
+      indexDocument: {
+        id: threadId,
+        content: updated.content || '',
+        hashtags: updated.hashtags || [],
+        username: updated.user?.username || '',
+        userId,
+        visibility: updated.visibility,
+      },
+    }).catch(err => this.logger.warn('Publish workflow failed for thread update', err instanceof Error ? err.message : err));
+
+    return updated;
   }
 
   /**
@@ -914,17 +934,25 @@ export class ThreadsService {
       if (existingVoteOnPoll) throw new ConflictException('Already voted on this poll');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.pollVote.create({ data: { userId, optionId } }),
-      this.prisma.pollOption.update({
-        where: { id: optionId },
-        data: { votesCount: { increment: 1 } },
-      }),
-      this.prisma.poll.update({
-        where: { id: option.pollId },
-        data: { totalVotes: { increment: 1 } },
-      }),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.pollVote.create({ data: { userId, optionId } }),
+        this.prisma.pollOption.update({
+          where: { id: optionId },
+          data: { votesCount: { increment: 1 } },
+        }),
+        this.prisma.poll.update({
+          where: { id: option.pollId },
+          data: { totalVotes: { increment: 1 } },
+        }),
+      ]);
+    } catch (err: unknown) {
+      // P2002: duplicate vote from concurrent request
+      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'P2002') {
+        throw new ConflictException('Already voted on this poll');
+      }
+      throw err;
+    }
     return { voted: true };
   }
 
