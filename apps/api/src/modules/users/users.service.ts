@@ -450,7 +450,7 @@ export class UsersService {
 
   async getSavedPosts(userId: string, cursor?: string, limit = 20) {
     const saved = await this.prisma.savedPost.findMany({
-      where: { userId },
+      where: { userId, post: { isRemoved: false } },
       include: {
         post: {
           select: {
@@ -484,7 +484,7 @@ export class UsersService {
 
   async getSavedThreads(userId: string, cursor?: string, limit = 20) {
     const bookmarks = await this.prisma.threadBookmark.findMany({
-      where: { userId },
+      where: { userId, thread: { isRemoved: false } },
       include: {
         thread: {
           select: {
@@ -516,7 +516,7 @@ export class UsersService {
 
   async getSavedReels(userId: string, cursor?: string, limit = 20) {
     const interactions = await this.prisma.reelInteraction.findMany({
-      where: { userId, saved: true },
+      where: { userId, saved: true, reel: { isRemoved: false } },
       include: {
         reel: {
           select: {
@@ -559,7 +559,7 @@ export class UsersService {
 
   async getSavedVideos(userId: string, cursor?: string, limit = 20) {
     const bookmarks = await this.prisma.videoBookmark.findMany({
-      where: { userId },
+      where: { userId, video: { isRemoved: false } },
       include: {
         video: {
           select: {
@@ -636,7 +636,7 @@ export class UsersService {
 
   async getWatchLater(userId: string, cursor?: string, limit = 20) {
     const items = await this.prisma.watchLater.findMany({
-      where: { userId },
+      where: { userId, video: { isRemoved: false } },
       include: {
         video: {
           select: {
@@ -684,7 +684,7 @@ export class UsersService {
 
   async getWatchHistory(userId: string, cursor?: string, limit = 20) {
     const items = await this.prisma.watchHistory.findMany({
-      where: { userId },
+      where: { userId, video: { isRemoved: false } },
       include: {
         video: {
           select: {
@@ -766,7 +766,7 @@ export class UsersService {
     const users = await this.prisma.user.findMany({
       where: { followersCount: { gt: 0 }, isDeleted: false, isBanned: false },
       select: { id: true, followersCount: true },
-      take: 200000, // Snapshot all users — capped at 200K to prevent OOM
+      take: 5000, // Snapshot in manageable batches to prevent OOM
     });
 
     // Process in parallel batches of 100 instead of sequential

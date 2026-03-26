@@ -59,22 +59,22 @@ export class StoriesService {
       this.prisma.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true },
-        take: 50,
+        take: 10000,
       }),
       this.prisma.block.findMany({
         where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
         select: { blockerId: true, blockedId: true },
-        take: 50,
+        take: 10000,
       }),
       this.prisma.mute.findMany({
         where: { userId },
         select: { mutedId: true },
-        take: 50,
+        take: 10000,
       }),
       this.prisma.restrict.findMany({
         where: { restricterId: userId },
         select: { restrictedId: true },
-        take: 50,
+        take: 10000,
       }),
     ]);
 

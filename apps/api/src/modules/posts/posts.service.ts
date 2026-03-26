@@ -8,6 +8,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -88,35 +89,40 @@ export class PostsService {
    */
   @Cron('*/5 * * * *')
   async notifyScheduledPostsPublished() {
-    const now = new Date();
-    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+    try {
+      const now = new Date();
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
-    // Find posts that just became visible (scheduledAt between 5min ago and now)
-    const justPublished = await this.prisma.post.findMany({
-      where: {
-        scheduledAt: { gt: fiveMinutesAgo, lte: now },
-        isRemoved: false,
-      },
-      select: { id: true, userId: true, content: true },
-      take: 50,
-    });
+      // Find posts that just became visible (scheduledAt between 5min ago and now)
+      const justPublished = await this.prisma.post.findMany({
+        where: {
+          scheduledAt: { gt: fiveMinutesAgo, lte: now },
+          isRemoved: false,
+        },
+        select: { id: true, userId: true, content: true },
+        take: 50,
+      });
 
-    for (const post of justPublished) {
-      // Dedup via Redis — only notify once per post
-      const dedup = await this.redis.get(`scheduled_notified:${post.id}`);
-      if (dedup) continue;
-      await this.redis.setex(`scheduled_notified:${post.id}`, 86400, '1');
+      for (const post of justPublished) {
+        // Dedup via Redis — only notify once per post
+        const dedup = await this.redis.get(`scheduled_notified:${post.id}`);
+        if (dedup) continue;
+        await this.redis.setex(`scheduled_notified:${post.id}`, 86400, '1');
 
-      if (post.userId) {
-        this.notifications.create({
-          userId: post.userId,
-          actorId: post.userId,
-          type: 'SYSTEM',
-          postId: post.id,
-          title: 'Scheduled post published!',
-          body: post.content ? post.content.slice(0, 100) : 'Your scheduled post is now live.',
-        }).catch(() => {});
+        if (post.userId) {
+          this.notifications.create({
+            userId: post.userId,
+            actorId: post.userId,
+            type: 'SYSTEM',
+            postId: post.id,
+            title: 'Scheduled post published!',
+            body: post.content ? post.content.slice(0, 100) : 'Your scheduled post is now live.',
+          }).catch(() => {});
+        }
       }
+    } catch (error) {
+      this.logger.error('notifyScheduledPostsPublished cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
     }
   }
 
@@ -895,6 +901,7 @@ export class PostsService {
   async react(postId: string, userId: string, reaction: string = 'LIKE') {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+    if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.userId !== userId) throw new NotFoundException('Post not found');
 
     // Prevent self-like/self-react
     if (post.userId === userId) {
@@ -972,6 +979,7 @@ export class PostsService {
   async save(postId: string, userId: string) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+    if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.userId !== userId) throw new NotFoundException('Post not found');
 
     try {
       await this.prisma.$transaction([
@@ -1078,6 +1086,7 @@ export class PostsService {
   async share(postId: string, userId: string, content?: string) {
     const original = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!original || original.isRemoved) throw new NotFoundException('Post not found');
+    if (original.scheduledAt && new Date(original.scheduledAt) > new Date() && original.userId !== userId) throw new NotFoundException('Post not found');
 
     // Block check: cannot share posts from users who blocked you or whom you blocked
     if (original.userId && original.userId !== userId) {
@@ -1237,6 +1246,7 @@ export class PostsService {
   async addComment(postId: string, userId: string, dto: AddCommentDto) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+    if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.userId !== userId) throw new NotFoundException('Post not found');
 
     // Enforce commentPermission — owner always allowed (supersedes legacy commentsDisabled)
     const perm = post.commentPermission ?? 'EVERYONE';

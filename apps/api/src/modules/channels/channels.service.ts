@@ -252,18 +252,21 @@ export class ChannelsService {
     if (!channel) throw new NotFoundException('Channel not found');
 
     const [blocks, mutes] = userId ? await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
+      this.prisma.block.findMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] }, select: { blockerId: true, blockedId: true },
+      take: 10000,
     }),
       this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
-      take: 50,
+      take: 10000,
     }),
     ]) : [[], []];
 
-    const excludedIds = [
-      ...blocks.map(b => b.blockedId),
-      ...mutes.map(m => m.mutedId),
-    ];
+    const excludedSet = new Set<string>();
+    for (const b of blocks) {
+      if (b.blockerId === userId) excludedSet.add(b.blockedId);
+      else excludedSet.add(b.blockerId);
+    }
+    for (const m of mutes) excludedSet.add(m.mutedId);
+    const excludedIds = [...excludedSet];
 
     const where: Prisma.VideoWhereInput = {
       channelId: channel.id,

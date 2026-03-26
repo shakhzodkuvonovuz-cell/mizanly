@@ -420,6 +420,7 @@ export class SearchService {
         WHERE "createdAt" >= ${twentyFourHoursAgo}
           AND array_length(hashtags, 1) > 0
           AND ("scheduledAt" IS NULL OR "scheduledAt" <= NOW())
+          AND "isRemoved" = false
         GROUP BY tag
         UNION ALL
         SELECT unnest(hashtags) as tag, COUNT(*) as cnt
@@ -427,6 +428,7 @@ export class SearchService {
         WHERE "createdAt" >= ${twentyFourHoursAgo}
           AND array_length(hashtags, 1) > 0
           AND ("scheduledAt" IS NULL OR "scheduledAt" <= NOW())
+          AND "isRemoved" = false
         GROUP BY tag
       ) combined
       GROUP BY tag

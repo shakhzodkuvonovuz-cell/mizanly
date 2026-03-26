@@ -603,6 +603,7 @@ export class ThreadsService {
   async like(threadId: string, userId: string) {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+    if (thread.scheduledAt && new Date(thread.scheduledAt) > new Date() && thread.userId !== userId) throw new NotFoundException('Thread not found');
 
     // Prevent self-like
     if (thread.userId === userId) {
@@ -827,6 +828,7 @@ export class ThreadsService {
   async addReply(threadId: string, userId: string, content: string, parentId?: string) {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+    if (thread.scheduledAt && new Date(thread.scheduledAt) > new Date() && thread.userId !== userId) throw new NotFoundException('Thread not found');
 
     // Enforce reply permission — owner always allowed
     if (thread.replyPermission && thread.replyPermission !== 'EVERYONE' && thread.userId !== userId) {
@@ -943,8 +945,9 @@ export class ThreadsService {
       if (block) throw new NotFoundException('User not found');
     }
 
+    const isOwn = viewerId === user.id;
     const threads = await this.prisma.thread.findMany({
-      where: { userId: user.id, isRemoved: false, isChainHead: true, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+      where: { userId: user.id, isRemoved: false, isChainHead: true, ...(isOwn ? {} : { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] }) },
       select: THREAD_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

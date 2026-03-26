@@ -325,14 +325,17 @@ export class ReelsService {
     }
 
     const [blocks, mutes] = userId ? await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 10000 }),
+      this.prisma.block.findMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] }, select: { blockerId: true, blockedId: true }, take: 10000 }),
       this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 10000 }),
     ]) : [[], []];
 
-    const excludedIds = [
-      ...blocks.map(b => b.blockedId),
-      ...mutes.map(m => m.mutedId),
-    ];
+    const excludedSet = new Set<string>();
+    for (const b of blocks) {
+      if (b.blockerId === userId) excludedSet.add(b.blockedId);
+      else excludedSet.add(b.blockerId);
+    }
+    for (const m of mutes) excludedSet.add(m.mutedId);
+    const excludedIds = [...excludedSet];
 
     const where: Prisma.ReelWhereInput = {
       status: ReelStatus.READY,
@@ -593,6 +596,7 @@ export class ReelsService {
   async like(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
+    if (reel.scheduledAt && new Date(reel.scheduledAt) > new Date() && reel.userId !== userId) throw new NotFoundException('Reel not found');
 
     // Prevent self-like
     if (reel.userId === userId) {
@@ -664,6 +668,7 @@ export class ReelsService {
   async comment(reelId: string, userId: string, content: string, parentId?: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
+    if (reel.scheduledAt && new Date(reel.scheduledAt) > new Date() && reel.userId !== userId) throw new NotFoundException('Reel not found');
 
     // Enforce commentPermission — owner always allowed
     const perm = reel.commentPermission ?? 'EVERYONE';
@@ -750,13 +755,15 @@ export class ReelsService {
     if (!comment || comment.reelId !== reelId) throw new NotFoundException('Comment not found');
 
     try {
-      await this.prisma.reelCommentReaction.create({
-        data: { commentId, userId },
-      });
-      await this.prisma.reelComment.update({
-        where: { id: commentId },
-        data: { likesCount: { increment: 1 } },
-      });
+      await this.prisma.$transaction([
+        this.prisma.reelCommentReaction.create({
+          data: { commentId, userId },
+        }),
+        this.prisma.reelComment.update({
+          where: { id: commentId },
+          data: { likesCount: { increment: 1 } },
+        }),
+      ]);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         return { liked: true };
@@ -774,10 +781,7 @@ export class ReelsService {
       where: { commentId, userId },
     });
     if (deleted.count > 0) {
-      await this.prisma.reelComment.update({
-        where: { id: commentId },
-        data: { likesCount: { decrement: 1 } },
-      });
+      await this.prisma.$executeRaw`UPDATE "ReelComment" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`;
     }
     return { unliked: true };
   }
@@ -861,6 +865,7 @@ export class ReelsService {
   async bookmark(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
+    if (reel.scheduledAt && new Date(reel.scheduledAt) > new Date() && reel.userId !== userId) throw new NotFoundException('Reel not found');
 
     // Use interactive transaction to atomically check-and-update
     const alreadyBookmarked = await this.prisma.$transaction(async (tx) => {
