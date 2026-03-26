@@ -4,6 +4,7 @@ import { CounterReconciliationService } from './counter-reconciliation.service';
 import { SearchReconciliationService } from './search-reconciliation.service';
 import { MeilisearchSyncService } from './meilisearch-sync.service';
 import { ABTestingService } from './ab-testing.service';
+import { PaymentReconciliationService } from './payment-reconciliation.service';
 import { MeilisearchService } from '../../modules/search/meilisearch.service';
 
 /**
@@ -19,6 +20,7 @@ import { MeilisearchService } from '../../modules/search/meilisearch.service';
     MeilisearchSyncService,
     MeilisearchService,
     ABTestingService,
+    PaymentReconciliationService,
   ],
   exports: [
     PublishWorkflowService,
@@ -27,6 +29,7 @@ import { MeilisearchService } from '../../modules/search/meilisearch.service';
     MeilisearchSyncService,
     MeilisearchService,
     ABTestingService,
+    PaymentReconciliationService,
   ],
 })
 export class PlatformServicesModule {}

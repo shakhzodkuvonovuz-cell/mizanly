@@ -307,6 +307,13 @@ enum CoinTransactionType {
   CASHOUT
 }
 
+enum TipStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  DISPUTED
+}
+
 enum HalalCategory {
   RESTAURANT
   GROCERY
@@ -2731,7 +2738,7 @@ model Tip {
   currency        String   @default("USD") @db.VarChar(3)
   message         String?  @db.VarChar(500)
   platformFee     Decimal  @default(0) @db.Decimal(12, 2)
-  status          String   @default("completed") @db.VarChar(20)
+  status          String   @default("pending") @db.VarChar(20)
   stripePaymentId String?
   createdAt       DateTime @default(now())
 
