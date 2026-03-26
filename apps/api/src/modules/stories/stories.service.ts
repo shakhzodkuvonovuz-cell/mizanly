@@ -463,6 +463,16 @@ export class StoriesService {
       },
     });
 
+    // Create STORY_REPLY notification so the story owner gets a push notification
+    this.notifications.create({
+      userId: ownerId,
+      actorId: senderId,
+      type: 'STORY_REPLY',
+      conversationId: conversation.id,
+      title: 'Story reply',
+      body: content.length > 100 ? content.slice(0, 99) + '\u2026' : content,
+    }).catch(() => {});
+
     return message;
   }
 

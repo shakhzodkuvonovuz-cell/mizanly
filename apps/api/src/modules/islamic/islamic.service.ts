@@ -816,7 +816,10 @@ export class IslamicService {
     }
     // Increment global community dhikr counter (Finding #280)
     await this.redis.incrby('community:dhikr:total', dto.count);
-    await this.redis.incrby(`community:dhikr:today:${new Date().toISOString().slice(0, 10)}`, dto.count);
+    const todayKey = `community:dhikr:today:${new Date().toISOString().slice(0, 10)}`;
+    await this.redis.incrby(todayKey, dto.count);
+    // 48-hour TTL prevents stale daily keys from accumulating indefinitely
+    await this.redis.expire(todayKey, 48 * 60 * 60);
 
     const session = await this.prisma.dhikrSession.create({
       data: {

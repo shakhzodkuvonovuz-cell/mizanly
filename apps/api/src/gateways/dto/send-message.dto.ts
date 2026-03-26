@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsEnum, IsUrl, IsUUID, MaxLength, IsBoolean } from 'class-validator';
 
 export class WsSendMessageDto {
-  @IsString()
+  @IsUUID()
   conversationId: string;
 
   @IsOptional()

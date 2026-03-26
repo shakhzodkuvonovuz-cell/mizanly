@@ -219,6 +219,18 @@ export default function RisalahScreen() {
         });
       });
 
+      // On reconnect, re-join all conversation rooms (fixes stale presence after network drop)
+      socket.on('connect', () => {
+        if (!mounted) return;
+        const convos = queryClient.getQueryData<Conversation[]>(['conversations']);
+        if (convos) {
+          for (const convo of convos) {
+            socket?.emit('join_conversation', { conversationId: convo.id });
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      });
+
       // Refetch conversations on new messages so list stays fresh
       socket.on('new_message', () => {
         if (!mounted) return;

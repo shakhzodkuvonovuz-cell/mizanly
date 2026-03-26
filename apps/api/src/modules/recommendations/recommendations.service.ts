@@ -1,7 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma, ReelStatus, PostVisibility, EmbeddingContentType } from '@prisma/client';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
+import Redis from 'ioredis';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 const POST_SELECT = {
   id: true,
@@ -162,30 +164,13 @@ export class RecommendationsService {
   constructor(
     private prisma: PrismaService,
     private embeddingsService: EmbeddingsService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
+  /** Get user IDs to exclude (blocked both directions + muted).
+   *  Delegates to shared cached utility — results cached in Redis for 60s per user. */
   private async getExcludedUserIds(userId: string): Promise<string[]> {
-    const [blocks, mutes] = await Promise.all([
-      this.prisma.block.findMany({
-        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
-        select: { blockerId: true, blockedId: true },
-        take: 10000,
-      }),
-      this.prisma.mute.findMany({
-        where: { userId },
-        select: { mutedId: true },
-        take: 10000,
-      }),
-    ]);
-    const excluded = new Set<string>();
-    for (const b of blocks) {
-      if (b.blockerId === userId) excluded.add(b.blockedId);
-      else excluded.add(b.blockerId);
-    }
-    for (const m of mutes) {
-      excluded.add(m.mutedId);
-    }
-    return [...excluded];
+    return getExcludedUserIds(this.prisma, this.redis, userId);
   }
 
   // ── Multi-stage ranking pipeline ──────────────────────────

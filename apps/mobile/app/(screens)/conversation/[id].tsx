@@ -1000,6 +1000,10 @@ export default function ConversationScreen() {
         setTimeout(() => {
           newMessageIdsRef.current.delete(msg.id);
         }, 500);
+        // Emit delivery receipt so the sender gets confirmation
+        if (msg.senderId !== user?.id) {
+          socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
+        }
       });
       socket.on('delivery_receipt', ({ messageId, deliveredAt, deliveredTo }: { messageId: string; deliveredAt: string; deliveredTo: string }) => {
         setDeliveredMessages(prev => {

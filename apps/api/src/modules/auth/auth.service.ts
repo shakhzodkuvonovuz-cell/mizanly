@@ -155,10 +155,12 @@ export class AuthService {
       this.logger.log(`Minor registered (age ${age}): user ${user.id} — child protections active`);
     }
 
-    // Increment device account counter after successful registration (permanent limit)
+    // Increment device account counter after successful registration
+    // TTL of 365 days prevents indefinite Redis key accumulation while maintaining abuse prevention
     if (dto.deviceId) {
       const deviceKey = `device_accounts:${dto.deviceId}`;
       await this.redis.incr(deviceKey);
+      await this.redis.expire(deviceKey, 365 * 24 * 60 * 60);
     }
 
     // Clear attempt counter on successful registration

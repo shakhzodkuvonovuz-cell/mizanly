@@ -259,7 +259,7 @@ export class ReelsService {
         this.logger.log(`Reel ${reel.id} submitted to Stream as ${streamId}`);
         // Finding #377: Notify user their reel is ready (success path)
         this.notifications.create({
-          userId, actorId: userId, type: 'SYSTEM', reelId: reel.id,
+          userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
           title: 'Reel ready!',
           body: 'Your reel has finished processing and is now live.',
         }).catch(() => {});
@@ -272,7 +272,7 @@ export class ReelsService {
         }).then(() => {
           // Finding #377: Notify user their reel is ready
           this.notifications.create({
-            userId, actorId: userId, type: 'SYSTEM', reelId: reel.id,
+            userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
             title: 'Reel ready!',
             body: 'Your reel has finished processing and is now live.',
           }).catch(() => {});

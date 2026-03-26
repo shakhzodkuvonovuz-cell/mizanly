@@ -73,6 +73,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   private readonly QURAN_ROOM_TTL = 3600; // 1 hour auto-cleanup
   private readonly MAX_QURAN_ROOM_PARTICIPANTS = 50;
   private redisSubscriber: Redis | null = null; // For cleanup on destroy
+  // Server-side typing timeout: auto-clear after 10 seconds to handle dropped isTyping:false events
+  private typingTimers = new Map<string, ReturnType<typeof setTimeout>>(); // `userId:conversationId` → timer
 
   constructor(
     private messagesService: MessagesService,
@@ -91,7 +93,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       // Create a duplicate Redis connection for subscribing (pub/sub requires dedicated connection)
       const subscriber = this.redis.duplicate();
       this.redisSubscriber = subscriber;
-      await subscriber.subscribe('notification:new', 'content:update');
+      await subscriber.subscribe('notification:new', 'content:update', 'new_message');
       subscriber.on('message', (channel: string, message: string) => {
         try {
           if (channel === 'notification:new') {
@@ -106,12 +108,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
             if (roomId && event) {
               this.server.to(`content:${roomId}`).emit(event, data);
             }
+          } else if (channel === 'new_message') {
+            // Broadcast REST-sent messages (e.g. image messages) to socket rooms
+            const { conversationId, message: msg } = JSON.parse(message);
+            if (conversationId && msg) {
+              this.server.to(`conversation:${conversationId}`).emit('new_message', msg);
+            }
           }
         } catch (e) {
           this.logger.debug('Failed to parse pub/sub message', e);
         }
       });
-      this.logger.log('Subscribed to notification:new + content:update Redis channels');
+      this.logger.log('Subscribed to notification:new + content:update + new_message Redis channels');
     } catch (e) {
       this.logger.warn('Failed to subscribe to Redis channels — real-time updates disabled', e);
     }
@@ -119,10 +127,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   async onModuleDestroy() {
     // Clean up all heartbeat timers
-    for (const [socketId, timer] of this.heartbeatTimers) {
+    for (const [, timer] of this.heartbeatTimers) {
       clearInterval(timer);
     }
     this.heartbeatTimers.clear();
+
+    // Clean up all typing timeout timers
+    for (const [, timer] of this.typingTimers) {
+      clearTimeout(timer);
+    }
+    this.typingTimers.clear();
 
     // Unsubscribe Redis pub/sub
     if (this.redisSubscriber) {
@@ -261,14 +275,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       }, this.HEARTBEAT_INTERVAL);
       this.heartbeatTimers.set(client.id, timer);
 
-      // Broadcast online status only to user's conversations, not globally
-      const memberships = await this.prisma.conversationMember.findMany({
+      // Check activityStatus setting — skip broadcast if user has disabled activity visibility
+      const settings = await this.prisma.userSettings.findUnique({
         where: { userId: user.id },
-        select: { conversationId: true },
-        take: 5000, // CODEX #50: presence must reach all conversations, not just first 100
+        select: { activityStatus: true },
       });
-      for (const m of memberships) {
-        client.to(`conversation:${m.conversationId}`).emit('user_online', { userId, isOnline: true });
+      const showActivity = !settings || settings.activityStatus !== false;
+
+      // Broadcast online status only to user's conversations, not globally
+      if (showActivity) {
+        const memberships = await this.prisma.conversationMember.findMany({
+          where: { userId: user.id },
+          select: { conversationId: true },
+          take: 5000, // CODEX #50: presence must reach all conversations, not just first 100
+        });
+        for (const m of memberships) {
+          client.to(`conversation:${m.conversationId}`).emit('user_online', { userId, isOnline: true });
+        }
       }
 
       client.join(`user:${user.id}`);
@@ -344,14 +367,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         where: { id: userId },
         data: { lastSeenAt: new Date() },
       }).catch((e) => this.logger.error('Failed to update lastSeenAt', e));
-      // Broadcast offline only to user's conversations, not globally
-      const memberships = await this.prisma.conversationMember.findMany({
+      // Check activityStatus — only broadcast offline if user allows activity visibility
+      const settings = await this.prisma.userSettings.findUnique({
         where: { userId },
-        select: { conversationId: true },
-        take: 5000, // CODEX #50: presence must reach all conversations, not just first 100
+        select: { activityStatus: true },
       });
-      for (const m of memberships) {
-        this.server.to(`conversation:${m.conversationId}`).emit('user_offline', { userId, isOnline: false });
+      const showActivity = !settings || settings.activityStatus !== false;
+      if (showActivity) {
+        const memberships = await this.prisma.conversationMember.findMany({
+          where: { userId },
+          select: { conversationId: true },
+          take: 5000,
+        });
+        for (const m of memberships) {
+          this.server.to(`conversation:${m.conversationId}`).emit('user_offline', { userId, isOnline: false });
+        }
       }
     }
   }
@@ -440,7 +470,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       throw new WsException('Failed to send message');
     }
 
-    this.server
+    // Use client.to() so the sender doesn't receive their own message back
+    client
       .to(`conversation:${dto.conversationId}`)
       .emit('new_message', message);
 
@@ -471,10 +502,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       select: { activityStatus: true },
     });
     if (settings && !settings.activityStatus) return; // User has disabled activity visibility
+
+    const typingKey = `${client.data.userId}:${dto.conversationId}`;
+    // Clear any existing timeout for this user+conversation
+    const existingTimer = this.typingTimers.get(typingKey);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      this.typingTimers.delete(typingKey);
+    }
+
     client.to(`conversation:${dto.conversationId}`).emit('user_typing', {
       userId: client.data.userId,
       isTyping: dto.isTyping,
     });
+
+    // Server-side auto-clear: if isTyping:true, set a 10-second timeout to emit isTyping:false
+    // This handles dropped connections where the client never sends isTyping:false
+    if (dto.isTyping) {
+      const timer = setTimeout(() => {
+        client.to(`conversation:${dto.conversationId}`).emit('user_typing', {
+          userId: client.data.userId,
+          isTyping: false,
+        });
+        this.typingTimers.delete(typingKey);
+      }, 10_000);
+      this.typingTimers.set(typingKey, timer);
+    }
   }
 
   @SubscribeMessage('read')
@@ -864,7 +917,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     @MessageBody() data: { contentId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    if (!data?.contentId) return;
+    if (!client.data.userId || !data?.contentId) return;
+    if (!(await this.checkRateLimit(client.data.userId, 'content_join', 30, 60))) return;
     client.join(`content:${data.contentId}`);
     this.logger.debug(`Socket ${client.id} joined content room: ${data.contentId}`);
   }
@@ -874,7 +928,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     @MessageBody() data: { contentId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    if (!data?.contentId) return;
+    if (!client.data.userId || !data?.contentId) return;
+    if (!(await this.checkRateLimit(client.data.userId, 'content_leave', 30, 60))) return;
     client.leave(`content:${data.contentId}`);
   }
 

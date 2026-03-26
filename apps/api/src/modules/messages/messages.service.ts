@@ -42,6 +42,7 @@ const CONVERSATION_SELECT = {
         },
       },
     },
+    take: 5, // Limit to first 5 members for conversation list display
   },
 };
 
@@ -88,6 +89,7 @@ const MESSAGE_SELECT = {
   },
   reactions: {
     select: { id: true, emoji: true, userId: true },
+    take: 50,
   },
 };
 
@@ -310,6 +312,13 @@ export class MessagesService {
     this.notifyConversationMembers(conversationId, senderId, data.content).catch((err) => {
       this.logger.warn(`Message notification failed: ${err?.message}`);
     });
+
+    // Publish to Redis so ChatGateway can broadcast to socket room
+    // This ensures messages sent via REST (e.g. image messages) appear in real-time
+    this.redis.publish('new_message', JSON.stringify({
+      conversationId,
+      message,
+    })).catch((e) => this.logger.debug('Redis new_message publish failed', e));
 
     return message;
   }

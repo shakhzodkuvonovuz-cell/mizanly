@@ -32,6 +32,18 @@ export class ABTestingService {
 
   constructor(@Inject('REDIS') private redis: Redis) {}
 
+  /** SCAN-based key collection (non-blocking alternative to KEYS) */
+  private async scanKeys(pattern: string): Promise<string[]> {
+    const allKeys: string[] = [];
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = nextCursor;
+      allKeys.push(...keys);
+    } while (cursor !== '0');
+    return allKeys;
+  }
+
   /**
    * Create or update an experiment definition.
    * Stored in Redis for hot-reload without deployments.
@@ -47,7 +59,7 @@ export class ABTestingService {
    * Get all experiments.
    */
   async getExperiments(): Promise<Experiment[]> {
-    const keys = await this.redis.keys(`${this.EXPERIMENT_KEY_PREFIX}*`);
+    const keys = await this.scanKeys(`${this.EXPERIMENT_KEY_PREFIX}*`);
     if (keys.length === 0) return [];
 
     const values = await this.redis.mget(...keys);
@@ -135,7 +147,7 @@ export class ABTestingService {
 
     const metrics: Record<string, Record<string, number>> = {};
     for (const variant of experiment.variants) {
-      const conversionKeys = await this.redis.keys(`ab:conversions:${experimentId}:${variant.name}:*`);
+      const conversionKeys = await this.scanKeys(`ab:conversions:${experimentId}:${variant.name}:*`);
       metrics[variant.name] = {};
       for (const key of conversionKeys) {
         const eventName = key.split(':').pop() || '';
@@ -152,11 +164,11 @@ export class ABTestingService {
    */
   async deleteExperiment(experimentId: string): Promise<void> {
     await this.redis.del(`${this.EXPERIMENT_KEY_PREFIX}${experimentId}`);
-    const assignmentKeys = await this.redis.keys(`${this.ASSIGNMENT_KEY_PREFIX}${experimentId}:*`);
+    const assignmentKeys = await this.scanKeys(`${this.ASSIGNMENT_KEY_PREFIX}${experimentId}:*`);
     if (assignmentKeys.length > 0) {
       await this.redis.del(...assignmentKeys);
     }
-    const conversionKeys = await this.redis.keys(`ab:conversions:${experimentId}:*`);
+    const conversionKeys = await this.scanKeys(`ab:conversions:${experimentId}:*`);
     if (conversionKeys.length > 0) {
       await this.redis.del(...conversionKeys);
     }

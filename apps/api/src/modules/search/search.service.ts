@@ -309,7 +309,102 @@ export class SearchService {
     const results: SearchResults = {};
     const isAggregate = !type;
 
-    if (isAggregate || type === 'people') {
+    if (isAggregate) {
+      // Run all 7 aggregate queries in parallel instead of sequentially
+      const [people, threads, posts, reels, videos, channels, hashtags] = await Promise.all([
+        this.prisma.user.findMany({
+          where: {
+            OR: [
+              { username: { contains: query, mode: 'insensitive' } },
+              { displayName: { contains: query, mode: 'insensitive' } },
+            ],
+            isBanned: false,
+            isDeactivated: false,
+            isDeleted: false,
+          },
+          select: USER_SEARCH_SELECT,
+          take: 5,
+          orderBy: { followers: { _count: 'desc' } },
+        }),
+        this.prisma.thread.findMany({
+          where: {
+            content: { contains: query, mode: 'insensitive' },
+            visibility: 'PUBLIC',
+            isChainHead: true,
+            isRemoved: false,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+          },
+          select: THREAD_SEARCH_SELECT,
+          take: 5,
+          orderBy: { likesCount: 'desc' },
+        }),
+        this.prisma.post.findMany({
+          where: {
+            content: { contains: query, mode: 'insensitive' },
+            visibility: 'PUBLIC',
+            isRemoved: false,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+          },
+          select: POST_SEARCH_SELECT,
+          take: 5,
+          orderBy: { likesCount: 'desc' },
+        }),
+        this.prisma.reel.findMany({
+          where: {
+            caption: { contains: query, mode: 'insensitive' },
+            status: 'READY',
+            isRemoved: false,
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            isTrial: false,
+            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+          },
+          select: REEL_SEARCH_SELECT,
+          take: 5,
+          orderBy: { likesCount: 'desc' },
+        }),
+        this.prisma.video.findMany({
+          where: {
+            AND: [
+              { OR: [{ title: { contains: query, mode: 'insensitive' } }, { description: { contains: query, mode: 'insensitive' } }] },
+              { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+            ],
+            status: 'PUBLISHED',
+            isRemoved: false,
+            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+          },
+          select: VIDEO_SEARCH_SELECT,
+          take: 5,
+          orderBy: { viewsCount: 'desc' },
+        }),
+        this.prisma.channel.findMany({
+          where: {
+            OR: [
+              { handle: { contains: query, mode: 'insensitive' } },
+              { name: { contains: query, mode: 'insensitive' } },
+              { description: { contains: query, mode: 'insensitive' } },
+            ],
+            user: { isBanned: false, isDeleted: false, isDeactivated: false },
+          },
+          select: CHANNEL_SEARCH_SELECT,
+          take: 5,
+          orderBy: { subscribersCount: 'desc' },
+        }),
+        this.prisma.hashtag.findMany({
+          where: { name: { contains: query, mode: 'insensitive' } },
+          take: 10,
+          orderBy: { postsCount: 'desc' },
+        }),
+      ]);
+      results.people = people;
+      results.threads = threads;
+      results.posts = posts;
+      results.reels = reels;
+      results.videos = videos;
+      results.channels = channels;
+      results.hashtags = hashtags;
+    } else if (type === 'people') {
       results.people = await this.prisma.user.findMany({
         where: {
           OR: [
@@ -321,88 +416,13 @@ export class SearchService {
           isDeleted: false,
         },
         select: USER_SEARCH_SELECT,
-        take: isAggregate ? 5 : safeLimit,
+        take: safeLimit,
         orderBy: { followers: { _count: 'desc' } },
       });
-    }
-
-    if (isAggregate) {
-      results.threads = await this.prisma.thread.findMany({
-        where: {
-          content: { contains: query, mode: 'insensitive' },
-          visibility: 'PUBLIC',
-          isChainHead: true,
-          isRemoved: false,
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-          user: { isDeactivated: false, isBanned: false, isDeleted: false },
-        },
-        select: THREAD_SEARCH_SELECT,
-        take: 5,
-        orderBy: { likesCount: 'desc' },
-      });
-
-      results.posts = await this.prisma.post.findMany({
-        where: {
-          content: { contains: query, mode: 'insensitive' },
-          visibility: 'PUBLIC',
-          isRemoved: false,
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-          user: { isDeactivated: false, isBanned: false, isDeleted: false },
-        },
-        select: POST_SEARCH_SELECT,
-        take: 5,
-        orderBy: { likesCount: 'desc' },
-      });
-
-      results.reels = await this.prisma.reel.findMany({
-        where: {
-          caption: { contains: query, mode: 'insensitive' },
-          status: 'READY',
-          isRemoved: false,
-          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-          isTrial: false,
-          user: { isDeactivated: false, isBanned: false, isDeleted: false },
-        },
-        select: REEL_SEARCH_SELECT,
-        take: 5,
-        orderBy: { likesCount: 'desc' },
-      });
-
-      results.videos = await this.prisma.video.findMany({
-        where: {
-          AND: [
-            { OR: [{ title: { contains: query, mode: 'insensitive' } }, { description: { contains: query, mode: 'insensitive' } }] },
-            { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
-          ],
-          status: 'PUBLISHED',
-          isRemoved: false,
-          user: { isDeactivated: false, isBanned: false, isDeleted: false },
-        },
-        select: VIDEO_SEARCH_SELECT,
-        take: 5,
-        orderBy: { viewsCount: 'desc' },
-      });
-
-      results.channels = await this.prisma.channel.findMany({
-        where: {
-          OR: [
-            { handle: { contains: query, mode: 'insensitive' } },
-            { name: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
-          ],
-          // Filter out channels owned by banned or deleted users
-          user: { isBanned: false, isDeleted: false, isDeactivated: false },
-        },
-        select: CHANNEL_SEARCH_SELECT,
-        take: 5,
-        orderBy: { subscribersCount: 'desc' },
-      });
-    }
-
-    if (!type || type === 'tags') {
+    } else if (type === 'tags') {
       results.hashtags = await this.prisma.hashtag.findMany({
         where: { name: { contains: query, mode: 'insensitive' } },
-        take: type ? safeLimit : 10,
+        take: safeLimit,
         orderBy: { postsCount: 'desc' },
       });
     }
