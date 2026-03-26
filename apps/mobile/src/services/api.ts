@@ -391,7 +391,7 @@ export const usersApi = {
     api.get<PaginatedResponse<Reel>>(`/users/me/saved-reels${qs({ cursor })}`),
   getSavedVideos: (cursor?: string) =>
     api.get<PaginatedResponse<Video>>(`/users/me/saved-videos${qs({ cursor })}`),
-  getFollowRequests: () => api.get('/users/me/follow-requests'),
+  getFollowRequests: () => api.get('/follows/requests/incoming'),
   getAnalytics: () => api.get<{ stats: CreatorStat[] }>('/users/me/analytics'),
   getWatchHistory: (cursor?: string) =>
     api.get<PaginatedResponse<WatchHistoryItem>>(`/users/me/watch-history${qs({ cursor })}`),
@@ -874,7 +874,7 @@ export const searchApi = {
   search: (query: string, type?: string, cursor?: string) =>
     api.get<SearchResults>(`/search${qs({ q: query, type, cursor })}`),
   trending: () => api.get<TrendingHashtag[]>('/search/trending'),
-  suggestions: () => api.get<User[]>('/search/suggestions'),
+  suggestions: () => api.get<User[]>('/search/suggested-users'),
   hashtagPosts: (tag: string, cursor?: string) =>
     api.get<PaginatedResponse<Post>>(`/search/hashtag/${encodeURIComponent(tag)}${qs({ cursor })}`),
   searchPosts: (query: string, cursor?: string) =>

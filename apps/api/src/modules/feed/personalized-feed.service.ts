@@ -364,10 +364,13 @@ export class PersonalizedFeedService {
         reasons.push('Supporting new creator');
       }
 
+      // Cap score at 1.0 to prevent boost stacking above ceiling
+      const finalScore = Math.min(score, 1.0);
+
       feedItems.push({
         id: candidate.contentId,
         type: this.contentTypeToFeedType(contentType),
-        score,
+        score: finalScore,
         reasons,
       });
     }

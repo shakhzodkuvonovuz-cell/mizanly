@@ -303,6 +303,7 @@ export class AuthService {
     email: string;
     displayName: string;
     avatarUrl?: string;
+    phone?: string;
   }) {
     // Check if this clerkId already exists (update case) — keep existing username
     const existingByClerk = await this.prisma.user.findUnique({ where: { clerkId } });
@@ -313,6 +314,7 @@ export class AuthService {
           email: data.email,
           displayName: data.displayName,
           avatarUrl: data.avatarUrl,
+          ...(data.phone ? { phone: data.phone } : {}),
         },
       });
     }
@@ -328,15 +330,22 @@ export class AuthService {
       username = `user_${randomBytes(4).toString('hex')}`;
     }
 
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         clerkId,
         email: data.email,
         username,
         displayName: data.displayName,
         avatarUrl: data.avatarUrl,
+        language: 'en',
+        ...(data.phone ? { phone: data.phone } : {}),
       },
     });
+
+    // Ensure UserSettings record exists for new webhook-created users
+    await this.prisma.userSettings.create({ data: { userId: user.id } }).catch(() => {});
+
+    return user;
   }
 
   async trackLogin(clerkId: string) {
@@ -351,14 +360,22 @@ export class AuthService {
     const user = await this.prisma.user.findFirst({ where: { clerkId } });
     if (!user) return { count: 0 };
 
-    // Deactivate the user
+    // Deactivate the user and mark for deletion so the daily cron picks it up
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { isDeactivated: true, deactivatedAt: new Date() },
+      data: {
+        isDeactivated: true,
+        deactivatedAt: new Date(),
+        isDeleted: true,
+        deletedAt: new Date(),
+        scheduledDeletionAt: new Date(),
+      },
     });
 
     // Clean up device tokens so no notifications are sent to deactivated user
     await this.prisma.device.deleteMany({ where: { userId: user.id } });
+
+    this.logger.log(`User ${user.id} deactivated via Clerk deletion webhook — scheduled for data purge`);
 
     return { count: 1 };
   }

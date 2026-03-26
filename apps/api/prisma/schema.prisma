@@ -1206,6 +1206,7 @@ model Reel {
   @@index([hashtags])
   @@index([status, createdAt(sort: Desc)])   // P0: feed queries filter status=READY+sort
   @@index([isRemoved, createdAt(sort: Desc)]) // P0: all feeds exclude removed reels
+  @@index([status, isRemoved, isTrial, createdAt(sort: Desc)]) // ForYou feed composite filter
   @@map("reels")
 }
 
@@ -1462,6 +1463,7 @@ model Video {
 
   @@index([channelId, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
   @@index([category, viewsCount(sort: Desc)])
   @@index([tags])
   @@map("videos")
@@ -1960,6 +1962,7 @@ model Notification {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, isRead])
+  @@index([userId, type, createdAt(sort: Desc)])
   @@index([actorId])
   @@index([postId])
   @@index([reelId])

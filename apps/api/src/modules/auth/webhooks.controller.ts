@@ -26,6 +26,7 @@ interface ClerkWebhookEvent {
   data: {
     id: string;
     email_addresses?: Array<{ email_address: string }>;
+    phone_numbers?: Array<{ phone_number: string }>;
     first_name?: string;
     last_name?: string;
     username?: string;
@@ -115,6 +116,7 @@ export class WebhooksController {
 
     if (type === 'user.created' || type === 'user.updated') {
       const email = data.email_addresses?.[0]?.email_address ?? '';
+      const phone = data.phone_numbers?.[0]?.phone_number ?? undefined;
       const firstName = data.first_name ?? '';
       const lastName = data.last_name ?? '';
       const displayName =
@@ -125,6 +127,7 @@ export class WebhooksController {
         email,
         displayName,
         avatarUrl,
+        phone,
       });
     } else if (type === 'user.deleted') {
       await this.authService.deactivateByClerkId(data.id);

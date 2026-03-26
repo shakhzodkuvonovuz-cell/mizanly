@@ -156,8 +156,12 @@ export class StreamService {
   async handleStreamReady(streamId: string): Promise<void> {
     const playback = await this.getPlaybackUrls(streamId);
 
-    const video = await this.prisma.video.findFirst({ where: { streamId } });
+    const video = await this.prisma.video.findFirst({
+      where: { streamId },
+      select: { id: true, status: true, channelId: true },
+    });
     if (video) {
+      const previousStatus = video.status;
       await this.prisma.video.update({
         where: { id: video.id },
         data: {
@@ -168,7 +172,20 @@ export class StreamService {
           publishedAt: new Date(),
         },
       });
-      this.logger.log(`Video ${video.id} ready for streaming`);
+
+      // If transitioning from error/draft to published, increment the channel videosCount
+      // (only increment was done at creation — this handles the re-publish case)
+      if (video.channelId && (previousStatus === 'DRAFT' || previousStatus === 'PROCESSING')) {
+        await this.prisma.channel.update({
+          where: { id: video.channelId },
+          data: { videosCount: { increment: 1 } },
+        }).catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.warn(`Failed to increment channel videosCount for channel ${video.channelId}: ${msg}`);
+        });
+      }
+
+      this.logger.log(`Video ${video.id} ready for streaming (was ${previousStatus})`);
       return;
     }
 
@@ -193,12 +210,23 @@ export class StreamService {
   async handleStreamError(streamId: string, error: string): Promise<void> {
     this.logger.error(`Stream error for ${streamId}: ${error}`);
 
-    const video = await this.prisma.video.findFirst({ where: { streamId } });
+    const video = await this.prisma.video.findFirst({
+      where: { streamId },
+      select: { id: true, channelId: true, status: true },
+    });
     if (video) {
       await this.prisma.video.update({
         where: { id: video.id },
         data: { status: 'DRAFT' },
       });
+      // Decrement channel videosCount if the video was previously counted (PUBLISHED/PROCESSING)
+      if (video.status !== 'DRAFT' && video.channelId) {
+        await this.prisma.$executeRaw`
+          UPDATE "Channel"
+          SET "videosCount" = GREATEST("videosCount" - 1, 0)
+          WHERE id = ${video.channelId}
+        `;
+      }
       return;
     }
 

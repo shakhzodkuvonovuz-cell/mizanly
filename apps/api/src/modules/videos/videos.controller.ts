@@ -9,6 +9,7 @@ import {
   Param,
   Query,
   UseGuards,
+  NotImplementedException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -323,6 +324,14 @@ export class VideosController {
   @ApiOperation({ summary: 'Delete all end screens for a video' })
   deleteEndScreens(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.videosService.deleteEndScreens(id, userId);
+  }
+
+  @Post(':id/cross-publish')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cross-publish video to other spaces (coming soon)' })
+  crossPublish(@Param('id') _id: string, @CurrentUser('id') _userId: string) {
+    throw new NotImplementedException('Cross-publish coming soon');
   }
 
   // Bug 22: DELETE video comment was unreachable (service existed, no controller route)

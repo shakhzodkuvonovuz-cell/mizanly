@@ -5,10 +5,13 @@ import {
   ForbiddenException,
   ConflictException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import { PrivacyService } from '../privacy/privacy.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -58,6 +61,7 @@ export class UsersService {
     private prisma: PrismaService,
     private privacyService: PrivacyService,
     @Inject('REDIS') private redis: Redis,
+    @Optional() private notificationsService: NotificationsService,
   ) {}
 
   touchLastSeen(userId: string) {
@@ -155,86 +159,8 @@ export class UsersService {
    * Includes: profile, posts, comments, messages, follows, likes, bookmarks, search history.
    */
   async exportData(userId: string) {
-    const [user, posts, comments, messages, followers, following, likes, bookmarks, threads, reels, videos] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true, username: true, displayName: true, bio: true, avatarUrl: true,
-          coverUrl: true, website: true, location: true, isPrivate: true,
-          createdAt: true, lastSeenAt: true,
-        },
-      }),
-      this.prisma.post.findMany({
-        where: { userId, isRemoved: false },
-        select: { id: true, content: true, mediaUrls: true, postType: true, createdAt: true },
-        orderBy: { createdAt: 'desc' },
-        // GDPR export cap: 5000 per entity to prevent OOM on heavy users (10 entities × 5000 = 50K max rows)
-        take: 5000,
-      }),
-      this.prisma.comment.findMany({
-        where: { userId, isRemoved: false },
-        select: { id: true, content: true, postId: true, createdAt: true },
-        orderBy: { createdAt: 'desc' },
-        take: 5000,
-      }),
-      this.prisma.message.findMany({
-        where: { senderId: userId },
-        select: { id: true, content: true, conversationId: true, createdAt: true },
-        orderBy: { createdAt: 'desc' },
-        take: 5000,
-      }),
-      this.prisma.follow.findMany({
-        where: { followingId: userId },
-        select: { followerId: true, createdAt: true },
-        take: 5000,
-      }),
-      this.prisma.follow.findMany({
-        where: { followerId: userId },
-        select: { followingId: true, createdAt: true },
-        take: 5000,
-      }),
-      this.prisma.postReaction.findMany({
-        where: { userId },
-        select: { postId: true, reaction: true, createdAt: true },
-        take: 5000,
-      }),
-      this.prisma.savedPost.findMany({
-        where: { userId },
-        select: { postId: true, createdAt: true },
-        take: 5000,
-      }),
-      // Additional content types for complete GDPR export
-      this.prisma.thread.findMany({
-        where: { userId },
-        select: { id: true, content: true, mediaUrls: true, createdAt: true },
-        take: 5000,
-      }),
-      this.prisma.reel.findMany({
-        where: { userId },
-        select: { id: true, caption: true, videoUrl: true, createdAt: true },
-        take: 5000,
-      }),
-      this.prisma.video.findMany({
-        where: { userId },
-        select: { id: true, title: true, description: true, thumbnailUrl: true, createdAt: true },
-        take: 5000,
-      }),
-    ]);
-
-    return {
-      exportedAt: new Date().toISOString(),
-      profile: user,
-      posts,
-      threads,
-      reels,
-      videos,
-      comments,
-      messages,
-      followers: followers.map(f => f.followerId),
-      following: following.map(f => f.followingId),
-      likes,
-      bookmarks,
-    };
+    // Delegate to PrivacyService which covers 34+ data categories (GDPR Article 20)
+    return this.privacyService.exportUserData(userId);
   }
 
   /**
@@ -760,33 +686,38 @@ export class UsersService {
    */
   @Cron('0 2 * * *')
   async snapshotFollowerCounts() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const users = await this.prisma.user.findMany({
-      where: { followersCount: { gt: 0 }, isDeleted: false, isBanned: false },
-      select: { id: true, followersCount: true },
-      take: 5000, // Snapshot in manageable batches to prevent OOM
-    });
+      const users = await this.prisma.user.findMany({
+        where: { followersCount: { gt: 0 }, isDeleted: false, isBanned: false },
+        select: { id: true, followersCount: true },
+        take: 5000, // Snapshot in manageable batches to prevent OOM
+      });
 
-    // Process in parallel batches of 100 instead of sequential
-    const BATCH_SIZE = 100;
-    let created = 0;
-    for (let i = 0; i < users.length; i += BATCH_SIZE) {
-      const batch = users.slice(i, i + BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map(user =>
-          this.prisma.creatorStat.upsert({
-            where: { userId_date_space: { userId: user.id, date: today, space: 'SAF' } },
-            update: { followers: user.followersCount },
-            create: { userId: user.id, date: today, space: 'SAF', followers: user.followersCount },
-          }),
-        ),
-      );
-      created += results.filter(r => r.status === 'fulfilled').length;
+      // Process in parallel batches of 100 instead of sequential
+      const BATCH_SIZE = 100;
+      let created = 0;
+      for (let i = 0; i < users.length; i += BATCH_SIZE) {
+        const batch = users.slice(i, i + BATCH_SIZE);
+        const results = await Promise.allSettled(
+          batch.map(user =>
+            this.prisma.creatorStat.upsert({
+              where: { userId_date_space: { userId: user.id, date: today, space: 'SAF' } },
+              update: { followers: user.followersCount },
+              create: { userId: user.id, date: today, space: 'SAF', followers: user.followersCount },
+            }),
+          ),
+        );
+        created += results.filter(r => r.status === 'fulfilled').length;
+      }
+
+      this.logger.log(`Follower snapshot: ${created} users snapshotted (batched)`);
+    } catch (error) {
+      this.logger.error('snapshotFollowerCounts cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
     }
-
-    this.logger.log(`Follower snapshot: ${created} users snapshotted (batched)`);
   }
 
   /**
@@ -795,30 +726,49 @@ export class UsersService {
    */
   @Cron('0 9 * * 0')
   async sendWeeklyScreenTimeDigest() {
-    const usersWithLimits = await this.prisma.userSettings.findMany({
-      where: { dailyTimeLimit: { not: null } },
-      select: { userId: true, dailyTimeLimit: true },
-      take: 10000,
-    });
-
-    // Batched createMany instead of sequential individual creates
-    const BATCH_SIZE = 500;
-    let created = 0;
-    for (let i = 0; i < usersWithLimits.length; i += BATCH_SIZE) {
-      const batch = usersWithLimits.slice(i, i + BATCH_SIZE);
-      const result = await this.prisma.notification.createMany({
-        data: batch.map(s => ({
-          userId: s.userId,
-          type: 'SYSTEM' as const,
-          title: 'Weekly Screen Time Summary',
-          body: `Your daily limit is ${s.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
-        })),
-        skipDuplicates: true,
+    try {
+      const usersWithLimits = await this.prisma.userSettings.findMany({
+        where: { dailyTimeLimit: { not: null } },
+        select: { userId: true, dailyTimeLimit: true },
+        take: 10000,
       });
-      created += result.count;
-    }
 
-    this.logger.log(`Weekly screen time digest sent to ${created} users (batched)`);
+      // Route through NotificationsService for push delivery + dedup, with batched fallback
+      const BATCH_SIZE = 500;
+      let created = 0;
+
+      if (this.notificationsService) {
+        for (const s of usersWithLimits) {
+          await this.notificationsService.create({
+            userId: s.userId,
+            actorId: null,
+            type: 'SYSTEM',
+            title: 'Weekly Screen Time Summary',
+            body: `Your daily limit is ${s.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
+          }).catch(() => {});
+          created++;
+        }
+      } else {
+        for (let i = 0; i < usersWithLimits.length; i += BATCH_SIZE) {
+          const batch = usersWithLimits.slice(i, i + BATCH_SIZE);
+          const result = await this.prisma.notification.createMany({
+            data: batch.map(s => ({
+              userId: s.userId,
+              type: 'SYSTEM' as const,
+              title: 'Weekly Screen Time Summary',
+              body: `Your daily limit is ${s.dailyTimeLimit} minutes. Check your wellbeing settings for this week's usage.`,
+            })),
+            skipDuplicates: true,
+          });
+          created += result.count;
+        }
+      }
+
+      this.logger.log(`Weekly screen time digest sent to ${created} users`);
+    } catch (error) {
+      this.logger.error('sendWeeklyScreenTimeDigest cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+    }
   }
 
   /**

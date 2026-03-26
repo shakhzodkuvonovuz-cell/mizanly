@@ -328,17 +328,8 @@ export class CommunitiesService {
       this.prisma.circleMember.delete({
         where: { circleId_userId: { circleId: id, userId } },
       }),
-      this.prisma.circle.update({
-        where: { id },
-        data: { membersCount: { decrement: 1 } },
-      }),
+      this.prisma.$executeRaw`UPDATE "Circle" SET "membersCount" = GREATEST("membersCount" - 1, 0) WHERE id = ${id}`,
     ]);
-
-    // Ensure membersCount doesn't go negative
-    await this.prisma.circle.updateMany({
-      where: { id, membersCount: { lt: 0 } },
-      data: { membersCount: 0 },
-    });
 
     return { data: null, success: true, timestamp: new Date().toISOString() };
   }

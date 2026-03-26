@@ -559,10 +559,7 @@ export class GamificationService {
         this.prisma.seriesFollower.delete({
           where: { seriesId_userId: { seriesId, userId } },
         }),
-        this.prisma.series.update({
-          where: { id: seriesId },
-          data: { followersCount: { decrement: 1 } },
-        }),
+        this.prisma.$executeRaw`UPDATE "Series" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${seriesId}`,
       ]);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'code' in err && err.code === 'P2025') {
@@ -570,11 +567,6 @@ export class GamificationService {
       }
       throw err;
     }
-    // Ensure followersCount doesn't go negative
-    await this.prisma.series.updateMany({
-      where: { id: seriesId, followersCount: { lt: 0 } },
-      data: { followersCount: 0 },
-    });
     return { success: true };
   }
 

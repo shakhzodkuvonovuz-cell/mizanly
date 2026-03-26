@@ -37,10 +37,35 @@ export class OptionalClerkAuthGuard implements CanActivate {
           isBanned: true,
           isDeactivated: true,
           isDeleted: true,
+          banExpiresAt: true,
+          deactivatedAt: true,
         },
       });
+      if (!user) return true;
+
+      // Auto-unban if temp ban has expired (same logic as ClerkAuthGuard)
+      if (user.isBanned && user.banExpiresAt && user.banExpiresAt < new Date()) {
+        const wasDeactivatedBeforeBan = user.deactivatedAt && user.banExpiresAt
+          ? user.deactivatedAt < user.banExpiresAt
+          : false;
+
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            isBanned: false,
+            banExpiresAt: null,
+            ...(wasDeactivatedBeforeBan ? {} : { isDeactivated: false }),
+          },
+        });
+        user.isBanned = false;
+        (user as Record<string, unknown>).banExpiresAt = null;
+        if (!wasDeactivatedBeforeBan) {
+          user.isDeactivated = false;
+        }
+      }
+
       // Don't attach banned/deactivated/deleted users
-      if (user && !user.isBanned && !user.isDeactivated && !user.isDeleted) {
+      if (!user.isBanned && !user.isDeactivated && !user.isDeleted) {
         request.user = user;
       }
     } catch (err: unknown) {

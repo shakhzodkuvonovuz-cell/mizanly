@@ -157,7 +157,7 @@ export class ThreadsService {
       const recentThreads = await this.prisma.thread.findMany({
         where,
         select: THREAD_SELECT,
-        take: 200, // fetch more to score and rank
+        take: 500, // wider candidate pool for better scoring diversity
         orderBy: { createdAt: 'desc' },
       });
 
@@ -257,7 +257,7 @@ export class ThreadsService {
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       },
       select: THREAD_SELECT,
-      take: 200,
+      take: 500, // wider candidate pool for better trending diversity
       orderBy: { createdAt: 'desc' },
     });
 
@@ -448,8 +448,8 @@ export class ThreadsService {
       }
 
       // Gamification: award XP + update streak
-      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' });
-      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' }).catch(err => this.logger.warn('Failed to queue gamification XP for thread', err instanceof Error ? err.message : err));
+      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Failed to queue gamification streak for thread', err instanceof Error ? err.message : err));
     }
     // --- End deferred side effects ---
 

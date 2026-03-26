@@ -20,7 +20,7 @@ export const paymentsApi = {
 
   // Cancel an active subscription
   cancelSubscription: (data: CancelSubscriptionDto) =>
-    api.delete<void>('/payments/cancel-subscription', data),
+    api.post<void>('/payments/cancel-subscription', data),
 
   // List user's saved payment methods
   getPaymentMethods: () =>

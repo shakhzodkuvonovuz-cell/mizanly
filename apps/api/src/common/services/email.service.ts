@@ -67,13 +67,15 @@ export class EmailService implements OnModuleInit {
         this.logger.log(`Email sent to ${data.to}: ${data.subject}`);
         return true;
       } catch (err) {
-        this.logger.error(`Failed to send email to ${data.to}: ${(err as Error).message}`);
+        // TODO: Queue failed emails for retry (DLQ pattern) instead of dropping them.
+        // Currently there is no durable retry mechanism — failed emails are lost.
+        this.logger.error(`Failed to send email to ${data.to}: ${(err as Error).message}`, (err as Error).stack);
         return false;
       }
     }
 
-    // Fallback: log subject only (no PII/content in logs)
-    this.logger.log(`[EMAIL LOG] To: ${data.to} | Subject: ${data.subject} (not sent — Resend not configured)`);
+    // Fallback: log at error level when Resend is not configured — emails are silently dropped
+    this.logger.error(`[EMAIL DROPPED] To: ${data.to} | Subject: ${data.subject} — Resend not configured, email not sent`);
     return false;
   }
 

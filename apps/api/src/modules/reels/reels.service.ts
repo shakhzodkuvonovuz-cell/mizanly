@@ -243,8 +243,8 @@ export class ReelsService {
       }
 
       // Gamification: award XP + update streak
-      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' });
-      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' }).catch(err => this.logger.warn('Failed to queue gamification XP for reel', err instanceof Error ? err.message : err));
+      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Failed to queue gamification streak for reel', err instanceof Error ? err.message : err));
     }
     // --- End deferred side effects ---
 
@@ -347,11 +347,11 @@ export class ReelsService {
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
     };
 
-    // Fetch up to 200 recent reels to score and rank
+    // Fetch up to 500 recent reels to score and rank (wider candidate pool)
     const recentReels = await this.prisma.reel.findMany({
       where,
       select: REEL_SELECT,
-      take: 200,
+      take: 500,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -440,7 +440,7 @@ export class ReelsService {
         ...REEL_SELECT,
         savesCount: true,
       },
-      take: 200,
+      take: 500, // wider candidate pool for better trending diversity
       orderBy: { createdAt: 'desc' },
     });
 

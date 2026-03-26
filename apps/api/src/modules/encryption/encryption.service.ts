@@ -165,20 +165,20 @@ export class EncryptionService {
         take: 50,
       });
 
-      // Create system messages in each conversation.
-      // Use a structured JSON message type so the client can render localized text
+      // Create system messages in all conversations via batch insert
+      // Uses a structured JSON message type so the client can render localized text
       // instead of hardcoded English (Finding 28: i18n for system messages).
-      for (const { conversationId } of memberships) {
-        await this.prisma.message.create({
-          data: {
+      if (memberships.length > 0) {
+        await this.prisma.message.createMany({
+          data: memberships.map(({ conversationId }) => ({
             conversationId,
             senderId: userId,
             content: JSON.stringify({
               type: 'SECURITY_CODE_CHANGED',
               params: { username: name },
             }),
-            messageType: 'SYSTEM',
-          },
+            messageType: 'SYSTEM' as const,
+          })),
         });
       }
     } catch (err) {

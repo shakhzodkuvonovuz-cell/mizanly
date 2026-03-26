@@ -2,6 +2,7 @@ import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ContentSpace, PostVisibility, Prisma } from '@prisma/client';
 import Redis from 'ioredis';
+import { CANDIDATE_POOL_SIZE } from '../../common/constants/feed-scoring';
 
 const FEED_POST_SELECT = {
   id: true,
@@ -153,7 +154,7 @@ export class FeedService {
     if (tagNames.length === 0) return [];
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    return this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       where: {
         hashtags: { hasSome: tagNames },
         createdAt: { gte: twentyFourHoursAgo },
@@ -162,10 +163,20 @@ export class FeedService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         user: { isDeactivated: false, isBanned: false },
       },
-      select: { id: true, content: true, mediaUrls: true, likesCount: true, commentsCount: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
-      orderBy: { likesCount: 'desc' },
-      take: limit,
+      select: { id: true, content: true, mediaUrls: true, likesCount: true, commentsCount: true, sharesCount: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+      take: CANDIDATE_POOL_SIZE.COMMUNITY,
+      orderBy: { createdAt: 'desc' },
     });
+
+    // Score by time-decayed engagement: (likes*2 + comments*3 + shares*4) / ageHours^1.2
+    const scored = posts.map(post => {
+      const ageHours = Math.max(1, (Date.now() - post.createdAt.getTime()) / 3600000);
+      const engagement = post.likesCount * 2 + post.commentsCount * 3 + post.sharesCount * 4;
+      return { ...post, _score: engagement / Math.pow(ageHours, 1.2) };
+    });
+    scored.sort((a, b) => b._score - a._score);
+
+    return scored.slice(0, limit).map(({ _score, ...post }) => post);
   }
 
   async getUserInterests(userId: string): Promise<{ bySpace: Record<string, number>; byHashtag: Record<string, number> }> {
@@ -355,9 +366,9 @@ export class FeedService {
       },
       select: FEED_POST_SELECT,
       orderBy: { createdAt: 'desc' },
-      // Fetch a reasonable candidate pool for scoring.
+      // Wider candidate pool for scoring (raised from 200 for better diversity).
       // No offset — we filter by score/id cursor below.
-      take: 200,
+      take: 500,
     });
 
     // Scoring formula: engagementRate = engagementTotal / ageHours
@@ -575,15 +586,16 @@ export class FeedService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: limit + 1,
     });
 
-    const hasMore = posts.length === limit;
+    const hasMore = posts.length > limit;
+    const items = hasMore ? posts.slice(0, limit) : posts;
     return {
-      data: posts,
+      data: items,
       meta: {
         hasMore,
-        cursor: hasMore ? posts[posts.length - 1].createdAt.toISOString() : undefined,
+        cursor: hasMore ? items[items.length - 1].createdAt.toISOString() : undefined,
       },
     };
   }

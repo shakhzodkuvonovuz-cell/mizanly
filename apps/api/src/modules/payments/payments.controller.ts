@@ -82,7 +82,7 @@ export class PaymentsController {
     return this.paymentsService.createSubscription(userId, dto.tierId, dto.paymentMethodId);
   }
 
-  @Delete('cancel-subscription')
+  @Post('cancel-subscription')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Cancel Stripe Subscription' })
   @ApiResponse({ status: 200, description: 'Subscription cancelled successfully' })

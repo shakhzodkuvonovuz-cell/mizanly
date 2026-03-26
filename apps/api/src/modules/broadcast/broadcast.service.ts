@@ -74,10 +74,12 @@ export class BroadcastService {
     if (existing) return existing;
 
     try {
-      const member = await this.prisma.channelMember.create({
-        data: { channelId, userId, role: ChannelRole.SUBSCRIBER },
-      });
-      await this.prisma.$executeRaw`UPDATE broadcast_channels SET "subscribersCount" = "subscribersCount" + 1 WHERE id = ${channelId}`;
+      const [member] = await this.prisma.$transaction([
+        this.prisma.channelMember.create({
+          data: { channelId, userId, role: ChannelRole.SUBSCRIBER },
+        }),
+        this.prisma.$executeRaw`UPDATE broadcast_channels SET "subscribersCount" = "subscribersCount" + 1 WHERE id = ${channelId}`,
+      ]);
       return member;
     } catch (err) {
       // P2002: race condition duplicate — idempotent
@@ -98,10 +100,12 @@ export class BroadcastService {
     if (!member) return { unsubscribed: true };
     if (member.role === ChannelRole.OWNER) throw new ForbiddenException('Owner cannot unsubscribe');
 
-    await this.prisma.channelMember.delete({
-      where: { channelId_userId: { channelId, userId } },
-    });
-    await this.prisma.$executeRaw`UPDATE broadcast_channels SET "subscribersCount" = GREATEST("subscribersCount" - 1, 0) WHERE id = ${channelId}`;
+    await this.prisma.$transaction([
+      this.prisma.channelMember.delete({
+        where: { channelId_userId: { channelId, userId } },
+      }),
+      this.prisma.$executeRaw`UPDATE broadcast_channels SET "subscribersCount" = GREATEST("subscribersCount" - 1, 0) WHERE id = ${channelId}`,
+    ]);
     return { unsubscribed: true };
   }
 

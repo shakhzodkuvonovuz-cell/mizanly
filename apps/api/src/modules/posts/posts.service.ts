@@ -183,7 +183,7 @@ export class PostsService {
           ...(dismissedPostIds.length ? { id: { notIn: dismissedPostIds } } : {}),
         },
         select: POST_SELECT,
-        take: 200, // fetch more to score and rank
+        take: 500, // wider candidate pool for better scoring diversity
         orderBy: { createdAt: 'desc' },
       });
 
@@ -306,7 +306,7 @@ export class PostsService {
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       },
       select: POST_SELECT,
-      take: 200,
+      take: 500, // wider candidate pool for better trending diversity
       orderBy: { createdAt: 'desc' },
     });
 
@@ -731,8 +731,8 @@ export class PostsService {
       }
 
       // Gamification: award XP + update streak (fire-and-forget)
-      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' });
-      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
+      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' }).catch(err => this.logger.warn('Failed to queue gamification XP for post', err instanceof Error ? err.message : err));
+      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Failed to queue gamification streak for post', err instanceof Error ? err.message : err));
 
       // Track analytics
       this.analytics.track('post_created', userId, {
@@ -746,7 +746,7 @@ export class PostsService {
 
     // AI moderation: ALWAYS runs at creation time to catch violations early (even for scheduled content)
     if (dto.content) {
-      this.queueService.addModerationJob({ content: dto.content, contentType: 'post', contentId: post.id });
+      this.queueService.addModerationJob({ content: dto.content, contentType: 'post', contentId: post.id }).catch(err => this.logger.warn('Failed to queue moderation for post', err instanceof Error ? err.message : err));
     }
 
     // Image moderation: ALWAYS runs at creation time (even for scheduled content)
@@ -1325,7 +1325,7 @@ export class PostsService {
     }
 
     // Gamification: award XP for commenting
-    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'comment_posted' });
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'comment_posted' }).catch(err => this.logger.warn('Failed to queue gamification XP for comment', err instanceof Error ? err.message : err));
 
     // Finding #350: Publish real-time comment event
     this.redis.publish?.('content:update', JSON.stringify({

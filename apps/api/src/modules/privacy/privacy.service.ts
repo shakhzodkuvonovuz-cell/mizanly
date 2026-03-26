@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import { UploadService } from '../upload/upload.service';
 import { QueueService } from '../../common/queue/queue.service';
@@ -45,29 +46,35 @@ export class PrivacyService {
    */
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async processScheduledDeletions() {
-    const now = new Date();
-    const usersToDelete = await this.prisma.user.findMany({
-      where: {
-        scheduledDeletionAt: { lte: now },
-        isDeactivated: true,
-        isDeleted: false,
-      },
-      select: { id: true },
-      take: 50, // Process in batches to avoid OOM
-    });
+    try {
+      const now = new Date();
+      const usersToDelete = await this.prisma.user.findMany({
+        where: {
+          scheduledDeletionAt: { lte: now },
+          isDeactivated: true,
+          isDeleted: false,
+        },
+        select: { id: true },
+        take: 50, // Process in batches to avoid OOM
+      });
 
-    if (usersToDelete.length === 0) return;
+      if (usersToDelete.length === 0) return;
 
-    this.logger.log(`Processing ${usersToDelete.length} scheduled account deletions`);
+      this.logger.log(`Processing ${usersToDelete.length} scheduled account deletions`);
 
-    for (const user of usersToDelete) {
-      try {
-        await this.deleteAllUserData(user.id);
-        this.logger.log(`Purged user ${user.id} (scheduled deletion completed)`);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        this.logger.error(`Failed to purge user ${user.id}: ${msg}`);
+      for (const user of usersToDelete) {
+        try {
+          await this.deleteAllUserData(user.id);
+          this.logger.log(`Purged user ${user.id} (scheduled deletion completed)`);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.error(`Failed to purge user ${user.id}: ${msg}`);
+          Sentry.captureException(err);
+        }
       }
+    } catch (error) {
+      this.logger.error('processScheduledDeletions cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
     }
   }
 
@@ -90,6 +97,7 @@ export class PrivacyService {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       this.logger.error(`IP purge failed: ${msg}`);
+      Sentry.captureException(err);
     }
   }
 
@@ -138,6 +146,8 @@ export class PrivacyService {
       reelComments, reelReactions, videoReactions, videoComments,
       circleMemberships, reports, tips, coinTransactions,
       dhikrSessions, fastingLogs,
+      voicePosts, hifzProgress, hajjProgress, forumThreads, forumReplies,
+      scholarQuestions, channelPosts, duaBookmarks,
     ] = await Promise.all([
       this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, postType: true, createdAt: true }, take: EXPORT_CAP }),
       this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true }, take: EXPORT_CAP }),
@@ -166,6 +176,15 @@ export class PrivacyService {
       this.prisma.coinTransaction.findMany({ where: { userId }, select: { id: true, type: true, amount: true, createdAt: true }, take: EXPORT_CAP }),
       this.prisma.dhikrSession.findMany({ where: { userId }, select: { id: true, count: true, phrase: true, createdAt: true }, take: EXPORT_CAP }),
       this.prisma.fastingLog.findMany({ where: { userId }, select: { id: true, date: true, fastType: true }, take: EXPORT_CAP }),
+      // Missing GDPR categories added
+      this.prisma.voicePost.findMany({ where: { userId }, select: { id: true, audioUrl: true, duration: true, createdAt: true }, take: EXPORT_CAP }),
+      this.prisma.hifzProgress.findMany({ where: { userId }, select: { id: true, surahNum: true, status: true, lastReviewedAt: true, updatedAt: true }, take: EXPORT_CAP }),
+      this.prisma.hajjProgress.findMany({ where: { userId }, select: { id: true, year: true, currentStep: true, notes: true, createdAt: true }, take: EXPORT_CAP }),
+      this.prisma.forumThread.findMany({ where: { authorId: userId }, select: { id: true, title: true, content: true, createdAt: true }, take: EXPORT_CAP }),
+      this.prisma.forumReply.findMany({ where: { authorId: userId }, select: { id: true, content: true, threadId: true, createdAt: true }, take: EXPORT_CAP }),
+      this.prisma.scholarQuestion.findMany({ where: { userId }, select: { id: true, question: true, createdAt: true }, take: EXPORT_CAP }),
+      this.prisma.channelPost.findMany({ where: { userId }, select: { id: true, content: true, channelId: true, createdAt: true }, take: EXPORT_CAP }),
+      this.prisma.duaBookmark.findMany({ where: { userId }, select: { id: true, duaId: true, createdAt: true }, take: EXPORT_CAP }),
     ]);
 
     // Check which conversations have encryption envelopes to accurately mark messages
@@ -216,6 +235,14 @@ export class PrivacyService {
       coinTransactions,
       dhikrSessions,
       fastingLogs,
+      voicePosts,
+      hifzProgress,
+      hajjProgress,
+      forumThreads,
+      forumReplies,
+      scholarQuestions,
+      channelPosts,
+      duaBookmarks,
       exportedAt: new Date().toISOString(),
     };
 

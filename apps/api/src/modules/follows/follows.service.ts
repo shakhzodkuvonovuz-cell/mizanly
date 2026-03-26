@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
@@ -11,12 +12,14 @@ import { PushTriggerService } from '../notifications/push-trigger.service';
 import { Prisma, Notification } from '@prisma/client';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
+import Redis from 'ioredis';
 
 @Injectable()
 export class FollowsService {
   private readonly logger = new Logger(FollowsService.name);
   constructor(
     private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
     private pushTrigger: PushTriggerService,
     private queueService: QueueService,
@@ -30,7 +33,7 @@ export class FollowsService {
 
     const target = await this.prisma.user.findUnique({
       where: { id: targetUserId },
-      select: { id: true, isPrivate: true, isDeactivated: true, isBanned: true },
+      select: { id: true, username: true, isPrivate: true, isDeactivated: true, isBanned: true },
     });
     if (!target || target.isDeactivated || target.isBanned) {
       throw new NotFoundException('User not found');
@@ -135,6 +138,12 @@ export class FollowsService {
       this.analytics.track('user_followed', currentUserId, { targetUserId });
       this.analytics.increment('follows:daily');
 
+      // Invalidate Redis user cache for both users so follow counts are fresh
+      this.redis.del(`user:${target.username}`).catch(() => {});
+      this.prisma.user.findUnique({ where: { id: currentUserId }, select: { username: true } })
+        .then(u => { if (u) this.redis.del(`user:${u.username}`).catch(() => {}); })
+        .catch(() => {});
+
       // Finding #357: First follower celebration — check if this is the target's first follower
       this.prisma.user.findUnique({ where: { id: targetUserId }, select: { followersCount: true } })
         .then(u => {
@@ -191,6 +200,14 @@ export class FollowsService {
       this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${currentUserId}`,
       this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${targetUserId}`,
     ]);
+
+    // Invalidate Redis user cache for both users so follow counts are fresh
+    const [currentUser, targetUser] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: currentUserId }, select: { username: true } }),
+      this.prisma.user.findUnique({ where: { id: targetUserId }, select: { username: true } }),
+    ]);
+    if (currentUser) this.redis.del(`user:${currentUser.username}`).catch(() => {});
+    if (targetUser) this.redis.del(`user:${targetUser.username}`).catch(() => {});
 
     return { message: 'Unfollowed' };
   }
