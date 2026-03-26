@@ -120,6 +120,7 @@ export class FeedService {
         userId,
         isRemoved: false,
         createdAt: { lt: new Date(today.getFullYear(), 0, 1) },
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       },
       select: {
         id: true, content: true, mediaUrls: true, thumbnailUrl: true,

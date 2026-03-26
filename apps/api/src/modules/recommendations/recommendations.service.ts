@@ -599,7 +599,11 @@ export class RecommendationsService {
       if (rankedIds.length > 0) {
         const [posts, explorationPosts] = await Promise.all([
           this.prisma.post.findMany({
-            where: { id: { in: rankedIds }, isRemoved: false },
+            where: {
+              id: { in: rankedIds },
+              isRemoved: false,
+              OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            },
             select: POST_SELECT,
             take: 50,
           }),
@@ -747,7 +751,11 @@ export class RecommendationsService {
       if (rankedIds.length > 0) {
         const [threads, explorationThreads] = await Promise.all([
           this.prisma.thread.findMany({
-            where: { id: { in: rankedIds }, isRemoved: false },
+            where: {
+              id: { in: rankedIds },
+              isRemoved: false,
+              OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+            },
             select: THREAD_SELECT,
             take: 50,
           }),

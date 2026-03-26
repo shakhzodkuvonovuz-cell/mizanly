@@ -39,7 +39,11 @@ export class AudioTracksService {
     const track = await this.prisma.audioTrack.findUnique({ where: { id: trackId } });
     if (!track) throw new NotFoundException('Audio track not found');
 
-    const where: Prisma.ReelWhereInput = { audioTrackId: trackId, isRemoved: false };
+    const where: Prisma.ReelWhereInput = {
+      audioTrackId: trackId,
+      isRemoved: false,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+    };
     if (cursor) where.id = { lt: cursor };
 
     const reels = await this.prisma.reel.findMany({

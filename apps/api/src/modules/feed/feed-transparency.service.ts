@@ -202,9 +202,12 @@ export class FeedTransparencyService {
       where: {
         isRemoved: false,
         visibility: 'PUBLIC',
-        OR: keywords.map((kw) => ({
-          content: { contains: kw, mode: 'insensitive' as const },
-        })),
+        AND: [
+          { OR: keywords.map((kw) => ({
+            content: { contains: kw, mode: 'insensitive' as const },
+          })) },
+          { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+        ],
         ...(excludedUserIds.length > 0
           ? { userId: { notIn: excludedUserIds } }
           : {}),

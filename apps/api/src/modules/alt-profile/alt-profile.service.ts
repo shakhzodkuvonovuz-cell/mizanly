@@ -197,7 +197,12 @@ export class AltProfileService {
 
     const limit = 20;
     const posts = await this.prisma.post.findMany({
-      where: { userId, isAltProfile: true, isRemoved: false },
+      where: {
+        userId,
+        isAltProfile: true,
+        isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+      },
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { createdAt: 'desc' },
       take: limit + 1,

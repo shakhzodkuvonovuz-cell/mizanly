@@ -268,6 +268,8 @@ export class ChannelsService {
     const where: Prisma.VideoWhereInput = {
       channelId: channel.id,
       status: VideoStatus.PUBLISHED,
+      isRemoved: false,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
     };
 
@@ -378,7 +380,11 @@ export class ChannelsService {
       }),
       // Top 5 videos by views
       this.prisma.video.findMany({
-        where: { channelId: channel.id },
+        where: {
+          channelId: channel.id,
+          isRemoved: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        },
         select: {
           id: true,
           title: true,

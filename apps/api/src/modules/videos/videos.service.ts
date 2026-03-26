@@ -279,8 +279,11 @@ export class VideosService {
         }
         return { category: category as VideoCategory };
       })() : {}),
-      // Prioritize subscribed channels if user has subscriptions
-      ...(channelIds.length ? { OR: [{ channelId: { in: channelIds } }, { channelId: { notIn: channelIds } }] } : {}),
+      AND: [
+        // Prioritize subscribed channels if user has subscriptions
+        ...(channelIds.length ? [{ OR: [{ channelId: { in: channelIds } }, { channelId: { notIn: channelIds } }] }] : []),
+        { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+      ],
     };
 
     // If user has subscriptions, prioritize subscribed channels
@@ -829,10 +832,14 @@ export class VideosService {
     const where: Prisma.VideoWhereInput = {
       id: { not: videoId },
       status: VideoStatus.PUBLISHED,
-      OR: [
-        { channelId: video.channelId },
-        { category: video.category },
-        ...(video.tags.length > 0 ? [{ tags: { hasSome: video.tags } }] : []),
+      isRemoved: false,
+      AND: [
+        { OR: [
+          { channelId: video.channelId },
+          { category: video.category },
+          ...(video.tags.length > 0 ? [{ tags: { hasSome: video.tags } }] : []),
+        ] },
+        { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
       ],
     };
 
