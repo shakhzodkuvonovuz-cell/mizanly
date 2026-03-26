@@ -55,9 +55,10 @@ export class PrivacyService {
    * - Cascade: removes all related records (follows, blocks, settings, devices, etc.)
    * - SetNull: nulls userId on preserved records (posts, messages, financial records)
    *
-   * Runs weekly at 4 AM Sunday (low-traffic window, after other crons complete).
+   * Runs daily at 4:30 AM (low-traffic window, after other crons complete).
+   * Processes 20 users per run — at scale, this purges ~600/month which handles typical deletion volume.
    */
-  @Cron('0 4 * * 0')
+  @Cron('0 30 4 * * *')
   async hardDeletePurgedUsers(): Promise<number> {
     const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
     const cutoffDate = new Date(Date.now() - NINETY_DAYS_MS);
@@ -73,7 +74,7 @@ export class PrivacyService {
           ],
         },
         select: { id: true, deletedAt: true, updatedAt: true },
-        take: 10, // Small batch — each hard-delete cascades across hundreds of rows
+        take: 20, // Moderate batch — each hard-delete cascades across hundreds of rows
       });
 
       if (candidates.length === 0) {
@@ -99,12 +100,12 @@ export class PrivacyService {
           }
 
           // Audit trail: log BEFORE deletion (the record won't exist after)
+          // Using captureMessage (not addBreadcrumb) for a permanent Sentry record of each successful deletion
           const deletionTimestamp = candidate.deletedAt ?? candidate.updatedAt;
-          Sentry.addBreadcrumb({
-            category: 'hard-delete',
-            message: `Permanently deleting user ${candidate.id}, soft-deleted at ${deletionTimestamp.toISOString()}`,
-            level: 'warning',
-          });
+          Sentry.captureMessage(
+            `Hard-delete purge: permanently removing user ${candidate.id} (soft-deleted at ${deletionTimestamp.toISOString()})`,
+            'info',
+          );
           this.logger.warn(
             `Hard-delete purge: permanently removing user ${candidate.id} (soft-deleted at ${deletionTimestamp.toISOString()})`,
           );
@@ -116,9 +117,7 @@ export class PrivacyService {
           this.logger.log(`Hard-delete purge: successfully removed user ${candidate.id}`);
 
           // Throttle between deletions to avoid overwhelming the database
-          if (candidates.indexOf(candidate) < candidates.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-          }
+          await new Promise((resolve) => setTimeout(resolve, 500));
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           this.logger.error(`Hard-delete purge: failed to delete user ${candidate.id}: ${msg}`);

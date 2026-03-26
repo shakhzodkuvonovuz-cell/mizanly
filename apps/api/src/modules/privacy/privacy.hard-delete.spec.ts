@@ -8,6 +8,7 @@ import { globalMockProviders } from '../../common/test/mock-providers';
 
 jest.mock('@sentry/node', () => ({
   captureException: jest.fn(),
+  captureMessage: jest.fn(),
   addBreadcrumb: jest.fn(),
 }));
 
@@ -117,7 +118,7 @@ describe('PrivacyService — hardDeletePurgedUsers', () => {
         where: expect.objectContaining({
           isDeleted: true,
         }),
-        take: 10,
+        take: 20,
       }),
     );
     expect(prisma.user.delete).not.toHaveBeenCalled();
@@ -171,7 +172,7 @@ describe('PrivacyService — hardDeletePurgedUsers', () => {
     );
   });
 
-  it('should call Sentry.addBreadcrumb before each deletion as audit trail', async () => {
+  it('should call Sentry.captureMessage before each deletion as audit trail', async () => {
     const candidates = [{ id: 'user-audit', deletedAt: NINETY_ONE_DAYS_AGO, updatedAt: NINETY_ONE_DAYS_AGO }];
     prisma.user.findMany.mockResolvedValue(candidates);
     prisma.user.findUnique.mockResolvedValue({ id: 'user-audit', isDeleted: true });
@@ -179,12 +180,9 @@ describe('PrivacyService — hardDeletePurgedUsers', () => {
 
     await service.hardDeletePurgedUsers();
 
-    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(
-      expect.objectContaining({
-        category: 'hard-delete',
-        message: expect.stringContaining('user-audit'),
-        level: 'warning',
-      }),
+    expect(Sentry.captureMessage).toHaveBeenCalledWith(
+      expect.stringContaining('user-audit'),
+      'info',
     );
   });
 
@@ -197,10 +195,9 @@ describe('PrivacyService — hardDeletePurgedUsers', () => {
     const result = await service.hardDeletePurgedUsers();
 
     expect(result).toBe(1);
-    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: expect.stringContaining(NINETY_ONE_DAYS_AGO.toISOString()),
-      }),
+    expect(Sentry.captureMessage).toHaveBeenCalledWith(
+      expect.stringContaining(NINETY_ONE_DAYS_AGO.toISOString()),
+      'info',
     );
   });
 
@@ -219,7 +216,7 @@ describe('PrivacyService — hardDeletePurgedUsers', () => {
     await service.hardDeletePurgedUsers();
 
     expect(prisma.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 10 }),
+      expect.objectContaining({ take: 20 }),
     );
   });
 
