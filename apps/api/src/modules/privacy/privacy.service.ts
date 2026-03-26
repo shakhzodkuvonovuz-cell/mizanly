@@ -41,6 +41,104 @@ export class PrivacyService {
   }
 
   /**
+   * Hard-delete users that were soft-deleted more than 90 days ago.
+   *
+   * This is the final purge — no recovery after this.
+   * The soft-delete phase (deleteAllUserData) already:
+   * - Anonymized PII (username, email, phone, avatar, bio)
+   * - Cleaned R2 media files
+   * - Cleaned Meilisearch indexes
+   * - Cleaned Redis keys
+   * - Soft-deleted content (isRemoved: true)
+   *
+   * Hard-delete removes the User row entirely. Prisma cascade rules handle:
+   * - Cascade: removes all related records (follows, blocks, settings, devices, etc.)
+   * - SetNull: nulls userId on preserved records (posts, messages, financial records)
+   *
+   * Runs weekly at 4 AM Sunday (low-traffic window, after other crons complete).
+   */
+  @Cron('0 4 * * 0')
+  async hardDeletePurgedUsers(): Promise<number> {
+    const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+    const cutoffDate = new Date(Date.now() - NINETY_DAYS_MS);
+
+    try {
+      const candidates = await this.prisma.user.findMany({
+        where: {
+          isDeleted: true,
+          OR: [
+            { deletedAt: { lte: cutoffDate } },
+            // Fallback: if deletedAt was never set but isDeleted is true, use updatedAt
+            { deletedAt: null, updatedAt: { lte: cutoffDate } },
+          ],
+        },
+        select: { id: true, deletedAt: true, updatedAt: true },
+        take: 10, // Small batch — each hard-delete cascades across hundreds of rows
+      });
+
+      if (candidates.length === 0) {
+        this.logger.log('Hard-delete purge: no users eligible for permanent removal');
+        return 0;
+      }
+
+      this.logger.log(`Hard-delete purge: found ${candidates.length} users eligible for permanent removal`);
+
+      let deletedCount = 0;
+
+      for (const candidate of candidates) {
+        try {
+          // Safety check: re-fetch and verify isDeleted is still true
+          const user = await this.prisma.user.findUnique({
+            where: { id: candidate.id },
+            select: { id: true, isDeleted: true },
+          });
+
+          if (!user || !user.isDeleted) {
+            this.logger.warn(`Hard-delete purge: skipping user ${candidate.id} — isDeleted is false or user not found`);
+            continue;
+          }
+
+          // Audit trail: log BEFORE deletion (the record won't exist after)
+          const deletionTimestamp = candidate.deletedAt ?? candidate.updatedAt;
+          Sentry.addBreadcrumb({
+            category: 'hard-delete',
+            message: `Permanently deleting user ${candidate.id}, soft-deleted at ${deletionTimestamp.toISOString()}`,
+            level: 'warning',
+          });
+          this.logger.warn(
+            `Hard-delete purge: permanently removing user ${candidate.id} (soft-deleted at ${deletionTimestamp.toISOString()})`,
+          );
+
+          // Prisma cascade handles all related records
+          await this.prisma.user.delete({ where: { id: candidate.id } });
+
+          deletedCount++;
+          this.logger.log(`Hard-delete purge: successfully removed user ${candidate.id}`);
+
+          // Throttle between deletions to avoid overwhelming the database
+          if (candidates.indexOf(candidate) < candidates.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.logger.error(`Hard-delete purge: failed to delete user ${candidate.id}: ${msg}`);
+          Sentry.captureException(err, {
+            tags: { operation: 'hard-delete-purge', userId: candidate.id },
+          });
+          // Continue processing remaining users — one failure should not block others
+        }
+      }
+
+      this.logger.log(`Hard-delete purge complete: ${deletedCount}/${candidates.length} users permanently removed`);
+      return deletedCount;
+    } catch (error) {
+      this.logger.error('Hard-delete purge cron failed', error instanceof Error ? error.message : error);
+      Sentry.captureException(error);
+      return 0;
+    }
+  }
+
+  /**
    * Bug 67: Process scheduled account deletions.
    * Runs daily at 3 AM — finds users whose deletedAt has passed and purges their data.
    */

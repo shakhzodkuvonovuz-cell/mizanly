@@ -171,6 +171,7 @@ export const mockPrivacyService = {
     deleteAllUserData: jest.fn().mockResolvedValue({ deleted: true }),
     processScheduledDeletions: jest.fn().mockResolvedValue(undefined),
     purgeOldIpAddresses: jest.fn().mockResolvedValue(undefined),
+    hardDeletePurgedUsers: jest.fn().mockResolvedValue(0),
   },
 };
 
