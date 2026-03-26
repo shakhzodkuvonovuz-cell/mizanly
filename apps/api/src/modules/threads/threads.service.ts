@@ -233,6 +233,17 @@ export class ThreadsService {
    * Threads with deep reply chains score higher.
    */
   private async getTrendingThreads(excludedIds: string[], cursor?: string, limit = 20) {
+    // 60-second Redis cache for trending threads (same pattern as posts.service.ts getTrendingFallback)
+    const cacheKey = `threads:trending:${cursor ?? 'first'}:${limit}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      try {
+        return JSON.parse(cached) as { data: Record<string, unknown>[]; meta: { hasMore: boolean; cursor?: string } };
+      } catch {
+        await this.redis.del(cacheKey);
+      }
+    }
+
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const threads = await this.prisma.thread.findMany({
@@ -272,13 +283,17 @@ export class ThreadsService {
       ({ _score, ...t }) => t,
     );
 
-    return {
+    const result = {
       data,
       meta: {
         hasMore,
         cursor: hasMore ? String(offset + limit) : undefined,
       },
     };
+
+    // Cache trending threads for 60 seconds
+    await this.redis.setex(cacheKey, 60, JSON.stringify(result));
+    return result;
   }
 
   /**
@@ -307,7 +322,7 @@ export class ThreadsService {
     // Get trending to fill the rest
     const seenIds = new Set(followingThreads.map(t => t.id));
     const trending = await this.getTrendingThreads(excludedIds, undefined, halfLimit);
-    const trendingFiltered = trending.data.filter(t => !seenIds.has(t.id));
+    const trendingFiltered = trending.data.filter((t: { id: string }) => !seenIds.has(t.id)) as typeof followingThreads;
 
     // Interleave
     const merged: typeof followingThreads = [];

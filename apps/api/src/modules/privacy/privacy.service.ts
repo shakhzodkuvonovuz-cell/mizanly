@@ -182,7 +182,7 @@ export class PrivacyService {
 
     this.logger.log(`Data export requested for user ${userId}`);
 
-    return {
+    const exportData: Record<string, unknown> = {
       profile: user,
       settings: userSettings,
       posts,
@@ -217,6 +217,16 @@ export class PrivacyService {
       dhikrSessions,
       fastingLogs,
       exportedAt: new Date().toISOString(),
+    };
+
+    // Indicate which categories hit the export cap (GDPR transparency)
+    const truncatedCategories = Object.entries(exportData)
+      .filter(([, val]) => Array.isArray(val) && val.length >= EXPORT_CAP)
+      .map(([key]) => key);
+
+    return {
+      ...exportData,
+      _meta: { exportCap: EXPORT_CAP, truncatedCategories },
     };
   }
 
@@ -260,7 +270,7 @@ export class PrivacyService {
       }),
       this.prisma.reel.findMany({
         where: { userId },
-        select: { id: true, videoUrl: true, thumbnailUrl: true },
+        select: { id: true, videoUrl: true, thumbnailUrl: true, carouselUrls: true },
       }),
       this.prisma.story.findMany({
         where: { userId },
@@ -293,6 +303,13 @@ export class PrivacyService {
       if (vk) mediaKeysToDelete.push(vk);
       const tk = this.extractR2Key(reel.thumbnailUrl);
       if (tk) mediaKeysToDelete.push(tk);
+      // Collect carousel slide URLs for R2 deletion
+      if (reel.carouselUrls && Array.isArray(reel.carouselUrls)) {
+        for (const carouselUrl of reel.carouselUrls) {
+          const ck = this.extractR2Key(carouselUrl);
+          if (ck) mediaKeysToDelete.push(ck);
+        }
+      }
     }
     for (const story of userStories) {
       const mk = this.extractR2Key(story.mediaUrl);
@@ -511,24 +528,28 @@ export class PrivacyService {
       await tx.callParticipant.deleteMany({ where: { userId } });
     });
 
-    // ── Post-transaction: R2 media cleanup (fire-and-forget) ──
+    // ── Post-transaction: R2 media cleanup (batched in chunks of 50) ──
     if (mediaKeysToDelete.length > 0) {
       this.logger.log(`Deleting ${mediaKeysToDelete.length} R2 media files for user ${userId}`);
-      Promise.allSettled(
-        mediaKeysToDelete.map((key) =>
-          this.uploadService.deleteFile(key).catch((err: unknown) => {
-            const msg = err instanceof Error ? err.message : String(err);
-            this.logger.warn(`Failed to delete R2 file ${key} for user ${userId}: ${msg}`);
-          }),
-        ),
-      ).then((results) => {
-        const failed = results.filter((r) => r.status === 'rejected').length;
-        if (failed > 0) {
-          this.logger.warn(`${failed}/${mediaKeysToDelete.length} R2 deletions failed for user ${userId}`);
-        } else {
-          this.logger.log(`All ${mediaKeysToDelete.length} R2 media files deleted for user ${userId}`);
-        }
-      });
+      const R2_BATCH_SIZE = 50;
+      let totalFailed = 0;
+      for (let i = 0; i < mediaKeysToDelete.length; i += R2_BATCH_SIZE) {
+        const batch = mediaKeysToDelete.slice(i, i + R2_BATCH_SIZE);
+        const results = await Promise.allSettled(
+          batch.map((key) =>
+            this.uploadService.deleteFile(key).catch((err: unknown) => {
+              const errMsg = err instanceof Error ? err.message : String(err);
+              this.logger.warn(`R2 delete failed for ${key}: ${errMsg}`);
+            }),
+          ),
+        );
+        totalFailed += results.filter((r) => r.status === 'rejected').length;
+      }
+      if (totalFailed > 0) {
+        this.logger.warn(`${totalFailed}/${mediaKeysToDelete.length} R2 deletions failed for user ${userId}`);
+      } else {
+        this.logger.log(`All ${mediaKeysToDelete.length} R2 media files deleted for user ${userId}`);
+      }
     }
 
     // ── Post-transaction: Meilisearch index removal (fire-and-forget) ──

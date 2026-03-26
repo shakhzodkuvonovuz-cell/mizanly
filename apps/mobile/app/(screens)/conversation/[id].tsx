@@ -1027,11 +1027,6 @@ export default function ConversationScreen() {
           queryClient.invalidateQueries({ queryKey: ['conversation', id] });
         }
       });
-      // Listen for new notifications to update badge count in real-time
-      socket.on('new_notification', () => {
-        const store = useStore.getState();
-        store.setUnreadNotifications(store.unreadNotifications + 1);
-      });
       socketRef.current = socket;
     };
     connect();

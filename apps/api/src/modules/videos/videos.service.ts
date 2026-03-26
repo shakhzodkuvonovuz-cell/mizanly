@@ -186,22 +186,25 @@ export class VideosService {
       });
 
     // Publish workflow: search index, cache invalidation, real-time event
-    this.publishWorkflow.onPublish({
-      contentType: 'video',
-      contentId: video[0].id,
-      userId,
-      indexDocument: {
-        id: video[0].id,
-        title: dto.title,
-        description: dto.description || '',
-        tags: dto.tags || [],
-        username: video[0].user?.username || '',
+    // Only trigger for immediately-published content (not scheduled)
+    if (!(dto as unknown as Record<string, unknown>).scheduledAt) {
+      this.publishWorkflow.onPublish({
+        contentType: 'video',
+        contentId: video[0].id,
         userId,
-        channelId: dto.channelId,
-        category: dto.category || 'OTHER',
-        status: 'PROCESSING',
-      },
-    }).catch(err => this.logger.warn('Publish workflow failed for video', err instanceof Error ? err.message : err));
+        indexDocument: {
+          id: video[0].id,
+          title: dto.title,
+          description: dto.description || '',
+          tags: dto.tags || [],
+          username: video[0].user?.username || '',
+          userId,
+          channelId: dto.channelId,
+          category: dto.category || 'OTHER',
+          status: 'PROCESSING',
+        },
+      }).catch(err => this.logger.warn('Publish workflow failed for video', err instanceof Error ? err.message : err));
+    }
 
     // Gamification: award XP + update streak
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' });

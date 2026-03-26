@@ -329,7 +329,7 @@ export class MessagesService {
         isMuted: false,
       },
       select: { userId: true },
-      take: 500,
+      take: 1024, // Match max group size
     });
     if (members.length === 0) return;
 
@@ -337,19 +337,24 @@ export class MessagesService {
       ? (content.length > 100 ? content.slice(0, 99) + '\u2026' : content)
       : 'Sent a message';
 
-    await Promise.all(
-      members.map((member) =>
-        this.notifications.create({
-          userId: member.userId,
-          actorId: senderId,
-          type: 'MESSAGE',
-          conversationId,
-          body: truncatedBody,
-        }).catch((err) => {
-          this.logger.warn(`Notification to ${member.userId} failed: ${err?.message}`);
-        }),
-      ),
-    );
+    // Process in batches of 20 to avoid overwhelming notification service
+    const NOTIFY_BATCH = 20;
+    for (let i = 0; i < members.length; i += NOTIFY_BATCH) {
+      const batch = members.slice(i, i + NOTIFY_BATCH);
+      await Promise.all(
+        batch.map((member) =>
+          this.notifications.create({
+            userId: member.userId,
+            actorId: senderId,
+            type: 'MESSAGE',
+            conversationId,
+            body: truncatedBody,
+          }).catch((err) => {
+            this.logger.warn(`Notification to ${member.userId} failed: ${err?.message}`);
+          }),
+        ),
+      );
+    }
   }
 
   async deleteMessage(messageId: string, userId: string) {
@@ -844,6 +849,11 @@ export class MessagesService {
         where: { id: convId },
         data: { lastMessageText: original.content ?? '[Forwarded]', lastMessageAt: new Date(), lastMessageById: userId },
       });
+
+      // Notify target conversation members about the forwarded message
+      this.notifyConversationMembers(convId, userId, original.content ?? '[Forwarded]').catch((err) => {
+        this.logger.warn(`Forward notification failed for conv ${convId}: ${err?.message}`);
+      });
     }
 
     // Increment forward count on original message
@@ -1281,6 +1291,13 @@ export class MessagesService {
           }
         });
         published++;
+
+        // Notify conversation members about the now-published scheduled message
+        if (msg.senderId) {
+          this.notifyConversationMembers(msg.conversationId, msg.senderId, msg.content?.slice(0, 100) ?? 'Sent a message').catch((err) => {
+            this.logger.warn(`Scheduled message notification failed for msg ${msg.id}: ${err?.message}`);
+          });
+        }
       } catch (error) {
         this.logger.error(`Failed to publish scheduled message ${msg.id}`, error instanceof Error ? error.message : error);
       }
@@ -1296,18 +1313,40 @@ export class MessagesService {
   // ── Message Expiry Job ──
   @Cron(CronExpression.EVERY_MINUTE)
   async processExpiredMessages() {
-    const now = new Date();
-    // Delete expired disappearing messages
-    await this.prisma.message.updateMany({
-      where: { expiresAt: { lt: now }, isDeleted: false },
-      data: { isDeleted: true, content: null, mediaUrl: null },
-    });
-    // Delete viewed view-once messages older than 30 seconds
-    const thirtySecondsAgo = new Date(now.getTime() - 30000);
-    await this.prisma.message.updateMany({
-      where: { isViewOnce: true, viewedAt: { lt: thirtySecondsAgo }, isDeleted: false },
-      data: { isDeleted: true, content: null, mediaUrl: null },
-    });
+    try {
+      const now = new Date();
+      // Delete expired disappearing messages — clear all content metadata
+      await this.prisma.message.updateMany({
+        where: { expiresAt: { lt: now }, isDeleted: false },
+        data: {
+          isDeleted: true,
+          content: null,
+          mediaUrl: null,
+          fileName: null,
+          voiceDuration: null,
+          transcription: null,
+          mediaType: null,
+          fileSize: null,
+        },
+      });
+      // Delete viewed view-once messages older than 30 seconds
+      const thirtySecondsAgo = new Date(now.getTime() - 30000);
+      await this.prisma.message.updateMany({
+        where: { isViewOnce: true, viewedAt: { lt: thirtySecondsAgo }, isDeleted: false },
+        data: {
+          isDeleted: true,
+          content: null,
+          mediaUrl: null,
+          fileName: null,
+          voiceDuration: null,
+          transcription: null,
+          mediaType: null,
+          fileSize: null,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Failed to process expired messages', error instanceof Error ? error.message : error);
+    }
   }
 
   // Finding #364: Group topics — Telegram-style discussion threads within groups

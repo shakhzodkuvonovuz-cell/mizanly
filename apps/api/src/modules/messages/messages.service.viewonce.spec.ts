@@ -259,6 +259,11 @@ describe('MessagesService — View-Once Message Security', () => {
         isDeleted: true,
         content: null,
         mediaUrl: null,
+        fileName: null,
+        voiceDuration: null,
+        transcription: null,
+        mediaType: null,
+        fileSize: null,
       });
     });
   });
