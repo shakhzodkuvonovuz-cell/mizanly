@@ -119,7 +119,7 @@ export const mockAsyncJobService = {
   provide: AsyncJobService,
   useValue: {
     enqueue: jest.fn(),
-    getStats: jest.fn().mockReturnValue({ enqueued: 0, completed: 0, failed: 0, retried: 0 }),
+    getStats: jest.fn().mockReturnValue({ enqueued: 0, completed: 0, failed: 0, retried: 0, deprecated: true }),
   },
 };
 
