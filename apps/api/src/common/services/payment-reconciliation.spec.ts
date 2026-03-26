@@ -678,13 +678,14 @@ describe('PaymentReconciliationService', () => {
 
     it('should report no discrepancies when balance matches transactions', async () => {
       prisma.coinBalance.findMany.mockResolvedValue([
-        { userId: 'user-bal-1', coins: 500 },
+        { userId: 'user-bal-1', coins: 500, diamonds: 100 },
       ]);
-      // First aggregate call = incoming (PURCHASE, REWARD, REFUND) = 600
+      // 4 aggregate calls per user: coin-in, coin-out, diamond-in, diamond-out
       prisma.coinTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 600 } })
-        // Second aggregate call = outgoing (GIFT_SENT, TIP_SENT) = -100
-        .mockResolvedValueOnce({ _sum: { amount: -100 } });
+        .mockResolvedValueOnce({ _sum: { amount: 600 } })   // coin incoming
+        .mockResolvedValueOnce({ _sum: { amount: -100 } })  // coin outgoing
+        .mockResolvedValueOnce({ _sum: { amount: 100 } })   // diamond incoming
+        .mockResolvedValueOnce({ _sum: { amount: 0 } });    // diamond outgoing
 
       const result = await service.auditCoinBalances();
 
@@ -694,14 +695,14 @@ describe('PaymentReconciliationService', () => {
 
     it('should flag discrepancy when balance does not match transactions', async () => {
       prisma.coinBalance.findMany.mockResolvedValue([
-        { userId: 'user-bad', coins: 1000 },
+        { userId: 'user-bad', coins: 1000, diamonds: 50 },
       ]);
-      // Incoming = 500
       prisma.coinTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 500 } })
-        // Outgoing = -100
-        .mockResolvedValueOnce({ _sum: { amount: -100 } });
-      // Expected = 500 + (-100) = 400, stored = 1000 -> discrepancy
+        .mockResolvedValueOnce({ _sum: { amount: 500 } })   // coin incoming
+        .mockResolvedValueOnce({ _sum: { amount: -100 } })  // coin outgoing
+        .mockResolvedValueOnce({ _sum: { amount: 50 } })    // diamond incoming (matches)
+        .mockResolvedValueOnce({ _sum: { amount: 0 } });    // diamond outgoing
+      // Expected coins = 500 + (-100) = 400, stored = 1000 -> discrepancy
 
       const result = await service.auditCoinBalances();
 
@@ -714,20 +715,26 @@ describe('PaymentReconciliationService', () => {
 
     it('should handle multiple balances and report all discrepancies', async () => {
       prisma.coinBalance.findMany.mockResolvedValue([
-        { userId: 'user-ok', coins: 100 },
-        { userId: 'user-bad1', coins: 500 },
-        { userId: 'user-bad2', coins: 200 },
+        { userId: 'user-ok', coins: 100, diamonds: 0 },
+        { userId: 'user-bad1', coins: 500, diamonds: 0 },
+        { userId: 'user-bad2', coins: 200, diamonds: 0 },
       ]);
-      // user-ok: incoming=150, outgoing=-50 -> expected=100 (matches)
+      // user-ok: coin-in=150, coin-out=-50 -> expected=100 (matches). diamonds match (0=0)
       prisma.coinTransaction.aggregate
         .mockResolvedValueOnce({ _sum: { amount: 150 } })
         .mockResolvedValueOnce({ _sum: { amount: -50 } })
-        // user-bad1: incoming=200, outgoing=0 -> expected=200 (mismatch, stored=500)
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })
+        // user-bad1: coin-in=200, coin-out=0 -> expected=200 (mismatch, stored=500)
         .mockResolvedValueOnce({ _sum: { amount: 200 } })
         .mockResolvedValueOnce({ _sum: { amount: 0 } })
-        // user-bad2: incoming=300, outgoing=-50 -> expected=250 (mismatch, stored=200)
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })
+        // user-bad2: coin-in=300, coin-out=-50 -> expected=250 (mismatch, stored=200)
         .mockResolvedValueOnce({ _sum: { amount: 300 } })
-        .mockResolvedValueOnce({ _sum: { amount: -50 } });
+        .mockResolvedValueOnce({ _sum: { amount: -50 } })
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })
+        .mockResolvedValueOnce({ _sum: { amount: 0 } });
 
       const result = await service.auditCoinBalances();
 
@@ -737,10 +744,12 @@ describe('PaymentReconciliationService', () => {
 
     it('should not auto-fix discrepancies (only log)', async () => {
       prisma.coinBalance.findMany.mockResolvedValue([
-        { userId: 'user-nofix', coins: 999 },
+        { userId: 'user-nofix', coins: 999, diamonds: 0 },
       ]);
       prisma.coinTransaction.aggregate
         .mockResolvedValueOnce({ _sum: { amount: 100 } })
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })
         .mockResolvedValueOnce({ _sum: { amount: 0 } });
 
       await service.auditCoinBalances();
@@ -751,17 +760,39 @@ describe('PaymentReconciliationService', () => {
 
     it('should handle null _sum.amount from aggregate', async () => {
       prisma.coinBalance.findMany.mockResolvedValue([
-        { userId: 'user-null', coins: 5 },
+        { userId: 'user-null', coins: 5, diamonds: 0 },
       ]);
       // No transactions at all
       prisma.coinTransaction.aggregate
+        .mockResolvedValueOnce({ _sum: { amount: null } })
+        .mockResolvedValueOnce({ _sum: { amount: null } })
         .mockResolvedValueOnce({ _sum: { amount: null } })
         .mockResolvedValueOnce({ _sum: { amount: null } });
 
       const result = await service.auditCoinBalances();
 
-      // Expected = 0 + 0 = 0, stored = 5 -> discrepancy
+      // Expected coins = 0 + 0 = 0, stored = 5 -> discrepancy
       expect(result).toBe(1);
+    });
+
+    it('should flag diamond discrepancy separately from coin discrepancy', async () => {
+      prisma.coinBalance.findMany.mockResolvedValue([
+        { userId: 'user-diamond-bad', coins: 0, diamonds: 500 },
+      ]);
+      prisma.coinTransaction.aggregate
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })    // coin incoming (matches)
+        .mockResolvedValueOnce({ _sum: { amount: 0 } })    // coin outgoing
+        .mockResolvedValueOnce({ _sum: { amount: 200 } })  // diamond incoming
+        .mockResolvedValueOnce({ _sum: { amount: 0 } });   // diamond outgoing
+      // Expected diamonds = 200, stored = 500 -> discrepancy
+
+      const result = await service.auditCoinBalances();
+
+      expect(result).toBe(1);
+      expect(Sentry.captureMessage).toHaveBeenCalledWith(
+        expect.stringContaining('Diamond balance discrepancy: userId=user-diamond-bad, stored=500, expected=200'),
+        'warning',
+      );
     });
   });
 

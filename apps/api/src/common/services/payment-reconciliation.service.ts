@@ -534,15 +534,15 @@ export class PaymentReconciliationService {
    */
   async auditCoinBalances(): Promise<number> {
     try {
-      // Get all coin balances with non-zero coins
+      // Check ALL balances — not just coins > 0.
+      // Users whose balance was incorrectly zeroed by a bug need detection too.
+      // Also audit diamonds (tips/gifts produce diamond income, cashout deducts).
       const balances = await this.prisma.coinBalance.findMany({
-        where: {
-          coins: { gt: 0 },
-        },
-        take: 50,
+        take: 100,
         select: {
           userId: true,
           coins: true,
+          diamonds: true,
         },
       });
 
@@ -551,8 +551,9 @@ export class PaymentReconciliationService {
       let discrepancies = 0;
 
       for (const balance of balances) {
-        // Sum all PURCHASE and REFUND transactions (positive = coins in, CASHOUT is diamonds not coins)
-        const result = await this.prisma.coinTransaction.aggregate({
+        // ── Coin audit ──
+        // Incoming: PURCHASE, REWARD, REFUND (positive amounts)
+        const coinIncoming = await this.prisma.coinTransaction.aggregate({
           where: {
             userId: balance.userId,
             type: { in: ['PURCHASE', 'REWARD', 'REFUND'] },
@@ -560,8 +561,8 @@ export class PaymentReconciliationService {
           _sum: { amount: true },
         });
 
-        // Sum all outgoing coin transactions (GIFT_SENT uses coins)
-        const outgoing = await this.prisma.coinTransaction.aggregate({
+        // Outgoing: GIFT_SENT, TIP_SENT (stored as negative amounts in some flows, positive in others)
+        const coinOutgoing = await this.prisma.coinTransaction.aggregate({
           where: {
             userId: balance.userId,
             type: { in: ['GIFT_SENT', 'TIP_SENT'] },
@@ -569,10 +570,7 @@ export class PaymentReconciliationService {
           _sum: { amount: true },
         });
 
-        // Expected balance = incoming + outgoing (outgoing amounts are negative)
-        const incomingSum = result._sum.amount ?? 0;
-        const outgoingSum = outgoing._sum.amount ?? 0;
-        const expectedCoins = incomingSum + outgoingSum;
+        const expectedCoins = (coinIncoming._sum.amount ?? 0) + (coinOutgoing._sum.amount ?? 0);
 
         if (expectedCoins !== balance.coins) {
           discrepancies++;
@@ -584,12 +582,44 @@ export class PaymentReconciliationService {
             `Coin balance discrepancy for user ${balance.userId}: stored=${balance.coins}, computed=${expectedCoins}`,
           );
         }
+
+        // ── Diamond audit ──
+        // Incoming: GIFT_RECEIVED, TIP_RECEIVED (diamond credits from tips/gifts)
+        const diamondIncoming = await this.prisma.coinTransaction.aggregate({
+          where: {
+            userId: balance.userId,
+            type: { in: ['GIFT_RECEIVED', 'TIP_RECEIVED'] },
+          },
+          _sum: { amount: true },
+        });
+
+        // Outgoing: CASHOUT (diamond deductions)
+        const diamondOutgoing = await this.prisma.coinTransaction.aggregate({
+          where: {
+            userId: balance.userId,
+            type: 'CASHOUT',
+          },
+          _sum: { amount: true },
+        });
+
+        const expectedDiamonds = (diamondIncoming._sum.amount ?? 0) + (diamondOutgoing._sum.amount ?? 0);
+
+        if (expectedDiamonds !== balance.diamonds) {
+          discrepancies++;
+          Sentry.captureMessage(
+            `Diamond balance discrepancy: userId=${balance.userId}, stored=${balance.diamonds}, expected=${expectedDiamonds} (diff=${balance.diamonds - expectedDiamonds})`,
+            'warning',
+          );
+          this.logger.warn(
+            `Diamond balance discrepancy for user ${balance.userId}: stored=${balance.diamonds}, computed=${expectedDiamonds}`,
+          );
+        }
       }
 
       if (discrepancies > 0) {
-        this.logger.warn(`Coin balance audit found ${discrepancies} discrepancy(ies) — logged to Sentry for manual review`);
+        this.logger.warn(`Coin/diamond balance audit found ${discrepancies} discrepancy(ies) — logged to Sentry for manual review`);
       } else {
-        this.logger.log(`Coin balance audit: ${balances.length} balance(s) checked, all consistent`);
+        this.logger.log(`Coin/diamond balance audit: ${balances.length} balance(s) checked, all consistent`);
       }
 
       return discrepancies;
