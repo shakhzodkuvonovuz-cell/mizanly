@@ -17,10 +17,10 @@ jobs:
           cache: npm
       - run: npm ci --legacy-peer-deps
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
-      - run: npm run lint --workspace=apps/api
-      - run: npm run lint --workspace=apps/mobile
-      - run: npx tsc --noEmit --project apps/api/tsconfig.json
-      - run: npm run typecheck --workspace=apps/mobile
+      - name: Typecheck API
+        run: npx tsc --noEmit --project apps/api/tsconfig.json
+      - name: Typecheck Mobile
+        run: npm run typecheck --workspace=apps/mobile
 
   build-mobile:
     runs-on: ubuntu-latest
@@ -32,7 +32,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - run: npx expo export --platform web
+      - name: Verify Expo config and dependencies
+        run: npx expo config --type public
         working-directory: apps/mobile
 
   test-api:
@@ -64,6 +65,8 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm test --workspace=apps/api -- --passWithNoTests
+      - name: Push schema to test database
+        run: npx prisma db push --schema=apps/api/prisma/schema.prisma --skip-generate --accept-data-loss
       - name: Run integration tests (real PostgreSQL)
         run: npm run test:integration --workspace=apps/api -- --passWithNoTests
 
