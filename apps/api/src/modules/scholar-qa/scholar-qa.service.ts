@@ -85,13 +85,24 @@ export class ScholarQAService {
     });
     if (existingVote) throw new ConflictException('Already voted on this question');
 
-    await this.prisma.scholarQuestionVote.create({
-      data: { userId, questionId, voteType: 'UPVOTE' },
-    });
-    return this.prisma.scholarQuestion.update({
-      where: { id: questionId },
-      data: { votes: { increment: 1 } },
-    });
+    try {
+      const [, updated] = await this.prisma.$transaction([
+        this.prisma.scholarQuestionVote.create({
+          data: { userId, questionId, voteType: 'UPVOTE' },
+        }),
+        this.prisma.scholarQuestion.update({
+          where: { id: questionId },
+          data: { votes: { increment: 1 } },
+        }),
+      ]);
+      return updated;
+    } catch (err: unknown) {
+      // P2002: duplicate vote from concurrent request — idempotent
+      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'P2002') {
+        throw new ConflictException('Already voted on this question');
+      }
+      throw err;
+    }
   }
 
   async startSession(scholarId: string, qaId: string) {

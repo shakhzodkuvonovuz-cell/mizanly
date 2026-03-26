@@ -246,6 +246,7 @@ export default function RisalahScreen() {
   const { data: conversations, isLoading, isError, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
+    refetchInterval: 60_000, // Poll every 60s so unread badge updates even when socket is disconnected
   });
 
   // Join conversation rooms so we receive typing events

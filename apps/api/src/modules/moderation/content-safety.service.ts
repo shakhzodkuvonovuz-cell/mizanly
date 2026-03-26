@@ -285,28 +285,38 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
     reason: string,
     flags: string[],
   ): Promise<void> {
+    let contentOwnerId: string | null = null;
+
     // Atomic: remove content + create audit log in a transaction
     await this.prisma.$transaction(async (tx) => {
       if (contentType === 'post') {
-        await tx.post.update({
+        const item = await tx.post.update({
           where: { id: contentId },
           data: { isRemoved: true },
+          select: { userId: true },
         });
+        contentOwnerId = item.userId;
       } else if (contentType === 'reel') {
-        await tx.reel.update({
+        const item = await tx.reel.update({
           where: { id: contentId },
           data: { isRemoved: true },
+          select: { userId: true },
         });
+        contentOwnerId = item.userId;
       } else if (contentType === 'thread') {
-        await tx.thread.update({
+        const item = await tx.thread.update({
           where: { id: contentId },
           data: { isRemoved: true },
+          select: { userId: true },
         });
+        contentOwnerId = item.userId;
       } else if (contentType === 'comment') {
-        await tx.comment.update({
+        const item = await tx.comment.update({
           where: { id: contentId },
           data: { isRemoved: true },
+          select: { userId: true },
         });
+        contentOwnerId = item.userId;
       }
 
       const targetField = contentType === 'post' ? 'targetPostId'
@@ -323,6 +333,22 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
           explanation: `Auto-removed: ${flags.join(', ')}`,
         },
       });
+
+      // Create SYSTEM notification to content owner about removal
+      if (contentOwnerId) {
+        await tx.notification.create({
+          data: {
+            userId: contentOwnerId,
+            actorId: null,
+            type: 'SYSTEM',
+            title: 'Content removed',
+            body: `Your ${contentType} was removed for violating our community guidelines. Reason: ${reason}`,
+            ...(contentType === 'post' ? { postId: contentId } : {}),
+            ...(contentType === 'reel' ? { reelId: contentId } : {}),
+            ...(contentType === 'thread' ? { threadId: contentId } : {}),
+          },
+        });
+      }
     });
   }
 

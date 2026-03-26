@@ -451,6 +451,18 @@ export class PaymentsService {
       return;
     }
 
+    // PI-based idempotency: check if coins were already credited for this PaymentIntent
+    const alreadyCredited = await this.prisma.coinTransaction.findFirst({
+      where: {
+        userId,
+        description: { contains: paymentIntent.id },
+      },
+    });
+    if (alreadyCredited) {
+      this.logger.log(`Coin purchase already credited for PI ${paymentIntent.id} — skipping (idempotent)`);
+      return;
+    }
+
     // Credit coins atomically
     await this.prisma.$transaction(async (tx) => {
       await tx.coinBalance.upsert({
@@ -459,8 +471,8 @@ export class PaymentsService {
         create: { userId, coins: coinAmount, diamonds: 0 },
       });
 
-      // Mark the pending transaction as completed
-      await tx.coinTransaction.updateMany({
+      // Mark the pending transaction as completed (or create if none pending)
+      const updated = await tx.coinTransaction.updateMany({
         where: {
           userId,
           type: 'PURCHASE',
@@ -471,6 +483,18 @@ export class PaymentsService {
           description: `Coin purchase completed (${coinAmount} coins) — Stripe PI: ${paymentIntent.id}`,
         },
       });
+
+      // If no pending transaction was found, create a completed one
+      if (updated.count === 0) {
+        await tx.coinTransaction.create({
+          data: {
+            userId,
+            type: 'PURCHASE',
+            amount: coinAmount,
+            description: `Coin purchase completed (${coinAmount} coins) — Stripe PI: ${paymentIntent.id}`,
+          },
+        });
+      }
     });
 
     this.logger.log(`Credited ${coinAmount} coins to user ${userId} via PI ${paymentIntent.id}`);
@@ -554,9 +578,15 @@ export class PaymentsService {
     if (!tipId) {
       // Redis mapping expired or lost — try DB fallback via metadata
       const senderId = paymentIntent.metadata?.senderId;
+      const metaAmount = paymentIntent.metadata?.amount ? parseFloat(paymentIntent.metadata.amount) : undefined;
       if (senderId) {
+        // Try matching by senderId + amount for better precision
         const tip = await this.prisma.tip.findFirst({
-          where: { senderId, status: 'pending' },
+          where: {
+            senderId,
+            status: 'pending',
+            ...(metaAmount !== undefined ? { amount: metaAmount } : {}),
+          },
           orderBy: { createdAt: 'desc' },
           select: { id: true },
         });

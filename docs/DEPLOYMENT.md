@@ -21,6 +21,9 @@
 
 ```bash
 # Database (Neon)
+# NOTE: For production, append ?connection_limit=20 to DATABASE_URL to cap
+# the Prisma connection pool size and prevent exceeding Neon's connection limit.
+# Example: postgresql://user:pass@host/mizanly?sslmode=require&connection_limit=20
 DATABASE_URL=postgresql://user:pass@host/mizanly?sslmode=require
 DIRECT_DATABASE_URL=postgresql://user:pass@host/mizanly?sslmode=require
 

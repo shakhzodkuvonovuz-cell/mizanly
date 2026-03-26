@@ -86,10 +86,21 @@ export class NotificationsService {
     if (!notification) throw new NotFoundException('Notification not found');
     if (notification.userId !== userId) throw new ForbiddenException();
 
-    return this.prisma.notification.update({
+    const updated = await this.prisma.notification.update({
       where: { id: notificationId },
       data: { isRead: true, readAt: new Date() },
     });
+
+    // Emit updated unread count via Redis pub/sub so badge updates in real-time
+    const unreadCount = await this.prisma.notification.count({
+      where: { userId, isRead: false },
+    });
+    this.redis.publish('notification:new', JSON.stringify({
+      userId,
+      notification: { type: 'UNREAD_COUNT_UPDATE', unreadCount },
+    })).catch((e) => this.logger.debug('Redis unread count publish failed', e));
+
+    return updated;
   }
 
   async markAllRead(userId: string) {
@@ -136,6 +147,13 @@ export class NotificationsService {
     if (notification.userId !== userId) throw new ForbiddenException();
 
     await this.prisma.notification.delete({ where: { id: notificationId } });
+
+    // If the deleted notification was unread, invalidate the cached unread count
+    // so the next getUnreadCount call returns the correct value
+    if (!notification.isRead) {
+      this.redis.del(`notif_unread:${userId}`).catch(() => {});
+    }
+
     return { deleted: true };
   }
 
@@ -257,6 +275,10 @@ export class NotificationsService {
         const countKey = `notif_batch:${existing.id}`;
         const count = await this.redis.incr(countKey);
         if (count === 1) await this.redis.expire(countKey, 1800);
+
+        // If re-marking a read notification as unread, invalidate the cached unread count
+        const wasRead = existing.isRead;
+
         await this.prisma.notification.update({
           where: { id: existing.id },
           data: {
@@ -265,6 +287,11 @@ export class NotificationsService {
             createdAt: new Date(), // Bump to top
           },
         });
+
+        if (wasRead) {
+          this.redis.del(`notif_unread:${params.userId}`).catch(() => {});
+        }
+
         return existing;
       }
     }
@@ -359,7 +386,7 @@ export class NotificationsService {
         actor: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       },
       orderBy: { createdAt: 'desc' },
-      take: 200,
+      take: 50,
     });
 
     // Group by type + content target (postId/reelId/threadId)
@@ -401,24 +428,39 @@ export class NotificationsService {
    * Deletes read notifications older than 90 days.
    * Runs at 3 AM daily (low-traffic window) to minimize DB impact.
    */
-  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  @Cron('0 30 3 * * *') // 3:30 AM daily (staggered from other 3 AM crons)
   async cleanupOldNotifications(): Promise<number> {
     try {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 90);
 
-      const result = await this.prisma.notification.deleteMany({
-        where: {
-          isRead: true,
-          createdAt: { lt: cutoff },
-        },
-      });
+      const BATCH_SIZE = 10000;
+      let totalDeleted = 0;
 
-      if (result.count > 0) {
-        this.logger.log(`Cleaned up ${result.count} old read notification(s)`);
+      // Delete in chunks to avoid unbounded deleteMany on large tables
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const batch = await this.prisma.notification.findMany({
+          where: { isRead: true, createdAt: { lt: cutoff } },
+          select: { id: true },
+          take: BATCH_SIZE,
+        });
+
+        if (batch.length === 0) break;
+
+        const result = await this.prisma.notification.deleteMany({
+          where: { id: { in: batch.map(n => n.id) } },
+        });
+        totalDeleted += result.count;
+
+        if (batch.length < BATCH_SIZE) break; // Last batch
       }
 
-      return result.count;
+      if (totalDeleted > 0) {
+        this.logger.log(`Cleaned up ${totalDeleted} old read notification(s)`);
+      }
+
+      return totalDeleted;
     } catch (error) {
       this.logger.error('cleanupOldNotifications cron failed', error instanceof Error ? error.message : error);
       Sentry.captureException(error);

@@ -123,45 +123,53 @@ export class BlocksService {
    */
   private async cleanupAfterBlock(blockerId: string, blockedId: string): Promise<void> {
     // Remove blocked user from any circles owned by the blocker
-    const blockerCircles = await this.prisma.circle.findMany({
-      where: { ownerId: blockerId },
-      select: { id: true },
-      take: 50,
-    });
-    if (blockerCircles.length > 0) {
-      const circleIds = blockerCircles.map((c) => c.id);
-      const result = await this.prisma.circleMember.deleteMany({
-        where: { circleId: { in: circleIds }, userId: blockedId },
+    try {
+      const blockerCircles = await this.prisma.circle.findMany({
+        where: { ownerId: blockerId },
+        select: { id: true },
+        take: 50,
       });
-      // Decrement membersCount for affected circles
-      if (result.count > 0) {
-        for (const circleId of circleIds) {
-          await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = GREATEST("membersCount" - 1, 1) WHERE id = ${circleId}`.catch(err => this.logger.warn('Failed to update circle member count', err instanceof Error ? err.message : err));
+      if (blockerCircles.length > 0) {
+        const circleIds = blockerCircles.map((c) => c.id);
+        const result = await this.prisma.circleMember.deleteMany({
+          where: { circleId: { in: circleIds }, userId: blockedId },
+        });
+        // Decrement membersCount for affected circles
+        if (result.count > 0) {
+          for (const circleId of circleIds) {
+            await this.prisma.$executeRaw`UPDATE circles SET "membersCount" = GREATEST("membersCount" - 1, 1) WHERE id = ${circleId}`.catch(err => this.logger.warn('Failed to update circle member count', err instanceof Error ? err.message : err));
+          }
         }
       }
+    } catch (err) {
+      this.logger.error(`Circle cleanup failed for block ${blockerId}->${blockedId}`, err instanceof Error ? err.message : err);
     }
 
     // Archive shared 1:1 DM conversations for both parties
-    const sharedConversations = await this.prisma.conversation.findMany({
-      where: {
-        isGroup: false,
-        AND: [
-          { members: { some: { userId: blockerId } } },
-          { members: { some: { userId: blockedId } } },
-        ],
-      },
-      select: { id: true },
-      take: 50,
-    });
-    if (sharedConversations.length > 0) {
-      const convIds = sharedConversations.map((c) => c.id);
-      await this.prisma.conversationMember.updateMany({
+    try {
+      const sharedConversations = await this.prisma.conversation.findMany({
         where: {
-          conversationId: { in: convIds },
-          userId: { in: [blockerId, blockedId] },
+          isGroup: false,
+          AND: [
+            { members: { some: { userId: blockerId } } },
+            { members: { some: { userId: blockedId } } },
+          ],
         },
-        data: { isArchived: true },
+        select: { id: true },
+        take: 50,
       });
+      if (sharedConversations.length > 0) {
+        const convIds = sharedConversations.map((c) => c.id);
+        await this.prisma.conversationMember.updateMany({
+          where: {
+            conversationId: { in: convIds },
+            userId: { in: [blockerId, blockedId] },
+          },
+          data: { isArchived: true },
+        });
+      }
+    } catch (err) {
+      this.logger.error(`DM archive cleanup failed for block ${blockerId}->${blockedId}`, err instanceof Error ? err.message : err);
     }
   }
 

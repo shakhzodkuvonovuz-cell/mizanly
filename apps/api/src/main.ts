@@ -73,6 +73,13 @@ async function bootstrap() {
   // CORS — unified policy (CODEX #26: same logic for HTTP and WebSocket)
   const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
   const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction && corsOrigins.length === 0) {
+    new Logger('CORS').warn(
+      'CORS_ORIGINS is empty in production — all cross-origin requests will be rejected. ' +
+      'Set CORS_ORIGINS to your frontend domain(s) (comma-separated).',
+    );
+  }
   app.enableCors({
     origin: corsOrigins.length > 0
       ? corsOrigins

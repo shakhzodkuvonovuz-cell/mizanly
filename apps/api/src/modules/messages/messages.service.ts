@@ -1249,6 +1249,11 @@ export class MessagesService {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async publishScheduledMessages(): Promise<number> {
+    // Distributed lock: prevent duplicate sends when multiple instances overlap
+    const lockKey = 'cron:publishScheduledMessages:lock';
+    const acquired = await this.redis.set(lockKey, '1', 'EX', 55, 'NX');
+    if (!acquired) return 0;
+
     try {
       const now = new Date();
 

@@ -80,9 +80,9 @@ export class PrivacyService {
 
   /**
    * Finding #200: Purge IP addresses older than 90 days.
-   * Runs daily at 4 AM.
+   * Runs daily at 4:15 AM (staggered from other crons to avoid collision).
    */
-  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  @Cron('0 15 4 * * *')
   async purgeOldIpAddresses() {
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     try {
