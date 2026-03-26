@@ -248,7 +248,11 @@ export class PrivacyService {
 
     // Indicate which categories hit the export cap (GDPR transparency)
     const truncatedCategories = Object.entries(exportData)
-      .filter(([, val]) => Array.isArray(val) && val.length >= EXPORT_CAP)
+      .filter(([, val]) => {
+        if (Array.isArray(val) && val.length >= EXPORT_CAP) return true;
+        if (val && typeof val === 'object' && 'data' in val && Array.isArray((val as any).data) && (val as any).data.length >= EXPORT_CAP) return true;
+        return false;
+      })
       .map(([key]) => key);
 
     return {

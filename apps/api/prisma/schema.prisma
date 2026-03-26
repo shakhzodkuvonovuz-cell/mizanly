@@ -2975,8 +2975,8 @@ model CoinBalance {
 
 model CoinTransaction {
   id          String              @id @default(cuid())
-  userId      String
-  user        User                @relation("coinTransactions", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?               @relation("coinTransactions", fields: [userId], references: [id], onDelete: SetNull)
   type        CoinTransactionType
   amount      Int
   currency    String              @default("USD") @db.VarChar(3)
