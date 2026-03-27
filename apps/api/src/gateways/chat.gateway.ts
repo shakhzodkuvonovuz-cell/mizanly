@@ -279,6 +279,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       await this.redis.sadd(presenceKey, client.id);
       await this.redis.expire(presenceKey, this.PRESENCE_TTL);
 
+      // Cap connections at 3 per user (allows multi-device, prevents floods)
+      const MAX_SOCKETS_PER_USER = 3;
+      const existingSockets = await this.redis.smembers(presenceKey);
+      if (existingSockets.length > MAX_SOCKETS_PER_USER) {
+        // Disconnect oldest connections (keep the 3 most recent including this one)
+        const staleSocketIds = existingSockets
+          .filter(sid => sid !== client.id)
+          .slice(0, existingSockets.length - MAX_SOCKETS_PER_USER);
+        for (const staleId of staleSocketIds) {
+          try {
+            const staleSockets = await this.server.in(staleId).fetchSockets();
+            for (const s of staleSockets) {
+              s.emit('force_disconnect', { reason: 'connection_limit' });
+              s.disconnect(true);
+            }
+          } catch { /* stale socket already gone */ }
+          await this.redis.srem(presenceKey, staleId);
+        }
+      }
+
       // Start heartbeat to keep presence alive while connected
       const timer = setInterval(async () => {
         try {
