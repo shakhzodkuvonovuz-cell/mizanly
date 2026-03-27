@@ -34,7 +34,7 @@ export class ClerkAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid token');
     }
 
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { clerkId },
       select: {
         id: true,
@@ -48,6 +48,20 @@ export class ClerkAuthGuard implements CanActivate {
         deactivatedAt: true,
       },
     });
+
+    // Retry once after 2s if user not found — handles race condition where
+    // the Clerk user.created webhook hasn't been processed yet (signup race)
+    if (!user) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      user = await this.prisma.user.findUnique({
+        where: { clerkId },
+        select: {
+          id: true, clerkId: true, username: true, displayName: true,
+          isBanned: true, isDeactivated: true, isDeleted: true,
+          banExpiresAt: true, deactivatedAt: true,
+        },
+      });
+    }
 
     if (!user) {
       throw new UnauthorizedException('User not found');

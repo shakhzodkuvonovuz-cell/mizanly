@@ -376,6 +376,7 @@ export class AuthService {
         displayName: data.displayName,
         avatarUrl: data.avatarUrl,
         language: 'en',
+        tosAcceptedAt: new Date(), // Implicit acceptance via Clerk signup
         ...(data.phone ? { phone: data.phone } : {}),
       },
     });
