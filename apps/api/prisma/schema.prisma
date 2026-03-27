@@ -1475,6 +1475,7 @@ model Video {
   @@index([channelId, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
+  @@index([status, isRemoved, createdAt(sort: Desc)])
   @@index([category, viewsCount(sort: Desc)])
   @@index([tags])
   @@map("videos")

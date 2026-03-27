@@ -24,10 +24,15 @@ const mockQueueService = {
 function createTxProxy(): any {
   return new Proxy({}, {
     get(_target, prop) {
+      if (prop === '$executeRaw' || prop === '$executeRawUnsafe') {
+        return jest.fn().mockResolvedValue(0);
+      }
       // Return an object whose methods are all jest.fn() returning resolved values
       return new Proxy({}, {
         get(_t, method) {
-          return jest.fn().mockResolvedValue(method === 'update' ? {} : { count: 0 });
+          if (method === 'findMany') return jest.fn().mockResolvedValue([]);
+          if (method === 'update') return jest.fn().mockResolvedValue({});
+          return jest.fn().mockResolvedValue({ count: 0 });
         },
       });
     },

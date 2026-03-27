@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import Stripe from 'stripe';
 import Redis from 'ioredis';
 
@@ -20,6 +21,7 @@ export class PaymentsService {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private configService: ConfigService,
+    private notifications: NotificationsService,
   ) {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     this.stripeAvailable = !!secretKey;
@@ -639,6 +641,24 @@ export class PaymentsService {
         }
       }
     });
+
+    // Notify receiver they received a tip
+    const completedTip = await this.prisma.tip.findFirst({
+      where: { stripePaymentId: paymentIntent.id },
+      select: { receiverId: true, senderId: true, amount: true },
+    });
+    if (completedTip?.receiverId) {
+      const sender = completedTip.senderId
+        ? await this.prisma.user.findUnique({ where: { id: completedTip.senderId }, select: { username: true } })
+        : null;
+      this.notifications.create({
+        userId: completedTip.receiverId,
+        actorId: completedTip.senderId ?? null,
+        type: 'SYSTEM',
+        title: 'Tip received!',
+        body: `${sender?.username ? `@${sender.username}` : 'Someone'} sent you a $${Number(completedTip.amount).toFixed(2)} tip.`,
+      }).catch(err => this.logger.warn('Failed to create tip notification', err instanceof Error ? err.message : err));
+    }
 
     // Clean up Redis mapping
     await this.redis.del(`payment_intent:${paymentIntent.id}`);

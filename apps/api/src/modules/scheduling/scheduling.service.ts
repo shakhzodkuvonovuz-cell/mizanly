@@ -449,6 +449,13 @@ export class SchedulingService {
     for (const post of overduePosts) {
       if (!post.userId) continue;
 
+      // Notify author their scheduled post is now published
+      this.notifications.create({
+        userId: post.userId, actorId: null, type: 'SYSTEM', postId: post.id,
+        title: 'Post published!',
+        body: `Your scheduled post is now live.`,
+      }).catch(err => this.logger.warn(`Notification failed for scheduled post ${post.id}`, err instanceof Error ? err.message : err));
+
       // Publish workflow
       this.publishWorkflow.onPublish({
         contentType: 'post',
@@ -488,6 +495,13 @@ export class SchedulingService {
     for (const thread of overdueThreads) {
       if (!thread.userId) continue;
 
+      // Notify author their scheduled thread is now published
+      this.notifications.create({
+        userId: thread.userId, actorId: null, type: 'SYSTEM', threadId: thread.id,
+        title: 'Thread published!',
+        body: `Your scheduled thread is now live.`,
+      }).catch(err => this.logger.warn(`Notification failed for scheduled thread ${thread.id}`, err instanceof Error ? err.message : err));
+
       this.publishWorkflow.onPublish({
         contentType: 'thread',
         contentId: thread.id,
@@ -522,6 +536,13 @@ export class SchedulingService {
 
     for (const reel of overdueReels) {
       if (!reel.userId) continue;
+
+      // Notify author their scheduled reel is now published
+      this.notifications.create({
+        userId: reel.userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
+        title: 'Reel published!',
+        body: `Your scheduled reel is now live.`,
+      }).catch(err => this.logger.warn(`Notification failed for scheduled reel ${reel.id}`, err instanceof Error ? err.message : err));
 
       this.publishWorkflow.onPublish({
         contentType: 'reel',
@@ -574,6 +595,16 @@ export class SchedulingService {
       // Deferred: Gamification XP
       this.queueService.addGamificationJob({ type: 'award-xp', userId: video.userId, action: 'video_created' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
       this.queueService.addGamificationJob({ type: 'update-streak', userId: video.userId, action: 'posting' }).catch(err => this.logger.warn('Queue job failed:', err?.message));
+
+      // Deferred: Notify author their scheduled video is now published
+      this.notifications.create({
+        userId: video.userId,
+        actorId: null,
+        type: 'SYSTEM',
+        videoId: video.id,
+        title: 'Video published!',
+        body: `Your scheduled video "${(video.title || 'Untitled').slice(0, 50)}" is now live.`,
+      }).catch(err => this.logger.warn(`Notification failed for scheduled video ${video.id}`, err instanceof Error ? err.message : err));
     }
 
     const result = {

@@ -2,8 +2,10 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CoinTransactionType } from '@prisma/client';
 
 export interface GiftCatalogItem {
@@ -53,7 +55,12 @@ const DIAMOND_RATE = 0.7; // Creator receives 70% of coin cost as diamonds
 
 @Injectable()
 export class GiftsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(GiftsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async getBalance(userId: string) {
     const balance = await this.prisma.coinBalance.upsert({
@@ -178,6 +185,15 @@ export class GiftsService {
 
       return gift;
     });
+
+    // Notify receiver they received a gift
+    this.notifications.create({
+      userId: receiverId,
+      actorId: senderId,
+      type: 'SYSTEM',
+      title: 'Gift received!',
+      body: `Someone sent you a ${catalogItem.name}! (+${diamondsEarned} diamonds)`,
+    }).catch(err => this.logger.warn('Failed to create gift notification', err instanceof Error ? err.message : err));
 
     return {
       gift: giftRecord,

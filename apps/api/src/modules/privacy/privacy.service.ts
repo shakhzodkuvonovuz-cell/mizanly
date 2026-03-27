@@ -543,6 +543,25 @@ export class PrivacyService {
       await tx.scholarVerification.deleteMany({ where: { userId } });
 
       // ─── 5. Social graph removal ───
+      // Decrement follower/following counts on OTHER users before deleting follow records
+      // Get all users this person follows → decrement their followersCount
+      const following = await tx.follow.findMany({ where: { followerId: userId }, select: { followingId: true }, take: 10000 }) || [];
+      // Get all users following this person → decrement their followingCount
+      const followers = await tx.follow.findMany({ where: { followingId: userId }, select: { followerId: true }, take: 10000 }) || [];
+      const followingIds = (following as Array<{ followingId: string }>).map(f => f.followingId);
+      const followerIds = (followers as Array<{ followerId: string }>).map(f => f.followerId);
+      if (followingIds.length > 0) {
+        await tx.$executeRawUnsafe(
+          `UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ANY($1::text[])`,
+          followingIds,
+        );
+      }
+      if (followerIds.length > 0) {
+        await tx.$executeRawUnsafe(
+          `UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ANY($1::text[])`,
+          followerIds,
+        );
+      }
       await tx.follow.deleteMany({ where: { OR: [{ followerId: userId }, { followingId: userId }] } });
       await tx.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } });
       await tx.mute.deleteMany({ where: { OR: [{ userId }, { mutedId: userId }] } });

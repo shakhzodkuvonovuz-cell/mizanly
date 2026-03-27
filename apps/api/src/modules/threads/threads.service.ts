@@ -356,22 +356,7 @@ export class ThreadsService {
       }
     }
 
-    // Parse and upsert hashtags
-    const hashtagNames = extractHashtags(dto.content ?? '');
     const isScheduled = !!dto.scheduledAt;
-    // For scheduled content: create the hashtag record but don't increment count yet —
-    // counts are incremented when the scheduling cron publishes the content
-    if (hashtagNames.length > 0) {
-      await Promise.all(
-        hashtagNames.map((name) =>
-          this.prisma.hashtag.upsert({
-            where: { name },
-            create: { name, threadsCount: isScheduled ? 0 : 1 },
-            update: isScheduled ? {} : { threadsCount: { increment: 1 } },
-          }),
-        ),
-      );
-    }
 
     const [thread] = await this.prisma.$transaction([
       this.prisma.thread.create({
@@ -411,6 +396,22 @@ export class ThreadsService {
         data: { threadsCount: { increment: 1 } },
       }),
     ]);
+
+    // Parse and upsert hashtags AFTER thread creation succeeds (prevents orphan counts on failure)
+    const hashtagNames = extractHashtags(dto.content ?? '');
+    // For scheduled content: create the hashtag record but don't increment count yet —
+    // counts are incremented when the scheduling cron publishes the content
+    if (hashtagNames.length > 0) {
+      await Promise.all(
+        hashtagNames.map((name) =>
+          this.prisma.hashtag.upsert({
+            where: { name },
+            create: { name, threadsCount: isScheduled ? 0 : 1 },
+            update: isScheduled ? {} : { threadsCount: { increment: 1 } },
+          }),
+        ),
+      );
+    }
     // --- Side effects deferred for scheduled content ---
     // Notifications and gamification XP only fire when content is actually published.
     // For scheduled content, these are triggered by the scheduling cron in publishOverdueContent().

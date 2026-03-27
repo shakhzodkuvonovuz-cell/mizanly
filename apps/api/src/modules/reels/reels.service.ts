@@ -112,26 +112,6 @@ export class ReelsService {
       }
     }
 
-    // Parse and upsert hashtags from caption
-    const hashtagNames = [...new Set([
-      ...extractHashtags(dto.caption ?? ''),
-      ...(dto.hashtags || []).map((h) => h.toLowerCase()),
-    ])];
-    const isScheduled = !!dto.scheduledAt;
-    // For scheduled content: create the hashtag record but don't increment count yet —
-    // counts are incremented when the scheduling cron publishes the content
-    if (hashtagNames.length > 0) {
-      await Promise.all(
-        hashtagNames.map((name) =>
-          this.prisma.hashtag.upsert({
-            where: { name },
-            create: { name, reelsCount: isScheduled ? 0 : 1 },
-            update: isScheduled ? {} : { reelsCount: { increment: 1 } },
-          }),
-        ),
-      );
-    }
-
     const commentPerm = dto.commentPermission
       ? CommentPermission[dto.commentPermission as keyof typeof CommentPermission] ?? CommentPermission.EVERYONE
       : CommentPermission.EVERYONE;
@@ -173,6 +153,26 @@ export class ReelsService {
         data: { reelsCount: { increment: 1 } },
       }),
     ]);
+
+    // Parse and upsert hashtags AFTER reel creation succeeds (prevents orphan counts on failure)
+    const hashtagNames = [...new Set([
+      ...extractHashtags(dto.caption ?? ''),
+      ...(dto.hashtags || []).map((h) => h.toLowerCase()),
+    ])];
+    const isScheduled = !!dto.scheduledAt;
+    // For scheduled content: create the hashtag record but don't increment count yet —
+    // counts are incremented when the scheduling cron publishes the content
+    if (hashtagNames.length > 0) {
+      await Promise.all(
+        hashtagNames.map((name) =>
+          this.prisma.hashtag.upsert({
+            where: { name },
+            create: { name, reelsCount: isScheduled ? 0 : 1 },
+            update: isScheduled ? {} : { reelsCount: { increment: 1 } },
+          }),
+        ),
+      );
+    }
 
     // Create tagged user records (accepts user IDs or usernames — resolves both)
     // Tag records are always created (even for scheduled content), but notifications are deferred
@@ -262,25 +262,32 @@ export class ReelsService {
           data: { streamId, status: 'READY' },
         });
         this.logger.log(`Reel ${reel.id} submitted to Stream as ${streamId}`);
-        // Finding #377: Notify user their reel is ready (success path)
-        this.notifications.create({
-          userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
-          title: 'Reel ready!',
-          body: 'Your reel has finished processing and is now live.',
-        }).catch(() => {});
+        // Notify user their reel is ready (success path)
+        // Skip notification for scheduled reels — they're not "live" yet
+        const freshReel = await this.prisma.reel.findUnique({ where: { id: reel.id }, select: { scheduledAt: true } });
+        if (!freshReel?.scheduledAt || new Date(freshReel.scheduledAt) <= new Date()) {
+          this.notifications.create({
+            userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
+            title: 'Reel ready!',
+            body: 'Your reel has finished processing and is now live.',
+          }).catch(() => {});
+        }
       })
       .catch((err) => {
         this.logger.error(`Stream upload failed for reel ${reel.id}`, err);
         this.prisma.reel.update({
           where: { id: reel.id },
           data: { status: 'READY' },
-        }).then(() => {
-          // Finding #377: Notify user their reel is ready
-          this.notifications.create({
-            userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
-            title: 'Reel ready!',
-            body: 'Your reel has finished processing and is now live.',
-          }).catch(() => {});
+        }).then(async () => {
+          // Notify user their reel is ready — skip for scheduled reels
+          const freshReel = await this.prisma.reel.findUnique({ where: { id: reel.id }, select: { scheduledAt: true } });
+          if (!freshReel?.scheduledAt || new Date(freshReel.scheduledAt) <= new Date()) {
+            this.notifications.create({
+              userId, actorId: null, type: 'SYSTEM', reelId: reel.id,
+              title: 'Reel ready!',
+              body: 'Your reel has finished processing and is now live.',
+            }).catch(() => {});
+          }
         }).catch((e) => this.logger.error('Failed to update reel status', e));
       });
 
@@ -805,12 +812,13 @@ export class ReelsService {
     const comment = await this.prisma.reelComment.findUnique({ where: { id: commentId } });
     if (!comment || comment.reelId !== reelId) throw new NotFoundException('Comment not found');
 
-    const deleted = await this.prisma.reelCommentReaction.deleteMany({
-      where: { commentId, userId },
-    });
-    if (deleted.count > 0) {
-      await this.prisma.$executeRaw`UPDATE "reel_comments" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`;
-    }
+    // Atomic: delete reaction + decrement counter in single transaction
+    await this.prisma.$transaction([
+      this.prisma.reelCommentReaction.deleteMany({
+        where: { commentId, userId },
+      }),
+      this.prisma.$executeRaw`UPDATE "reel_comments" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`,
+    ]);
     return { unliked: true };
   }
 

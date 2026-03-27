@@ -110,7 +110,9 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
       },
     }),
     ConfigModule.forRoot({ isGlobal: true }),
-    // TODO: Switch to @nestjs/throttler-storage-redis for multi-instance rate limiting
+    // NEEDS PACKAGE: npm install @nestjs/throttler-storage-redis
+    // Then: ThrottlerModule.forRoot({ throttlers: [{ ttl: 60000, limit: 100 }], storage: new ThrottlerStorageRedisService(redisUrl) })
+    // Current: in-memory storage resets per deploy, per-instance only. Acceptable for single Railway instance.
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     ScheduleModule.forRoot(),
     PrismaModule, RedisModule, AsyncJobsModule, QueueModule, FeatureFlagsModule, AnalyticsModule, PlatformServicesModule,
