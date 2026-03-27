@@ -25,7 +25,6 @@ jobs:
   build-mobile:
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,6 +53,7 @@ jobs:
         ports: ['6379:6379']
     env:
       DATABASE_URL: postgresql://mizanly:mizanly_test@localhost:5432/mizanly_test
+      DIRECT_DATABASE_URL: postgresql://mizanly:mizanly_test@localhost:5432/mizanly_test
       REDIS_URL: redis://localhost:6379
       CLERK_SECRET_KEY: test_secret
       NODE_ENV: test
@@ -70,7 +70,6 @@ jobs:
   test-api-integration:
     runs-on: ubuntu-latest
     needs: test-api
-    continue-on-error: true
     services:
       postgres:
         image: postgres:16-alpine
@@ -85,6 +84,7 @@ jobs:
         ports: ['6379:6379']
     env:
       DATABASE_URL: postgresql://mizanly:mizanly_test@localhost:5432/mizanly_test
+      DIRECT_DATABASE_URL: postgresql://mizanly:mizanly_test@localhost:5432/mizanly_test
       REDIS_URL: redis://localhost:6379
       NODE_ENV: test
     steps:
