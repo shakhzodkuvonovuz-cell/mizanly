@@ -72,7 +72,7 @@ jobs:
     needs: test-api
     services:
       postgres:
-        image: postgres:16-alpine
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: mizanly
           POSTGRES_PASSWORD: mizanly_test
