@@ -189,7 +189,7 @@ export class FeedService {
       take: 200,
     });
     const bySpace: Record<string, number> = {};
-    const postIds = interactions.map(i => i.postId);
+    const postIds = interactions.map(i => i.postId).filter((id): id is string => id !== null);
     // Fetch hashtags for interacted posts
     const posts = postIds.length > 0
       ? await this.prisma.post.findMany({ where: { id: { in: postIds } }, select: { id: true, hashtags: true }, take: 200 })
@@ -200,7 +200,7 @@ export class FeedService {
     for (const i of interactions) {
       const w = (i.liked ? 2 : 0) + (i.commented ? 3 : 0) + (i.shared ? 4 : 0) + (i.saved ? 3 : 0) + Math.min(i.viewDurationMs / 10000, 5);
       bySpace[i.space] = (bySpace[i.space] || 0) + w;
-      const tags = hashtagMap.get(i.postId) || [];
+      const tags = (i.postId ? hashtagMap.get(i.postId) : undefined) || [];
       for (const tag of tags) {
         byHashtag[tag] = (byHashtag[tag] || 0) + w;
       }

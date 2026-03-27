@@ -200,7 +200,7 @@ export class RecommendationsService {
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
-    const seenSet = new Set(seenIds.map(s => s.postId));
+    const seenSet = new Set(seenIds.map(s => s.postId).filter((id): id is string => id !== null));
 
     // KNN search: top 500 candidates across all interest centroids
     const candidates = await this.embeddingsService.findSimilarByMultipleVectors(
