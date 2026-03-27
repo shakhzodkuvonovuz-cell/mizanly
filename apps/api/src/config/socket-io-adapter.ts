@@ -64,8 +64,9 @@ export class RedisIoAdapter extends IoAdapter {
  * Initialize Redis adapter for the NestJS app.
  * Call this in main.ts before app.listen().
  */
-export async function initRedisAdapter(app: INestApplication): Promise<void> {
+export async function initRedisAdapter(app: INestApplication): Promise<RedisIoAdapter> {
   const adapter = new RedisIoAdapter(app);
   await adapter.connectToRedis();
   app.useWebSocketAdapter(adapter);
+  return adapter;
 }

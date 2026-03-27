@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 
 /**
  * @deprecated DEAD CODE — Nothing in the codebase calls enqueue().
@@ -24,9 +24,15 @@ import { Injectable, Logger } from '@nestjs/common';
  * corresponding @Processor() class. Do NOT use this service.
  */
 @Injectable()
-export class AsyncJobService {
+export class AsyncJobService implements OnModuleDestroy {
   private readonly logger = new Logger('AsyncJobs');
   private jobCounts = { enqueued: 0, completed: 0, failed: 0, retried: 0 };
+  private pendingTimers = new Set<ReturnType<typeof setTimeout>>();
+
+  onModuleDestroy() {
+    for (const timer of this.pendingTimers) clearTimeout(timer);
+    this.pendingTimers.clear();
+  }
 
   /**
    * @deprecated Use QueueService instead. This method runs jobs in-process
@@ -72,7 +78,12 @@ export class AsyncJobService {
         this.jobCounts.retried++;
         const delay = baseDelay * Math.pow(2, attempt);
         this.logger.warn(`Job "${jobName}" failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise((resolve) => {
+          const timer = setTimeout(resolve, delay);
+          this.pendingTimers.add(timer);
+          // Auto-remove from set after execution
+          setTimeout(() => this.pendingTimers.delete(timer), delay + 100);
+        });
         return this.executeWithRetry(jobName, fn, maxRetries, baseDelay, attempt + 1);
       }
       throw err;

@@ -1,4 +1,5 @@
 import { Inject, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -129,6 +130,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
           }
         } catch (e) {
           this.logger.debug('Failed to parse pub/sub message', e);
+          Sentry.captureException(e, { tags: { component: 'chat-gateway', channel } });
         }
       });
       this.logger.log('Subscribed to notification:new + content:update + new_message + user:banned + user:session_revoked Redis channels');

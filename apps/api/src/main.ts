@@ -159,11 +159,15 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   // Wire up Socket.io Redis adapter for horizontal scaling
-  await initRedisAdapter(app);
+  const socketAdapter = await initRedisAdapter(app);
+
+  // Clean up Redis adapter connections on shutdown
+  process.on('SIGTERM', () => socketAdapter.disconnect());
+  process.on('SIGINT', () => socketAdapter.disconnect());
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
-  new Logger('Bootstrap').log(`🟢 Mizanly API running on port ${port}`);
+  new Logger('Bootstrap').log(`Mizanly API running on port ${port}`);
 }
 
 bootstrap();
