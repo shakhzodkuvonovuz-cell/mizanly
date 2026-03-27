@@ -192,10 +192,11 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
   private async processBlurHash(job: Job<MediaJobData>): Promise<void> {
     const { mediaUrl, mediaKey, contentType, contentId } = job.data;
     await this.validateMediaUrl(mediaUrl);
-    this.logger.debug(`Generating blur placeholder for ${mediaKey}`);
+    this.logger.debug(`Generating BlurHash for ${mediaKey}`);
 
     try {
       const sharp = await import('sharp');
+      const { encode } = await import('blurhash');
       const response = await fetch(mediaUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch image: ${response.status}`);
@@ -203,47 +204,35 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
 
       const buffer = Buffer.from(await response.arrayBuffer());
 
-      // Downscale to tiny image for average color computation
+      // Downscale to small image for BlurHash encoding (4x3 components = good quality)
       const { data, info } = await sharp.default(buffer)
         .resize(32, 32, { fit: 'inside' })
         .ensureAlpha()
         .raw()
         .toBuffer({ resolveWithObject: true });
 
-      const pixelCount = info.width * info.height;
-      let r = 0, g = 0, b = 0;
-      for (let i = 0; i < pixelCount; i++) {
-        r += data[i * 4];
-        g += data[i * 4 + 1];
-        b += data[i * 4 + 2];
-      }
-
-      // Convert to hex color for use as placeholder background
-      const hexR = Math.round(r / pixelCount).toString(16).padStart(2, '0');
-      const hexG = Math.round(g / pixelCount).toString(16).padStart(2, '0');
-      const hexB = Math.round(b / pixelCount).toString(16).padStart(2, '0');
-      const blurhash = `#${hexR}${hexG}${hexB}`;
+      // Encode real BlurHash (produces compact string like "LEHV6nWB2yk8pyo0adR*.7kCMdnj")
+      const blurhash = encode(new Uint8ClampedArray(data), info.width, info.height, 4, 3);
 
       // Write to database if contentId provided
       if (contentId && contentType) {
+        const updateData = { blurhash };
         if (contentType === 'reel') {
-          await this.prisma.reel.update({
-            where: { id: contentId },
-            data: { blurhash },
-          }).catch(() => { /* reel may not exist */ });
+          await this.prisma.reel.update({ where: { id: contentId }, data: updateData }).catch(() => {});
         } else if (contentType === 'post') {
-          await this.prisma.post.update({
-            where: { id: contentId },
-            data: { blurhash },
-          }).catch(() => { /* post may not exist */ });
+          await this.prisma.post.update({ where: { id: contentId }, data: updateData }).catch(() => {});
+        } else if (contentType === 'story') {
+          await this.prisma.story.update({ where: { id: contentId }, data: updateData }).catch(() => {});
+        } else if (contentType === 'video') {
+          await this.prisma.video.update({ where: { id: contentId }, data: { blurhash } }).catch(() => {});
         }
       }
 
       await job.updateProgress(100);
-      this.logger.debug(`Blur placeholder generated for ${mediaKey}: ${blurhash}`);
+      this.logger.debug(`BlurHash generated for ${mediaKey}: ${blurhash}`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Blur generation failed for ${mediaKey}: ${msg}`);
+      this.logger.error(`BlurHash generation failed for ${mediaKey}: ${msg}`);
       throw error;
     }
   }

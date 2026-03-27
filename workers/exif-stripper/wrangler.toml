@@ -1,0 +1,14 @@
+name = "mizanly-exif-stripper"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+account_id = "a80d909cd5b47fdb4dcba31a66a3283b"
+
+# Triggered on every object upload to the mizanly-media bucket
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "mizanly-media"
+
+# Event notification: fires when objects are PUT into the bucket
+[triggers]
+# R2 event notifications must be configured via dashboard or API
+# This worker strips EXIF from uploaded images automatically

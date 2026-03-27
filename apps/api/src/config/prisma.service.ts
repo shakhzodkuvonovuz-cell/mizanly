@@ -67,6 +67,24 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       }
     }
     this.logger.log('CHECK constraints applied (12 non-negative guards)');
+
+    // Apply pg_trgm GIN indexes for fast ILIKE search (replaces sequential scan)
+    try {
+      await this.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pg_trgm`);
+      const trigramIndexes = [
+        `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_content_trgm ON posts USING GIN (content gin_trgm_ops)`,
+        `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_threads_content_trgm ON threads USING GIN (content gin_trgm_ops)`,
+        `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_username_trgm ON users USING GIN (username gin_trgm_ops)`,
+        `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_displayname_trgm ON users USING GIN ("displayName" gin_trgm_ops)`,
+      ];
+      for (const sql of trigramIndexes) {
+        await this.$executeRawUnsafe(sql).catch(() => {}); // CONCURRENTLY may fail inside transaction
+      }
+      this.logger.log('pg_trgm GIN indexes applied (4 search indexes)');
+    } catch {
+      // pg_trgm extension not available (some hosted PostgreSQL plans don't support it)
+      this.logger.warn('pg_trgm extension not available — ILIKE search uses sequential scan');
+    }
   }
 
   async onModuleDestroy() {

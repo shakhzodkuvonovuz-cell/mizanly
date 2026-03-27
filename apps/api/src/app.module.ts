@@ -2,6 +2,7 @@ import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
@@ -110,10 +111,11 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
       },
     }),
     ConfigModule.forRoot({ isGlobal: true }),
-    // NEEDS PACKAGE: npm install @nestjs/throttler-storage-redis
-    // Then: ThrottlerModule.forRoot({ throttlers: [{ ttl: 60000, limit: 100 }], storage: new ThrottlerStorageRedisService(redisUrl) })
-    // Current: in-memory storage resets per deploy, per-instance only. Acceptable for single Railway instance.
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    // Redis-backed distributed rate limiting (persists across deploys, shared across instances)
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60000, limit: 100 }],
+      ...(process.env.REDIS_URL ? { storage: new ThrottlerStorageRedisService(process.env.REDIS_URL) } : {}),
+    }),
     ScheduleModule.forRoot(),
     PrismaModule, RedisModule, AsyncJobsModule, QueueModule, FeatureFlagsModule, AnalyticsModule, PlatformServicesModule,
     AuthModule,
