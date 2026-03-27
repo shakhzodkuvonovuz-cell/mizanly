@@ -4,7 +4,11 @@ import { sanitizeText } from '../utils/sanitize';
 @Injectable()
 export class SanitizePipe implements PipeTransform {
   transform(value: unknown, metadata: ArgumentMetadata) {
-    // Sanitize both @Body and @Query params
+    // Sanitize @Body, @Query, and @Param values
+    if (metadata.type === 'param') {
+      // @Param values are always strings — sanitize directly
+      return typeof value === 'string' ? sanitizeText(value) : value;
+    }
     if ((metadata.type !== 'body' && metadata.type !== 'query') || typeof value !== 'object' || value === null) {
       return value;
     }

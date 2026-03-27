@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { Prisma, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 import { createClerkClient } from '@clerk/backend';
@@ -26,6 +27,7 @@ export class ReportsService {
     private queueService: QueueService,
     private config: ConfigService,
     private notificationsService: NotificationsService,
+    private publishWorkflow: PublishWorkflowService,
     @Inject('REDIS') private redis: Redis,
   ) {
     this.clerk = createClerkClient({
@@ -326,6 +328,23 @@ export class ReportsService {
       // Force-disconnect any active WebSocket connections for the banned user
       this.redis.publish('user:banned', JSON.stringify({ userId: report.reportedUserId }))
         .catch(err => this.logger.warn('Failed to publish ban disconnect', err instanceof Error ? err.message : err));
+
+      // Remove banned user + their content from Meilisearch search index
+      this.publishWorkflow.onUnpublish({ contentType: 'user', contentId: report.reportedUserId, userId: report.reportedUserId })
+        .catch(err => this.logger.warn(`Failed to remove banned user from search: ${err instanceof Error ? err.message : err}`));
+      // Also remove their content from search indexes
+      const userContent = await this.prisma.post.findMany({ where: { userId: report.reportedUserId }, select: { id: true }, take: 1000 });
+      for (const post of userContent) {
+        this.queueService.addSearchIndexJob({ action: 'delete', indexName: 'posts', documentId: post.id }).catch(() => {});
+      }
+      const userReels = await this.prisma.reel.findMany({ where: { userId: report.reportedUserId }, select: { id: true }, take: 1000 });
+      for (const reel of userReels) {
+        this.queueService.addSearchIndexJob({ action: 'delete', indexName: 'reels', documentId: reel.id }).catch(() => {});
+      }
+      const userThreads = await this.prisma.thread.findMany({ where: { userId: report.reportedUserId }, select: { id: true }, take: 1000 });
+      for (const thread of userThreads) {
+        this.queueService.addSearchIndexJob({ action: 'delete', indexName: 'threads', documentId: thread.id }).catch(() => {});
+      }
     }
 
     // Finding 30 (Audit 13): Handle WARNING action — notify the reported user

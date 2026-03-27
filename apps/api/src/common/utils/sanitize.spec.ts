@@ -81,6 +81,13 @@ describe('sanitizeText', () => {
     it('should handle encoded HTML entities', () => {
       expect(sanitizeText('&lt;script&gt;')).toBe('&lt;script&gt;');
     });
+
+    it('should strip unclosed/partial HTML tags (XSS prevention)', () => {
+      expect(sanitizeText('<script>alert(1)')).toBe('alert(1)');
+      expect(sanitizeText('<img src=x onerror=alert(1)')).toBe('');
+      expect(sanitizeText('text<iframe src=evil')).toBe('text');
+      expect(sanitizeText('hello</script')).toBe('hello');
+    });
   });
 
   describe('newline collapsing', () => {
