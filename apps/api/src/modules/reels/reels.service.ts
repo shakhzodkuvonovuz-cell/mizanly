@@ -547,6 +547,13 @@ export class ReelsService {
     return { ...reel, isLiked, isBookmarked };
   }
 
+  async recordView(reelId: string): Promise<void> {
+    await this.prisma.reel.update({
+      where: { id: reelId },
+      data: { viewsCount: { increment: 1 } },
+    }).catch(() => {});
+  }
+
   async delete(reelId: string, userId: string) {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel) throw new NotFoundException('Reel not found');

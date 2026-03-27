@@ -15,6 +15,7 @@ describe('ReelsController', () => {
     create: jest.fn(),
     getFeed: jest.fn(),
     getById: jest.fn(),
+    recordView: jest.fn(),
     delete: jest.fn(),
     like: jest.fn(),
     unlike: jest.fn(),

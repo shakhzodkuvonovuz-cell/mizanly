@@ -1206,7 +1206,8 @@ model Reel {
   stitches        Reel[]            @relation("StitchOf")
   templates       ReelTemplate[]    @relation("ReelTemplateSource")
   seriesEpisodes  SeriesEpisode[]   @relation("seriesEpisodeReels")
-  taggedUsers     ReelTaggedUser[]
+  taggedUsers      ReelTaggedUser[]
+  feedInteractions FeedInteraction[] @relation("feedInteractionReel")
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -1321,8 +1322,9 @@ model Thread {
   reactions       ThreadReaction[]
   replies         ThreadReply[]
   poll            Poll?
-  bookmarks       ThreadBookmark[]
-  notifications   Notification[]
+  bookmarks        ThreadBookmark[]
+  notifications    Notification[]
+  feedInteractions FeedInteraction[] @relation("feedInteractionThread")
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -2108,7 +2110,9 @@ model Hashtag {
 model FeedInteraction {
   id             String       @id @default(cuid())
   userId         String
-  postId         String
+  postId         String?
+  reelId         String?
+  threadId       String?
   space          ContentSpace @default(SAF)
   viewed         Boolean      @default(false)
   viewDurationMs Int          @default(0)
@@ -2119,11 +2123,17 @@ model FeedInteraction {
   completionRate Float?
   createdAt      DateTime     @default(now())
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post           Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post           Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reel           Reel?        @relation("feedInteractionReel", fields: [reelId], references: [id], onDelete: Cascade)
+  thread         Thread?      @relation("feedInteractionThread", fields: [threadId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
+  @@unique([userId, reelId])
+  @@unique([userId, threadId])
   @@index([userId, createdAt(sort: Desc)])
   @@index([postId])
+  @@index([reelId])
+  @@index([threadId])
   @@index([space, userId])
   @@map("feed_interactions")
 }

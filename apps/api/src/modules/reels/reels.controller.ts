@@ -115,6 +115,7 @@ export class ReelsController {
     @Param('id') id: string,
     @CurrentUser('id') userId?: string,
   ) {
+    this.reelsService.recordView(id);
     return this.reelsService.getById(id, userId);
   }
 
