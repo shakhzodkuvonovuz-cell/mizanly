@@ -93,7 +93,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       // Create a duplicate Redis connection for subscribing (pub/sub requires dedicated connection)
       const subscriber = this.redis.duplicate();
       this.redisSubscriber = subscriber;
-      await subscriber.subscribe('notification:new', 'content:update', 'new_message');
+      await subscriber.subscribe('notification:new', 'content:update', 'new_message', 'user:banned', 'user:session_revoked');
       subscriber.on('message', (channel: string, message: string) => {
         try {
           if (channel === 'notification:new') {
@@ -102,24 +102,36 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
               this.server.to(`user:${userId}`).emit('new_notification', notification);
             }
           } else if (channel === 'content:update') {
-            // Finding #350-351: Real-time content updates (new comments, likes)
             const { postId, reelId, threadId, event, data } = JSON.parse(message);
             const roomId = postId || reelId || threadId;
             if (roomId && event) {
               this.server.to(`content:${roomId}`).emit(event, data);
             }
           } else if (channel === 'new_message') {
-            // Broadcast REST-sent messages (e.g. image messages) to socket rooms
             const { conversationId, message: msg } = JSON.parse(message);
             if (conversationId && msg) {
               this.server.to(`conversation:${conversationId}`).emit('new_message', msg);
+            }
+          } else if (channel === 'user:banned' || channel === 'user:session_revoked') {
+            // Force-disconnect banned users or users whose sessions were revoked
+            const { userId } = JSON.parse(message);
+            if (userId) {
+              this.server.in(`user:${userId}`).fetchSockets().then(sockets => {
+                for (const s of sockets) {
+                  s.emit('force_disconnect', { reason: channel === 'user:banned' ? 'account_banned' : 'session_revoked' });
+                  s.disconnect(true);
+                }
+                if (sockets.length > 0) {
+                  this.logger.log(`Force-disconnected ${sockets.length} socket(s) for ${channel}: ${userId}`);
+                }
+              }).catch(e => this.logger.error(`Failed to force-disconnect user ${userId}`, e));
             }
           }
         } catch (e) {
           this.logger.debug('Failed to parse pub/sub message', e);
         }
       });
-      this.logger.log('Subscribed to notification:new + content:update + new_message Redis channels');
+      this.logger.log('Subscribed to notification:new + content:update + new_message + user:banned + user:session_revoked Redis channels');
     } catch (e) {
       this.logger.warn('Failed to subscribe to Redis channels — real-time updates disabled', e);
     }
@@ -906,8 +918,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   ) {
     if (!client.data.userId || !data?.contentId) return;
     if (!(await this.checkRateLimit(client.data.userId, 'content_join', 30, 60))) return;
-    client.join(`content:${data.contentId}`);
-    this.logger.debug(`Socket ${client.id} joined content room: ${data.contentId}`);
+
+    // Verify the content exists and is accessible (not removed, not from banned user)
+    const contentId = data.contentId;
+    const [post, reel, thread] = await Promise.all([
+      this.prisma.post.findUnique({ where: { id: contentId }, select: { isRemoved: true, visibility: true, user: { select: { isBanned: true, isDeleted: true } } } }).catch(() => null),
+      this.prisma.reel.findUnique({ where: { id: contentId }, select: { isRemoved: true, user: { select: { isBanned: true, isDeleted: true } } } }).catch(() => null),
+      this.prisma.thread.findUnique({ where: { id: contentId }, select: { isRemoved: true, visibility: true, user: { select: { isBanned: true, isDeleted: true } } } }).catch(() => null),
+    ]);
+    const content = post || reel || thread;
+    if (!content || content.isRemoved || content.user?.isBanned || content.user?.isDeleted) {
+      client.emit('error', { message: 'Content not found' });
+      return;
+    }
+
+    client.join(`content:${contentId}`);
   }
 
   @SubscribeMessage('leave_content')

@@ -142,6 +142,19 @@ export class WebhooksController {
       }
     } else if (type === 'session.ended') {
       this.logger.debug(`Session ended for user ${data.user_id}`);
+    } else if (type === 'session.revoked' || type === 'session.removed') {
+      // Force-disconnect WebSocket connections when session is revoked/removed
+      const revokedUserId = data.user_id as string | undefined;
+      if (revokedUserId) {
+        const user = await this.authService.findByClerkId(revokedUserId);
+        if (user) {
+          const redis = this.authService.getRedis();
+          if (redis) {
+            redis.publish('user:session_revoked', JSON.stringify({ userId: user.id }))
+              .catch(err => this.logger.warn(`Failed to publish session revoke for ${user.id}`, err));
+          }
+        }
+      }
     } else if (ACKNOWLEDGED_EVENTS.has(type)) {
       this.logger.debug(`Clerk webhook acknowledged but no action: ${type}`);
     } else if (!HANDLED_EVENTS.has(type)) {

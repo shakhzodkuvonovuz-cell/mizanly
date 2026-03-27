@@ -5,6 +5,7 @@ import {
   ConflictException,
   ForbiddenException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
@@ -13,6 +14,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { Prisma, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 import { createClerkClient } from '@clerk/backend';
+import Redis from 'ioredis';
 
 @Injectable()
 export class ReportsService {
@@ -24,6 +26,7 @@ export class ReportsService {
     private queueService: QueueService,
     private config: ConfigService,
     private notificationsService: NotificationsService,
+    @Inject('REDIS') private redis: Redis,
   ) {
     this.clerk = createClerkClient({
       secretKey: this.config.get('CLERK_SECRET_KEY'),
@@ -320,6 +323,9 @@ export class ReportsService {
           this.logger.warn(`Failed to revoke Clerk session for banned user ${report.reportedUserId}: ${msg}`);
         }
       }
+      // Force-disconnect any active WebSocket connections for the banned user
+      this.redis.publish('user:banned', JSON.stringify({ userId: report.reportedUserId }))
+        .catch(err => this.logger.warn('Failed to publish ban disconnect', err instanceof Error ? err.message : err));
     }
 
     // Finding 30 (Audit 13): Handle WARNING action — notify the reported user

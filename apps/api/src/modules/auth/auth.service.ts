@@ -39,6 +39,14 @@ export class AuthService {
     });
   }
 
+  /** Find a user by Clerk ID. Returns { id } or null. */
+  async findByClerkId(clerkId: string): Promise<{ id: string } | null> {
+    return this.prisma.user.findUnique({ where: { clerkId }, select: { id: true } });
+  }
+
+  /** Expose Redis client for webhook controller (session revocation pub/sub). */
+  getRedis(): Redis { return this.redis; }
+
   /**
    * Calculate age from date of birth string.
    * COPPA/GDPR compliance: must be 13+ to register.

@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import Redis from 'ioredis';
 import { Logger } from '@nestjs/common';
+import * as Sentry from '@sentry/node';
 
 /**
  * Socket.io Redis adapter for horizontal scaling.
@@ -33,7 +34,8 @@ export class RedisIoAdapter extends IoAdapter {
       this.adapterConstructor = createAdapter(this.pubClient, this.subClient) as unknown as (...args: unknown[]) => unknown;
       this.logger.log('Socket.io Redis adapter connected — horizontal scaling enabled');
     } catch (error) {
-      this.logger.error('Failed to connect Socket.io Redis adapter — falling back to in-memory');
+      this.logger.error('Socket.io Redis adapter FAILED — falling back to in-memory. WebSocket events will NOT propagate across instances.');
+      Sentry.captureException(error, { tags: { component: 'socket-io-adapter' } });
     }
   }
 
