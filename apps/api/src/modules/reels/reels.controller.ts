@@ -234,6 +234,15 @@ export class ReelsController {
     return { viewed: true };
   }
 
+  @Post(':id/loop')
+  @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Record a loop (replay) for a reel' })
+  loop(@Param('id') id: string) {
+    this.reelsService.recordLoop(id);
+    return { looped: true };
+  }
+
   @Post(':id/report')
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })

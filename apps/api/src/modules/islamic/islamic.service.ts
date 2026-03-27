@@ -320,6 +320,21 @@ export class IslamicService {
     return { data, cursor: nextCursor, hasMore };
   }
 
+  async toggleHadithBookmark(userId: string, hadithId: number): Promise<{ bookmarked: boolean }> {
+    if (hadithId < 1 || hadithId > this.hadiths.length) {
+      throw new NotFoundException('Hadith not found');
+    }
+    const existing = await this.prisma.hadithBookmark.findUnique({
+      where: { userId_hadithId: { userId, hadithId } },
+    });
+    if (existing) {
+      await this.prisma.hadithBookmark.delete({ where: { id: existing.id } });
+      return { bookmarked: false };
+    }
+    await this.prisma.hadithBookmark.create({ data: { userId, hadithId } });
+    return { bookmarked: true };
+  }
+
   async getNearbyMosques(lat: number, lng: number, radiusKm = 10, limit = 20): Promise<Mosque[]> {
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       throw new BadRequestException('Invalid coordinates');

@@ -171,6 +171,14 @@ export class IslamicController {
     return this.islamicService.getHadiths(cursor ? parseInt(cursor, 10) : undefined);
   }
 
+  @Post('hadiths/:id/bookmark')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Toggle hadith bookmark' })
+  @ApiParam({ name: 'id', description: 'Hadith ID (1-40)' })
+  async bookmarkHadith(@Param('id', ParseIntPipe) id: number, @CurrentUser('id') userId: string) {
+    return this.islamicService.toggleHadithBookmark(userId, id);
+  }
+
   @Get('mosques')
   @ApiOperation({ summary: 'Find nearby mosques' })
   @ApiResponse({ status: 200, description: 'List of nearby mosques', type: Object })

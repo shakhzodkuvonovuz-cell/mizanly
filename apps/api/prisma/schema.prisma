@@ -931,6 +931,7 @@ model User {
   scholarQAs               ScholarQA[]                 @relation("scholarQAs")
   scholarQuestions         ScholarQuestion[]           @relation("scholarQuestions")
   duaBookmarks             DuaBookmark[]               @relation("duaBookmarks")
+  hadithBookmarks          HadithBookmark[]            @relation("hadithBookmarks")
   altProfileAccessGrants   AltProfileAccess[]          @relation("altProfileAccess")
   groupTopicsCreated       GroupTopic[]                @relation("groupTopics")
   encryptionKeyRecord      EncryptionKey?              @relation("encryptionKey")
@@ -4553,6 +4554,18 @@ model DuaBookmark {
   @@unique([userId, duaId])
   @@index([userId])
   @@map("dua_bookmarks")
+}
+
+model HadithBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("hadithBookmarks", fields: [userId], references: [id], onDelete: Cascade)
+  hadithId  Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, hadithId])
+  @@index([userId])
+  @@map("hadith_bookmarks")
 }
 
 // ============================================================
