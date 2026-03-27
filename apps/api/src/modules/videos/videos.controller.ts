@@ -331,7 +331,7 @@ export class VideosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cross-publish video to other spaces (coming soon)' })
   crossPublish(@Param('id') _id: string, @CurrentUser('id') _userId: string) {
-    throw new NotImplementedException('Cross-publish coming soon');
+    return { crossPublished: false, message: 'Cross-publish is not yet available. Coming soon.' };
   }
 
   // Bug 22: DELETE video comment was unreachable (service existed, no controller route)

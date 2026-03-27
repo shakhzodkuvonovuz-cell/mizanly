@@ -308,10 +308,20 @@ export class AuthService {
     displayName: string;
     avatarUrl?: string;
     phone?: string;
+    username?: string;
   }) {
-    // Check if this clerkId already exists (update case) — keep existing username
+    // Check if this clerkId already exists (update case)
     const existingByClerk = await this.prisma.user.findUnique({ where: { clerkId } });
     if (existingByClerk) {
+      // Sync username if changed (and new username is available + not taken by another user)
+      const usernameUpdate: Record<string, string> = {};
+      if (data.username && data.username !== existingByClerk.username) {
+        const taken = await this.prisma.user.findUnique({ where: { username: data.username }, select: { id: true } });
+        if (!taken) {
+          usernameUpdate.previousUsername = existingByClerk.username;
+          usernameUpdate.username = data.username;
+        }
+      }
       const updatedUser = await this.prisma.user.update({
         where: { clerkId },
         data: {
@@ -319,6 +329,7 @@ export class AuthService {
           displayName: data.displayName,
           avatarUrl: data.avatarUrl,
           ...(data.phone ? { phone: data.phone } : {}),
+          ...usernameUpdate,
         },
       });
 

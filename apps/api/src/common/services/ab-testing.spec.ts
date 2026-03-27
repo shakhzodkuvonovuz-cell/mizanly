@@ -54,6 +54,8 @@ describe('ABTestingService', () => {
       expect(mockRedis.set).toHaveBeenCalledWith(
         'ab:experiment:feed_ranking_v2',
         JSON.stringify(testExperiment),
+        'EX',
+        90 * 24 * 3600,
       );
     });
   });

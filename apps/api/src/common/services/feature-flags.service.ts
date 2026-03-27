@@ -64,6 +64,7 @@ export class FeatureFlagsService {
   /** Set a flag value */
   async setFlag(flagName: string, value: string): Promise<void> {
     await this.redis.hset(this.HASH_KEY, flagName, value);
+    await this.redis.expire(this.HASH_KEY, 90 * 24 * 3600); // Refresh 90-day TTL on mutation
     this.localCache = null; // Invalidate local cache
   }
 

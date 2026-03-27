@@ -55,7 +55,7 @@ export class ABTestingService implements OnModuleInit {
             startDate: exp.startDate?.toISOString(),
             endDate: exp.endDate?.toISOString(),
           };
-          await this.redis.set(key, JSON.stringify(config));
+          await this.redis.set(key, JSON.stringify(config), 'EX', 30 * 24 * 3600); // 30 day TTL
         }
       }
       this.logger.log(`Hydrated ${dbExperiments.length} experiment(s) from DB into Redis`);
@@ -82,7 +82,7 @@ export class ABTestingService implements OnModuleInit {
    */
   async createExperiment(experiment: ExperimentConfig): Promise<ExperimentConfig> {
     const key = `${this.EXPERIMENT_KEY_PREFIX}${experiment.id}`;
-    await this.redis.set(key, JSON.stringify(experiment));
+    await this.redis.set(key, JSON.stringify(experiment), 'EX', 90 * 24 * 3600); // 90 day TTL
 
     // Mirror to DB for durability (non-blocking — Redis is authoritative)
     this.prisma.experiment.upsert({
@@ -155,8 +155,8 @@ export class ABTestingService implements OnModuleInit {
         startDate: exp.startDate?.toISOString(),
         endDate: exp.endDate?.toISOString(),
       };
-      // Re-populate Redis
-      await this.redis.set(`${this.EXPERIMENT_KEY_PREFIX}${experimentId}`, JSON.stringify(config));
+      // Re-populate Redis with TTL
+      await this.redis.set(`${this.EXPERIMENT_KEY_PREFIX}${experimentId}`, JSON.stringify(config), 'EX', 90 * 24 * 3600);
       return config;
     } catch {
       return null;

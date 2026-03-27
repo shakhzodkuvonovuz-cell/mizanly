@@ -128,6 +128,7 @@ export class WebhooksController {
         displayName,
         avatarUrl,
         phone,
+        username: data.username ?? undefined,
       });
     } else if (type === 'user.deleted') {
       await this.authService.deactivateByClerkId(data.id);

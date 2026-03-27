@@ -1920,11 +1920,13 @@ export class IslamicService {
    * Finding #281: Follow a mosque — store lat/lng in Redis for prayer time fetching.
    */
   async followMosque(userId: string, mosqueName: string, lat: number, lng: number) {
-    await this.redis.hset(`user:mosque:${userId}`, {
+    const key = `user:mosque:${userId}`;
+    await this.redis.hset(key, {
       name: mosqueName,
       lat: String(lat),
       lng: String(lng),
     });
+    await this.redis.expire(key, 365 * 24 * 3600); // 1 year TTL — refreshed on follow
     return { followed: true, mosqueName };
   }
 
