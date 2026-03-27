@@ -565,11 +565,10 @@ export class PaymentsService {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + (plan === 'YEARLY' ? 12 : 1));
 
-    // NOTE: stripeSubId stores PaymentIntent ID (pi_xxx), not Subscription ID (sub_xxx). Field name is misleading.
     await this.prisma.premiumSubscription.upsert({
       where: { userId },
-      create: { userId, plan: plan as 'MONTHLY' | 'YEARLY', status: 'ACTIVE', endDate, stripeSubId: paymentIntent.id },
-      update: { status: 'ACTIVE', endDate, stripeSubId: paymentIntent.id },
+      create: { userId, plan: plan as 'MONTHLY' | 'YEARLY', status: 'ACTIVE', endDate, stripePaymentIntentId: paymentIntent.id },
+      update: { status: 'ACTIVE', endDate, stripePaymentIntentId: paymentIntent.id },
     });
 
     this.logger.log(`Premium activated for user ${userId} (${plan}) via PI ${paymentIntent.id}`);

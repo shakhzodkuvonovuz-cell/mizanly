@@ -1,11 +1,19 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ChannelRole, ChannelType, MessageType } from '@prisma/client';
+import Redis from 'ioredis';
 
 @Injectable()
 export class BroadcastService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(BroadcastService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+    @Inject('REDIS') private redis: Redis,
+  ) {}
 
   async create(userId: string, data: { name: string; slug: string; description?: string; avatarUrl?: string }) {
     const existing = await this.prisma.broadcastChannel.findUnique({ where: { slug: data.slug } });
@@ -143,6 +151,37 @@ export class BroadcastService {
       include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
     });
     await this.prisma.$executeRaw`UPDATE broadcast_channels SET "postsCount" = "postsCount" + 1 WHERE id = ${channelId}`;
+
+    // Notify subscribers about new broadcast message (non-blocking)
+    this.prisma.channelMember.findMany({
+      where: { channelId, userId: { not: userId } },
+      select: { userId: true },
+      take: 10000,
+    }).then(async (subscribers) => {
+      // Batch create notifications for subscribers
+      if (subscribers.length > 0) {
+        const BATCH = 500;
+        for (let i = 0; i < subscribers.length; i += BATCH) {
+          const batch = subscribers.slice(i, i + BATCH);
+          await this.prisma.notification.createMany({
+            data: batch.map(s => ({
+              userId: s.userId,
+              actorId: userId,
+              type: 'SYSTEM' as const,
+              title: 'New broadcast',
+              body: data.content?.slice(0, 100) || 'New message in channel',
+            })),
+            skipDuplicates: true,
+          }).catch(() => {});
+        }
+      }
+      // Emit socket event for real-time update
+      this.redis.publish('content:update', JSON.stringify({
+        event: 'broadcast_message',
+        data: { channelId, messageId: msg.id },
+      })).catch(() => {});
+    }).catch(err => this.logger.warn(`Broadcast notification failed: ${err?.message}`));
+
     return msg;
   }
 

@@ -1274,8 +1274,6 @@ export class ReelsService {
   }
 
   // Finding #376: Reel draft — save draft state without publishing
-  // NOTE: ReelStatus enum lacks a DRAFT value (only PROCESSING/READY/FAILED).
-  // Using PROCESSING as the draft marker until a schema migration adds DRAFT.
   async saveDraft(userId: string, dto: CreateReelDto) {
     const draft = await this.prisma.reel.create({
       data: {
@@ -1285,7 +1283,7 @@ export class ReelsService {
         caption: dto.caption ? sanitizeText(dto.caption) : '',
         hashtags: dto.hashtags ?? [],
         mentions: dto.mentions ?? [],
-        status: ReelStatus.PROCESSING,
+        status: ReelStatus.DRAFT,
         altText: dto.altText,
         topics: dto.topics ?? [],
       },
@@ -1294,10 +1292,10 @@ export class ReelsService {
     return draft;
   }
 
-  // Finding #376: Get user's draft reels (uses PROCESSING as draft marker)
+  // Finding #376: Get user's draft reels
   async getDrafts(userId: string) {
     const drafts = await this.prisma.reel.findMany({
-      where: { userId, status: ReelStatus.PROCESSING, isRemoved: false },
+      where: { userId, status: ReelStatus.DRAFT, isRemoved: false },
       select: REEL_SELECT,
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -1310,7 +1308,7 @@ export class ReelsService {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel) throw new NotFoundException('Reel not found');
     if (reel.userId !== userId) throw new ForbiddenException();
-    if (reel.status !== ReelStatus.PROCESSING) throw new BadRequestException('Only drafts can be deleted this way');
+    if (reel.status !== ReelStatus.DRAFT) throw new BadRequestException('Only drafts can be deleted this way');
 
     await this.prisma.reel.delete({ where: { id: reelId } });
     return { deleted: true };

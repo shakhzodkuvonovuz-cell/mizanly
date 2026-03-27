@@ -192,6 +192,12 @@ export class MessagesController {
     private chatGateway: ChatGateway,
   ) {}
 
+  @Get('unread-count')
+  @ApiOperation({ summary: 'Get total unread message count across all conversations (for badge)' })
+  async getUnreadCount(@CurrentUser('id') userId: string) {
+    return this.messagesService.getTotalUnreadCount(userId);
+  }
+
   @Get('conversations')
   @ApiOperation({ summary: 'Get all conversations for current user' })
   getConversations(

@@ -52,6 +52,7 @@ enum ReelStatus {
   PROCESSING
   READY
   FAILED
+  DRAFT
 }
 
 enum ThreadVisibility {
@@ -1018,6 +1019,7 @@ model Post {
   isSensitive      Boolean        @default(false)
   altText          String?
   scheduledAt      DateTime?
+  originalScheduledAt DateTime?   // Preserved when publishOverdueContent sets scheduledAt=null
   hideLikesCount   Boolean        @default(false)
   commentsDisabled  Boolean           @default(false)
   commentPermission CommentPermission @default(EVERYONE)
@@ -1184,6 +1186,7 @@ model Reel {
   remixAllowed      Boolean           @default(true)
   topics            String[]          @default([])
   scheduledAt       DateTime?
+  originalScheduledAt DateTime?
   blurhash          String?
   likesCount      Int               @default(0)
   commentsCount   Int               @default(0)
@@ -1315,6 +1318,7 @@ model Thread {
   isSensitive     Boolean          @default(false)
   altText         String?
   scheduledAt     DateTime?
+  originalScheduledAt DateTime?
   hideLikesCount  Boolean          @default(false)
   isRemoved       Boolean          @default(false)
   replyPermission ReplyPermission  @default(EVERYONE)
@@ -1452,6 +1456,7 @@ model Video {
   isAgeRestricted    Boolean             @default(false)
   isPremiereEnabled  Boolean             @default(false)
   scheduledAt        DateTime?
+  originalScheduledAt DateTime?
   publishedAt        DateTime?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -3902,7 +3907,8 @@ model PremiumSubscription {
   userId      String             @unique
   plan        SubscriptionPlan   @default(MONTHLY)
   status      SubscriptionStatus @default(PENDING)
-  stripeSubId String?
+  stripeSubId String?            // Stripe Subscription ID (sub_xxx) — for recurring subscriptions
+  stripePaymentIntentId String?  // Stripe PaymentIntent ID (pi_xxx) — for one-time premium purchases
   startDate   DateTime           @default(now())
   endDate     DateTime?
   autoRenew   Boolean            @default(true)

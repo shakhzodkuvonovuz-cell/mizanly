@@ -105,6 +105,14 @@ export class MessagesService {
     @Inject('REDIS') private redis: Redis,
   ) {}
 
+  async getTotalUnreadCount(userId: string): Promise<{ unreadCount: number }> {
+    const result = await this.prisma.conversationMember.aggregate({
+      where: { userId },
+      _sum: { unreadCount: true },
+    });
+    return { unreadCount: result._sum.unreadCount ?? 0 };
+  }
+
   async getConversations(userId: string, limit = 50) {
     limit = Math.min(Math.max(limit, 1), 100);
     const memberships = await this.prisma.conversationMember.findMany({

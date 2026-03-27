@@ -420,7 +420,15 @@ export class SchedulingService {
       }),
     ]);
 
-    // 2. Set scheduledAt to null (= published) for all overdue items
+    // 2. Preserve original scheduledAt, then set scheduledAt to null (= published)
+    // First copy scheduledAt → originalScheduledAt for analytics/history
+    await Promise.all([
+      this.prisma.$executeRaw`UPDATE "posts" SET "originalScheduledAt" = "scheduledAt" WHERE "scheduledAt" IS NOT NULL AND "scheduledAt" <= ${now} AND "isRemoved" = false AND "originalScheduledAt" IS NULL`,
+      this.prisma.$executeRaw`UPDATE "threads" SET "originalScheduledAt" = "scheduledAt" WHERE "scheduledAt" IS NOT NULL AND "scheduledAt" <= ${now} AND "isRemoved" = false AND "originalScheduledAt" IS NULL`,
+      this.prisma.$executeRaw`UPDATE "reels" SET "originalScheduledAt" = "scheduledAt" WHERE "scheduledAt" IS NOT NULL AND "scheduledAt" <= ${now} AND "isRemoved" = false AND "originalScheduledAt" IS NULL`,
+      this.prisma.$executeRaw`UPDATE "videos" SET "originalScheduledAt" = "scheduledAt" WHERE "scheduledAt" IS NOT NULL AND "scheduledAt" <= ${now} AND "isRemoved" = false AND "originalScheduledAt" IS NULL`,
+    ]);
+    // Then clear scheduledAt to mark as published
     const [posts, threads, reels, videos] = await Promise.all([
       this.prisma.post.updateMany({
         where: overdueWhere,

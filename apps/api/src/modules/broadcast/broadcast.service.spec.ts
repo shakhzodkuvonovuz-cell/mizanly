@@ -19,7 +19,7 @@ describe('BroadcastService', () => {
       },
       channelMember: {
         findUnique: jest.fn(),
-        findMany: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),

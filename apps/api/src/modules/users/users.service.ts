@@ -1117,21 +1117,22 @@ export class UsersService {
     if (users.length === 0) return [];
 
     // Check follows and blocks in parallel
+    const matchedIds = users.map(u => u.id);
     const [follows, blocks] = await Promise.all([
       this.prisma.follow.findMany({
-        where: { followerId: userId, followingId: { in: users.map(u => u.id) } },
+        where: { followerId: userId, followingId: { in: matchedIds } },
         select: { followingId: true },
-        take: 50,
+        take: matchedIds.length, // Cap at matched contacts count (already bounded)
       }),
       this.prisma.block.findMany({
         where: {
           OR: [
-            { blockerId: userId, blockedId: { in: users.map(u => u.id) } },
-            { blockedId: userId, blockerId: { in: users.map(u => u.id) } },
+            { blockerId: userId, blockedId: { in: matchedIds } },
+            { blockedId: userId, blockerId: { in: matchedIds } },
           ],
         },
         select: { blockerId: true, blockedId: true },
-        take: 50,
+        take: matchedIds.length * 2, // Both directions
       }),
     ]);
 
