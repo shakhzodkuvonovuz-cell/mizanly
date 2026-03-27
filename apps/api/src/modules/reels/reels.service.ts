@@ -557,14 +557,14 @@ export class ReelsService {
         where: { id: reelId },
         data: { isRemoved: true },
       }),
-      this.prisma.$executeRaw`UPDATE "User" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${userId}`,
+      this.prisma.$executeRaw`UPDATE "users" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
 
     // Decrement hashtag counters for removed reel
     if (reel.hashtags && reel.hashtags.length > 0) {
       await Promise.all(
         reel.hashtags.map((name: string) =>
-          this.prisma.$executeRaw`UPDATE "Hashtag" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE name = ${name}`,
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE name = ${name}`,
         ),
       );
     }
@@ -635,7 +635,7 @@ export class ReelsService {
           update: { liked: true },
         }),
         this.prisma.$executeRaw`
-          UPDATE "Reel"
+          UPDATE "reels"
           SET "likesCount" = GREATEST(0, "likesCount" + 1)
           WHERE id = ${reelId}
         `,
@@ -671,7 +671,7 @@ export class ReelsService {
           update: { liked: false },
         }),
         this.prisma.$executeRaw`
-          UPDATE "Reel"
+          UPDATE "reels"
           SET "likesCount" = GREATEST(0, "likesCount" - 1)
           WHERE id = ${reelId}
         `,
@@ -735,7 +735,7 @@ export class ReelsService {
         },
       }),
       this.prisma.$executeRaw`
-        UPDATE "Reel"
+        UPDATE "reels"
         SET "commentsCount" = "commentsCount" + 1
         WHERE id = ${reelId}
       `,
@@ -766,7 +766,7 @@ export class ReelsService {
 
     await this.prisma.$transaction([
       this.prisma.reelComment.update({ where: { id: commentId }, data: { content: '[deleted]' } }),
-      this.prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
+      this.prisma.$executeRaw`UPDATE "reels" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
     ]);
     return { deleted: true };
   }
@@ -802,7 +802,7 @@ export class ReelsService {
       where: { commentId, userId },
     });
     if (deleted.count > 0) {
-      await this.prisma.$executeRaw`UPDATE "ReelComment" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`;
+      await this.prisma.$executeRaw`UPDATE "reel_comments" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`;
     }
     return { unliked: true };
   }
@@ -874,7 +874,7 @@ export class ReelsService {
         update: { shared: true },
       });
       await tx.$executeRaw`
-        UPDATE "Reel"
+        UPDATE "reels"
         SET "sharesCount" = "sharesCount" + 1
         WHERE id = ${reelId}
       `;
@@ -902,7 +902,7 @@ export class ReelsService {
         update: { saved: true },
       });
       await tx.$executeRaw`
-        UPDATE "Reel"
+        UPDATE "reels"
         SET "savesCount" = "savesCount" + 1
         WHERE id = ${reelId}
       `;
@@ -927,7 +927,7 @@ export class ReelsService {
         data: { saved: false },
       });
       await tx.$executeRaw`
-        UPDATE "Reel"
+        UPDATE "reels"
         SET "savesCount" = GREATEST("savesCount" - 1, 0)
         WHERE id = ${reelId}
       `;
@@ -956,7 +956,7 @@ export class ReelsService {
         update: { viewed: true },
       });
       await tx.$executeRaw`
-        UPDATE "Reel"
+        UPDATE "reels"
         SET "viewsCount" = "viewsCount" + 1
         WHERE id = ${reelId}
       `;

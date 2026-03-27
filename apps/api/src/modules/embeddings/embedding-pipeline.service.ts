@@ -63,7 +63,7 @@ export class EmbeddingPipelineService {
     while (true) {
       // Use NOT IN subquery instead of pre-loading all embedded IDs into memory
       const posts = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
-        `SELECT p.id FROM "Post" p
+        `SELECT p.id FROM "posts" p
          WHERE p."isRemoved" = false AND p."visibility" = 'PUBLIC' AND p."content" IS NOT NULL
          AND NOT EXISTS (SELECT 1 FROM embeddings e WHERE e."contentId" = p.id AND e."contentType" = 'POST')
          ORDER BY p."createdAt" DESC
@@ -90,7 +90,7 @@ export class EmbeddingPipelineService {
 
     while (true) {
       const reels = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
-        `SELECT r.id FROM "Reel" r
+        `SELECT r.id FROM "reels" r
          WHERE r."isRemoved" = false AND r."status" = 'READY'
          AND NOT EXISTS (SELECT 1 FROM embeddings e WHERE e."contentId" = r.id AND e."contentType" = 'REEL')
          ORDER BY r."createdAt" DESC LIMIT $1`,
@@ -116,7 +116,7 @@ export class EmbeddingPipelineService {
 
     while (true) {
       const threads = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
-        `SELECT t.id FROM "Thread" t
+        `SELECT t.id FROM "threads" t
          WHERE t."isRemoved" = false AND t."visibility" = 'PUBLIC'
          AND NOT EXISTS (SELECT 1 FROM embeddings e WHERE e."contentId" = t.id AND e."contentType" = 'THREAD')
          ORDER BY t."createdAt" DESC LIMIT $1`,
@@ -142,7 +142,7 @@ export class EmbeddingPipelineService {
 
     while (true) {
       const videos = await this.prisma.$queryRawUnsafe<Array<{ id: string }>>(
-        `SELECT v.id FROM "Video" v
+        `SELECT v.id FROM "videos" v
          WHERE v."status" = 'PUBLISHED'
          AND NOT EXISTS (SELECT 1 FROM embeddings e WHERE e."contentId" = v.id AND e."contentType" = 'VIDEO')
          ORDER BY v."createdAt" DESC LIMIT $1`,

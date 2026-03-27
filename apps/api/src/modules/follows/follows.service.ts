@@ -197,8 +197,8 @@ export class FollowsService {
           },
         },
       }),
-      this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${currentUserId}`,
-      this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${targetUserId}`,
+      this.prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${currentUserId}`,
+      this.prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${targetUserId}`,
     ]);
 
     // Invalidate Redis user cache for both users so follow counts are fresh
@@ -499,8 +499,8 @@ export class FollowsService {
           },
         },
       }),
-      this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${followerUserId}`,
-      this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${currentUserId}`,
+      this.prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${followerUserId}`,
+      this.prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${currentUserId}`,
     ]);
 
     return { message: 'Follower removed' };

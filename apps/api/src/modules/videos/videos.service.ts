@@ -530,7 +530,7 @@ export class VideosService {
           });
           // Decrement dislikesCount, increment likesCount
           await tx.$executeRaw`
-            UPDATE "Video"
+            UPDATE "videos"
             SET "dislikesCount" = GREATEST(0, "dislikesCount" - 1),
                 "likesCount" = GREATEST(0, "likesCount" + 1)
             WHERE id = ${videoId}
@@ -541,7 +541,7 @@ export class VideosService {
             data: { userId, videoId, isLike: true },
           });
           await tx.$executeRaw`
-            UPDATE "Video"
+            UPDATE "videos"
             SET "likesCount" = GREATEST(0, "likesCount" + 1)
             WHERE id = ${videoId}
           `;
@@ -584,7 +584,7 @@ export class VideosService {
           data: { isLike: false },
         });
         await tx.$executeRaw`
-          UPDATE "Video"
+          UPDATE "videos"
           SET "likesCount" = GREATEST(0, "likesCount" - 1),
               "dislikesCount" = GREATEST(0, "dislikesCount" + 1)
           WHERE id = ${videoId}
@@ -594,7 +594,7 @@ export class VideosService {
           data: { userId, videoId, isLike: false },
         });
         await tx.$executeRaw`
-          UPDATE "Video"
+          UPDATE "videos"
           SET "dislikesCount" = GREATEST(0, "dislikesCount" + 1)
           WHERE id = ${videoId}
         `;
@@ -616,12 +616,12 @@ export class VideosService {
       }),
       existingReaction.isLike
         ? this.prisma.$executeRaw`
-            UPDATE "Video"
+            UPDATE "videos"
             SET "likesCount" = GREATEST(0, "likesCount" - 1)
             WHERE id = ${videoId}
           `
         : this.prisma.$executeRaw`
-            UPDATE "Video"
+            UPDATE "videos"
             SET "dislikesCount" = GREATEST(0, "dislikesCount" - 1)
             WHERE id = ${videoId}
           `,
@@ -732,7 +732,7 @@ export class VideosService {
 
     await this.prisma.$transaction([
       this.prisma.videoComment.update({ where: { id: commentId }, data: { content: '[deleted]' } }),
-      this.prisma.$executeRaw`UPDATE "Video" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${videoId}`,
+      this.prisma.$executeRaw`UPDATE "videos" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${videoId}`,
     ]);
     return { deleted: true };
   }
@@ -769,7 +769,7 @@ export class VideosService {
       this.prisma.videoBookmark.delete({
         where: { userId_videoId: { userId, videoId } },
       }),
-      this.prisma.$executeRaw`UPDATE "Video" SET "savesCount" = GREATEST("savesCount" - 1, 0) WHERE id = ${videoId}`,
+      this.prisma.$executeRaw`UPDATE "videos" SET "savesCount" = GREATEST("savesCount" - 1, 0) WHERE id = ${videoId}`,
     ]);
     return { bookmarked: false };
   }

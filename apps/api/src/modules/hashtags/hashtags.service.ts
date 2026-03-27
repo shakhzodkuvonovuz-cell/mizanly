@@ -170,16 +170,16 @@ export class HashtagsService {
         h."threadsCount",
         h."videosCount",
         (
-          (SELECT COUNT(*) FROM "Post" p WHERE p."hashtags" @> ARRAY[h.name] AND p."createdAt" >= NOW() - INTERVAL '7 days' AND p."isRemoved" = false) +
+          (SELECT COUNT(*) FROM "posts" p WHERE p."hashtags" @> ARRAY[h.name] AND p."createdAt" >= NOW() - INTERVAL '7 days' AND p."isRemoved" = false) +
           (SELECT COUNT(*) FROM "reels" r WHERE r."hashtags" @> ARRAY[h.name] AND r."createdAt" >= NOW() - INTERVAL '7 days' AND r."isRemoved" = false) +
-          (SELECT COUNT(*) FROM "Thread" t WHERE t."hashtags" @> ARRAY[h.name] AND t."createdAt" >= NOW() - INTERVAL '7 days' AND t."isRemoved" = false) +
+          (SELECT COUNT(*) FROM "threads" t WHERE t."hashtags" @> ARRAY[h.name] AND t."createdAt" >= NOW() - INTERVAL '7 days' AND t."isRemoved" = false) +
           (SELECT COUNT(*) FROM "videos" v WHERE v."tags" @> ARRAY[h.name] AND v."createdAt" >= NOW() - INTERVAL '7 days' AND v."isRemoved" = false)
         ) as total
       FROM "hashtags" h
       WHERE (
-        (SELECT COUNT(*) FROM "Post" p WHERE p."hashtags" @> ARRAY[h.name] AND p."createdAt" >= NOW() - INTERVAL '7 days' AND p."isRemoved" = false) +
+        (SELECT COUNT(*) FROM "posts" p WHERE p."hashtags" @> ARRAY[h.name] AND p."createdAt" >= NOW() - INTERVAL '7 days' AND p."isRemoved" = false) +
         (SELECT COUNT(*) FROM "reels" r WHERE r."hashtags" @> ARRAY[h.name] AND r."createdAt" >= NOW() - INTERVAL '7 days' AND r."isRemoved" = false) +
-        (SELECT COUNT(*) FROM "Thread" t WHERE t."hashtags" @> ARRAY[h.name] AND t."createdAt" >= NOW() - INTERVAL '7 days' AND t."isRemoved" = false) +
+        (SELECT COUNT(*) FROM "threads" t WHERE t."hashtags" @> ARRAY[h.name] AND t."createdAt" >= NOW() - INTERVAL '7 days' AND t."isRemoved" = false) +
         (SELECT COUNT(*) FROM "videos" v WHERE v."tags" @> ARRAY[h.name] AND v."createdAt" >= NOW() - INTERVAL '7 days' AND v."isRemoved" = false)
       ) > 0
       ORDER BY total DESC, h."postsCount" DESC

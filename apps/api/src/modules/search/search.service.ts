@@ -436,7 +436,7 @@ export class SearchService {
     const topTags = await this.prisma.$queryRaw<Array<{ tag: string; cnt: bigint }>>`
       SELECT tag, SUM(cnt) as cnt FROM (
         SELECT unnest(hashtags) as tag, COUNT(*) as cnt
-        FROM "Post"
+        FROM "posts"
         WHERE "createdAt" >= ${twentyFourHoursAgo}
           AND array_length(hashtags, 1) > 0
           AND ("scheduledAt" IS NULL OR "scheduledAt" <= NOW())
@@ -444,7 +444,7 @@ export class SearchService {
         GROUP BY tag
         UNION ALL
         SELECT unnest(hashtags) as tag, COUNT(*) as cnt
-        FROM "Thread"
+        FROM "threads"
         WHERE "createdAt" >= ${twentyFourHoursAgo}
           AND array_length(hashtags, 1) > 0
           AND ("scheduledAt" IS NULL OR "scheduledAt" <= NOW())

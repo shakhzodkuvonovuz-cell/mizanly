@@ -110,8 +110,8 @@ describe('Follow/Unfollow Counter Integrity (Real DB)', () => {
         prisma.follow.delete({
           where: { followerId_followingId: { followerId: alice.id, followingId: bob.id } },
         }),
-        prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE "id" = ${alice.id}`,
-        prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${bob.id}`,
+        prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE "id" = ${alice.id}`,
+        prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${bob.id}`,
       ]);
 
       // Follow record should be gone
@@ -133,8 +133,8 @@ describe('Follow/Unfollow Counter Integrity (Real DB)', () => {
       const bob = await helper.createUser({ id: 'bob', username: 'bob', followersCount: 0 });
 
       // Force decrement with GREATEST — should stay at 0
-      await prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE "id" = ${alice.id}`;
-      await prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${bob.id}`;
+      await prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE "id" = ${alice.id}`;
+      await prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${bob.id}`;
 
       const aliceAfter = await prisma.user.findUnique({ where: { id: alice.id } });
       const bobAfter = await prisma.user.findUnique({ where: { id: bob.id } });
@@ -146,9 +146,9 @@ describe('Follow/Unfollow Counter Integrity (Real DB)', () => {
       const user = await helper.createUser({ id: 'user1', username: 'user1', followersCount: 2 });
 
       // Decrement 3 times from count of 2 — should bottom out at 0
-      await prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${user.id}`;
-      await prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${user.id}`;
-      await prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${user.id}`;
+      await prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${user.id}`;
+      await prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${user.id}`;
+      await prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${user.id}`;
 
       const after = await prisma.user.findUnique({ where: { id: user.id } });
       expect(after!.followersCount).toBe(0);
@@ -290,8 +290,8 @@ describe('Follow/Unfollow Counter Integrity (Real DB)', () => {
         prisma.follow.delete({
           where: { followerId_followingId: { followerId: alice.id, followingId: bob.id } },
         }),
-        prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE "id" = ${alice.id}`,
-        prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${bob.id}`,
+        prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE "id" = ${alice.id}`,
+        prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE "id" = ${bob.id}`,
       ]);
 
       const aliceAfter = await prisma.user.findUnique({ where: { id: alice.id } });

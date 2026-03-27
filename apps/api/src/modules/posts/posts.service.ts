@@ -856,14 +856,14 @@ export class PostsService {
         where: { id: postId },
         data: { isRemoved: true, removedAt: new Date(), removedById: userId },
       }),
-      this.prisma.$executeRaw`UPDATE "User" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE id = ${userId}`,
+      this.prisma.$executeRaw`UPDATE "users" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
 
     // Decrement hashtag counters
     if (post.hashtags && post.hashtags.length > 0) {
       await Promise.all(
         post.hashtags.map((name: string) =>
-          this.prisma.$executeRaw`UPDATE "Hashtag" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE name = ${name}`,
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE name = ${name}`,
         ),
       );
     }
@@ -956,7 +956,7 @@ export class PostsService {
       this.prisma.postReaction.delete({
         where: { userId_postId: { userId, postId } },
       }),
-      this.prisma.$executeRaw`UPDATE "Post" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`,
+      this.prisma.$executeRaw`UPDATE "posts" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`,
     ]);
     return { reaction: null };
   }
@@ -990,7 +990,7 @@ export class PostsService {
 
     await this.prisma.$transaction([
       this.prisma.savedPost.delete({ where: { userId_postId: { userId, postId } } }),
-      this.prisma.$executeRaw`UPDATE "Post" SET "savesCount" = GREATEST("savesCount" - 1, 0) WHERE id = ${postId}`,
+      this.prisma.$executeRaw`UPDATE "posts" SET "savesCount" = GREATEST("savesCount" - 1, 0) WHERE id = ${postId}`,
     ]);
     return { saved: false };
   }
@@ -1373,7 +1373,7 @@ export class PostsService {
         where: { id: commentId },
         data: { isRemoved: true },
       }),
-      this.prisma.$executeRaw`UPDATE "Post" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${comment.postId}`,
+      this.prisma.$executeRaw`UPDATE "posts" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${comment.postId}`,
     ]);
     return { deleted: true };
   }
@@ -1417,7 +1417,7 @@ export class PostsService {
       this.prisma.commentReaction.delete({
         where: { userId_commentId: { userId, commentId } },
       }),
-      this.prisma.$executeRaw`UPDATE "Comment" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`,
+      this.prisma.$executeRaw`UPDATE "comments" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`,
     ]);
     return { liked: false };
   }
@@ -1631,7 +1631,7 @@ export class PostsService {
 
     // Increment user's post count for the cross-posted items
     if (newPosts.length > 0) {
-      await this.prisma.$executeRaw`UPDATE "User" SET "postsCount" = "postsCount" + ${newPosts.length} WHERE id = ${userId}`;
+      await this.prisma.$executeRaw`UPDATE "users" SET "postsCount" = "postsCount" + ${newPosts.length} WHERE id = ${userId}`;
     }
 
     return newPosts;

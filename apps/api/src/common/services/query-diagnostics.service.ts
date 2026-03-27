@@ -28,19 +28,19 @@ export class QueryDiagnosticsService {
     const queries = [
       {
         name: 'Post ForYou Feed (visibility + createdAt)',
-        sql: `EXPLAIN (FORMAT JSON, ANALYZE false) SELECT id FROM "Post" WHERE visibility = 'PUBLIC' AND "isRemoved" = false AND "createdAt" > NOW() - INTERVAL '72 hours' ORDER BY "createdAt" DESC LIMIT 200`,
+        sql: `EXPLAIN (FORMAT JSON, ANALYZE false) SELECT id FROM "posts" WHERE visibility = 'PUBLIC' AND "isRemoved" = false AND "createdAt" > NOW() - INTERVAL '72 hours' ORDER BY "createdAt" DESC LIMIT 200`,
       },
       {
         name: 'Thread Feed (isChainHead + createdAt)',
-        sql: `EXPLAIN (FORMAT JSON, ANALYZE false) SELECT id FROM "Thread" WHERE "isChainHead" = true AND "isRemoved" = false AND "createdAt" > NOW() - INTERVAL '72 hours' ORDER BY "createdAt" DESC LIMIT 200`,
+        sql: `EXPLAIN (FORMAT JSON, ANALYZE false) SELECT id FROM "threads" WHERE "isChainHead" = true AND "isRemoved" = false AND "createdAt" > NOW() - INTERVAL '72 hours' ORDER BY "createdAt" DESC LIMIT 200`,
       },
       {
         name: 'Reel Feed (status + createdAt)',
-        sql: `EXPLAIN (FORMAT JSON, ANALYZE false) SELECT id FROM "Reel" WHERE status = 'READY' AND "isRemoved" = false AND "createdAt" > NOW() - INTERVAL '72 hours' ORDER BY "createdAt" DESC LIMIT 200`,
+        sql: `EXPLAIN (FORMAT JSON, ANALYZE false) SELECT id FROM "reels" WHERE status = 'READY' AND "isRemoved" = false AND "createdAt" > NOW() - INTERVAL '72 hours' ORDER BY "createdAt" DESC LIMIT 200`,
       },
       {
         name: 'Block Exclusion (blockerId)',
-        sql: `EXPLAIN (FORMAT JSON, ANALYZE false) SELECT "blockedId" FROM "Block" WHERE "blockerId" = 'test-user-id' LIMIT 10000`,
+        sql: `EXPLAIN (FORMAT JSON, ANALYZE false) SELECT "blockedId" FROM "blocks" WHERE "blockerId" = 'test-user-id' LIMIT 10000`,
       },
       {
         name: 'Notification List (userId + createdAt)',

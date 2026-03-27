@@ -130,7 +130,7 @@ export class BookmarksService {
         this.prisma.threadBookmark.delete({
           where: { userId_threadId: { userId, threadId } },
         }),
-        this.prisma.$executeRaw`UPDATE "Thread" SET "bookmarksCount" = GREATEST("bookmarksCount" - 1, 0) WHERE id = ${threadId}`,
+        this.prisma.$executeRaw`UPDATE "threads" SET "bookmarksCount" = GREATEST("bookmarksCount" - 1, 0) WHERE id = ${threadId}`,
       ]);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {

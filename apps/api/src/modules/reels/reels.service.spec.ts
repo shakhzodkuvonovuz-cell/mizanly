@@ -624,7 +624,7 @@ describe('ReelsService', () => {
       });
       expect(prisma.$transaction).toHaveBeenCalledWith([
         prisma.reelComment.update({ where: { id: commentId }, data: { content: '[deleted]' } }),
-        prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
+        prisma.$executeRaw`UPDATE "reels" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
       ]);
       expect(result).toEqual({ deleted: true });
     });

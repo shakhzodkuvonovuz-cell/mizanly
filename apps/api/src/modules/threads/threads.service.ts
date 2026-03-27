@@ -596,14 +596,14 @@ export class ThreadsService {
         where: { id: threadId },
         data: { isRemoved: true },
       }),
-      this.prisma.$executeRaw`UPDATE "User" SET "threadsCount" = GREATEST("threadsCount" - 1, 0) WHERE id = ${userId}`,
+      this.prisma.$executeRaw`UPDATE "users" SET "threadsCount" = GREATEST("threadsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
 
     // Decrement hashtag counters for removed thread
     if (thread.hashtags && thread.hashtags.length > 0) {
       await Promise.all(
         thread.hashtags.map((name: string) =>
-          this.prisma.$executeRaw`UPDATE "Hashtag" SET "threadsCount" = GREATEST("threadsCount" - 1, 0) WHERE name = ${name}`,
+          this.prisma.$executeRaw`UPDATE "hashtags" SET "threadsCount" = GREATEST("threadsCount" - 1, 0) WHERE name = ${name}`,
         ),
       );
     }
@@ -669,7 +669,7 @@ export class ThreadsService {
       this.prisma.threadReaction.delete({
         where: { userId_threadId: { userId, threadId } },
       }),
-      this.prisma.$executeRaw`UPDATE "Thread" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${threadId}`,
+      this.prisma.$executeRaw`UPDATE "threads" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${threadId}`,
     ]);
     return { liked: false };
   }
@@ -730,7 +730,7 @@ export class ThreadsService {
         where: { id: repost.id },
         data: { isRemoved: true },
       }),
-      this.prisma.$executeRaw`UPDATE "Thread" SET "repostsCount" = GREATEST("repostsCount" - 1, 0) WHERE id = ${threadId}`,
+      this.prisma.$executeRaw`UPDATE "threads" SET "repostsCount" = GREATEST("repostsCount" - 1, 0) WHERE id = ${threadId}`,
     ]);
     return { reposted: false };
   }
@@ -766,7 +766,7 @@ export class ThreadsService {
       this.prisma.threadBookmark.delete({
         where: { userId_threadId: { userId, threadId } },
       }),
-      this.prisma.$executeRaw`UPDATE "Thread" SET "bookmarksCount" = GREATEST("bookmarksCount" - 1, 0) WHERE id = ${threadId}`,
+      this.prisma.$executeRaw`UPDATE "threads" SET "bookmarksCount" = GREATEST("bookmarksCount" - 1, 0) WHERE id = ${threadId}`,
     ]);
     return { bookmarked: false };
   }
@@ -838,7 +838,7 @@ export class ThreadsService {
       this.prisma.threadReplyLike.delete({
         where: { userId_replyId: { userId, replyId } },
       }),
-      this.prisma.$executeRaw`UPDATE "ThreadReply" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${replyId}`,
+      this.prisma.$executeRaw`UPDATE "thread_replies" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${replyId}`,
     ]);
     return { liked: false };
   }
@@ -903,7 +903,7 @@ export class ThreadsService {
 
     await this.prisma.$transaction([
       this.prisma.threadReply.update({ where: { id: replyId }, data: { content: '[deleted]' } }),
-      this.prisma.$executeRaw`UPDATE "Thread" SET "repliesCount" = GREATEST("repliesCount" - 1, 0) WHERE id = ${reply.threadId}`,
+      this.prisma.$executeRaw`UPDATE "threads" SET "repliesCount" = GREATEST("repliesCount" - 1, 0) WHERE id = ${reply.threadId}`,
     ]);
     return { deleted: true };
   }

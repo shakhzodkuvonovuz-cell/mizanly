@@ -77,14 +77,14 @@ export class BlocksService {
         }),
         ...(blockerWasFollowing
           ? [
-              this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockerId}`,
-              this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockedId}`,
+              this.prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockerId}`,
+              this.prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockedId}`,
             ]
           : []),
         ...(blockedWasFollowing
           ? [
-              this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockedId}`,
-              this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockerId}`,
+              this.prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockedId}`,
+              this.prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockerId}`,
             ]
           : []),
       ]);

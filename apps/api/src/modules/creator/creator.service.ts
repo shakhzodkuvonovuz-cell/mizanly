@@ -132,7 +132,7 @@ export class CreatorService {
     const [topLocations, totalCount] = await Promise.all([
       this.prisma.$queryRawUnsafe<Array<{ location: string; count: bigint }>>(
         `SELECT COALESCE(u."location", 'Unknown') as location, COUNT(*) as count
-         FROM "Follow" f JOIN "User" u ON f."followerId" = u.id
+         FROM "follows" f JOIN "users" u ON f."followerId" = u.id
          WHERE f."followingId" = $1
          GROUP BY COALESCE(u."location", 'Unknown')
          ORDER BY count DESC LIMIT 10`,
