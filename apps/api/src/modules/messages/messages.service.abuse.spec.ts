@@ -8,7 +8,7 @@ describe('MessagesService — abuse vectors (Task 99)', () => {
   let service: MessagesService;
   let prisma: any;
 
-  const mockMembership = { userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0 };
+  const mockMembership = { userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } };
 
   beforeEach(async () => {
     const txPrisma = {

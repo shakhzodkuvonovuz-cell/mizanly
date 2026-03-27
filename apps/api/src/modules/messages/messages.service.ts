@@ -180,15 +180,29 @@ export class MessagesService {
       isViewOnce?: boolean;
     },
   ) {
-    await this.requireMembership(conversationId, senderId);
-
-    // Check if sender is blocked by any member in this conversation
-    const members = await this.prisma.conversationMember.findMany({
-      where: { conversationId, userId: { not: senderId } },
-      select: { userId: true },
-      take: 200,
+    // Single combined query: membership check + conversation data + other members
+    // Replaces 3 separate queries (requireMembership, findMany members, findUnique conversation)
+    const membership = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId: senderId } },
+      select: {
+        isBanned: true,
+        conversation: {
+          select: {
+            isGroup: true,
+            slowModeSeconds: true,
+            disappearingDuration: true,
+            members: { where: { userId: { not: senderId } }, select: { userId: true }, take: 200 },
+          },
+        },
+      },
     });
-    const otherUserIds = members.map(m => m.userId);
+    if (!membership) throw new ForbiddenException('Not a member of this conversation');
+    if (membership.isBanned) throw new ForbiddenException('You are banned from this conversation');
+
+    const convo = membership.conversation;
+    const otherUserIds = convo.members.map(m => m.userId);
+
+    // Check if sender is blocked by any member
     if (otherUserIds.length > 0) {
       const blockExists = await this.prisma.block.findFirst({
         where: {
@@ -202,12 +216,6 @@ export class MessagesService {
         throw new ForbiddenException('Cannot send messages due to a block');
       }
     }
-
-    // Single query for DM check + slow mode + disappearing (merged from two separate findUnique calls)
-    const convo = await this.prisma.conversation.findUnique({
-      where: { id: conversationId },
-      select: { isGroup: true, slowModeSeconds: true, disappearingDuration: true },
-    });
 
     // DM restriction: prevent non-followers from messaging private accounts (1:1 only)
     if (convo && !convo.isGroup) {
@@ -825,47 +833,71 @@ export class MessagesService {
     if (original.isViewOnce) throw new BadRequestException('View-once messages cannot be forwarded');
     await this.requireMembership(original.conversationId, userId);
 
-    const results = [];
-    for (const convId of targetConversationIds) {
-      await this.requireMembership(convId, userId);
+    // Batch: verify all memberships at once (single query instead of N)
+    const memberships = await this.prisma.conversationMember.findMany({
+      where: { conversationId: { in: targetConversationIds }, userId },
+      select: { conversationId: true, isBanned: true },
+    });
+    const memberConvIds = new Set(memberships.filter(m => !m.isBanned).map(m => m.conversationId));
+    const validTargets = targetConversationIds.filter(id => memberConvIds.has(id));
+    if (validTargets.length === 0) throw new ForbiddenException('Not a member of any target conversation');
 
-      // Check if sender is blocked by any member in the target conversation
-      const targetMembers = await this.prisma.conversationMember.findMany({
-        where: { conversationId: convId, userId: { not: userId } },
-        select: { userId: true },
-      });
-      const memberIds = targetMembers.map(m => m.userId);
-      if (memberIds.length > 0) {
-        const blockExists = await this.prisma.block.findFirst({
-          where: {
-            OR: [
-              { blockerId: { in: memberIds }, blockedId: userId },
-              { blockerId: userId, blockedId: { in: memberIds } },
-            ],
+    // Batch: get all other members across all target conversations (single query)
+    const allOtherMembers = await this.prisma.conversationMember.findMany({
+      where: { conversationId: { in: validTargets }, userId: { not: userId } },
+      select: { conversationId: true, userId: true },
+      take: 1000,
+    });
+
+    // Batch: check blocks once for all involved users
+    const allOtherUserIds = [...new Set(allOtherMembers.map(m => m.userId))];
+    const blocks = allOtherUserIds.length > 0 ? await this.prisma.block.findMany({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: { in: allOtherUserIds } },
+          { blockedId: userId, blockerId: { in: allOtherUserIds } },
+        ],
+      },
+      select: { blockerId: true, blockedId: true },
+    }) : [];
+    const blockedUserIds = new Set(blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId));
+
+    // Filter out conversations where any member is blocked
+    const membersByConv = new Map<string, string[]>();
+    for (const m of allOtherMembers) {
+      if (!membersByConv.has(m.conversationId)) membersByConv.set(m.conversationId, []);
+      membersByConv.get(m.conversationId)!.push(m.userId);
+    }
+    const allowedTargets = validTargets.filter(convId => {
+      const convMembers = membersByConv.get(convId) || [];
+      return !convMembers.some(uid => blockedUserIds.has(uid));
+    });
+
+    // Batch: create all forwarded messages + update conversations in one transaction
+    const now = new Date();
+    const results = await this.prisma.$transaction(
+      allowedTargets.flatMap(convId => [
+        this.prisma.message.create({
+          data: {
+            conversationId: convId, senderId: userId,
+            content: original.content, messageType: original.messageType,
+            mediaUrl: original.mediaUrl, mediaType: original.mediaType,
+            voiceDuration: original.voiceDuration, fileName: original.fileName,
+            fileSize: original.fileSize,
+            isForwarded: true, forwardedFromId: messageId,
           },
-        });
-        if (blockExists) {
-          continue; // Skip this conversation silently — don't reveal the block
-        }
-      }
+        }),
+        this.prisma.conversation.update({
+          where: { id: convId },
+          data: { lastMessageText: original.content ?? '[Forwarded]', lastMessageAt: now, lastMessageById: userId },
+        }),
+      ]),
+    );
+    // Extract only message results (every other item in the transaction)
+    const messages = results.filter((_, i) => i % 2 === 0);
 
-      const msg = await this.prisma.message.create({
-        data: {
-          conversationId: convId, senderId: userId,
-          content: original.content, messageType: original.messageType,
-          mediaUrl: original.mediaUrl, mediaType: original.mediaType,
-          voiceDuration: original.voiceDuration, fileName: original.fileName,
-          fileSize: original.fileSize,
-          isForwarded: true, forwardedFromId: messageId,
-        },
-      });
-      results.push(msg);
-      await this.prisma.conversation.update({
-        where: { id: convId },
-        data: { lastMessageText: original.content ?? '[Forwarded]', lastMessageAt: new Date(), lastMessageById: userId },
-      });
-
-      // Notify target conversation members about the forwarded message
+    // Notify all target conversations (non-blocking)
+    for (const convId of allowedTargets) {
       this.notifyConversationMembers(convId, userId, original.content ?? '[Forwarded]').catch((err) => {
         this.logger.warn(`Forward notification failed for conv ${convId}: ${err?.message}`);
       });
@@ -874,15 +906,15 @@ export class MessagesService {
     // Increment forward count on original message
     await this.prisma.message.update({
       where: { id: messageId },
-      data: { forwardCount: { increment: targetConversationIds.length } },
+      data: { forwardCount: { increment: allowedTargets.length } },
     });
 
     // Finding #298: Track DM share as algorithm signal (DM shares = strong interest)
     if (original.content) {
-      await this.redis.incrby(`dm_shares:${messageId}`, results.length);
+      await this.redis.incrby(`dm_shares:${messageId}`, messages.length);
     }
 
-    return results;
+    return messages;
   }
 
   async markDelivered(messageId: string, userId: string) {

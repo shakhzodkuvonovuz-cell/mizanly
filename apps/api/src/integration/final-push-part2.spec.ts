@@ -20,7 +20,7 @@ describe('Final Push Part 2 — Messages, Reels, Follows, Gamification, Gifts', 
   describe('MessagesService — comprehensive', () => {
     let service: MessagesService;
     let prisma: any;
-    const mem = { userId: 'u1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0 };
+    const mem = { userId: 'u1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } };
     const txP = { message: { create: jest.fn().mockResolvedValue({ id: 'msg', content: 'test', messageType: 'TEXT' }) }, conversation: { update: jest.fn() }, conversationMember: { update: jest.fn(), updateMany: jest.fn() } };
 
     beforeEach(async () => {

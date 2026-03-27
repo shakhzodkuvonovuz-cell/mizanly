@@ -7,7 +7,7 @@ describe('MessagesService — concurrency (Task 88)', () => {
   let service: MessagesService;
   let prisma: any;
 
-  const mockMembership = { userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0 };
+  const mockMembership = { userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } };
 
   beforeEach(async () => {
     const txPrisma = {
@@ -29,7 +29,7 @@ describe('MessagesService — concurrency (Task 88)', () => {
             },
             conversation: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
             message: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), count: jest.fn().mockResolvedValue(0) },
-            block: { findFirst: jest.fn() },
+            block: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             messageReaction: { upsert: jest.fn(), deleteMany: jest.fn() },
             user: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             dMNote: { upsert: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
@@ -123,8 +123,11 @@ describe('MessagesService — concurrency (Task 88)', () => {
       messageType: 'TEXT', mediaUrl: null, mediaType: null,
       voiceDuration: null, fileName: null, fileSize: null, forwardCount: 0,
     });
-    prisma.message.create.mockResolvedValue({ id: 'fwd-1' });
-    prisma.conversation.update.mockResolvedValue({});
+    prisma.conversationMember.findMany
+      .mockResolvedValueOnce([{ conversationId: 'conv-2', isBanned: false }])
+      .mockResolvedValueOnce([]);
+    prisma.block.findMany.mockResolvedValue([]);
+    prisma.$transaction.mockResolvedValue([{ id: 'fwd-1' }, {}]);
     prisma.message.update.mockResolvedValue({});
 
     const result = await service.forwardMessage('msg-1', 'user-1', ['conv-2']);

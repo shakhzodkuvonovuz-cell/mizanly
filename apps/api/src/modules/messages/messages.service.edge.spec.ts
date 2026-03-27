@@ -11,7 +11,7 @@ describe('MessagesService — edge cases', () => {
   const userId = 'user-edge-1';
   const convId = 'conv-1';
 
-  const mockMembership = { userId, isMuted: false, isArchived: false, isBanned: false, unreadCount: 0 };
+  const mockMembership = { userId, isMuted: false, isArchived: false, isBanned: false, unreadCount: 0, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } };
   const mockMessage = {
     id: 'msg-1',
     conversationId: convId,

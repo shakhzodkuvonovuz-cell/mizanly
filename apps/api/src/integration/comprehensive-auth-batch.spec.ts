@@ -259,7 +259,7 @@ describe('Comprehensive Auth + Abuse — batch tests', () => {
   describe('MessagesService — additional abuse', () => {
     let service: MessagesService;
     let prisma: any;
-    const mockMembership = { userId: 'u1', isMuted: false, isArchived: false, isBanned: false };
+    const mockMembership = { userId: 'u1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } };
 
     beforeEach(async () => {
       const txPrisma = {

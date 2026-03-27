@@ -18,7 +18,7 @@ describe('MessagesService — View-Once Message Security', () => {
           useValue: {
             conversationMember: {
               findMany: jest.fn().mockResolvedValue([]),
-              findUnique: jest.fn().mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false }),
+              findUnique: jest.fn().mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } }),
               create: jest.fn(),
               update: jest.fn(),
               updateMany: jest.fn(),
@@ -119,7 +119,13 @@ describe('MessagesService — View-Once Message Security', () => {
         isViewOnce: false,
       };
       prisma.message.findUnique.mockResolvedValue(normalMessage);
-      prisma.message.create.mockResolvedValue({ id: 'forwarded-msg', content: 'hello world', isForwarded: true });
+      prisma.conversationMember.findMany
+        .mockResolvedValueOnce([{ conversationId: 'conv-2', isBanned: false }])
+        .mockResolvedValueOnce([]);
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.$transaction.mockResolvedValue([
+        { id: 'forwarded-msg', content: 'hello world', isForwarded: true }, {},
+      ]);
       prisma.message.update.mockResolvedValue({ ...normalMessage, forwardCount: 1 });
 
       const result = await service.forwardMessage('msg-normal', 'user-1', ['conv-2']);

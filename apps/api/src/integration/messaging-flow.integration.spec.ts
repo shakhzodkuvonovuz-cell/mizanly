@@ -34,7 +34,7 @@ describe('Integration: Messaging Flow', () => {
         update: jest.fn().mockResolvedValue(mockConversation),
       },
       conversationMember: {
-        findUnique: jest.fn().mockResolvedValue({ userId: 'user-1', conversationId: 'conv-1', isMuted: false, isBanned: false, isArchived: false }),
+        findUnique: jest.fn().mockResolvedValue({ userId: 'user-1', conversationId: 'conv-1', isMuted: false, isBanned: false, isArchived: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } }),
         findMany: jest.fn().mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]),
         create: jest.fn().mockResolvedValue({}),
         update: jest.fn().mockResolvedValue({}),

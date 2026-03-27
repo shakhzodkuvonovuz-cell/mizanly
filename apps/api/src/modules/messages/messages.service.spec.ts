@@ -18,7 +18,10 @@ describe('MessagesService', () => {
           useValue: {
             conversationMember: {
               findMany: jest.fn().mockResolvedValue([]),
-              findUnique: jest.fn().mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0 }),
+              findUnique: jest.fn().mockResolvedValue({
+                userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0,
+                conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] },
+              }),
               create: jest.fn(),
               update: jest.fn(),
               updateMany: jest.fn(),
@@ -737,7 +740,7 @@ describe('MessagesService', () => {
 
   describe('setMemberTag', () => {
     it('should update member tag', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversationMember.update.mockResolvedValue({ tag: 'Admin' });
 
       const result = await service.setMemberTag('conv-1', 'user-1', 'Admin');
@@ -749,7 +752,7 @@ describe('MessagesService', () => {
     });
 
     it('should truncate tag to 30 characters', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversationMember.update.mockResolvedValue({ tag: 'a'.repeat(30) });
 
       await service.setMemberTag('conv-1', 'user-1', 'a'.repeat(50));
@@ -760,7 +763,7 @@ describe('MessagesService', () => {
     });
 
     it('should clear tag when null is passed', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversationMember.update.mockResolvedValue({ tag: null });
 
       await service.setMemberTag('conv-1', 'user-1', null);
@@ -773,7 +776,7 @@ describe('MessagesService', () => {
 
   describe('setLockCode', () => {
     it('should set hashed lock code on conversation', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversation.update.mockResolvedValue({});
 
       const result = await service.setLockCode('conv-1', 'user-1', '1234');
@@ -788,7 +791,7 @@ describe('MessagesService', () => {
     });
 
     it('should remove lock code when null is passed', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversation.update.mockResolvedValue({ lockCode: null });
 
       await service.setLockCode('conv-1', 'user-1', null);
@@ -802,7 +805,7 @@ describe('MessagesService', () => {
   describe('verifyLockCode', () => {
     it('should return valid: true for correct code', async () => {
       // First set a lock code to get a real hash
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       let storedHash = '';
       prisma.conversation.update.mockImplementation(async (args: any) => {
         storedHash = args.data.lockCode;
@@ -817,7 +820,7 @@ describe('MessagesService', () => {
     });
 
     it('should return valid: false for wrong code', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       let storedHash = '';
       prisma.conversation.update.mockImplementation(async (args: any) => {
         storedHash = args.data.lockCode;
@@ -831,7 +834,7 @@ describe('MessagesService', () => {
     });
 
     it('should throw NotFoundException if conversation not found', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversation.findUnique.mockResolvedValue(null);
 
       await expect(service.verifyLockCode('conv-1', 'user-1', 'code')).rejects.toThrow(NotFoundException);
@@ -840,7 +843,7 @@ describe('MessagesService', () => {
 
   describe('setNewMemberHistoryCount', () => {
     it('should set history count for group owner', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversation.findUnique.mockResolvedValue({ createdById: 'user-1', isGroup: true });
       prisma.conversation.update.mockResolvedValue({ newMemberHistoryCount: 50 });
 
@@ -849,7 +852,7 @@ describe('MessagesService', () => {
     });
 
     it('should clamp count to 0-100 range', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversation.findUnique.mockResolvedValue({ createdById: 'user-1', isGroup: true });
       prisma.conversation.update.mockResolvedValue({ newMemberHistoryCount: 100 });
 
@@ -862,14 +865,14 @@ describe('MessagesService', () => {
     });
 
     it('should throw ForbiddenException for non-owner', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-2', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-2', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversation.findUnique.mockResolvedValue({ createdById: 'user-1', isGroup: true });
 
       await expect(service.setNewMemberHistoryCount('conv-1', 'user-2', 25)).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw BadRequestException for non-group conversation', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } });
       prisma.conversation.findUnique.mockResolvedValue({ createdById: 'user-1', isGroup: false });
 
       await expect(service.setNewMemberHistoryCount('conv-1', 'user-1', 25)).rejects.toThrow(BadRequestException);
@@ -906,13 +909,20 @@ describe('MessagesService', () => {
         conversationId: 'conv-1', content: 'Hello', messageType: 'TEXT',
         mediaUrl: null, mediaType: null, voiceDuration: null, fileName: null, fileSize: null, forwardCount: 0,
       });
-      prisma.message.create.mockResolvedValue({ id: 'fwd-1', content: 'Hello', isForwarded: true });
-      prisma.conversation.update.mockResolvedValue({});
+      // Mock batch membership check — user is member of all target conversations
+      // requireMembership uses findUnique (default mock returns valid member)
+      prisma.conversationMember.findMany
+        .mockResolvedValueOnce([{ conversationId: 'conv-2', isBanned: false }, { conversationId: 'conv-3', isBanned: false }]) // batch membership
+        .mockResolvedValueOnce([]); // other members in target convos
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.$transaction.mockResolvedValue([
+        { id: 'fwd-1', content: 'Hello', isForwarded: true }, {},
+        { id: 'fwd-2', content: 'Hello', isForwarded: true }, {},
+      ]);
       prisma.message.update.mockResolvedValue({});
 
       const result = await service.forwardMessage('msg-1', 'user-1', ['conv-2', 'conv-3']);
       expect(result).toHaveLength(2);
-      expect(prisma.message.create).toHaveBeenCalledTimes(2);
     });
 
     it('should throw BadRequestException for more than 5 targets', async () => {
@@ -926,6 +936,7 @@ describe('MessagesService', () => {
     });
 
     it('should throw NotFoundException when original message not found', async () => {
+      prisma.message.findUnique.mockReset();
       prisma.message.findUnique.mockResolvedValue(null);
       await expect(service.forwardMessage('nonexistent', 'user-1', ['conv-2'])).rejects.toThrow(NotFoundException);
     });

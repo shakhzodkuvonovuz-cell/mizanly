@@ -11,7 +11,7 @@ describe('MessagesService — authorization matrix', () => {
   const userB = 'user-b';
   const convId = 'conv-1';
 
-  const mockMembership = { userId: userA, isMuted: false, isArchived: false, isBanned: false, unreadCount: 0 };
+  const mockMembership = { userId: userA, isMuted: false, isArchived: false, isBanned: false, unreadCount: 0, conversation: { isGroup: false, slowModeSeconds: null, disappearingDuration: null, members: [] } };
 
   beforeEach(async () => {
     const txPrisma = {
