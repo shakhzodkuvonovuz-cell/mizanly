@@ -309,9 +309,9 @@ export class ThreadsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Get trending to fill the rest
+    // Get trending to fill the rest — pass cursor so trending advances with pagination
     const seenIds = new Set(followingThreads.map(t => t.id));
-    const trending = await this.getTrendingThreads(excludedIds, undefined, halfLimit);
+    const trending = await this.getTrendingThreads(excludedIds, cursor, halfLimit);
     const trendingFiltered = trending.data.filter((t: { id: string }) => !seenIds.has(t.id)) as typeof followingThreads;
 
     // Interleave

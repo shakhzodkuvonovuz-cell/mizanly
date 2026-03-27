@@ -1330,44 +1330,46 @@ export class MessagesService {
 
       if (overdue.length === 0) return 0;
 
-      let published = 0;
+      const msgIds = overdue.map(m => m.id);
+
+      // Batch: mark all overdue messages as sent in a single updateMany
+      await this.prisma.message.updateMany({
+        where: { id: { in: msgIds } },
+        data: { isScheduled: false, scheduledAt: null },
+      });
+
+      // Update conversation metadata per unique conversation (dedup to avoid N updates for same convo)
+      const convMap = new Map<string, typeof overdue[0]>();
       for (const msg of overdue) {
-        try {
-          await this.prisma.$transaction(async (tx) => {
-            // Mark message as sent
-            await tx.message.update({
-              where: { id: msg.id },
-              data: { isScheduled: false, scheduledAt: null },
-            });
+        convMap.set(msg.conversationId, msg); // Last message per convo wins
+      }
+      for (const [convId, msg] of convMap) {
+        await this.prisma.conversation.update({
+          where: { id: convId },
+          data: {
+            lastMessageAt: now,
+            lastMessageText: msg.content?.slice(0, 100) ?? null,
+            lastMessageById: msg.senderId,
+          },
+        }).catch(err => this.logger.warn(`Failed to update conversation ${convId} for scheduled message`, err?.message));
 
-            // Update conversation last-message metadata
-            await tx.conversation.update({
-              where: { id: msg.conversationId },
-              data: {
-                lastMessageAt: now,
-                lastMessageText: msg.content?.slice(0, 100) ?? null,
-                lastMessageById: msg.senderId,
-              },
-            });
+        // Increment unread count for other members
+        if (msg.senderId) {
+          await this.prisma.conversationMember.updateMany({
+            where: { conversationId: convId, userId: { not: msg.senderId } },
+            data: { unreadCount: { increment: 1 } },
+          }).catch(err => this.logger.warn(`Failed to increment unread for conv ${convId}`, err?.message));
+        }
+      }
 
-            // Increment unread count for other members
-            if (msg.senderId) {
-              await tx.conversationMember.updateMany({
-                where: { conversationId: msg.conversationId, userId: { not: msg.senderId } },
-                data: { unreadCount: { increment: 1 } },
-              });
-            }
+      const published = overdue.length;
+
+      // Notify conversation members (non-blocking)
+      for (const msg of overdue) {
+        if (msg.senderId) {
+          this.notifyConversationMembers(msg.conversationId, msg.senderId, msg.content?.slice(0, 100) ?? 'Sent a message').catch((err) => {
+            this.logger.warn(`Scheduled message notification failed for msg ${msg.id}: ${err?.message}`);
           });
-          published++;
-
-          // Notify conversation members about the now-published scheduled message
-          if (msg.senderId) {
-            this.notifyConversationMembers(msg.conversationId, msg.senderId, msg.content?.slice(0, 100) ?? 'Sent a message').catch((err) => {
-              this.logger.warn(`Scheduled message notification failed for msg ${msg.id}: ${err?.message}`);
-            });
-          }
-        } catch (error) {
-          this.logger.error(`Failed to publish scheduled message ${msg.id}`, error instanceof Error ? error.message : error);
         }
       }
 

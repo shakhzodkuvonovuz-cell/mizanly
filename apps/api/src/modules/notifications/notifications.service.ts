@@ -396,7 +396,7 @@ export class NotificationsService {
         actor: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: Math.min(limit * 3, 100), // Adaptive: fetch 3x groups needed, cap at 100
     });
 
     // Group by type + content target (postId/reelId/threadId)

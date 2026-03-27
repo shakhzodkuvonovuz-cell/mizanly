@@ -1927,13 +1927,18 @@ export class IslamicService {
    * Finding #281: Follow a mosque — store lat/lng in Redis for prayer time fetching.
    */
   async followMosque(userId: string, mosqueName: string, lat: number, lng: number) {
+    // Redis cache for fast access
     const key = `user:mosque:${userId}`;
-    await this.redis.hset(key, {
-      name: mosqueName,
-      lat: String(lat),
-      lng: String(lng),
-    });
-    await this.redis.expire(key, 365 * 24 * 3600); // 1 year TTL — refreshed on follow
+    await this.redis.hset(key, { name: mosqueName, lat: String(lat), lng: String(lng) });
+    await this.redis.expire(key, 365 * 24 * 3600);
+
+    // DB persistence — survives Redis flush
+    await this.prisma.prayerNotificationSetting.upsert({
+      where: { userId },
+      create: { userId, mosqueName, mosqueLat: lat, mosqueLng: lng },
+      update: { mosqueName, mosqueLat: lat, mosqueLng: lng },
+    }).catch(err => this.logger.warn(`Failed to persist mosque data for user ${userId}`, err instanceof Error ? err.message : err));
+
     return { followed: true, mosqueName };
   }
 
@@ -1941,7 +1946,20 @@ export class IslamicService {
    * Finding #281: Get prayer times for the user's followed mosque.
    */
   async getFollowedMosqueTimes(userId: string) {
-    const mosque = await this.redis.hgetall(`user:mosque:${userId}`);
+    let mosque = await this.redis.hgetall(`user:mosque:${userId}`);
+    // Fallback to DB if Redis lost the data
+    if (!mosque?.lat || !mosque?.lng) {
+      const dbSettings = await this.prisma.prayerNotificationSetting.findUnique({
+        where: { userId },
+        select: { mosqueName: true, mosqueLat: true, mosqueLng: true },
+      });
+      if (dbSettings?.mosqueLat && dbSettings?.mosqueLng) {
+        mosque = { name: dbSettings.mosqueName ?? '', lat: String(dbSettings.mosqueLat), lng: String(dbSettings.mosqueLng) };
+        // Re-seed Redis cache
+        await this.redis.hset(`user:mosque:${userId}`, mosque);
+        await this.redis.expire(`user:mosque:${userId}`, 365 * 24 * 3600);
+      }
+    }
     if (!mosque?.lat || !mosque?.lng) {
       return { hasMosque: false, message: 'No mosque followed yet' };
     }

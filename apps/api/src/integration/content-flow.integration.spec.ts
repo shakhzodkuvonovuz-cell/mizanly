@@ -289,6 +289,7 @@ describe('Integration: Content Flow', () => {
       },
       hashtag: {
         upsert: jest.fn().mockResolvedValue({ id: 'h1', name: 'mizanly' }),
+        createMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
       feedDismissal: {
         upsert: jest.fn().mockResolvedValue({
@@ -326,6 +327,7 @@ describe('Integration: Content Flow', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
       $executeRaw: jest.fn().mockResolvedValue(1),
+      $executeRawUnsafe: jest.fn().mockResolvedValue(1),
       $queryRawUnsafe: jest.fn().mockResolvedValue([]),
       $transaction: jest.fn().mockImplementation((fnOrArr: any) => {
         if (typeof fnOrArr === 'function') return fnOrArr(prismaValue);

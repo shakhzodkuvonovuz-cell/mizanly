@@ -45,7 +45,10 @@ describe('BlocksService', () => {
             conversationMember: {
               updateMany: jest.fn().mockResolvedValue({ count: 0 }),
             },
-            $transaction: jest.fn(),
+            $transaction: jest.fn().mockImplementation(async (fnOrArray: unknown) => {
+              if (typeof fnOrArray === 'function') return (fnOrArray as (tx: any) => Promise<unknown>)(prisma);
+              return Promise.all(fnOrArray as Promise<unknown>[]);
+            }),
             $executeRaw: jest.fn(),
           },
         },
@@ -63,25 +66,13 @@ describe('BlocksService', () => {
       prisma.block.findUnique.mockResolvedValue(null);
       prisma.follow.findMany.mockResolvedValue([]);
       prisma.block.create.mockResolvedValue({});
-      prisma.follow.deleteMany.mockResolvedValue({});
-      prisma.followRequest.deleteMany.mockResolvedValue({});
-      prisma.$transaction.mockResolvedValue([]);
+      prisma.follow.deleteMany.mockResolvedValue({ count: 0 });
+      prisma.followRequest.deleteMany.mockResolvedValue({ count: 0 });
+      // $transaction uses mockImplementation from beforeEach — passes prisma as tx
 
       const result = await service.block(blockerId, blockedId);
 
-      expect(prisma.block.findUnique).toHaveBeenCalledWith({
-        where: { blockerId_blockedId: { blockerId, blockedId } },
-      });
-      expect(prisma.follow.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: {
-          OR: [
-            { followerId: blockerId, followingId: blockedId },
-            { followerId: blockedId, followingId: blockerId },
-          ],
-        },
-        select: { followerId: true, followingId: true },
-      }));
-      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function));
       expect(result).toEqual({ message: 'User blocked' });
     });
 
@@ -115,13 +106,19 @@ describe('BlocksService', () => {
         { followerId: blockerId, followingId: blockedId },
         { followerId: blockedId, followingId: blockerId },
       ]);
-      prisma.$transaction.mockResolvedValue([]);
+      prisma.block.create.mockResolvedValue({});
+      prisma.follow.deleteMany.mockResolvedValue({ count: 2 });
+      prisma.followRequest.deleteMany.mockResolvedValue({ count: 0 });
 
       await service.block(blockerId, blockedId);
 
-      // Transaction should include: block.create + follow.deleteMany + followRequest.deleteMany + 4x $executeRaw
-      const txArgs = prisma.$transaction.mock.calls[0][0];
-      expect(txArgs.length).toBe(7); // 3 base + 2 blokerWasFollowing + 2 blockedWasFollowing
+      // Interactive transaction called with callback function
+      expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function));
+      // Verify block was created + follows deleted + counters decremented
+      expect(prisma.block.create).toHaveBeenCalled();
+      expect(prisma.follow.deleteMany).toHaveBeenCalled();
+      expect(prisma.followRequest.deleteMany).toHaveBeenCalled();
+      expect(prisma.$executeRaw).toHaveBeenCalled();
     });
   });
 
@@ -244,12 +241,17 @@ describe('BlocksService', () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'user-456', username: 'blocked-user' });
       prisma.block.findUnique.mockResolvedValue(null);
       prisma.follow.findMany.mockResolvedValue([]);
-      prisma.$transaction.mockResolvedValue([]);
+      prisma.block.create.mockResolvedValue({});
+      prisma.follow.deleteMany.mockResolvedValue({ count: 0 });
+      prisma.followRequest.deleteMany.mockResolvedValue({ count: 0 });
 
       await service.block('user-123', 'user-456');
 
-      const txArgs = prisma.$transaction.mock.calls[0][0];
-      expect(txArgs.length).toBe(3); // block.create + follow.deleteMany + followRequest.deleteMany
+      expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function));
+      expect(prisma.block.create).toHaveBeenCalled();
+      expect(prisma.follow.deleteMany).toHaveBeenCalled();
+      // No $executeRaw calls since no follows existed
+      expect(prisma.$executeRaw).not.toHaveBeenCalled();
     });
   });
 

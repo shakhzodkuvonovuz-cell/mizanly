@@ -323,8 +323,8 @@ export class PostsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Get trending content to fill the rest
-    const seenIds = new Set(followingPosts.map(p => p.id));
+    // Get trending content to fill the rest — exclude already-seen posts + cursor for pagination
+    const seenIds = [...new Set(followingPosts.map(p => p.id))];
     const fallbackCutoff = new Date(Date.now() - TIME_WINDOWS.FALLBACK_HOURS * 3600000);
     const trendingPosts = await this.prisma.post.findMany({
       where: {
@@ -333,7 +333,11 @@ export class PostsService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: fallbackCutoff },
         user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false },
-        id: { notIn: [...seenIds] },
+        // Use AND to combine notIn (exclude seen) with lt (cursor pagination)
+        AND: [
+          { id: { notIn: seenIds } },
+          ...(cursor ? [{ id: { lt: cursor } }] : []),
+        ],
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       },
       select: POST_SELECT,
@@ -486,19 +490,20 @@ export class PostsService {
     const isScheduled = !!dto.scheduledAt;
 
     const result = await this.prisma.$transaction(async (tx) => {
-      // Upsert hashtags inside transaction so counts stay consistent if post creation fails
-      // For scheduled content: create the hashtag record but don't increment count yet —
-      // counts are incremented when the scheduling cron publishes the content
+      // Batch upsert hashtags: createMany for record existence + single raw SQL for count increment
+      // For scheduled content: create the hashtag record but don't increment count yet
       if (hashtagNames.length > 0) {
-        await Promise.all(
-          hashtagNames.map((name) =>
-            tx.hashtag.upsert({
-              where: { name },
-              create: { name, postsCount: isScheduled ? 0 : 1 },
-              update: isScheduled ? {} : { postsCount: { increment: 1 } },
-            }),
-          ),
-        );
+        await tx.hashtag.createMany({
+          data: hashtagNames.map(name => ({ name })),
+          skipDuplicates: true,
+        });
+        if (!isScheduled) {
+          // Batch increment postsCount using parameterized query (safe from SQL injection)
+          await tx.$executeRawUnsafe(
+            `UPDATE hashtags SET "postsCount" = "postsCount" + 1 WHERE name = ANY($1::text[])`,
+            hashtagNames,
+          );
+        }
       }
 
       // Map commentPermission → also set legacy commentsDisabled boolean for backward compat

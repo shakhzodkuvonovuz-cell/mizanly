@@ -49,8 +49,12 @@ describe('PostsService — edge cases', () => {
         {
           provide: PrismaService,
           useValue: {
-            $transaction: jest.fn(),
+            $transaction: jest.fn().mockImplementation(async (fn: unknown) => {
+              if (typeof fn === 'function') return (fn as (tx: any) => Promise<unknown>)(prisma);
+              return [];
+            }),
             $executeRaw: jest.fn(),
+            $executeRawUnsafe: jest.fn(),
             $queryRaw: jest.fn(),
             post: {
               create: jest.fn(),
@@ -70,7 +74,7 @@ describe('PostsService — edge cases', () => {
             follow: { findMany: jest.fn() },
             block: { findMany: jest.fn() },
             mute: { findMany: jest.fn() },
-            hashtag: { upsert: jest.fn() },
+            hashtag: { upsert: jest.fn(), createMany: jest.fn().mockResolvedValue({ count: 0 }) },
             user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             comment: {
               create: jest.fn(),

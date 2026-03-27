@@ -3214,6 +3214,9 @@ model PrayerNotificationSetting {
   adhanEnabled    Boolean  @default(false)
   adhanStyle      AdhanStyle @default(MAKKAH)
   reminderMinutes Int      @default(15)
+  mosqueName      String?  // Preferred mosque name for prayer times
+  mosqueLat       Float?   // Mosque latitude (DB backup for Redis cache)
+  mosqueLng       Float?   // Mosque longitude
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

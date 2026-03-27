@@ -44,12 +44,12 @@ describe('Final Coverage Push — 3800+ tests', () => {
           ...globalMockProviders, PostsService,
           { provide: PrismaService, useValue: {
             $transaction: jest.fn().mockImplementation(async (cb: any) => { if (typeof cb === 'function') return cb(prisma); return cb; }),
-            $executeRaw: jest.fn(),
+            $executeRaw: jest.fn(), $executeRawUnsafe: jest.fn(),
             post: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
             follow: { findMany: jest.fn().mockResolvedValue([]) }, block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn().mockResolvedValue(null) }, mute: { findMany: jest.fn().mockResolvedValue([]) },
             restrict: { findMany: jest.fn().mockResolvedValue([]) },
-            hashtag: { upsert: jest.fn() }, user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
+            hashtag: { upsert: jest.fn(), createMany: jest.fn().mockResolvedValue({ count: 0 }) }, user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             comment: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
             commentReaction: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn() },
             savedPost: { create: jest.fn(), delete: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },
@@ -113,7 +113,7 @@ describe('Final Coverage Push — 3800+ tests', () => {
       prisma.user.update.mockResolvedValue({});
       const result = await service.create('owner', { postType: 'TEXT', content: 'Hello #test #world' } as any);
       expect(result).toBeDefined();
-      expect(prisma.hashtag.upsert).toHaveBeenCalled();
+      expect(prisma.hashtag.createMany).toHaveBeenCalled();
     });
 
     it('create post with mentions', async () => {
@@ -349,11 +349,11 @@ describe('Final Coverage Push — 3800+ tests', () => {
             block: { findMany: jest.fn().mockResolvedValue([]), findFirst: jest.fn() },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
             restrict: { findMany: jest.fn().mockResolvedValue([]) },
-            hashtag: { upsert: jest.fn() }, report: { create: jest.fn() }, feedDismissal: { upsert: jest.fn() },
+            hashtag: { upsert: jest.fn(), createMany: jest.fn().mockResolvedValue({ count: 0 }) }, report: { create: jest.fn() }, feedDismissal: { upsert: jest.fn() },
             pollOption: { findUnique: jest.fn(), update: jest.fn() },
             pollVote: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn() },
             poll: { update: jest.fn() },
-            $transaction: jest.fn().mockResolvedValue([{}, {}]), $executeRaw: jest.fn(),
+            $transaction: jest.fn().mockResolvedValue([{}, {}]), $executeRaw: jest.fn(), $executeRawUnsafe: jest.fn(),
           }},
           { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'n-1' }) } },
           { provide: 'REDIS', useValue: { get: jest.fn(), set: jest.fn().mockResolvedValue('OK'), setex: jest.fn(), del: jest.fn().mockResolvedValue(1), publish: jest.fn().mockResolvedValue(1), pfadd: jest.fn().mockResolvedValue(1), pfcount: jest.fn().mockResolvedValue(0), zadd: jest.fn().mockResolvedValue(0), zcard: jest.fn().mockResolvedValue(0), zrevrange: jest.fn().mockResolvedValue([]), hmget: jest.fn().mockResolvedValue([]), hset: jest.fn().mockResolvedValue(1), pipeline: jest.fn().mockReturnValue({ del: jest.fn().mockReturnThis(), zadd: jest.fn().mockReturnThis(), hset: jest.fn().mockReturnThis(), expire: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }), keys: jest.fn().mockResolvedValue([]) } },

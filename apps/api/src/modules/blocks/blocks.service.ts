@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import * as Sentry from '@sentry/node';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 
@@ -35,59 +36,54 @@ export class BlocksService {
     });
     if (existing) return { message: 'User blocked' };
 
-    // Count follows being deleted to decrement counts accurately
-    const deletedFollows = await this.prisma.follow.findMany({
-      where: {
-        OR: [
-          { followerId: blockerId, followingId: blockedId },
-          { followerId: blockedId, followingId: blockerId },
-        ],
-      },
-      select: { followerId: true, followingId: true },
-      take: 50,
-    });
-
-    // blocker→blocked: blocker loses 1 following, blocked loses 1 follower
-    const blockerWasFollowing = deletedFollows.some(
-      (f) => f.followerId === blockerId && f.followingId === blockedId,
-    );
-    // blocked→blocker: blocked loses 1 following, blocker loses 1 follower
-    const blockedWasFollowing = deletedFollows.some(
-      (f) => f.followerId === blockedId && f.followingId === blockerId,
-    );
-
     try {
-      await this.prisma.$transaction([
-        this.prisma.block.create({ data: { blockerId, blockedId } }),
-        this.prisma.follow.deleteMany({
+      // Use interactive transaction to prevent race: scan follows + delete + decrement atomically
+      await this.prisma.$transaction(async (tx) => {
+        // Count follows being deleted INSIDE transaction to prevent drift
+        const deletedFollows = await tx.follow.findMany({
           where: {
             OR: [
               { followerId: blockerId, followingId: blockedId },
               { followerId: blockedId, followingId: blockerId },
             ],
           },
-        }),
-        this.prisma.followRequest.deleteMany({
+          select: { followerId: true, followingId: true },
+          take: 50,
+        });
+
+        const blockerWasFollowing = deletedFollows.some(
+          (f) => f.followerId === blockerId && f.followingId === blockedId,
+        );
+        const blockedWasFollowing = deletedFollows.some(
+          (f) => f.followerId === blockedId && f.followingId === blockerId,
+        );
+
+        await tx.block.create({ data: { blockerId, blockedId } });
+        await tx.follow.deleteMany({
+          where: {
+            OR: [
+              { followerId: blockerId, followingId: blockedId },
+              { followerId: blockedId, followingId: blockerId },
+            ],
+          },
+        });
+        await tx.followRequest.deleteMany({
           where: {
             OR: [
               { senderId: blockerId, receiverId: blockedId },
               { senderId: blockedId, receiverId: blockerId },
             ],
           },
-        }),
-        ...(blockerWasFollowing
-          ? [
-              this.prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockerId}`,
-              this.prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockedId}`,
-            ]
-          : []),
-        ...(blockedWasFollowing
-          ? [
-              this.prisma.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockedId}`,
-              this.prisma.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockerId}`,
-            ]
-          : []),
-      ]);
+        });
+        if (blockerWasFollowing) {
+          await tx.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockerId}`;
+          await tx.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockedId}`;
+        }
+        if (blockedWasFollowing) {
+          await tx.$executeRaw`UPDATE "users" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockedId}`;
+          await tx.$executeRaw`UPDATE "users" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockerId}`;
+        }
+      });
     } catch (err) {
       // P2002: concurrent block race condition — idempotent
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -110,9 +106,11 @@ export class BlocksService {
     }
 
     // Post-block cleanup (non-blocking): remove from circles + archive DM conversations
-    this.cleanupAfterBlock(blockerId, blockedId).catch((err) =>
-      this.logger.error(`Block cleanup failed for ${blockerId}->${blockedId}: ${err.message}`),
-    );
+    // Errors are logged + captured in Sentry for visibility (fire-and-forget but monitored)
+    this.cleanupAfterBlock(blockerId, blockedId).catch((err) => {
+      this.logger.error(`Block cleanup failed for ${blockerId}->${blockedId}: ${err.message}`);
+      Sentry.captureException(err, { tags: { component: 'blocks', action: 'cleanup', blockerId, blockedId } });
+    });
 
     return { message: 'User blocked' };
   }
