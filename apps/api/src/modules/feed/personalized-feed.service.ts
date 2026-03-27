@@ -593,9 +593,20 @@ export class PersonalizedFeedService {
         reasons: ['Trending'] as string[],
       }));
       scored.sort((a, b) => b.score - a.score);
-      const trimmed = scored.slice(0, limit + 1);
-      const hasMore = trimmed.length > limit;
-      const data = trimmed.slice(0, limit);
+
+      const explorationSlots = Math.max(1, Math.floor(limit * 0.1));
+      const mainSlots = limit - explorationSlots;
+      const main = scored.slice(0, mainSlots);
+      const explorationPool = scored.slice(mainSlots, mainSlots + explorationSlots * 3);
+      for (let i = explorationPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [explorationPool[i], explorationPool[j]] = [explorationPool[j], explorationPool[i]];
+      }
+      const exploration = explorationPool.slice(0, explorationSlots).map(item => ({ ...item, reasons: ['Discover something new'] }));
+      const merged = [...main, ...exploration];
+
+      const hasMore = scored.length > limit;
+      const data = merged.slice(0, limit);
       return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
@@ -624,9 +635,20 @@ export class PersonalizedFeedService {
         reasons: ['Trending'] as string[],
       }));
       scored.sort((a, b) => b.score - a.score);
-      const trimmed = scored.slice(0, limit + 1);
-      const hasMore = trimmed.length > limit;
-      const data = trimmed.slice(0, limit);
+
+      const explorationSlots = Math.max(1, Math.floor(limit * 0.1));
+      const mainSlots = limit - explorationSlots;
+      const main = scored.slice(0, mainSlots);
+      const explorationPool = scored.slice(mainSlots, mainSlots + explorationSlots * 3);
+      for (let i = explorationPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [explorationPool[i], explorationPool[j]] = [explorationPool[j], explorationPool[i]];
+      }
+      const exploration = explorationPool.slice(0, explorationSlots).map(item => ({ ...item, reasons: ['Discover something new'] }));
+      const merged = [...main, ...exploration];
+
+      const hasMore = scored.length > limit;
+      const data = merged.slice(0, limit);
       return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
@@ -657,9 +679,20 @@ export class PersonalizedFeedService {
       reasons: ['Trending'] as string[],
     }));
     scored.sort((a, b) => b.score - a.score);
-    const trimmed = scored.slice(0, limit + 1);
-    const hasMore = trimmed.length > limit;
-    const data = trimmed.slice(0, limit);
+
+    const explorationSlots = Math.max(1, Math.floor(limit * 0.1));
+    const mainSlots = limit - explorationSlots;
+    const main = scored.slice(0, mainSlots);
+    const explorationPool = scored.slice(mainSlots, mainSlots + explorationSlots * 3);
+    for (let i = explorationPool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [explorationPool[i], explorationPool[j]] = [explorationPool[j], explorationPool[i]];
+    }
+    const exploration = explorationPool.slice(0, explorationSlots).map(item => ({ ...item, reasons: ['Discover something new'] }));
+    const merged = [...main, ...exploration];
+
+    const hasMore = scored.length > limit;
+    const data = merged.slice(0, limit);
     return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
   }
 
