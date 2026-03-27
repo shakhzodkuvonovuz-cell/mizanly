@@ -16,6 +16,7 @@ describe('IslamicNotificationsService', () => {
       lpush: jest.fn().mockResolvedValue(1),
       lrange: jest.fn().mockResolvedValue([]),
       expire: jest.fn().mockResolvedValue(1),
+      hgetall: jest.fn().mockResolvedValue({}),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -50,9 +51,10 @@ describe('IslamicNotificationsService', () => {
       expect(result).toBe(false);
     });
 
-    it('should return false when no cached prayer times', async () => {
+    it('should return false when no cached prayer times and no mosque data', async () => {
       prisma.prayerNotificationSetting.findUnique.mockResolvedValue({ dndDuringPrayer: true });
       redis.get.mockResolvedValue(null);
+      redis.hgetall.mockResolvedValue({});
       const result = await service.isInPrayerDND('user-1');
       expect(result).toBe(false);
     });

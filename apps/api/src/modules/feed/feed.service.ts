@@ -91,13 +91,8 @@ export class FeedService {
   }
 
   async dismiss(userId: string, contentId: string, contentType: string) {
-    // Finding #300: Track negative signal for algorithm adjustment
-    // DEAD DATA: These signals are stored but never consumed by any feed algorithm. Consider removing.
-    await this.redis.lpush(`negative_signals:${userId}`, JSON.stringify({
-      contentId, contentType, action: 'dismiss', timestamp: Date.now(),
-    }));
-    await this.redis.ltrim(`negative_signals:${userId}`, 0, 9999);
-
+    // Dismissal is persisted in DB (feedDismissal table). The feed algorithm reads
+    // dismissed content IDs via getDismissedIds() to exclude from future pages.
     return this.prisma.feedDismissal.upsert({
       where: { userId_contentId_contentType: { userId, contentId, contentType } },
       update: {},

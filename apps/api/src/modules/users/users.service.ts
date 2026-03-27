@@ -745,6 +745,15 @@ export class UsersService {
   @Cron('0 9 * * 0')
   async sendWeeklyScreenTimeDigest() {
     try {
+      // Dedup: prevent duplicate digests if cron restarts mid-execution
+      const weekId = `${new Date().getFullYear()}-W${Math.ceil((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / 604800000)}`;
+      const dedupKey = `digest_sent:screen_time:${weekId}`;
+      const alreadySent = await this.redis.set(dedupKey, '1', 'EX', 8 * 24 * 3600, 'NX');
+      if (!alreadySent) {
+        this.logger.log(`Screen time digest already sent for ${weekId} — skipping`);
+        return;
+      }
+
       const usersWithLimits = await this.prisma.userSettings.findMany({
         where: { dailyTimeLimit: { not: null } },
         select: { userId: true, dailyTimeLimit: true },

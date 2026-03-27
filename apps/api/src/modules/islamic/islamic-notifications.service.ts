@@ -30,10 +30,26 @@ export class IslamicNotificationsService {
 
     const prayerTimesKey = `prayer_times:${userId}`;
     const cached = await this.redis.get(prayerTimesKey);
-    if (!cached) return false;
+
+    // Fallback: if Redis cache miss, check user's mosque coordinates to compute times on the fly
+    let times: Record<string, string> | null = null;
+    if (cached) {
+      try { times = JSON.parse(cached); } catch { /* invalid cache, fall through */ }
+    }
+    if (!times) {
+      // Check if user has stored mosque coordinates for fallback computation
+      const mosqueData = await this.redis.hgetall(`user:mosque:${userId}`);
+      if (mosqueData?.lat && mosqueData?.lng) {
+        const { calculatePrayerTimes } = await import('./prayer-calculator');
+        const computed = calculatePrayerTimes(new Date(), parseFloat(mosqueData.lat), parseFloat(mosqueData.lng));
+        times = computed as unknown as Record<string, string>;
+        // Re-seed cache for next check
+        await this.redis.setex(prayerTimesKey, 3600, JSON.stringify(times)).catch(() => {});
+      }
+    }
+    if (!times) return false;
 
     try {
-      const times = JSON.parse(cached);
       const now = new Date();
       const currentTime = now.getHours() * 60 + now.getMinutes();
 

@@ -612,8 +612,15 @@ export class MessagesService {
     const crypto = await import('crypto');
     const inviteCode = crypto.randomBytes(16).toString('base64url');
 
-    // Store in Redis with 7-day expiry
-    await this.redis.setex(`group_invite:${inviteCode}`, 7 * 24 * 60 * 60, conversationId);
+    // Store in Redis (cache) with 7-day expiry + DB (durable) for recovery on flush
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await Promise.all([
+      this.redis.setex(`group_invite:${inviteCode}`, 7 * 24 * 60 * 60, conversationId),
+      this.prisma.conversation.update({
+        where: { id: conversationId },
+        data: { inviteCode, inviteExpiresAt: expiresAt },
+      }).catch(() => {}), // Best-effort DB persistence
+    ]);
 
     return { inviteCode, expiresIn: '7 days' };
   }
@@ -622,7 +629,20 @@ export class MessagesService {
    * Finding #169: Join a group via invite link.
    */
   async joinViaInviteLink(inviteCode: string, userId: string) {
-    const conversationId = await this.redis.get(`group_invite:${inviteCode}`);
+    let conversationId = await this.redis.get(`group_invite:${inviteCode}`);
+    // Fallback to DB if Redis lost the invite link
+    if (!conversationId) {
+      const convo = await this.prisma.conversation.findFirst({
+        where: { inviteCode, inviteExpiresAt: { gt: new Date() } },
+        select: { id: true },
+      });
+      if (convo) {
+        conversationId = convo.id;
+        // Re-seed Redis cache
+        const ttl = Math.max(1, Math.floor((new Date().getTime() - Date.now()) / 1000));
+        await this.redis.setex(`group_invite:${inviteCode}`, ttl > 0 ? ttl : 3600, conversationId).catch(() => {});
+      }
+    }
     if (!conversationId) throw new NotFoundException('Invite link expired or invalid');
 
     const existing = await this.prisma.conversationMember.findUnique({
@@ -908,11 +928,6 @@ export class MessagesService {
       where: { id: messageId },
       data: { forwardCount: { increment: allowedTargets.length } },
     });
-
-    // Finding #298: Track DM share as algorithm signal (DM shares = strong interest)
-    if (original.content) {
-      await this.redis.incrby(`dm_shares:${messageId}`, messages.length);
-    }
 
     return messages;
   }

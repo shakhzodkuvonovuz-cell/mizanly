@@ -862,10 +862,17 @@ export class IslamicService {
    * Finding #280: Get global community dhikr counter.
    */
   async getCommunityDhikrTotal() {
-    const [total, todayKey] = await Promise.all([
-      this.redis.get('community:dhikr:total'),
-      this.redis.get(`community:dhikr:today:${new Date().toISOString().slice(0, 10)}`),
-    ]);
+    let total = await this.redis.get('community:dhikr:total');
+    // Recovery: if Redis lost the total, recompute from DB and re-seed Redis
+    if (!total) {
+      const dbTotal = await this.prisma.dhikrSession.aggregate({ _sum: { count: true } });
+      const computed = dbTotal._sum.count ?? 0;
+      if (computed > 0) {
+        await this.redis.set('community:dhikr:total', String(computed));
+        total = String(computed);
+      }
+    }
+    const todayKey = await this.redis.get(`community:dhikr:today:${new Date().toISOString().slice(0, 10)}`);
     return {
       allTimeTotal: parseInt(total ?? '0', 10),
       todayTotal: parseInt(todayKey ?? '0', 10),

@@ -572,12 +572,13 @@ export class VideosService {
     if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
     if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
 
-    const existingReaction = await this.prisma.videoReaction.findUnique({
-      where: { userId_videoId: { userId, videoId } },
-    });
-    if (existingReaction?.isLike === false) throw new ConflictException('Already disliked');
-
     await this.prisma.$transaction(async (tx) => {
+      // Read existing reaction INSIDE the transaction to prevent race condition
+      const existingReaction = await tx.videoReaction.findUnique({
+        where: { userId_videoId: { userId, videoId } },
+      });
+      if (existingReaction?.isLike === false) throw new ConflictException('Already disliked');
+
       if (existingReaction) {
         await tx.videoReaction.update({
           where: { userId_videoId: { userId, videoId } },
