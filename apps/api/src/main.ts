@@ -51,6 +51,11 @@ function validateEnv() {
       logger.warn(`Missing recommended env var: ${key} — ${desc} (will use fallback)`);
     }
   }
+
+  // Warn about NODE_ENV — Swagger and stack traces leak if not set to 'production'
+  if (!process.env.NODE_ENV) {
+    logger.warn('NODE_ENV is not set — defaulting to development mode (Swagger enabled, verbose errors). Set NODE_ENV=production for production deploys.');
+  }
 }
 
 async function bootstrap() {

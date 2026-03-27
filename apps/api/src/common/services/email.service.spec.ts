@@ -136,7 +136,7 @@ describe('EmailService', () => {
   describe('constructor', () => {
     it('should use default fromAddress when EMAIL_FROM not set', () => {
       service = createService();
-      expect((service as any).fromAddress).toBe('Mizanly <noreply@mizanly.com>');
+      expect((service as any).fromAddress).toBe('Mizanly <noreply@mizanly.app>');
     });
 
     it('should use configured EMAIL_FROM when set', () => {
@@ -536,7 +536,7 @@ describe('EmailService', () => {
       expect(result).toBe(true);
       expect(mockSend).toHaveBeenCalledTimes(1);
       const call = mockSend.mock.calls[0][0];
-      expect(call.from).toBe('Mizanly <noreply@mizanly.com>');
+      expect(call.from).toBe('Mizanly <noreply@mizanly.app>');
       expect(call.to).toBe('test@example.com');
       expect(call.subject).toBe('Welcome to Mizanly!');
       expect(call.html).toContain('Aisha');

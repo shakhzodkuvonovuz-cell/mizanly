@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as Sentry from '@sentry/node';
 
 interface EmailData {
   to: string;
@@ -15,7 +16,7 @@ export class EmailService implements OnModuleInit {
   private readonly fromAddress: string;
 
   constructor(private config: ConfigService) {
-    this.fromAddress = this.config.get<string>('EMAIL_FROM') || 'Mizanly <noreply@mizanly.com>';
+    this.fromAddress = this.config.get<string>('EMAIL_FROM') || 'Mizanly <noreply@mizanly.app>';
     this.initPromise = this.initResend();
   }
 
@@ -67,9 +68,8 @@ export class EmailService implements OnModuleInit {
         this.logger.log(`Email sent to ${data.to}: ${data.subject}`);
         return true;
       } catch (err) {
-        // TODO: Queue failed emails for retry (DLQ pattern) instead of dropping them.
-        // Currently there is no durable retry mechanism — failed emails are lost.
         this.logger.error(`Failed to send email to ${data.to}: ${(err as Error).message}`, (err as Error).stack);
+        Sentry.captureException(err, { tags: { component: 'email', recipient: data.to } });
         return false;
       }
     }
@@ -120,7 +120,7 @@ export class EmailService implements OnModuleInit {
         <strong style="color: #fff;">Minbar</strong> (long videos).
       </p>
       <div style="text-align: center; margin: 24px 0;">
-        <a href="https://mizanly.com" style="background: #0A7B4F; color: #fff; padding: 12px 32px; border-radius: 999px; text-decoration: none; font-weight: 600;">
+        <a href="https://mizanly.app" style="background: #0A7B4F; color: #fff; padding: 12px 32px; border-radius: 999px; text-decoration: none; font-weight: 600;">
           Open Mizanly
         </a>
       </div>

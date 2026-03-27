@@ -65,12 +65,14 @@ export class UploadService {
       );
     }
 
+    // Only create a real S3 client when credentials are present.
+    // When unconfigured, ensureR2Configured() blocks all operations before reaching the client.
     this.s3 = new S3Client({
       region: 'auto',
-      endpoint: `https://${accountId || ''}.r2.cloudflarestorage.com`,
+      endpoint: accountId ? `https://${accountId}.r2.cloudflarestorage.com` : 'https://unconfigured.r2.cloudflarestorage.com',
       credentials: {
-        accessKeyId: accessKeyId ?? '',
-        secretAccessKey: secretAccessKey ?? '',
+        accessKeyId: accessKeyId || 'not-configured',
+        secretAccessKey: secretAccessKey || 'not-configured',
       },
     });
     this.bucket = this.config.get('R2_BUCKET_NAME') ?? 'mizanly-media';

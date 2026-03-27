@@ -87,8 +87,11 @@ export class FeatureFlagsService {
       this.lastCacheTime = now;
       return this.localCache.get(flagName) ?? null;
     } catch (err) {
-      this.logger.error('Failed to fetch feature flags from Redis', err);
-      // Fall back to local cache if available
+      if (!this.localCache) {
+        this.logger.warn(`Feature flags unavailable — Redis down and no local cache. All flags will return false until Redis recovers.`);
+      }
+      this.logger.error('Failed to fetch feature flags from Redis', err instanceof Error ? err.message : err);
+      // Fall back to local cache if available — if no cache, returns null (flag disabled)
       return this.localCache?.get(flagName) ?? null;
     }
   }

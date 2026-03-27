@@ -26,9 +26,11 @@ export class PaymentsService {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     this.stripeAvailable = !!secretKey;
     if (!secretKey) {
-      this.logger.warn('STRIPE_SECRET_KEY not set — payment operations will fail');
+      this.logger.warn('STRIPE_SECRET_KEY not set — payment operations will return errors');
+      // Create a no-op Stripe instance with a placeholder key to avoid null checks everywhere.
+      // All user-facing methods call ensureStripeAvailable() which throws before reaching Stripe API.
     }
-    this.stripe = new Stripe(secretKey || '', {
+    this.stripe = new Stripe(secretKey || 'sk_not_configured', {
       apiVersion: '2025-02-24.acacia' as Stripe.LatestApiVersion,
     });
   }
@@ -325,6 +327,7 @@ export class PaymentsService {
   }
 
   async cancelSubscription(userId: string, subscriptionId: string) {
+    this.ensureStripeAvailable();
     let internalId: string;
     let stripeSubscriptionId: string | null;
 
