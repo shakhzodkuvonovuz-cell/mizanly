@@ -30,9 +30,11 @@ export class RecommendationsController {
   suggestedPosts(
     @CurrentUser('id') userId?: string,
     @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     const safeLimit = Math.min(Math.max(1, limit || 20), 50);
-    return this.recommendationsService.suggestedPosts(userId, safeLimit);
+    const safeOffset = Math.max(0, offset || 0);
+    return this.recommendationsService.suggestedPosts(userId, safeLimit, safeOffset);
   }
 
   @Get('reels')
@@ -42,9 +44,11 @@ export class RecommendationsController {
   suggestedReels(
     @CurrentUser('id') userId?: string,
     @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     const safeLimit = Math.min(Math.max(1, limit || 20), 50);
-    return this.recommendationsService.suggestedReels(userId, safeLimit);
+    const safeOffset = Math.max(0, offset || 0);
+    return this.recommendationsService.suggestedReels(userId, safeLimit, safeOffset);
   }
 
   @Get('channels')
@@ -54,9 +58,11 @@ export class RecommendationsController {
   suggestedChannels(
     @CurrentUser('id') userId?: string,
     @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     const safeLimit = Math.min(Math.max(1, limit || 20), 50);
-    return this.recommendationsService.suggestedChannels(userId, safeLimit);
+    const safeOffset = Math.max(0, offset || 0);
+    return this.recommendationsService.suggestedChannels(userId, safeLimit, safeOffset);
   }
 
   @Get('threads')
@@ -66,8 +72,10 @@ export class RecommendationsController {
   suggestedThreads(
     @CurrentUser('id') userId?: string,
     @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     const safeLimit = Math.min(Math.max(1, limit || 20), 50);
-    return this.recommendationsService.suggestedThreads(userId, safeLimit);
+    const safeOffset = Math.max(0, offset || 0);
+    return this.recommendationsService.suggestedThreads(userId, safeLimit, safeOffset);
   }
 }

@@ -397,7 +397,9 @@ export class PersonalizedFeedService {
     // Hydrate feed items with actual content data
     const hydrated = await this.hydrateItems(diversified, contentType);
 
-    const hasMore = feedItems.length > diversified.length;
+    // hasMore only true if we have remaining items AND actually returned data
+    // (prevents empty page with hasMore=true when all items filtered out)
+    const hasMore = hydrated.length > 0 && feedItems.length > diversified.length;
     const nextCursor = hydrated.length > 0
       ? hydrated[hydrated.length - 1].id
       : undefined;
@@ -462,7 +464,7 @@ export class PersonalizedFeedService {
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           visibility: PostVisibility.PUBLIC,
           hashtags: { hasSome: islamicTagArray },
-          user: { isVerified: true, isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
+          user: { isVerified: true, isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
         },
         select: { id: true },
         orderBy: { likesCount: 'desc' },
@@ -479,7 +481,7 @@ export class PersonalizedFeedService {
           isTrial: false,
           status: ReelStatus.READY,
           hashtags: { hasSome: islamicTagArray },
-          user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
+          user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
         },
         select: { id: true },
         orderBy: { viewsCount: 'desc' },
@@ -496,7 +498,7 @@ export class PersonalizedFeedService {
         visibility: 'PUBLIC',
         isChainHead: true,
         hashtags: { hasSome: islamicTagArray },
-        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
       },
       select: { id: true },
       orderBy: { likesCount: 'desc' },
@@ -543,9 +545,25 @@ export class PersonalizedFeedService {
         reasons: ['Trending'] as string[],
       }));
       scored.sort((a, b) => b.score - a.score);
-      const trimmed = scored.slice(0, limit + 1);
-      const hasMore = trimmed.length > limit;
-      const data = trimmed.slice(0, limit);
+
+      // Exploration injection: replace ~10% of slots with random recent content for discovery
+      const explorationSlots = Math.max(1, Math.floor(limit * 0.1));
+      const mainSlots = limit - explorationSlots;
+      const main = scored.slice(0, mainSlots);
+      const explorationPool = scored.slice(mainSlots, mainSlots + explorationSlots * 3);
+      // Shuffle exploration pool and take explorationSlots items
+      for (let i = explorationPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [explorationPool[i], explorationPool[j]] = [explorationPool[j], explorationPool[i]];
+      }
+      const exploration = explorationPool.slice(0, explorationSlots).map(item => ({
+        ...item,
+        reasons: ['Discover something new'],
+      }));
+      const merged = [...main, ...exploration];
+
+      const hasMore = scored.length > limit;
+      const data = merged.slice(0, limit);
       return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
@@ -590,7 +608,7 @@ export class PersonalizedFeedService {
             status: 'PUBLISHED',
             isRemoved: false,
             createdAt: { gte: since },
-            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
             ...(cursor ? { id: { lt: cursor } } : {}),
           },
           select: { id: true, tags: true, createdAt: true, viewsCount: true },
@@ -623,7 +641,7 @@ export class PersonalizedFeedService {
           visibility: 'PUBLIC',
           isChainHead: true,
           createdAt: { gte: since },
-          user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userFilter },
+          user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
         select: { id: true, hashtags: true, createdAt: true, likesCount: true },

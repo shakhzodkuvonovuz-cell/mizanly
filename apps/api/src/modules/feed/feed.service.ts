@@ -436,6 +436,7 @@ export class FeedService {
       }
     }
 
+    // Cursor is a featuredAt ISO timestamp (not ID) since we sort by featuredAt desc
     const posts = await this.prisma.post.findMany({
       where: {
         isFeatured: true,
@@ -443,21 +444,22 @@ export class FeedService {
         visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
-        ...(cursor ? { id: { lt: cursor } } : {}),
+        ...(cursor ? { featuredAt: { lt: new Date(cursor) } } : {}),
       },
-      select: FEED_POST_SELECT,
+      select: { ...FEED_POST_SELECT, featuredAt: true },
       orderBy: { featuredAt: 'desc' },
       take: limit + 1,
     });
 
     const hasMore = posts.length > limit;
     const data = hasMore ? posts.slice(0, limit) : posts;
+    const lastItem = data[data.length - 1] as typeof data[0] & { featuredAt?: Date | null };
 
     return {
       data,
       meta: {
         hasMore,
-        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+        cursor: hasMore && lastItem?.featuredAt ? lastItem.featuredAt.toISOString() : undefined,
       },
     };
   }

@@ -1040,7 +1040,11 @@ export class PostsService {
   // Finding #175: Get saved posts in a collection
   async getCollection(userId: string, collectionName: string, cursor?: string) {
     const saves = await this.prisma.savedPost.findMany({
-      where: { userId, collectionName },
+      where: {
+        userId,
+        collectionName,
+        post: { isRemoved: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
+      },
       include: {
         post: {
           select: {
@@ -1483,7 +1487,11 @@ export class PostsService {
 
   async getArchived(userId: string, cursor?: string, limit = 20) {
     const saved = await this.prisma.savedPost.findMany({
-      where: { userId, collectionName: 'archive' },
+      where: {
+        userId,
+        collectionName: 'archive',
+        post: { isRemoved: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
+      },
       include: { post: { select: POST_SELECT } },
       take: limit + 1,
       ...(cursor

@@ -563,7 +563,7 @@ export class RecommendationsService {
       .sort((a, b) => b.mutualFollowers - a.mutualFollowers);
   }
 
-  async suggestedPosts(userId?: string, limit = 20) {
+  async suggestedPosts(userId?: string, limit = 20, offset = 0) {
     // Fetch excluded IDs once (avoids duplicate query in multiStageRank + fallback)
     const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
 
@@ -624,10 +624,11 @@ export class RecommendationsService {
 
     // Add exploration posts for fallback path too
     const explorationPosts = await this.getExplorationPosts(excludedIds, userId, explorationCount);
-    return this.interleaveExploration(mainPosts, explorationPosts);
+    const results = this.interleaveExploration(mainPosts, explorationPosts);
+    return offset > 0 ? results.slice(offset) : results;
   }
 
-  async suggestedReels(userId?: string, limit = 20) {
+  async suggestedReels(userId?: string, limit = 20, offset = 0) {
     // Fetch excluded IDs once
     const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
 
@@ -688,10 +689,11 @@ export class RecommendationsService {
     });
 
     const explorationReels = await this.getExplorationReels(excludedIds, userId, explorationCount);
-    return this.interleaveExploration(mainReels, explorationReels);
+    const results = this.interleaveExploration(mainReels, explorationReels);
+    return offset > 0 ? results.slice(offset) : results;
   }
 
-  async suggestedChannels(userId?: string, limit = 20) {
+  async suggestedChannels(userId?: string, limit = 20, offset = 0) {
     // Fetch excluded IDs once
     const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
 
@@ -712,6 +714,7 @@ export class RecommendationsService {
         { subscribersCount: 'desc' },
         { totalViews: 'desc' },
       ],
+      skip: offset,
       take: limit,
     });
   }
@@ -719,7 +722,7 @@ export class RecommendationsService {
   /**
    * Suggested threads with pgvector ranking
    */
-  async suggestedThreads(userId?: string, limit = 20) {
+  async suggestedThreads(userId?: string, limit = 20, offset = 0) {
     const excludedIds = userId ? await this.getExcludedUserIds(userId) : [];
 
     // Reserve 15% of slots for exploration content
@@ -768,6 +771,7 @@ export class RecommendationsService {
     });
 
     const explorationThreads = await this.getExplorationThreads(excludedIds, userId, explorationCount);
-    return this.interleaveExploration(mainThreads, explorationThreads);
+    const results = this.interleaveExploration(mainThreads, explorationThreads);
+    return offset > 0 ? results.slice(offset) : results;
   }
 }
