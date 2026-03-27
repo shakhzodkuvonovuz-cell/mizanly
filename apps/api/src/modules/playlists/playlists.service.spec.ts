@@ -72,11 +72,6 @@ describe('PlaylistsService', () => {
     notifications = module.get(NotificationsService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-    expect(service).toBeInstanceOf(PlaylistsService);
-  });
-
   describe('create', () => {
     const USER_ID = 'user-123';
     const CHANNEL_ID = 'channel-789';

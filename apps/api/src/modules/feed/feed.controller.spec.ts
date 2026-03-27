@@ -53,11 +53,6 @@ describe('FeedController', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(FeedController);
-  });
-
   describe('log', () => {
     it('should call service.logInteraction', async () => {
       const dto = { postId: 'post-1', space: 'saf' };

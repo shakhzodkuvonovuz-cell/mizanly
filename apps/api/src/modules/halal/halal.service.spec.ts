@@ -40,11 +40,6 @@ describe('HalalService', () => {
     prisma = module.get<PrismaService>(PrismaService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-    expect(service).toBeInstanceOf(HalalService);
-  });
-
   describe('findNearby', () => {
     it('should return empty array when no restaurants found', async () => {
       mockPrisma.halalRestaurant.findMany.mockResolvedValue([]);

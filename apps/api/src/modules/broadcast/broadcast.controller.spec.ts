@@ -44,11 +44,6 @@ describe('BroadcastController', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(BroadcastController);
-  });
-
   describe('create', () => {
     it('should call service.create', async () => {
       const dto = { name: 'Test', slug: 'test' };

@@ -61,11 +61,6 @@ describe('ReelsController', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(ReelsController);
-  });
-
   describe('create', () => {
     it('should call service.create with userId and dto', async () => {
       const dto = { videoUrl: 'url' } as any;

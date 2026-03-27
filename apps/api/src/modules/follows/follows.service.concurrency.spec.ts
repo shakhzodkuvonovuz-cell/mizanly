@@ -43,6 +43,9 @@ describe('FollowsService — concurrency (Task 89)', () => {
 
     expect(r1.status).toBe('fulfilled');
     expect(r2.status).toBe('fulfilled');
+    // Verify both follow records were created (A→B and B→A)
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+    expect(prisma.follow.findUnique).toHaveBeenCalledTimes(2);
   });
 
   it('should handle follow and unfollow simultaneously — consistent state', async () => {
@@ -57,8 +60,12 @@ describe('FollowsService — concurrency (Task 89)', () => {
       service.unfollow('user-a', 'user-b'),
     ]);
 
-    expect(r1.status).toBeDefined();
-    expect(r2.status).toBeDefined();
+    // Both operations should settle (not hang/timeout)
+    const settled = [r1, r2].filter(r => r.status === 'fulfilled' || r.status === 'rejected');
+    expect(settled).toHaveLength(2);
+    // At least one should have succeeded (follow or unfollow)
+    const fulfilled = settled.filter(r => r.status === 'fulfilled');
+    expect(fulfilled.length).toBeGreaterThanOrEqual(1);
   });
 
   it('should handle 100 users following same target simultaneously', async () => {
@@ -72,6 +79,8 @@ describe('FollowsService — concurrency (Task 89)', () => {
     const results = await Promise.allSettled(promises);
     const successes = results.filter(r => r.status === 'fulfilled');
     expect(successes.length).toBe(100);
+    // Verify all 100 follow operations triggered transactions
+    expect(prisma.$transaction).toHaveBeenCalledTimes(100);
   });
 
   it('should handle rapid follow/unfollow toggle — last action wins', async () => {

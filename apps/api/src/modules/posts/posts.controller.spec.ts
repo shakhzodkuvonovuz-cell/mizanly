@@ -59,11 +59,6 @@ describe('PostsController', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(PostsController);
-  });
-
   describe('getFeed', () => {
     it('should call service.getFeed with userId and type', async () => {
       mockService.getFeed.mockResolvedValue({ data: [], meta: {} });

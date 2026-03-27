@@ -34,11 +34,6 @@ describe('StickersController', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(StickersController);
-  });
-
   describe('createPack', () => {
     it('should call service.createPack with userId', async () => {
       const dto = { name: 'Pack', description: 'desc', stickers: [] };

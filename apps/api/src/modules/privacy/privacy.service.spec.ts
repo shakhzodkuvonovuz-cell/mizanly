@@ -217,6 +217,41 @@ describe('PrivacyService', () => {
       await new Promise((r) => setTimeout(r, 50));
       expect(uploadService.deleteFile).not.toHaveBeenCalled();
     });
+
+    it('should call $transaction for anonymization (username, email, PII)', async () => {
+      prisma.user.findUnique.mockResolvedValue(validUser);
+
+      // Track all user.update calls inside the transaction
+      const updateCalls: any[] = [];
+      prisma.$transaction.mockImplementation(async (fn: (tx: any) => Promise<void>) => {
+        const txProxy = new Proxy({}, {
+          get(_target, prop) {
+            if (prop === '$executeRaw' || prop === '$executeRawUnsafe') return jest.fn().mockResolvedValue(0);
+            return new Proxy({}, {
+              get(_t, method) {
+                if (method === 'findMany') return jest.fn().mockResolvedValue([]);
+                if (method === 'update') return jest.fn().mockImplementation((args: any) => {
+                  updateCalls.push(args);
+                  return {};
+                });
+                if (method === 'findUnique') return jest.fn().mockResolvedValue(null);
+                return jest.fn().mockResolvedValue({ count: 0 });
+              },
+            });
+          },
+        });
+        return fn(txProxy);
+      });
+
+      await service.deleteAllUserData('u1');
+
+      // Find the anonymization update (the one that sets username to deleted_*)
+      const anonymizeCall = updateCalls.find(c => c?.data?.username?.includes?.('deleted_'));
+      expect(anonymizeCall).toBeDefined();
+      expect(anonymizeCall.data.username).toBe('deleted_u1');
+      expect(anonymizeCall.data.email).toBe('deleted_u1@deleted.local');
+      expect(anonymizeCall.data.isDeleted).toBe(true);
+    });
   });
 
   describe('exportUserData — with data', () => {

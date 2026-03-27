@@ -31,11 +31,6 @@ describe('CallsController', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(CallsController);
-  });
-
   describe('initiate', () => {
     it('should call service.initiate', async () => {
       const dto = { targetUserId: 'user-2', callType: 'audio' };

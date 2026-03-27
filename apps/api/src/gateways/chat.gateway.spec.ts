@@ -146,12 +146,6 @@ describe('ChatGateway', () => {
     (gateway.server.in as jest.Mock).mockReturnValue({ fetchSockets: jest.fn().mockResolvedValue([]) });
   });
 
-  it('should be defined', () => {
-    expect(gateway).toBeDefined();
-    expect(gateway).toBeInstanceOf(ChatGateway);
-    expect(gateway.server).toBeDefined();
-  });
-
   describe('handleJoin', () => {
     it('should join conversation room if user is a member', async () => {
       const client = { ...mockSocket, data: { userId: 'user-123' } };

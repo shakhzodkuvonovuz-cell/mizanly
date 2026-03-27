@@ -36,11 +36,6 @@ describe('SearchIndexingProcessor', () => {
     meilisearch = module.get(MeilisearchService);
   });
 
-  it('should be defined', () => {
-    expect(processor).toBeDefined();
-    expect(processor).toBeInstanceOf(SearchIndexingProcessor);
-  });
-
   it('should not start worker when REDIS_URL not set', () => {
     processor.onModuleInit();
     // No worker created — no crash

@@ -31,11 +31,6 @@ describe('CollabsController', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(CollabsController);
-  });
-
   describe('invite', () => {
     it('should call service.invite', async () => {
       const dto = { postId: 'post-1', targetUserId: 'user-2' };

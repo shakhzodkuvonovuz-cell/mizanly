@@ -45,11 +45,6 @@ describe('AiTasksProcessor', () => {
     prisma = module.get(PrismaService);
   });
 
-  it('should be defined', () => {
-    expect(processor).toBeDefined();
-    expect(processor).toBeInstanceOf(AiTasksProcessor);
-  });
-
   describe('processModeration (via reflection)', () => {
     it('should not create report when content is safe', async () => {
       ai.moderateContent.mockResolvedValue({ safe: true, flags: [], confidence: 0.9 });

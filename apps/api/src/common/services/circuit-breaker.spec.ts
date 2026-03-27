@@ -24,11 +24,6 @@ describe('CircuitBreakerService', () => {
     service.onModuleDestroy();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-    expect(service).toBeInstanceOf(CircuitBreakerService);
-  });
-
   describe('getBreaker', () => {
     it('should create a breaker with the given name', () => {
       const breaker = service.getBreaker('redis');

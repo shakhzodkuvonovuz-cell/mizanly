@@ -24,11 +24,6 @@ describe('WebhooksController — typed ClerkWebhookEvent', () => {
     controller = module.get(WebhooksController);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(WebhooksController);
-  });
-
   it('should reject when raw body missing', async () => {
     const req = { rawBody: undefined } as any;
     await expect(

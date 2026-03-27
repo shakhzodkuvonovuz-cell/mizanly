@@ -28,11 +28,6 @@ describe('ThumbnailsService', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-    expect(service).toBeInstanceOf(ThumbnailsService);
-  });
-
   describe('createVariants', () => {
     it('should reject less than 2 thumbnails', async () => {
       await expect(

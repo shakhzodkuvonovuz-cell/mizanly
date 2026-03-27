@@ -44,11 +44,6 @@ describe('WebhookProcessor', () => {
     processor = module.get(WebhookProcessor);
   });
 
-  it('should be defined', () => {
-    expect(processor).toBeDefined();
-    expect(processor).toBeInstanceOf(WebhookProcessor);
-  });
-
   describe('URL validation', () => {
     it('should reject HTTP URLs', async () => {
       const job = {

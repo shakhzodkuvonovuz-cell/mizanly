@@ -191,10 +191,6 @@ describe('ReelsService', () => {
     notifications = module.get(NotificationsService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-    expect(service).toBeInstanceOf(ReelsService);
-  });
 
   describe('create', () => {
     it('should create reel with PROCESSING status then update to READY', async () => {

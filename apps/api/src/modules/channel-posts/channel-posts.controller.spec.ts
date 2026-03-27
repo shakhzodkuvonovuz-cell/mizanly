@@ -32,11 +32,6 @@ describe('ChannelPostsController', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(ChannelPostsController);
-  });
-
   describe('create', () => {
     it('should call service.create', async () => {
       const dto = { content: 'Hello' };

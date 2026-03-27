@@ -58,11 +58,6 @@ describe('ThreadsController', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(ThreadsController);
-  });
-
   describe('getFeed', () => {
     it('should call service.getFeed with userId, type, and cursor', async () => {
       mockService.getFeed.mockResolvedValue({ data: [] });

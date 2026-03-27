@@ -53,11 +53,6 @@ describe('VideosController', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(VideosController);
-  });
-
   describe('create', () => {
     it('should call service.create with userId and dto', async () => {
       const dto = { title: 'Video' } as any;

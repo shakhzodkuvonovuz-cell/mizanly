@@ -38,11 +38,6 @@ describe('LiveController', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(LiveController);
-  });
-
   describe('create', () => {
     it('should call service.create', async () => {
       const dto = { title: 'Test', liveType: 'video' };

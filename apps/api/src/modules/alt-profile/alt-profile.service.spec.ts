@@ -36,11 +36,6 @@ describe('AltProfileService', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-    expect(service).toBeInstanceOf(AltProfileService);
-  });
-
   describe('create', () => {
     it('should create an alt profile', async () => {
       mockPrisma.altProfile.findUnique.mockResolvedValue(null);

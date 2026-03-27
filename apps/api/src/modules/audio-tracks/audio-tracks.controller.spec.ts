@@ -30,11 +30,6 @@ describe('AudioTracksController', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(AudioTracksController);
-  });
-
   describe('create', () => {
     it('should call service.create', async () => {
       const dto = { title: 'Track', artist: 'Artist', duration: 180, audioUrl: 'url' };

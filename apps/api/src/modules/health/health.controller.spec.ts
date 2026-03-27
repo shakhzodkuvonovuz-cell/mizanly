@@ -64,11 +64,6 @@ describe('HealthController', () => {
     global.fetch = originalFetch;
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(HealthController);
-  });
-
   describe('GET /health', () => {
     it('should return 200 with status "healthy" when all services are up', async () => {
       prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);

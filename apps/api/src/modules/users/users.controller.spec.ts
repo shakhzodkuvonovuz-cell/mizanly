@@ -62,11 +62,6 @@ describe('UsersController', () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-    expect(controller).toBeInstanceOf(UsersController);
-  });
-
   describe('getMe', () => {
     it('should call service.touchLastSeen and service.getMe with userId', async () => {
       mockService.getMe.mockResolvedValue({ id: 'user-1' });
