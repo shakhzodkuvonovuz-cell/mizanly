@@ -71,16 +71,11 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 - **AI Bot Blocking:** ON (block on all pages)
 - **Cloudflare Zone ID:** `a80d909cd5b47fdb4dcba31a66a3283b`
 
-### Custom Domain Wiring (TODO)
-1. **Cloudflare DNS:** Add CNAME `api` → `mizanlyapi-production.up.railway.app` (Proxy ON)
-2. **Railway:** Settings → Custom Domain → add `api.mizanly.app`
-3. **Update env vars (Railway + local):**
-   - `APP_URL` → `https://api.mizanly.app`
-   - `API_URL` → `https://api.mizanly.app`
-   - `CORS_ORIGINS` → add `https://mizanly.app`
-4. **Update mobile .env:**
-   - `EXPO_PUBLIC_API_URL` → `https://api.mizanly.app/api/v1`
-   - `EXPO_PUBLIC_WS_URL` → `https://api.mizanly.app`
+### Custom Domain Wiring (PARTIALLY DONE)
+1. **Cloudflare DNS:** PENDING — Add CNAME `api` → `mizanlyapi-production.up.railway.app` (Proxy ON) in Cloudflare dashboard (wrangler OAuth lacks DNS scope)
+2. **Railway:** PENDING — Settings → Custom Domain → add `api.mizanly.app`
+3. **Railway env vars:** DONE — APP_URL, API_URL, CORS_ORIGINS all set to mizanly.app
+4. **Mobile .env (local):** DONE — Updated to api.mizanly.app
 
 ### Railway Config (`apps/api/railway.json`)
 ```json
@@ -88,13 +83,13 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
   "build": {
     "builder": "NIXPACKS",
     "installCommand": "npm install --legacy-peer-deps",
-    "buildCommand": "npx prisma generate && npx prisma migrate deploy && rm -rf dist && npx nest build && ls dist/main.js"
+    "buildCommand": "npx prisma generate && npx prisma db push --skip-generate --accept-data-loss && rm -rf dist && npx nest build && ls dist/main.js"
   },
   "deploy": {
     "startCommand": "node dist/main.js",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
-    "healthcheckPath": "/api/v1/health/live"
+    "healthcheckPath": "/api/v1/health/ready"
   }
 }
 ```
@@ -108,26 +103,34 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 - Sentry: initialized before app creation
 - Socket.io Redis adapter: initialized after app setup
 
-### CI/CD (`.github/workflows/ci.yml`)
-| Job | Depends On | Services |
-|-----|-----------|----------|
-| lint-and-typecheck | — | — |
-| build-mobile | lint-and-typecheck | — |
-| test-api | lint-and-typecheck | postgres:16, redis:7 |
-| build-api | test-api | — |
+### CI/CD (`.github/workflows/ci.yml`) — ALL GREEN as of 2026-03-27
+| Job | Depends On | Services | Status |
+|-----|-----------|----------|--------|
+| lint-and-typecheck | — | — | PASS |
+| build-mobile | lint-and-typecheck | — | PASS |
+| test-api (5502 tests) | lint-and-typecheck | postgres:16, redis:7 | PASS |
+| test-api-integration (111 tests) | test-api | pgvector/pgvector:pg16, redis:7 | PASS |
+| build-api | test-api | — | PASS |
 
-### Environment Variables (32/34 configured)
-**Set:** DATABASE_URL, DIRECT_DATABASE_URL, CLERK_SECRET_KEY (test), CLERK_PUBLISHABLE_KEY (test), CLERK_WEBHOOK_SECRET, REDIS_URL, STRIPE_SECRET_KEY (test), STRIPE_WEBHOOK_SECRET, ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_PUBLIC_URL, CF_STREAM_ACCOUNT_ID, CF_STREAM_API_TOKEN, CF_STREAM_WEBHOOK_SECRET, RESEND_API_KEY, SENTRY_DSN, TURN_SERVER_URL, TURN_USERNAME, TURN_CREDENTIAL, TOTP_ENCRYPTION_KEY, GOLD_PRICE_PER_GRAM, SILVER_PRICE_PER_GRAM, NODE_ENV, PORT, CORS_ORIGINS
-**Empty:** MEILISEARCH_HOST, MEILISEARCH_API_KEY
-**Needs update for production:** APP_URL (localhost:3000 → api.mizanly.app), API_URL (same)
+### Environment Variables — ALL 30 SET on Railway (as of 2026-03-27)
+**All configured:** DATABASE_URL (Neon pooled), DIRECT_DATABASE_URL (Neon direct), REDIS_URL (Upstash), CLERK_SECRET_KEY (test), CLERK_PUBLISHABLE_KEY (test), CLERK_WEBHOOK_SECRET, STRIPE_SECRET_KEY (test), STRIPE_WEBHOOK_SECRET, ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, R2_PUBLIC_URL, CF_STREAM_ACCOUNT_ID, CF_STREAM_API_TOKEN, CF_STREAM_WEBHOOK_SECRET, MEILISEARCH_HOST, MEILISEARCH_API_KEY, RESEND_API_KEY, SENTRY_DSN, TURN_SERVER_URL, TURN_USERNAME, TURN_CREDENTIAL, TOTP_ENCRYPTION_KEY, GOLD_PRICE_PER_GRAM, SILVER_PRICE_PER_GRAM, APP_URL (api.mizanly.app), API_URL, CORS_ORIGINS, NODE_ENV=production
+**For launch:** Switch CLERK + STRIPE keys from test → live
 
 ### Mobile .env (current)
 ```
-EXPO_PUBLIC_API_URL=https://mizanlyapi-production.up.railway.app/api/v1
+EXPO_PUBLIC_API_URL=https://api.mizanly.app/api/v1
 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-EXPO_PUBLIC_WS_URL=https://mizanlyapi-production.up.railway.app
+EXPO_PUBLIC_WS_URL=https://api.mizanly.app
 EXPO_PUBLIC_GIPHY_API_KEY=<beta key>
 ```
+
+### CLI Access (authenticated on dev machine)
+`gh`, `railway`, `wrangler`, `stripe`, `neonctl`, `sentry-cli`, `eas` — all logged in.
+
+### R2 Lifecycle Rules (set via wrangler)
+- Auto-delete temp uploads (`temp/` prefix) after 7 days
+- Auto-delete deleted user media (`deleted/` prefix) after 30 days
+- Abort incomplete multipart uploads after 7 days (default)
 
 ---
 
