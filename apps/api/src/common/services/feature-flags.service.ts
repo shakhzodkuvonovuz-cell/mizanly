@@ -1,19 +1,14 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
+import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 
 /**
- * Simple Redis-backed feature flags.
+ * Feature flags with Redis (fast) + DB (durable) dual storage.
  *
- * Flags are stored as Redis hash: feature_flags → { flagName: "true"|"false"|percentage }
+ * Read path: local cache → Redis → DB fallback
+ * Write path: Redis + DB (dual write)
  *
- * Usage:
- *   if (await this.flags.isEnabled('new_feed_algorithm')) { ... }
- *   if (await this.flags.isEnabledForUser('dark_mode_v2', userId)) { ... }
- *
- * Set flags via Redis CLI or admin endpoint:
- *   HSET feature_flags new_feed_algorithm true
- *   HSET feature_flags experimental_ui 25       (25% rollout)
- *   HSET feature_flags maintenance_mode false
+ * Redis flush no longer loses all flags — DB is the durable source of truth.
  */
 @Injectable()
 export class FeatureFlagsService {
@@ -21,9 +16,12 @@ export class FeatureFlagsService {
   private readonly HASH_KEY = 'feature_flags';
   private localCache: Map<string, string> | null = null;
   private lastCacheTime = 0;
-  private readonly CACHE_TTL_MS = 30_000; // Refresh local cache every 30s
+  private readonly CACHE_TTL_MS = 30_000;
 
-  constructor(@Inject('REDIS') private redis: Redis) {}
+  constructor(
+    @Inject('REDIS') private redis: Redis,
+    private prisma: PrismaService,
+  ) {}
 
   /**
    * Check if a flag is globally enabled.
@@ -61,16 +59,24 @@ export class FeatureFlagsService {
     return this.redis.hgetall(this.HASH_KEY);
   }
 
-  /** Set a flag value */
+  /** Set a flag value — dual write to Redis (fast) + DB (durable) */
   async setFlag(flagName: string, value: string): Promise<void> {
     await this.redis.hset(this.HASH_KEY, flagName, value);
-    await this.redis.expire(this.HASH_KEY, 90 * 24 * 3600); // Refresh 90-day TTL on mutation
-    this.localCache = null; // Invalidate local cache
+    await this.redis.expire(this.HASH_KEY, 90 * 24 * 3600);
+    // Persist to DB (non-blocking — Redis is authoritative for reads)
+    this.prisma.featureFlag.upsert({
+      where: { name: flagName },
+      create: { name: flagName, value },
+      update: { value },
+    }).catch(err => this.logger.warn(`Failed to persist flag "${flagName}" to DB`, err instanceof Error ? err.message : err));
+    this.localCache = null;
   }
 
-  /** Delete a flag */
+  /** Delete a flag — from both Redis and DB */
   async deleteFlag(flagName: string): Promise<void> {
     await this.redis.hdel(this.HASH_KEY, flagName);
+    this.prisma.featureFlag.deleteMany({ where: { name: flagName } })
+      .catch(err => this.logger.warn(`Failed to delete flag "${flagName}" from DB`, err instanceof Error ? err.message : err));
     this.localCache = null;
   }
 
@@ -87,12 +93,22 @@ export class FeatureFlagsService {
       this.lastCacheTime = now;
       return this.localCache.get(flagName) ?? null;
     } catch (err) {
-      if (!this.localCache) {
-        this.logger.warn(`Feature flags unavailable — Redis down and no local cache. All flags will return false until Redis recovers.`);
-      }
       this.logger.error('Failed to fetch feature flags from Redis', err instanceof Error ? err.message : err);
-      // Fall back to local cache if available — if no cache, returns null (flag disabled)
-      return this.localCache?.get(flagName) ?? null;
+      // Fall back to local cache first
+      if (this.localCache) {
+        return this.localCache.get(flagName) ?? null;
+      }
+      // Last resort: fall back to DB
+      try {
+        const dbFlags = await this.prisma.featureFlag.findMany({ take: 200 });
+        this.localCache = new Map(dbFlags.map(f => [f.name, f.value]));
+        this.lastCacheTime = Date.now();
+        this.logger.log(`Feature flags recovered from DB (${dbFlags.length} flags loaded)`);
+        return this.localCache.get(flagName) ?? null;
+      } catch {
+        this.logger.warn('Feature flags unavailable — Redis AND DB both down. All flags will return false.');
+        return null;
+      }
     }
   }
 }
