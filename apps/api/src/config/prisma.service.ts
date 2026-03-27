@@ -13,13 +13,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       ],
     });
 
-    // Log queries taking >500ms for performance investigation
-    // Prisma 6 uses event-based logging instead of middleware
+    // Prisma query-level timing: log slow queries for performance investigation
     (this as any).$on('query', (e: { query: string; duration: number; params: string }) => {
       if (e.duration > 500) {
-        this.logger.warn(
-          `Slow query (${e.duration}ms): ${e.query.slice(0, 200)}`,
-        );
+        this.logger.error(`VERY SLOW query (${e.duration}ms): ${e.query.slice(0, 300)}`);
+      } else if (e.duration > 100) {
+        this.logger.warn(`Slow query (${e.duration}ms): ${e.query.slice(0, 200)}`);
       }
     });
   }
