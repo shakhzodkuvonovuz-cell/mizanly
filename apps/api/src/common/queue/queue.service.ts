@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/node';
 import Redis from 'ioredis';
 import { getCorrelationId } from '../middleware/correlation-id.store';
 import { CircuitBreakerService } from '../services/circuit-breaker.service';
+import { PrismaService } from '../../config/prisma.service';
 
 /**
  * QueueService — high-level API for enqueuing jobs across all BullMQ queues.
@@ -34,6 +35,7 @@ export class QueueService implements OnModuleDestroy {
     @Inject('QUEUE_AI_TASKS') private aiTasksQueue: Queue,
     @Inject('REDIS') private redis: Redis,
     private circuitBreaker: CircuitBreakerService,
+    private prisma: PrismaService,
   ) {}
 
   /** Attach correlationId from the current request context to job data */
@@ -155,7 +157,7 @@ export class QueueService implements OnModuleDestroy {
     const maxAttempts = job.opts?.attempts ?? 1;
     if (job.attemptsMade < maxAttempts) return;
 
-    const entry = JSON.stringify({
+    const entry = {
       jobId: job.id,
       queue: queueName,
       name: job.name,
@@ -163,29 +165,42 @@ export class QueueService implements OnModuleDestroy {
       error: error.message,
       failedAt: new Date().toISOString(),
       attempts: job.attemptsMade,
+    };
+
+    // Dual storage: Redis (fast retrieval for admin dashboard) + DB (durable, survives flush)
+    const redisDone = this.redis.lpush(QueueService.DLQ_KEY, JSON.stringify(entry))
+      .then(() => this.redis.ltrim(QueueService.DLQ_KEY, 0, QueueService.DLQ_MAX_SIZE - 1))
+      .catch((dlqError) => {
+        this.logger.error(`Redis DLQ storage failed for job ${job.id}: ${dlqError instanceof Error ? dlqError.message : 'unknown'}`);
+      });
+
+    const dbDone = this.prisma.failedJob.create({
+      data: {
+        queue: queueName,
+        jobName: job.name,
+        jobId: job.id ?? null,
+        data: JSON.parse(JSON.stringify(job.data ?? {})),
+        error: error.message,
+        attempts: job.attemptsMade,
+      },
+    }).catch((dbError) => {
+      this.logger.error(`DB DLQ storage failed for job ${job.id}: ${dbError instanceof Error ? dbError.message : 'unknown'}`);
     });
 
-    try {
-      await this.redis.lpush(QueueService.DLQ_KEY, entry);
-      await this.redis.ltrim(QueueService.DLQ_KEY, 0, QueueService.DLQ_MAX_SIZE - 1);
-      this.logger.error(
-        `Job ${job.id} (${queueName}/${job.name}) moved to DLQ after ${job.attemptsMade} attempts: ${error.message}`,
-      );
-    } catch (dlqError) {
-      // DLQ Redis storage failed — ensure the failed job is at least visible in Sentry
+    // Wait for at least one to succeed
+    await Promise.allSettled([redisDone, dbDone]);
+
+    // If both failed, capture to Sentry as absolute last resort
+    const [redisResult, dbResult] = await Promise.allSettled([redisDone, dbDone]);
+    if (redisResult.status === 'rejected' && dbResult.status === 'rejected') {
       Sentry.captureException(error, {
         tags: { queue: queueName, jobName: job.name },
-        extra: {
-          jobId: job.id,
-          jobData: job.data,
-          attempts: job.attemptsMade,
-          dlqError: dlqError instanceof Error ? dlqError.message : 'Unknown DLQ error',
-        },
+        extra: { jobId: job.id, jobData: job.data, attempts: job.attemptsMade },
       });
-      this.logger.error(
-        `CRITICAL: DLQ storage failed for job ${job.id} (${queueName}/${job.name}). Captured in Sentry as fallback.`,
-      );
+      this.logger.error(`CRITICAL: Both Redis AND DB DLQ failed for job ${job.id}. Captured in Sentry.`);
     }
+
+    this.logger.error(`Job ${job.id} (${queueName}/${job.name}) moved to DLQ after ${job.attemptsMade} attempts: ${error.message}`);
   }
 
   // ── Stats ─────────────────────────────────────────────────

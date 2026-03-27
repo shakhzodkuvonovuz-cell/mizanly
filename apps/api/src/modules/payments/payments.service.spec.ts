@@ -53,6 +53,7 @@ describe('PaymentsService', () => {
             membershipTier: { findUnique: jest.fn() },
             membershipSubscription: { findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
             coinTransaction: { findFirst: jest.fn().mockResolvedValue(null) },
+            paymentMapping: { upsert: jest.fn().mockResolvedValue({}), findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null) },
           },
         },
       ],

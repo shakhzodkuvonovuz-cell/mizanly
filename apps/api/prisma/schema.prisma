@@ -4897,3 +4897,35 @@ model FeatureFlag {
 
   @@map("feature_flags")
 }
+
+// Dead Letter Queue — persists permanently-failed queue jobs for investigation.
+// Redis DLQ is volatile (lost on flush). This table survives infrastructure events.
+model FailedJob {
+  id         String   @id @default(cuid())
+  queue      String   @db.VarChar(50)  // notifications, media-processing, webhooks, etc.
+  jobName    String   @db.VarChar(100) // push-trigger, bulk-push, index, etc.
+  jobId      String?  @db.VarChar(100) // BullMQ job ID
+  data       Json     // Original job payload
+  error      String   @db.Text         // Error message
+  attempts   Int      @default(1)      // How many times it was retried
+  failedAt   DateTime @default(now())
+  resolvedAt DateTime?                 // Set when manually investigated/resolved
+  resolution String?  @db.VarChar(200) // "retried", "data_fixed", "ignored", etc.
+
+  @@index([queue, failedAt(sort: Desc)])
+  @@index([resolvedAt])
+  @@map("failed_jobs")
+}
+
+// Payment State Store — durable mapping between Stripe IDs and internal IDs.
+// Replaces volatile Redis-only mappings that are lost on flush/TTL expiry.
+model PaymentMapping {
+  id              String   @id @default(cuid())
+  stripeId        String   @unique @db.VarChar(100) // pi_xxx, sub_xxx, cs_xxx
+  internalId      String   @db.VarChar(100)         // tip ID, subscription ID, order ID
+  type            String   @db.VarChar(30)          // "tip", "subscription", "order", "premium"
+  createdAt       DateTime @default(now())
+
+  @@index([type, createdAt(sort: Desc)])
+  @@map("payment_mappings")
+}

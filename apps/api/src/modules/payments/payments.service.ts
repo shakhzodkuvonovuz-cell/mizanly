@@ -85,32 +85,65 @@ export class PaymentsService {
    * Store mapping between Stripe payment intent and our tip ID
    */
   private async storePaymentIntentMapping(paymentIntentId: string, tipId: string) {
-    // 30-day TTL — payment intents are short-lived
+    // Dual write: Redis (fast cache, 30d TTL) + DB (durable, no TTL)
     await this.redis.setex(`payment_intent:${paymentIntentId}`, 60 * 60 * 24 * 30, tipId);
+    this.prisma.paymentMapping.upsert({
+      where: { stripeId: paymentIntentId },
+      create: { stripeId: paymentIntentId, internalId: tipId, type: 'tip' },
+      update: { internalId: tipId },
+    }).catch(err => this.logger.warn(`Failed to persist payment mapping: ${err instanceof Error ? err.message : err}`));
   }
 
   /**
    * Store mapping between Stripe subscription and our subscription ID (both directions)
    */
   private async storeSubscriptionMapping(stripeSubscriptionId: string, subscriptionId: string) {
-    // 1-year TTL — subscriptions are long-lived, must survive multiple renewal cycles
+    // Dual write: Redis (fast cache, 1y TTL) + DB (durable)
     const ONE_YEAR = 60 * 60 * 24 * 365;
     await this.redis.setex(`subscription:${stripeSubscriptionId}`, ONE_YEAR, subscriptionId);
     await this.redis.setex(`subscription:internal:${subscriptionId}`, ONE_YEAR, stripeSubscriptionId);
+    this.prisma.paymentMapping.upsert({
+      where: { stripeId: stripeSubscriptionId },
+      create: { stripeId: stripeSubscriptionId, internalId: subscriptionId, type: 'subscription' },
+      update: { internalId: subscriptionId },
+    }).catch(err => this.logger.warn(`Failed to persist subscription mapping: ${err instanceof Error ? err.message : err}`));
   }
 
   /**
    * Get internal subscription ID from Stripe subscription ID
+   * Falls back to DB if Redis mapping expired/lost
    */
   private async getInternalSubscriptionId(stripeSubscriptionId: string): Promise<string | null> {
-    return await this.redis.get(`subscription:${stripeSubscriptionId}`);
+    const cached = await this.redis.get(`subscription:${stripeSubscriptionId}`);
+    if (cached) return cached;
+    // DB fallback
+    const mapping = await this.prisma.paymentMapping.findUnique({
+      where: { stripeId: stripeSubscriptionId },
+      select: { internalId: true },
+    }).catch(() => null);
+    if (mapping) {
+      // Re-seed Redis cache
+      await this.redis.setex(`subscription:${stripeSubscriptionId}`, 60 * 60 * 24 * 365, mapping.internalId).catch(() => {});
+    }
+    return mapping?.internalId ?? null;
   }
 
   /**
    * Get Stripe subscription ID from internal subscription ID
+   * Falls back to DB if Redis mapping expired/lost
    */
   private async getStripeSubscriptionId(internalSubscriptionId: string): Promise<string | null> {
-    return await this.redis.get(`subscription:internal:${internalSubscriptionId}`);
+    const cached = await this.redis.get(`subscription:internal:${internalSubscriptionId}`);
+    if (cached) return cached;
+    // DB fallback: reverse lookup
+    const mapping = await this.prisma.paymentMapping.findFirst({
+      where: { internalId: internalSubscriptionId, type: 'subscription' },
+      select: { stripeId: true },
+    }).catch(() => null);
+    if (mapping) {
+      await this.redis.setex(`subscription:internal:${internalSubscriptionId}`, 60 * 60 * 24 * 365, mapping.stripeId).catch(() => {});
+    }
+    return mapping?.stripeId ?? null;
   }
 
   // ==================== Public Endpoints ====================
