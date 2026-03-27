@@ -54,30 +54,52 @@ export class FeatureFlagsService {
     return hash < pct;
   }
 
-  /** Get all current flags (for admin dashboard or client config) */
-  async getAllFlags(): Promise<Record<string, string>> {
-    return this.redis.hgetall(this.HASH_KEY);
-  }
-
-  /** Set a flag value — dual write to Redis (fast) + DB (durable) */
+  /** Set a flag value — dual write to Redis (fast) + DB (durable).
+   *  DB write is AWAITED to prevent data loss during outages. */
   async setFlag(flagName: string, value: string): Promise<void> {
     await this.redis.hset(this.HASH_KEY, flagName, value);
     await this.redis.expire(this.HASH_KEY, 90 * 24 * 3600);
-    // Persist to DB (non-blocking — Redis is authoritative for reads)
-    this.prisma.featureFlag.upsert({
-      where: { name: flagName },
-      create: { name: flagName, value },
-      update: { value },
-    }).catch(err => this.logger.warn(`Failed to persist flag "${flagName}" to DB`, err instanceof Error ? err.message : err));
+    // Await DB write — if DB is down, flag is still in Redis but we log the failure
+    try {
+      await this.prisma.featureFlag.upsert({
+        where: { name: flagName },
+        create: { name: flagName, value },
+        update: { value },
+      });
+    } catch (err) {
+      this.logger.error(`DURABLE WRITE FAILED for flag "${flagName}" — flag is in Redis but NOT in DB. Manual reconciliation needed.`, err instanceof Error ? err.message : err);
+    }
     this.localCache = null;
   }
 
   /** Delete a flag — from both Redis and DB */
   async deleteFlag(flagName: string): Promise<void> {
     await this.redis.hdel(this.HASH_KEY, flagName);
-    this.prisma.featureFlag.deleteMany({ where: { name: flagName } })
-      .catch(err => this.logger.warn(`Failed to delete flag "${flagName}" from DB`, err instanceof Error ? err.message : err));
+    try {
+      await this.prisma.featureFlag.deleteMany({ where: { name: flagName } });
+    } catch (err) {
+      this.logger.error(`DURABLE DELETE FAILED for flag "${flagName}"`, err instanceof Error ? err.message : err);
+    }
     this.localCache = null;
+  }
+
+  /** Get all current flags — falls back to DB if Redis is empty/down */
+  async getAllFlags(): Promise<Record<string, string>> {
+    try {
+      const redisFlags = await this.redis.hgetall(this.HASH_KEY);
+      if (Object.keys(redisFlags).length > 0) return redisFlags;
+    } catch {
+      // Redis down — fall through to DB
+    }
+    // DB fallback
+    try {
+      const dbFlags = await this.prisma.featureFlag.findMany({ take: 200 });
+      const result: Record<string, string> = {};
+      for (const f of dbFlags) result[f.name] = f.value;
+      return result;
+    } catch {
+      return {};
+    }
   }
 
   private async getFlagValue(flagName: string): Promise<string | null> {

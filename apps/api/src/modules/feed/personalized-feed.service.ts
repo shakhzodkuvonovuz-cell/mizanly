@@ -546,20 +546,12 @@ export class PersonalizedFeedService {
       }));
       scored.sort((a, b) => b.score - a.score);
 
-      // Exploration injection: replace ~10% of slots with random recent content for discovery
+      // Real exploration: fetch FRESH low-engagement content (not trending tail)
       const explorationSlots = Math.max(1, Math.floor(limit * 0.1));
       const mainSlots = limit - explorationSlots;
       const main = scored.slice(0, mainSlots);
-      const explorationPool = scored.slice(mainSlots, mainSlots + explorationSlots * 3);
-      // Shuffle exploration pool and take explorationSlots items
-      for (let i = explorationPool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [explorationPool[i], explorationPool[j]] = [explorationPool[j], explorationPool[i]];
-      }
-      const exploration = explorationPool.slice(0, explorationSlots).map(item => ({
-        ...item,
-        reasons: ['Discover something new'],
-      }));
+      const mainIds = main.map(m => m.id);
+      const exploration = await this.fetchExplorationContent('saf', explorationSlots, mainIds, userFilter);
       const merged = [...main, ...exploration];
 
       const hasMore = scored.length > limit;
@@ -597,12 +589,8 @@ export class PersonalizedFeedService {
       const explorationSlots = Math.max(1, Math.floor(limit * 0.1));
       const mainSlots = limit - explorationSlots;
       const main = scored.slice(0, mainSlots);
-      const explorationPool = scored.slice(mainSlots, mainSlots + explorationSlots * 3);
-      for (let i = explorationPool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [explorationPool[i], explorationPool[j]] = [explorationPool[j], explorationPool[i]];
-      }
-      const exploration = explorationPool.slice(0, explorationSlots).map(item => ({ ...item, reasons: ['Discover something new'] }));
+      const mainIds = main.map(m => m.id);
+      const exploration = await this.fetchExplorationContent('bakra', explorationSlots, mainIds, userFilter);
       const merged = [...main, ...exploration];
 
       const hasMore = scored.length > limit;
@@ -639,12 +627,8 @@ export class PersonalizedFeedService {
       const explorationSlots = Math.max(1, Math.floor(limit * 0.1));
       const mainSlots = limit - explorationSlots;
       const main = scored.slice(0, mainSlots);
-      const explorationPool = scored.slice(mainSlots, mainSlots + explorationSlots * 3);
-      for (let i = explorationPool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [explorationPool[i], explorationPool[j]] = [explorationPool[j], explorationPool[i]];
-      }
-      const exploration = explorationPool.slice(0, explorationSlots).map(item => ({ ...item, reasons: ['Discover something new'] }));
+      const mainIds = main.map(m => m.id);
+      const exploration = await this.fetchExplorationContent('minbar', explorationSlots, mainIds, userFilter);
       const merged = [...main, ...exploration];
 
       const hasMore = scored.length > limit;
@@ -683,12 +667,8 @@ export class PersonalizedFeedService {
     const explorationSlots = Math.max(1, Math.floor(limit * 0.1));
     const mainSlots = limit - explorationSlots;
     const main = scored.slice(0, mainSlots);
-    const explorationPool = scored.slice(mainSlots, mainSlots + explorationSlots * 3);
-    for (let i = explorationPool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [explorationPool[i], explorationPool[j]] = [explorationPool[j], explorationPool[i]];
-    }
-    const exploration = explorationPool.slice(0, explorationSlots).map(item => ({ ...item, reasons: ['Discover something new'] }));
+    const mainIds = main.map(m => m.id);
+    const exploration = await this.fetchExplorationContent('majlis', explorationSlots, mainIds, userFilter);
     const merged = [...main, ...exploration];
 
     const hasMore = scored.length > limit;
@@ -708,6 +688,103 @@ export class PersonalizedFeedService {
     // After 12 hours, decay linearly: at 24h the decay factor is 0.5
     const decayFactor = ageHours <= 12 ? 1.0 : Math.max(0.5, 1.0 - (ageHours - 12) / 24);
     return engagementScore * decayFactor;
+  }
+
+  // ── Real Exploration: fetch FRESH low-engagement content for filter bubble breaking ──
+
+  /** Fetch fresh posts (< 6h old, < 10 likes) that wouldn't rank in trending.
+   *  These are genuinely different from what the user normally sees. */
+  private async fetchExplorationContent(
+    space: 'saf' | 'bakra' | 'majlis' | 'minbar',
+    count: number,
+    excludeIds: string[],
+    userFilter: Record<string, unknown>,
+  ): Promise<FeedItem[]> {
+    const freshCutoff = new Date(Date.now() - TIME_WINDOWS.EXPLORATION_FRESH_HOURS * 3600000);
+    const baseUserFilter = { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter };
+
+    if (space === 'saf') {
+      const posts = await this.prisma.post.findMany({
+        where: {
+          isRemoved: false, visibility: PostVisibility.PUBLIC,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+          createdAt: { gte: freshCutoff },
+          likesCount: { lt: 10 }, // Low engagement = discovery content
+          id: { notIn: excludeIds },
+          user: baseUserFilter,
+        },
+        select: { id: true },
+        orderBy: { createdAt: 'desc' },
+        take: count * 3,
+      });
+      // Shuffle and pick
+      for (let i = posts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [posts[i], posts[j]] = [posts[j], posts[i]];
+      }
+      return posts.slice(0, count).map(p => ({ id: p.id, type: 'post' as const, score: 0.5, reasons: ['Fresh from the community'] }));
+    }
+
+    if (space === 'bakra') {
+      const reels = await this.prisma.reel.findMany({
+        where: {
+          isRemoved: false, status: ReelStatus.READY, isTrial: false,
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+          createdAt: { gte: freshCutoff },
+          viewsCount: { lt: 50 },
+          id: { notIn: excludeIds },
+          user: baseUserFilter,
+        },
+        select: { id: true },
+        orderBy: { createdAt: 'desc' },
+        take: count * 3,
+      });
+      for (let i = reels.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [reels[i], reels[j]] = [reels[j], reels[i]];
+      }
+      return reels.slice(0, count).map(r => ({ id: r.id, type: 'reel' as const, score: 0.5, reasons: ['Fresh from the community'] }));
+    }
+
+    if (space === 'minbar') {
+      const videos = await this.prisma.video.findMany({
+        where: {
+          status: 'PUBLISHED', isRemoved: false,
+          createdAt: { gte: freshCutoff },
+          viewsCount: { lt: 50 },
+          id: { notIn: excludeIds },
+          user: baseUserFilter,
+        },
+        select: { id: true },
+        orderBy: { createdAt: 'desc' },
+        take: count * 3,
+      });
+      for (let i = videos.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [videos[i], videos[j]] = [videos[j], videos[i]];
+      }
+      return videos.slice(0, count).map(v => ({ id: v.id, type: 'video' as const, score: 0.5, reasons: ['Fresh from the community'] }));
+    }
+
+    // majlis
+    const threads = await this.prisma.thread.findMany({
+      where: {
+        isRemoved: false, isChainHead: true, visibility: 'PUBLIC',
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        createdAt: { gte: freshCutoff },
+        likesCount: { lt: 10 },
+        id: { notIn: excludeIds },
+        user: baseUserFilter,
+      },
+      select: { id: true },
+      orderBy: { createdAt: 'desc' },
+      take: count * 3,
+    });
+    for (let i = threads.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [threads[i], threads[j]] = [threads[j], threads[i]];
+    }
+    return threads.slice(0, count).map(t => ({ id: t.id, type: 'thread' as const, score: 0.5, reasons: ['Fresh from the community'] }));
   }
 
   // ── Helpers ───────────────────────────────────────────────

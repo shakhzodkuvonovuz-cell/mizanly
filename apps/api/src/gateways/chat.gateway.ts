@@ -94,7 +94,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       // Create a duplicate Redis connection for subscribing (pub/sub requires dedicated connection)
       const subscriber = this.redis.duplicate();
       this.redisSubscriber = subscriber;
-      await subscriber.subscribe('notification:new', 'content:update', 'new_message', 'user:banned', 'user:session_revoked');
+      await subscriber.subscribe('notification:new', 'content:update', 'new_message', 'user:banned', 'user:session_revoked', 'socket:evict');
       subscriber.on('message', (channel: string, message: string) => {
         try {
           if (channel === 'notification:new') {
@@ -127,13 +127,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
                 }
               }).catch(e => this.logger.error(`Failed to force-disconnect user ${userId}`, e));
             }
+          } else if (channel === 'socket:evict') {
+            // Evict specific sockets by ID — works across all instances via pub/sub
+            const { socketIds, reason } = JSON.parse(message);
+            if (Array.isArray(socketIds)) {
+              for (const sid of socketIds) {
+                this.server.in(sid).fetchSockets().then(sockets => {
+                  for (const s of sockets) {
+                    s.emit('force_disconnect', { reason });
+                    s.disconnect(true);
+                  }
+                }).catch(() => {}); // Socket may not be on this instance
+              }
+            }
           }
         } catch (e) {
           this.logger.debug('Failed to parse pub/sub message', e);
           Sentry.captureException(e, { tags: { component: 'chat-gateway', channel } });
         }
       });
-      this.logger.log('Subscribed to notification:new + content:update + new_message + user:banned + user:session_revoked Redis channels');
+      this.logger.log('Subscribed to notification:new + content:update + new_message + user:banned + user:session_revoked + socket:evict Redis channels');
     } catch (e) {
       this.logger.warn('Failed to subscribe to Redis channels — real-time updates disabled', e);
     }
@@ -276,28 +289,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       // Track user as online via Redis (scales across instances)
       const userId = client.data.userId;
       const presenceKey = `presence:${userId}`;
-      await this.redis.sadd(presenceKey, client.id);
-      await this.redis.expire(presenceKey, this.PRESENCE_TTL);
 
-      // Cap connections at 3 per user (allows multi-device, prevents floods)
+      // Cap connections at 3 per user — check BEFORE adding new socket
       const MAX_SOCKETS_PER_USER = 3;
-      const existingSockets = await this.redis.smembers(presenceKey);
-      if (existingSockets.length > MAX_SOCKETS_PER_USER) {
-        // Disconnect oldest connections (keep the 3 most recent including this one)
-        const staleSocketIds = existingSockets
-          .filter(sid => sid !== client.id)
-          .slice(0, existingSockets.length - MAX_SOCKETS_PER_USER);
-        for (const staleId of staleSocketIds) {
-          try {
-            const staleSockets = await this.server.in(staleId).fetchSockets();
-            for (const s of staleSockets) {
-              s.emit('force_disconnect', { reason: 'connection_limit' });
-              s.disconnect(true);
-            }
-          } catch { /* stale socket already gone */ }
+      const existingBefore = await this.redis.smembers(presenceKey);
+      if (existingBefore.length >= MAX_SOCKETS_PER_USER) {
+        // Evict oldest sockets via Redis pub/sub (works across instances)
+        const staleIds = existingBefore.slice(0, existingBefore.length - MAX_SOCKETS_PER_USER + 1);
+        for (const staleId of staleIds) {
           await this.redis.srem(presenceKey, staleId);
         }
+        // Publish eviction event — all server instances listen and disconnect matching sockets
+        if (staleIds.length > 0) {
+          this.redis.publish('socket:evict', JSON.stringify({ socketIds: staleIds, reason: 'connection_limit' }))
+            .catch(() => {});
+        }
       }
+
+      // NOW add the new socket
+      await this.redis.sadd(presenceKey, client.id);
+      await this.redis.expire(presenceKey, this.PRESENCE_TTL);
 
       // Start heartbeat to keep presence alive while connected
       const timer = setInterval(async () => {

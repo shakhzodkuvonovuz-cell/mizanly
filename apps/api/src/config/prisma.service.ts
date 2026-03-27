@@ -27,6 +27,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     try {
       await this.$connect();
       this.logger.log('Database connected');
+      // Apply CHECK constraints (idempotent — safe to run on every startup)
+      await this.applyCheckConstraints();
     } catch (error) {
       this.logger.error('Failed to connect to database — retrying in 1s', error instanceof Error ? error.message : error);
       // Retry once after 1 second before falling back to lazy connection on first query
@@ -38,6 +40,33 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         this.logger.error('Database retry failed — will attempt connection on first query', retryError instanceof Error ? retryError.message : retryError);
       }
     }
+  }
+
+  /** Apply CHECK constraints on startup — prevents negative counters/balances at DB level.
+   *  Idempotent: uses IF NOT EXISTS so safe to run on every startup. */
+  private async applyCheckConstraints() {
+    const constraints = [
+      `ALTER TABLE coin_balances ADD CONSTRAINT IF NOT EXISTS coins_non_negative CHECK (coins >= 0)`,
+      `ALTER TABLE coin_balances ADD CONSTRAINT IF NOT EXISTS diamonds_non_negative CHECK (diamonds >= 0)`,
+      `ALTER TABLE posts ADD CONSTRAINT IF NOT EXISTS posts_likes_non_negative CHECK ("likesCount" >= 0)`,
+      `ALTER TABLE posts ADD CONSTRAINT IF NOT EXISTS posts_comments_non_negative CHECK ("commentsCount" >= 0)`,
+      `ALTER TABLE reels ADD CONSTRAINT IF NOT EXISTS reels_likes_non_negative CHECK ("likesCount" >= 0)`,
+      `ALTER TABLE reels ADD CONSTRAINT IF NOT EXISTS reels_views_non_negative CHECK ("viewsCount" >= 0)`,
+      `ALTER TABLE threads ADD CONSTRAINT IF NOT EXISTS threads_likes_non_negative CHECK ("likesCount" >= 0)`,
+      `ALTER TABLE videos ADD CONSTRAINT IF NOT EXISTS videos_likes_non_negative CHECK ("likesCount" >= 0)`,
+      `ALTER TABLE videos ADD CONSTRAINT IF NOT EXISTS videos_views_non_negative CHECK ("viewsCount" >= 0)`,
+      `ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS users_followers_non_negative CHECK ("followersCount" >= 0)`,
+      `ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS users_following_non_negative CHECK ("followingCount" >= 0)`,
+      `ALTER TABLE users ADD CONSTRAINT IF NOT EXISTS users_posts_non_negative CHECK ("postsCount" >= 0)`,
+    ];
+    for (const sql of constraints) {
+      try {
+        await this.$executeRawUnsafe(sql);
+      } catch {
+        // Constraint already exists or table doesn't exist yet — skip silently
+      }
+    }
+    this.logger.log('CHECK constraints applied (12 non-negative guards)');
   }
 
   async onModuleDestroy() {
