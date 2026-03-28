@@ -173,6 +173,16 @@ export function ratchetEncrypt(
     );
   }
 
+  // E4: Counter overflow guard. The counter is serialized as uint32BE in the header
+  // (max 2^32 - 1 = 4,294,967,295). At this limit, the session must be reset and
+  // re-established via X3DH to prevent counter wrap-around.
+  if (state.sendingChain.counter >= 0xFFFFFFFF) {
+    throw new Error(
+      'Sending chain counter exhausted (2^32 messages). ' +
+      'Session must be reset and re-established.',
+    );
+  }
+
   // Pad plaintext to hide message length (Finding 8)
   const paddedPlaintext = padMessage(plaintext);
 
@@ -241,11 +251,11 @@ export function ratchetDecrypt(
   if (message.ciphertext.length > MAX_MESSAGE_SIZE + 16 + 256) {
     throw new Error(`Ciphertext too large: ${message.ciphertext.length} bytes`);
   }
-  if (message.header.counter < 0 || !Number.isInteger(message.header.counter)) {
-    throw new Error(`Invalid counter: ${message.header.counter}`);
+  if (message.header.counter < 0 || !Number.isInteger(message.header.counter) || message.header.counter > 0xFFFFFFFF) {
+    throw new Error('Invalid counter value');
   }
-  if (message.header.previousCounter < 0 || !Number.isInteger(message.header.previousCounter)) {
-    throw new Error(`Invalid previousCounter: ${message.header.previousCounter}`);
+  if (message.header.previousCounter < 0 || !Number.isInteger(message.header.previousCounter) || message.header.previousCounter > 0xFFFFFFFF) {
+    throw new Error('Invalid previousCounter value');
   }
 
   const headerBytes = serializeHeader(message.header);

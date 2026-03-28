@@ -941,9 +941,24 @@ export default function ConversationScreen() {
         );
       }
 
+      // E3: Unwrap the JSON envelope to extract real message type + content.
+      // The envelope format is { t: 'TEXT', c: 'actual content' }.
+      // Backward compat: if decrypted string is not valid JSON or has no 't' field,
+      // treat the entire string as plaintext TEXT content.
+      let realContent = decrypted;
+      let realMessageType = message.messageType ?? 'TEXT';
+      try {
+        const envelope = JSON.parse(decrypted);
+        if (envelope && typeof envelope.c === 'string' && typeof envelope.t === 'string') {
+          realContent = envelope.c;
+          realMessageType = envelope.t;
+        }
+      } catch {
+        // Not a JSON envelope — legacy plaintext message, use as-is
+      }
+
       // Cache and index for search.
       // C7: Disappearing messages — if conversation has a timer, set expiresAt.
-      // The message cache enforces expiry on read (getCachedMessages filters expired).
       const convo = convoQuery.data;
       const disappearSec = (convo as any)?.disappearingDuration as number | undefined;
       const createdAtMs = new Date(message.createdAt).getTime();
@@ -955,16 +970,16 @@ export default function ConversationScreen() {
         messageId: message.id,
         conversationId: id,
         senderId,
-        content: decrypted,
-        messageType: message.messageType ?? 'TEXT',
+        content: realContent,
+        messageType: realMessageType,
         createdAt: createdAtMs,
         expiresAt,
       }).catch(() => {});
       // Don't index disappearing messages for search (they should vanish completely)
       if (!expiresAt) {
-        indexMessage(message.id, id, decrypted, createdAtMs).catch(() => {});
+        indexMessage(message.id, id, realContent, createdAtMs).catch(() => {});
       }
-      return decrypted;
+      return realContent;
     } catch (err) {
       // Session auto-recovery: reset session on persistent failures
       const errMsg = String(err);
@@ -1406,8 +1421,12 @@ export default function ConversationScreen() {
           oneTimePreKeyId = result.oneTimePreKeyId;
         }
 
-        // Encrypt via Double Ratchet
-        const signalMsg = await signalEncrypt(recipientId, 1, messageContent);
+        // E3: Wrap plaintext with message type INSIDE the encryption envelope.
+        // The server sees messageType:'TEXT' (opaque) for all encrypted messages.
+        // The real type is inside the ciphertext — an observer cannot distinguish
+        // text from images from voice notes by looking at the wire format.
+        const wrappedContent = JSON.stringify({ t: 'TEXT', c: messageContent });
+        const signalMsg = await signalEncrypt(recipientId, 1, wrappedContent);
         const clientMessageId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
         e2ePayload = {

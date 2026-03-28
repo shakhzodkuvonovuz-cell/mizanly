@@ -229,6 +229,9 @@ export function padMessage(plaintext: Uint8Array): Uint8Array {
   const targetLen = Math.max(MIN_PADDED_SIZE, plaintext.length + 1);
   const paddedLen = Math.ceil(targetLen / PAD_BLOCK) * PAD_BLOCK;
   const padLen = paddedLen - plaintext.length;
+  // E1: Cap padLen to 255 (max value representable in a single byte).
+  // For messages near MAX_MESSAGE_SIZE this is always true, but be explicit.
+  if (padLen > 255) throw new Error(`Padding too large: ${padLen} bytes (max 255)`);
   const padded = new Uint8Array(paddedLen);
   padded.set(plaintext);
   for (let i = plaintext.length; i < paddedLen; i++) {
@@ -238,12 +241,17 @@ export function padMessage(plaintext: Uint8Array): Uint8Array {
 }
 
 /**
- * Remove PKCS#7-style padding. Throws on invalid padding (tampering detected).
+ * Remove padding. Throws on invalid padding (tampering detected).
+ * E1: Validates padLen is within PAD_BLOCK alignment (max 160 for short messages,
+ * standard 1-16 for longer messages). Rejects implausible padLen values.
  */
 export function unpadMessage(padded: Uint8Array): Uint8Array {
   if (padded.length === 0) throw new Error('Empty padded message');
   const padLen = padded[padded.length - 1];
-  if (padLen === 0 || padLen > padded.length || padLen > 255) throw new Error('Invalid message padding');
+  if (padLen === 0 || padLen > padded.length || padLen > MIN_PADDED_SIZE) {
+    throw new Error('Invalid message padding');
+  }
+  // Verify all pad bytes match
   for (let i = padded.length - padLen; i < padded.length; i++) {
     if (padded[i] !== padLen) throw new Error('Invalid message padding');
   }
