@@ -41,6 +41,19 @@ apps/mobile/       — React Native Expo SDK 52, 213 screens
 apps/e2e-server/   — Go E2E Key Server (Signal Protocol)
 ```
 
-See `.claude/rules/` for file-type-specific rules (auto-loaded by glob).
-See `~/.claude/projects/C--dev-mizanly/memory/MEMORY.md` for session history + project state.
-See `docs/audit/2026-03-28-e2e-deep-audit-v3.md` for 33 E2E findings (A+ roadmap).
+## Technical Debt — DO NOT FORGET
+
+- **E2E Audit V3:** 33 findings in `docs/audit/2026-03-28-e2e-deep-audit-v3.md`. 6 critical (F1-F6) block "E2E encrypted" claim.
+- **F1 (Critical):** Transparency root NOT SIGNED — key substitution MITM works today. Need offline Ed25519 signing key.
+- **F2 (Critical):** Message cache (`message-cache.ts`) stores PLAINTEXT — not AEAD-wrapped like storage.ts. Forensic extraction reads all messages.
+- **F4 (Critical):** MMKV key names are unencrypted — social graph visible without decryption. Need HMAC-hashed key names.
+- **F5 (Critical):** Sealed sender not wired into send path — full metadata visible to server.
+- **F6 (Critical):** No EAS build yet — cert pinning is inert code. Pin hashes are template values.
+- **Zero real-device testing.** All E2E code is untested on actual hardware.
+- **Prisma schema field names are FINAL** — never rename.
+- **Islamic data curated by user personally** — never AI-generate Quran, hadith, or prayer content.
+
+## File Pointers
+- `.claude/rules/` — file-type-specific rules (auto-loaded by glob)
+- `~/.claude/projects/C--dev-mizanly/memory/MEMORY.md` — full memory index
+- `docs/audit/2026-03-28-e2e-deep-audit-v3.md` — 33 E2E findings (A+ roadmap)
