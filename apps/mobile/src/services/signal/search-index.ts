@@ -45,24 +45,29 @@ const INDEX_COUNT_KEY = 'searchidx:__count';
 // COUNT HELPERS
 // ============================================================
 
+/**
+ * V4-F17: Index count stored via AEAD (not raw MMKV number).
+ * Previously stored as plain number, visible to filesystem forensics.
+ */
 async function getIndexCount(): Promise<number> {
+  const val = await secureLoad(HMAC_TYPE.SEARCH_COUNT, INDEX_COUNT_KEY);
+  if (val !== null) return parseInt(val, 10) || 0;
+  // Migration: check legacy raw number keys, delete-then-write for crash safety
   const mmkv = await getMMKV();
   const hashed = hmacKeyName(HMAC_TYPE.SEARCH_COUNT, INDEX_COUNT_KEY);
   let count = mmkv.getNumber(hashed);
-  if (count === undefined) {
-    count = mmkv.getNumber(INDEX_COUNT_KEY);
-    if (count !== undefined) {
-      mmkv.set(hashed, count);
-      mmkv.delete(INDEX_COUNT_KEY);
-    }
+  if (count === undefined) count = mmkv.getNumber(INDEX_COUNT_KEY);
+  if (count !== undefined) {
+    mmkv.delete(hashed);
+    mmkv.delete(INDEX_COUNT_KEY);
+    await secureStore(HMAC_TYPE.SEARCH_COUNT, INDEX_COUNT_KEY, String(count));
+    return count;
   }
-  return count ?? 0;
+  return 0;
 }
 
 async function setIndexCount(count: number): Promise<void> {
-  const mmkv = await getMMKV();
-  const hashed = hmacKeyName(HMAC_TYPE.SEARCH_COUNT, INDEX_COUNT_KEY);
-  mmkv.set(hashed, count);
+  await secureStore(HMAC_TYPE.SEARCH_COUNT, INDEX_COUNT_KEY, String(count));
 }
 
 // ============================================================

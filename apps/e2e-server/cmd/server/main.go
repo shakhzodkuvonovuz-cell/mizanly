@@ -145,6 +145,9 @@ func main() {
 	mux.Handle("GET /api/v1/e2e/transparency/", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleGetTransparencyProof))))
 	mux.Handle("GET /api/v1/e2e/transparency/root", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleGetTransparencyRoot))))
 
+	// Device linking: rate-limited code verification (V4-F20)
+	mux.Handle("POST /api/v1/e2e/device-link/verify", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleVerifyDeviceLink))))
+
 	// --- Startup cleanup: expired signed pre-keys ---
 	if deleted, err := db.CleanupExpiredSignedPreKeys(ctx); err != nil {
 		logger.Error("signed pre-key cleanup failed", "error", err)

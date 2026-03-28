@@ -17,8 +17,11 @@ import type { SenderKeyMessage } from '../types';
 
 const SecureStore = require('expo-secure-store');
 
-beforeEach(() => {
+beforeEach(async () => {
   SecureStore.__reset();
+  const { _resetForTesting } = require('../storage');
+  _resetForTesting();
+  await SecureStore.setItemAsync('e2e_mmkv_key', require('../crypto').toBase64(require('../crypto').generateRandomBytes(32)));
 });
 
 // ============================================================

@@ -110,8 +110,11 @@ async function setupAliceBobSession(): Promise<{
 const SecureStore = require('expo-secure-store');
 const { toBase64 } = require('../crypto');
 
-beforeEach(() => {
+beforeEach(async () => {
   SecureStore.__reset();
+  const { _resetForTesting } = require('../storage');
+  _resetForTesting();
+  await SecureStore.setItemAsync('e2e_mmkv_key', require('../crypto').toBase64(require('../crypto').generateRandomBytes(32)));
 });
 
 // ============================================================

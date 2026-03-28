@@ -363,10 +363,10 @@ export async function decryptMediaFile(
     encoding: FileSystem.EncodingType.Base64,
   });
 
-  // F17 FIX: Schedule auto-cleanup of decrypted file after 60 seconds.
-  // Callers should also call cleanupTempFile() explicitly when done viewing.
-  // This timer is a safety net — if the caller forgets, the file is still cleaned up.
-  // 60s is enough time to display/render the media before deletion.
+  // V4-F10: Auto-cleanup reduced from 60s to 5s. Callers MUST copy data they need
+  // before this timer fires. 5s is enough for the UI to load the file into a
+  // media player or image view (which holds its own memory copy). The shorter
+  // window limits forensic extraction of decrypted media from the filesystem.
   setTimeout(async () => {
     try {
       const info = await FileSystem.getInfoAsync(decryptedFileUri);
@@ -374,7 +374,7 @@ export async function decryptMediaFile(
         await FileSystem.deleteAsync(decryptedFileUri, { idempotent: true });
       }
     } catch { /* best-effort cleanup */ }
-  }, 60_000);
+  }, 5_000);
 
   return decryptedFileUri;
 }
@@ -414,7 +414,15 @@ function decodeHeader(header: Uint8Array): MediaFileHeader {
 // HELPERS
 // ============================================================
 
+/**
+ * V4-F11: Use Buffer for base64 conversion (same as crypto.ts F19 fix).
+ * Previously used String.fromCharCode loop + btoa, creating immutable intermediate
+ * strings containing chunk data that can't be zeroed (persists until GC).
+ */
 function arrayBufferToBase64(bytes: Uint8Array): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString('base64');
+  }
   let binary = '';
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -423,6 +431,10 @@ function arrayBufferToBase64(bytes: Uint8Array): string {
 }
 
 function base64ToArrayBuffer(base64: string): Uint8Array {
+  if (typeof Buffer !== 'undefined') {
+    const buf = Buffer.from(base64, 'base64');
+    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  }
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {

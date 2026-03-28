@@ -97,8 +97,12 @@ export function verifyMerkleProof(
   leafIndex: number,
   expectedRoot: string,
 ): boolean {
-  // Compute leaf hash: SHA-256(userId || identityKey)
+  // V4-F7: Compute leaf hash with 0x00 domain separation prefix (RFC 6962).
+  // SHA-256(0x00 || userId || identityKey)
+  const LEAF_PREFIX = new Uint8Array([0x00]);
+  const INTERNAL_PREFIX = new Uint8Array([0x01]);
   const leafData = concat(
+    LEAF_PREFIX,
     new Uint8Array(new TextEncoder().encode(userId)),
     identityKey,
   );
@@ -110,10 +114,11 @@ export function verifyMerkleProof(
     const sibling = fromBase64(siblingB64);
     if (index % 2 === 0) {
       // Current node is on the left — sibling is on the right
-      currentHash = sha256Hash(concat(currentHash, sibling));
+      // V4-F7: Internal node prefix 0x01
+      currentHash = sha256Hash(concat(INTERNAL_PREFIX, currentHash, sibling));
     } else {
       // Current node is on the right — sibling is on the left
-      currentHash = sha256Hash(concat(sibling, currentHash));
+      currentHash = sha256Hash(concat(INTERNAL_PREFIX, sibling, currentHash));
     }
     index = Math.floor(index / 2);
   }
@@ -271,21 +276,24 @@ export function verifyConsistencyProof(
   newHash = proofHashes[proofIdx];
   proofIdx++;
 
+  // V4-F7: Internal node prefix for domain separation in consistency proof
+  const INTERNAL_PREFIX = new Uint8Array([0x01]);
+
   while (node > 0) {
     if (node % 2 === 1) {
       // Node is a right child — proof hash is the left sibling
       if (proofIdx >= proofHashes.length) return false;
       const sibling = proofHashes[proofIdx];
       proofIdx++;
-      oldHash = sha256Hash(concat(sibling, oldHash));
-      newHash = sha256Hash(concat(sibling, newHash));
+      oldHash = sha256Hash(concat(INTERNAL_PREFIX, sibling, oldHash));
+      newHash = sha256Hash(concat(INTERNAL_PREFIX, sibling, newHash));
     } else if (node < lastNode) {
       // Node is a left child with a right sibling in the new tree
       if (proofIdx >= proofHashes.length) return false;
       const sibling = proofHashes[proofIdx];
       proofIdx++;
       // Only the new hash includes this sibling (old tree doesn't extend here)
-      newHash = sha256Hash(concat(newHash, sibling));
+      newHash = sha256Hash(concat(INTERNAL_PREFIX, newHash, sibling));
     }
     node = Math.floor(node / 2);
     lastNode = Math.floor(lastNode / 2);
@@ -296,9 +304,12 @@ export function verifyConsistencyProof(
     if (proofIdx >= proofHashes.length) return false;
     const sibling = proofHashes[proofIdx];
     proofIdx++;
-    newHash = sha256Hash(concat(newHash, sibling));
+    newHash = sha256Hash(concat(INTERNAL_PREFIX, newHash, sibling));
     lastNode = Math.floor(lastNode / 2);
   }
+
+  // V4-F23: Verify all proof nodes were consumed (reject extra trailing nodes)
+  if (proofIdx !== proofHashes.length) return false;
 
   // Both reconstructed roots must match
   return constantTimeEqual(oldHash, oldRootBytes) && constantTimeEqual(newHash, newRootBytes);
@@ -311,4 +322,17 @@ export interface TransparencyState {
   root: string;     // Base64 Merkle root
   treeSize: number;
   verifiedAt: number; // Unix ms
+  /**
+   * V4-F7: Hash algorithm version. Roots from version 1 (no domain separation)
+   * are incompatible with version 2 (0x00/0x01 prefix). When loading a cached
+   * root, discard if hashVersion < CURRENT_HASH_VERSION.
+   */
+  hashVersion?: number;
 }
+
+/**
+ * V4-F7: Current Merkle hash version. Increment when the hash algorithm changes.
+ * Version 1: SHA-256(data) — no domain separation (pre V4-F7)
+ * Version 2: SHA-256(0x00 || data) for leaves, SHA-256(0x01 || left || right) for internal
+ */
+export const CURRENT_HASH_VERSION = 2;

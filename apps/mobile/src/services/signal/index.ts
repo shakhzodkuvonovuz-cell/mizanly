@@ -185,6 +185,17 @@ export async function initialize(
   // Register the background notification handler for encrypted preview decryption
   registerNotificationHandler();
 
+  // V4-F19: Check certificate pin expiration proximity.
+  // Pins expire 2027-06-01. Alert if within 60 days to prompt app update.
+  const PIN_EXPIRY = new Date('2027-06-01').getTime();
+  const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
+  if (Date.now() > PIN_EXPIRY - SIXTY_DAYS_MS) {
+    recordE2EEvent({
+      event: 'bundle_fetch_failed',
+      metadata: { reason: 'cert_pin_expiry_approaching', daysRemaining: Math.floor((PIN_EXPIRY - Date.now()) / (24 * 60 * 60 * 1000)) },
+    });
+  }
+
   // C6: Key transparency — verify our own key is consistent with the server's Merkle log.
   // Runs in background after initialization. If the server returns a proof that doesn't
   // match our locally stored key, it means the server substituted a different key (MITM).
@@ -254,7 +265,7 @@ async function preWarmSessions(userIds: string[]): Promise<string[]> {
   try {
     // Single batch request — server sees one opaque batch, not individual fetches
     const bundles = await fetchPreKeyBundlesBatch(toWarm);
-    for (const [userId, bundleResponse] of Object.entries(bundles)) {
+    for (const [userId, bundleResponse] of bundles) {
       try {
         await createInitiatorSession(userId, 1, bundleResponse.bundle);
         established.push(userId);

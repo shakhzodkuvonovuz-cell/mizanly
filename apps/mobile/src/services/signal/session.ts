@@ -120,12 +120,29 @@ export async function createResponderSession(
   identityTrust: 'trusted' | 'new' | 'changed';
 }> {
   // X3DH responder computation (outside lock — loads private keys from SecureStore)
+  // V4-F6: Pass PQXDH fields so responder computes hybrid shared secret
+  // matching the initiator's PQXDH derivation (prevents silent session failure).
+  // The PQ secret key is loaded from LOCAL SecureStore — NEVER from the wire message.
+  let pqSecretKey: Uint8Array | undefined;
+  if (preKeyMsg.pqCiphertext && preKeyMsg.pqPreKeyId !== undefined) {
+    try {
+      const SecureStore = await import('expo-secure-store');
+      const pqSkB64 = await SecureStore.getItemAsync(`e2e_pq_sk_${preKeyMsg.pqPreKeyId}`);
+      if (pqSkB64) {
+        const { fromBase64 } = await import('./crypto');
+        pqSecretKey = fromBase64(pqSkB64);
+      }
+    } catch { /* PQ key not available — fall back to classical X3DH */ }
+  }
+
   const x3dhResult = await respondX3DH(
     preKeyMsg.identityKey,
     preKeyMsg.ephemeralKey,
     preKeyMsg.signedPreKeyId,
     preKeyMsg.preKeyId,
     senderId,
+    preKeyMsg.pqCiphertext,
+    pqSecretKey,
   );
 
   const localRegId = await getOrCreateRegistrationId();

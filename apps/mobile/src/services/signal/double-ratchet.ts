@@ -58,6 +58,41 @@ const CHAIN_KEY_MSG = new Uint8Array([0x01]);
 /** HMAC input byte for advancing chain key */
 const CHAIN_KEY_NEXT = new Uint8Array([0x02]);
 
+/**
+ * V4-F1: Reject DH outputs from low-order X25519 points.
+ *
+ * With @noble/curves' clamped scalars (bottom 3 bits cleared), ALL low-order
+ * input points produce all-zeros output. Checking just for zeros IS sufficient.
+ * The additional 6 non-zero low-order points below are defense-in-depth against
+ * hypothetical future crypto backends that don't clamp. They will never match
+ * with @noble/curves but cost only ~0.2μs to check (6 extra constantTimeEqual).
+ */
+const LOW_ORDER_POINTS: Uint8Array[] = [
+  // All zeros
+  new Uint8Array(32),
+  // Order 2: (1, 0, 0, ..., 0)
+  (() => { const p = new Uint8Array(32); p[0] = 1; return p; })(),
+  // The remaining small-subgroup points (hex representations, little-endian)
+  // ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f
+  new Uint8Array([0xec, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
+  // e0eb7a7c3b41b8ae1656e3faf19fc46ada098deb9c32b1fd866205165f49b800
+  new Uint8Array([0xe0, 0xeb, 0x7a, 0x7c, 0x3b, 0x41, 0xb8, 0xae, 0x16, 0x56, 0xe3, 0xfa, 0xf1, 0x9f, 0xc4, 0x6a, 0xda, 0x09, 0x8d, 0xeb, 0x9c, 0x32, 0xb1, 0xfd, 0x86, 0x62, 0x05, 0x16, 0x5f, 0x49, 0xb8, 0x00]),
+  // 5f9c95bca3508c24b1d0b1559c83ef5b04445cc4581c8e86d8224eddd09f1157
+  new Uint8Array([0x5f, 0x9c, 0x95, 0xbc, 0xa3, 0x50, 0x8c, 0x24, 0xb1, 0xd0, 0xb1, 0x55, 0x9c, 0x83, 0xef, 0x5b, 0x04, 0x44, 0x5c, 0xc4, 0x58, 0x1c, 0x8e, 0x86, 0xd8, 0x22, 0x4e, 0xdd, 0xd0, 0x9f, 0x11, 0x57]),
+  // edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f
+  new Uint8Array([0xed, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
+  // eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f (= p-1 ≡ -1)
+  new Uint8Array([0xee, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
+];
+
+function assertNonZeroDH(dh: Uint8Array, label: string): void {
+  for (const lowOrder of LOW_ORDER_POINTS) {
+    if (constantTimeEqual(dh, lowOrder)) {
+      throw new Error(`DH ratchet ${label} produced low-order output. Ratchet key may be malicious.`);
+    }
+  }
+}
+
 // ============================================================
 // KEY DERIVATION FUNCTIONS
 // ============================================================
@@ -347,6 +382,9 @@ function dhRatchetStep(state: SessionState, theirNewRatchetKey: Uint8Array): voi
 
   // Derive new receiving chain
   const dhReceive = x25519DH(state.senderRatchetKeyPair.privateKey, theirNewRatchetKey);
+  // V4-F1: Check DH output for all-zeros (small-subgroup attack protection).
+  // A malicious ratchet key could be the identity point, producing predictable output.
+  assertNonZeroDH(dhReceive, 'ratchet-receive');
   const { rootKey: rootKey1, chainKey: receivingChainKey } = kdfRK(state.rootKey, dhReceive);
   zeroOut(dhReceive);
 
@@ -360,6 +398,8 @@ function dhRatchetStep(state: SessionState, theirNewRatchetKey: Uint8Array): voi
 
   // Derive new sending chain
   const dhSend = x25519DH(state.senderRatchetKeyPair.privateKey, theirNewRatchetKey);
+  // V4-F1: Same check for sending chain DH output
+  assertNonZeroDH(dhSend, 'ratchet-send');
   const { rootKey: rootKey2, chainKey: sendingChainKey } = kdfRK(state.rootKey, dhSend);
   zeroOut(dhSend);
 

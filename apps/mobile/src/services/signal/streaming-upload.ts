@@ -271,8 +271,10 @@ export async function downloadEncryptedMedia(
   mediaUrl: string,
   onProgress?: (progress: number) => void,
 ): Promise<string> {
+  // V4-F25: Use CSPRNG for temp filenames (consistent with media-crypto.ts F23 fix)
+  const { generateRandomBytes, toBase64 } = await import('./crypto');
   const localUri =
-    FileSystem.cacheDirectory + `download_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    FileSystem.cacheDirectory + `download_${toBase64(generateRandomBytes(16)).replace(/[/+=]/g, '_')}`;
 
   const downloadResumable = FileSystem.createDownloadResumable(
     mediaUrl,

@@ -174,7 +174,7 @@ func (h *Handler) HandleUploadOneTimePreKeys(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := h.store.InsertOneTimePreKeys(r.Context(), userID, req.DeviceID, keys); err != nil {
-		h.logger.Error("upload one-time pre-keys", "error", err, "userId", userID, "count", len(keys))
+		h.logger.Error("upload one-time pre-keys", "error", err, "userId", hashUserID(userID), "count", len(keys))
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -224,6 +224,16 @@ func (h *Handler) HandleGetBundlesBatch(w http.ResponseWriter, r *http.Request) 
 	if len(req.UserIDs) > 100 {
 		writeError(w, http.StatusBadRequest, "max 100 users per batch")
 		return
+	}
+
+	// V4-F16: Rate limit the batch endpoint itself (max 10 calls per hour per requester).
+	// Uses atomic Lua script (INCR+EXPIRE in one call) — no crash-between-commands risk.
+	if h.rateLimiter != nil {
+		batchRLKey := fmt.Sprintf("e2e:rl:batch:%s", requesterID)
+		if _, err := h.rateLimiter.CheckRateLimit(r.Context(), batchRLKey, 10, 3600); err != nil {
+			writeError(w, http.StatusTooManyRequests, "max 10 batch bundle requests per hour")
+			return
+		}
 	}
 
 	// Deduplicate user IDs — prevent consuming multiple OTPs for the same user
@@ -377,6 +387,45 @@ func (h *Handler) HandleGetTransparencyProof(w http.ResponseWriter, r *http.Requ
 	}
 
 	writeJSON(w, http.StatusOK, proof)
+}
+
+// HandleVerifyDeviceLink verifies a device linking code with server-side rate limiting.
+// V4-F20: Max 5 attempts per linking session. After 5 failures, the session is invalidated.
+// This prevents brute-force of the 6-digit code (20 bits entropy, 1M combinations).
+func (h *Handler) HandleVerifyDeviceLink(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req struct {
+		LinkSessionID string `json:"linkSessionId"` // Unique per code generation
+		Code          string `json:"code"`
+	}
+	if err := readJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	if len(req.Code) != 6 || req.LinkSessionID == "" {
+		writeError(w, http.StatusBadRequest, "code must be 6 digits")
+		return
+	}
+
+	// Rate limit: max 5 attempts per link session, 10-minute window (fail-closed).
+	// Uses atomic Lua script — no crash-between-commands risk.
+	if h.rateLimiter != nil {
+		rlKey := fmt.Sprintf("e2e:rl:link:%s:%s", userID, req.LinkSessionID)
+		if _, err := h.rateLimiter.CheckRateLimit(r.Context(), rlKey, 5, 600); err != nil {
+			writeError(w, http.StatusTooManyRequests, "too many attempts — generate a new code")
+			return
+		}
+	}
+
+	// TODO: Actual code verification logic (compare against stored code for this session)
+	// For now, return 501 — endpoint is ready for integration when device linking is built.
+	writeError(w, http.StatusNotImplemented, "device linking not yet implemented")
 }
 
 // HandleGetTransparencyRoot returns the current Merkle tree root + signature.

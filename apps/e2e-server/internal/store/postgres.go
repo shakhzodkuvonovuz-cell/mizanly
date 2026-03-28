@@ -536,7 +536,13 @@ func (s *Store) rebuildMerkleCache(ctx context.Context) error {
 		if err := rows.Scan(&uid, &pub); err != nil {
 			return err
 		}
-		leafData := append([]byte(uid), pub...)
+		// V4-F7: Domain separation prefix 0x00 for leaves (RFC 6962).
+		// Prevents second-preimage attacks where internal node hashes collide with leaves.
+		// V4-F8: Explicit allocation — no append mutation of shared slices.
+		leafData := make([]byte, 0, 1+len(uid)+len(pub))
+		leafData = append(leafData, 0x00) // Leaf prefix
+		leafData = append(leafData, []byte(uid)...)
+		leafData = append(leafData, pub...)
 		leaf := sha256.Sum256(leafData)
 		s.cachedLeaves = append(s.cachedLeaves, leaf[:])
 		s.cachedLeafIndex[uid] = i
@@ -656,7 +662,12 @@ func buildMerkleProof(leaves [][]byte, targetIndex int) (root []byte, proof [][]
 			proof = append(proof, layer[sibling])
 		}
 		for i := 0; i < len(layer); i += 2 {
-			combined := append(layer[i], layer[i+1]...)
+			// V4-F7: Domain separation prefix 0x01 for internal nodes (RFC 6962).
+			// V4-F8: Explicit allocation — no append mutation of shared slices.
+			combined := make([]byte, 0, 1+len(layer[i])+len(layer[i+1]))
+			combined = append(combined, 0x01) // Internal node prefix
+			combined = append(combined, layer[i]...)
+			combined = append(combined, layer[i+1]...)
 			h := sha256.Sum256(combined)
 			nextLayer = append(nextLayer, h[:])
 		}
@@ -683,7 +694,11 @@ func computeMerkleRoot(leaves [][]byte) []byte {
 	for len(layer) > 1 {
 		var next [][]byte
 		for i := 0; i < len(layer); i += 2 {
-			combined := append(layer[i], layer[i+1]...)
+			// V4-F7: Domain separation prefix 0x01 for internal nodes (RFC 6962).
+			combined := make([]byte, 0, 1+len(layer[i])+len(layer[i+1]))
+			combined = append(combined, 0x01)
+			combined = append(combined, layer[i]...)
+			combined = append(combined, layer[i+1]...)
 			h := sha256.Sum256(combined)
 			next = append(next, h[:])
 		}

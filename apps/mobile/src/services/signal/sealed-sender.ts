@@ -51,7 +51,19 @@ const SEALED_SENDER_INFO = 'MizanlySealedSender';
  * The counter is tracked per-sender in MMKV (AEAD-wrapped, HMAC-hashed key).
  */
 const SEALED_REPLAY_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
-let sealedSenderCounter = 0; // Monotonic counter, reset on app restart (OK — timestamp is primary)
+/**
+ * V4-F4: Persisted monotonic counter for sealed sender.
+ * Previously reset to 0 on app restart, allowing replay within the 5-minute timestamp window.
+ * Now loaded from MMKV on first use and persisted on every increment.
+ */
+let sealedSenderCounter = 0;
+let sealedCounterLoaded = false;
+
+/** Reset sealed sender state on logout. Called by clearAllE2EState. */
+export function resetSealedSenderState(): void {
+  sealedSenderCounter = 0;
+  sealedCounterLoaded = false;
+}
 
 /** Sealed envelope: server sees this, cannot determine sender */
 export interface SealedEnvelope {
@@ -96,8 +108,21 @@ export async function sealMessage(
   const nonce = sealKey.slice(32, 56);
   zeroOut(dhOutput);
 
+  // V4-F4: Load persisted counter on first use (survives app restart)
+  if (!sealedCounterLoaded) {
+    try {
+      const stored = await secureLoad(HMAC_TYPE.SEALED_CTR, 'sealed_sender_ctr_self');
+      if (stored) sealedSenderCounter = parseInt(stored, 10) || 0;
+    } catch { /* First run — start at 0 */ }
+    sealedCounterLoaded = true;
+  }
+
   // F13: Include timestamp + counter for replay protection
   sealedSenderCounter++;
+  // V4-F4: Persist counter immediately (survives app kill between seal and send)
+  try {
+    await secureStore(HMAC_TYPE.SEALED_CTR, 'sealed_sender_ctr_self', String(sealedSenderCounter));
+  } catch { /* Best-effort persist — counter still incremented in memory */ }
   const innerJson = JSON.stringify({
     senderId,
     senderDeviceId,
@@ -178,15 +203,17 @@ export async function unsealMessage(
     // Check + update the last-seen counter for this sender
     const counterKey = `sealed_ctr:${raw.senderId}`;
     try {
-      const lastSeenStr = await secureLoad(HMAC_TYPE.PREVIEW_KEY, counterKey);
+      const lastSeenStr = await secureLoad(HMAC_TYPE.SEALED_CTR, counterKey);
       const lastSeen = lastSeenStr ? parseInt(lastSeenStr, 10) : -1;
       if (ctr <= lastSeen) {
         throw new Error('Sealed sender envelope replayed — counter not advanced');
       }
-      await secureStore(HMAC_TYPE.PREVIEW_KEY, counterKey, String(ctr));
+      await secureStore(HMAC_TYPE.SEALED_CTR, counterKey, String(ctr));
     } catch (err) {
       if (err instanceof Error && err.message.includes('replayed')) throw err;
-      // Storage error — allow the message (fail-open for replay, fail-closed for crypto)
+      // V4-F3: Fail CLOSED on storage error. Previously fail-open allowed replay
+      // when MMKV was corrupted. A legitimate sender will retransmit.
+      throw new Error('Sealed sender replay check unavailable — rejecting envelope');
     }
   }
 

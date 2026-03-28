@@ -87,6 +87,10 @@ export interface PreKeySignalMessage {
   identityKey: Uint8Array; // 32 bytes: sender's Ed25519 public key
   ephemeralKey: Uint8Array; // 32 bytes: sender's ephemeral X25519 public key
   message: SignalMessage; // The actual encrypted message
+  /** V4-F6: ML-KEM ciphertext from PQXDH initiator (undefined for classical X3DH) */
+  pqCiphertext?: Uint8Array;
+  /** V4-F6: PQ pre-key ID used by initiator — responder loads its ML-KEM secret key locally */
+  pqPreKeyId?: number;
 }
 
 // ============================================================

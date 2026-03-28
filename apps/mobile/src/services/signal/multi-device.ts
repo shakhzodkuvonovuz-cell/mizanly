@@ -191,6 +191,8 @@ export function generateDeviceLinkCode(): { code: string; secret: Uint8Array } {
   // 6-digit numeric code derived from the secret (for manual entry)
   const num = ((secret[0] << 16) | (secret[1] << 8) | secret[2]) % 1000000;
   const code = String(num).padStart(6, '0');
+  // V4-F20: Reset attempt counter when generating a new code
+  linkAttempts = 0;
   return { code, secret };
 }
 
@@ -201,10 +203,23 @@ export function generateDeviceLinkCode(): { code: string; secret: Uint8Array } {
  * @param expectedSecret - The secret from generateDeviceLinkCode
  * @returns true if the code matches
  */
+/**
+ * V4-F20: Client-side attempt tracking for device link code verification.
+ * Limits to 5 attempts per code. After 5 failures, the code is invalidated.
+ * Server-side rate limiting should also be implemented when the device linking
+ * endpoint is built.
+ */
+let linkAttempts = 0;
+const MAX_LINK_ATTEMPTS = 5;
+
 export function verifyDeviceLinkCode(
   code: string,
   expectedSecret: Uint8Array,
 ): boolean {
+  if (linkAttempts >= MAX_LINK_ATTEMPTS) {
+    return false; // Code invalidated after too many attempts
+  }
+
   const num = ((expectedSecret[0] << 16) | (expectedSecret[1] << 8) | expectedSecret[2]) % 1000000;
   const expected = String(num).padStart(6, '0');
   // Constant-time comparison for the 6-digit code
@@ -212,7 +227,15 @@ export function verifyDeviceLinkCode(
   for (let i = 0; i < 6; i++) {
     diff |= code.charCodeAt(i) ^ expected.charCodeAt(i);
   }
-  return diff === 0 && code.length === 6;
+  const isValid = diff === 0 && code.length === 6;
+  if (!isValid) linkAttempts++;
+  if (isValid) linkAttempts = 0; // Reset on success
+  return isValid;
+}
+
+/** Reset attempt counter when generating a new link code. */
+export function resetLinkAttempts(): void {
+  linkAttempts = 0;
 }
 
 // ============================================================

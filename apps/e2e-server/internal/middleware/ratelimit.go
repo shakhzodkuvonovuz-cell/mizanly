@@ -66,6 +66,19 @@ func (rl *RateLimiter) CheckBundleFetch(ctx context.Context, requesterID, target
 	return nil
 }
 
+// CheckRateLimit is a generic atomic rate limiter (INCR + EXPIRE via Lua).
+// Returns the current count. Fails closed on Redis error.
+func (rl *RateLimiter) CheckRateLimit(ctx context.Context, key string, maxCount int64, windowSeconds int) (int64, error) {
+	count, err := incrWithExpireScript.Run(ctx, rl.rdb, []string{key}, windowSeconds).Int64()
+	if err != nil {
+		return 0, fmt.Errorf("rate limiting unavailable — try again later")
+	}
+	if count > maxCount {
+		return count, fmt.Errorf("rate limit exceeded")
+	}
+	return count, nil
+}
+
 // RateLimitMiddleware wraps a handler with rate limit checking.
 // targetIDFunc extracts the target user ID from the request.
 func (rl *RateLimiter) RateLimitMiddleware(targetIDFunc func(*http.Request) string) func(http.Handler) http.Handler {

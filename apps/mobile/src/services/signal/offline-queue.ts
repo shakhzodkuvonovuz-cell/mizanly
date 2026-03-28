@@ -47,7 +47,8 @@ export async function queueEncryptedMessage(msg: QueuedMessage): Promise<void> {
 export async function markMessageSent(messageId: string): Promise<void> {
   // Dequeue immediately — no setTimeout (not persistent across app kill)
   await dequeueMessage(messageId);
-  recordE2EEvent({ event: 'message_encrypted', metadata: { messageId } });
+  // V4-F21: Don't log messageId — it correlates with server-visible messages
+  recordE2EEvent({ event: 'message_encrypted' });
 }
 
 /**

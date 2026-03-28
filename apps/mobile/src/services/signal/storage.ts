@@ -28,7 +28,7 @@ import { MMKV } from 'react-native-mmkv';
 import {
   toBase64, fromBase64, generateRandomBytes, constantTimeEqual,
   aeadEncrypt, aeadDecrypt, hkdfDeriveSecrets, utf8Encode, utf8Decode,
-  hmacSha256,
+  hmacSha256, zeroOut,
 } from './crypto';
 import type {
   Ed25519KeyPair,
@@ -87,6 +87,8 @@ export const HMAC_TYPE = {
   SENDER_GROUPS: 'sg:',
   CACHE_COUNT: 'nc:',
   SEARCH_COUNT: 'ns:',
+  /** Sealed sender monotonic counter (V4-F4) */
+  SEALED_CTR: 'sc:',
 } as const;
 
 /** Current session state serialization version */
@@ -130,14 +132,15 @@ export async function getMMKV(): Promise<MMKV> {
         );
       }
 
-      // D4: MMKV created WITHOUT built-in encryption. All crypto-sensitive values
-      // are wrapped with XChaCha20-Poly1305 AEAD (aeadSet/aeadGet) which provides
-      // BOTH confidentiality and integrity. MMKV's built-in AES-CFB was redundant
-      // CPU (~2x slower reads/writes) and provided no integrity. The AEAD key is
-      // derived from the SecureStore key via HKDF — same security, half the crypto ops.
+      // V4-F5: Re-enable MMKV base encryption to hide HMAC type prefixes and
+      // numeric metadata (counts, numbers) from filesystem forensics. AEAD still
+      // provides integrity on top. The ~0.1ms/op overhead is negligible.
+      // Derive a proper 16-byte key via HKDF with a unique info string.
+      // Base64-encode for MMKV's string API (24 chars, full 128-bit entropy).
+      const mmkvKeyBytes = hkdfDeriveSecrets(fromBase64(encryptionKey), new Uint8Array(32), 'MizanlyMMKVCFB', 16);
       mmkvInstance = new MMKV({
         id: 'mizanly-signal',
-        // No encryptionKey — AEAD handles all crypto
+        encryptionKey: toBase64(mmkvKeyBytes),
       });
 
       // F4: Pre-load HMAC key for key name hashing (separate from AEAD key).
@@ -189,21 +192,20 @@ export async function getMMKV(): Promise<MMKV> {
  */
 
 /**
- * Cached SecureStore read for the MMKV encryption key base64 string.
- * This caches the SecureStore LOOKUP (a string), not the derived key material.
- * The actual AEAD Uint8Array is re-derived via HKDF on every call (F10).
- * Reset to null on clearAllE2EState() so the next getAEADKey reads fresh.
+ * V4-F9: No caching of encryption key material — read from SecureStore every time.
+ * Previously cached the base64 string in `cachedEncKeyB64`, which allowed a Frida
+ * attacker to find it in the JS heap and derive the AEAD key via HKDF.
+ * Now reads from SecureStore on every call (~1-2ms overhead, acceptable).
  */
-let cachedEncKeyB64: string | null = null;
 
-/** Derive the 32-byte AEAD key. HKDF runs every call (F10). SecureStore read is cached. */
+/** Derive the 32-byte AEAD key. SecureStore + HKDF on every call (F10 + V4-F9). */
 export async function getAEADKey(): Promise<Uint8Array> {
-  if (!cachedEncKeyB64) {
-    cachedEncKeyB64 = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
-  }
-  if (!cachedEncKeyB64) throw new Error('MMKV encryption key not available');
-  const encKey = fromBase64(cachedEncKeyB64);
-  return hkdfDeriveSecrets(encKey, new Uint8Array(32), 'MizanlyMMKVAEAD', 32);
+  const encKeyB64 = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
+  if (!encKeyB64) throw new Error('MMKV encryption key not available');
+  const encKey = fromBase64(encKeyB64);
+  const derived = hkdfDeriveSecrets(encKey, new Uint8Array(32), 'MizanlyMMKVAEAD', 32);
+  zeroOut(encKey); // V4-F9: Zero master key bytes after derivation
+  return derived;
 }
 
 /**
@@ -222,6 +224,8 @@ export async function aeadSet(mmkv: MMKV, storageKey: string, value: string, aad
   const plaintext = utf8Encode(value);
   const aad = utf8Encode(aadKey ?? storageKey); // Original key name as AAD — prevents cross-key swaps
   const ciphertext = aeadEncrypt(aKey, nonce, plaintext, aad);
+  // V4-F24: Zero AEAD key after use (reduces heap exposure window)
+  zeroOut(aKey);
   // Prefix: 'A1:' = AEAD version 1 (enables future migration + backward compat)
   const combined = new Uint8Array(nonce.length + ciphertext.length);
   combined.set(nonce);
@@ -250,14 +254,17 @@ export async function aeadGet(mmkv: MMKV, storageKey: string, aadKey?: string): 
 
   const aKey = await getAEADKey();
   const combined = fromBase64(raw.slice(3)); // Skip 'A1:' prefix
-  if (combined.length < 25) throw new Error('MMKV AEAD: value too short (tampered?)');
+  if (combined.length < 25) { zeroOut(aKey); throw new Error('MMKV AEAD: value too short (tampered?)'); }
   const nonce = combined.slice(0, 24);
   const ciphertext = combined.slice(24);
   const aad = utf8Encode(aadKey ?? storageKey);
   try {
     const plaintext = aeadDecrypt(aKey, nonce, ciphertext, aad);
+    // V4-F24: Zero AEAD key after use
+    zeroOut(aKey);
     return utf8Decode(plaintext);
   } catch {
+    zeroOut(aKey);
     throw new Error(
       `MMKV integrity check failed for key "${(aadKey ?? storageKey).split(':')[0]}:...". ` +
       'Session state may have been tampered with. Re-establishing session.',
@@ -1030,23 +1037,43 @@ export async function cleanupOrphanedOTPKeys(): Promise<number> {
   const registeredOTPIds: number[] = JSON.parse(registryJson);
   if (registeredOTPIds.length === 0) return 0;
 
-  // Check each session — if established, its OTP key is safe to delete
-  // We can't easily map OTP key ID to session, so we use a heuristic:
-  // if ALL sessions are established, all remaining OTP private keys
-  // in SecureStore (for which no unestablished session exists) are orphans.
+  // V4-F15: Check sessions via AEAD-verified reads.
+  // For legacy sessions (session:userId:deviceId prefix), we can extract the userId:deviceId
+  // and call loadSessionRecord which properly verifies AEAD with the correct AAD.
+  // For HMAC-keyed sessions, we can't reverse the HMAC — but if sessions have been
+  // migrated, the legacy key was deleted. No legacy key = can't verify = be conservative.
   let hasUnestablishedSession = false;
-  for (const key of sessionKeys) {
-    const json = mmkv.getString(key);
-    if (!json) continue;
+  const legacySessions = sessionKeys.filter((k) => k.startsWith(MMKV_PREFIX.SESSION));
+  const hmacKeyedSessions = sessionKeys.filter((k) => k.startsWith(HMAC_TYPE.SESSION));
+
+  // Check legacy sessions via loadSessionRecord (proper AEAD + AAD)
+  for (const key of legacySessions) {
     try {
-      const raw = JSON.parse(json);
-      if (raw.activeSession && !raw.activeSession.sessionEstablished) {
+      // Extract userId:deviceId from "session:userId:deviceId"
+      const parts = key.replace(MMKV_PREFIX.SESSION, '').split(':');
+      if (parts.length < 2) continue;
+      const deviceId = parseInt(parts[parts.length - 1], 10);
+      const userId = parts.slice(0, -1).join(':');
+      const record = await loadSessionRecord(userId, deviceId);
+      if (record && !record.activeSession.sessionEstablished) {
         hasUnestablishedSession = true;
         break;
       }
     } catch {
-      // Corrupted session — skip
+      // AEAD verification failed — treat as unestablished (conservative)
+      hasUnestablishedSession = true;
+      break;
     }
+  }
+
+  // For HMAC-keyed sessions, we can't extract userId:deviceId from the hashed key.
+  // If HMAC sessions exist AND no legacy sessions were found unestablished,
+  // we still can't prove all HMAC sessions are established — be conservative.
+  if (!hasUnestablishedSession && hmacKeyedSessions.length > 0 && legacySessions.length === 0) {
+    // All sessions are HMAC-keyed (fully migrated). We can't verify them here.
+    // Only safe to cleanup if no sessions exist at all (no OTPs needed).
+    // If sessions exist, assume at least one could be unestablished.
+    hasUnestablishedSession = true;
   }
 
   // Only clean up if no unestablished sessions exist (safe to delete all OTP keys)
@@ -1223,7 +1250,7 @@ export async function importAllState(data: Uint8Array, password: string): Promis
   mmkvInstance = null;
   mmkvInitPromise = null;
   hmacKeyForNames = null;
-  cachedEncKeyB64 = null;
+  // V4-F9: cachedEncKeyB64 removed — no longer cached
   const mmkv = await getMMKV();
   for (const [key, val] of Object.entries(state.mmkvEntries ?? {})) {
     mmkv.set(key, val as string);
@@ -1340,7 +1367,11 @@ export async function clearAllE2EState(): Promise<void> {
       key.startsWith(HMAC_TYPE.SEARCH_TOKEN) ||
       key.startsWith(HMAC_TYPE.SEARCH_MSG) ||
       key.startsWith(HMAC_TYPE.PREVIEW_KEY) ||
-      key.startsWith(HMAC_TYPE.SENDER_GROUPS)
+      key.startsWith(HMAC_TYPE.SENDER_GROUPS) ||
+      key.startsWith(HMAC_TYPE.SEALED_CTR) ||
+      key.startsWith(HMAC_TYPE.PREKEY_REGISTRY) ||
+      key.startsWith(HMAC_TYPE.CACHE_COUNT) ||
+      key.startsWith(HMAC_TYPE.SEARCH_COUNT)
     ) {
       mmkv.set(key, '{}');
     }
@@ -1353,7 +1384,12 @@ export async function clearAllE2EState(): Promise<void> {
   mmkvInstance = null;
   mmkvInitPromise = null;
   hmacKeyForNames = null;
-  cachedEncKeyB64 = null; // F10: force fresh SecureStore read on next operation
+
+  // Reset sealed sender module state (counter + loaded flag)
+  try {
+    const { resetSealedSenderState } = await import('./sealed-sender');
+    resetSealedSenderState();
+  } catch { /* sealed-sender module may not be loaded yet */ }
 }
 
 /**
@@ -1400,5 +1436,15 @@ export async function panicWipe(): Promise<void> {
   mmkvInstance = null;
   mmkvInitPromise = null;
   hmacKeyForNames = null;
-  cachedEncKeyB64 = null;
+  // V4-F9: cachedEncKeyB64 removed — no longer cached
+}
+
+/**
+ * Reset module-level singletons for testing only.
+ * Forces fresh key derivation on next operation.
+ */
+export function _resetForTesting(): void {
+  mmkvInstance = null;
+  mmkvInitPromise = null;
+  hmacKeyForNames = null;
 }

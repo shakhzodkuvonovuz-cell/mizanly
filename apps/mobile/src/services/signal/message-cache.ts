@@ -44,26 +44,32 @@ const CACHE_GLOBAL_COUNT_KEY = 'msgcache:__count';
 // COUNT HELPERS (plain numbers, not sensitive — only key is HMAC'd)
 // ============================================================
 
+/**
+ * V4-F17: Global count stored via AEAD (not raw MMKV number).
+ * Previously stored as plain number, visible to filesystem forensics.
+ */
 async function getGlobalCount(): Promise<number> {
+  const val = await secureLoad(HMAC_TYPE.CACHE_COUNT, CACHE_GLOBAL_COUNT_KEY);
+  if (val !== null) return parseInt(val, 10) || 0;
+  // Migration: check legacy raw number keys, delete-then-write for crash safety
   const mmkv = await getMMKV();
   const hashed = hmacKeyName(HMAC_TYPE.CACHE_COUNT, CACHE_GLOBAL_COUNT_KEY);
-  // Try hashed key first, then legacy
   let count = mmkv.getNumber(hashed);
-  if (count === undefined) {
-    count = mmkv.getNumber(CACHE_GLOBAL_COUNT_KEY);
-    if (count !== undefined) {
-      // Migrate: write to hashed, delete legacy
-      mmkv.set(hashed, count);
-      mmkv.delete(CACHE_GLOBAL_COUNT_KEY);
-    }
+  if (count === undefined) count = mmkv.getNumber(CACHE_GLOBAL_COUNT_KEY);
+  if (count !== undefined) {
+    // Delete legacy FIRST — if crash here, count is 0 (self-heals on next write).
+    // If we wrote AEAD first and crashed before delete, both exist = no issue
+    // (AEAD takes priority on next read), but deleting first is cleaner.
+    mmkv.delete(hashed);
+    mmkv.delete(CACHE_GLOBAL_COUNT_KEY);
+    await secureStore(HMAC_TYPE.CACHE_COUNT, CACHE_GLOBAL_COUNT_KEY, String(count));
+    return count;
   }
-  return count ?? 0;
+  return 0;
 }
 
 async function setGlobalCount(count: number): Promise<void> {
-  const mmkv = await getMMKV();
-  const hashed = hmacKeyName(HMAC_TYPE.CACHE_COUNT, CACHE_GLOBAL_COUNT_KEY);
-  mmkv.set(hashed, count);
+  await secureStore(HMAC_TYPE.CACHE_COUNT, CACHE_GLOBAL_COUNT_KEY, String(count));
 }
 
 // ============================================================

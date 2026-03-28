@@ -529,19 +529,29 @@ export async function distributeSenderKeyToMembers(
     }
   }
 
+  // V4-F12: Zero the serialized key material before the retry closure captures it.
+  // The retry re-serializes from persisted state (AEAD-protected in MMKV).
+  const retryGroupId = groupId;
+  const retryChainId = state.chainId;
+  const retryGeneration = state.generation;
+  zeroOut(serialized);
+
   // F21 FIX: Retry distribution for unacknowledged members after 30 seconds.
-  // Members who were offline during distribution get a retry automatically.
-  // After retry, remaining failures are accepted (lazy re-distribution on first message).
   if (unacknowledged.length > 0) {
     setTimeout(async () => {
+      // Re-load and re-serialize from MMKV (not from captured closure variable)
+      const freshState = await loadSenderKeyState(retryGroupId, 'self');
+      if (!freshState) return;
+      const freshSerialized = serializeSenderKeyForDistribution(freshState);
       for (const memberId of unacknowledged) {
         try {
-          const encrypted = await encryptForMember(memberId, serialized);
-          await uploadToServer(groupId, memberId, encrypted, state.chainId, state.generation);
+          const encrypted = await encryptForMember(memberId, freshSerialized);
+          await uploadToServer(retryGroupId, memberId, encrypted, retryChainId, retryGeneration);
         } catch {
           // Final failure — member will request re-distribution on join
         }
       }
+      zeroOut(freshSerialized);
     }, 30_000);
   }
 

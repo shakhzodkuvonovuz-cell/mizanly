@@ -33,15 +33,17 @@ describe('F1: Transparency root signature', () => {
     const { verifyMerkleProof } = require('../key-transparency');
     const { sha256Hash, concat } = require('../crypto');
 
-    // Build a simple 2-leaf tree
+    // Build a simple 2-leaf tree with V4-F7 domain separation prefixes
     const userId1 = 'user1';
     const key1 = generateRandomBytes(32);
     const userId2 = 'user2';
     const key2 = generateRandomBytes(32);
 
-    const leaf1 = sha256Hash(concat(new Uint8Array(new TextEncoder().encode(userId1)), key1));
-    const leaf2 = sha256Hash(concat(new Uint8Array(new TextEncoder().encode(userId2)), key2));
-    const root = sha256Hash(concat(leaf1, leaf2));
+    const LEAF_PREFIX = new Uint8Array([0x00]);
+    const INTERNAL_PREFIX = new Uint8Array([0x01]);
+    const leaf1 = sha256Hash(concat(LEAF_PREFIX, new Uint8Array(new TextEncoder().encode(userId1)), key1));
+    const leaf2 = sha256Hash(concat(LEAF_PREFIX, new Uint8Array(new TextEncoder().encode(userId2)), key2));
+    const root = sha256Hash(concat(INTERNAL_PREFIX, leaf1, leaf2));
 
     // Proof for leaf1 (index 0): sibling is leaf2
     const valid = verifyMerkleProof(userId1, key1, [toBase64(leaf2)], 0, toBase64(root));

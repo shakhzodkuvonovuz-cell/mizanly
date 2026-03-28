@@ -37,7 +37,14 @@ const SecureStore = require('expo-secure-store');
 beforeEach(async () => {
   SecureStore.__reset();
   // Set MMKV encryption key so cache/search modules can initialize
-  await SecureStore.setItemAsync('e2e_mmkv_key', toBase64(generateRandomBytes(16)));
+  await SecureStore.setItemAsync('e2e_mmkv_key', toBase64(generateRandomBytes(32)));
+  // V4-F9: Reset module singletons to force fresh key derivation.
+  // Without this, the MMKV singleton retains the previous test's AEAD key
+  // while SecureStore has been reset with a new random key.
+  const storage = require('../storage');
+  if (typeof storage._resetForTesting === 'function') {
+    storage._resetForTesting();
+  }
 });
 
 // ============================================================
@@ -47,10 +54,11 @@ beforeEach(async () => {
 describe('offline queue', () => {
   beforeEach(async () => {
     // Clear any leftover queue entries from other tests
-    const { clearAllE2EState } = require('../storage');
+    const { clearAllE2EState, _resetForTesting } = require('../storage');
     await clearAllE2EState().catch(() => {});
+    _resetForTesting();
     // Re-set the MMKV key after clearing
-    await SecureStore.setItemAsync('e2e_mmkv_key', toBase64(generateRandomBytes(16)));
+    await SecureStore.setItemAsync('e2e_mmkv_key', toBase64(generateRandomBytes(32)));
   });
 
   function createTestMessage(overrides?: Partial<QueuedMessage>): QueuedMessage {
