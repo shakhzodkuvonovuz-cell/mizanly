@@ -50,6 +50,7 @@ import {
   encryptGroupMessage,
   decryptGroupMessage,
   distributeSenderKeyToMembers,
+  resetSession,
 } from '@/services/signal';
 import { toBase64, fromBase64, utf8Encode } from '@/services/signal/crypto';
 import type { Message, Conversation, ConversationMember } from '@/types';
@@ -875,7 +876,13 @@ export default function ConversationScreen() {
       }).catch(() => {});
       indexMessage(message.id, id, decrypted, new Date(message.createdAt).getTime()).catch(() => {});
       return decrypted;
-    } catch {
+    } catch (err) {
+      // Session auto-recovery: if decrypt fails on all sessions, reset and
+      // flag for re-establishment. Next message send will trigger fresh X3DH.
+      const errMsg = String(err);
+      if (errMsg.includes('Failed to decrypt') || errMsg.includes('session') || errMsg.includes('integrity')) {
+        resetSession(senderId, message.e2eSenderDeviceId ?? 1).catch(() => {});
+      }
       return '[Encrypted message]';
     }
   }, [id]);
@@ -2132,18 +2139,40 @@ export default function ConversationScreen() {
               key={conv.id}
               label={conversationName(conv, user?.id, t)}
               icon={<Avatar uri={conversationAvatar(conv, user?.id)} name={conversationName(conv, user?.id, t)} size="sm" />}
-              onPress={() => {
-                if (forwardMsg && socketRef.current) {
-                  socketRef.current.emit('send_message', {
-                    conversationId: conv.id,
-                    content: forwardMsg.content || '',
-                    messageType: forwardMsg.messageType || 'TEXT',
-                    mediaUrl: forwardMsg.mediaUrl,
-                    mediaType: forwardMsg.mediaType,
-                  });
+              onPress={async () => {
+                if (!forwardMsg) return;
+                try {
+                  // E2E encrypt for the TARGET conversation's recipient
+                  const targetMember = conv.members?.find((m: ConversationMember) => m.userId !== user?.id);
+                  const targetRecipientId = targetMember?.userId;
+                  const forwardContent = forwardMsg.content || forwardMsg.mediaUrl || '';
+
+                  if (targetRecipientId && forwardContent) {
+                    // Ensure session with target recipient
+                    const has = await hasEstablishedSession(targetRecipientId);
+                    if (!has) {
+                      const { bundle } = await fetchPreKeyBundle(targetRecipientId);
+                      await createInitiatorSession(targetRecipientId, 1, bundle);
+                    }
+                    const signalMsg = await signalEncrypt(targetRecipientId, 1, forwardContent);
+                    const clientMessageId = `fwd_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                    socketRef.current?.emit('send_message', {
+                      conversationId: conv.id,
+                      clientMessageId,
+                      encryptedContent: toBase64(signalMsg.ciphertext),
+                      e2eVersion: 1,
+                      e2eSenderDeviceId: 1,
+                      e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
+                      e2eCounter: signalMsg.header.counter,
+                      e2ePreviousCounter: signalMsg.header.previousCounter,
+                      messageType: forwardMsg.messageType || 'TEXT',
+                    });
+                  }
                   setForwardMsg(null);
                   haptic.success();
                   showToast({ message: t('messages.forwardedSuccess', { name: conversationName(conv, user?.id, t) }), variant: 'success' });
+                } catch {
+                  showToast({ message: t('errors.encryptionFailed'), variant: 'error' });
                 }
               }}
             />
