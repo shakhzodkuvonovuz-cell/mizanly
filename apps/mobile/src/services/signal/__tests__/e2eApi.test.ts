@@ -708,35 +708,35 @@ describe('rate limit handling (429)', () => {
 // ============================================================
 
 describe('error handling', () => {
-  it('throws on 500 server error with status and path', async () => {
+  it('throws on 500 with status only — no path/body leak (F9)', async () => {
     mockFetchResponses.push({
       status: 500,
       ok: false,
       json: async () => ({}),
       text: async () => 'Internal Server Error',
     });
-    await expect(getPreKeyCount()).rejects.toThrow('E2E API error: 500');
+    await expect(getPreKeyCount()).rejects.toThrow('E2E request failed: 500');
   });
 
-  it('includes response body in error message', async () => {
+  it('does NOT include response body in error (F9: sanitized)', async () => {
     mockFetchResponses.push({
       status: 400,
       ok: false,
       json: async () => ({}),
       text: async () => 'Bad Request: missing deviceId',
     });
-    await expect(registerIdentityKey(1, testBytes(32), 1000)).rejects.toThrow('Bad Request: missing deviceId');
+    // F9: error must only contain status code, NOT server response body or path
+    await expect(registerIdentityKey(1, testBytes(32), 1000)).rejects.toThrow('E2E request failed: 400');
   });
 
-  it('handles non-JSON error body gracefully', async () => {
+  it('handles non-JSON error body gracefully (F9: status only)', async () => {
     mockFetchResponses.push({
       status: 502,
       ok: false,
       json: async () => { throw new Error('not json'); },
       text: async () => { throw new Error('body read failed'); },
     });
-    // Should still throw with status, even though text() fails
-    await expect(getPreKeyCount()).rejects.toThrow('E2E API error: 502');
+    await expect(getPreKeyCount()).rejects.toThrow('E2E request failed: 502');
   });
 
   it('throws on network error (fetch rejects)', async () => {
@@ -745,24 +745,24 @@ describe('error handling', () => {
     await expect(getPreKeyCount()).rejects.toThrow('Network request failed');
   });
 
-  it('throws on 404 for missing user bundle', async () => {
+  it('throws on 404 for missing user bundle (F9: no path leak)', async () => {
     mockFetchResponses.push({
       status: 404,
       ok: false,
       json: async () => ({}),
       text: async () => 'User not found',
     });
-    await expect(fetchPreKeyBundle('nonexistent-user')).rejects.toThrow('E2E API error: 404');
+    await expect(fetchPreKeyBundle('nonexistent-user')).rejects.toThrow('E2E request failed: 404');
   });
 
-  it('throws on 401 unauthorized', async () => {
+  it('throws on 401 unauthorized (F9: no body leak)', async () => {
     mockFetchResponses.push({
       status: 401,
       ok: false,
       json: async () => ({}),
       text: async () => 'Unauthorized',
     });
-    await expect(getPreKeyCount()).rejects.toThrow('E2E API error: 401');
+    await expect(getPreKeyCount()).rejects.toThrow('E2E request failed: 401');
   });
 });
 

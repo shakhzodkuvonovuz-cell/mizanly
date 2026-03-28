@@ -140,9 +140,8 @@ export async function getMMKV(): Promise<MMKV> {
         // No encryptionKey — AEAD handles all crypto
       });
 
-      // F4: Pre-load AEAD key so hmacKeyName() can use it synchronously
-      // after getMMKV() resolves. All subsequent storage operations can
-      // compute HMAC key names without awaiting.
+      // F4: Pre-load AEAD key source so hmacKeyName() can derive it synchronously.
+      // F10: Only the base64 source string is cached, not the derived Uint8Array.
       await getAEADKey();
 
       return mmkvInstance;
@@ -169,17 +168,27 @@ export async function getMMKV(): Promise<MMKV> {
  * so no additional SecureStore entry is needed.
  */
 
-/** Cached AEAD key — derived once from MMKV encryption key */
-let aeadKey: Uint8Array | null = null;
+/**
+ * F10 FIX: AEAD key is re-derived on each operation, NOT cached in a module variable.
+ *
+ * Previously: `let aeadKey: Uint8Array | null` persisted in JS heap for the entire
+ * app lifetime. A memory dump → find aeadKey → decrypt ALL MMKV values.
+ * After clearAllE2EState set it to null, GC timing was unpredictable.
+ *
+ * Now: the base64 source key is cached (it's a string, already in SecureStore),
+ * but the derived Uint8Array is freshly computed per call via HKDF (~0.5ms).
+ * No persistent key material in the JS heap.
+ */
+let aeadKeySourceB64: string | null = null;
 
-/** Derive the 32-byte AEAD key from the 16-byte MMKV encryption key */
-async function getAEADKey(): Promise<Uint8Array> {
-  if (aeadKey) return aeadKey;
-  const encKeyB64 = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
-  if (!encKeyB64) throw new Error('MMKV encryption key not available');
-  const encKey = fromBase64(encKeyB64);
-  aeadKey = hkdfDeriveSecrets(encKey, new Uint8Array(32), 'MizanlyMMKVAEAD', 32);
-  return aeadKey;
+/** Derive the 32-byte AEAD key from the MMKV encryption key. Re-derives every call. */
+export async function getAEADKey(): Promise<Uint8Array> {
+  if (!aeadKeySourceB64) {
+    aeadKeySourceB64 = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
+    if (!aeadKeySourceB64) throw new Error('MMKV encryption key not available');
+  }
+  const encKey = fromBase64(aeadKeySourceB64);
+  return hkdfDeriveSecrets(encKey, new Uint8Array(32), 'MizanlyMMKVAEAD', 32);
 }
 
 /**
@@ -247,11 +256,12 @@ export async function aeadGet(mmkv: MMKV, storageKey: string, aadKey?: string): 
 
 /**
  * Get the AEAD key synchronously. Only safe to call AFTER getMMKV() has resolved
- * (which pre-loads the AEAD key). Throws if called before initialization.
+ * (which pre-loads the source key). Re-derives the key each time (F10).
  */
 function getAEADKeySync(): Uint8Array {
-  if (!aeadKey) throw new Error('AEAD key not initialized — call getMMKV() first');
-  return aeadKey;
+  if (!aeadKeySourceB64) throw new Error('AEAD key source not initialized — call getMMKV() first');
+  const encKey = fromBase64(aeadKeySourceB64);
+  return hkdfDeriveSecrets(encKey, new Uint8Array(32), 'MizanlyMMKVAEAD', 32);
 }
 
 /**
@@ -1179,7 +1189,7 @@ export async function importAllState(data: Uint8Array, password: string): Promis
   // Reset MMKV instance to use the restored encryption key
   mmkvInstance = null;
   mmkvInitPromise = null;
-  aeadKey = null;
+  aeadKeySourceB64 = null;
   const mmkv = await getMMKV();
   for (const [key, val] of Object.entries(state.mmkvEntries ?? {})) {
     mmkv.set(key, val as string);
@@ -1308,5 +1318,5 @@ export async function clearAllE2EState(): Promise<void> {
   // Reset singletons so next getMMKV() re-reads the encryption key
   mmkvInstance = null;
   mmkvInitPromise = null;
-  aeadKey = null;
+  aeadKeySourceB64 = null;
 }

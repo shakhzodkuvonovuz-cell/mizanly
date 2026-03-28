@@ -16,9 +16,7 @@
  */
 
 import * as Notifications from 'expo-notifications';
-import { MMKV } from 'react-native-mmkv';
-import * as SecureStore from 'expo-secure-store';
-import { aeadDecrypt, hkdfDeriveSecrets, fromBase64, utf8Decode } from './crypto';
+import { aeadDecrypt, fromBase64, utf8Decode } from './crypto';
 
 /** HKDF info string for conversation preview encryption */
 const PREVIEW_KEY_INFO = 'MizanlyPreview';
@@ -83,31 +81,12 @@ async function decryptNotificationPreview(
     const nonce = encryptedPreview.slice(0, 24);
     const ciphertext = encryptedPreview.slice(24);
 
-    // Load MMKV encryption key to derive AEAD key for preview key access
-    const mmkvKey = await SecureStore.getItemAsync('e2e_mmkv_key');
-    if (!mmkvKey) return null;
-
-    // F11 FIX: Use the shared unencrypted MMKV with AEAD, matching storage.ts pattern.
-    // Previously created its own MMKV with AES-CFB encryptionKey (weaker protection).
-    // The preview key is AEAD-wrapped with HMAC-hashed key name (F4).
-    const { MMKV } = await import('react-native-mmkv');
-    const mmkv = new MMKV({ id: 'mizanly-signal' });
-    // Derive AEAD key (same derivation as storage.ts getAEADKey)
-    const { hkdfDeriveSecrets: hkdf } = await import('./crypto');
-    const encKey = fromBase64(mmkvKey);
-    const aeadKeyLocal = hkdf(encKey, new Uint8Array(32), 'MizanlyMMKVAEAD', 32);
-    // Compute HMAC key name for preview key
-    const { hmac } = await import('@noble/hashes/hmac');
-    const { sha256 } = await import('@noble/hashes/sha256');
-    const { utf8Encode: encode } = await import('./crypto');
+    // F11 FIX: Use storage.ts secureLoad directly instead of creating our own MMKV.
+    // Previously duplicated MMKV init, AEAD derivation, and HMAC logic — error-prone
+    // and used the OLD AES-CFB pattern. Now delegates to the single source of truth.
+    const { secureLoad, HMAC_TYPE } = await import('./storage');
     const originalKey = `previewkey:${conversationId}`;
-    const hash = hmac(sha256, aeadKeyLocal, encode(originalKey));
-    const hashedKey = 'p:' + (await import('./crypto')).toBase64(hash.slice(0, 16));
-    // Try hashed key first, then legacy
-    let previewKeyB64 = mmkv.getString(hashedKey);
-    if (!previewKeyB64) {
-      previewKeyB64 = mmkv.getString(`previewkey:${conversationId}`);
-    }
+    const previewKeyB64 = await secureLoad(HMAC_TYPE.PREVIEW_KEY, originalKey);
     if (!previewKeyB64) return null;
 
     const previewKey = fromBase64(previewKeyB64);

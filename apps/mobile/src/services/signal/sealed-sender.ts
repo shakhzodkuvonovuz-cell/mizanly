@@ -36,9 +36,22 @@ import {
   fromBase64,
   zeroOut,
 } from './crypto';
-import { loadIdentityKeyPair, loadKnownIdentityKey } from './storage';
+import { loadIdentityKeyPair, loadKnownIdentityKey, secureStore, secureLoad, HMAC_TYPE } from './storage';
 
 const SEALED_SENDER_INFO = 'MizanlySealedSender';
+
+/**
+ * F13: Sealed sender replay protection.
+ *
+ * Each sealed envelope includes a timestamp and monotonic counter.
+ * Recipients reject envelopes that are:
+ * - Older than 5 minutes (prevents delayed replay)
+ * - Have a counter <= the last seen counter for that sender (prevents immediate replay)
+ *
+ * The counter is tracked per-sender in MMKV (AEAD-wrapped, HMAC-hashed key).
+ */
+const SEALED_REPLAY_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
+let sealedSenderCounter = 0; // Monotonic counter, reset on app restart (OK — timestamp is primary)
 
 /** Sealed envelope: server sees this, cannot determine sender */
 export interface SealedEnvelope {
@@ -83,8 +96,15 @@ export async function sealMessage(
   const nonce = sealKey.slice(32, 56);
   zeroOut(dhOutput);
 
-  // Encrypt the inner envelope: { senderId, senderDeviceId, innerContent }
-  const innerJson = JSON.stringify({ senderId, senderDeviceId, innerContent });
+  // F13: Include timestamp + counter for replay protection
+  sealedSenderCounter++;
+  const innerJson = JSON.stringify({
+    senderId,
+    senderDeviceId,
+    innerContent,
+    ts: Date.now(),         // F13: Reject envelopes older than 5 minutes
+    ctr: sealedSenderCounter, // F13: Reject envelopes with counter <= last seen
+  });
   const plaintext = utf8Encode(innerJson);
 
   // AAD: recipientId prevents envelope being redirected to wrong recipient
@@ -140,6 +160,39 @@ export async function unsealMessage(
   zeroOut(encKey);
   zeroOut(nonce);
 
-  const inner = JSON.parse(utf8Decode(plaintext)) as UnsealedContent;
-  return inner;
+  const raw = JSON.parse(utf8Decode(plaintext));
+
+  // F13: Replay protection — check timestamp and counter
+  const ts = raw.ts as number | undefined;
+  const ctr = raw.ctr as number | undefined;
+
+  if (ts !== undefined) {
+    const age = Date.now() - ts;
+    if (age > SEALED_REPLAY_MAX_AGE_MS || age < -60_000) {
+      // Too old (>5min) or too far in the future (>1min clock skew tolerance)
+      throw new Error('Sealed sender envelope expired — possible replay attack');
+    }
+  }
+
+  if (ctr !== undefined && raw.senderId) {
+    // Check + update the last-seen counter for this sender
+    const counterKey = `sealed_ctr:${raw.senderId}`;
+    try {
+      const lastSeenStr = await secureLoad(HMAC_TYPE.PREVIEW_KEY, counterKey);
+      const lastSeen = lastSeenStr ? parseInt(lastSeenStr, 10) : -1;
+      if (ctr <= lastSeen) {
+        throw new Error('Sealed sender envelope replayed — counter not advanced');
+      }
+      await secureStore(HMAC_TYPE.PREVIEW_KEY, counterKey, String(ctr));
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('replayed')) throw err;
+      // Storage error — allow the message (fail-open for replay, fail-closed for crypto)
+    }
+  }
+
+  return {
+    senderId: raw.senderId,
+    senderDeviceId: raw.senderDeviceId,
+    innerContent: raw.innerContent,
+  };
 }

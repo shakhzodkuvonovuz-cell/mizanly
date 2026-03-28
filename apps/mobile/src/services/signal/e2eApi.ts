@@ -72,8 +72,11 @@ async function e2eFetch(
   }
 
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(`E2E API error: ${response.status} ${path} — ${body}`);
+    // F9 FIX: Strip path and response body from error messages.
+    // Previously: `E2E API error: 404 /api/v1/e2e/keys/bundle/user_abc — {"error":"not found"}`
+    // If this reaches Sentry breadcrumbs, server internals (paths, response bodies) leak.
+    // Now: generic status code only. The path and body are NOT logged anywhere.
+    throw new Error(`E2E request failed: ${response.status}`);
   }
 
   return response;

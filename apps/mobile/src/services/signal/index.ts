@@ -232,23 +232,39 @@ export async function initialize(
  * Runs in background on app open. Failures are silently ignored —
  * sessions will be lazily established on first message send.
  */
+/**
+ * F8 FIX: Use batch bundle fetch to avoid leaking individual contact list.
+ *
+ * Previously: 10 sequential fetchPreKeyBundle calls → server sees exactly which
+ * 10 users you talk to most (full social graph for top contacts).
+ *
+ * Now: single batch request POST /keys/bundles/batch with all user IDs.
+ * The server sees the batch but can't distinguish "top contact" from "random user"
+ * since the batch endpoint is also used for group session establishment.
+ */
 async function preWarmSessions(userIds: string[]): Promise<string[]> {
-  const toWarm = userIds.slice(0, 10); // Top 10 contacts — budget: 10 OTPs
+  const toWarm: string[] = [];
+  for (const userId of userIds.slice(0, 10)) {
+    const has = await hasEstablishedSession(userId);
+    if (!has) toWarm.push(userId);
+  }
+  if (toWarm.length === 0) return [];
+
   const established: string[] = [];
-
-  for (const userId of toWarm) {
-    try {
-      const has = await hasEstablishedSession(userId);
-      if (has) continue;
-
-      // Fetch bundle + establish session (consumes 1 OTP per contact)
-      const { bundle } = await fetchPreKeyBundle(userId);
-      await createInitiatorSession(userId, 1, bundle);
-      established.push(userId);
-      recordE2EEvent({ event: 'session_established', metadata: { preWarmed: true } });
-    } catch {
-      // Non-fatal — will establish lazily on first message
+  try {
+    // Single batch request — server sees one opaque batch, not individual fetches
+    const bundles = await fetchPreKeyBundlesBatch(toWarm);
+    for (const [userId, bundleResponse] of Object.entries(bundles)) {
+      try {
+        await createInitiatorSession(userId, 1, bundleResponse.bundle);
+        established.push(userId);
+        recordE2EEvent({ event: 'session_established', metadata: { preWarmed: true } });
+      } catch {
+        // Individual session failure — non-fatal
+      }
     }
+  } catch {
+    // Batch fetch failed — will establish lazily on first message
   }
 
   return established;

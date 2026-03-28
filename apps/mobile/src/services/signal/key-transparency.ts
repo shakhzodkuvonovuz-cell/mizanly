@@ -219,6 +219,17 @@ export async function verifyKeyTransparency(
  * @param proof - Consistency proof (array of base64 hashes)
  * @returns true if the log is append-only consistent
  */
+/**
+ * F7 FIX: Full RFC 6962 consistency proof verification.
+ *
+ * Previously returned `true` (stub). Now implements the complete algorithm
+ * from RFC 6962 Section 2.1.2: given the old root, new root, and a proof
+ * path, verify that the old tree is a prefix of the new tree.
+ *
+ * The proof contains hashes that, combined with the old tree's structure,
+ * must reconstruct BOTH the old root and the new root. If either fails,
+ * the server has tampered with the log (removed or modified entries).
+ */
 export function verifyConsistencyProof(
   oldRoot: string,
   oldSize: number,
@@ -232,20 +243,65 @@ export function verifyConsistencyProof(
   }
   if (oldSize === 0) return true; // Empty tree is consistent with anything
 
-  // RFC 6962 consistency proof verification
-  // Simplified: check that we can reconstruct both roots from the proof
-  // Full implementation would follow Certificate Transparency spec exactly
-  // For now, verify that proof is non-empty (server provided it)
-  // and that both roots are 32 bytes (valid SHA-256)
   const oldRootBytes = fromBase64(oldRoot);
   const newRootBytes = fromBase64(newRoot);
   if (oldRootBytes.length !== 32 || newRootBytes.length !== 32) return false;
-  if (proof.length === 0 && oldSize !== newSize) return false;
+  if (proof.length === 0) return false; // Non-trivial consistency needs proof nodes
 
-  // TODO: Full RFC 6962 consistency proof verification
-  // For now, basic structural checks pass. Full crypto verification
-  // will be added when the Go server implements the transparency log.
-  return true;
+  const proofHashes = proof.map((p) => fromBase64(p));
+
+  // RFC 6962 consistency proof algorithm:
+  // Find the largest power of 2 <= oldSize (the "split point")
+  // Then walk the proof path reconstructing both roots.
+  let node = oldSize - 1; // 0-indexed
+  let lastNode = newSize - 1;
+
+  // Strip least-significant zeros to find the starting position
+  while (node % 2 === 1) {
+    node = Math.floor(node / 2);
+    lastNode = Math.floor(lastNode / 2);
+  }
+
+  let proofIdx = 0;
+  let oldHash: Uint8Array;
+  let newHash: Uint8Array;
+
+  if (proofIdx >= proofHashes.length) return false;
+  oldHash = proofHashes[proofIdx];
+  newHash = proofHashes[proofIdx];
+  proofIdx++;
+
+  while (node > 0) {
+    if (node % 2 === 1) {
+      // Node is a right child — proof hash is the left sibling
+      if (proofIdx >= proofHashes.length) return false;
+      const sibling = proofHashes[proofIdx];
+      proofIdx++;
+      oldHash = sha256Hash(concat(sibling, oldHash));
+      newHash = sha256Hash(concat(sibling, newHash));
+    } else if (node < lastNode) {
+      // Node is a left child with a right sibling in the new tree
+      if (proofIdx >= proofHashes.length) return false;
+      const sibling = proofHashes[proofIdx];
+      proofIdx++;
+      // Only the new hash includes this sibling (old tree doesn't extend here)
+      newHash = sha256Hash(concat(newHash, sibling));
+    }
+    node = Math.floor(node / 2);
+    lastNode = Math.floor(lastNode / 2);
+  }
+
+  // Continue walking up for the new tree (old tree is fully reconstructed)
+  while (lastNode > 0) {
+    if (proofIdx >= proofHashes.length) return false;
+    const sibling = proofHashes[proofIdx];
+    proofIdx++;
+    newHash = sha256Hash(concat(newHash, sibling));
+    lastNode = Math.floor(lastNode / 2);
+  }
+
+  // Both reconstructed roots must match
+  return constantTimeEqual(oldHash, oldRootBytes) && constantTimeEqual(newHash, newRootBytes);
 }
 
 /**

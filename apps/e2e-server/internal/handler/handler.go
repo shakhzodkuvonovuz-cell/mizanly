@@ -79,14 +79,18 @@ func (h *Handler) HandleRegisterIdentity(w http.ResponseWriter, r *http.Request)
 	if h.rdb != nil {
 		identityRLKey := fmt.Sprintf("e2e:rl:identity:%s", userID)
 		count, rlErr := h.rdb.Incr(r.Context(), identityRLKey).Result()
-		if rlErr == nil {
-			if count == 1 {
-				h.rdb.Expire(r.Context(), identityRLKey, 24*time.Hour)
-			}
-			if count > 2 { // Allow 2 per day (initial registration + one rotation)
-				writeError(w, http.StatusTooManyRequests, "identity key can only be changed twice per 24 hours")
-				return
-			}
+		if rlErr != nil {
+			// F12 FIX: Fail CLOSED on Redis error. Previously fail-open — Redis outage
+			// allowed unlimited identity key changes (rapid key cycling for MITM).
+			writeError(w, http.StatusTooManyRequests, "rate limiting unavailable — try again later")
+			return
+		}
+		if count == 1 {
+			h.rdb.Expire(r.Context(), identityRLKey, 24*time.Hour)
+		}
+		if count > 2 { // Allow 2 per day (initial registration + one rotation)
+			writeError(w, http.StatusTooManyRequests, "identity key can only be changed twice per 24 hours")
+			return
 		}
 	}
 

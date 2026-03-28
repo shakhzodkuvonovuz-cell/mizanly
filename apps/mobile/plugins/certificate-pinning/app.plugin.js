@@ -34,27 +34,29 @@ const PLUGIN_NAME = 'mizanly-certificate-pinning';
 // ============================================================
 
 // SHA-256 SPKI hashes for certificate pinning.
-// These are PLACEHOLDER values — replace with actual hashes from your certificates
-// before the first EAS build. Use the openssl command above to generate.
+// Generated 2026-03-28 from live production certs using:
+//   openssl s_client -connect api.mizanly.app:443 -showcerts | openssl x509 -pubkey -noout | \
+//     openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
 //
-// Each domain needs 2 pins: primary (current cert) + backup (next cert or CA).
+// Each domain needs 2 pins: primary (leaf cert) + backup (intermediate CA).
 // The backup pin allows certificate rotation without app updates.
 const PINNED_DOMAINS = [
   {
     domain: 'api.mizanly.app',
     pins: [
-      // Primary: Let's Encrypt R3 intermediate CA (covers all LE certs)
-      'jQJTbIh0grw0/1TkHSumWb+Fs0Ggogr621gT3PvPKG0=',
-      // Backup: ISRG Root X1 (Let's Encrypt root — survives intermediate rotation)
-      'C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=',
+      // Primary: leaf certificate SPKI hash (Railway/Cloudflare)
+      'cRZwLNgQoGbIG0UAYZun62UeVxrduZabom9awhuYWew=',
+      // Backup: intermediate CA SPKI hash (survives leaf cert rotation)
+      'iFvwVyJSxnQdyaUvUERIf+8qk7gRze3612JMwoO3zdU=',
     ],
     includeSubdomains: true,
   },
   {
     domain: 'e2e.mizanly.app',
     pins: [
-      'jQJTbIh0grw0/1TkHSumWb+Fs0Ggogr621gT3PvPKG0=',
-      'C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=',
+      // Same CA chain (both behind Cloudflare)
+      'cRZwLNgQoGbIG0UAYZun62UeVxrduZabom9awhuYWew=',
+      'iFvwVyJSxnQdyaUvUERIf+8qk7gRze3612JMwoO3zdU=',
     ],
     includeSubdomains: false,
   },
