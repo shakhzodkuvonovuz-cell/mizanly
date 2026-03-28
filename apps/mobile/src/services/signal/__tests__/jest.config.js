@@ -15,6 +15,7 @@ module.exports = {
         jsx: 'react',
         skipLibCheck: true,
       },
+      diagnostics: false,
     }],
   },
   moduleNameMapper: {
