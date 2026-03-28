@@ -109,7 +109,8 @@
       "expo-screen-capture",
       "./plugins/ffmpeg-kit/app.plugin",
       "./plugins/giphy-sdk/app.plugin",
-      "./plugins/certificate-pinning/app.plugin"
+      "./plugins/certificate-pinning/app.plugin",
+      "react-native-quick-crypto"
     ],
     "experiments": {
       "typedRoutes": true

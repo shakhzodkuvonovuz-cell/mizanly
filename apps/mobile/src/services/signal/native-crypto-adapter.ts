@@ -147,6 +147,135 @@ export function secureRandomBytes(length: number): Uint8Array {
 }
 
 // ============================================================
+// AEAD ENCRYPT/DECRYPT (XChaCha20-Poly1305 via native ChaCha20-Poly1305)
+// ============================================================
+
+/**
+ * XChaCha20-Poly1305 = HChaCha20 key schedule + ChaCha20-Poly1305.
+ * quick-crypto provides ChaCha20-Poly1305 natively (12-byte nonce).
+ * We handle the XChaCha20 extension (24-byte nonce → subkey + 12-byte nonce).
+ *
+ * HChaCha20: takes 32-byte key + 16-byte nonce prefix → 32-byte subkey.
+ * Then ChaCha20-Poly1305 uses the subkey + [0x00,0x00,0x00,0x00, nonce[16:24]].
+ *
+ * This gives us hardware-accelerated AEAD with the 24-byte nonce convenience
+ * of XChaCha20 (no nonce reuse risk with random nonces).
+ */
+
+/** HChaCha20 key schedule — derives subkey from key + 16-byte nonce prefix. */
+function hchacha20(key: Uint8Array, nonce16: Uint8Array): Uint8Array {
+  // HChaCha20 from @noble/ciphers — pure JS, fast (~0.01ms)
+  const { hchacha } = require('@noble/ciphers/chacha');
+  return hchacha(key, nonce16);
+}
+
+/**
+ * XChaCha20-Poly1305 encrypt using native ChaCha20-Poly1305.
+ * Returns ciphertext + 16-byte tag (same format as @noble).
+ */
+export function nativeAeadEncrypt(
+  key: Uint8Array,
+  nonce: Uint8Array,
+  plaintext: Uint8Array,
+  aad?: Uint8Array,
+): Uint8Array | null {
+  if (!nativeAvailable || !nativeCrypto?.createCipheriv) return null;
+  try {
+    // XChaCha20 extension: derive subkey + short nonce
+    const subkey = hchacha20(key, nonce.slice(0, 16));
+    // ChaCha20-Poly1305 uses 12-byte nonce: [0,0,0,0] + nonce[16:24]
+    const shortNonce = new Uint8Array(12);
+    shortNonce.set(nonce.slice(16, 24), 4);
+
+    const cipher = nativeCrypto.createCipheriv(
+      'chacha20-poly1305',
+      Buffer.from(subkey),
+      Buffer.from(shortNonce),
+      { authTagLength: 16 },
+    );
+    if (aad) cipher.setAAD(Buffer.from(aad));
+
+    const encrypted = cipher.update(Buffer.from(plaintext));
+    cipher.final();
+    const tag = cipher.getAuthTag();
+
+    // Combine: ciphertext + tag (matches @noble/ciphers format)
+    const result = new Uint8Array(encrypted.length + tag.length);
+    result.set(new Uint8Array(encrypted));
+    result.set(new Uint8Array(tag), encrypted.length);
+    return result;
+  } catch {
+    return null; // Fall back to @noble
+  }
+}
+
+/**
+ * XChaCha20-Poly1305 decrypt using native ChaCha20-Poly1305.
+ * Input: ciphertext + 16-byte tag (same format as @noble).
+ */
+export function nativeAeadDecrypt(
+  key: Uint8Array,
+  nonce: Uint8Array,
+  ciphertextWithTag: Uint8Array,
+  aad?: Uint8Array,
+): Uint8Array | null {
+  if (!nativeAvailable || !nativeCrypto?.createDecipheriv) return null;
+  if (ciphertextWithTag.length < 16) return null;
+  try {
+    const subkey = hchacha20(key, nonce.slice(0, 16));
+    const shortNonce = new Uint8Array(12);
+    shortNonce.set(nonce.slice(16, 24), 4);
+
+    const ciphertext = ciphertextWithTag.slice(0, -16);
+    const tag = ciphertextWithTag.slice(-16);
+
+    const decipher = nativeCrypto.createDecipheriv(
+      'chacha20-poly1305',
+      Buffer.from(subkey),
+      Buffer.from(shortNonce),
+      { authTagLength: 16 },
+    );
+    decipher.setAuthTag(Buffer.from(tag));
+    if (aad) decipher.setAAD(Buffer.from(aad));
+
+    const decrypted = decipher.update(Buffer.from(ciphertext));
+    decipher.final(); // Throws if auth tag doesn't verify
+    return new Uint8Array(decrypted);
+  } catch {
+    return null; // Fall back to @noble (or throw — caller decides)
+  }
+}
+
+// ============================================================
+// HKDF (native when available)
+// ============================================================
+
+/**
+ * Native HKDF-SHA256.
+ * react-native-quick-crypto provides hkdfSync which uses OpenSSL's HKDF.
+ */
+export function nativeHkdf(
+  ikm: Uint8Array,
+  salt: Uint8Array,
+  info: string,
+  length: number,
+): Uint8Array | null {
+  if (!nativeAvailable || !nativeCrypto?.hkdfSync) return null;
+  try {
+    const result = nativeCrypto.hkdfSync(
+      'sha256',
+      Buffer.from(ikm),
+      Buffer.from(salt),
+      info,
+      length,
+    );
+    return new Uint8Array(result);
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================
 // HASHING (hardware-accelerated when available)
 // ============================================================
 

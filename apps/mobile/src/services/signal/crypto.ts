@@ -168,6 +168,14 @@ export function hkdfDeriveSecrets(
   info: string,
   length: number,
 ): Uint8Array {
+  // Try native HKDF (OpenSSL, hardware-accelerated)
+  if (nativeCryptoAdapter) {
+    const native = (nativeCryptoAdapter as any).nativeHkdf;
+    if (native) {
+      const result = native(ikm, salt, info, length);
+      if (result) return result;
+    }
+  }
   return hkdf(sha256, ikm, salt, info, length);
 }
 
@@ -220,6 +228,15 @@ export function aeadEncrypt(
 ): Uint8Array {
   if (key.length !== 32) throw new Error(`AEAD key must be 32 bytes, got ${key.length}`);
   if (nonce.length !== 24) throw new Error(`AEAD nonce must be 24 bytes, got ${nonce.length}`);
+  // Try native C++ path first (10-50x faster via OpenSSL hardware acceleration)
+  if (nativeCryptoAdapter) {
+    const native = (nativeCryptoAdapter as any).nativeAeadEncrypt;
+    if (native) {
+      const result = native(key, nonce, plaintext, aad);
+      if (result) return result;
+    }
+  }
+  // Fallback to @noble (pure JS)
   const cipher = xchacha20poly1305(key, nonce, aad);
   return cipher.encrypt(plaintext);
 }
@@ -237,6 +254,15 @@ export function aeadDecrypt(
 ): Uint8Array {
   if (key.length !== 32) throw new Error(`AEAD key must be 32 bytes, got ${key.length}`);
   if (nonce.length !== 24) throw new Error(`AEAD nonce must be 24 bytes, got ${nonce.length}`);
+  // Try native C++ path first
+  if (nativeCryptoAdapter) {
+    const native = (nativeCryptoAdapter as any).nativeAeadDecrypt;
+    if (native) {
+      const result = native(key, nonce, ciphertext, aad);
+      if (result) return result;
+    }
+  }
+  // Fallback to @noble (pure JS)
   const cipher = xchacha20poly1305(key, nonce, aad);
   return cipher.decrypt(ciphertext);
 }
