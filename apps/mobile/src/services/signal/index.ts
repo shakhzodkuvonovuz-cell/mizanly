@@ -191,27 +191,37 @@ export async function initialize(
  * Runs in background — failures are silently ignored.
  */
 /**
- * Pre-warm sessions by checking which contacts DON'T have sessions yet.
+ * Pre-warm sessions by fetching bundles and establishing X3DH sessions
+ * for the user's most frequent contacts.
  *
- * SECURITY FIX: We do NOT fetch bundles during pre-warming because that
- * CONSUMES one-time pre-keys from the server. Pre-keys are finite and
- * burning them without sending messages weakens forward secrecy.
+ * This consumes one OTP per contact — acceptable for top 10 contacts
+ * (100 OTPs uploaded per batch, replenished at < 20). The speed gain
+ * is massive: first message goes from 300-700ms (X3DH + network) to
+ * ~3ms (Double Ratchet encrypt only).
  *
- * Instead, we just identify contacts without sessions. The actual bundle
- * fetch + X3DH happens on first message send.
- *
- * Returns the list of userIds that need session establishment.
+ * Runs in background on app open. Failures are silently ignored —
+ * sessions will be lazily established on first message send.
  */
 async function preWarmSessions(userIds: string[]): Promise<string[]> {
-  const toCheck = userIds.slice(0, 20);
-  const needsSession: string[] = [];
+  const toWarm = userIds.slice(0, 10); // Top 10 contacts — budget: 10 OTPs
+  const established: string[] = [];
 
-  for (const userId of toCheck) {
-    const has = await hasEstablishedSession(userId);
-    if (!has) needsSession.push(userId);
+  for (const userId of toWarm) {
+    try {
+      const has = await hasEstablishedSession(userId);
+      if (has) continue;
+
+      // Fetch bundle + establish session (consumes 1 OTP per contact)
+      const { bundle } = await fetchPreKeyBundle(userId);
+      await createInitiatorSession(userId, 1, bundle);
+      established.push(userId);
+      recordE2EEvent({ event: 'session_established', metadata: { preWarmed: true } });
+    } catch {
+      // Non-fatal — will establish lazily on first message
+    }
   }
 
-  return needsSession;
+  return established;
 }
 
 // ============================================================

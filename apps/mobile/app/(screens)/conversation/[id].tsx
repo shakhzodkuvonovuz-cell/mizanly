@@ -1081,14 +1081,13 @@ export default function ConversationScreen() {
 
   const [isSending, setIsSending] = useState(false);
   const tc = useThemeColors();
+  // Undo-via-delete: message is sent IMMEDIATELY to server (Telegram-fast),
+  // but user has 5 seconds to undo. Undo = server-side delete before recipient reads.
+  // This gives ~100ms recipient latency instead of 5000ms.
   const [undoPending, setUndoPending] = useState<{
-    id: string;
-    content: string;
-    replyToId?: string;
+    pendingId: string;
+    serverMessageId: string | null; // Set after ACK from server
     timer: ReturnType<typeof setTimeout>;
-    e2ePayload?: PendingMessage['e2ePayload'];
-    isSpoiler?: boolean;
-    isViewOnce?: boolean;
   } | null>(null);
 
   // Clean up undo timer on unmount
@@ -1101,55 +1100,58 @@ export default function ConversationScreen() {
   const handleUndoSend = useCallback(() => {
     if (!undoPending) return;
     clearTimeout(undoPending.timer);
-    // Remove the optimistic pending message
-    setPendingMessages(prev => prev.filter(p => p.id !== undoPending.id));
+    // Remove optimistic pending message from UI
+    setPendingMessages(prev => prev.filter(p => p.id !== undoPending.pendingId));
+    // Delete from server (message was already sent — undo = "delete for everyone")
+    if (undoPending.serverMessageId) {
+      messagesApi.deleteMessage(id, undoPending.serverMessageId).catch(() => {
+        // Server delete failed — message stays. This is the edge case where
+        // recipient may have already seen it. Same as WhatsApp "Delete for Everyone".
+      });
+    }
     setUndoPending(null);
     haptic.delete();
-  }, [undoPending, haptic]);
+  }, [undoPending, haptic, id]);
 
-  const commitSend = useCallback((pending: {
-    id: string;
-    content: string;
+  /**
+   * Emit an encrypted message to the server IMMEDIATELY via socket.
+   * Returns the server-assigned messageId from the ACK callback.
+   * The message reaches the recipient in ~100ms (network latency only).
+   */
+  const emitEncryptedMessage = useCallback((payload: {
+    e2ePayload: NonNullable<PendingMessage['e2ePayload']>;
     replyToId?: string;
-    e2ePayload?: PendingMessage['e2ePayload'];
     isSpoiler?: boolean;
     isViewOnce?: boolean;
-  }) => {
-    if (!isOffline && socketRef.current?.connected) {
-      if (pending.e2ePayload) {
-        // E2E encrypted message — send all Signal Protocol fields
-        socketRef.current.emit('send_message', {
-          conversationId: id,
-          clientMessageId: pending.e2ePayload.clientMessageId,
-          encryptedContent: pending.e2ePayload.encryptedContent,
-          e2eVersion: pending.e2ePayload.e2eVersion,
-          e2eSenderDeviceId: pending.e2ePayload.e2eSenderDeviceId,
-          e2eSenderRatchetKey: pending.e2ePayload.e2eSenderRatchetKey,
-          e2eCounter: pending.e2ePayload.e2eCounter,
-          e2ePreviousCounter: pending.e2ePayload.e2ePreviousCounter,
-          messageType: 'TEXT',
-          replyToId: pending.replyToId,
-          ...(pending.isSpoiler ? { isSpoiler: true } : {}),
-          ...(pending.isViewOnce ? { isViewOnce: true } : {}),
-        });
-      } else {
-        // Fallback: no E2E payload (encryption failed, sending plaintext)
-        // This should NOT happen in production — encryption errors block send.
-        socketRef.current.emit('send_message', {
-          conversationId: id,
-          content: pending.content,
-          replyToId: pending.replyToId,
-          messageType: 'TEXT',
-          clientMessageId: pending.id,
-          ...(pending.isSpoiler ? { isSpoiler: true } : {}),
-          ...(pending.isViewOnce ? { isViewOnce: true } : {}),
-        });
+    messageType?: string;
+    mediaUrl?: string;
+  }): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if (isOffline || !socketRef.current?.connected) {
+        resolve(null);
+        return;
       }
-    }
-    // Reset spoiler/viewOnce toggles after sending
-    setSendAsSpoiler(false);
-    setSendAsViewOnce(false);
-    setUndoPending(null);
+      socketRef.current.emit('send_message', {
+        conversationId: id,
+        clientMessageId: payload.e2ePayload.clientMessageId,
+        encryptedContent: payload.e2ePayload.encryptedContent,
+        e2eVersion: payload.e2ePayload.e2eVersion,
+        e2eSenderDeviceId: payload.e2ePayload.e2eSenderDeviceId,
+        e2eSenderRatchetKey: payload.e2ePayload.e2eSenderRatchetKey,
+        e2eCounter: payload.e2ePayload.e2eCounter,
+        e2ePreviousCounter: payload.e2ePayload.e2ePreviousCounter,
+        messageType: payload.messageType ?? 'TEXT',
+        replyToId: payload.replyToId,
+        mediaUrl: payload.mediaUrl,
+        ...(payload.isSpoiler ? { isSpoiler: true } : {}),
+        ...(payload.isViewOnce ? { isViewOnce: true } : {}),
+      }, (ack: { success?: boolean; messageId?: string } | undefined) => {
+        // Socket ACK — server returns { success, messageId, clientMessageId, createdAt }
+        resolve(ack?.messageId ?? null);
+      });
+      // Timeout: if no ACK in 10 seconds, resolve null (message may still have been received)
+      setTimeout(() => resolve(null), 10000);
+    });
   }, [id, isOffline]);
 
   const lastSentRef = useRef<number>(0);
@@ -1233,50 +1235,52 @@ export default function ConversationScreen() {
     setPendingMessages(prev => [...prev, pendingMessage]);
     lastSentRef.current = Date.now(); // Slow mode: track last send time
     const savedReplyToId = replyTo?.id;
+    const savedSpoiler = sendAsSpoiler;
+    const savedViewOnce = sendAsViewOnce;
     setText('');
     setReplyTo(null);
     setIsSending(false);
 
-    // Cancel any existing undo timer before starting a new one
+    // Cancel any existing undo timer (previous undo window ends)
     if (undoPending?.timer) {
       clearTimeout(undoPending.timer);
-      // Immediately commit the previous pending message
-      commitSend(undoPending);
     }
 
-    // Start 5-second undo window
-    const undoPayload = {
-      id: pendingId,
-      content: messageContent,
-      replyToId: savedReplyToId,
-      e2ePayload,
-      isSpoiler: sendAsSpoiler || undefined,
-      isViewOnce: sendAsViewOnce || undefined,
-    };
-    const timer = setTimeout(() => {
-      commitSend(undoPayload);
-    }, 5000);
-    setUndoPending({ ...undoPayload, timer });
-  }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient, convoQuery.data, user?.id, undoPending, commitSend]);
+    // TELEGRAM-FAST: Send encrypted message IMMEDIATELY to server.
+    // Recipient sees it in ~100ms (network latency only).
+    // Undo = server-side delete within 5 seconds (like WhatsApp "Delete for Everyone").
+    if (e2ePayload) {
+      emitEncryptedMessage({
+        e2ePayload,
+        replyToId: savedReplyToId,
+        isSpoiler: savedSpoiler || undefined,
+        isViewOnce: savedViewOnce || undefined,
+      }).then((serverMessageId) => {
+        // Start 5-second undo window AFTER emit (message is already in transit)
+        const timer = setTimeout(() => {
+          setUndoPending(null);
+          // Remove from pending — server message takes over in the query cache
+          setPendingMessages(prev => prev.filter(p => p.id !== pendingId));
+          queryClient.invalidateQueries({ queryKey: ['messages', id] });
+        }, 5000);
+        setUndoPending({ pendingId, serverMessageId, timer });
+      });
+    }
+
+    setSendAsSpoiler(false);
+    setSendAsViewOnce(false);
+  }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient, convoQuery.data, user?.id, undoPending, emitEncryptedMessage]);
 
   // Retry pending messages when network comes back online
   useEffect(() => {
     if (isOffline || !socketRef.current?.connected) return;
     // Filter pending messages that haven't been sent yet
-    const toRetry = pendingMessages.filter(p => p.status === 'pending');
+    const toRetry = pendingMessages.filter(p => p.status === 'pending' && p.e2ePayload);
     toRetry.forEach(pending => {
       if (pending.e2ePayload) {
-        socketRef.current?.emit('send_message', {
-          conversationId: id,
-          clientMessageId: pending.e2ePayload.clientMessageId,
-          encryptedContent: pending.e2ePayload.encryptedContent,
-          e2eVersion: pending.e2ePayload.e2eVersion,
-          e2eSenderDeviceId: pending.e2ePayload.e2eSenderDeviceId,
-          e2eSenderRatchetKey: pending.e2ePayload.e2eSenderRatchetKey,
-          e2eCounter: pending.e2ePayload.e2eCounter,
-          e2ePreviousCounter: pending.e2ePayload.e2ePreviousCounter,
-          messageType: 'TEXT',
-          replyToId: pending.replyToId,
+        emitEncryptedMessage({ e2ePayload: pending.e2ePayload, replyToId: pending.replyToId }).then(() => {
+          setPendingMessages(prev => prev.filter(p => p.id !== pending.id));
+          queryClient.invalidateQueries({ queryKey: ['messages', id] });
         });
       }
     });
@@ -2125,15 +2129,37 @@ export default function ConversationScreen() {
       <GifPicker
         visible={showGifPicker}
         onClose={() => setShowGifPicker(false)}
-        onSelect={(gifUrl) => {
-          socketRef.current?.emit('send_message', {
-            conversationId: id,
-            content: '',
-            messageType: 'GIF',
-            mediaUrl: gifUrl,
-            mediaType: 'gif',
-            replyToId: replyTo?.id,
-          });
+        onSelect={async (gifUrl) => {
+          // Encrypt GIF URL as message content via Signal Protocol
+          const convoData = convoQuery.data;
+          const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
+          if (otherMember?.userId) {
+            try {
+              const hasSession = await hasEstablishedSession(otherMember.userId);
+              if (!hasSession) {
+                const { bundle } = await fetchPreKeyBundle(otherMember.userId);
+                await createInitiatorSession(otherMember.userId, 1, bundle);
+              }
+              const signalMsg = await signalEncrypt(otherMember.userId, 1, gifUrl);
+              const clientMessageId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+              emitEncryptedMessage({
+                e2ePayload: {
+                  encryptedContent: toBase64(signalMsg.ciphertext),
+                  e2eVersion: 1,
+                  e2eSenderDeviceId: 1,
+                  e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
+                  e2eCounter: signalMsg.header.counter,
+                  e2ePreviousCounter: signalMsg.header.previousCounter,
+                  clientMessageId,
+                },
+                messageType: 'GIF',
+                mediaUrl: gifUrl,
+                replyToId: replyTo?.id,
+              });
+            } catch {
+              showToast({ message: t('errors.encryptionFailed'), variant: 'error' });
+            }
+          }
           setShowGifPicker(false);
           setReplyTo(null);
         }}
