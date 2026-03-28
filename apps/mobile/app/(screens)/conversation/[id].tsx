@@ -1270,8 +1270,10 @@ export default function ConversationScreen() {
         // Socket ACK — server returns { success, messageId, clientMessageId, createdAt }
         resolve(ack?.messageId ?? null);
       });
-      // Timeout: if no ACK in 10 seconds, resolve null (message may still have been received)
-      setTimeout(() => resolve(null), 10000);
+      // D8: Reduced from 10s to 3s — faster undo resolution.
+      // If ACK doesn't arrive in 3s, resolve null (message may still have been received).
+      // The undo bar still shows for 5s regardless — this just affects when serverMessageId is available.
+      setTimeout(() => resolve(null), 3000);
     });
   }, [id, isOffline]);
 
