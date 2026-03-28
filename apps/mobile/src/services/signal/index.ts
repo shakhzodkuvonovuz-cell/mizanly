@@ -185,6 +185,17 @@ export async function initialize(
   // Register the background notification handler for encrypted preview decryption
   registerNotificationHandler();
 
+  // V5-F6: Clean up leftover decrypted media temp files from previous sessions.
+  // If the app was killed before the 5-second setTimeout in decryptMediaFile fired,
+  // decrypted media persists in cacheDirectory. Clean up on every launch + backgrounding.
+  cleanupDecryptedMediaFiles();
+  try {
+    const { AppState } = require('react-native');
+    AppState.addEventListener('change', (state: string) => {
+      if (state === 'background') cleanupDecryptedMediaFiles();
+    });
+  } catch { /* AppState not available in tests */ }
+
   // V4-F19: Check certificate pin expiration proximity.
   // Pins expire 2027-06-01. Alert if within 60 days to prompt app update.
   const PIN_EXPIRY = new Date('2027-06-01').getTime();
@@ -221,6 +232,29 @@ export async function initialize(
   }).catch(() => {});
 
   initialized = true;
+}
+
+// ============================================================
+// V5-F6: DECRYPTED MEDIA CLEANUP
+// ============================================================
+
+/**
+ * Delete leftover decrypted_* temp files from cacheDirectory.
+ * Called on app launch and on app backgrounding.
+ */
+async function cleanupDecryptedMediaFiles(): Promise<void> {
+  try {
+    const FileSystem = require('expo-file-system');
+    const cacheDir = FileSystem.cacheDirectory;
+    if (!cacheDir) return;
+    const files: string[] = await FileSystem.readDirectoryAsync(cacheDir);
+    for (const file of files) {
+      // Clean both decrypted_* (from decryptMediaFile) and encrypted_* (from encryptSmallMediaFile)
+      if (file.startsWith('decrypted_') || file.startsWith('encrypted_') || file.startsWith('download_')) {
+        await FileSystem.deleteAsync(cacheDir + file, { idempotent: true }).catch(() => {});
+      }
+    }
+  } catch { /* Best-effort cleanup */ }
 }
 
 // ============================================================

@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -26,6 +27,10 @@ type Store struct {
 	pool                   *pgxpool.Pool
 	transparencySigningKey ed25519.PrivateKey // F1: Ed25519 key for signing Merkle roots
 	// F14: Cached Merkle tree — rebuilt on identity key changes, not on every request.
+	// V5-F4: mu protects all cached* fields from concurrent access.
+	// Go HTTP handlers run in separate goroutines — concurrent identity registration
+	// and proof/root requests would race without synchronization.
+	mu              sync.RWMutex
 	cachedLeaves    [][]byte
 	cachedRoot      []byte
 	cachedRootSig   string
@@ -514,10 +519,11 @@ type TransparencyRoot struct {
 	UpdatedAt string `json:"updatedAt"`
 }
 
-// F14 FIX: rebuildMerkleCache loads all identity keys and builds the tree ONCE.
+// F14 FIX: rebuildMerkleCacheLocked loads all identity keys and builds the tree ONCE.
 // Called on startup and after every identity key change. Subsequent proof/root
 // requests use the cached tree (O(log n) proof lookup instead of O(n) rebuild).
-func (s *Store) rebuildMerkleCache(ctx context.Context) error {
+// V5-F4: Caller MUST hold s.mu write lock.
+func (s *Store) rebuildMerkleCacheLocked(ctx context.Context) error {
 	rows, err := s.pool.Query(ctx,
 		`SELECT "userId", "publicKey" FROM e2e_identity_keys ORDER BY "createdAt" ASC`,
 	)
@@ -572,24 +578,41 @@ func (s *Store) rebuildMerkleCache(ctx context.Context) error {
 }
 
 // InvalidateMerkleCache marks the cache as stale. Called after identity key changes.
+// V5-F4: Write-locked to prevent concurrent reads of half-invalidated state.
 func (s *Store) InvalidateMerkleCache() {
+	s.mu.Lock()
 	s.cacheValid = false
+	s.mu.Unlock()
 }
 
 // ensureMerkleCache rebuilds cache if invalid.
+// V5-F4: Acquires write lock for rebuild. Read lock for validity check.
 func (s *Store) ensureMerkleCache(ctx context.Context) error {
+	s.mu.RLock()
+	valid := s.cacheValid
+	s.mu.RUnlock()
+	if valid {
+		return nil
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// Double-check after acquiring write lock (another goroutine may have rebuilt)
 	if s.cacheValid {
 		return nil
 	}
-	return s.rebuildMerkleCache(ctx)
+	return s.rebuildMerkleCacheLocked(ctx)
 }
 
 // GetTransparencyProof returns a Merkle inclusion proof for a user's identity key.
 // F14: Uses cached tree — O(log n) proof extraction, not O(n) full rebuild.
+// V5-F4: ensureMerkleCache handles locking for rebuild. Read lock for cache access.
 func (s *Store) GetTransparencyProof(ctx context.Context, targetUserID string) (*TransparencyProof, error) {
 	if err := s.ensureMerkleCache(ctx); err != nil {
 		return nil, err
 	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	targetLeafIndex, ok := s.cachedLeafIndex[targetUserID]
 	if !ok {
@@ -616,10 +639,14 @@ func (s *Store) GetTransparencyProof(ctx context.Context, targetUserID string) (
 
 // GetTransparencyRoot returns the current Merkle tree root + signature.
 // F14: Uses cached root — no DB query needed.
+// V5-F4: Read lock for cache access after ensureMerkleCache ensures validity.
 func (s *Store) GetTransparencyRoot(ctx context.Context) (*TransparencyRoot, error) {
 	if err := s.ensureMerkleCache(ctx); err != nil {
 		return nil, err
 	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	if s.cachedTreeSize == 0 {
 		return &TransparencyRoot{Root: "", TreeSize: 0, UpdatedAt: time.Now().UTC().Format(time.RFC3339)}, nil

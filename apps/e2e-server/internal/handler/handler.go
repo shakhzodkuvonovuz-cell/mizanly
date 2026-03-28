@@ -66,7 +66,7 @@ func (h *Handler) HandleRegisterIdentity(w http.ResponseWriter, r *http.Request)
 
 	var req model.IdentityKeyRequest
 	if err := readJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -125,7 +125,7 @@ func (h *Handler) HandleUploadSignedPreKey(w http.ResponseWriter, r *http.Reques
 
 	var req model.SignedPreKeyRequest
 	if err := readJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -135,7 +135,8 @@ func (h *Handler) HandleUploadSignedPreKey(w http.ResponseWriter, r *http.Reques
 
 	if err := h.store.UpsertSignedPreKey(r.Context(), userID, req.DeviceID, req.KeyID, req.PublicKey, req.Signature); err != nil {
 		h.logger.Error("upload signed pre-key", "error", err, "userId", hashUserID(userID))
-		writeError(w, http.StatusBadRequest, err.Error())
+		// V5-F8: Generic error to client — raw err.Error() may contain SQL table/column names
+		writeError(w, http.StatusBadRequest, "invalid signed pre-key request")
 		return
 	}
 
@@ -154,7 +155,7 @@ func (h *Handler) HandleUploadOneTimePreKeys(w http.ResponseWriter, r *http.Requ
 
 	var req model.OneTimePreKeysRequest
 	if err := readJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -175,7 +176,8 @@ func (h *Handler) HandleUploadOneTimePreKeys(w http.ResponseWriter, r *http.Requ
 
 	if err := h.store.InsertOneTimePreKeys(r.Context(), userID, req.DeviceID, keys); err != nil {
 		h.logger.Error("upload one-time pre-keys", "error", err, "userId", hashUserID(userID), "count", len(keys))
-		writeError(w, http.StatusBadRequest, err.Error())
+		// V5-F8: Generic error to client — raw err.Error() may contain SQL details
+		writeError(w, http.StatusBadRequest, "invalid one-time pre-key request")
 		return
 	}
 
@@ -199,7 +201,7 @@ func (h *Handler) HandleGetBundle(w http.ResponseWriter, r *http.Request) {
 
 	bundle, err := h.store.GetPreKeyBundle(r.Context(), targetUserID, deviceID)
 	if err != nil {
-		h.logger.Error("get bundle", "error", err, "targetUserId", targetUserID)
+		h.logger.Error("get bundle", "error", err, "targetUserId", hashUserID(targetUserID))
 		writeError(w, http.StatusNotFound, "pre-key bundle not found")
 		return
 	}
@@ -217,7 +219,7 @@ func (h *Handler) HandleGetBundlesBatch(w http.ResponseWriter, r *http.Request) 
 
 	var req model.BatchBundleRequest
 	if err := readJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -251,7 +253,7 @@ func (h *Handler) HandleGetBundlesBatch(w http.ResponseWriter, r *http.Request) 
 	if h.rateLimiter != nil {
 		for _, uid := range req.UserIDs {
 			if err := h.rateLimiter.CheckBundleFetch(r.Context(), requesterID, uid); err != nil {
-				writeError(w, http.StatusTooManyRequests, err.Error())
+				writeError(w, http.StatusTooManyRequests, "rate limit exceeded")
 				return
 			}
 		}
@@ -314,7 +316,7 @@ func (h *Handler) HandleStoreSenderKey(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.store.UpsertSenderKey(r.Context(), req.GroupID, userID, req.RecipientUserID, req.EncryptedKey, req.ChainID, req.Generation); err != nil {
 		h.logger.Error("store sender key", "error", err, "userId", hashUserID(userID))
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, "invalid sender key request")
 		return
 	}
 
@@ -337,7 +339,8 @@ func (h *Handler) HandleGetSenderKeys(w http.ResponseWriter, r *http.Request) {
 
 	keys, err := h.store.GetSenderKeys(r.Context(), groupID, userID)
 	if err != nil {
-		h.logger.Error("get sender keys", "error", err, "userId", userID, "groupId", groupID)
+		// V5-F7: Hash userId for logs (previously leaked plaintext). Remove groupId entirely.
+		h.logger.Error("get sender keys", "error", err, "userId", hashUserID(userID))
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}

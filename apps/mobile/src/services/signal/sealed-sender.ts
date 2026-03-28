@@ -35,10 +35,13 @@ import {
   toBase64,
   fromBase64,
   zeroOut,
+  assertNonZeroDH,
 } from './crypto';
 import { loadIdentityKeyPair, loadKnownIdentityKey, secureStore, secureLoad, HMAC_TYPE } from './storage';
 
 const SEALED_SENDER_INFO = 'MizanlySealedSender';
+
+// V5: assertNonZeroDH + LOW_ORDER_POINTS imported from crypto.ts (single source of truth)
 
 /**
  * F13: Sealed sender replay protection.
@@ -103,6 +106,9 @@ export async function sealMessage(
 
   // DH → shared secret
   const dhOutput = x25519DH(ephPair.privateKey, recipientX25519);
+  // V5-F2: Check DH output for low-order points (small-subgroup attack protection).
+  // A server substituting a low-order identity key produces predictable output.
+  assertNonZeroDH(dhOutput, 'seal');
   const sealKey = hkdfDeriveSecrets(dhOutput, new Uint8Array(32), SEALED_SENDER_INFO, 56);
   const encKey = sealKey.slice(0, 32);
   const nonce = sealKey.slice(32, 56);
@@ -166,6 +172,8 @@ export async function unsealMessage(
 
   // DH → shared secret (mirrors the sealer's computation)
   const dhOutput = x25519DH(ourX25519, ephPublic);
+  // V5-F2: Check DH output for low-order points (defense against malicious ephemeral key).
+  assertNonZeroDH(dhOutput, 'unseal');
   const sealKey = hkdfDeriveSecrets(dhOutput, new Uint8Array(32), SEALED_SENDER_INFO, 56);
   const encKey = sealKey.slice(0, 32);
   const nonce = sealKey.slice(32, 56);

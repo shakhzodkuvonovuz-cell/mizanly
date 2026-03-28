@@ -37,7 +37,7 @@ var saddCountScript = redis.NewScript(`
 `)
 
 // CheckBundleFetch enforces per-requester-per-target rate limit on bundle fetches.
-// 5 fetches per target per hour. 200 unique targets per hour globally.
+// 5 fetches per target per hour. 50 unique targets per hour globally (V5-F12: was 200 in comment, 50 in code).
 // All Redis operations are atomic via Lua scripts (no crash-between-commands risk).
 func (rl *RateLimiter) CheckBundleFetch(ctx context.Context, requesterID, targetID string) error {
 	// Per-target limit: 5 per hour (atomic INCR + EXPIRE)
@@ -52,7 +52,7 @@ func (rl *RateLimiter) CheckBundleFetch(ctx context.Context, requesterID, target
 		return fmt.Errorf("rate limit exceeded: max 5 bundle fetches per target per hour")
 	}
 
-	// Global unique-target limit: 200 per hour (atomic SADD + EXPIRE + SCARD)
+	// Global unique-target limit: 50 per hour (atomic SADD + EXPIRE + SCARD)
 	globalKey := fmt.Sprintf("e2e:rl:global:%s", requesterID)
 	globalCount, err := saddCountScript.Run(ctx, rl.rdb, []string{globalKey}, targetID, 3600).Int64()
 	if err != nil {
@@ -91,7 +91,9 @@ func (rl *RateLimiter) RateLimitMiddleware(targetIDFunc func(*http.Request) stri
 				return
 			}
 			if err := rl.CheckBundleFetch(r.Context(), requesterID, targetID); err != nil {
-				http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusTooManyRequests)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusTooManyRequests)
+				w.Write([]byte(`{"error":"rate limit exceeded"}`))
 				return
 			}
 			next.ServeHTTP(w, r)

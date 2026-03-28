@@ -16,7 +16,7 @@
  */
 
 import * as Notifications from 'expo-notifications';
-import { aeadDecrypt, fromBase64, utf8Decode } from './crypto';
+import { aeadDecrypt, fromBase64, utf8Decode, utf8Encode } from './crypto';
 
 /** HKDF info string for conversation preview encryption */
 const PREVIEW_KEY_INFO = 'MizanlyPreview';
@@ -90,7 +90,9 @@ async function decryptNotificationPreview(
     if (!previewKeyB64) return null;
 
     const previewKey = fromBase64(previewKeyB64);
-    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext);
+    // V5-F9: conversationId as AAD — must match what encryptPreview used
+    const aad = utf8Encode(conversationId);
+    const plaintext = aeadDecrypt(previewKey, nonce, ciphertext, aad);
 
     return utf8Decode(plaintext);
   } catch {
@@ -122,16 +124,21 @@ export async function storePreviewKey(
  *
  * @param preview - Plaintext preview (first ~100 chars of message)
  * @param previewKey - Conversation's preview encryption key
+ * @param conversationId - V5-F9: Required AAD to prevent cross-conversation swaps
  * @returns Base64 encoded [nonce:24][ciphertext+tag]
  */
 export function encryptPreview(
   preview: string,
   previewKey: Uint8Array,
+  conversationId: string = '',
 ): string {
   const { aeadEncrypt, generateRandomBytes, utf8Encode, toBase64, concat } = require('./crypto');
   const nonce = generateRandomBytes(24);
   const plaintext = utf8Encode(preview.slice(0, 100)); // Max 100 chars
-  const ciphertext = aeadEncrypt(previewKey, nonce, plaintext);
+  // V5-F9: AAD binds the preview to a specific conversation.
+  // Empty string AAD still provides domain separation vs no-AAD.
+  const aad = utf8Encode(conversationId);
+  const ciphertext = aeadEncrypt(previewKey, nonce, plaintext, aad);
   const combined = concat(nonce, ciphertext);
   return toBase64(combined);
 }

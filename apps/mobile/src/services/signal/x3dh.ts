@@ -27,7 +27,7 @@ import {
   hkdfDeriveSecrets,
   concat,
   zeroOut,
-  constantTimeEqual,
+  assertNonZeroDH,
 } from './crypto';
 import { isPQXDHAvailable, pqEncapsulate, pqDecapsulate, deriveHybridSecret } from './pqxdh';
 import {
@@ -68,35 +68,7 @@ const PADDING = new Uint8Array(32).fill(0xff);
  */
 const ZERO_SALT = new Uint8Array(32);
 
-/**
- * Verify a DH shared secret is not all-zeros.
- * A malicious party providing the identity point (all zeros) as a public key
- * causes DH to produce a predictable all-zero output, completely breaking secrecy.
- * Both initiator AND responder must check every DH output.
- */
-/**
- * Reject DH outputs from low-order X25519 points.
- * With @noble/curves clamping, all-zeros is the only reachable output.
- * The additional points are defense-in-depth against non-clamping backends.
- * Constant-time via constantTimeEqual (F22).
- */
-const LOW_ORDER_POINTS: Uint8Array[] = [
-  new Uint8Array(32),
-  (() => { const p = new Uint8Array(32); p[0] = 1; return p; })(),
-  new Uint8Array([0xec, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
-  new Uint8Array([0xe0, 0xeb, 0x7a, 0x7c, 0x3b, 0x41, 0xb8, 0xae, 0x16, 0x56, 0xe3, 0xfa, 0xf1, 0x9f, 0xc4, 0x6a, 0xda, 0x09, 0x8d, 0xeb, 0x9c, 0x32, 0xb1, 0xfd, 0x86, 0x62, 0x05, 0x16, 0x5f, 0x49, 0xb8, 0x00]),
-  new Uint8Array([0x5f, 0x9c, 0x95, 0xbc, 0xa3, 0x50, 0x8c, 0x24, 0xb1, 0xd0, 0xb1, 0x55, 0x9c, 0x83, 0xef, 0x5b, 0x04, 0x44, 0x5c, 0xc4, 0x58, 0x1c, 0x8e, 0x86, 0xd8, 0x22, 0x4e, 0xdd, 0xd0, 0x9f, 0x11, 0x57]),
-  new Uint8Array([0xed, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
-  new Uint8Array([0xee, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
-];
-
-function assertNonZeroDH(dh: Uint8Array, label: string): void {
-  for (const lowOrder of LOW_ORDER_POINTS) {
-    if (constantTimeEqual(dh, lowOrder)) {
-      throw new Error(`X3DH ${label} produced low-order output. Keys may be malicious.`);
-    }
-  }
-}
+// V5: assertNonZeroDH + LOW_ORDER_POINTS imported from crypto.ts (single source of truth)
 
 // ============================================================
 // INITIATOR (Alice → Bob)
@@ -230,8 +202,20 @@ export async function initiateX3DH(
         zeroOut(pqResult.sharedSecret);
       }
     } catch {
-      // PQ encapsulation failed — continue with classical secret only
+      // V5-F5: Emit telemetry on PQXDH failure instead of silently downgrading.
+      // If both parties advertise version 2 but PQ encapsulation fails,
+      // an attacker may be stripping PQ fields to force classical-only.
+      if (bundle.supportedVersions?.includes(2)) {
+        import('./telemetry').then(({ recordE2EEvent }) =>
+          recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_encapsulation_failed' } }),
+        ).catch(() => {});
+      }
     }
+  } else if (isPQXDHAvailable() && bundle.supportedVersions?.includes(2) && !(bundle as any).pqPreKey) {
+    // V5-F5: Both sides support PQ but bundle has no pqPreKey — possible strip attack
+    import('./telemetry').then(({ recordE2EEvent }) =>
+      recordE2EEvent({ event: 'identity_key_changed', metadata: { reason: 'pqxdh_downgrade_missing_prekey' } }),
+    ).catch(() => {});
   }
 
   // Clean up intermediate DH outputs

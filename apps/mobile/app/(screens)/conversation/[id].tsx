@@ -879,7 +879,19 @@ export default function ConversationScreen() {
   //   3. SenderKeyMessage (group — has e2eSenderKeyId)
   const getDecryptedContent = useCallback(async (message: EncryptedMessage) => {
     if (!message.encryptedContent || !message.e2eVersion) {
-      return message.content; // Plaintext message — no decryption needed
+      // V5-F1: SYSTEM messages (join/leave, security code changed) are legitimately
+      // plaintext from the server. All other message types MUST have E2E encryption
+      // fields. A message without encryptedContent in an E2E conversation is either
+      // a legacy pre-E2E message or a server-injected forgery. Show a warning.
+      if (message.messageType === 'SYSTEM') {
+        return message.content;
+      }
+      // Telemetry: a non-SYSTEM plaintext message in an E2E conversation
+      // is either a legacy pre-E2E message or a server-injected forgery.
+      import('@/services/signal/telemetry').then(({ recordE2EEvent }) =>
+        recordE2EEvent({ event: 'message_decrypt_failed', metadata: { reason: 'plaintext_in_e2e_conversation', messageType: message.messageType ?? 'unknown' } }),
+      ).catch(() => {});
+      return '[This message was not end-to-end encrypted]';
     }
     const senderId = message.senderId ?? (message as any).sender?.id;
     if (!senderId) return '[Encrypted message]';
@@ -981,11 +993,11 @@ export default function ConversationScreen() {
       }
       return realContent;
     } catch (err) {
-      // Session auto-recovery: reset session on persistent failures
-      const errMsg = String(err);
-      if (errMsg.includes('Failed to decrypt') || errMsg.includes('No session') || errMsg.includes('integrity')) {
-        resetSession(senderId, message.e2eSenderDeviceId ?? 1).catch(() => {});
-      }
+      // V5-F3: Do NOT auto-reset sessions on decrypt failure.
+      // Previously: a corrupted message from a malicious server triggered resetSession(),
+      // forcing re-establishment via X3DH with a potentially substituted bundle (MITM).
+      // Now: display error, let the user manually reset if needed via conversation info.
+      // The session state is preserved — subsequent messages may still decrypt.
       return '[Encrypted message]';
     }
   }, [id]);

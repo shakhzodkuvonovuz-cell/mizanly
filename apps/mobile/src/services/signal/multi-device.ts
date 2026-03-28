@@ -44,12 +44,37 @@ import type { SignalMessage } from './types';
  * attacker's device ID → client encrypts for attacker → attacker gets all messages.
  *
  * Now:
- * - Cache known device IDs per user in MMKV (AEAD + HMAC)
+ * - Cache known device IDs per user in MMKV (AEAD + HMAC) — persists across restarts
  * - On server response: flag NEW device IDs that weren't previously known
  * - New devices are accepted but marked as "unverified" — UI should show a warning
  * - Caller can check the `newDevices` array to prompt user verification
+ *
+ * V5-F11: In-memory Map upgraded to MMKV-backed persistent cache.
+ * Previously lost on app restart — first request after restart blindly trusted server.
  */
 const knownDeviceCache = new Map<string, number[]>();
+
+/** V5-F11: Load persisted device IDs from MMKV into in-memory cache. */
+async function loadPersistedDeviceIds(userId: string): Promise<number[] | null> {
+  try {
+    const { secureLoad, HMAC_TYPE } = await import('./storage');
+    const stored = await secureLoad(HMAC_TYPE.SESSION, `devices:${userId}`);
+    if (stored) {
+      const ids = JSON.parse(stored) as number[];
+      knownDeviceCache.set(userId, ids);
+      return ids;
+    }
+  } catch { /* Migration: no persisted data yet */ }
+  return null;
+}
+
+/** V5-F11: Persist device IDs to MMKV (AEAD + HMAC). */
+async function persistDeviceIds(userId: string, ids: number[]): Promise<void> {
+  try {
+    const { secureStore, HMAC_TYPE } = await import('./storage');
+    await secureStore(HMAC_TYPE.SESSION, `devices:${userId}`, JSON.stringify(ids));
+  } catch { /* Best-effort persist */ }
+}
 
 export async function getDeviceIds(userId: string): Promise<number[]> {
   try {
@@ -62,12 +87,19 @@ export async function getDeviceIds(userId: string): Promise<number[]> {
 
       // Validate: device IDs must be positive integers 1-10
       const validIds = serverIds.filter((id: number) => Number.isInteger(id) && id >= 1 && id <= 10);
-      if (validIds.length === 0) return knownDeviceCache.get(userId) ?? [1];
+      if (validIds.length === 0) {
+        // V5-F11: Fall back to persisted cache, then in-memory, then default
+        return knownDeviceCache.get(userId) ?? await loadPersistedDeviceIds(userId) ?? [1];
+      }
 
       // Check for new devices not previously seen
-      const cached = knownDeviceCache.get(userId);
+      let cached = knownDeviceCache.get(userId);
+      // V5-F11: If not in memory, try loading from MMKV
+      if (!cached) {
+        cached = await loadPersistedDeviceIds(userId) ?? undefined;
+      }
       if (cached) {
-        const newDevices = validIds.filter((id) => !cached.includes(id));
+        const newDevices = validIds.filter((id) => !cached!.includes(id));
         if (newDevices.length > 0) {
           // New device detected — accept but record for UI warning.
           // A compromised server injecting a device triggers this flag.
@@ -81,12 +113,15 @@ export async function getDeviceIds(userId: string): Promise<number[]> {
       }
 
       knownDeviceCache.set(userId, validIds);
+      // V5-F11: Persist to MMKV so it survives app restart
+      await persistDeviceIds(userId, validIds);
       return validIds;
     }
   } catch {
     // Endpoint not available — use cached or fallback
   }
-  return knownDeviceCache.get(userId) ?? [1];
+  // V5-F11: Fall back to persisted cache, then in-memory, then default
+  return knownDeviceCache.get(userId) ?? await loadPersistedDeviceIds(userId) ?? [1];
 }
 
 // Internal helpers — reuse e2eApi's config
