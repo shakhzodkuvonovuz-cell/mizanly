@@ -60,39 +60,32 @@ export interface MLKEMProvider {
 // ============================================================
 
 let mlkemProvider: MLKEMProvider | null = null;
-let mlkemDetected = false;
 
-/**
- * Load ML-KEM-768 from @noble/post-quantum.
- * The package is installed — this initializes the provider on first call.
- */
-async function detectMLKEM(): Promise<void> {
-  if (mlkemDetected) return;
-  mlkemDetected = true;
-  try {
-    const { ml_kem768 } = await import('@noble/post-quantum/ml-kem');
-    if (ml_kem768) {
-      mlkemProvider = {
-        keygen: () => {
-          const { publicKey, secretKey } = ml_kem768.keygen();
-          return { publicKey: new Uint8Array(publicKey), secretKey: new Uint8Array(secretKey) };
-        },
-        encapsulate: (pk: Uint8Array) => {
-          const { cipherText, sharedSecret } = ml_kem768.encapsulate(pk);
-          return { ciphertext: new Uint8Array(cipherText), sharedSecret: new Uint8Array(sharedSecret) };
-        },
-        decapsulate: (ct: Uint8Array, sk: Uint8Array) => {
-          return new Uint8Array(ml_kem768.decapsulate(ct, sk));
-        },
-      };
-    }
-  } catch {
-    mlkemProvider = null;
+// V6-F9 FIX: Synchronous require() instead of async import().
+// Same rationale as native-crypto-adapter.ts: the first X3DH handshake after
+// app launch must know whether PQXDH is available BEFORE computing the shared
+// secret. Previously, the async detection could lose the race, causing the
+// initiator to skip PQ encapsulation even when ML-KEM is installed.
+try {
+  const { ml_kem768 } = require('@noble/post-quantum/ml-kem');
+  if (ml_kem768) {
+    mlkemProvider = {
+      keygen: () => {
+        const { publicKey, secretKey } = ml_kem768.keygen();
+        return { publicKey: new Uint8Array(publicKey), secretKey: new Uint8Array(secretKey) };
+      },
+      encapsulate: (pk: Uint8Array) => {
+        const { cipherText, sharedSecret } = ml_kem768.encapsulate(pk);
+        return { ciphertext: new Uint8Array(cipherText), sharedSecret: new Uint8Array(sharedSecret) };
+      },
+      decapsulate: (ct: Uint8Array, sk: Uint8Array) => {
+        return new Uint8Array(ml_kem768.decapsulate(ct, sk));
+      },
+    };
   }
+} catch {
+  mlkemProvider = null;
 }
-
-// Kick off detection immediately
-detectMLKEM();
 
 /** Check if PQXDH is available (ML-KEM package installed) */
 export function isPQXDHAvailable(): boolean {
@@ -102,7 +95,6 @@ export function isPQXDHAvailable(): boolean {
 /** Manually set an ML-KEM provider (for testing or alternative implementations) */
 export function setMLKEMProvider(provider: MLKEMProvider | null): void {
   mlkemProvider = provider;
-  mlkemDetected = true;
 }
 
 // ============================================================

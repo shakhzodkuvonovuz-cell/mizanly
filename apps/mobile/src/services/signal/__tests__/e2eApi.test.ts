@@ -629,35 +629,65 @@ describe('fetchSenderKeys', () => {
 // ============================================================
 
 describe('negotiateProtocolVersion', () => {
-  it('returns 1 when bundle supports [1]', () => {
+  // V6-F12: negotiateProtocolVersion now checks isPQXDHAvailable() at runtime.
+  // Mock it to test both PQXDH-available and PQXDH-unavailable paths.
+  const pqxdh = require('../pqxdh');
+  const originalIsPQXDH = pqxdh.isPQXDHAvailable;
+
+  afterEach(() => {
+    pqxdh.isPQXDHAvailable = originalIsPQXDH;
+  });
+
+  it('returns 1 when bundle supports [1] (PQXDH available)', () => {
+    pqxdh.isPQXDHAvailable = () => true;
     expect(negotiateProtocolVersion([1])).toBe(1);
   });
 
-  it('returns 2 when bundle supports [1, 2] (F27: PQXDH)', () => {
+  it('returns 2 when bundle supports [1, 2] and PQXDH available (F27)', () => {
+    pqxdh.isPQXDHAvailable = () => true;
     expect(negotiateProtocolVersion([1, 2])).toBe(2);
   });
 
-  it('returns 2 when bundle supports [2] only (F27: we now support v2)', () => {
+  it('returns 1 when bundle supports [1, 2] but PQXDH unavailable (V6-F12)', () => {
+    pqxdh.isPQXDHAvailable = () => false;
+    expect(negotiateProtocolVersion([1, 2])).toBe(1);
+  });
+
+  it('returns 2 when bundle supports [2] only and PQXDH available', () => {
+    pqxdh.isPQXDHAvailable = () => true;
     expect(negotiateProtocolVersion([2])).toBe(2);
+  });
+
+  it('returns null when bundle supports [2] only and PQXDH unavailable (V6-F12)', () => {
+    pqxdh.isPQXDHAvailable = () => false;
+    expect(negotiateProtocolVersion([2])).toBeNull();
   });
 
   it('returns null when bundle supports empty array', () => {
     expect(negotiateProtocolVersion([])).toBeNull();
   });
 
-  it('returns 2 when bundle supports [1, 2, 3] (highest mutual)', () => {
+  it('returns 2 when bundle supports [1, 2, 3] and PQXDH available (highest mutual)', () => {
+    pqxdh.isPQXDHAvailable = () => true;
     expect(negotiateProtocolVersion([1, 2, 3])).toBe(2);
+  });
+
+  it('returns 1 when bundle supports [1, 2, 3] and PQXDH unavailable (V6-F12)', () => {
+    pqxdh.isPQXDHAvailable = () => false;
+    expect(negotiateProtocolVersion([1, 2, 3])).toBe(1);
   });
 
   it('returns null when bundle supports [3, 4, 5] (no overlap)', () => {
     expect(negotiateProtocolVersion([3, 4, 5])).toBeNull();
   });
 
-  it('returns 2 when bundle supports [2, 1] (order does not matter)', () => {
+  it('returns 2 when bundle supports [2, 1] and PQXDH available (order does not matter)', () => {
+    pqxdh.isPQXDHAvailable = () => true;
     expect(negotiateProtocolVersion([2, 1])).toBe(2);
   });
 
-  it('returns the highest mutual version (F27: now 2 with PQXDH)', () => {
+  it('returns the highest mutual version with PQXDH available', () => {
+    pqxdh.isPQXDHAvailable = () => true;
     expect(negotiateProtocolVersion([1, 1, 1])).toBe(1); // No v2 in bundle → v1
     expect(negotiateProtocolVersion([1, 2])).toBe(2);     // Both have v2 → v2
   });

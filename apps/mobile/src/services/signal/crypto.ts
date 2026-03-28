@@ -27,7 +27,20 @@ import type { X25519KeyPair, Ed25519KeyPair } from './types';
 // F30 FIX: Hoist require() to module level. Previously called inside hot-path functions
 // (hmacSha256, sha256Hash, aeadEncrypt, aeadDecrypt) adding ~0.01ms per call.
 // require() is cached by the module system, but the lookup still has overhead.
-let nativeCryptoAdapter: { isNativeCryptoAvailable: () => boolean; hmacSha256?: (k: Uint8Array, d: Uint8Array) => Uint8Array; sha256?: (d: Uint8Array) => Uint8Array; aeadEncrypt?: (k: Uint8Array, n: Uint8Array, p: Uint8Array, a?: Uint8Array) => Uint8Array; aeadDecrypt?: (k: Uint8Array, n: Uint8Array, c: Uint8Array, a?: Uint8Array) => Uint8Array } | null = null;
+// V6-F14: Complete type declaration for all native crypto adapter functions.
+// Previously missing nativeHkdf, nativeAeadEncrypt, nativeAeadDecrypt,
+// constantTimeCompare, secureZero — accessed via `as any` casts throughout.
+interface NativeCryptoAdapter {
+  isNativeCryptoAvailable: () => boolean;
+  hmacSha256?: (k: Uint8Array, d: Uint8Array) => Uint8Array;
+  sha256?: (d: Uint8Array) => Uint8Array;
+  nativeHkdf?: (ikm: Uint8Array, salt: Uint8Array, info: string, length: number) => Uint8Array | null;
+  nativeAeadEncrypt?: (k: Uint8Array, n: Uint8Array, p: Uint8Array, a?: Uint8Array) => Uint8Array | null;
+  nativeAeadDecrypt?: (k: Uint8Array, n: Uint8Array, c: Uint8Array, a?: Uint8Array) => Uint8Array | null;
+  constantTimeCompare?: (a: Uint8Array, b: Uint8Array) => boolean;
+  secureZero?: (arr: Uint8Array) => void;
+}
+let nativeCryptoAdapter: NativeCryptoAdapter | null = null;
 try {
   nativeCryptoAdapter = require('./native-crypto-adapter');
 } catch { nativeCryptoAdapter = null; }
@@ -170,7 +183,7 @@ export function hkdfDeriveSecrets(
 ): Uint8Array {
   // Try native HKDF (OpenSSL, hardware-accelerated)
   if (nativeCryptoAdapter) {
-    const native = (nativeCryptoAdapter as any).nativeHkdf;
+    const native = nativeCryptoAdapter.nativeHkdf;
     if (native) {
       const result = native(ikm, salt, info, length);
       if (result) return result;
@@ -230,7 +243,7 @@ export function aeadEncrypt(
   if (nonce.length !== 24) throw new Error(`AEAD nonce must be 24 bytes, got ${nonce.length}`);
   // Try native C++ path first (10-50x faster via OpenSSL hardware acceleration)
   if (nativeCryptoAdapter) {
-    const native = (nativeCryptoAdapter as any).nativeAeadEncrypt;
+    const native = nativeCryptoAdapter.nativeAeadEncrypt;
     if (native) {
       const result = native(key, nonce, plaintext, aad);
       if (result) return result;
@@ -256,7 +269,7 @@ export function aeadDecrypt(
   if (nonce.length !== 24) throw new Error(`AEAD nonce must be 24 bytes, got ${nonce.length}`);
   // Try native C++ path first
   if (nativeCryptoAdapter) {
-    const native = (nativeCryptoAdapter as any).nativeAeadDecrypt;
+    const native = nativeCryptoAdapter.nativeAeadDecrypt;
     if (native) {
       const result = native(key, nonce, ciphertext, aad);
       if (result) return result;
@@ -311,6 +324,12 @@ export function padMessage(plaintext: Uint8Array): Uint8Array {
  * Remove padding. Throws on invalid padding (tampering detected).
  * E1: Validates padLen is within PAD_BLOCK alignment (max 160 for short messages,
  * standard 1-16 for longer messages). Rejects implausible padLen values.
+ *
+ * V6-F7 FIX: Constant-time padding validation. Previously threw on first mismatch,
+ * leaking the position of the bad byte via timing. Now accumulates XOR diff across
+ * ALL padding bytes and throws after the loop. While AEAD prevents ciphertext
+ * modification (making this unexploitable in practice), constant-time validation
+ * is defense-in-depth against future protocol changes.
  */
 export function unpadMessage(padded: Uint8Array): Uint8Array {
   if (padded.length === 0) throw new Error('Empty padded message');
@@ -318,10 +337,12 @@ export function unpadMessage(padded: Uint8Array): Uint8Array {
   if (padLen === 0 || padLen > padded.length || padLen > MIN_PADDED_SIZE) {
     throw new Error('Invalid message padding');
   }
-  // Verify all pad bytes match
+  // Constant-time: accumulate XOR diff across all padding bytes, throw after loop
+  let diff = 0;
   for (let i = padded.length - padLen; i < padded.length; i++) {
-    if (padded[i] !== padLen) throw new Error('Invalid message padding');
+    diff |= padded[i] ^ padLen;
   }
+  if (diff !== 0) throw new Error('Invalid message padding');
   return padded.slice(0, padded.length - padLen);
 }
 
@@ -416,8 +437,8 @@ export function utf8Decode(bytes: Uint8Array): string {
  * falls back to XOR accumulator otherwise.
  */
 export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (nativeCryptoAdapter?.isNativeCryptoAvailable() && (nativeCryptoAdapter as any).constantTimeCompare) {
-    return (nativeCryptoAdapter as any).constantTimeCompare(a, b);
+  if (nativeCryptoAdapter?.isNativeCryptoAvailable() && nativeCryptoAdapter.constantTimeCompare) {
+    return nativeCryptoAdapter.constantTimeCompare(a, b);
   }
   // Fallback: XOR accumulator (best-effort in JS)
   const len = Math.max(a.length, b.length);
@@ -434,8 +455,8 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
  * falls back to random overwrite + zero fill otherwise.
  */
 export function zeroOut(arr: Uint8Array): void {
-  if (nativeCryptoAdapter?.isNativeCryptoAvailable() && (nativeCryptoAdapter as any).secureZero) {
-    (nativeCryptoAdapter as any).secureZero(arr);
+  if (nativeCryptoAdapter?.isNativeCryptoAvailable() && nativeCryptoAdapter.secureZero) {
+    nativeCryptoAdapter.secureZero(arr);
     return;
   }
 

@@ -25,30 +25,27 @@
  */
 
 // ============================================================
-// AUTO-DETECTION
+// AUTO-DETECTION (synchronous — guarantees native from first call)
 // ============================================================
 
 let nativeAvailable = false;
 let nativeCrypto: any = null;
 
-/**
- * Attempt to load react-native-quick-crypto.
- * Called once on module import. Silently falls back to JS if unavailable.
- */
-async function detectNativeCrypto(): Promise<void> {
-  try {
-    const quickCrypto = await import('react-native-quick-crypto' as string);
-    if (quickCrypto?.default?.randomBytes || quickCrypto?.randomBytes) {
-      nativeCrypto = quickCrypto.default ?? quickCrypto;
-      nativeAvailable = true;
-    }
-  } catch {
-    nativeAvailable = false;
+// V6-F9 FIX: Synchronous require() instead of async import().
+// Previously: async detectNativeCrypto() was fire-and-forget at module load.
+// The first crypto operations after app launch could race the Promise and
+// fall back to JS (@noble), which is not constant-time (JIT can optimize
+// branches based on secret data). Now: require() is synchronous — the native
+// C++ JSI path is guaranteed active from the very first aeadEncrypt call.
+try {
+  const quickCrypto = require('react-native-quick-crypto');
+  if (quickCrypto?.default?.randomBytes || quickCrypto?.randomBytes) {
+    nativeCrypto = quickCrypto.default ?? quickCrypto;
+    nativeAvailable = true;
   }
+} catch {
+  nativeAvailable = false;
 }
-
-// Kick off detection
-detectNativeCrypto();
 
 /** Check if native crypto is available */
 export function isNativeCryptoAvailable(): boolean {

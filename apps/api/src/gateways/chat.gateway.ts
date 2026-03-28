@@ -474,6 +474,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       return;
     }
 
+    // V6-F2b: E2E enforcement moved to messagesService.sendMessage (persistent DB flag).
+    // The service checks conversation.isE2E and rejects plaintext if true.
+    // No Redis TTL — the flag is permanent once set, stored in PostgreSQL.
+
     let message;
     try {
       message = await this.messagesService.sendMessage(
@@ -515,17 +519,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   }
 
   /**
-   * Sealed sender message handler (C11 / F5).
+   * Sealed sender message handler (C11 / V6-F1).
    *
    * The client sends: sealed envelope + E2E fields for persistence.
    * The server:
-   * 1. Forwards the sealed envelope to the recipient (routing)
+   * 1. Forwards the sealed envelope to the RECIPIENT'S USER ROOM (not conversation room)
    * 2. Persists the message in the DB (so history/undo/receipts work)
    *
-   * The sealed envelope wraps the Signal ciphertext — even in the DB,
-   * the stored encryptedContent is the double-encrypted sealed blob.
-   * A compromised server sees only opaque ciphertext; the sender's
-   * identity is protected inside the sealed envelope.
+   * V6-F1 FIX: Previously routed to `conversation:${conversationId}` which leaked the
+   * sender's identity via room membership — all conversation members could see which
+   * socket emitted. Now routes to `user:${recipientId}` so the server forwards the
+   * opaque envelope directly to the recipient without broadcasting to the conversation.
+   *
+   * The forwarded event contains ONLY the sealed envelope (ephemeralKey + sealedCiphertext)
+   * plus the conversationId (so the recipient can route to the correct session).
+   * No senderId, no socket metadata. The recipient unseals the envelope to discover
+   * the sender identity, then decrypts the inner ciphertext via their pairwise session.
+   *
+   * KNOWN LIMITATION (V6-F4): The authenticated socket still allows timing correlation —
+   * a compromised server can correlate sealed message timing with socket auth timestamps.
+   * Full mitigation requires a separate unauthenticated transport for sealed delivery.
+   *
+   * DB LIMITATION: Message.senderId is a required Prisma field. The DB record still
+   * contains the senderId for schema integrity. The sealed envelope (stored as
+   * encryptedContent) is the authoritative transport — the DB senderId is a server-side
+   * implementation detail, not visible to other clients.
    */
   @SubscribeMessage('send_sealed_message')
   async handleSealedMessage(
@@ -558,25 +576,45 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     if (!client.data.userId) throw new WsException('Unauthorized');
     if (!(await this.checkRateLimit(client.data.userId, 'sealed_message', 30, 60))) return;
 
-    // 1. Forward the sealed envelope to the recipient's room
-    client.to(`conversation:${data.conversationId}`).emit('sealed_message', {
+    // V6-F1: Validate inputs + verify recipient is a member of this conversation.
+    // Without this check, a malicious client could route sealed envelopes to any userId.
+    if (!data.recipientId || !data.conversationId) {
+      client.emit('error', { message: 'recipientId and conversationId required for sealed messages' });
+      return;
+    }
+    const recipientMembership = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId: data.conversationId, userId: data.recipientId } },
+      select: { userId: true },
+    });
+    if (!recipientMembership) {
+      client.emit('error', { message: 'Recipient is not a member of this conversation' });
+      return;
+    }
+
+    // V6-F1: Route to recipient's USER room — NOT the conversation room.
+    // The server sees the recipientId for routing but the forwarded event contains
+    // ONLY the opaque sealed envelope. No senderId, no conversation context.
+    // The recipient unseals the envelope to discover sender + inner ciphertext.
+    this.server.to(`user:${data.recipientId}`).emit('sealed_message', {
       ephemeralKey: data.ephemeralKey,
       sealedCiphertext: data.sealedCiphertext,
+      // V6-F1: Include conversationId so the recipient knows which conversation
+      // this sealed message belongs to (needed to route to correct session).
+      // This is NOT a privacy leak — the recipient already knows their conversations.
       conversationId: data.conversationId,
     });
 
-    // 2. Persist the message for history/undo/receipts
+    // V6-F1b: Persist with senderId=null — the sender's identity is inside the sealed
+    // envelope (encryptedContent). The DB record does NOT reveal who sent the message.
+    // The recipient unseals the envelope to discover the sender.
     let message;
     try {
       message = await this.messagesService.sendMessage(
         data.conversationId,
-        client.data.userId,
+        null, // V6-F1b: sealed sender — no senderId in DB
         {
+          _sealedSender: true,
           messageType: data.messageType || 'TEXT',
-          replyToId: data.replyToId,
-          mediaUrl: data.mediaUrl,
-          isSpoiler: data.isSpoiler,
-          isViewOnce: data.isViewOnce,
           ...(data.encryptedContent ? { encryptedContent: Uint8Array.from(Buffer.from(data.encryptedContent, 'base64')) } : {}),
           ...(data.e2eVersion ? { e2eVersion: data.e2eVersion } : {}),
           ...(data.e2eSenderDeviceId !== undefined ? { e2eSenderDeviceId: data.e2eSenderDeviceId } : {}),

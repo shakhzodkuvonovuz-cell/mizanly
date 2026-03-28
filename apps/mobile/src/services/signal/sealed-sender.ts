@@ -11,14 +11,30 @@
  * 3. DH(ephemeral, recipientIdentityX25519) → sharedSecret
  * 4. Encrypt { senderId, deviceId, innerCiphertext } with sharedSecret
  * 5. Server receives { recipientId, ephemeralKey, sealedCiphertext }
- *    — server CANNOT determine who sent the message
+ *    — server CANNOT determine who sent the message from the envelope alone
  *
  * The recipient:
  * 1. Uses their identity private key to compute DH(identityX25519, ephemeralKey)
  * 2. Decrypts the sealed envelope → reveals senderId + innerCiphertext
  * 3. Routes to the correct session for final decryption
  *
- * This is the same approach Signal uses (deployed 2018).
+ * KNOWN LIMITATIONS (V6 audit):
+ *
+ * V6-F1: The WebSocket is authenticated via Clerk JWT. The server routes sealed
+ * messages to `user:${recipientId}` (not the conversation room), reducing metadata
+ * exposure, but the server still knows the sender from the socket authentication.
+ * The DB persists senderId due to schema constraints. Full sealed sender privacy
+ * against the server requires an unauthenticated delivery transport (future work).
+ *
+ * V6-F4: Even with an unauthenticated delivery path, the sender's authenticated
+ * socket creates a timing correlation vector. A compromised server can correlate
+ * sealed message send timestamps with socket authentication timestamps to identify
+ * the sender. Full mitigation requires a SEPARATE unauthenticated transport channel
+ * for sealed message delivery (e.g., anonymous HTTP PUT with delivery token).
+ *
+ * Current protection scope: sealed sender protects against PASSIVE network observers
+ * (ISP, CDN, co-located tenants) and limits metadata visible to the server's routing
+ * layer. It does NOT fully protect against an active adversary with DB + socket access.
  */
 
 import {

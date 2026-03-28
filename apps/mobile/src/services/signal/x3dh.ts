@@ -145,7 +145,8 @@ export async function initiateX3DH(
   }
 
   // --- Step 1b: TOFU identity key check ---
-  const identityTrust = await verifyIdentityKey(remoteUserId, bundle.identityKey);
+  // V6-F3: `let` instead of `const` — PQXDH downgrade detection may override to 'changed'
+  let identityTrust = await verifyIdentityKey(remoteUserId, bundle.identityKey);
   // Store/update the known identity key regardless of trust status
   await storeKnownIdentityKey(remoteUserId, bundle.identityKey);
 
@@ -203,18 +204,25 @@ export async function initiateX3DH(
       }
     } catch {
       // V5-F5: Emit telemetry on PQXDH failure instead of silently downgrading.
+      // V6-F3: Also set identityTrust='changed' to trigger safety number change warning.
       // If both parties advertise version 2 but PQ encapsulation fails,
       // an attacker may be stripping PQ fields to force classical-only.
       if (bundle.supportedVersions?.includes(2)) {
+        identityTrust = 'changed';
         import('./telemetry').then(({ recordE2EEvent }) =>
           recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_encapsulation_failed' } }),
         ).catch(() => {});
       }
     }
   } else if (isPQXDHAvailable() && bundle.supportedVersions?.includes(2) && !(bundle as any).pqPreKey) {
-    // V5-F5: Both sides support PQ but bundle has no pqPreKey — possible strip attack
+    // V5-F5: Both sides support PQ but bundle has no pqPreKey — possible strip attack.
+    // V6-F3 FIX: Set identityTrust='changed' so the UI shows a safety number change
+    // warning. Previously only emitted telemetry — the user was never informed of the
+    // potential downgrade attack. Now triggers "[Security code changed]" in the UI,
+    // prompting the user to verify the safety number out-of-band.
+    identityTrust = 'changed';
     import('./telemetry').then(({ recordE2EEvent }) =>
-      recordE2EEvent({ event: 'identity_key_changed', metadata: { reason: 'pqxdh_downgrade_missing_prekey' } }),
+      recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_downgrade_missing_prekey' } }),
     ).catch(() => {});
   }
 

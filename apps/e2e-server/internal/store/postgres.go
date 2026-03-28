@@ -38,6 +38,8 @@ type Store struct {
 	cachedLeafIndex map[string]int       // userId → leaf index
 	cachedPubKeys   map[string][]byte    // userId → publicKey
 	cacheValid      bool
+	// V6-F13: Track actual rebuild time (not time.Now() on every request)
+	cacheRebuiltAt  time.Time
 }
 
 // New creates a new Store with a connection pool configured for Neon.
@@ -574,6 +576,7 @@ func (s *Store) rebuildMerkleCacheLocked(ctx context.Context) error {
 	}
 
 	s.cacheValid = true
+	s.cacheRebuiltAt = time.Now().UTC() // V6-F13: actual rebuild time
 	return nil
 }
 
@@ -652,11 +655,15 @@ func (s *Store) GetTransparencyRoot(ctx context.Context) (*TransparencyRoot, err
 		return &TransparencyRoot{Root: "", TreeSize: 0, UpdatedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 	}
 
+	// V6-F13 FIX: Return actual cache rebuild time, not time.Now().
+	// Previously, a stale cached tree always appeared freshly computed.
+	// A compromised server could serve an old tree indefinitely without
+	// the client noticing the staleness from the timestamp.
 	return &TransparencyRoot{
 		Root:      base64.StdEncoding.EncodeToString(s.cachedRoot),
 		RootSig:   s.cachedRootSig,
 		TreeSize:  s.cachedTreeSize,
-		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
+		UpdatedAt: s.cacheRebuiltAt.Format(time.RFC3339),
 	}, nil
 }
 

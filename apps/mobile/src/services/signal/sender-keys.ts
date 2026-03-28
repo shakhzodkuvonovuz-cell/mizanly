@@ -537,21 +537,31 @@ export async function distributeSenderKeyToMembers(
   zeroOut(serialized);
 
   // F21 FIX: Retry distribution for unacknowledged members after 30 seconds.
+  // V6-F6 FIX: Key material is re-loaded from MMKV (not captured from the outer scope).
+  // try/finally guarantees zeroOut on any error path (previously leaked on throw).
+  // NOTE: encryptForMember + uploadToServer callbacks ARE still captured by the closure.
+  // This is acceptable — they hold no key material, only session encrypt/upload capability.
   if (unacknowledged.length > 0) {
+    const retryMemberIds = [...unacknowledged]; // Copy — original array may be GC'd
     setTimeout(async () => {
-      // Re-load and re-serialize from MMKV (not from captured closure variable)
-      const freshState = await loadSenderKeyState(retryGroupId, 'self');
-      if (!freshState) return;
-      const freshSerialized = serializeSenderKeyForDistribution(freshState);
-      for (const memberId of unacknowledged) {
-        try {
-          const encrypted = await encryptForMember(memberId, freshSerialized);
-          await uploadToServer(retryGroupId, memberId, encrypted, retryChainId, retryGeneration);
-        } catch {
-          // Final failure — member will request re-distribution on join
+      let freshSerialized: Uint8Array | null = null;
+      try {
+        // Re-load from MMKV (AEAD-protected) — no closure capture of key material
+        const freshState = await loadSenderKeyState(retryGroupId, 'self');
+        if (!freshState) return;
+        freshSerialized = serializeSenderKeyForDistribution(freshState);
+        for (const memberId of retryMemberIds) {
+          try {
+            const encrypted = await encryptForMember(memberId, freshSerialized);
+            await uploadToServer(retryGroupId, memberId, encrypted, retryChainId, retryGeneration);
+          } catch {
+            // Final failure — member will request re-distribution on join
+          }
         }
+      } finally {
+        // V6-F6: Guaranteed cleanup even if the loop throws unexpectedly
+        if (freshSerialized) zeroOut(freshSerialized);
       }
-      zeroOut(freshSerialized);
     }, 30_000);
   }
 

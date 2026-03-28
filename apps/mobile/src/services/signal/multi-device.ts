@@ -220,38 +220,73 @@ export function serializeForWire(
  *
  * @returns { code: string, secret: Uint8Array }
  */
+/**
+ * V6-F11: Current link session ID — used to scope attempt counter persistence.
+ * Each call to generateDeviceLinkCode sets a new session ID.
+ */
+let currentLinkSessionId = '';
+
 export function generateDeviceLinkCode(): { code: string; secret: Uint8Array } {
-  const { generateRandomBytes } = require('./crypto');
+  const { generateRandomBytes, toBase64 } = require('./crypto');
   const secret = generateRandomBytes(32);
   // 6-digit numeric code derived from the secret (for manual entry)
   const num = ((secret[0] << 16) | (secret[1] << 8) | secret[2]) % 1000000;
   const code = String(num).padStart(6, '0');
-  // V4-F20: Reset attempt counter when generating a new code
-  linkAttempts = 0;
+  // V6-F11: Generate unique session ID and reset both in-memory + persisted counter
+  currentLinkSessionId = toBase64(generateRandomBytes(8));
+  linkAttemptsCache = 0;
+  linkCacheLoaded = true; // New session — no need to load old counter
+  persistLinkAttempts(currentLinkSessionId, 0);
   return { code, secret };
 }
 
 /**
- * Verify a device linking code from a new device.
- *
- * @param code - The 6-digit code entered by the new device
- * @param expectedSecret - The secret from generateDeviceLinkCode
- * @returns true if the code matches
+ * V6-F11 FIX: Persisted attempt counter — survives app restart.
+ * Previously: in-memory `linkAttempts` variable reset to 0 on app restart,
+ * allowing an attacker to restart the app between brute-force attempts.
+ * Now: counter is persisted in MMKV (AEAD + HMAC) per link session ID.
+ * Server-side rate limiting (V4-F20) remains the authoritative control.
  */
-/**
- * V4-F20: Client-side attempt tracking for device link code verification.
- * Limits to 5 attempts per code. After 5 failures, the code is invalidated.
- * Server-side rate limiting should also be implemented when the device linking
- * endpoint is built.
- */
-let linkAttempts = 0;
 const MAX_LINK_ATTEMPTS = 5;
+
+async function loadLinkAttempts(sessionId: string): Promise<number> {
+  try {
+    const { secureLoad, HMAC_TYPE } = await import('./storage');
+    const val = await secureLoad(HMAC_TYPE.SESSION, `link_attempts:${sessionId}`);
+    return val ? parseInt(val, 10) || 0 : 0;
+  } catch { return 0; }
+}
+
+async function persistLinkAttempts(sessionId: string, count: number): Promise<void> {
+  try {
+    const { secureStore, HMAC_TYPE } = await import('./storage');
+    await secureStore(HMAC_TYPE.SESSION, `link_attempts:${sessionId}`, String(count));
+  } catch { /* Best-effort persist — server rate limit is authoritative */ }
+}
+
+/**
+ * V6-F11: Load persisted counter into in-memory cache on first use.
+ * Called once when verifyDeviceLinkCode is first invoked after app restart.
+ */
+let linkCacheLoaded = false;
+async function ensureLinkCacheLoaded(): Promise<void> {
+  if (linkCacheLoaded || !currentLinkSessionId) return;
+  linkCacheLoaded = true;
+  const persisted = await loadLinkAttempts(currentLinkSessionId);
+  if (persisted > linkAttemptsCache) linkAttemptsCache = persisted;
+}
 
 export function verifyDeviceLinkCode(
   code: string,
   expectedSecret: Uint8Array,
 ): boolean {
-  if (linkAttempts >= MAX_LINK_ATTEMPTS) {
+  // V6-F11: Kick off async load of persisted counter (non-blocking).
+  // On first call after restart, linkAttemptsCache may be 0 until the load completes.
+  // The server-side rate limit (V4-F20) is the authoritative guard regardless.
+  ensureLinkCacheLoaded().catch(() => {});
+
+  const attempts = linkAttemptsCache;
+  if (attempts >= MAX_LINK_ATTEMPTS) {
     return false; // Code invalidated after too many attempts
   }
 
@@ -263,14 +298,24 @@ export function verifyDeviceLinkCode(
     diff |= code.charCodeAt(i) ^ expected.charCodeAt(i);
   }
   const isValid = diff === 0 && code.length === 6;
-  if (!isValid) linkAttempts++;
-  if (isValid) linkAttempts = 0; // Reset on success
+  if (!isValid) {
+    linkAttemptsCache++;
+    persistLinkAttempts(currentLinkSessionId, linkAttemptsCache);
+  }
+  if (isValid) {
+    linkAttemptsCache = 0;
+    persistLinkAttempts(currentLinkSessionId, 0);
+  }
   return isValid;
 }
 
+/** In-memory cache of current session's attempt count (loaded from MMKV on init) */
+let linkAttemptsCache = 0;
+
 /** Reset attempt counter when generating a new link code. */
 export function resetLinkAttempts(): void {
-  linkAttempts = 0;
+  linkAttemptsCache = 0;
+  if (currentLinkSessionId) persistLinkAttempts(currentLinkSessionId, 0);
 }
 
 // ============================================================

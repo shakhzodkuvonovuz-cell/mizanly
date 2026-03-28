@@ -1905,9 +1905,23 @@ export default function ConversationScreen() {
       new Date(member.lastReadAt) >= new Date(item.message.createdAt)
     ).slice(0, 3) ?? [];
     const encMsg = item.message as EncryptedMessage;
-    const displayMessage = (encMsg.encryptedContent && decryptedContents.has(encMsg.id))
-      ? { ...item.message, content: decryptedContents.get(encMsg.id) ?? item.message.content }
-      : item.message;
+    // V6-F2a: Client-side E2E enforcement. Three cases:
+    // 1. Encrypted + decrypted → show decrypted content
+    // 2. Encrypted + not yet decrypted → show "[Encrypted message]"
+    // 3. Not encrypted (no encryptedContent) → block plaintext injection
+    //    EXCEPT for SYSTEM messages (join/leave/security code changed)
+    let displayMessage: typeof item.message;
+    if (encMsg.encryptedContent && decryptedContents.has(encMsg.id)) {
+      displayMessage = { ...item.message, content: decryptedContents.get(encMsg.id) ?? item.message.content };
+    } else if (encMsg.encryptedContent) {
+      displayMessage = { ...item.message, content: '🔒' };
+    } else if (item.message.messageType !== 'SYSTEM') {
+      // V6-F2a: Plaintext message in an E2E conversation — possible server injection.
+      // Display a warning instead of the attacker-controlled content.
+      displayMessage = { ...item.message, content: '⚠ This message was not end-to-end encrypted' };
+    } else {
+      displayMessage = item.message; // SYSTEM messages are legitimate plaintext
+    }
     return (
       <Swipeable
         renderRightActions={() => (

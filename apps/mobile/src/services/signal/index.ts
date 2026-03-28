@@ -192,7 +192,12 @@ export async function initialize(
   try {
     const { AppState } = require('react-native');
     AppState.addEventListener('change', (state: string) => {
-      if (state === 'background') cleanupDecryptedMediaFiles();
+      // V6-F10: Clean up on BOTH 'inactive' and 'background' to reduce the
+      // filesystem exposure window. 'inactive' fires before 'background' on iOS
+      // (e.g., Control Center pull-down, app switcher). On Android, 'inactive'
+      // fires during multi-window transitions. This narrows the window where
+      // decrypted media temp files are accessible on a rooted filesystem.
+      if (state === 'background' || state === 'inactive') cleanupDecryptedMediaFiles();
     });
   } catch { /* AppState not available in tests */ }
 

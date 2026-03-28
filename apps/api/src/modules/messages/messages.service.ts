@@ -186,7 +186,7 @@ export class MessagesService {
 
   async sendMessage(
     conversationId: string,
-    senderId: string,
+    senderId: string | null,
     data: {
       content?: string;
       messageType?: string;
@@ -205,8 +205,70 @@ export class MessagesService {
       e2eSenderKeyId?: number;
       clientMessageId?: string;
       encryptedLastMessagePreview?: Uint8Array;
+      // V6-F1b: Sealed sender — senderId is null, sender identity is inside encrypted envelope
+      _sealedSender?: boolean;
     },
   ) {
+    // V6-F1b: Sealed sender fast path — senderId is null.
+    // The gateway already verified: sender membership, recipient membership, rate limit.
+    // Skip all sender-specific checks (block, DM restriction, slow mode).
+    // Only persist the opaque encrypted payload with senderId=null.
+    if (data._sealedSender && senderId === null) {
+      if (!data.encryptedContent) {
+        throw new BadRequestException('Sealed sender messages must have encryptedContent');
+      }
+      // Dedup for sealed sender: match by clientMessageId + conversationId only (no senderId)
+      if (data.clientMessageId) {
+        const existing = await this.prisma.message.findUnique({
+          where: { clientMessageId: data.clientMessageId },
+          select: { ...MESSAGE_SELECT, conversationId: true },
+        });
+        if (existing && existing.conversationId === conversationId) {
+          return existing;
+        }
+      }
+      // Fetch conversation for isE2E flag and disappearing duration
+      const convo = await this.prisma.conversation.findUnique({
+        where: { id: conversationId },
+        select: { isE2E: true, disappearingDuration: true },
+      });
+      return this.prisma.$transaction(async (tx) => {
+        const msg = await tx.message.create({
+          data: {
+            conversationId,
+            senderId: null, // V6-F1b: sender identity is inside the sealed envelope
+            messageType: (data.messageType as MessageType) ?? 'TEXT',
+            isEncrypted: true,
+            encryptedContent: new Uint8Array(data.encryptedContent!),
+            ...(data.e2eVersion ? { e2eVersion: data.e2eVersion } : {}),
+            ...(data.e2eSenderDeviceId !== undefined ? { e2eSenderDeviceId: data.e2eSenderDeviceId } : {}),
+            ...(data.e2eSenderRatchetKey ? { e2eSenderRatchetKey: new Uint8Array(data.e2eSenderRatchetKey) } : {}),
+            ...(data.e2eCounter !== undefined ? { e2eCounter: data.e2eCounter } : {}),
+            ...(data.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: data.e2ePreviousCounter } : {}),
+            ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
+            ...(convo?.disappearingDuration ? { expiresAt: new Date(Date.now() + convo.disappearingDuration * 1000) } : {}),
+          },
+          select: MESSAGE_SELECT,
+        });
+        await tx.conversation.update({
+          where: { id: conversationId },
+          data: {
+            lastMessageAt: new Date(),
+            lastMessageText: null, // Sealed sender — no plaintext preview
+            lastMessageById: null, // V6-F1b: sender unknown to server
+            ...(!convo?.isE2E ? { isE2E: true } : {}),
+          },
+        });
+        return msg;
+      });
+    }
+
+    // From here on, senderId is required (non-sealed path).
+    // The sealed sender path above returns early with senderId=null.
+    if (!senderId) {
+      throw new BadRequestException('senderId is required for non-sealed messages');
+    }
+
     // Idempotent dedup: if clientMessageId already exists AND belongs to this conversation+sender,
     // return the existing message. Check conversation+sender to prevent cross-conversation info leak.
     if (data.clientMessageId) {
@@ -233,6 +295,7 @@ export class MessagesService {
             isGroup: true,
             slowModeSeconds: true,
             disappearingDuration: true,
+            isE2E: true, // V6-F2b: persistent E2E enforcement flag
             members: { where: { userId: { not: senderId } }, select: { userId: true }, take: 200 },
           },
         },
@@ -312,6 +375,13 @@ export class MessagesService {
     if (data.content && data.encryptedContent) {
       throw new BadRequestException('Message cannot have both content and encryptedContent');
     }
+    // V6-F2b: Persistent E2E enforcement — once a conversation has received an encrypted
+    // message, ALL subsequent messages MUST be encrypted. A compromised server cannot
+    // inject plaintext content into E2E conversations. This replaces the Redis TTL check
+    // in the gateway (which expired after 24h, creating a delayed injection window).
+    if (convo?.isE2E && !data.encryptedContent) {
+      throw new BadRequestException('This conversation requires end-to-end encryption');
+    }
 
     // Slow mode check (using convo from merged query above)
     if (convo?.slowModeSeconds && convo.slowModeSeconds > 0) {
@@ -364,6 +434,9 @@ export class MessagesService {
           // Encrypted messages: no plaintext preview, use encryptedLastMessagePreview
           lastMessageText: data.e2eVersion ? null : (data.content?.slice(0, 100) ?? null),
           lastMessageById: senderId,
+          // V6-F2b: Set isE2E=true on first encrypted message (never unset).
+          // Once set, all future messages in this conversation MUST be encrypted.
+          ...(data.e2eVersion && !convo?.isE2E ? { isE2E: true } : {}),
           ...(data.encryptedLastMessagePreview
             ? { encryptedLastMessagePreview: new Uint8Array(data.encryptedLastMessagePreview) }
             : {}),

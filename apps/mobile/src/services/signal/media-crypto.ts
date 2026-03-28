@@ -210,6 +210,12 @@ export async function encryptSmallMediaFile(
   // F18 FIX: Encode mediaKey to base64 ONCE at source, then zero the Uint8Array.
   // The raw key never leaves this function — callers use mediaKeyB64 directly.
   // This eliminates multiple Uint8Array copies traveling through JS memory.
+  //
+  // V6-F8: The base64 string is an immutable JS string — it CANNOT be zeroed and
+  // persists in the JS heap until GC. This is an inherent JavaScript limitation.
+  // Callers SHOULD null their reference to mediaKeyB64 after embedding it in the
+  // E2E message payload (e.g., `result.mediaKeyB64 = ''` after use) to allow
+  // earlier GC. The Uint8Array source is zeroed here.
   const mediaKeyB64 = toBase64(ctx.mediaKey);
   const zeroedKey = new Uint8Array(ctx.mediaKey.length); // All zeros for deprecated field
   zeroOut(ctx.mediaKey);

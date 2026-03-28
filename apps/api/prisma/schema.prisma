@@ -1674,6 +1674,10 @@ model Conversation {
 
   // Signal Protocol E2E — client-encrypted preview for conversation list
   encryptedLastMessagePreview Bytes?
+  // V6-F2b: Persistent E2E flag — set on first encrypted message, never unset.
+  // Once true, the server rejects plaintext messages in this conversation.
+  // Replaces Redis TTL-based check (which expired after 24h, allowing delayed injection).
+  isE2E                       Boolean                   @default(false)
 
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
