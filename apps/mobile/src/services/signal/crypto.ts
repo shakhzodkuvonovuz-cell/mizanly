@@ -83,11 +83,14 @@ export function x25519DH(
 // ============================================================
 
 /**
- * V5: Canonical list of low-order X25519 points.
- * DH with any of these produces a predictable output, breaking secrecy.
- * With @noble/curves clamping, all low-order inputs produce all-zeros.
- * The additional non-zero points are defense-in-depth against backends
- * that don't clamp.
+ * V5: All 7 distinct small-order X25519 x-coordinates (Montgomery form, LE).
+ *
+ * Curve25519 has cofactor h=8, but in x-only Montgomery representation,
+ * conjugate points (±y) share the same x-coordinate. This yields exactly
+ * 7 distinct x-values, not 8. (V8-F1 audit claimed 8 — mathematically incorrect.)
+ *
+ * @noble/curves rejects ALL of these at the library level (throws before
+ * our check runs). This list is defense-in-depth for non-clamping backends.
  *
  * Previously duplicated in x3dh.ts, double-ratchet.ts, sealed-sender.ts.
  * Now single source of truth here.
@@ -464,6 +467,10 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   for (let i = 0; i < len; i++) {
     diff |= padA[i] ^ padB[i];
   }
+  // V8-F2 FIX: Zero the padded copies. Previously abandoned to GC — contained
+  // copies of session keys, HMAC results, etc. accessible via heap dump.
+  padA.fill(0);
+  padB.fill(0);
   return diff === 0;
 }
 

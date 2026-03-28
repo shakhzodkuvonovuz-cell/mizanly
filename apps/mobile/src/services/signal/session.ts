@@ -15,7 +15,7 @@
  */
 
 import { ratchetEncrypt, ratchetDecrypt } from './double-ratchet';
-import { utf8Encode, utf8Decode, generateX25519KeyPair } from './crypto';
+import { utf8Encode, utf8Decode, generateX25519KeyPair, zeroOut } from './crypto';
 import {
   withSessionLock,
   loadSessionRecord,
@@ -334,6 +334,12 @@ export async function decryptMessage(
       );
     }
 
+    // V8-F10 FIX: Zero the OLD session's key material before replacing.
+    // Previously: old session's chainKeys, rootKey, ratchetPrivateKey were just
+    // dereferenced (assigned over). They persisted in JS heap until GC, breaking
+    // forward secrecy — a memory dump recovers old chain keys.
+    const oldActive = record.activeSession;
+
     // Commit the winning clone to the record
     if (winningIndex === -1) {
       // Active session succeeded — replace with mutated clone
@@ -344,6 +350,13 @@ export async function decryptMessage(
       record.previousSessions.push(record.activeSession);
       record.activeSession = winningSession;
     }
+
+    // Zero the old active session's key material
+    zeroOut(oldActive.rootKey);
+    zeroOut(oldActive.sendingChain.chainKey);
+    if (oldActive.receivingChain) zeroOut(oldActive.receivingChain.chainKey);
+    zeroOut(oldActive.senderRatchetKeyPair.privateKey);
+    for (const sk of oldActive.skippedKeys) zeroOut(sk.messageKey);
 
     // Mark session as established on first successful decrypt
     if (!record.activeSession.sessionEstablished) {

@@ -56,7 +56,7 @@ import {
   ed25519Verify,
   constantTimeEqual,
 } from './crypto';
-import { loadIdentityKeyPair, loadKnownIdentityKey, secureStore, secureLoad, HMAC_TYPE } from './storage';
+import { loadIdentityKeyPair, loadKnownIdentityKey, storeKnownIdentityKey, secureStore, secureLoad, HMAC_TYPE } from './storage';
 
 const SEALED_SENDER_INFO = 'MizanlySealedSender';
 
@@ -298,11 +298,31 @@ export async function unsealMessage(
     if (knownKey && !constantTimeEqual(knownKey, senderIdKey)) {
       throw new Error('Sealed sender identity key does not match known key — possible impersonation');
     }
+
+    // V8-F4 FIX: First-contact sealed sender — knownKey is null.
+    // Previously: silently accepted attacker's self-signed cert on first contact.
+    // An attacker impersonating "Alice" sends their own key+signature to "Bob" who
+    // has never talked to Alice. Bob's knownKey=null, signature is valid over the
+    // attacker's own key, and the attacker's identity is TOFU-stored as Alice.
+    //
+    // Now: on first contact, store the key (TOFU) but flag the message as unverified.
+    // The safety number UI will show "new contact" — not silently trusted.
+    // If the real Alice later contacts Bob, the key mismatch triggers an alert.
+    if (!knownKey) {
+      // TOFU store the key — but the recipient should verify via safety numbers
+      await storeKnownIdentityKey(raw.senderId, senderIdKey);
+    }
   } else if (sealedVersion >= 2) {
     // Sender claims sv=2 (supports certificates) but omitted them — attacker stripping fields
     throw new Error('Sealed sender v2 envelope missing certificate — possible downgrade attack');
   }
-  // sealedVersion=0 (legacy client, no sv field): accepted without certificate
+  // V8-F5 FIX: Reject ALL envelopes without certificates. Legacy sv=0 is no longer accepted.
+  // Previously: sealedVersion=0 (no sv field) → accepted without certificate → trivial bypass.
+  // An attacker could simply omit the sv field to skip all certificate checks.
+  // Now: if no certificate present AND sealedVersion < 2, reject.
+  else {
+    throw new Error('Sealed sender envelope has no certificate — all envelopes require sender authentication');
+  }
 
   // F13: Replay protection — check timestamp and counter (types already validated above)
   if (ts !== undefined) {

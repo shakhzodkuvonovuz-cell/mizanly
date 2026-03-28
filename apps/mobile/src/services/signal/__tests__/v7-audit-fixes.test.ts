@@ -42,13 +42,25 @@ describe('V7-F1: Sealed sender rejects non-numeric ctr/ts', () => {
     const encKey = sealKey.slice(0, 32);
     const nonce = sealKey.slice(32, 56);
 
-    const inner = {
+    // V8-F5: All sealed envelopes must include v2 certificate fields.
+    // Signature is computed AFTER overrides are applied (overrides may change ts/ctr).
+    const senderKp = generateEd25519KeyPair();
+    const baseInner = {
       senderId: 'attacker_user',
       senderDeviceId: 1,
       innerContent: 'some_content',
       ts: Date.now(),
       ctr: 1,
       ...innerOverrides,
+    };
+    const { ed25519Sign } = require('../crypto');
+    const signData = utf8Encode(`recipient_user|${baseInner.innerContent}|${baseInner.ts}|${baseInner.ctr}`);
+    const sig = ed25519Sign(senderKp.privateKey, signData);
+    const inner = {
+      ...baseInner,
+      sv: 2,
+      senderIdentityKey: toBase64(senderKp.publicKey),
+      senderSignature: toBase64(sig),
     };
     const plaintext = utf8Encode(JSON.stringify(inner));
     const aad = utf8Encode('recipient_user');

@@ -203,20 +203,16 @@ export async function initiateX3DH(
   }
 
   // --- Step 5: Derive shared secret via HKDF ---
-  let sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
+  // V8-F11 FIX: Single-pass HKDF per Signal PQXDH spec.
+  // Previously: HKDF(HKDF(F||DH) || PQ) — two nested KDFs.
+  // Signal spec requires: HKDF(F || DH1 || DH2 || DH3 || [DH4] || [PQ_shared_secret])
+  // All input key material is concatenated BEFORE the single HKDF call.
+  // This preserves the formal security proof from Signal's PQXDH specification.
 
-  // --- Step 5b (C10): PQXDH hybrid — if ML-KEM available + bundle has PQ pre-key ---
-  // Combine classical X3DH secret with ML-KEM shared secret for quantum resistance.
-  // If ML-KEM isn't available, the classical secret is used as-is (protocol v1).
   let pqCiphertext: Uint8Array | undefined;
   // V7-F5: Access pqPreKey with proper type narrowing instead of 4 separate `as any` casts.
   const bundlePqPreKey = (bundle as unknown as Record<string, unknown>).pqPreKey;
   if (isPQXDHAvailable() && bundlePqPreKey !== undefined && bundlePqPreKey !== null) {
-    // V7-F5 FIX: Validate pqPreKey type + length BEFORE the try/catch.
-    // Previously: `as any` casts bypassed type checking. A malicious server could send
-    // pqPreKey as a number, object, or short array → undefined behavior in ML-KEM-768.
-    // Validation errors must NOT be caught by the PQ encapsulation catch block (which
-    // silently downgrades to classical X3DH). Invalid types are a hard rejection.
     let pqPubKey: Uint8Array;
     if (typeof bundlePqPreKey === 'string') {
       pqPubKey = new Uint8Array(Buffer.from(bundlePqPreKey, 'base64'));
@@ -231,10 +227,9 @@ export async function initiateX3DH(
     try {
       const pqResult = pqEncapsulate(pqPubKey);
       if (pqResult) {
-        const classicalSecret = sharedSecret;
-        sharedSecret = deriveHybridSecret(classicalSecret, pqResult.sharedSecret);
+        // V8-F11: Append PQ shared secret to dhConcat BEFORE HKDF (single-pass)
+        dhConcat = concat(dhConcat, pqResult.sharedSecret);
         pqCiphertext = pqResult.ciphertext;
-        zeroOut(classicalSecret);
         zeroOut(pqResult.sharedSecret);
       }
     } catch {
@@ -260,6 +255,10 @@ export async function initiateX3DH(
       recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_downgrade_missing_prekey' } }),
     ).catch(() => {});
   }
+
+  // V8-F11: Single-pass HKDF AFTER all key material (DH + PQ) is concatenated.
+  // dhConcat now contains: F || DH1 || DH2 || DH3 || [DH4] || [PQ_shared_secret]
+  const sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
 
   // Clean up intermediate DH outputs
   zeroOut(dh1);
@@ -383,23 +382,18 @@ export async function respondX3DH(
     dhConcat = concat(PADDING, dh1, dh2, dh3);
   }
 
-  // Derive classical shared secret
-  let sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
-
-  // F16 FIX: PQXDH responder — decapsulate if the initiator sent PQ ciphertext.
-  // Previously the responder ignored PQ fields, causing both sides to compute
-  // DIFFERENT shared secrets when the initiator used PQXDH (silent session failure).
+  // V8-F11 FIX: PQXDH responder — single-pass HKDF (matches initiator).
+  // Append PQ shared secret to dhConcat BEFORE HKDF, not after in a nested call.
   if (pqCiphertext && pqSecretKey) {
     const pqSharedSecret = pqDecapsulate(pqCiphertext, pqSecretKey);
     if (pqSharedSecret) {
-      // Hybrid derivation: combine classical DH secret with PQ shared secret
-      sharedSecret = deriveHybridSecret(sharedSecret, pqSharedSecret);
+      dhConcat = concat(dhConcat, pqSharedSecret);
       zeroOut(pqSharedSecret);
     }
-    // If PQ decapsulation fails (library unavailable), fall back to classical-only.
-    // This matches the initiator behavior: initiator only sends PQ fields when
-    // both sides advertise version 2 (F27 version negotiation).
   }
+
+  // Single-pass HKDF over all key material: F || DH1..DH4 || [PQ_shared_secret]
+  const sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
 
   // Clean up
   zeroOut(dh1);

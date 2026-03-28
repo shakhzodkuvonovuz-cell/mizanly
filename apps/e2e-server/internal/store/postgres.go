@@ -145,14 +145,16 @@ func (s *Store) UpsertIdentityKey(ctx context.Context, userID string, deviceID i
 	return changed, oldFingerprint, nil
 }
 
-// GetIdentityKey fetches a user's identity key.
-func (s *Store) GetIdentityKey(ctx context.Context, userID string) (publicKey []byte, registrationID int, deviceID int, err error) {
+// GetIdentityKey fetches a user's identity key for a specific device.
+// V8-F8 FIX: Added deviceID parameter. Previously returned an arbitrary device's key,
+// causing SPK signature verification to fail for device 2+ (wrong identity key used).
+func (s *Store) GetIdentityKey(ctx context.Context, userID string, deviceID int) (publicKey []byte, registrationID int, devID int, err error) {
 	err = s.pool.QueryRow(ctx,
-		`SELECT "publicKey", "registrationId", "deviceId" FROM e2e_identity_keys WHERE "userId" = $1`,
-		userID,
-	).Scan(&publicKey, &registrationID, &deviceID)
+		`SELECT "publicKey", "registrationId", "deviceId" FROM e2e_identity_keys WHERE "userId" = $1 AND "deviceId" = $2`,
+		userID, deviceID,
+	).Scan(&publicKey, &registrationID, &devID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, 0, 0, fmt.Errorf("no identity key for user %s", userID)
+		return nil, 0, 0, fmt.Errorf("no identity key for user %s device %d", userID, deviceID)
 	}
 	return
 }
@@ -170,8 +172,8 @@ func (s *Store) UpsertSignedPreKey(ctx context.Context, userID string, deviceID,
 		return errors.New("signature must be 64 bytes base64")
 	}
 
-	// Fetch identity key to verify signature
-	identityPub, _, _, err := s.GetIdentityKey(ctx, userID)
+	// V8-F8: Fetch identity key for THIS SPECIFIC device to verify SPK signature
+	identityPub, _, _, err := s.GetIdentityKey(ctx, userID, deviceID)
 	if err != nil {
 		return fmt.Errorf("identity key required before uploading signed pre-key: %w", err)
 	}
@@ -370,12 +372,13 @@ func (s *Store) GetPreKeyBundle(ctx context.Context, targetUserID string, device
 	}
 	defer tx.Rollback(ctx)
 
-	// 1. Get identity key
+	// V8-F7 FIX: Filter by deviceID — previously returned an arbitrary device's key.
+	// Multi-device users got device 2's key when requesting device 1's bundle.
 	var identityPub []byte
 	var regID, devID int
 	err = tx.QueryRow(ctx,
-		`SELECT "publicKey", "registrationId", "deviceId" FROM e2e_identity_keys WHERE "userId" = $1`,
-		targetUserID,
+		`SELECT "publicKey", "registrationId", "deviceId" FROM e2e_identity_keys WHERE "userId" = $1 AND "deviceId" = $2`,
+		targetUserID, deviceID,
 	).Scan(&identityPub, &regID, &devID)
 	if err != nil {
 		return nil, fmt.Errorf("identity key: %w", err)
@@ -532,8 +535,10 @@ type TransparencyRoot struct {
 // requests use the cached tree (O(log n) proof lookup instead of O(n) rebuild).
 // V5-F4: Caller MUST hold s.mu write lock.
 func (s *Store) rebuildMerkleCacheLocked(ctx context.Context) error {
+	// V8-F9 FIX: Include deviceId in query and cache keys. Previously only userId was used,
+	// so multi-device users had their leaf indices overwritten (only last device indexed).
 	rows, err := s.pool.Query(ctx,
-		`SELECT "userId", "publicKey" FROM e2e_identity_keys ORDER BY "createdAt" ASC`,
+		`SELECT "userId", "deviceId", "publicKey" FROM e2e_identity_keys ORDER BY "createdAt" ASC`,
 	)
 	if err != nil {
 		return err
@@ -546,12 +551,12 @@ func (s *Store) rebuildMerkleCacheLocked(ctx context.Context) error {
 	i := 0
 	for rows.Next() {
 		var uid string
+		var devID int
 		var pub []byte
-		if err := rows.Scan(&uid, &pub); err != nil {
+		if err := rows.Scan(&uid, &devID, &pub); err != nil {
 			return err
 		}
 		// V4-F7: Domain separation prefix 0x00 for leaves (RFC 6962).
-		// Prevents second-preimage attacks where internal node hashes collide with leaves.
 		// V4-F8: Explicit allocation — no append mutation of shared slices.
 		leafData := make([]byte, 0, 1+len(uid)+len(pub))
 		leafData = append(leafData, 0x00) // Leaf prefix
@@ -559,8 +564,15 @@ func (s *Store) rebuildMerkleCacheLocked(ctx context.Context) error {
 		leafData = append(leafData, pub...)
 		leaf := sha256.Sum256(leafData)
 		s.cachedLeaves = append(s.cachedLeaves, leaf[:])
-		s.cachedLeafIndex[uid] = i
-		s.cachedPubKeys[uid] = pub
+		// V8-F9: Key by userId:deviceId — multi-device users get distinct indices
+		cacheKey := fmt.Sprintf("%s:%d", uid, devID)
+		s.cachedLeafIndex[cacheKey] = i
+		s.cachedPubKeys[cacheKey] = pub
+		// Also store under plain userId for backward-compat (single-device lookups)
+		if _, exists := s.cachedLeafIndex[uid]; !exists {
+			s.cachedLeafIndex[uid] = i
+			s.cachedPubKeys[uid] = pub
+		}
 		i++
 	}
 	if err := rows.Err(); err != nil {

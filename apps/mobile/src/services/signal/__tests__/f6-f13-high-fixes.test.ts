@@ -247,12 +247,24 @@ describe('F13: Sealed sender replay protection', () => {
     const encKey = sealKey.slice(0, 32);
     const nonce = sealKey.slice(32, 56);
 
+    // V8-F5: Must include v2 certificate fields (sv, senderIdentityKey, senderSignature)
+    // or the envelope is rejected before the timestamp check.
+    const senderKp = generateEd25519KeyPair();
+    const innerContent = 'old_message';
+    const ts = Date.now() - 10 * 60 * 1000;
+    const ctr = 999;
+    const { ed25519Sign } = require('../crypto');
+    const signData = utf8Encode(`recipient|${innerContent}|${ts}|${ctr}`);
+    const sig = ed25519Sign(senderKp.privateKey, signData);
     const innerJson = JSON.stringify({
       senderId: 'expired_sender',
       senderDeviceId: 1,
-      innerContent: 'old_message',
-      ts: Date.now() - 10 * 60 * 1000, // 10 minutes ago (exceeds 5-minute limit)
-      ctr: 999,
+      innerContent,
+      ts,
+      ctr,
+      sv: 2,
+      senderIdentityKey: toBase64(senderKp.publicKey),
+      senderSignature: toBase64(sig),
     });
     const ciphertext = aeadEncrypt(encKey, nonce, utf8Encode(innerJson), utf8Encode('recipient'));
     zeroOut(encKey);
