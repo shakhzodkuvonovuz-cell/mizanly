@@ -226,11 +226,11 @@ describe('ChatGateway', () => {
       expect(messagesService.sendMessage).toHaveBeenCalledWith(
         UUID1,
         'user-123',
-        { content: 'Hello' }
+        expect.objectContaining({ content: 'Hello' }),
       );
       expect(client.to).toHaveBeenCalledWith(`conversation:${UUID1}`);
       expect(client.to(`conversation:${UUID1}`).emit).toHaveBeenCalledWith('new_message', mockMessage);
-      expect(result).toEqual(mockMessage);
+      expect(result).toEqual(expect.objectContaining({ success: true, messageId: 'msg-789' }));
     });
 
     it('should throw WsException if not authorized', async () => {

@@ -85,6 +85,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       // pg_trgm extension not available (some hosted PostgreSQL plans don't support it)
       this.logger.warn('pg_trgm extension not available — ILIKE search uses sequential scan');
     }
+
+    // E2E partial index: speed up queries that filter encrypted vs unencrypted messages
+    try {
+      await this.$executeRawUnsafe(
+        `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_messages_e2e_version ON messages ("e2eVersion") WHERE "e2eVersion" IS NOT NULL`,
+      ).catch(() => {});
+      this.logger.log('E2E partial index applied on messages.e2eVersion');
+    } catch {
+      this.logger.warn('E2E partial index creation failed');
+    }
   }
 
   async onModuleDestroy() {

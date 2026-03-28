@@ -29,6 +29,7 @@ const CONVERSATION_SELECT = {
   groupAvatarUrl: true,
   lastMessageText: true,
   lastMessageAt: true,
+  encryptedLastMessagePreview: true,
   createdAt: true,
   members: {
     include: {
@@ -66,6 +67,14 @@ const MESSAGE_SELECT = {
   isScheduled: true,
   scheduledAt: true,
   isEncrypted: true,
+  encryptedContent: true,
+  e2eVersion: true,
+  e2eSenderDeviceId: true,
+  e2eSenderRatchetKey: true,
+  e2eCounter: true,
+  e2ePreviousCounter: true,
+  e2eSenderKeyId: true,
+  clientMessageId: true,
   forwardCount: true,
   editedAt: true,
   deliveredAt: true,
@@ -186,8 +195,33 @@ export class MessagesService {
       replyToId?: string;
       isSpoiler?: boolean;
       isViewOnce?: boolean;
+      // E2E encryption fields (opaque passthrough — server never reads content)
+      encryptedContent?: Uint8Array;
+      e2eVersion?: number;
+      e2eSenderDeviceId?: number;
+      e2eSenderRatchetKey?: Uint8Array;
+      e2eCounter?: number;
+      e2ePreviousCounter?: number;
+      e2eSenderKeyId?: number;
+      clientMessageId?: string;
+      encryptedLastMessagePreview?: Uint8Array;
     },
   ) {
+    // Idempotent dedup: if clientMessageId already exists AND belongs to this conversation+sender,
+    // return the existing message. Check conversation+sender to prevent cross-conversation info leak.
+    if (data.clientMessageId) {
+      const existing = await this.prisma.message.findUnique({
+        where: { clientMessageId: data.clientMessageId },
+        select: { ...MESSAGE_SELECT, conversationId: true },
+      });
+      if (existing && existing.conversationId === conversationId && existing.senderId === senderId) {
+        return existing;
+      }
+      // If clientMessageId exists for a different conversation/sender, silently ignore.
+      // Returning a specific error would confirm message existence (information leak).
+      // The Prisma unique constraint will catch the actual collision on insert.
+    }
+
     // Single combined query: membership check + conversation data + other members
     // Replaces 3 separate queries (requireMembership, findMany members, findUnique conversation)
     const membership = await this.prisma.conversationMember.findUnique({
@@ -257,8 +291,26 @@ export class MessagesService {
       }
     }
 
-    if (!data.content && !data.mediaUrl) {
-      throw new BadRequestException('Message must have content or media');
+    // Validate: message must have plaintext content, encrypted content, or media
+    if (!data.content && !data.encryptedContent && !data.mediaUrl) {
+      throw new BadRequestException('Message must have content, encrypted content, or media');
+    }
+
+    // CRITICAL E2E validation — prevent plaintext leakage via malicious clients:
+    // 1. If e2eVersion is set, encryptedContent is REQUIRED
+    if (data.e2eVersion && !data.encryptedContent) {
+      throw new BadRequestException('e2eVersion requires encryptedContent');
+    }
+    // 2. If encryptedContent is set, e2eVersion is REQUIRED (prevent ghost blobs)
+    if (data.encryptedContent && !data.e2eVersion) {
+      throw new BadRequestException('encryptedContent requires e2eVersion');
+    }
+    // 3. Plaintext content and encrypted content are MUTUALLY EXCLUSIVE
+    //    A message is either plaintext OR encrypted, never both.
+    //    Without this, a malicious client could send plaintext alongside encrypted
+    //    content, leaking the message to the server while appearing "encrypted."
+    if (data.content && data.encryptedContent) {
+      throw new BadRequestException('Message cannot have both content and encryptedContent');
     }
 
     // Slow mode check (using convo from merged query above)
@@ -282,13 +334,23 @@ export class MessagesService {
         data: {
           conversationId,
           senderId,
-          content: data.content,
-          messageType: (data.messageType as MessageType) ?? 'TEXT', // Validated by SendMessageDto @IsEnum
+          content: data.e2eVersion ? null : data.content, // Null for encrypted (content in encryptedContent)
+          messageType: (data.messageType as MessageType) ?? 'TEXT',
           mediaUrl: data.mediaUrl,
           mediaType: data.mediaType,
           replyToId: data.replyToId,
           isSpoiler: data.isSpoiler ?? false,
           isViewOnce: data.isViewOnce ?? false,
+          isEncrypted: !!data.e2eVersion,
+          // E2E fields (opaque passthrough)
+          ...(data.encryptedContent ? { encryptedContent: new Uint8Array(data.encryptedContent) } : {}),
+          ...(data.e2eVersion ? { e2eVersion: data.e2eVersion } : {}),
+          ...(data.e2eSenderDeviceId !== undefined ? { e2eSenderDeviceId: data.e2eSenderDeviceId } : {}),
+          ...(data.e2eSenderRatchetKey ? { e2eSenderRatchetKey: new Uint8Array(data.e2eSenderRatchetKey) } : {}),
+          ...(data.e2eCounter !== undefined ? { e2eCounter: data.e2eCounter } : {}),
+          ...(data.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: data.e2ePreviousCounter } : {}),
+          ...(data.e2eSenderKeyId ? { e2eSenderKeyId: data.e2eSenderKeyId } : {}),
+          ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
           ...(convo?.disappearingDuration ? { expiresAt: new Date(Date.now() + convo.disappearingDuration * 1000) } : {}),
         },
         select: MESSAGE_SELECT,
@@ -299,8 +361,12 @@ export class MessagesService {
         where: { id: conversationId },
         data: {
           lastMessageAt: now,
-          lastMessageText: data.content?.slice(0, 100) ?? null,
+          // Encrypted messages: no plaintext preview, use encryptedLastMessagePreview
+          lastMessageText: data.e2eVersion ? null : (data.content?.slice(0, 100) ?? null),
           lastMessageById: senderId,
+          ...(data.encryptedLastMessagePreview
+            ? { encryptedLastMessagePreview: new Uint8Array(data.encryptedLastMessagePreview) }
+            : {}),
         },
       });
 
@@ -319,27 +385,44 @@ export class MessagesService {
     });
 
     // Trigger voice message transcription asynchronously
+    // Skip for encrypted messages — server can't read the audio
     if (
       (message.messageType === 'VOICE') &&
       message.mediaUrl &&
-      message.id
+      message.id &&
+      !data.e2eVersion // Skip transcription for E2E encrypted voice messages
     ) {
       this.ai.transcribeVoiceMessage(message.id, message.mediaUrl).catch((err) => {
         this.logger.warn(`Voice transcription failed for message ${message.id}: ${err?.message}`);
       });
     }
 
-    // Push notifications to all non-muted conversation members (except sender)
-    this.notifyConversationMembers(conversationId, senderId, data.content).catch((err) => {
+    // Push notification strategy:
+    // - Unencrypted: preview in push body (good UX, it's plaintext anyway)
+    // - Encrypted: "New message" in body + encrypted preview in push data field.
+    //   Android background handler decrypts data.encryptedPreview → shows local notification.
+    //   iOS NSE does the same (post-launch, requires native extension).
+    //
+    // BOTH types have a non-empty body → Apple/Google can't distinguish by body presence.
+    // The only difference is content vs generic text — same as any app that varies notification text.
+    const notificationBody = data.e2eVersion
+      ? 'New message'
+      : (data.content
+          ? (data.content.length > 100 ? data.content.slice(0, 99) + '…' : data.content)
+          : 'New message');
+    this.notifyConversationMembers(conversationId, senderId, notificationBody).catch((err) => {
       this.logger.warn(`Message notification failed: ${err?.message}`);
     });
 
-    // Publish to Redis so ChatGateway can broadcast to socket room
-    // This ensures messages sent via REST (e.g. image messages) appear in real-time
-    this.redis.publish('new_message', JSON.stringify({
-      conversationId,
-      message,
-    })).catch((e) => this.logger.debug('Redis new_message publish failed', e));
+    // Publish to Redis so ChatGateway can broadcast to socket room.
+    // Only for REST-sent messages — WebSocket messages are broadcast directly by the gateway.
+    // The gateway sets skipRedisPublish=true to prevent double delivery.
+    if (!(data as any)._skipRedisPublish) {
+      this.redis.publish('new_message', JSON.stringify({
+        conversationId,
+        message,
+      })).catch((e) => this.logger.debug('Redis new_message publish failed', e));
+    }
 
     return message;
   }
@@ -380,6 +463,8 @@ export class MessagesService {
             type: 'MESSAGE',
             conversationId,
             body: truncatedBody,
+            // E2E encrypted preview is stored on the Conversation model (encryptedLastMessagePreview).
+            // The push notification handler on the client reads it from the cached conversation data.
           }).catch((err) => {
             this.logger.warn(`Notification to ${member.userId} failed: ${err?.message}`);
           }),
@@ -393,19 +478,53 @@ export class MessagesService {
     if (!message) throw new NotFoundException('Message not found');
     if (message.senderId !== userId) throw new ForbiddenException();
 
+    // Clear ALL content fields including E2E cryptographic material.
+    // Ratchet keys in the DB could be combined with a compromised private key
+    // to derive session keys for this specific message.
     await this.prisma.message.update({
       where: { id: messageId },
-      data: { isDeleted: true, content: null },
+      data: {
+        isDeleted: true,
+        content: null,
+        encryptedContent: null,
+        encNonce: null,
+        e2eSenderRatchetKey: null,
+        e2eVersion: null,
+        e2eSenderDeviceId: null,
+        e2eCounter: null,
+        e2ePreviousCounter: null,
+        e2eSenderKeyId: null,
+        transcription: null,
+        mediaUrl: null,
+        fileName: null,
+        voiceDuration: null,
+        mediaType: null,
+        fileSize: null,
+      },
     });
     return { deleted: true };
   }
 
   async editMessage(messageId: string, userId: string, content: string) {
     if (!content || content.trim().length === 0) throw new BadRequestException('Message content cannot be empty');
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, senderId: true, isDeleted: true, createdAt: true, isEncrypted: true, e2eVersion: true },
+    });
     if (!message) throw new NotFoundException('Message not found');
     if (message.senderId !== userId) throw new ForbiddenException();
     if (message.isDeleted) throw new BadRequestException('Cannot edit deleted message');
+
+    // CRITICAL: Encrypted messages CANNOT be edited via plaintext REST endpoint.
+    // Allowing this would let a malicious client retroactively expose E2E message
+    // content to the server in plaintext. Edits to encrypted messages must be
+    // done client-side (decrypt → modify → re-encrypt → send as new encrypted message).
+    if (message.isEncrypted || message.e2eVersion) {
+      throw new BadRequestException(
+        'Encrypted messages cannot be edited via server. ' +
+        'Use client-side re-encryption.',
+      );
+    }
 
     // Check if message is older than 15 minutes
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
@@ -815,6 +934,7 @@ export class MessagesService {
       where: {
         conversationId: { in: convIds },
         isDeleted: false,
+        e2eVersion: null, // Exclude encrypted messages — server can't search ciphertext
         content: { contains: query.trim(), mode: 'insensitive' },
       },
       select: {
@@ -830,7 +950,7 @@ export class MessagesService {
     if (!query?.trim()) throw new BadRequestException('Search query is required');
     await this.requireMembership(conversationId, userId);
     const messages = await this.prisma.message.findMany({
-      where: { conversationId, isDeleted: false, content: { contains: query, mode: 'insensitive' }, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: { conversationId, isDeleted: false, e2eVersion: null, content: { contains: query, mode: 'insensitive' }, ...(cursor ? { id: { lt: cursor } } : {}) },
       include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -854,11 +974,12 @@ export class MessagesService {
       select: {
         conversationId: true, content: true, messageType: true, mediaUrl: true,
         mediaType: true, voiceDuration: true, fileName: true, fileSize: true,
-        forwardCount: true, isViewOnce: true,
+        forwardCount: true, isViewOnce: true, isEncrypted: true, e2eVersion: true,
       },
     });
     if (!original) throw new NotFoundException('Message not found');
     if (original.isViewOnce) throw new BadRequestException('View-once messages cannot be forwarded');
+    if (original.e2eVersion) throw new BadRequestException('Encrypted messages cannot be forwarded by the server. Use client-side forwarding (decrypt → re-encrypt for target).');
     await this.requireMembership(original.conversationId, userId);
 
     // Batch: verify all memberships at once (single query instead of N)

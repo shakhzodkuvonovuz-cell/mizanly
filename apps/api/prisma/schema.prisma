@@ -937,6 +937,13 @@ model User {
   groupTopicsCreated       GroupTopic[]                @relation("groupTopics")
   encryptionKeyRecord      EncryptionKey?              @relation("encryptionKey")
   conversationKeyEnvelopes ConversationKeyEnvelope[]   @relation("conversationKeyEnvelopes")
+
+  // Signal Protocol E2E
+  e2eIdentityKey        E2EIdentityKey?    @relation("e2eIdentityKey")
+  e2eSignedPreKeys      E2ESignedPreKey[]  @relation("e2eSignedPreKeys")
+  e2eOneTimePreKeys     E2EOneTimePreKey[] @relation("e2eOneTimePreKeys")
+  e2eSenderKeysSent     E2ESenderKey[]     @relation("e2eSenderKeysSent")
+  e2eSenderKeysReceived E2ESenderKey[]     @relation("e2eSenderKeysReceived")
   adminLogsPerformed       AdminLog[]                  @relation("adminLogs")
   adminLogTargets          AdminLog[]                  @relation("adminLogTargets")
   storyViews               StoryView[]                 @relation("storyViews")
@@ -1664,6 +1671,10 @@ model Conversation {
   newMemberHistoryCount Int?                      @default(25) // Number of recent messages shown to new members (0-100)
   inviteCode            String?                   @db.VarChar(32) // Shareable group invite code (DB backup for Redis cache)
   inviteExpiresAt       DateTime?                 // When the invite link expires
+
+  // Signal Protocol E2E — client-encrypted preview for conversation list
+  encryptedLastMessagePreview Bytes?
+
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
   members               ConversationMember[]
@@ -1739,6 +1750,17 @@ model Message {
   isEncrypted     Boolean           @default(false)
   transcription   String?
   encNonce        String?
+
+  // Signal Protocol E2E fields
+  encryptedContent    Bytes?            // Raw binary ciphertext (avoids base64 overhead)
+  e2eVersion          Int?              // 1=classical X3DH, 2=PQXDH (future), 3=sealed sender (future)
+  e2eSenderDeviceId   Int?              // Sender device for multi-device session routing
+  e2eSenderRatchetKey Bytes?            // 32 bytes: sender's current DH ratchet public key
+  e2eCounter          Int?              // Message counter in current sending chain
+  e2ePreviousCounter  Int?              // Last counter in previous sending chain
+  e2eSenderKeyId      Int?              // For group messages: sender key chain identifier
+  clientMessageId     String?  @unique  // Client-generated UUID for idempotent dedup
+
   createdAt       DateTime          @default(now())
   conversation    Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender          User?             @relation(fields: [senderId], references: [id], onDelete: SetNull)
@@ -2971,6 +2993,71 @@ model ConversationKeyEnvelope {
   @@index([conversationId])
   @@index([userId])
   @@map("conversation_key_envelopes")
+}
+
+// ============================================================
+// SIGNAL PROTOCOL — E2E ENCRYPTION (X3DH + Double Ratchet)
+// Server is a dumb key store. Never sees plaintext or private keys.
+// ============================================================
+
+model E2EIdentityKey {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation("e2eIdentityKey", fields: [userId], references: [id], onDelete: Cascade)
+  deviceId       Int      @default(1)
+  publicKey      Bytes    // 32 bytes Ed25519 public key
+  registrationId Int      // 14-bit unsigned (0-16383) per Signal spec
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("e2e_identity_keys")
+}
+
+model E2ESignedPreKey {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("e2eSignedPreKeys", fields: [userId], references: [id], onDelete: Cascade)
+  deviceId  Int      @default(1)
+  keyId     Int
+  publicKey Bytes    // 32 bytes X25519 public key
+  signature Bytes    // 64 bytes Ed25519 signature over publicKey
+  createdAt DateTime @default(now())
+
+  @@unique([userId, deviceId, keyId])
+  @@index([userId, deviceId])
+  @@map("e2e_signed_pre_keys")
+}
+
+model E2EOneTimePreKey {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("e2eOneTimePreKeys", fields: [userId], references: [id], onDelete: Cascade)
+  deviceId  Int      @default(1)
+  keyId     Int
+  publicKey Bytes    // 32 bytes X25519 public key
+  // No `used` boolean — rows are DELETED on claim to prevent metadata leak and table bloat
+  createdAt DateTime @default(now())
+
+  @@unique([userId, deviceId, keyId])
+  @@index([userId, deviceId])
+  @@map("e2e_one_time_pre_keys")
+}
+
+model E2ESenderKey {
+  id              String   @id @default(cuid())
+  groupId         String
+  senderUserId    String
+  recipientUserId String
+  senderUser      User     @relation("e2eSenderKeysSent", fields: [senderUserId], references: [id], onDelete: Cascade)
+  recipientUser   User     @relation("e2eSenderKeysReceived", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  encryptedKey    Bytes
+  chainId         Int
+  generation      Int      @default(0) // Incremented on member removal rotation
+  createdAt       DateTime @default(now())
+
+  @@unique([groupId, senderUserId, recipientUserId, chainId])
+  @@index([groupId, recipientUserId])
+  @@map("e2e_sender_keys")
 }
 
 model HashtagFollow {

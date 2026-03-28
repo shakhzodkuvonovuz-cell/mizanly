@@ -1,7 +1,7 @@
 name = "mizanly-exif-stripper"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
-account_id = "a80d909cd5b47fdb4dcba31a66a3283b"
+account_id = "f60f0e188859d5f4d64b56f2717f6531"
 
 # Triggered on every object upload to the mizanly-media bucket
 [[r2_buckets]]

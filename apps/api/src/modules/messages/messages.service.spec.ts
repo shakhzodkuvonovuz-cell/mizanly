@@ -271,7 +271,7 @@ describe('MessagesService', () => {
       expect(prisma.message.findUnique).toHaveBeenCalledWith({ where: { id: messageId } });
       expect(prisma.message.update).toHaveBeenCalledWith({
         where: { id: messageId },
-        data: { isDeleted: true, content: null },
+        data: expect.objectContaining({ isDeleted: true, content: null, encryptedContent: null }),
       });
       expect(result).toEqual({ deleted: true });
     });
@@ -331,6 +331,8 @@ describe('MessagesService', () => {
         id: messageId,
         senderId: userId,
         isDeleted: false,
+        isEncrypted: false,
+        e2eVersion: null,
         createdAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
       };
       const updatedMessage = { id: messageId, content, editedAt: new Date() };
@@ -339,7 +341,9 @@ describe('MessagesService', () => {
 
       const result = await service.editMessage(messageId, userId, content);
 
-      expect(prisma.message.findUnique).toHaveBeenCalledWith({ where: { id: messageId } });
+      expect(prisma.message.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: messageId } }),
+      );
       expect(prisma.message.update).toHaveBeenCalledWith({
         where: { id: messageId },
         data: { content, editedAt: expect.any(Date) },

@@ -458,16 +458,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   @SubscribeMessage('send_message')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: {
-      conversationId: string;
-      content?: string;
-      messageType?: string;
-      mediaUrl?: string;
-      mediaType?: string;
-      replyToId?: string;
-      isSpoiler?: boolean;
-      isViewOnce?: boolean;
-    },
+    @MessageBody() data: Record<string, unknown>,
   ) {
     if (!client.data.userId) throw new WsException('Unauthorized');
 
@@ -496,18 +487,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
           replyToId: dto.replyToId,
           isSpoiler: dto.isSpoiler,
           isViewOnce: dto.isViewOnce,
-        },
+          // E2E fields (opaque passthrough — base64 strings converted to Uint8Array)
+          ...(dto.encryptedContent ? { encryptedContent: Uint8Array.from(Buffer.from(dto.encryptedContent, 'base64')) } : {}),
+          ...(dto.e2eVersion ? { e2eVersion: dto.e2eVersion } : {}),
+          ...(dto.e2eSenderDeviceId !== undefined ? { e2eSenderDeviceId: dto.e2eSenderDeviceId } : {}),
+          ...(dto.e2eSenderRatchetKey ? { e2eSenderRatchetKey: Uint8Array.from(Buffer.from(dto.e2eSenderRatchetKey, 'base64')) } : {}),
+          ...(dto.e2eCounter !== undefined ? { e2eCounter: dto.e2eCounter } : {}),
+          ...(dto.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: dto.e2ePreviousCounter } : {}),
+          ...(dto.e2eSenderKeyId ? { e2eSenderKeyId: dto.e2eSenderKeyId } : {}),
+          ...(dto.clientMessageId ? { clientMessageId: dto.clientMessageId } : {}),
+          ...(dto.encryptedLastMessagePreview ? { encryptedLastMessagePreview: Uint8Array.from(Buffer.from(dto.encryptedLastMessagePreview, 'base64')) } : {}),
+          _skipRedisPublish: true, // Prevent double broadcast — gateway emits directly
+        } as any,
       );
     } catch {
       throw new WsException('Failed to send message');
     }
 
-    // Use client.to() so the sender doesn't receive their own message back
+    // Broadcast to conversation room (sender doesn't receive their own message)
     client
       .to(`conversation:${dto.conversationId}`)
       .emit('new_message', message);
 
-    return message;
+    // Return message as ACK — the client's socket.emit callback receives this
+    // for the offline queue to mark as 'sent'
+    return { success: true, messageId: message.id, clientMessageId: dto.clientMessageId, createdAt: message.createdAt };
   }
 
   @SubscribeMessage('typing')

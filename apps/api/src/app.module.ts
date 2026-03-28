@@ -66,7 +66,8 @@ import { StreamModule } from './modules/stream/stream.module';
 import { ReelTemplatesModule } from './modules/reel-templates/reel-templates.module';
 import { StoryChainsModule } from './modules/story-chains/story-chains.module';
 import { VideoRepliesModule } from './modules/video-replies/video-replies.module';
-import { EncryptionModule } from './modules/encryption/encryption.module';
+// EncryptionModule REMOVED — replaced by Go E2E Key Server (apps/e2e-server/)
+// Old module files kept at src/modules/encryption/ for reference during transition.
 import { ChatExportModule } from './modules/chat-export/chat-export.module';
 import { CreatorModule } from './modules/creator/creator.module';
 import { GiftsModule } from './modules/gifts/gifts.module';
@@ -171,7 +172,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     ReelTemplatesModule,
     StoryChainsModule,
     VideoRepliesModule,
-    EncryptionModule,
+    // EncryptionModule removed — Go E2E Key Server handles key management
     ChatExportModule,
     CreatorModule,
     GiftsModule,

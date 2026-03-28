@@ -62,6 +62,12 @@ import { CreateDMNoteDto } from './dto/dm-note.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
+/**
+ * REST message DTO — plaintext messages ONLY.
+ * E2E encrypted messages use the WebSocket WsSendMessageDto which includes
+ * encryptedContent, e2eVersion, and other Signal Protocol fields.
+ * DO NOT add E2E fields here without also adding base64→Uint8Array conversion.
+ */
 class SendMessageDto {
   @ApiProperty({ required: false, description: 'Message content (text)', maxLength: 5000 })
   @IsOptional()
