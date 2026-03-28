@@ -207,16 +207,18 @@ export async function encryptSmallMediaFile(
     encoding: FileSystem.EncodingType.Base64,
   });
 
-  // F18: mediaKey is returned as Uint8Array. Callers MUST:
-  // 1. Convert to base64 for the E2E payload: toBase64(result.mediaKey)
-  // 2. Zero immediately after: zeroOut(result.mediaKey)
-  // Automated zeroing (microtask/timeout) conflicts with async callers.
-  // The zeroOut responsibility is documented in the EncryptedMediaInfo type.
+  // F18 FIX: Encode mediaKey to base64 ONCE at source, then zero the Uint8Array.
+  // The raw key never leaves this function — callers use mediaKeyB64 directly.
+  // This eliminates multiple Uint8Array copies traveling through JS memory.
+  const mediaKeyB64 = toBase64(ctx.mediaKey);
+  const zeroedKey = new Uint8Array(ctx.mediaKey.length); // All zeros for deprecated field
+  zeroOut(ctx.mediaKey);
 
   return {
     encryptedFileUri,
     mediaUrl: '', // Set by caller after upload
-    mediaKey: ctx.mediaKey,
+    mediaKeyB64,
+    mediaKey: zeroedKey, // Deprecated — always zeroed. Use mediaKeyB64.
     mediaSha256,
     totalChunks: ctx.totalChunks,
     fileSize: ctx.fileSize,

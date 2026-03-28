@@ -35,6 +35,7 @@ import {
   concat,
   uint32BE,
   generateRandomBytes,
+  fromBase64,
 } from '../crypto';
 
 // Access test helpers on the mock
@@ -366,8 +367,10 @@ describe('encryptSmallMediaFile', () => {
       fileName: 'photo.jpg',
     });
 
-    expect(result.mediaKey).toBeInstanceOf(Uint8Array);
-    expect(result.mediaKey.length).toBe(32);
+    // F18: mediaKeyB64 is the primary field; mediaKey is zeroed
+    expect(result.mediaKeyB64).toBeTruthy();
+    expect(typeof result.mediaKeyB64).toBe('string');
+    expect(fromBase64(result.mediaKeyB64).length).toBe(32);
     expect(result.mediaSha256).toBeInstanceOf(Uint8Array);
     expect(result.mediaSha256.length).toBe(32);
     expect(result.totalChunks).toBe(1);
@@ -393,7 +396,7 @@ describe('encryptSmallMediaFile', () => {
     // decryptMediaFile reads from the encrypted file URI
     const decryptedUri = await decryptMediaFile(
       result.encryptedFileUri,
-      result.mediaKey,
+      fromBase64(result.mediaKeyB64),
       result.mediaSha256,
       result.totalChunks,
     );
@@ -418,7 +421,7 @@ describe('encryptSmallMediaFile', () => {
 
     const decryptedUri = await decryptMediaFile(
       result.encryptedFileUri,
-      result.mediaKey,
+      fromBase64(result.mediaKeyB64),
       result.mediaSha256,
       result.totalChunks,
     );
@@ -487,7 +490,7 @@ describe('decryptMediaFile', () => {
     fsMock.__setFile(result.encryptedFileUri, arrayBufferToBase64(encBytes));
 
     await expect(
-      decryptMediaFile(result.encryptedFileUri, result.mediaKey, result.mediaSha256, result.totalChunks),
+      decryptMediaFile(result.encryptedFileUri, fromBase64(result.mediaKeyB64), result.mediaSha256, result.totalChunks),
     ).rejects.toThrow('Unsupported media protocol version: 99');
   });
 
@@ -505,7 +508,7 @@ describe('decryptMediaFile', () => {
     fsMock.__setFile(result.encryptedFileUri, arrayBufferToBase64(encBytes));
 
     await expect(
-      decryptMediaFile(result.encryptedFileUri, result.mediaKey, result.mediaSha256, result.totalChunks),
+      decryptMediaFile(result.encryptedFileUri, fromBase64(result.mediaKeyB64), result.mediaSha256, result.totalChunks),
     ).rejects.toThrow('Unexpected chunk size in header');
   });
 
@@ -544,7 +547,7 @@ describe('decryptMediaFile', () => {
 
     // The AEAD auth tag will likely fail before SHA-256, but one of the two checks must fail
     await expect(
-      decryptMediaFile(result.encryptedFileUri, result.mediaKey, result.mediaSha256, result.totalChunks),
+      decryptMediaFile(result.encryptedFileUri, fromBase64(result.mediaKeyB64), result.mediaSha256, result.totalChunks),
     ).rejects.toThrow();
   });
 
@@ -560,7 +563,7 @@ describe('decryptMediaFile', () => {
     // Header parses fine, but SHA-256 will differ since header is included in hash
     // The AEAD will also fail because nonce/aad are derived from the original key
     await expect(
-      decryptMediaFile(result.encryptedFileUri, result.mediaKey, result.mediaSha256, result.totalChunks),
+      decryptMediaFile(result.encryptedFileUri, fromBase64(result.mediaKeyB64), result.mediaSha256, result.totalChunks),
     ).rejects.toThrow();
   });
 
@@ -569,7 +572,7 @@ describe('decryptMediaFile', () => {
 
     const decryptedUri = await decryptMediaFile(
       result.encryptedFileUri,
-      result.mediaKey,
+      fromBase64(result.mediaKeyB64),
       result.mediaSha256,
       result.totalChunks,
     );
@@ -585,7 +588,7 @@ describe('decryptMediaFile', () => {
     const progressValues: number[] = [];
     await decryptMediaFile(
       result.encryptedFileUri,
-      result.mediaKey,
+      fromBase64(result.mediaKeyB64),
       result.mediaSha256,
       result.totalChunks,
       (p) => progressValues.push(p),
@@ -609,7 +612,7 @@ describe('decryptMediaFile', () => {
 
     // Pass wrong totalChunks — AAD will differ, causing AEAD failure
     await expect(
-      decryptMediaFile(result.encryptedFileUri, result.mediaKey, result.mediaSha256, 5),
+      decryptMediaFile(result.encryptedFileUri, fromBase64(result.mediaKeyB64), result.mediaSha256, 5),
     ).rejects.toThrow();
   });
 });
@@ -724,7 +727,7 @@ describe('edge cases', () => {
 
     const decryptedUri = await decryptMediaFile(
       result.encryptedFileUri,
-      result.mediaKey,
+      fromBase64(result.mediaKeyB64),
       result.mediaSha256,
       result.totalChunks,
     );
@@ -743,7 +746,7 @@ describe('edge cases', () => {
 
     const decryptedUri = await decryptMediaFile(
       result.encryptedFileUri,
-      result.mediaKey,
+      fromBase64(result.mediaKeyB64),
       result.mediaSha256,
       result.totalChunks,
     );

@@ -184,7 +184,10 @@ export interface MediaFileHeader {
 /** Media encryption result — keys travel inside the E2E message */
 export interface EncryptedMediaInfo {
   mediaUrl: string; // R2 URL of encrypted blob
-  mediaKey: Uint8Array; // 32 bytes: random per-file key
+  /** F18: Base64-encoded media key. The raw Uint8Array is zeroed at source. */
+  mediaKeyB64: string;
+  /** @deprecated Use mediaKeyB64. Kept for backward compat — zeroed after encode. */
+  mediaKey: Uint8Array;
   mediaSha256: Uint8Array; // 32 bytes: SHA-256 of entire encrypted file
   totalChunks: number;
   fileSize: number; // Original file size in bytes

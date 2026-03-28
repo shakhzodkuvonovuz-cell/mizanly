@@ -214,3 +214,53 @@ export function verifyDeviceLinkCode(
   }
   return diff === 0 && code.length === 6;
 }
+
+// ============================================================
+// F15: DEVICE ATTESTATION
+// ============================================================
+
+/**
+ * F15: Request a device attestation token from the OS.
+ *
+ * Android: Play Integrity API — returns a signed verdict confirming
+ *          the app is genuine (not modified/repackaged).
+ * iOS: App Attest (DeviceCheck framework) — returns an attestation
+ *       object signed by Apple, proving the device runs the real app.
+ *
+ * The token is sent to the Go E2E server during identity key registration.
+ * The server validates it with Google/Apple before accepting the key.
+ * This prevents rogue clients from registering fake keys.
+ *
+ * @returns Base64-encoded attestation token, or null if unavailable
+ */
+export async function getDeviceAttestationToken(): Promise<string | null> {
+  const { Platform } = require('react-native');
+
+  if (Platform.OS === 'android') {
+    try {
+      // Play Integrity API — requires com.google.android.play:integrity
+      // The native module wraps IntegrityManager.requestIntegrityToken()
+      // Not available until the native module is installed (EAS build)
+      const PlayIntegrity = require('expo-play-integrity');
+      const token = await PlayIntegrity.requestIntegrityToken();
+      return token;
+    } catch {
+      return null; // Play Integrity not available (dev build or missing module)
+    }
+  }
+
+  if (Platform.OS === 'ios') {
+    try {
+      // App Attest — requires DeviceCheck framework (iOS 14+)
+      // The native module wraps DCAppAttestService.attestKey()
+      // Not available until the native module is installed (EAS build)
+      const AppAttest = require('expo-app-attest');
+      const attestation = await AppAttest.attestKey();
+      return attestation;
+    } catch {
+      return null; // App Attest not available (simulator or missing module)
+    }
+  }
+
+  return null;
+}

@@ -286,8 +286,27 @@ export function uint32BE(value: number): Uint8Array {
   return buf;
 }
 
-/** Convert Uint8Array to Base64 string (for API communication). */
+/**
+ * F19 FIX: Convert Uint8Array to Base64 using Buffer when available.
+ *
+ * Previously: `String.fromCharCode` loop + `btoa` created an immutable
+ * intermediate JS string containing key material. Strings can't be zeroed
+ * and persist until GC.
+ *
+ * Now: `Buffer.from().toString('base64')` performs the encoding in a single
+ * native operation (V8/Hermes internal), avoiding the character-by-character
+ * intermediate string. The Buffer itself is a Uint8Array view and CAN be
+ * zeroed after use (though we don't here — the string output is still immutable).
+ *
+ * This reduces the number of intermediate copies from 2 (string + btoa output)
+ * to 1 (base64 string output only). The base64 string is still immutable
+ * (inherent JS limitation), but we've eliminated the intermediate binary string.
+ */
 export function toBase64(bytes: Uint8Array): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString('base64');
+  }
+  // Fallback for environments without Buffer
   let binary = '';
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -295,8 +314,16 @@ export function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-/** Convert Base64 string to Uint8Array (from API communication). */
+/**
+ * F19 FIX: Convert Base64 string to Uint8Array using Buffer when available.
+ * Same rationale as toBase64 — avoids intermediate string allocation.
+ */
 export function fromBase64(base64: string): Uint8Array {
+  if (typeof Buffer !== 'undefined') {
+    const buf = Buffer.from(base64, 'base64');
+    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  }
+  // Fallback
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
