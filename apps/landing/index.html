@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mizanly</title>
+  <meta name="description" content="Five spaces. One app. Built for the Muslim community.">
+  <meta name="theme-color" content="#0A7B4F">
+  <meta property="og:title" content="Mizanly">
+  <meta property="og:description" content="Five spaces. One app. Built for the Muslim community.">
+  <meta property="og:url" content="https://mizanly.app">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://mizanly.app">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#06060A;--card:#111118;--el:#1A1A24;--el2:#24243A;
+      --em:#0A7B4F;--em2:#14CC80;--gold:#C8963E;--gold2:#E8BD6A;
+      --t1:#F0EDE8;--t2:#8A857D;--t3:#524F49;
+      --f:'DM Sans',system-ui,sans-serif;--ar:'Amiri',serif;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:var(--f);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    ::selection{background:rgba(10,123,79,.3)}
+    a{color:inherit;text-decoration:none}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;transition:all .4s}
+    nav.s{background:rgba(6,6,10,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.04)}
+    .n-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px}
+    .n-logo .dot{width:8px;height:8px;border-radius:50%;background:var(--em)}
+    .n-r{display:flex;align-items:center;gap:24px}
+    .n-links{display:none;gap:28px;list-style:none}
+    .n-links a{font-size:13px;color:var(--t2);font-weight:500;transition:color .2s}
+    .n-links a:hover{color:var(--t1)}
+    @media(min-width:768px){.n-links{display:flex}}
+    .n-btn{font-size:13px;font-weight:600;padding:9px 20px;background:var(--em);color:#fff;border-radius:8px;transition:all .25s}
+    .n-btn:hover{background:#0D9668;transform:translateY(-1px)}
+
+    /* ============ HERO ============ */
+    .hero{min-height:100dvh;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:40px;padding:100px 40px 80px;max-width:1280px;margin:0 auto;position:relative}
+    .hero-txt{max-width:500px}
+    .hero-tag{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:100px;font-size:12px;font-weight:600;color:var(--em2);margin-bottom:28px}
+    .hero-tag .pulse{width:6px;height:6px;border-radius:50%;background:var(--em2);box-shadow:0 0 8px var(--em)}
+    .hero h1{font-size:clamp(36px,5.5vw,64px);font-weight:700;line-height:1.08;letter-spacing:-.03em;margin-bottom:20px}
+    .hero h1 span{color:var(--gold)}
+    .hero-sub{font-size:16px;color:var(--t2);line-height:1.7;margin-bottom:36px;max-width:420px}
+
+    .hero-phone-wrap{display:flex;justify-content:center;perspective:1200px}
+
+    @media(max-width:900px){
+      .hero{grid-template-columns:1fr;padding:120px 24px 60px;text-align:center}
+      .hero-txt{max-width:100%}
+      .hero-sub{margin-left:auto;margin-right:auto}
+      .hero-phone-wrap{margin-top:20px}
+    }
+
+    /* Form */
+    .fm{display:flex;gap:10px;max-width:400px}
+    .fm input{flex:1;padding:14px 18px;font-family:var(--f);font-size:14px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:var(--t1);outline:0;transition:border-color .3s;min-width:0}
+    .fm input::placeholder{color:var(--t3)}
+    .fm input:focus{border-color:rgba(10,123,79,.6)}
+    .fm button{padding:14px 24px;font-family:var(--f);font-size:14px;font-weight:600;background:var(--em);color:#fff;border:0;border-radius:10px;cursor:pointer;transition:all .25s;white-space:nowrap}
+    .fm button:hover{background:#0D9668}
+    .fm button:active{transform:scale(.97)}
+    .fm button:disabled{opacity:.4;cursor:not-allowed}
+    .fm button .sp{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .5s linear infinite}
+    .fm button.ld .bl{display:none}.fm button.ld .sp{display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:500px){.fm{flex-direction:column}}
+    @media(max-width:900px){.fm{margin:0 auto}}
+    .fm-msg{font-size:12px;margin-top:10px;color:var(--t3);min-height:16px}
+    .fm-msg.err{color:#F87171}.fm-msg.ok{color:var(--em2)}
+
+    /* Success */
+    .ok-panel{display:none}.ok-panel.show{display:block}
+    .ok-panel .pos{font-size:56px;font-weight:700;color:var(--gold);line-height:1}
+    .ok-panel h3{font-size:22px;font-weight:600;margin:4px 0 12px}
+    .ok-panel p{font-size:13px;color:var(--t2);margin-bottom:14px}
+    .ref{display:flex;max-width:400px;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden}
+    .ref input{flex:1;padding:10px 14px;font-family:var(--f);font-size:12px;background:var(--card);border:0;color:var(--gold);outline:0;min-width:0}
+    .ref button{padding:10px 16px;font-size:12px;font-weight:600;background:var(--el);color:var(--t2);border:0;border-left:1px solid rgba(255,255,255,.08);cursor:pointer;transition:color .2s}
+    .ref button:hover{color:var(--t1)}
+    @media(max-width:900px){.ref,.ok-panel{margin:0 auto;text-align:center}}
+
+    /* ============ PHONE MOCKUP ============ */
+    .phone{
+      width:280px;height:580px;
+      background:var(--card);
+      border-radius:40px;
+      border:3px solid #2A2A35;
+      position:relative;overflow:hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.03),
+        0 20px 60px rgba(0,0,0,.5),
+        0 0 120px rgba(10,123,79,.08);
+      transform:rotateY(-8deg) rotateX(2deg);
+      transition:transform .6s cubic-bezier(.25,1,.5,1);
+      flex-shrink:0;
+    }
+    .phone:hover{transform:rotateY(-2deg) rotateX(0deg)}
+
+    /* Dynamic island */
+    .phone-notch{
+      position:absolute;top:10px;left:50%;transform:translateX(-50%);
+      width:100px;height:28px;background:#000;border-radius:20px;z-index:5;
+    }
+    /* Status bar */
+    .phone-status{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:16px 24px 0;font-size:10px;font-weight:600;color:var(--t1);
+      position:relative;z-index:4;
+    }
+    .phone-status-r{display:flex;gap:4px;align-items:center}
+    .phone-status-r .bar{width:3px;height:8px;background:var(--t1);border-radius:1px}
+    .phone-status-r .bar:nth-child(2){height:10px}.phone-status-r .bar:nth-child(3){height:12px}.phone-status-r .bar:nth-child(4){height:9px;opacity:.3}
+
+    /* Screen content */
+    .phone-screen{
+      padding:48px 14px 70px;
+      height:100%;overflow:hidden;
+      position:relative;
+    }
+
+    /* Tab bar */
+    .phone-tabs{
+      position:absolute;bottom:0;left:0;right:0;
+      display:flex;justify-content:space-around;align-items:center;
+      padding:10px 0 26px;
+      background:linear-gradient(to top,var(--card) 60%,transparent);
+      z-index:5;
+    }
+    .phone-tab{
+      width:24px;height:24px;border-radius:6px;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .phone-tab svg{width:18px;height:18px;stroke:var(--t3);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .phone-tab.active svg{stroke:var(--em2)}
+    .phone-tab.active::after{content:'';position:absolute;bottom:22px;width:4px;height:4px;border-radius:50%;background:var(--em2)}
+
+    /* Feed content inside phone */
+    .feed{animation:feed-scroll 20s linear infinite}
+    @keyframes feed-scroll{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
+    @media(prefers-reduced-motion:reduce){.feed{animation:none}}
+
+    /* Stories row */
+    .stories{display:flex;gap:10px;margin-bottom:14px;padding:0 2px}
+    .story-ring{width:48px;height:48px;border-radius:50%;padding:2px;background:linear-gradient(135deg,var(--em),var(--gold));flex-shrink:0}
+    .story-inner{width:100%;height:100%;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center}
+    .story-av{width:36px;height:36px;border-radius:50%}
+
+    /* Post card */
+    .post{background:var(--el);border-radius:16px;margin-bottom:12px;overflow:hidden}
+    .post-head{display:flex;align-items:center;gap:8px;padding:10px 12px}
+    .post-av{width:28px;height:28px;border-radius:50%;flex-shrink:0}
+    .post-name{font-size:11px;font-weight:600;flex:1}
+    .post-time{font-size:9px;color:var(--t3)}
+    .post-img{width:100%;aspect-ratio:4/3}
+    .post-actions{display:flex;gap:14px;padding:10px 12px}
+    .post-actions svg{width:16px;height:16px;stroke:var(--t2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .post-actions .liked svg{stroke:none;fill:#F43F5E}
+    .post-cap{padding:0 12px 10px;font-size:10px;color:var(--t2);line-height:1.5}
+
+    /* ============ SPACES SHOWCASE ============ */
+    .spaces-section{padding:100px 0;overflow:hidden}
+    .spaces-head{text-align:center;padding:0 24px;margin-bottom:56px}
+    .spaces-head h2{font-size:clamp(28px,4vw,44px);font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
+    .spaces-head p{font-size:15px;color:var(--t2);max-width:500px;margin:0 auto;line-height:1.7}
+
+    .spaces-row{
+      display:flex;gap:24px;justify-content:center;
+      padding:0 24px;flex-wrap:nowrap;overflow-x:auto;
+      scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .spaces-row::-webkit-scrollbar{display:none}
+
+    .space-item{
+      flex-shrink:0;scroll-snap-align:center;
+      display:flex;flex-direction:column;align-items:center;gap:16px;
+    }
+    .space-label{text-align:center}
+    .space-label h3{font-size:15px;font-weight:600;margin-bottom:2px}
+    .space-label .ar{font-family:var(--ar);font-size:16px;font-weight:700}
+    .space-label p{font-size:11px;color:var(--t3);margin-top:4px}
+
+    /* Mini phones */
+    .mini-phone{
+      width:180px;height:370px;
+      background:var(--card);border-radius:28px;
+      border:2px solid #2A2A35;
+      position:relative;overflow:hidden;
+      box-shadow:0 12px 40px rgba(0,0,0,.4);
+      transition:transform .4s cubic-bezier(.25,1,.5,1),box-shadow .4s;
+    }
+    .mini-phone:hover{transform:translateY(-8px);box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 80px rgba(10,123,79,.06)}
+    .mini-notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:60px;height:18px;background:#000;border-radius:12px;z-index:5}
+    .mini-screen{padding:32px 10px 46px;height:100%;overflow:hidden}
+    .mini-tabs{
+      position:absolute;bottom:0;left:0;right:0;
+      display:flex;justify-content:space-around;
+      padding:6px 0 18px;background:var(--card);
+    }
+    .mini-tab{width:4px;height:4px;border-radius:50%;background:var(--t3)}
+    .mini-tab.act{background:var(--em2)}
+
+    /* Space-specific mini screens */
+    /* Saf - photo grid */
+    .mini-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px}
+    .mini-grid-item{aspect-ratio:1;border-radius:2px}
+
+    /* Bakra - video */
+    .mini-video{height:100%;border-radius:4px;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;position:relative}
+    .mini-video .play-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center}
+    .mini-video .play-btn::after{content:'';width:0;height:0;border-left:12px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px}
+    .mini-video-info{display:flex;align-items:center;gap:6px}
+    .mini-video-av{width:20px;height:20px;border-radius:50%}
+    .mini-video-name{font-size:9px;font-weight:600;color:#fff}
+
+    /* Majlis - threads */
+    .mini-thread{padding:8px;background:var(--el);border-radius:10px;margin-bottom:6px}
+    .mini-thread-head{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+    .mini-thread-av{width:16px;height:16px;border-radius:50%}
+    .mini-thread-name{font-size:9px;font-weight:600}
+    .mini-thread-text{height:6px;background:var(--el2);border-radius:3px;margin-bottom:4px}
+    .mini-thread-text.short{width:60%}
+
+    /* Risalah - chat */
+    .mini-chat{display:flex;flex-direction:column;gap:6px;padding:4px}
+    .mini-bubble{padding:8px 10px;border-radius:12px;font-size:8px;line-height:1.4;max-width:80%}
+    .mini-bubble.them{background:var(--el);align-self:flex-start;border-bottom-left-radius:4px;color:var(--t2)}
+    .mini-bubble.me{background:var(--em);align-self:flex-end;border-bottom-right-radius:4px;color:#fff}
+
+    /* Minbar - video player */
+    .mini-player{border-radius:8px;aspect-ratio:16/9;position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+    .mini-player .play-btn{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center}
+    .mini-player .play-btn::after{content:'';width:0;height:0;border-left:9px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+    .mini-player-title{height:8px;background:var(--el2);border-radius:4px;margin-bottom:6px}
+    .mini-player-sub{height:6px;background:var(--el);border-radius:3px;width:70%}
+
+    /* Space colors */
+    .sc-saf{color:#FB7185}.sc-bakra{color:#A78BFA}.sc-majlis{color:#60A5FA}.sc-risalah{color:#34D399}.sc-minbar{color:#FCA5A5}
+
+    /* ============ VALUES ============ */
+    .vals{padding:100px 40px;max-width:900px;margin:0 auto}
+    .vals h2{font-size:clamp(24px,3.5vw,36px);font-weight:700;letter-spacing:-.02em;margin-bottom:48px;text-align:center}
+    .vals-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px 56px}
+    .val-item dt{font-size:15px;font-weight:600;margin-bottom:6px}
+    .val-item dd{font-size:14px;color:var(--t2);line-height:1.7}
+    @media(max-width:640px){.vals{padding:80px 24px}.vals-grid{grid-template-columns:1fr;gap:28px}}
+
+    /* ============ CTA ============ */
+    .cta{padding:120px 40px;text-align:center;border-top:1px solid rgba(255,255,255,.04)}
+    .cta h2{font-size:clamp(28px,5vw,48px);font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
+    .cta>p{font-size:15px;color:var(--t2);margin-bottom:36px}
+    .cta .fm{margin:0 auto}
+    .cta-date{margin-top:32px;font-size:12px;color:var(--t3)}
+    .cta-date strong{color:var(--gold);font-weight:600}
+
+    /* ============ FOOTER ============ */
+    footer{padding:28px 32px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,.04);font-size:12px;color:var(--t3);flex-wrap:wrap;gap:12px}
+    .f-links{display:flex;gap:20px}
+    .f-links a{transition:color .2s}.f-links a:hover{color:var(--t2)}
+
+    /* Scroll reveal */
+    .sr{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.25,1,.5,1),transform .7s cubic-bezier(.25,1,.5,1)}
+    .sr.v{opacity:1;transform:none}
+    .d1{transition-delay:80ms}.d2{transition-delay:160ms}.d3{transition-delay:240ms}.d4{transition-delay:320ms}
+    @media(prefers-reduced-motion:reduce){.sr{opacity:1;transform:none;transition:none}}
+
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 20px;font-size:13px;color:var(--t1);z-index:999;opacity:0;transition:all .35s cubic-bezier(.25,1,.5,1);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  </style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="n-logo"><span class="dot"></span>Mizanly</div>
+  <div class="n-r">
+    <ul class="n-links">
+      <li><a href="#spaces">Spaces</a></li>
+      <li><a href="#values">Why</a></li>
+    </ul>
+    <a href="#join" class="n-btn">Join waitlist</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="join">
+  <div class="hero-txt">
+    <div class="hero-tag sr"><span class="pulse"></span>Coming soon</div>
+    <h1 class="sr d1">Five spaces.<br><span>One app.</span></h1>
+    <p class="hero-sub sr d2">A social platform built for the Muslim community. Your feed, reels, threads, messages, and lectures &mdash; all in one place.</p>
+    <form class="fm sr d3" id="hf" novalidate>
+      <input type="email" placeholder="your@email.com" autocomplete="email" required id="he" aria-label="Email">
+      <button type="submit" id="hb"><span class="bl">Join waitlist</span><span class="sp"></span></button>
+    </form>
+    <p class="fm-msg" id="hm"></p>
+    <div class="ok-panel" id="ho">
+      <p class="pos" id="hp">#0</p>
+      <h3>You're on the list</h3>
+      <p>Share your link to move up.</p>
+      <div class="ref">
+        <input type="text" id="rl" readonly aria-label="Referral link">
+        <button type="button" id="cb">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-phone-wrap sr d2">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <div class="phone-status-r"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+      </div>
+      <div class="phone-screen">
+        <div class="feed">
+          <!-- Stories -->
+          <div class="stories">
+            <div class="story-ring"><div class="story-inner"><div class="story-av" style="background:linear-gradient(135deg,#F472B6,#EC4899)"></div></div></div>
+            <div class="story-ring"><div class="story-inner"><div class="story-av" style="background:linear-gradient(135deg,#60A5FA,#3B82F6)"></div></div></div>
+            <div class="story-ring"><div class="story-inner"><div class="story-av" style="background:linear-gradient(135deg,var(--gold),var(--gold2))"></div></div></div>
+            <div class="story-ring"><div class="story-inner"><div class="story-av" style="background:linear-gradient(135deg,#34D399,#10B981)"></div></div></div>
+          </div>
+          <!-- Post 1 -->
+          <div class="post">
+            <div class="post-head">
+              <div class="post-av" style="background:linear-gradient(135deg,var(--em),var(--em2))"></div>
+              <span class="post-name">sarah.designs</span>
+              <span class="post-time">2h</span>
+            </div>
+            <div class="post-img" style="background:linear-gradient(135deg,#1a4a3a,#0D9668,#065F3B)"></div>
+            <div class="post-actions">
+              <span class="liked"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <div class="post-cap"><b>sarah.designs</b> The emerald hour at the mosque ✨</div>
+          </div>
+          <!-- Post 2 -->
+          <div class="post">
+            <div class="post-head">
+              <div class="post-av" style="background:linear-gradient(135deg,#7C3AED,#A78BFA)"></div>
+              <span class="post-name">omar.reads</span>
+              <span class="post-time">5h</span>
+            </div>
+            <div class="post-img" style="background:linear-gradient(135deg,#1E1B4B,#312E81,#4338CA)"></div>
+            <div class="post-actions">
+              <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <div class="post-cap"><b>omar.reads</b> New book haul for Ramadan prep 📚</div>
+          </div>
+          <!-- Duplicate for scroll loop -->
+          <div class="stories">
+            <div class="story-ring"><div class="story-inner"><div class="story-av" style="background:linear-gradient(135deg,#F472B6,#EC4899)"></div></div></div>
+            <div class="story-ring"><div class="story-inner"><div class="story-av" style="background:linear-gradient(135deg,#60A5FA,#3B82F6)"></div></div></div>
+            <div class="story-ring"><div class="story-inner"><div class="story-av" style="background:linear-gradient(135deg,var(--gold),var(--gold2))"></div></div></div>
+          </div>
+          <div class="post">
+            <div class="post-head">
+              <div class="post-av" style="background:linear-gradient(135deg,var(--gold),#B8860B)"></div>
+              <span class="post-name">yusuf.creates</span>
+              <span class="post-time">8h</span>
+            </div>
+            <div class="post-img" style="background:linear-gradient(135deg,#451a03,#78350f,#C8963E)"></div>
+            <div class="post-actions">
+              <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <div class="post-cap"><b>yusuf.creates</b> Golden hour at the masjid 🌅</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-tabs">
+        <div class="phone-tab active" style="position:relative"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+        <div class="phone-tab"><svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
+        <div class="phone-tab"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="phone-tab"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="phone-tab"><svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPACES -->
+<section class="spaces-section" id="spaces">
+  <div class="spaces-head sr">
+    <h2>Five spaces. Each one is home.</h2>
+    <p>Every space is designed to do one thing exceptionally well &mdash; for the community you belong to.</p>
+  </div>
+  <div class="spaces-row">
+    <!-- Saf -->
+    <div class="space-item sr">
+      <div class="mini-phone">
+        <div class="mini-notch"></div>
+        <div class="mini-screen">
+          <div class="mini-grid">
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#1a4a3a,#0D9668)"></div>
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#312E81,#4338CA)"></div>
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#78350f,#C8963E)"></div>
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#831843,#EC4899)"></div>
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#064E3B,#10B981)"></div>
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#1E1B4B,#7C3AED)"></div>
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#451a03,#EA580C)"></div>
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#0C4A6E,#0EA5E9)"></div>
+            <div class="mini-grid-item" style="background:linear-gradient(135deg,#14532D,#22C55E)"></div>
+          </div>
+        </div>
+        <div class="mini-tabs"><div class="mini-tab act"></div><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab"></div></div>
+      </div>
+      <div class="space-label">
+        <h3>Saf <span class="sc-saf" style="font-family:var(--ar)">&#1575;&#1604;&#1589;&#1601;</span></h3>
+        <p>Feed & Stories</p>
+      </div>
+    </div>
+    <!-- Bakra -->
+    <div class="space-item sr d1">
+      <div class="mini-phone">
+        <div class="mini-notch"></div>
+        <div class="mini-screen">
+          <div class="mini-video" style="background:linear-gradient(180deg,#1E1B4B,#312E81,#4C1D95)">
+            <div class="play-btn"></div>
+            <div class="mini-video-info"><div class="mini-video-av" style="background:linear-gradient(135deg,#A78BFA,#7C3AED)"></div><span class="mini-video-name">amina.vibes</span></div>
+          </div>
+        </div>
+        <div class="mini-tabs"><div class="mini-tab"></div><div class="mini-tab act"></div><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab"></div></div>
+      </div>
+      <div class="space-label">
+        <h3>Bakra <span class="sc-bakra" style="font-family:var(--ar)">&#1576;&#1603;&#1585;&#1577;</span></h3>
+        <p>Short Video</p>
+      </div>
+    </div>
+    <!-- Majlis -->
+    <div class="space-item sr d2">
+      <div class="mini-phone">
+        <div class="mini-notch"></div>
+        <div class="mini-screen">
+          <div class="mini-thread"><div class="mini-thread-head"><div class="mini-thread-av" style="background:linear-gradient(135deg,#60A5FA,#2563EB)"></div><span class="mini-thread-name">ali.thinks</span></div><div class="mini-thread-text" style="width:90%"></div><div class="mini-thread-text short"></div></div>
+          <div class="mini-thread"><div class="mini-thread-head"><div class="mini-thread-av" style="background:linear-gradient(135deg,#F472B6,#EC4899)"></div><span class="mini-thread-name">noor.writes</span></div><div class="mini-thread-text"></div><div class="mini-thread-text" style="width:75%"></div><div class="mini-thread-text short"></div></div>
+          <div class="mini-thread"><div class="mini-thread-head"><div class="mini-thread-av" style="background:linear-gradient(135deg,var(--gold),#B8860B)"></div><span class="mini-thread-name">hassan.qa</span></div><div class="mini-thread-text" style="width:85%"></div><div class="mini-thread-text short"></div></div>
+        </div>
+        <div class="mini-tabs"><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab act"></div><div class="mini-tab"></div><div class="mini-tab"></div></div>
+      </div>
+      <div class="space-label">
+        <h3>Majlis <span class="sc-majlis" style="font-family:var(--ar)">&#1575;&#1604;&#1605;&#1580;&#1604;&#1587;</span></h3>
+        <p>Threads</p>
+      </div>
+    </div>
+    <!-- Risalah -->
+    <div class="space-item sr d3">
+      <div class="mini-phone">
+        <div class="mini-notch"></div>
+        <div class="mini-screen">
+          <div class="mini-chat">
+            <div class="mini-bubble them">Assalamu alaikum! How's the project going?</div>
+            <div class="mini-bubble me">Wa alaikum assalam! Almost done alhamdulillah</div>
+            <div class="mini-bubble them">MashaAllah, can't wait to see it</div>
+            <div class="mini-bubble me">InshaAllah soon 🤲</div>
+            <div class="mini-bubble them">Let me know if you need any help</div>
+          </div>
+        </div>
+        <div class="mini-tabs"><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab act"></div><div class="mini-tab"></div></div>
+      </div>
+      <div class="space-label">
+        <h3>Risalah <span class="sc-risalah" style="font-family:var(--ar)">&#1585;&#1587;&#1575;&#1604;&#1577;</span></h3>
+        <p>Messages</p>
+      </div>
+    </div>
+    <!-- Minbar -->
+    <div class="space-item sr d4">
+      <div class="mini-phone">
+        <div class="mini-notch"></div>
+        <div class="mini-screen">
+          <div class="mini-player" style="background:linear-gradient(135deg,#7F1D1D,#991B1B,#DC2626)"><div class="play-btn"></div></div>
+          <div class="mini-player-title"></div>
+          <div class="mini-player-sub"></div>
+          <div style="margin-top:12px">
+            <div class="mini-player" style="background:linear-gradient(135deg,#064E3B,#065F46,#047857);aspect-ratio:16/9"><div class="play-btn"></div></div>
+            <div class="mini-player-title" style="width:80%"></div>
+            <div class="mini-player-sub" style="width:50%"></div>
+          </div>
+        </div>
+        <div class="mini-tabs"><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab"></div><div class="mini-tab act"></div></div>
+      </div>
+      <div class="space-label">
+        <h3>Minbar <span class="sc-minbar" style="font-family:var(--ar)">&#1575;&#1604;&#1605;&#1606;&#1576;&#1585;</span></h3>
+        <p>Long Video</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VALUES -->
+<section class="vals" id="values">
+  <h2 class="sr">Built with your values. Not bolted on.</h2>
+  <dl class="vals-grid">
+    <div class="val-item sr"><dt>Prayer-aware algorithm</dt><dd>The feed respects salah times. It slows during prayer windows &mdash; encouraging presence, not engagement.</dd></div>
+    <div class="val-item sr d1"><dt>Quran rooms</dt><dd>Live audio for group recitation, tajweed circles, and listening sessions together in real time.</dd></div>
+    <div class="val-item sr d2"><dt>8 languages, full RTL</dt><dd>English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay. Culturally adapted, not just translated.</dd></div>
+    <div class="val-item sr d3"><dt>Ethical by design</dt><dd>No addiction loops. No infinite scroll. 15% of your feed is fresh voices &mdash; not engagement-maximising content.</dd></div>
+  </dl>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2 class="sr">Be early.</h2>
+  <p class="sr d1">Join the waitlist. Help shape what comes next.</p>
+  <form class="fm sr d2" id="cf" novalidate>
+    <input type="email" placeholder="your@email.com" autocomplete="email" required id="ce" aria-label="Email">
+    <button type="submit" id="cb2"><span class="bl">Join waitlist</span><span class="sp"></span></button>
+  </form>
+  <p class="fm-msg" id="cm"></p>
+  <p class="cta-date sr d3">Launching <strong>Ramadan 2027</strong></p>
+</section>
+
+<footer>
+  <span style="font-weight:600">Mizanly</span>
+  <div class="f-links"><a href="mailto:hello@mizanly.app">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div>
+  <span>Sydney, Australia</span>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const API='https://mizanlyapi-production.up.railway.app/api/v1';
+addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('s',scrollY>60)},{passive:true});
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('v');io.unobserve(e.target)}})},{threshold:.12,rootMargin:'0px 0px -20px 0px'});
+document.querySelectorAll('.sr').forEach(el=>io.observe(el));
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3e3)}
+function ref(){return new URLSearchParams(location.search).get('ref')}
+async function sub(e,p){
+  e.preventDefault();const inp=document.getElementById(p+'e'),btn=document.getElementById(p+'b'+(p==='c'?'2':'')),msg=document.getElementById(p+'m'),em=inp.value.trim();
+  if(!em||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){msg.textContent='Valid email required.';msg.className='fm-msg err';inp.focus();return}
+  msg.textContent='';msg.className='fm-msg';btn.classList.add('ld');btn.disabled=true;
+  try{
+    const bd={email:em};const r=ref();if(r)bd.referralCode=r;
+    const res=await fetch(API+'/waitlist/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bd)});
+    if(res.status===429){msg.textContent='Too fast. Wait a minute.';msg.className='fm-msg err';return}
+    if(!res.ok)throw 0;const d=(await res.json())?.data||(await res.json());
+    if(p==='h'){document.getElementById('hf').style.display='none';msg.style.display='none';const ok=document.getElementById('ho');ok.classList.add('show');document.getElementById('hp').textContent='#'+d.position;document.getElementById('rl').value='https://mizanly.app?ref='+d.referralCode}
+    else{inp.value='';toast(d.alreadyJoined?"Already on the list.":"You're #"+d.position)}
+  }catch{msg.textContent='Something went wrong.';msg.className='fm-msg err'}
+  finally{btn.classList.remove('ld');btn.disabled=false}
+}
+document.getElementById('hf').addEventListener('submit',e=>sub(e,'h'));
+document.getElementById('cf').addEventListener('submit',e=>sub(e,'c'));
+document.getElementById('cb').addEventListener('click',()=>{
+  navigator.clipboard.writeText(document.getElementById('rl').value).then(()=>{toast('Copied');document.getElementById('cb').textContent='Copied';setTimeout(()=>document.getElementById('cb').textContent='Copy',2e3)}).catch(()=>{document.getElementById('rl').select();document.execCommand('copy');toast('Copied')})
+});
+document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{e.preventDefault();document.querySelector(a.getAttribute('href'))?.scrollIntoView({behavior:'smooth'})})});
+</script>
+</body>
+</html>

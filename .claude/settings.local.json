@@ -6,7 +6,11 @@
       "mcp__sequential-thinking__sequentialthinking",
       "mcp__playwright__browser_run_code",
       "mcp__playwright__browser_resize",
-      "mcp__playwright__browser_close"
+      "mcp__playwright__browser_close",
+      "mcp__brave-search__brave_web_search",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__filesystem__list_directory",
+      "mcp__filesystem__read_text_file"
     ]
   }
 }

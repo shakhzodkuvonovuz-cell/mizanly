@@ -381,3 +381,356 @@ describe('clearGroupSenderKeys', () => {
     await expect(encryptGroupMessage('group1', 'test')).rejects.toThrow('No sender key');
   });
 });
+
+// ============================================================
+// SKIPPED KEY FEATURE — OUT-OF-ORDER DELIVERY
+// ============================================================
+
+describe('skipped key out-of-order delivery', () => {
+  beforeEach(async () => {
+    const state = await generateSenderKey('group1');
+    const serialized = serializeSenderKeyForDistribution(state);
+    const received = deserializeSenderKeyFromDistribution(serialized);
+    await storeSenderKeyFromDistribution('group1', 'sender1', received);
+  });
+
+  it('encrypt 5, receive in order 5,3,1,4,2 — all decrypt correctly', async () => {
+    const m1 = await encryptGroupMessage('group1', 'msg-1');
+    const m2 = await encryptGroupMessage('group1', 'msg-2');
+    const m3 = await encryptGroupMessage('group1', 'msg-3');
+    const m4 = await encryptGroupMessage('group1', 'msg-4');
+    const m5 = await encryptGroupMessage('group1', 'msg-5');
+
+    // Receive in order: 5, 3, 1, 4, 2
+    expect(await decryptGroupMessage('group1', 'sender1', m5)).toBe('msg-5');
+    expect(await decryptGroupMessage('group1', 'sender1', m3)).toBe('msg-3');
+    expect(await decryptGroupMessage('group1', 'sender1', m1)).toBe('msg-1');
+    expect(await decryptGroupMessage('group1', 'sender1', m4)).toBe('msg-4');
+    expect(await decryptGroupMessage('group1', 'sender1', m2)).toBe('msg-2');
+  });
+
+  it('skipped key replay: use skipped key once, second attempt fails (key deleted)', async () => {
+    const m1 = await encryptGroupMessage('group1', 'first');
+    const m2 = await encryptGroupMessage('group1', 'second');
+    const m3 = await encryptGroupMessage('group1', 'third');
+
+    // Receive m3 first — stores skipped keys for counters 0 and 1
+    expect(await decryptGroupMessage('group1', 'sender1', m3)).toBe('third');
+
+    // Use skipped key for m1
+    expect(await decryptGroupMessage('group1', 'sender1', m1)).toBe('first');
+
+    // Replay m1 — skipped key was deleted after first use
+    await expect(decryptGroupMessage('group1', 'sender1', m1)).rejects.toThrow();
+
+    // m2's skipped key should still work (different counter)
+    expect(await decryptGroupMessage('group1', 'sender1', m2)).toBe('second');
+
+    // But replaying m2 also fails
+    await expect(decryptGroupMessage('group1', 'sender1', m2)).rejects.toThrow();
+  });
+
+  it('out-of-order with 10 messages received in random order', async () => {
+    const messages: SenderKeyMessage[] = [];
+    for (let i = 0; i < 10; i++) {
+      messages.push(await encryptGroupMessage('group1', `msg-${i}`));
+    }
+
+    // Receive in a shuffled order: 7, 2, 9, 0, 5, 3, 8, 1, 6, 4
+    const order = [7, 2, 9, 0, 5, 3, 8, 1, 6, 4];
+    for (const idx of order) {
+      const result = await decryptGroupMessage('group1', 'sender1', messages[idx]);
+      expect(result).toBe(`msg-${idx}`);
+    }
+  });
+
+  it('out-of-order with gap of exactly MAX_SENDER_KEY_SKIP=200', async () => {
+    // Encrypt 201 messages (counters 0..200)
+    const allMessages: SenderKeyMessage[] = [];
+    for (let i = 0; i <= 200; i++) {
+      allMessages.push(await encryptGroupMessage('group1', `msg-${i}`));
+    }
+
+    // Receive message at counter=200 first — gap is exactly 200, should succeed
+    expect(await decryptGroupMessage('group1', 'sender1', allMessages[200])).toBe('msg-200');
+
+    // Now all 200 skipped keys (counters 0..199) should be stored.
+    // Decrypt a few to verify they work
+    expect(await decryptGroupMessage('group1', 'sender1', allMessages[0])).toBe('msg-0');
+    expect(await decryptGroupMessage('group1', 'sender1', allMessages[100])).toBe('msg-100');
+    expect(await decryptGroupMessage('group1', 'sender1', allMessages[199])).toBe('msg-199');
+  });
+
+  it('skipped key cap: oldest keys evicted when exceeding 200', async () => {
+    // Encrypt enough messages to create more than 200 skipped keys
+    // First batch: 201 messages (counters 0..200)
+    const batch1: SenderKeyMessage[] = [];
+    for (let i = 0; i <= 200; i++) {
+      batch1.push(await encryptGroupMessage('group1', `batch1-${i}`));
+    }
+
+    // Receive counter=200 — stores 200 skipped keys (0..199)
+    expect(await decryptGroupMessage('group1', 'sender1', batch1[200])).toBe('batch1-200');
+
+    // Now encrypt one more and receive it out of order to push past the cap
+    const extra1 = await encryptGroupMessage('group1', 'extra-201');
+    const extra2 = await encryptGroupMessage('group1', 'extra-202');
+
+    // Receive extra2 (counter=202) — need to advance 1 step, adding 1 skipped key (201)
+    // Total skipped keys: 200 (from batch1) + 1 = 201 → oldest (counter 0) evicted
+    expect(await decryptGroupMessage('group1', 'sender1', extra2)).toBe('extra-202');
+
+    // Counter 0's skipped key was evicted — should fail
+    await expect(decryptGroupMessage('group1', 'sender1', batch1[0])).rejects.toThrow();
+
+    // Counter 1 should still be available (it's the new oldest after eviction)
+    expect(await decryptGroupMessage('group1', 'sender1', batch1[1])).toBe('batch1-1');
+  });
+
+  it('out-of-order: receive last message first, then all others in reverse', async () => {
+    const messages: SenderKeyMessage[] = [];
+    for (let i = 0; i < 8; i++) {
+      messages.push(await encryptGroupMessage('group1', `reverse-${i}`));
+    }
+
+    // Receive last first
+    expect(await decryptGroupMessage('group1', 'sender1', messages[7])).toBe('reverse-7');
+
+    // Then receive all others in reverse order: 6, 5, 4, 3, 2, 1, 0
+    for (let i = 6; i >= 0; i--) {
+      expect(await decryptGroupMessage('group1', 'sender1', messages[i])).toBe(`reverse-${i}`);
+    }
+  });
+
+  it('interleaved in-order and out-of-order messages', async () => {
+    const m0 = await encryptGroupMessage('group1', 'a');
+    const m1 = await encryptGroupMessage('group1', 'b');
+    const m2 = await encryptGroupMessage('group1', 'c');
+    const m3 = await encryptGroupMessage('group1', 'd');
+    const m4 = await encryptGroupMessage('group1', 'e');
+
+    // Receive: m0 (in order), m2 (skip m1), m1 (skipped key), m4 (skip m3), m3 (skipped key)
+    expect(await decryptGroupMessage('group1', 'sender1', m0)).toBe('a');
+    expect(await decryptGroupMessage('group1', 'sender1', m2)).toBe('c');
+    expect(await decryptGroupMessage('group1', 'sender1', m1)).toBe('b');
+    expect(await decryptGroupMessage('group1', 'sender1', m4)).toBe('e');
+    expect(await decryptGroupMessage('group1', 'sender1', m3)).toBe('d');
+  });
+});
+
+// ============================================================
+// SIGNING KEY SECURESTORE INTEGRATION
+// ============================================================
+
+describe('signing key SecureStore integration', () => {
+  it('signing private key is stored in SecureStore on generateSenderKey', async () => {
+    const state = await generateSenderKey('group-secure');
+    // Verify SecureStore has the signing key
+    const stored = await SecureStore.getItemAsync('e2e_sender_signing_group-secure');
+    expect(stored).not.toBeNull();
+    // Verify the stored key matches the returned key (via base64)
+    const { fromBase64 } = require('../crypto');
+    const storedKey = fromBase64(stored);
+    expect(Buffer.from(storedKey).equals(Buffer.from(state.signingKeyPair.privateKey))).toBe(true);
+  });
+
+  it('loadSenderSigningPrivate returns the stored key', async () => {
+    const { loadSenderSigningPrivate } = require('../storage');
+    const state = await generateSenderKey('group-load');
+    const loaded = await loadSenderSigningPrivate('group-load');
+    expect(loaded).not.toBeNull();
+    expect(Buffer.from(loaded!).equals(Buffer.from(state.signingKeyPair.privateKey))).toBe(true);
+  });
+
+  it('encrypt uses loadSenderSigningPrivate from SecureStore', async () => {
+    await generateSenderKey('group-sign');
+    // Distribute to receiver
+    const { loadSenderKeyState } = require('../storage');
+    const selfState = await loadSenderKeyState('group-sign', 'self');
+    const ser = serializeSenderKeyForDistribution(selfState);
+    const received = deserializeSenderKeyFromDistribution(ser);
+    await storeSenderKeyFromDistribution('group-sign', 'sender1', received);
+
+    // Encrypt should work because SecureStore has the signing key
+    const msg = await encryptGroupMessage('group-sign', 'test signing');
+    expect(msg.signature.length).toBe(64);
+
+    // Verify decrypt works
+    expect(await decryptGroupMessage('group-sign', 'sender1', msg)).toBe('test signing');
+  });
+
+  it('encrypt fails if signing key is deleted from SecureStore', async () => {
+    await generateSenderKey('group-deleted');
+    // Delete the signing key from SecureStore
+    await SecureStore.deleteItemAsync('e2e_sender_signing_group-deleted');
+
+    // Encrypt should fail because signing key is missing
+    await expect(encryptGroupMessage('group-deleted', 'test')).rejects.toThrow('signing key not found');
+  });
+
+  it('MMKV state does NOT contain the real private signing key', async () => {
+    const state = await generateSenderKey('group-mmkv-check');
+    const { loadSenderKeyState } = require('../storage');
+    const mmkvState = await loadSenderKeyState('group-mmkv-check', 'self');
+
+    // The state in MMKV has a placeholder private key (all zeros), not the real one
+    const realPrivate = state.signingKeyPair.privateKey;
+    const mmkvPrivate = mmkvState.signingKeyPair.privateKey;
+    expect(Buffer.from(realPrivate).equals(Buffer.from(mmkvPrivate))).toBe(false);
+  });
+});
+
+// ============================================================
+// SERIALIZATION EXTENDED — SECURITY BOUNDARY
+// ============================================================
+
+describe('sender key serialization security', () => {
+  it('serialized output contains exactly chainId+gen+chainKey+counter+pubKey, no other data', async () => {
+    const state = await generateSenderKey('group1');
+    const serialized = serializeSenderKeyForDistribution(state);
+    const hex = Buffer.from(serialized).toString('hex');
+
+    // Verify structure: first 4 bytes = chainId, next 4 = generation, etc.
+    expect(serialized.length).toBe(76);
+
+    // Verify the public key bytes appear at offset 44..76
+    const pubKeyHex = Buffer.from(state.signingKeyPair.publicKey).toString('hex');
+    const embeddedPubKey = hex.slice(88, 152); // 44*2=88 to 76*2=152
+    expect(embeddedPubKey).toBe(pubKeyHex);
+  });
+
+  it('multiple serializations of same state produce identical bytes', async () => {
+    const state = await generateSenderKey('group1');
+    const s1 = serializeSenderKeyForDistribution(state);
+    const s2 = serializeSenderKeyForDistribution(state);
+    expect(Buffer.from(s1).equals(Buffer.from(s2))).toBe(true);
+  });
+
+  it('private key bytes never appear in serialized output (50 iterations)', async () => {
+    for (let i = 0; i < 50; i++) {
+      const state = await generateSenderKey(`seccheck-${i}`);
+      const serialized = serializeSenderKeyForDistribution(state);
+      const privHex = Buffer.from(state.signingKeyPair.privateKey).toString('hex');
+      const serHex = Buffer.from(serialized).toString('hex');
+      expect(serHex.includes(privHex)).toBe(false);
+    }
+  });
+});
+
+// ============================================================
+// ROTATION — SECURESTORE CLEANUP
+// ============================================================
+
+describe('rotation SecureStore behavior', () => {
+  it('rotation stores a NEW signing key in SecureStore', async () => {
+    const original = await generateSenderKey('group-rot');
+    const originalKeyB64 = await SecureStore.getItemAsync('e2e_sender_signing_group-rot');
+
+    const rotated = await rotateSenderKey('group-rot');
+    const rotatedKeyB64 = await SecureStore.getItemAsync('e2e_sender_signing_group-rot');
+
+    // The SecureStore entry was overwritten with the new key
+    expect(rotatedKeyB64).not.toBe(originalKeyB64);
+
+    // The new key matches the rotated state
+    const { fromBase64 } = require('../crypto');
+    const storedKey = fromBase64(rotatedKeyB64);
+    expect(Buffer.from(storedKey).equals(Buffer.from(rotated.signingKeyPair.privateKey))).toBe(true);
+  });
+
+  it('rotation produces a key that can be used for encrypt/decrypt', async () => {
+    await generateSenderKey('group-rot2');
+    const rotated = await rotateSenderKey('group-rot2');
+
+    // Distribute rotated key
+    const ser = serializeSenderKeyForDistribution(rotated);
+    const received = deserializeSenderKeyFromDistribution(ser);
+    await storeSenderKeyFromDistribution('group-rot2', 'receiver1', received);
+
+    const msg = await encryptGroupMessage('group-rot2', 'after rotation');
+    expect(await decryptGroupMessage('group-rot2', 'receiver1', msg)).toBe('after rotation');
+  });
+});
+
+// ============================================================
+// CLEANUP — SECURESTORE SIGNING KEY DELETION
+// ============================================================
+
+describe('clearGroupSenderKeys SecureStore cleanup', () => {
+  it('clearGroupSenderKeys also deletes SecureStore signing key', async () => {
+    await generateSenderKey('group-clear');
+    // Verify signing key exists
+    const before = await SecureStore.getItemAsync('e2e_sender_signing_group-clear');
+    expect(before).not.toBeNull();
+
+    await clearGroupSenderKeys('group-clear', []);
+
+    // Verify signing key is gone
+    const after = await SecureStore.getItemAsync('e2e_sender_signing_group-clear');
+    expect(after).toBeNull();
+  });
+
+  it('clearGroupSenderKeys for one group does not affect another group', async () => {
+    await generateSenderKey('group-a');
+    await generateSenderKey('group-b');
+
+    await clearGroupSenderKeys('group-a', []);
+
+    // group-a's signing key is gone
+    const afterA = await SecureStore.getItemAsync('e2e_sender_signing_group-a');
+    expect(afterA).toBeNull();
+
+    // group-b's signing key is still there
+    const afterB = await SecureStore.getItemAsync('e2e_sender_signing_group-b');
+    expect(afterB).not.toBeNull();
+  });
+
+  it('clearGroupSenderKeys removes member keys and self key', async () => {
+    await generateSenderKey('group-full');
+    const { loadSenderKeyState } = require('../storage');
+    const state = await loadSenderKeyState('group-full', 'self');
+    const ser = serializeSenderKeyForDistribution(state);
+    const received = deserializeSenderKeyFromDistribution(ser);
+    await storeSenderKeyFromDistribution('group-full', 'member1', received);
+    await storeSenderKeyFromDistribution('group-full', 'member2', received);
+
+    await clearGroupSenderKeys('group-full', ['member1', 'member2']);
+
+    // Self key gone
+    expect(await loadSenderKeyState('group-full', 'self')).toBeNull();
+    // Member keys gone
+    expect(await loadSenderKeyState('group-full', 'member1')).toBeNull();
+    expect(await loadSenderKeyState('group-full', 'member2')).toBeNull();
+    // SecureStore signing key gone
+    expect(await SecureStore.getItemAsync('e2e_sender_signing_group-full')).toBeNull();
+  });
+});
+
+// ============================================================
+// EDGE CASES
+// ============================================================
+
+describe('sender key edge cases', () => {
+  beforeEach(async () => {
+    const state = await generateSenderKey('group1');
+    const serialized = serializeSenderKeyForDistribution(state);
+    const received = deserializeSenderKeyFromDistribution(serialized);
+    await storeSenderKeyFromDistribution('group1', 'sender1', received);
+  });
+
+  it('very long message (10KB)', async () => {
+    const longText = 'A'.repeat(10000);
+    const msg = await encryptGroupMessage('group1', longText);
+    expect(await decryptGroupMessage('group1', 'sender1', msg)).toBe(longText);
+  });
+
+  it('message with null bytes in content', async () => {
+    const text = 'before\0after\0end';
+    const msg = await encryptGroupMessage('group1', text);
+    expect(await decryptGroupMessage('group1', 'sender1', msg)).toBe(text);
+  });
+
+  it('encrypt without prior generate throws clear error', async () => {
+    await expect(encryptGroupMessage('nonexistent-group', 'hello')).rejects.toThrow('No sender key');
+  });
+});

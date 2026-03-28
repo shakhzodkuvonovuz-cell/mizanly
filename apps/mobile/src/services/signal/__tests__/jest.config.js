@@ -23,5 +23,6 @@ module.exports = {
     '^expo-secure-store$': '<rootDir>/src/services/signal/__tests__/__mocks__/expo-secure-store.js',
     '^react-native-mmkv$': '<rootDir>/src/services/signal/__tests__/__mocks__/react-native-mmkv.js',
     '^expo-file-system$': '<rootDir>/src/services/signal/__tests__/__mocks__/expo-file-system.js',
+    '^expo-notifications$': '<rootDir>/src/services/signal/__tests__/__mocks__/expo-notifications.js',
   },
 };
