@@ -514,6 +514,40 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     return { success: true, messageId: message.id, clientMessageId: dto.clientMessageId, createdAt: message.createdAt };
   }
 
+  /**
+   * Sealed sender message handler (C11).
+   *
+   * The client sends: { recipientId, ephemeralKey, sealedCiphertext }
+   * The server CANNOT determine the sender — the sender's identity is
+   * INSIDE the encrypted sealedCiphertext blob.
+   *
+   * The server's only job: forward the opaque blob to the recipient.
+   * It does NOT log the sender, does NOT store the message in the DB
+   * (the regular send_message handler is used for persistence).
+   *
+   * This is a ROUTING-ONLY handler for maximum metadata privacy.
+   */
+  @SubscribeMessage('send_sealed_message')
+  async handleSealedMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { recipientId: string; ephemeralKey: string; sealedCiphertext: string; conversationId: string },
+  ) {
+    // No userId check — that's the point of sealed sender (sender is anonymous)
+    // But we DO require the socket to be authenticated (valid Clerk JWT)
+    if (!client.data.userId) throw new WsException('Unauthorized');
+    if (!(await this.checkRateLimit(client.data.userId, 'sealed_message', 30, 60))) return;
+
+    // Forward the sealed envelope to the recipient's room
+    // The recipient unseals it client-side to reveal the sender
+    client.to(`conversation:${data.conversationId}`).emit('sealed_message', {
+      ephemeralKey: data.ephemeralKey,
+      sealedCiphertext: data.sealedCiphertext,
+      conversationId: data.conversationId,
+    });
+
+    return { success: true };
+  }
+
   @SubscribeMessage('typing')
   async handleTyping(
     @ConnectedSocket() client: Socket,

@@ -131,15 +131,28 @@ export function hkdfDeriveSecrets(
  * - Chain key advancement: KDF_CK(chainKey) -> messageKey || nextChainKey
  * - Safety number fingerprint computation (5200 iterations)
  */
+/** HMAC-SHA256. Uses native OpenSSL when available (C13), @noble fallback. */
 export function hmacSha256(
   key: Uint8Array,
   data: Uint8Array,
 ): Uint8Array {
+  try {
+    const adapter = require('./native-crypto-adapter');
+    if (adapter.isNativeCryptoAvailable()) {
+      return adapter.hmacSha256(key, data);
+    }
+  } catch { /* fallback */ }
   return hmac(sha256, key, data);
 }
 
-/** SHA-256 hash. Used for media file integrity verification. */
+/** SHA-256 hash. Uses native OpenSSL when available (C13), @noble fallback. */
 export function sha256Hash(data: Uint8Array): Uint8Array {
+  try {
+    const adapter = require('./native-crypto-adapter');
+    if (adapter.isNativeCryptoAvailable()) {
+      return adapter.sha256(data);
+    }
+  } catch { /* fallback */ }
   return sha256(data);
 }
 

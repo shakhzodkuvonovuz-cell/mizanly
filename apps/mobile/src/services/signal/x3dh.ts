@@ -107,6 +107,8 @@ export interface X3DHInitResult {
   oneTimePreKeyId?: number;
   /** Whether Bob's identity key was seen for the first time ('new') or changed ('changed') */
   identityTrust: 'trusted' | 'new' | 'changed';
+  /** ML-KEM ciphertext (C10: PQXDH only, undefined for classical X3DH) */
+  pqCiphertext?: Uint8Array;
 }
 
 /**
@@ -189,7 +191,29 @@ export async function initiateX3DH(
   }
 
   // --- Step 5: Derive shared secret via HKDF ---
-  const sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
+  let sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
+
+  // --- Step 5b (C10): PQXDH hybrid — if ML-KEM available + bundle has PQ pre-key ---
+  // Combine classical X3DH secret with ML-KEM shared secret for quantum resistance.
+  // If ML-KEM isn't available, the classical secret is used as-is (protocol v1).
+  let pqCiphertext: Uint8Array | undefined;
+  if (isPQXDHAvailable() && (bundle as any).pqPreKey) {
+    try {
+      const pqPubKey = typeof (bundle as any).pqPreKey === 'string'
+        ? new Uint8Array(Buffer.from((bundle as any).pqPreKey, 'base64'))
+        : (bundle as any).pqPreKey;
+      const pqResult = pqEncapsulate(pqPubKey);
+      if (pqResult) {
+        const classicalSecret = sharedSecret;
+        sharedSecret = deriveHybridSecret(classicalSecret, pqResult.sharedSecret);
+        pqCiphertext = pqResult.ciphertext;
+        zeroOut(classicalSecret);
+        zeroOut(pqResult.sharedSecret);
+      }
+    } catch {
+      // PQ encapsulation failed — continue with classical secret only
+    }
+  }
 
   // Clean up intermediate DH outputs
   zeroOut(dh1);
@@ -208,6 +232,7 @@ export async function initiateX3DH(
     signedPreKeyId: bundle.signedPreKey.keyId,
     oneTimePreKeyId: bundle.oneTimePreKey?.keyId,
     identityTrust,
+    pqCiphertext, // Included in PreKeySignalMessage when PQXDH is used
   };
 }
 

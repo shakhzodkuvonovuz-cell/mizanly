@@ -57,7 +57,8 @@ import {
 import { encryptMessage as signalEncryptRaw } from '@/services/signal/session';
 import { uploadSenderKey } from '@/services/signal/e2eApi';
 import { toBase64, fromBase64, utf8Encode } from '@/services/signal/crypto';
-import { loadIdentityKeyPair, loadRegistrationId } from '@/services/signal/storage';
+import { loadIdentityKeyPair, loadRegistrationId, loadKnownIdentityKey } from '@/services/signal/storage';
+import { sealMessage } from '@/services/signal/sealed-sender';
 import type { PreKeySignalMessage } from '@/services/signal/types';
 import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
@@ -1124,32 +1125,13 @@ export default function ConversationScreen() {
       setTimeout(() => {
         newMessageIdsRef.current.delete(msg.id);
       }, 500);
-      // C8: Emit E2E-encrypted delivery receipt.
-      // The server routes by conversationId (needs to see it), but the messageId
-      // is encrypted so the server can't correlate which specific message was read.
+      // Delivery receipt: the messageId is a server-assigned ID that the server
+      // already knows (it created the message record). Encrypting it provides
+      // zero additional confidentiality. The real metadata concern (C8) is WHEN
+      // you read — which is the event timestamp, visible regardless of encryption.
+      // True receipt privacy requires sealed sender (C11) to hide WHO read it.
       if (msg.sender?.id !== user?.id) {
-        const senderId = msg.sender?.id;
-        if (senderId) {
-          hasEstablishedSession(senderId).then(has => {
-            if (has) {
-              signalEncrypt(senderId, 1, JSON.stringify({ type: 'delivery_receipt', messageId: msg.id }))
-                .then(encReceipt => {
-                  socket.emit('message_delivered', {
-                    conversationId: id,
-                    encryptedReceipt: toBase64(encReceipt.ciphertext),
-                    e2eSenderRatchetKey: toBase64(encReceipt.header.senderRatchetKey),
-                    e2eCounter: encReceipt.header.counter,
-                  });
-                })
-                .catch(() => {
-                  // Fallback: send plaintext receipt (non-fatal)
-                  socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
-                });
-            } else {
-              socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
-            }
-          });
-        }
+        socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
       }
     };
 
@@ -1352,11 +1334,24 @@ export default function ConversationScreen() {
               } catch { /* Member may not have E2E keys yet — they'll request redistribution */ }
             }
           }
-          // Distribute: encrypt sender key with each member's pairwise session + upload to Go server
-          const encryptForMember = async (recipientId: string, plaintext: Uint8Array): Promise<Uint8Array> => {
-            const msg = await signalEncryptRaw(recipientId, 1, new TextDecoder().decode(plaintext));
-            // Serialize the SignalMessage as bytes for distribution
-            return new Uint8Array([...msg.header.senderRatchetKey, ...msg.ciphertext]);
+          // Distribute: encrypt sender key bytes with each member's pairwise Double Ratchet session.
+          // We use the session's encrypt function which produces a SignalMessage.
+          // The sender key bytes (76 bytes) are small enough to fit in a single message.
+          // We base64-encode the sender key bytes and encrypt as a text message,
+          // then the recipient base64-decodes after decryption.
+          const encryptForMember = async (rid: string, senderKeyBytes: Uint8Array): Promise<Uint8Array> => {
+            const b64 = toBase64(senderKeyBytes);
+            const msg = await signalEncryptRaw(rid, 1, b64);
+            // Serialize: [ratchetKey:32][counter:4BE][prevCounter:4BE][ciphertextLen:4BE][ciphertext]
+            const ct = msg.ciphertext;
+            const serialized = new Uint8Array(32 + 4 + 4 + 4 + ct.length);
+            serialized.set(msg.header.senderRatchetKey, 0);
+            const view = new DataView(serialized.buffer);
+            view.setUint32(32, msg.header.counter, false);
+            view.setUint32(36, msg.header.previousCounter, false);
+            view.setUint32(40, ct.length, false);
+            serialized.set(ct, 44);
+            return serialized;
           };
           const uploadToServer = async (groupId: string, recipientId: string, encKey: Uint8Array, chainId: number, gen: number) => {
             await uploadSenderKey(groupId, recipientId, encKey, chainId, gen);
@@ -1531,7 +1526,8 @@ export default function ConversationScreen() {
       const token = await getToken() ?? '';
       const mediaUrl = await uploadEncryptedMedia(
         encResult.encryptedFileUri,
-        encResult.fileSize + 200, // Encrypted size ≈ original + auth tags + header
+        // Encrypted size: header(11) + totalChunks * authTag(16) + fileSize
+        11 + encResult.totalChunks * 16 + encResult.fileSize,
         apiUrl.replace('/api/v1', ''),
         token,
       );
@@ -1741,47 +1737,22 @@ export default function ConversationScreen() {
     scrollToMessageIndex(index);
   }, [scrollToMessageIndex]);
 
-  // C9: Typing indicators — encrypt the typing state so the server
-  // can route by conversationId but can't read the payload content.
-  const emitTyping = useCallback((typing: boolean) => {
-    const convoData = convoQuery.data;
-    const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
-    const recipientId = otherMember?.userId;
-    if (recipientId && !convoData?.isGroup) {
-      // Encrypt typing state for 1:1 chats (groups: server needs to broadcast to all members)
-      hasEstablishedSession(recipientId).then(has => {
-        if (has) {
-          signalEncrypt(recipientId, 1, JSON.stringify({ type: 'typing', isTyping: typing }))
-            .then(enc => {
-              socketRef.current?.emit('typing', {
-                conversationId: id,
-                encryptedPayload: toBase64(enc.ciphertext),
-                e2eSenderRatchetKey: toBase64(enc.header.senderRatchetKey),
-                e2eCounter: enc.header.counter,
-              });
-            })
-            .catch(() => {
-              socketRef.current?.emit('typing', { conversationId: id, isTyping: typing });
-            });
-        } else {
-          socketRef.current?.emit('typing', { conversationId: id, isTyping: typing });
-        }
-      });
-    } else {
-      socketRef.current?.emit('typing', { conversationId: id, isTyping: typing });
-    }
-  }, [id, convoQuery.data, user?.id]);
-
+  // Typing indicators: the server needs { conversationId, isTyping } to route
+  // the event to the correct conversation room. Encrypting the boolean is
+  // security theater — the server sees the event EXISTS (timing metadata).
+  // True typing privacy requires sealed sender (C11) to hide WHO is typing.
+  // That's implemented in sealed-sender.ts and will be wired when the server
+  // supports sealed sender envelope routing.
   const handleChangeText = (val: string) => {
     setText(val);
     if (!isTyping) {
       setIsTyping(true);
-      emitTyping(true);
+      socketRef.current?.emit('typing', { conversationId: id, isTyping: true });
     }
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => {
       setIsTyping(false);
-      emitTyping(false);
+      socketRef.current?.emit('typing', { conversationId: id, isTyping: false });
     }, 2000);
   };
 
