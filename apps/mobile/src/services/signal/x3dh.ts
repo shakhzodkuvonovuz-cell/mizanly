@@ -228,7 +228,9 @@ export async function initiateX3DH(
       const pqResult = pqEncapsulate(pqPubKey);
       if (pqResult) {
         // V8-F11: Append PQ shared secret to dhConcat BEFORE HKDF (single-pass)
+        const oldDhConcat = dhConcat;
         dhConcat = concat(dhConcat, pqResult.sharedSecret);
+        zeroOut(oldDhConcat); // Zero classical-only dhConcat
         pqCiphertext = pqResult.ciphertext;
         zeroOut(pqResult.sharedSecret);
       }
@@ -387,7 +389,10 @@ export async function respondX3DH(
   if (pqCiphertext && pqSecretKey) {
     const pqSharedSecret = pqDecapsulate(pqCiphertext, pqSecretKey);
     if (pqSharedSecret) {
+      const oldDhConcat = dhConcat;
       dhConcat = concat(dhConcat, pqSharedSecret);
+      // Zero the old classical-only dhConcat — it contains DH key material
+      zeroOut(oldDhConcat);
       zeroOut(pqSharedSecret);
     }
   }

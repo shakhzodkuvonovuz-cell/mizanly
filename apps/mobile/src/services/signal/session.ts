@@ -345,18 +345,18 @@ export async function decryptMessage(
       // Active session succeeded — replace with mutated clone
       record.activeSession = winningSession;
     } else {
-      // Previous session succeeded — promote it to active
+      // Previous session succeeded — promote it to active.
+      // The spliced-out previous session's OLD state needs zeroing too.
+      const discardedPrev = record.previousSessions[winningIndex];
       record.previousSessions.splice(winningIndex, 1);
       record.previousSessions.push(record.activeSession);
       record.activeSession = winningSession;
+      // Zero the discarded previous session (it was replaced by the winning clone)
+      zeroSessionKeys(discardedPrev);
     }
 
-    // Zero the old active session's key material
-    zeroOut(oldActive.rootKey);
-    zeroOut(oldActive.sendingChain.chainKey);
-    if (oldActive.receivingChain) zeroOut(oldActive.receivingChain.chainKey);
-    zeroOut(oldActive.senderRatchetKeyPair.privateKey);
-    for (const sk of oldActive.skippedKeys) zeroOut(sk.messageKey);
+    // Zero the old active session's key material (replaced by clone or pushed to prev)
+    zeroSessionKeys(oldActive);
 
     // Mark session as established on first successful decrypt
     if (!record.activeSession.sessionEstablished) {
@@ -371,6 +371,15 @@ export async function decryptMessage(
     await storeSessionRecord(senderId, senderDeviceId, record);
     return utf8Decode(plaintext);
   });
+}
+
+/** V8-F10: Zero all key material in a SessionState (forward secrecy). */
+function zeroSessionKeys(state: SessionState): void {
+  zeroOut(state.rootKey);
+  zeroOut(state.sendingChain.chainKey);
+  if (state.receivingChain) zeroOut(state.receivingChain.chainKey);
+  zeroOut(state.senderRatchetKeyPair.privateKey);
+  for (const sk of state.skippedKeys) zeroOut(sk.messageKey);
 }
 
 /**

@@ -467,10 +467,10 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   for (let i = 0; i < len; i++) {
     diff |= padA[i] ^ padB[i];
   }
-  // V8-F2 FIX: Zero the padded copies. Previously abandoned to GC — contained
-  // copies of session keys, HMAC results, etc. accessible via heap dump.
-  padA.fill(0);
-  padB.fill(0);
+  // V8-F2 FIX: Zero the padded copies via zeroOut (not fill(0) which JIT can eliminate).
+  // padA/padB contain copies of session keys, HMAC results — must not leak to GC.
+  zeroOut(padA);
+  zeroOut(padB);
   return diff === 0;
 }
 
