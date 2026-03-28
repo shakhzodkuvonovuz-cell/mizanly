@@ -29,7 +29,7 @@ import {
   zeroOut,
   assertNonZeroDH,
 } from './crypto';
-import { isPQXDHAvailable, pqEncapsulate, pqDecapsulate, deriveHybridSecret } from './pqxdh';
+import { isPQXDHAvailable, pqEncapsulate, pqDecapsulate } from './pqxdh';
 import {
   loadIdentityKeyPair,
   loadSignedPreKeyPrivate,
