@@ -28,6 +28,7 @@ import {
   concat,
   zeroOut,
 } from './crypto';
+import { isPQXDHAvailable, pqEncapsulate, deriveHybridSecret } from './pqxdh';
 import {
   loadIdentityKeyPair,
   loadSignedPreKeyPrivate,

@@ -181,6 +181,15 @@ export async function initialize(
   // Register the background notification handler for encrypted preview decryption
   registerNotificationHandler();
 
+  // C6: Key transparency — verify our own key is consistent with server log
+  // (non-blocking, runs in background)
+  import('./key-transparency').then(({ verifyKeyTransparency }) => {
+    if (!identityKeyPair) return;
+    // TODO: Replace with actual transparency endpoint when Go server implements it
+    // For now, this is a no-op that logs if the endpoint exists
+    verifyKeyTransparency('self', async () => null).catch(() => {});
+  }).catch(() => {});
+
   initialized = true;
 }
 

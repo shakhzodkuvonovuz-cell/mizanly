@@ -296,15 +296,22 @@ export function utf8Decode(bytes: Uint8Array): string {
 }
 
 /**
- * Best-effort constant-time byte comparison.
- * Avoids early-return timing leak. JavaScript can't truly guarantee constant-time
- * (JIT may optimize), but XOR accumulator is better than short-circuit.
+ * Constant-time byte comparison.
+ * Uses native CRYPTO_memcmp when react-native-quick-crypto is available (C13),
+ * falls back to XOR accumulator otherwise.
  */
 export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  // XOR accumulator over the longer array — no early return on length mismatch.
-  // Length difference still results in false, but timing doesn't reveal WHICH byte differs.
+  // Try native constant-time comparison first
+  try {
+    const adapter = require('./native-crypto-adapter');
+    if (adapter.isNativeCryptoAvailable()) {
+      return adapter.constantTimeCompare(a, b);
+    }
+  } catch { /* adapter not loaded yet — use fallback */ }
+
+  // Fallback: XOR accumulator (best-effort in JS)
   const len = Math.max(a.length, b.length);
-  let diff = a.length ^ b.length; // Non-zero if lengths differ
+  let diff = a.length ^ b.length;
   for (let i = 0; i < len; i++) {
     diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
   }
@@ -312,25 +319,23 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 /**
- * Best-effort secure memory wipe.
- *
- * JavaScript provides NO guarantee this works:
- * - GC may have already copied the data
- * - JIT may optimize away the fill
- * - V8/Hermes may keep copies in optimized code
- *
- * We do it anyway as defense-in-depth. For true secure wiping,
- * migrate to react-native-quick-crypto (C++ OPENSSL_cleanse).
+ * Secure memory wipe.
+ * Uses native OPENSSL_cleanse when react-native-quick-crypto is available (C13),
+ * falls back to random overwrite + zero fill otherwise.
  */
 export function zeroOut(arr: Uint8Array): void {
-  // Write random bytes first (defeats dead-store elimination by the JIT —
-  // the optimizer can't prove these random bytes are unused, so it keeps the write).
-  // Then fill with zeros. Two writes > one write for secure wiping in JS.
+  try {
+    const adapter = require('./native-crypto-adapter');
+    if (adapter.isNativeCryptoAvailable()) {
+      adapter.secureZero(arr);
+      return;
+    }
+  } catch { /* adapter not loaded yet */ }
+
+  // Fallback: random overwrite then zero (defeats dead-store elimination)
   try {
     const random = getRandomBytes(arr.length);
     arr.set(random);
-  } catch {
-    // If getRandomBytes fails (shouldn't in practice), fall back to fill
-  }
+  } catch {}
   arr.fill(0);
 }
