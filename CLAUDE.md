@@ -73,6 +73,31 @@ apps/e2e-server/   — Go E2E Key Server (Signal Protocol)
 - zeroOut: OPENSSL_cleanse (defeats dead-store elimination)
 - Fallback: @noble/* pure JS when native unavailable (Jest, Expo Go)
 
+## Technical Debt — DO NOT FORGET
+
+### Media Speed (NOT Telegram-fast yet)
+- **Crypto is fast** — react-native-quick-crypto makes encrypt/decrypt ~5-20ms for 5MB (was ~200-500ms)
+- **Network is the bottleneck** — R2 upload/download is ~1-3s on 4G, unchanged by crypto speedup
+- To match Telegram's perceived speed, need:
+  - **Progressive image loading** — show blurry thumbnail instantly, sharpen as data arrives
+  - **Pre-upload during compose** — start uploading while user types caption (before tap send)
+  - **Cloudflare CDN edge caching** — R2 + Workers for global edge delivery
+  - **Streaming decrypt + display** — start showing media before full download completes
+- Current total: ~2-3s for 5MB photo (crypto fast, network slow). Telegram: <1s (custom CDN + pre-upload)
+
+### V7 Audit (14 findings, being fixed in separate session)
+- V7-F1 (CRITICAL): NaN counter poisoning bypasses sealed sender replay protection
+- V7-F2 (HIGH): No sender certificates in sealed sender (Signal has this, we don't)
+- V7-F3 (HIGH): Transparency root has no freshness/expiry check
+- V7-F4 to V7-F14: 11 medium/low findings (see docs/audit/MASTER_AUDIT_PROMPT_V2.md)
+
+### External Blockers (no code fix possible)
+- Apple Developer enrollment ($99) → EAS build → cert pinning activates → TestFlight
+- Device attestation (Play Integrity / App Attest) → needs native modules + device
+- Formal verification (Tamarin/ProVerif) → $50-100K project
+- Professional audit (Cure53/NCC/Trail of Bits) → $50-100K
+- Zero real-device testing — all E2E code untested on actual hardware
+
 ## Standing Rules — DO NOT FORGET
 - **Prisma schema field names are FINAL** — never rename.
 - **Islamic data curated by user personally** — never AI-generate Quran, hadith, or prayer content.
