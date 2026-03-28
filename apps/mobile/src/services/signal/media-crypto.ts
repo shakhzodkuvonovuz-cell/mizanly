@@ -439,7 +439,11 @@ function arrayBufferToBase64(bytes: Uint8Array): string {
 function base64ToArrayBuffer(base64: string): Uint8Array {
   if (typeof Buffer !== 'undefined') {
     const buf = Buffer.from(base64, 'base64');
-    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    // Codex-V7-F12 FIX: Copy to detached array. Previously returned a view into
+    // Buffer's shared pool — adjacent slab contents visible to memory scrapers.
+    const out = new Uint8Array(buf.byteLength);
+    out.set(new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
+    return out;
   }
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);

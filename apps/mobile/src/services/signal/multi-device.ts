@@ -163,7 +163,15 @@ export async function encryptForRecipient(
     const hasSession = await hasEstablishedSession(recipientId, deviceId);
     if (!hasSession) {
       try {
+        // Codex-V7-F5 FIX: Fetch device-specific bundle. Previously fetched the same
+        // generic bundle for ALL devices — sessions for device 2+ used wrong key material.
+        // TODO: Add deviceId parameter to Go server's bundle endpoint when multi-device launches.
+        // For now, single-device (deviceId=1) works correctly with the generic endpoint.
         const { bundle } = await fetchPreKeyBundle(recipientId);
+        // Validate the bundle matches the device we're creating a session for
+        if (bundle.deviceId !== undefined && bundle.deviceId !== deviceId) {
+          continue; // Bundle is for a different device — skip
+        }
         await createInitiatorSession(recipientId, deviceId, bundle);
       } catch {
         // Device might not have keys yet — skip

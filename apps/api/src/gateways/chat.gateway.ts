@@ -604,14 +604,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       conversationId: data.conversationId,
     });
 
-    // V6-F1b: Persist with senderId=null — the sender's identity is inside the sealed
-    // envelope (encryptedContent). The DB record does NOT reveal who sent the message.
-    // The recipient unseals the envelope to discover the sender.
+    // Codex-V7-F2 FIX: Persist with senderId from authenticated socket.
+    // Previously: senderId=null → history render can't determine sender after app restart.
+    // The sealed envelope hides the sender from TRANSPORT (socket logs, routing).
+    // But the persisted DB record NEEDS the senderId for history/undo/receipts.
+    // The sender's identity is ALSO inside the sealed envelope (defense-in-depth),
+    // so even if the DB is compromised, the inner encryption layer protects content.
     let message;
     try {
       message = await this.messagesService.sendMessage(
         data.conversationId,
-        null, // V6-F1b: sealed sender — no senderId in DB
+        client.data.userId, // Codex-V7-F2: Use authenticated userId for persistence
         {
           _sealedSender: true,
           messageType: data.messageType || 'TEXT',
@@ -622,12 +625,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
           ...(data.e2eCounter !== undefined ? { e2eCounter: data.e2eCounter } : {}),
           ...(data.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: data.e2ePreviousCounter } : {}),
           ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
+          // Codex-V7-F2: Persist sealed envelope fields for later unsealing from history
+          ...(data.ephemeralKey ? { e2eSealedEphemeralKey: data.ephemeralKey } : {}),
+          ...(data.sealedCiphertext ? { e2eSealedCiphertext: data.sealedCiphertext } : {}),
           _skipRedisPublish: true,
         } as any,
       );
     } catch {
-      // Persistence failed but routing succeeded — message was delivered
-      return { success: true };
+      // Codex-V7-F3 FIX: Persistence failure = message NOT delivered durably.
+      // Previously returned { success: true } — sender thought message was stored. It wasn't.
+      throw new WsException('Failed to persist sealed message');
     }
 
     return { success: true, messageId: message?.id, clientMessageId: data.clientMessageId, createdAt: message?.createdAt };

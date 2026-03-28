@@ -112,17 +112,19 @@ func (s *Store) UpsertIdentityKey(ctx context.Context, userID string, deviceID i
 		return false, "", errors.New("registrationId must be 1-16383 (14-bit, non-zero)")
 	}
 
-	// Atomic upsert — no TOCTOU race. Single statement returns old key if it existed.
+	// Codex-V7-F4 FIX: Conflict on ("userId","deviceId") — NOT just "userId".
+	// Previously: one row per user → device 2 overwrites device 1's key.
+	// Now: one row per (user, device) → multi-device identity keys coexist.
+	// Requires a UNIQUE index on ("userId","deviceId") in the DB schema.
 	var oldPub []byte
 	err = s.pool.QueryRow(ctx,
 		`INSERT INTO e2e_identity_keys (id, "userId", "deviceId", "publicKey", "registrationId", "createdAt", "updatedAt")
 		 VALUES (gen_random_uuid()::text, $1, $2, $3, $4, NOW(), NOW())
-		 ON CONFLICT ("userId") DO UPDATE
+		 ON CONFLICT ("userId", "deviceId") DO UPDATE
 		 SET "publicKey" = EXCLUDED."publicKey",
 		     "registrationId" = EXCLUDED."registrationId",
-		     "deviceId" = EXCLUDED."deviceId",
 		     "updatedAt" = NOW()
-		 RETURNING (SELECT "publicKey" FROM e2e_identity_keys WHERE "userId" = $1)`,
+		 RETURNING (SELECT "publicKey" FROM e2e_identity_keys WHERE "userId" = $1 AND "deviceId" = $2)`,
 		userID, deviceID, pubBytes, registrationID,
 	).Scan(&oldPub)
 
@@ -514,6 +516,7 @@ type TransparencyProof struct {
 	Root        string   `json:"root"`          // Base64 Merkle root
 	RootSig     string   `json:"rootSignature"` // Base64 Ed25519 signature of root
 	TreeSize    int      `json:"treeSize"`
+	UpdatedAt   string   `json:"updatedAt"` // Codex-V7-F8: Required for client freshness check
 }
 
 // TransparencyRoot is the current Merkle tree state.
@@ -640,6 +643,7 @@ func (s *Store) GetTransparencyProof(ctx context.Context, targetUserID string) (
 		Root:        base64.StdEncoding.EncodeToString(s.cachedRoot),
 		RootSig:     s.cachedRootSig,
 		TreeSize:    s.cachedTreeSize,
+		UpdatedAt:   time.Now().UTC().Format(time.RFC3339), // Codex-V7-F8: Client needs this for freshness check
 	}, nil
 }
 

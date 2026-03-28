@@ -1114,16 +1114,19 @@ export default function ConversationScreen() {
       socket.emit('join_conversation', { conversationId: id });
       // Refetch messages to catch any missed during disconnection
       queryClient.invalidateQueries({ queryKey: ['messages', id] });
-      // Retry pending messages on reconnect
-      const pending = pendingMessagesRef.current.filter(p => p.status === 'pending');
+      // Codex-V7-F1 FIX: Retry pending messages using the ENCRYPTED payload only.
+      // Previously sent raw p.content in plaintext — complete E2E bypass on reconnect.
+      // Now: only retry messages that have e2ePayload (already encrypted before disconnect).
+      // Messages without e2ePayload are dropped — they were never encrypted and MUST NOT be sent.
+      const pending = pendingMessagesRef.current.filter(p => p.status === 'pending' && p.e2ePayload);
       pending.forEach(p => {
-        socket.emit('send_message', {
-          conversationId: id,
-          content: p.content,
-          replyToId: p.replyToId,
-          messageType: 'TEXT',
-          clientId: p.id,
-        });
+        if (p.e2ePayload) {
+          emitEncryptedMessage({
+            e2ePayload: p.e2ePayload,
+            replyToId: p.replyToId,
+            sealedEnvelope: (p as any).sealedEnvelope,
+          });
+        }
       });
     };
 
@@ -1667,30 +1670,61 @@ export default function ConversationScreen() {
         height: asset.height,
       });
 
-      // Encrypt metadata via Signal Protocol and send via socket
+      // Codex-V7-F7+F6 FIX: Encrypt media for group (sender keys) OR 1:1 (Double Ratchet).
+      // Previously: always used 1:1 signalEncrypt to otherMember — in groups, only one
+      // member could decrypt. Now mirrors the text send path's group/1:1 branching.
+      // F6: Wrap type inside ciphertext — server sees opaque 'TEXT', not 'IMAGE'.
       const convoData = convoQuery.data;
-      const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
-      if (otherMember?.userId) {
-        const has = await hasEstablishedSession(otherMember.userId);
-        if (!has) {
-          const { bundle } = await fetchPreKeyBundle(otherMember.userId);
-          await createInitiatorSession(otherMember.userId, 1, bundle);
+      const isGroup = convoData?.isGroup === true;
+      const wrappedMedia = JSON.stringify({ t: 'IMAGE', c: mediaPayload });
+      const clientMessageId = `media_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+      if (isGroup) {
+        // Group: use sender keys (O(1) encrypt for all members)
+        let senderKeyMsg;
+        try {
+          senderKeyMsg = await encryptGroupMessage(id, wrappedMedia);
+        } catch (err) {
+          if (String(err).includes('No sender key')) {
+            await generateSenderKey(id);
+            senderKeyMsg = await encryptGroupMessage(id, wrappedMedia);
+          } else { throw err; }
         }
-        const signalMsg = await signalEncrypt(otherMember.userId, 1, mediaPayload);
-        const clientMessageId = `media_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         emitEncryptedMessage({
           e2ePayload: {
-            encryptedContent: toBase64(signalMsg.ciphertext),
+            encryptedContent: toBase64(senderKeyMsg.ciphertext),
             e2eVersion: 1,
             e2eSenderDeviceId: 1,
-            e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
-            e2eCounter: signalMsg.header.counter,
-            e2ePreviousCounter: signalMsg.header.previousCounter,
+            e2eSenderRatchetKey: toBase64(senderKeyMsg.signature),
+            e2eCounter: senderKeyMsg.counter,
+            e2ePreviousCounter: senderKeyMsg.generation,
             clientMessageId,
-            messageType: 'IMAGE',
+            e2eSenderKeyId: senderKeyMsg.chainId,
           },
           replyToId: replyTo?.id,
         });
+      } else {
+        const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
+        if (otherMember?.userId) {
+          const has = await hasEstablishedSession(otherMember.userId);
+          if (!has) {
+            const { bundle } = await fetchPreKeyBundle(otherMember.userId);
+            await createInitiatorSession(otherMember.userId, 1, bundle);
+          }
+          const signalMsg = await signalEncrypt(otherMember.userId, 1, wrappedMedia);
+          emitEncryptedMessage({
+            e2ePayload: {
+              encryptedContent: toBase64(signalMsg.ciphertext),
+              e2eVersion: 1,
+              e2eSenderDeviceId: 1,
+              e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
+              e2eCounter: signalMsg.header.counter,
+              e2ePreviousCounter: signalMsg.header.previousCounter,
+              clientMessageId,
+            },
+            replyToId: replyTo?.id,
+          });
+        }
       }
       haptic.success();
       setReplyTo(null);
@@ -1789,29 +1823,57 @@ export default function ConversationScreen() {
         duration: recordingTime,
       });
 
+      // Codex-V7-F7+F6 FIX: Group voice uses sender keys, type wrapped inside ciphertext
       const convoData = convoQuery.data;
-      const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
-      if (otherMember?.userId) {
-        const has = await hasEstablishedSession(otherMember.userId);
-        if (!has) {
-          const { bundle } = await fetchPreKeyBundle(otherMember.userId);
-          await createInitiatorSession(otherMember.userId, 1, bundle);
+      const isGroup = convoData?.isGroup === true;
+      const wrappedVoice = JSON.stringify({ t: 'VOICE', c: voicePayload });
+      const clientMessageId = `voice_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+      if (isGroup) {
+        let senderKeyMsg;
+        try {
+          senderKeyMsg = await encryptGroupMessage(id, wrappedVoice);
+        } catch (err) {
+          if (String(err).includes('No sender key')) {
+            await generateSenderKey(id);
+            senderKeyMsg = await encryptGroupMessage(id, wrappedVoice);
+          } else { throw err; }
         }
-        const signalMsg = await signalEncrypt(otherMember.userId, 1, voicePayload);
-        const clientMessageId = `voice_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         emitEncryptedMessage({
           e2ePayload: {
-            encryptedContent: toBase64(signalMsg.ciphertext),
+            encryptedContent: toBase64(senderKeyMsg.ciphertext),
             e2eVersion: 1,
             e2eSenderDeviceId: 1,
-            e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
-            e2eCounter: signalMsg.header.counter,
-            e2ePreviousCounter: signalMsg.header.previousCounter,
+            e2eSenderRatchetKey: toBase64(senderKeyMsg.signature),
+            e2eCounter: senderKeyMsg.counter,
+            e2ePreviousCounter: senderKeyMsg.generation,
             clientMessageId,
-            messageType: 'VOICE',
+            e2eSenderKeyId: senderKeyMsg.chainId,
           },
           replyToId: replyTo?.id,
         });
+      } else {
+        const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
+        if (otherMember?.userId) {
+          const has = await hasEstablishedSession(otherMember.userId);
+          if (!has) {
+            const { bundle } = await fetchPreKeyBundle(otherMember.userId);
+            await createInitiatorSession(otherMember.userId, 1, bundle);
+          }
+          const signalMsg = await signalEncrypt(otherMember.userId, 1, wrappedVoice);
+          emitEncryptedMessage({
+            e2ePayload: {
+              encryptedContent: toBase64(signalMsg.ciphertext),
+              e2eVersion: 1,
+              e2eSenderDeviceId: 1,
+              e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
+              e2eCounter: signalMsg.header.counter,
+              e2ePreviousCounter: signalMsg.header.previousCounter,
+              clientMessageId,
+            },
+            replyToId: replyTo?.id,
+          });
+        }
       }
       setReplyTo(null);
       haptic.success();
@@ -2615,35 +2677,64 @@ export default function ConversationScreen() {
         visible={showGifPicker}
         onClose={() => setShowGifPicker(false)}
         onSelect={async (gifUrl) => {
-          // Encrypt GIF URL as message content via Signal Protocol
+          // Codex-V7-F7+F6 FIX: Group GIF uses sender keys. Type + URL wrapped inside ciphertext.
+          // Previously: 1:1 encrypt only + mediaUrl in cleartext outside ciphertext.
           const convoData = convoQuery.data;
-          const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
-          if (otherMember?.userId) {
-            try {
-              const hasSession = await hasEstablishedSession(otherMember.userId);
-              if (!hasSession) {
-                const { bundle } = await fetchPreKeyBundle(otherMember.userId);
-                await createInitiatorSession(otherMember.userId, 1, bundle);
+          const isGroup = convoData?.isGroup === true;
+          // F6: Wrap GIF URL and type INSIDE the ciphertext — server sees opaque blob only
+          const wrappedGif = JSON.stringify({ t: 'GIF', c: gifUrl });
+          const clientMessageId = `gif_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+          try {
+            if (isGroup) {
+              let senderKeyMsg;
+              try {
+                senderKeyMsg = await encryptGroupMessage(id, wrappedGif);
+              } catch (err) {
+                if (String(err).includes('No sender key')) {
+                  await generateSenderKey(id);
+                  senderKeyMsg = await encryptGroupMessage(id, wrappedGif);
+                } else { throw err; }
               }
-              const signalMsg = await signalEncrypt(otherMember.userId, 1, gifUrl);
-              const clientMessageId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
               emitEncryptedMessage({
                 e2ePayload: {
-                  encryptedContent: toBase64(signalMsg.ciphertext),
+                  encryptedContent: toBase64(senderKeyMsg.ciphertext),
                   e2eVersion: 1,
                   e2eSenderDeviceId: 1,
-                  e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
-                  e2eCounter: signalMsg.header.counter,
-                  e2ePreviousCounter: signalMsg.header.previousCounter,
+                  e2eSenderRatchetKey: toBase64(senderKeyMsg.signature),
+                  e2eCounter: senderKeyMsg.counter,
+                  e2ePreviousCounter: senderKeyMsg.generation,
                   clientMessageId,
+                  e2eSenderKeyId: senderKeyMsg.chainId,
                 },
-                messageType: 'GIF',
-                mediaUrl: gifUrl,
                 replyToId: replyTo?.id,
+                // F6: NO messageType or mediaUrl outside ciphertext
               });
-            } catch {
-              showToast({ message: t('errors.encryptionFailed'), variant: 'error' });
+            } else {
+              const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
+              if (otherMember?.userId) {
+                const hasSession = await hasEstablishedSession(otherMember.userId);
+                if (!hasSession) {
+                  const { bundle } = await fetchPreKeyBundle(otherMember.userId);
+                  await createInitiatorSession(otherMember.userId, 1, bundle);
+                }
+                const signalMsg = await signalEncrypt(otherMember.userId, 1, wrappedGif);
+                emitEncryptedMessage({
+                  e2ePayload: {
+                    encryptedContent: toBase64(signalMsg.ciphertext),
+                    e2eVersion: 1,
+                    e2eSenderDeviceId: 1,
+                    e2eSenderRatchetKey: toBase64(signalMsg.header.senderRatchetKey),
+                    e2eCounter: signalMsg.header.counter,
+                    e2ePreviousCounter: signalMsg.header.previousCounter,
+                    clientMessageId,
+                  },
+                  replyToId: replyTo?.id,
+                });
+              }
             }
+          } catch {
+            showToast({ message: t('errors.encryptionFailed'), variant: 'error' });
           }
           setShowGifPicker(false);
           setReplyTo(null);

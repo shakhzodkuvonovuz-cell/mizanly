@@ -126,6 +126,8 @@ export async function initialize(
   e2eServerUrl: string,
   authTokenProvider: () => Promise<string>,
   topConversationUserIds: string[] = [],
+  /** Codex-V7-F11: Authenticated user ID for self key-transparency check */
+  authenticatedUserId?: string,
 ): Promise<void> {
   if (initialized) return;
 
@@ -215,9 +217,12 @@ export async function initialize(
   // C6: Key transparency — verify our own key is consistent with the server's Merkle log.
   // Runs in background after initialization. If the server returns a proof that doesn't
   // match our locally stored key, it means the server substituted a different key (MITM).
+  // Codex-V7-F11 FIX: Use actual authenticated userId, not literal 'self'.
+  // Previously queried /transparency/self — the Go server looked for a user called "self".
+  const selfUserId = authenticatedUserId;
   import('./key-transparency').then(({ verifyKeyTransparency }) => {
-    if (!identityKeyPair) return;
-    verifyKeyTransparency('self', async (userId: string) => {
+    if (!identityKeyPair || !selfUserId) return;
+    verifyKeyTransparency(selfUserId, async (userId: string) => {
       try {
         const response = await fetch(
           `${e2eServerUrl}/api/v1/e2e/transparency/${encodeURIComponent(userId)}`,
@@ -292,32 +297,27 @@ async function cleanupDecryptedMediaFiles(): Promise<void> {
  * The server sees the batch but can't distinguish "top contact" from "random user"
  * since the batch endpoint is also used for group session establishment.
  */
+/**
+ * Codex-V7-F10 FIX: Pre-warming no longer creates NEW sessions (which consume OTPs).
+ * It only "warms" the code path for users who ALREADY have established sessions.
+ * New sessions are created lazily on first message send (where OTP consumption is justified).
+ *
+ * Previously: fetched bundles for 10 contacts on every app launch → consumed 10 OTPs
+ * per launch even if the user never sends those contacts a message. Over time, this
+ * drains the OTP pool and degrades first-contact forward secrecy.
+ *
+ * Now: checks which contacts already have sessions (no network call needed).
+ * Returns early — the actual performance gain was already achieved when sessions
+ * were established during previous message exchanges.
+ */
 async function preWarmSessions(userIds: string[]): Promise<string[]> {
-  const toWarm: string[] = [];
+  // Codex-V7-F10: Only verify existing sessions are loadable. No new sessions, no OTP consumption.
+  const warmed: string[] = [];
   for (const userId of userIds.slice(0, 10)) {
     const has = await hasEstablishedSession(userId);
-    if (!has) toWarm.push(userId);
+    if (has) warmed.push(userId);
   }
-  if (toWarm.length === 0) return [];
-
-  const established: string[] = [];
-  try {
-    // Single batch request — server sees one opaque batch, not individual fetches
-    const bundles = await fetchPreKeyBundlesBatch(toWarm);
-    for (const [userId, bundleResponse] of bundles) {
-      try {
-        await createInitiatorSession(userId, 1, bundleResponse.bundle);
-        established.push(userId);
-        recordE2EEvent({ event: 'session_established', metadata: { preWarmed: true } });
-      } catch {
-        // Individual session failure — non-fatal
-      }
-    }
-  } catch {
-    // Batch fetch failed — will establish lazily on first message
-  }
-
-  return established;
+  return warmed;
 }
 
 // ============================================================
