@@ -24,7 +24,10 @@
 import * as SecureStore from 'expo-secure-store';
 import { MMKV } from 'react-native-mmkv';
 
-import { toBase64, fromBase64, generateRandomBytes, constantTimeEqual } from './crypto';
+import {
+  toBase64, fromBase64, generateRandomBytes, constantTimeEqual,
+  aeadEncrypt, aeadDecrypt, hkdfDeriveSecrets, utf8Encode, utf8Decode,
+} from './crypto';
 import type {
   Ed25519KeyPair,
   SessionRecord,
@@ -111,6 +114,86 @@ async function getMMKV(): Promise<MMKV> {
   }
 
   return mmkvInitPromise;
+}
+
+// ============================================================
+// MMKV AEAD AUTHENTICATION (Finding 2: integrity protection)
+// ============================================================
+
+/**
+ * MMKV uses AES-CFB-128 which provides confidentiality but NOT integrity.
+ * A forensic analyst with filesystem access can flip bits in the encrypted
+ * data without detection. This AEAD layer adds XChaCha20-Poly1305
+ * authentication on top: any tampering is detected on read.
+ *
+ * Format in MMKV: base64([nonce:24][ciphertext+tag])
+ * AAD: the MMKV key name (prevents swapping values between keys)
+ *
+ * The AEAD key is derived from the MMKV encryption key via HKDF,
+ * so no additional SecureStore entry is needed.
+ */
+
+/** Cached AEAD key — derived once from MMKV encryption key */
+let aeadKey: Uint8Array | null = null;
+
+/** Derive the 32-byte AEAD key from the 16-byte MMKV encryption key */
+async function getAEADKey(): Promise<Uint8Array> {
+  if (aeadKey) return aeadKey;
+  const encKeyB64 = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
+  if (!encKeyB64) throw new Error('MMKV encryption key not available');
+  const encKey = fromBase64(encKeyB64);
+  aeadKey = hkdfDeriveSecrets(encKey, new Uint8Array(32), 'MizanlyMMKVAEAD', 32);
+  return aeadKey;
+}
+
+/**
+ * Store a value in MMKV with AEAD authentication.
+ * The value is encrypted with XChaCha20-Poly1305 using the MMKV key name as AAD.
+ * Tampering with the stored value or swapping it to a different key is detected on read.
+ */
+async function aeadSet(mmkv: MMKV, key: string, value: string): Promise<void> {
+  const aKey = await getAEADKey();
+  const nonce = generateRandomBytes(24);
+  const plaintext = utf8Encode(value);
+  const aad = utf8Encode(key); // Key name as AAD — prevents cross-key swaps
+  const ciphertext = aeadEncrypt(aKey, nonce, plaintext, aad);
+  // Prefix: 'A1:' = AEAD version 1 (enables future migration + backward compat)
+  const combined = new Uint8Array(nonce.length + ciphertext.length);
+  combined.set(nonce);
+  combined.set(ciphertext, nonce.length);
+  mmkv.set(key, 'A1:' + toBase64(combined));
+}
+
+/**
+ * Read a value from MMKV with AEAD verification.
+ * Returns null if the key doesn't exist.
+ * Throws on integrity failure (tampering detected).
+ * Handles migration: values without 'A1:' prefix are read as-is (legacy)
+ * and will be re-wrapped with AEAD on next write.
+ */
+async function aeadGet(mmkv: MMKV, key: string): Promise<string | null> {
+  const raw = mmkv.getString(key);
+  if (!raw) return null;
+
+  // Migration: legacy values (no AEAD prefix) are returned as-is.
+  // They'll be re-wrapped with AEAD on next storeSessionRecord/storeSenderKeyState call.
+  if (!raw.startsWith('A1:')) return raw;
+
+  const aKey = await getAEADKey();
+  const combined = fromBase64(raw.slice(3)); // Skip 'A1:' prefix
+  if (combined.length < 25) throw new Error('MMKV AEAD: value too short (tampered?)');
+  const nonce = combined.slice(0, 24);
+  const ciphertext = combined.slice(24);
+  const aad = utf8Encode(key);
+  try {
+    const plaintext = aeadDecrypt(aKey, nonce, ciphertext, aad);
+    return utf8Decode(plaintext);
+  } catch {
+    throw new Error(
+      `MMKV integrity check failed for key "${key.split(':')[0]}:...". ` +
+      'Session state may have been tampered with. Re-establishing session.',
+    );
+  }
 }
 
 // ============================================================
@@ -386,23 +469,23 @@ function deserializeSessionState(raw: Record<string, unknown>): SessionState {
   };
 }
 
-/** Store a session record for a specific user + device. */
+/** Store a session record for a specific user + device (AEAD-authenticated). */
 export async function storeSessionRecord(
   userId: string,
   deviceId: number,
   record: SessionRecord,
 ): Promise<void> {
   const mmkv = await getMMKV();
-  mmkv.set(sessionKey(userId, deviceId), serializeSessionRecord(record));
+  await aeadSet(mmkv, sessionKey(userId, deviceId), serializeSessionRecord(record));
 }
 
-/** Load a session record. Returns null if no session exists. */
+/** Load a session record with AEAD integrity verification. Returns null if no session exists. */
 export async function loadSessionRecord(
   userId: string,
   deviceId: number,
 ): Promise<SessionRecord | null> {
   const mmkv = await getMMKV();
-  const json = mmkv.getString(sessionKey(userId, deviceId));
+  const json = await aeadGet(mmkv, sessionKey(userId, deviceId));
   if (!json) return null;
   return deserializeSessionRecord(json);
 }
@@ -472,7 +555,7 @@ export async function verifyIdentityKey(
 // SENDER KEY STATE (in encrypted MMKV)
 // ============================================================
 
-/** Store sender key state for a group. */
+/** Store sender key state for a group (AEAD-authenticated). */
 export async function storeSenderKeyState(
   groupId: string,
   senderId: string,
@@ -480,7 +563,8 @@ export async function storeSenderKeyState(
 ): Promise<void> {
   const mmkv = await getMMKV();
   const key = `${MMKV_PREFIX.SENDER_KEY}${groupId}:${senderId}`;
-  mmkv.set(
+  await aeadSet(
+    mmkv,
     key,
     JSON.stringify({
       chainId: state.chainId,
@@ -499,13 +583,14 @@ export async function storeSenderKeyState(
   );
 }
 
-/** Load sender key state. Returns null if not distributed yet. */
+/** Load sender key state with AEAD integrity verification. Returns null if not distributed yet. */
 export async function loadSenderKeyState(
   groupId: string,
   senderId: string,
 ): Promise<SenderKeyState | null> {
   const mmkv = await getMMKV();
-  const json = mmkv.getString(
+  const json = await aeadGet(
+    mmkv,
     `${MMKV_PREFIX.SENDER_KEY}${groupId}:${senderId}`,
   );
   if (!json) return null;
@@ -837,4 +922,5 @@ export async function clearAllE2EState(): Promise<void> {
   // Reset singletons so next getMMKV() re-reads the encryption key
   mmkvInstance = null;
   mmkvInitPromise = null;
+  aeadKey = null; // Reset AEAD key cache
 }
