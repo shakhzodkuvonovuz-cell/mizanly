@@ -10,7 +10,31 @@
       "mcp__brave-search__brave_web_search",
       "mcp__plugin_context7_context7__resolve-library-id",
       "mcp__filesystem__list_directory",
-      "mcp__filesystem__read_text_file"
+      "mcp__filesystem__read_text_file",
+      "mcp__filesystem__write_file"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if the task given by the user is fully complete. Were tests run and passing? Were all requested items addressed, not just some? If anything is incomplete or unverified, respond with {\"ok\": false, \"reason\": \"what remains\"}."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /c/dev/mizanly/apps/mobile && npx tsc --noEmit 2>&1 | tail -5 || true"
+          }
+        ]
+      }
     ]
   }
 }
