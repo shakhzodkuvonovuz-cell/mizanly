@@ -297,3 +297,18 @@ export { clearAllE2EState };
 
 // Key backup (C5)
 export { exportAllState, importAllState };
+
+// Sealed sender (C11)
+export { sealMessage, unsealMessage } from './sealed-sender';
+
+// PQXDH (C10)
+export { isPQXDHAvailable, deriveHybridSecret, negotiatePQVersion } from './pqxdh';
+
+// Multi-device (C4)
+export { encryptForRecipient, getDeviceIds, generateDeviceLinkCode, verifyDeviceLinkCode } from './multi-device';
+
+// Key transparency (C6)
+export { verifyKeyTransparency, verifyMerkleProof } from './key-transparency';
+
+// Native crypto adapter (C13)
+export { isNativeCryptoAvailable } from './native-crypto-adapter';

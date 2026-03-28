@@ -1124,9 +1124,32 @@ export default function ConversationScreen() {
       setTimeout(() => {
         newMessageIdsRef.current.delete(msg.id);
       }, 500);
-      // Emit delivery receipt so the sender gets confirmation
+      // C8: Emit E2E-encrypted delivery receipt.
+      // The server routes by conversationId (needs to see it), but the messageId
+      // is encrypted so the server can't correlate which specific message was read.
       if (msg.sender?.id !== user?.id) {
-        socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
+        const senderId = msg.sender?.id;
+        if (senderId) {
+          hasEstablishedSession(senderId).then(has => {
+            if (has) {
+              signalEncrypt(senderId, 1, JSON.stringify({ type: 'delivery_receipt', messageId: msg.id }))
+                .then(encReceipt => {
+                  socket.emit('message_delivered', {
+                    conversationId: id,
+                    encryptedReceipt: toBase64(encReceipt.ciphertext),
+                    e2eSenderRatchetKey: toBase64(encReceipt.header.senderRatchetKey),
+                    e2eCounter: encReceipt.header.counter,
+                  });
+                })
+                .catch(() => {
+                  // Fallback: send plaintext receipt (non-fatal)
+                  socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
+                });
+            } else {
+              socket.emit('message_delivered', { messageId: msg.id, conversationId: id });
+            }
+          });
+        }
       }
     };
 
@@ -1718,16 +1741,47 @@ export default function ConversationScreen() {
     scrollToMessageIndex(index);
   }, [scrollToMessageIndex]);
 
+  // C9: Typing indicators — encrypt the typing state so the server
+  // can route by conversationId but can't read the payload content.
+  const emitTyping = useCallback((typing: boolean) => {
+    const convoData = convoQuery.data;
+    const otherMember = convoData?.members?.find((m: ConversationMember) => m.userId !== user?.id);
+    const recipientId = otherMember?.userId;
+    if (recipientId && !convoData?.isGroup) {
+      // Encrypt typing state for 1:1 chats (groups: server needs to broadcast to all members)
+      hasEstablishedSession(recipientId).then(has => {
+        if (has) {
+          signalEncrypt(recipientId, 1, JSON.stringify({ type: 'typing', isTyping: typing }))
+            .then(enc => {
+              socketRef.current?.emit('typing', {
+                conversationId: id,
+                encryptedPayload: toBase64(enc.ciphertext),
+                e2eSenderRatchetKey: toBase64(enc.header.senderRatchetKey),
+                e2eCounter: enc.header.counter,
+              });
+            })
+            .catch(() => {
+              socketRef.current?.emit('typing', { conversationId: id, isTyping: typing });
+            });
+        } else {
+          socketRef.current?.emit('typing', { conversationId: id, isTyping: typing });
+        }
+      });
+    } else {
+      socketRef.current?.emit('typing', { conversationId: id, isTyping: typing });
+    }
+  }, [id, convoQuery.data, user?.id]);
+
   const handleChangeText = (val: string) => {
     setText(val);
     if (!isTyping) {
       setIsTyping(true);
-      socketRef.current?.emit('typing', { conversationId: id, isTyping: true });
+      emitTyping(true);
     }
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => {
       setIsTyping(false);
-      socketRef.current?.emit('typing', { conversationId: id, isTyping: false });
+      emitTyping(false);
     }, 2000);
   };
 
