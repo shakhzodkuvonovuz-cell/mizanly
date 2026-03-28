@@ -175,8 +175,8 @@ describe('group message encrypt/decrypt', () => {
   it('duplicate message (same counter) rejected', async () => {
     const m1 = await encryptGroupMessage('group1', 'once');
     await decryptGroupMessage('group1', 'sender1', m1);
-    // Replay — counter is now behind chain position
-    await expect(decryptGroupMessage('group1', 'sender1', m1)).rejects.toThrow('behind');
+    // Replay — caught by dedup check (Finding 15) before chain position check
+    await expect(decryptGroupMessage('group1', 'sender1', m1)).rejects.toThrow('Replayed group message');
   });
 
   it('out-of-order: skip one message, then decrypt it via skipped key', async () => {
@@ -221,13 +221,13 @@ describe('group message encrypt/decrypt', () => {
   it('wrong chain ID rejected', async () => {
     const msg = await encryptGroupMessage('group1', 'test');
     const wrongChain: SenderKeyMessage = { ...msg, chainId: msg.chainId + 1 };
-    await expect(decryptGroupMessage('group1', 'sender1', wrongChain)).rejects.toThrow('chain ID');
+    await expect(decryptGroupMessage('group1', 'sender1', wrongChain)).rejects.toThrow('mismatch');
   });
 
   it('newer generation rejected', async () => {
     const msg = await encryptGroupMessage('group1', 'test');
     const futureGen: SenderKeyMessage = { ...msg, generation: 5 };
-    await expect(decryptGroupMessage('group1', 'sender1', futureGen)).rejects.toThrow('newer');
+    await expect(decryptGroupMessage('group1', 'sender1', futureGen)).rejects.toThrow('mismatch');
   });
 
   it('older generation rejected', async () => {
@@ -243,7 +243,7 @@ describe('group message encrypt/decrypt', () => {
 
     // Fake a message claiming to be generation 0 (old)
     const oldGenMsg: SenderKeyMessage = { ...msg, generation: 0 };
-    await expect(decryptGroupMessage('group1', 'sender1', oldGenMsg)).rejects.toThrow('older');
+    await expect(decryptGroupMessage('group1', 'sender1', oldGenMsg)).rejects.toThrow('outdated');
   });
 
   it('Arabic and emoji content', async () => {

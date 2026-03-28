@@ -47,6 +47,7 @@ import {
   storeSenderSigningPrivate,
   loadSenderSigningPrivate,
   deleteSenderSigningPrivate,
+  checkGroupMessageDedup,
 } from './storage';
 import type {
   SenderKeyState,
@@ -104,7 +105,7 @@ export async function generateSenderKey(
     counter: 0,
     signingKeyPair: {
       publicKey: signingKeyPair.publicKey,
-      privateKey: new Uint8Array(32), // Placeholder — real key in SecureStore
+      privateKey: new Uint8Array(32).fill(0xde), // Sentinel — real key in SecureStore. 0xDE bytes produce invalid Ed25519 signatures if accidentally used.
     },
   };
 
@@ -156,8 +157,8 @@ export async function encryptGroupMessage(
   const state = await loadSenderKeyState(groupId, 'self');
   if (!state) {
     throw new Error(
-      `No sender key for group ${groupId}. ` +
-        'Call generateSenderKey() and distribute before sending.',
+      'No sender key for this group. ' +
+        'Generate and distribute a sender key before sending.',
     );
   }
 
@@ -192,8 +193,8 @@ export async function encryptGroupMessage(
   const signingPrivate = await loadSenderSigningPrivate(groupId);
   if (!signingPrivate) {
     throw new Error(
-      `Sender signing key not found in SecureStore for group ${groupId}. ` +
-        'The key may have been deleted. Regenerate with generateSenderKey().',
+      'Sender signing key not found in SecureStore. ' +
+        'The key may have been deleted. Regenerate the sender key.',
     );
   }
 
@@ -255,7 +256,7 @@ export async function decryptGroupMessage(
   const state = await loadSenderKeyState(groupId, senderId);
   if (!state) {
     throw new Error(
-      `No sender key from ${senderId} for group ${groupId}. ` +
+      'No sender key from this member for this group. ' +
         'Waiting for sender key distribution. [Waiting for encryption keys...]',
     );
   }
@@ -263,22 +264,19 @@ export async function decryptGroupMessage(
   // Check generation — must match exactly
   if (message.generation > state.generation) {
     throw new Error(
-      `Sender key generation ${message.generation} is newer than stored ${state.generation}. ` +
-        'Waiting for updated sender key distribution.',
+      'Sender key version mismatch — waiting for updated key distribution.',
     );
   }
   if (message.generation < state.generation) {
     throw new Error(
-      `Sender key generation ${message.generation} is older than stored ${state.generation}. ` +
-        'This message was sent before a key rotation and cannot be decrypted.',
+      'Sender key version is outdated — message was sent before a key rotation and cannot be decrypted.',
     );
   }
 
   // Verify chain ID matches
   if (message.chainId !== state.chainId) {
     throw new Error(
-      `Sender key chain ID mismatch: have ${state.chainId}, got ${message.chainId}. ` +
-        'The sender may have rotated their key.',
+      'Sender key mismatch — the sender may have rotated their key.',
     );
   }
 
@@ -286,6 +284,14 @@ export async function decryptGroupMessage(
   const signData = concat(uint32BE(message.counter), message.ciphertext);
   if (!ed25519Verify(state.signingKeyPair.publicKey, signData, message.signature)) {
     throw new Error('Sender key message signature verification failed. Message may be forged.');
+  }
+
+  // Replay protection (Finding 15): check dedup AFTER signature verification
+  // but BEFORE chain advancement. A replayed message has valid signature but
+  // should not be processed twice.
+  const isDuplicate = await checkGroupMessageDedup(groupId, senderId, message.chainId, message.counter);
+  if (isDuplicate) {
+    throw new Error('Replayed group message detected — this message was already decrypted.');
   }
 
   const MAX_SENDER_KEY_SKIP = 200;
@@ -498,7 +504,7 @@ export async function distributeSenderKeyToMembers(
 ): Promise<string[]> {
   const state = await loadSenderKeyState(groupId, 'self');
   if (!state) {
-    throw new Error(`No sender key for group ${groupId}. Call generateSenderKey() first.`);
+    throw new Error('No sender key for this group. Call generateSenderKey() first.');
   }
 
   const serialized = serializeSenderKeyForDistribution(state);

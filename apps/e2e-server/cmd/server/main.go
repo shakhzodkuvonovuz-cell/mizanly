@@ -138,8 +138,9 @@ func main() {
 	mux.Handle("POST /api/v1/e2e/sender-keys", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleStoreSenderKey))))
 	mux.Handle("GET /api/v1/e2e/sender-keys/", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleGetSenderKeys))))
 
-	// Safety numbers
-	mux.Handle("GET /api/v1/e2e/safety-number/", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleGetSafetyNumber))))
+	// Safety numbers: computed CLIENT-SIDE only (safety-numbers.ts).
+	// A server-side endpoint would allow a compromised server to return
+	// matching numbers even when keys are substituted, defeating MITM detection.
 
 	// --- Startup cleanup: expired signed pre-keys ---
 	if deleted, err := db.CleanupExpiredSignedPreKeys(ctx); err != nil {

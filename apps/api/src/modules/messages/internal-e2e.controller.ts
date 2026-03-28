@@ -1,4 +1,5 @@
-import { Controller, Post, Body, Headers, HttpCode, ForbiddenException, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Headers, HttpCode, ForbiddenException, BadRequestException, Req, Logger } from '@nestjs/common';
+import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
@@ -35,6 +36,7 @@ export class InternalE2EController {
   async handleIdentityChanged(
     @Headers('x-webhook-signature') signature: string,
     @Body() body: { userId: string; oldFingerprint?: string; newFingerprint: string },
+    @Req() req: Request & { rawBody?: Buffer },
   ) {
     // Verify HMAC signature (constant-time comparison — no timing attack)
     const secret = process.env.INTERNAL_WEBHOOK_SECRET;
@@ -47,9 +49,16 @@ export class InternalE2EController {
       throw new ForbiddenException('Missing webhook signature');
     }
 
-    // Compute expected HMAC-SHA256 of the request body
-    const bodyStr = JSON.stringify(body);
-    const expectedSig = createHmac('sha256', secret).update(bodyStr).digest('hex');
+    // Use RAW request body bytes for HMAC — NOT JSON.stringify(body).
+    // Re-serialization may reorder keys differently than Go's json.Marshal,
+    // causing HMAC mismatch. rawBody is enabled via NestFactory { rawBody: true }.
+    const rawBody = req.rawBody;
+    if (!rawBody) {
+      throw new BadRequestException('Raw body not available for HMAC verification');
+    }
+
+    // Compute expected HMAC-SHA256 of the raw request body
+    const expectedSig = createHmac('sha256', secret).update(rawBody).digest('hex');
 
     // Constant-time comparison — prevents timing side-channel attacks
     // Both must be same length for timingSafeEqual

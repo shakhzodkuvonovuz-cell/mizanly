@@ -130,7 +130,7 @@ func (h *Handler) HandleUploadSignedPreKey(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := h.store.UpsertSignedPreKey(r.Context(), userID, req.DeviceID, req.KeyID, req.PublicKey, req.Signature); err != nil {
-		h.logger.Error("upload signed pre-key", "error", err, "userId", userID)
+		h.logger.Error("upload signed pre-key", "error", err, "userId", hashUserID(userID))
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -267,7 +267,7 @@ func (h *Handler) HandleGetPreKeyCount(w http.ResponseWriter, r *http.Request) {
 
 	count, err := h.store.CountOneTimePreKeys(r.Context(), userID, 1)
 	if err != nil {
-		h.logger.Error("count pre-keys", "error", err, "userId", userID)
+		h.logger.Error("count pre-keys", "error", err, "userId", hashUserID(userID))
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -299,7 +299,7 @@ func (h *Handler) HandleStoreSenderKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.UpsertSenderKey(r.Context(), req.GroupID, userID, req.RecipientUserID, req.EncryptedKey, req.ChainID, req.Generation); err != nil {
-		h.logger.Error("store sender key", "error", err, "userId", userID)
+		h.logger.Error("store sender key", "error", err, "userId", hashUserID(userID))
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -334,94 +334,10 @@ func (h *Handler) HandleGetSenderKeys(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// --- Safety Numbers ---
-
-// HandleGetSafetyNumber handles GET /safety-number/{userId}.
-// Computes HMAC-SHA256 fingerprints with 5200 iterations per Signal spec.
-func (h *Handler) HandleGetSafetyNumber(w http.ResponseWriter, r *http.Request) {
-	requesterID := middleware.UserIDFromContext(r.Context())
-	if requesterID == "" {
-		writeError(w, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-
-	otherUserID := extractPathParam(r, "/api/v1/e2e/safety-number/")
-	if err := validatePathParam(otherUserID); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid userId")
-		return
-	}
-
-	// Fetch both identity keys
-	ourKey, _, _, err := h.store.GetIdentityKey(r.Context(), requesterID)
-	if err != nil {
-		writeError(w, http.StatusNotFound, "safety number unavailable")
-		return
-	}
-	theirKey, _, _, err := h.store.GetIdentityKey(r.Context(), otherUserID)
-	if err != nil {
-		writeError(w, http.StatusNotFound, "safety number unavailable")
-		return
-	}
-
-	safetyNumber := computeSafetyNumber(ourKey, requesterID, theirKey, otherUserID)
-	writeJSON(w, http.StatusOK, model.SafetyNumberResponse{SafetyNumber: safetyNumber})
-}
-
-// computeSafetyNumber generates a 60-digit safety number per Signal spec.
-// HMAC-SHA256 with 5200 iterations per fingerprint, sorted by userId.
-func computeSafetyNumber(key1 []byte, id1 string, key2 []byte, id2 string) string {
-	// Sort by userId for deterministic ordering. If equal, sort by key bytes.
-	shouldSwap := false
-	if id1 > id2 {
-		shouldSwap = true
-	} else if id1 == id2 {
-		for i := 0; i < len(key1) && i < len(key2); i++ {
-			if key1[i] > key2[i] { shouldSwap = true; break }
-			if key1[i] < key2[i] { break }
-		}
-	}
-	if shouldSwap {
-		key1, key2 = key2, key1
-		id1, id2 = id2, id1
-	}
-
-	fp1 := computeFingerprint(key1, id1)
-	fp2 := computeFingerprint(key2, id2)
-
-	// Convert 30 bytes from each fingerprint to 30 digits each (60 total)
-	return bytesToDigits(fp1[:30]) + bytesToDigits(fp2[:30])
-}
-
-func computeFingerprint(identityKey []byte, userID string) []byte {
-	// Signal spec uses version 0 as 2-byte uint16 big-endian: \x00\x00
-	version := []byte{0x00, 0x00}
-	userIDBytes := []byte(userID)
-	data := concat(version, identityKey, userIDBytes)
-
-	mac := hmac.New(sha256.New, identityKey)
-	mac.Write(data)
-	hash := mac.Sum(nil)
-
-	for i := 0; i < 5199; i++ {
-		mac = hmac.New(sha256.New, identityKey)
-		mac.Write(concat(hash, identityKey))
-		hash = mac.Sum(nil)
-	}
-	return hash
-}
-
-// bytesToDigits converts 30 bytes to 30 five-digit groups (60 digits total).
-// Each 5-byte chunk is converted to a number mod 100000.
-func bytesToDigits(b []byte) string {
-	var result strings.Builder
-	for i := 0; i < 30; i += 5 {
-		chunk := b[i : i+5]
-		// Big-endian 5-byte number mod 100000
-		n := uint64(chunk[0])<<32 | uint64(chunk[1])<<24 | uint64(chunk[2])<<16 | uint64(chunk[3])<<8 | uint64(chunk[4])
-		result.WriteString(fmt.Sprintf("%05d", n%100000))
-	}
-	return result.String()
-}
+// Safety numbers: REMOVED (Finding 7/12).
+// Server-side computation defeats the purpose of safety numbers.
+// A compromised server can substitute keys and return matching numbers.
+// Client-side computation in safety-numbers.ts is the authoritative source.
 
 // --- Internal webhook ---
 
@@ -430,7 +346,7 @@ func (h *Handler) notifyIdentityChanged(userID, oldFingerprint, newPublicKeyB64 
 	webhookURL := os.Getenv("NESTJS_INTERNAL_URL")
 	secret := os.Getenv("INTERNAL_WEBHOOK_SECRET")
 	if webhookURL == "" || secret == "" {
-		h.logger.Warn("identity key changed but NESTJS_INTERNAL_URL or INTERNAL_WEBHOOK_SECRET not configured", "userId", userID)
+		h.logger.Warn("identity key changed but NESTJS_INTERNAL_URL or INTERNAL_WEBHOOK_SECRET not configured", "userId", hashUserID(userID))
 		return
 	}
 
@@ -499,6 +415,14 @@ func (h *Handler) notifyIdentityChanged(userID, oldFingerprint, newPublicKeyB64 
 }
 
 // --- Helpers ---
+
+// hashUserID produces a truncated SHA-256 hash for log statements.
+// 16 hex chars is enough for debugging but cannot identify the user.
+// Deterministic: same userId always produces the same hash.
+func hashUserID(userID string) string {
+	h := sha256.Sum256([]byte(userID))
+	return fmt.Sprintf("%x", h[:8])
+}
 
 func readJSON(r *http.Request, v interface{}) error {
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20)) // 1MB max

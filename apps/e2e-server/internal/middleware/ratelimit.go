@@ -56,10 +56,11 @@ func (rl *RateLimiter) CheckBundleFetch(ctx context.Context, requesterID, target
 	globalKey := fmt.Sprintf("e2e:rl:global:%s", requesterID)
 	globalCount, err := saddCountScript.Run(ctx, rl.rdb, []string{globalKey}, targetID, 3600).Int64()
 	if err != nil {
-		return nil // Fail open
+		// Fail CLOSED — without rate limiting, an attacker can drain every user's OTP pool.
+		return fmt.Errorf("rate limiting unavailable — try again later")
 	}
-	if globalCount > 200 {
-		return fmt.Errorf("rate limit exceeded: max 200 unique targets per hour")
+	if globalCount > 50 {
+		return fmt.Errorf("rate limit exceeded: max 50 unique targets per hour")
 	}
 
 	return nil

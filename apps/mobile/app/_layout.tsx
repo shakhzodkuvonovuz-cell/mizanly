@@ -39,6 +39,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { initSentry, setSentryUser } from '@/config/sentry';
 import { navigate } from '@/utils/navigation';
 import { SocketProvider } from '@/providers/SocketProvider';
+import { initialize as initSignal } from '@/services/signal';
 
 // Allow the OS to flip layouts to RTL for Arabic and Urdu.
 I18nManager.allowRTL(true);
@@ -246,6 +247,16 @@ function AuthGuard() {
       router.replace('/(auth)/sign-in');
     });
   }, [getToken, router]);
+
+  // Initialize Signal Protocol E2E encryption once signed in
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const e2eUrl = process.env.EXPO_PUBLIC_E2E_URL ?? '';
+    if (!e2eUrl) return;
+    initSignal(e2eUrl, () => getToken().then(t => t ?? ''), []).catch(() => {
+      // Non-fatal — E2E will retry on next message send
+    });
+  }, [isSignedIn, getToken]);
 
   // Register push notification token once signed in
   usePushNotifications(!!isSignedIn);

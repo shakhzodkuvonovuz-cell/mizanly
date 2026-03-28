@@ -22,6 +22,7 @@
 
 import {
   hmacSha256,
+  sha256Hash,
   concat,
   utf8Encode,
 } from './crypto';
@@ -41,12 +42,14 @@ function cacheKey(id1: string, id2: string): string {
 }
 
 function quickHash(key: Uint8Array): string {
-  // Fast hash for cache invalidation — NOT for security
-  let h = 0;
-  for (let i = 0; i < key.length; i++) {
-    h = ((h << 5) - h + key[i]) | 0;
+  // SHA-256 first 8 bytes as hex — collision-resistant cache invalidation.
+  // DJB2 was too weak: trivial collisions could cause stale safety number display.
+  const hash = sha256Hash(key);
+  let hex = '';
+  for (let i = 0; i < 8; i++) {
+    hex += hash[i].toString(16).padStart(2, '0');
   }
-  return String(h);
+  return hex;
 }
 
 /** Invalidate cached safety number when an identity key changes. */

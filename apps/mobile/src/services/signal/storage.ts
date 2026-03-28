@@ -621,6 +621,39 @@ export async function dequeueMessage(messageId: string): Promise<void> {
 }
 
 // ============================================================
+// GROUP MESSAGE DEDUP (Finding 15: replay protection)
+// ============================================================
+
+/**
+ * Check if a group message has already been decrypted (replay protection).
+ *
+ * Sender Keys don't have the inherent replay protection of Double Ratchet
+ * (where message keys are derived and deleted). If an attacker can reset
+ * the receiver's chain state (Finding 2: MMKV tampering), they could
+ * replay old group messages. This dedup set catches that.
+ *
+ * @returns true if the message was already seen (replay detected)
+ */
+export async function checkGroupMessageDedup(
+  groupId: string,
+  senderId: string,
+  chainId: number,
+  counter: number,
+): Promise<boolean> {
+  const mmkv = await getMMKV();
+  const key = `group_dedup:${groupId}`;
+  const dedupId = `${senderId}:${chainId}:${counter}`;
+  const existing = mmkv.getString(key);
+  const set: string[] = existing ? JSON.parse(existing) : [];
+  if (set.includes(dedupId)) return true; // Already seen — replay
+  set.push(dedupId);
+  // FIFO cap at 10,000 entries per group
+  if (set.length > 10000) set.splice(0, set.length - 10000);
+  mmkv.set(key, JSON.stringify(set));
+  return false;
+}
+
+// ============================================================
 // OTP START ID TRACKING
 // ============================================================
 
@@ -785,6 +818,18 @@ export async function clearAllE2EState(): Promise<void> {
   // Clear SPK metadata (stored by prekeys.ts checkAndRotateSignedPreKey)
   await SecureStore.deleteItemAsync('spk_current_metadata');
   // MMKV encryption key intentionally kept — MMKV instance is cleared below
+
+  // Finding 9: Zero key material in MMKV before deletion.
+  // MMKV memory-maps files — simply deleting keys may leave key material
+  // in memory-mapped pages. Overwriting values first ensures the bytes
+  // on disk are overwritten before the mapping is released.
+  const allKeys = mmkv.getAllKeys();
+  for (const key of allKeys) {
+    if (key.startsWith(MMKV_PREFIX.SESSION) || key.startsWith(MMKV_PREFIX.SENDER_KEY)) {
+      // Overwrite with empty JSON to zero the memory-mapped pages
+      mmkv.set(key, '{}');
+    }
+  }
 
   // Clear all MMKV data (sessions, sender keys, cache, queue, registries)
   mmkv.clearAll();

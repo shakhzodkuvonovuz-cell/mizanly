@@ -96,10 +96,8 @@ type SenderKeysResponse struct {
 	SenderKeys []SenderKeyEntry `json:"senderKeys"`
 }
 
-// SafetyNumberResponse is returned from GET /safety-number/:userId.
-type SafetyNumberResponse struct {
-	SafetyNumber string `json:"safetyNumber"` // 60-digit string (12 groups of 5)
-}
+// SafetyNumberResponse REMOVED — server-side safety number computation
+// was a security risk (Finding 7/12). Client computes safety numbers locally.
 
 // IdentityChangedWebhook is sent to NestJS when an identity key changes.
 type IdentityChangedWebhook struct {
