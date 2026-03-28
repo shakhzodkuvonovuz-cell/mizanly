@@ -43,6 +43,7 @@ type PreKeyBundle struct {
 		KeyID     int    `json:"keyId"`
 		PublicKey string `json:"publicKey"` // Base64, 32 bytes X25519
 		Signature string `json:"signature"` // Base64, 64 bytes Ed25519
+		CreatedAt int64  `json:"createdAt"` // V7-F6: Unix ms — client validates SPK age
 	} `json:"signedPreKey"`
 	OneTimePreKey *struct {
 		KeyID     int    `json:"keyId"`

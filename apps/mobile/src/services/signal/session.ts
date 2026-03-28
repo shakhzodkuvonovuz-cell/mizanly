@@ -123,16 +123,23 @@ export async function createResponderSession(
   // V4-F6: Pass PQXDH fields so responder computes hybrid shared secret
   // matching the initiator's PQXDH derivation (prevents silent session failure).
   // The PQ secret key is loaded from LOCAL SecureStore — NEVER from the wire message.
+  // V7-F14 FIX: Distinguish "PQ key not found" from "SecureStore failure".
+  // Previously: empty catch block treated ALL errors as "PQ not available", silently
+  // downgrading to classical X3DH. If SecureStore fails (full disk, corruption, HW error),
+  // the responder computes classical-only secret while the initiator computed hybrid →
+  // different shared secrets → session establishment failure (DoS). An attacker who can
+  // induce SecureStore errors (e.g., filling Keychain on iOS) forces all new sessions
+  // to fail. Now: null result = classical fallback (correct), throw = propagate (fail fast).
   let pqSecretKey: Uint8Array | undefined;
   if (preKeyMsg.pqCiphertext && preKeyMsg.pqPreKeyId !== undefined) {
-    try {
-      const SecureStore = await import('expo-secure-store');
-      const pqSkB64 = await SecureStore.getItemAsync(`e2e_pq_sk_${preKeyMsg.pqPreKeyId}`);
-      if (pqSkB64) {
-        const { fromBase64 } = await import('./crypto');
-        pqSecretKey = fromBase64(pqSkB64);
-      }
-    } catch { /* PQ key not available — fall back to classical X3DH */ }
+    const SecureStore = await import('expo-secure-store');
+    const pqSkB64 = await SecureStore.getItemAsync(`e2e_pq_sk_${preKeyMsg.pqPreKeyId}`);
+    if (pqSkB64) {
+      const { fromBase64 } = await import('./crypto');
+      pqSecretKey = fromBase64(pqSkB64);
+    }
+    // If pqSkB64 is null → key doesn't exist → classical fallback (no catch needed)
+    // If getItemAsync throws → SecureStore failure → propagated to caller (fail fast)
   }
 
   const x3dhResult = await respondX3DH(

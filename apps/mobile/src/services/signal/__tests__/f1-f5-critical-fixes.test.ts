@@ -398,13 +398,13 @@ describe('F4: HMAC-hashed MMKV key names', () => {
 describe('F5: Sealed sender', () => {
   it('sealMessage + unsealMessage roundtrip', async () => {
     const { sealMessage, unsealMessage } = require('../sealed-sender');
-    const { storeIdentityKeyPair } = require('../storage');
+    const { storeIdentityKeyPair, storeKnownIdentityKey } = require('../storage');
 
     const senderKeyPair = generateEd25519KeyPair();
     const recipientKeyPair = generateEd25519KeyPair();
 
-    // Store recipient's identity key pair (for unsealMessage to load)
-    await storeIdentityKeyPair(recipientKeyPair);
+    // V7-F2: Store SENDER's identity key pair (sealMessage now loads it for sender certificate)
+    await storeIdentityKeyPair(senderKeyPair);
 
     const envelope = await sealMessage(
       'recipient_user',
@@ -417,6 +417,10 @@ describe('F5: Sealed sender', () => {
     expect(envelope.recipientId).toBe('recipient_user');
     expect(envelope.ephemeralKey).toBeTruthy();
     expect(envelope.sealedCiphertext).toBeTruthy();
+
+    // V7-F2: Switch to RECIPIENT's key pair for unsealMessage, store sender's known key for verification
+    await storeIdentityKeyPair(recipientKeyPair);
+    await storeKnownIdentityKey('sender_user', senderKeyPair.publicKey);
 
     const unsealed = await unsealMessage(envelope);
     expect(unsealed.senderId).toBe('sender_user');
@@ -442,6 +446,11 @@ describe('F5: Sealed sender', () => {
 
   it('sealed envelope hides sender identity', async () => {
     const { sealMessage } = require('../sealed-sender');
+    const { storeIdentityKeyPair } = require('../storage');
+
+    // V7-F2: sealMessage now loads identity key for sender certificate — must be stored
+    const senderKeyPair = generateEd25519KeyPair();
+    await storeIdentityKeyPair(senderKeyPair);
 
     const recipientKeyPair = generateEd25519KeyPair();
     const envelope = await sealMessage(

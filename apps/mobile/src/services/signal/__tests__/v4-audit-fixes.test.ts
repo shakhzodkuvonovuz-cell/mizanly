@@ -125,6 +125,12 @@ describe('V4-F3: sealed sender fails closed on storage error', () => {
 describe('V4-F4: sealed counter persists', () => {
   it('counter survives resetSealedSenderState + reload', async () => {
     const { sealMessage, resetSealedSenderState } = require('../sealed-sender');
+    const { storeIdentityKeyPair } = require('../storage');
+
+    // V7-F2: sealMessage now loads identity key for sender certificate
+    const senderKp = generateEd25519KeyPair();
+    await storeIdentityKeyPair(senderKp);
+
     const recipientKp = generateEd25519KeyPair();
 
     // Seal 3 messages (counter goes 1, 2, 3)

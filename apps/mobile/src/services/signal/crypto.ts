@@ -406,8 +406,17 @@ export function toBase64(bytes: Uint8Array): string {
  */
 export function fromBase64(base64: string): Uint8Array {
   if (typeof Buffer !== 'undefined') {
+    // V7-F12 FIX: Copy bytes to a standalone ArrayBuffer instead of returning a view.
+    // Buffer.from(string) may allocate from the Node/Hermes Buffer pool (8KB slab).
+    // The returned Uint8Array would be a VIEW into the shared pool. If zeroOut() is
+    // called on this view, it zeros bytes within the pool slab. But if the pool
+    // reuses the same slab for another allocation BEFORE zeroOut, the new Buffer
+    // shares the same ArrayBuffer and can observe key material at adjacent offsets.
+    // Copying to a standalone Uint8Array ensures zeroOut operates on isolated memory.
     const buf = Buffer.from(base64, 'base64');
-    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    const result = new Uint8Array(buf.byteLength);
+    result.set(new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
+    return result;
   }
   // Fallback
   const binary = atob(base64);
@@ -440,11 +449,20 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (nativeCryptoAdapter?.isNativeCryptoAvailable() && nativeCryptoAdapter.constantTimeCompare) {
     return nativeCryptoAdapter.constantTimeCompare(a, b);
   }
-  // Fallback: XOR accumulator (best-effort in JS)
+  // V7-F13 FIX: Pre-pad arrays to eliminate nullish coalescing timing branch.
+  // Previously: `(a[i] ?? 0)` introduced a timing branch — the JS engine takes a
+  // different code path for in-bounds access (returns number) vs. out-of-bounds
+  // (returns undefined, then ?? evaluates). This leaks the exact boundary where each
+  // array ends, allowing an attacker to determine individual array lengths.
+  // Now: both arrays are copied into equal-length buffers. All accesses are in-bounds.
   const len = Math.max(a.length, b.length);
   let diff = a.length ^ b.length;
+  const padA = new Uint8Array(len); // Zero-initialized
+  const padB = new Uint8Array(len);
+  padA.set(a);
+  padB.set(b);
   for (let i = 0; i < len; i++) {
-    diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
+    diff |= padA[i] ^ padB[i];
   }
   return diff === 0;
 }

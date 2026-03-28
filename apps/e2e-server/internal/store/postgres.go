@@ -380,14 +380,16 @@ func (s *Store) GetPreKeyBundle(ctx context.Context, targetUserID string, device
 	}
 
 	// 2. Get latest signed pre-key
+	// V7-F6: Include createdAt so client can validate SPK age
 	var spkID int
 	var spkPub, spkSig []byte
+	var spkCreatedAt time.Time
 	err = tx.QueryRow(ctx,
-		`SELECT "keyId", "publicKey", signature FROM e2e_signed_pre_keys
+		`SELECT "keyId", "publicKey", signature, "createdAt" FROM e2e_signed_pre_keys
 		 WHERE "userId" = $1 AND "deviceId" = $2
 		 ORDER BY "createdAt" DESC LIMIT 1`,
 		targetUserID, devID,
-	).Scan(&spkID, &spkPub, &spkSig)
+	).Scan(&spkID, &spkPub, &spkSig, &spkCreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("signed pre-key: %w", err)
 	}
@@ -435,6 +437,7 @@ func (s *Store) GetPreKeyBundle(ctx context.Context, targetUserID string, device
 	bundle.SignedPreKey.KeyID = spkID
 	bundle.SignedPreKey.PublicKey = base64.StdEncoding.EncodeToString(spkPub)
 	bundle.SignedPreKey.Signature = base64.StdEncoding.EncodeToString(spkSig)
+	bundle.SignedPreKey.CreatedAt = spkCreatedAt.UnixMilli() // V7-F6: Client validates SPK age
 
 	if otpKeyID != nil {
 		bundle.OneTimePreKey = &struct {

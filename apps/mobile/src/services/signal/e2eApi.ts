@@ -171,6 +171,7 @@ export async function fetchPreKeyBundle(
       keyId: raw.bundle.signedPreKey.keyId,
       publicKey: fromBase64(raw.bundle.signedPreKey.publicKey),
       signature: fromBase64(raw.bundle.signedPreKey.signature),
+      createdAt: raw.bundle.signedPreKey.createdAt, // V7-F6: Pass through for client age validation
     },
     oneTimePreKey: raw.bundle.oneTimePreKey
       ? {

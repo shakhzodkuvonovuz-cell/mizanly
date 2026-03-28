@@ -142,6 +142,22 @@ export function verifyMerkleProof(
  * @param fetchProof - Callback to fetch proof from Go server
  * @returns verification result
  */
+/**
+ * V7-F3: Maximum age for a transparency root before it's considered stale.
+ * A compromised server could freeze the Merkle tree at an honest point-in-time,
+ * then substitute keys for new contacts while serving old contacts the frozen
+ * (valid-but-stale) proof. 24 hours is generous — honest servers rebuild on
+ * every identity key change, so the root should never be older than minutes.
+ */
+const MAX_ROOT_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * V7-F3: In-memory cache of last-seen tree size per userId.
+ * Tree size must be monotonically increasing — a decrease means entries were deleted.
+ * Persisted via secureStore on each successful verification.
+ */
+const lastSeenTreeSize = new Map<string, number>();
+
 export async function verifyKeyTransparency(
   userId: string,
   fetchProof: (userId: string) => Promise<{
@@ -151,6 +167,7 @@ export async function verifyKeyTransparency(
     root: string;            // Base64 Merkle root
     rootSignature: string;   // Base64 Ed25519 signature of root
     treeSize: number;
+    updatedAt: string;       // V7-F3: ISO 8601 timestamp of last tree rebuild (MANDATORY)
   } | null>,
 ): Promise<{
   status: 'verified' | 'mismatch' | 'unavailable' | 'no_local_key';
@@ -178,6 +195,51 @@ export async function verifyKeyTransparency(
     };
   }
 
+  // V7-F3 FIX: Verify root freshness — reject stale/frozen trees.
+  // updatedAt is MANDATORY. A compromised server that omits it gets rejected, not bypassed.
+  // The Go server always includes updatedAt (V6-F13 actual rebuild time). Any proof
+  // without it is either from an ancient server version or an attacker stripping fields.
+  if (!proofData.updatedAt) {
+    return {
+      status: 'mismatch',
+      detail: 'Transparency proof missing updatedAt — cannot verify freshness',
+    };
+  }
+  const rootAge = Date.now() - new Date(proofData.updatedAt).getTime();
+  if (!Number.isFinite(rootAge) || rootAge > MAX_ROOT_AGE_MS) {
+    return {
+      status: 'mismatch',
+      detail: `Transparency root is stale (${Math.floor(rootAge / 3600000)}h old) — possible frozen tree attack`,
+    };
+  }
+  // Reject roots that claim to be from the future (>5 min clock skew tolerance)
+  if (rootAge < -5 * 60 * 1000) {
+    return {
+      status: 'mismatch',
+      detail: 'Transparency root timestamp is in the future — possible manipulation',
+    };
+  }
+
+  // V7-F3: Verify tree size is monotonically increasing.
+  // A compromised server that deletes entries could shrink the tree.
+  if (proofData.treeSize > 0) {
+    // Load persisted last-seen tree size
+    if (!lastSeenTreeSize.has(userId)) {
+      try {
+        const { secureLoad, HMAC_TYPE } = await import('./storage');
+        const stored = await secureLoad(HMAC_TYPE.SESSION, `transparency_treesize:${userId}`);
+        if (stored) lastSeenTreeSize.set(userId, parseInt(stored, 10) || 0);
+      } catch { /* First check — no prior state */ }
+    }
+    const prevSize = lastSeenTreeSize.get(userId) ?? 0;
+    if (proofData.treeSize < prevSize) {
+      return {
+        status: 'mismatch',
+        detail: `Transparency tree shrank from ${prevSize} to ${proofData.treeSize} — entries may have been deleted`,
+      };
+    }
+  }
+
   // Verify the Merkle proof
   const proofKey = fromBase64(proofData.identityKey);
   const proofValid = verifyMerkleProof(
@@ -201,6 +263,15 @@ export async function verifyKeyTransparency(
       status: 'mismatch',
       detail: 'Server transparency log contains a different key than locally stored — possible MITM',
     };
+  }
+
+  // V7-F3: Persist tree size for future monotonic growth checks
+  if (proofData.treeSize > 0) {
+    lastSeenTreeSize.set(userId, proofData.treeSize);
+    try {
+      const { secureStore, HMAC_TYPE } = await import('./storage');
+      await secureStore(HMAC_TYPE.SESSION, `transparency_treesize:${userId}`, String(proofData.treeSize));
+    } catch { /* Best-effort persist — in-memory cache still guards this session */ }
   }
 
   return { status: 'verified' };

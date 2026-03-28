@@ -146,6 +146,8 @@ export async function getMMKV(): Promise<MMKV> {
       // F4: Pre-load HMAC key for key name hashing (separate from AEAD key).
       // F10: The AEAD encryption key is NEVER cached. Only the HMAC key for
       // key name hashing is cached (different HKDF derivation, different purpose).
+      // F4: Pre-load HMAC key for key name hashing (separate from AEAD key).
+      // V7-F7: Permanently cached. See getHMACKeySync() comment for rationale.
       const encKeyB64 = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
       if (encKeyB64) {
         const encKey = fromBase64(encKeyB64);
@@ -277,15 +279,31 @@ export async function aeadGet(mmkv: MMKV, storageKey: string, aadKey?: string): 
 // ============================================================
 
 /**
- * Cached HMAC key ONLY — used exclusively by hmacKeyName() for key name hashing.
+ * V7-F7: Cached HMAC key for MMKV key name hashing.
+ *
+ * KNOWN LIMITATION (accepted): This key is cached at module scope for the entire
+ * app lifetime. An Attacker 3 (Frida memory dump) can extract it and derive all
+ * MMKV key name mappings, revealing the social graph (sessions, groups, cache entries)
+ * without breaking AEAD encryption. Message CONTENT remains protected by the AEAD key
+ * which is NEVER cached (F10).
+ *
+ * WHY NOT FIXABLE IN JS: hmacKeyName() must be synchronous (called in tight loops
+ * during session load/store). SecureStore is async-only. Any re-derivation scheme
+ * requires caching the master key bytes, which gives a Frida attacker the same
+ * capability (HKDF is deterministic). A TTL on the derived key with cached master
+ * bytes is security theater — the reviewer correctly identified this.
+ *
+ * REAL MITIGATION: Native HMAC module (C++ JSI) that keeps the key in native heap
+ * (not JS-visible) and exposes only hmacKeyName() as a synchronous JSI call.
+ * This is a future enhancement requiring a native module.
+ *
  * This is a separate HKDF derivation from the AEAD key, with a different info string,
  * so leaking it does NOT compromise AEAD encryption (different key, different purpose).
- * The AEAD encryption key is NEVER cached (F10).
  */
 let hmacKeyForNames: Uint8Array | null = null;
 
 /**
- * Get the HMAC key for key name hashing (synchronous, cached).
+ * Get the HMAC key for key name hashing (synchronous, permanently cached).
  * This is NOT the AEAD encryption key — it's derived with a different HKDF info string.
  * Leaking this key reveals key name mappings but NOT encrypted values.
  */
@@ -967,21 +985,35 @@ export async function dequeueMessage(messageId: string): Promise<void> {
  *
  * @returns true if the message was already seen (replay detected)
  */
+/**
+ * V7-F10 FIX: Per-SENDER dedup sets with independent caps.
+ *
+ * Previously: single dedup set per group (all senders mixed). A malicious group member
+ * sending 10,001 messages would evict ALL other members' dedup entries via FIFO cap.
+ * Then the attacker could replay old messages from other members — dedup check passes
+ * because their entries were evicted. The chain state provides secondary protection,
+ * but this was a defense-in-depth degradation.
+ *
+ * Now: dedup key includes senderId → independent 500-entry cap per sender per group.
+ * One attacker's volume cannot evict another sender's dedup entries.
+ */
 export async function checkGroupMessageDedup(
   groupId: string,
   senderId: string,
   chainId: number,
   counter: number,
 ): Promise<boolean> {
-  const originalKey = `group_dedup:${groupId}`;
-  const dedupId = `${senderId}:${chainId}:${counter}`;
+  // V7-F10: Per-sender dedup key — attacker volume cannot evict other senders' entries
+  const originalKey = `group_dedup:${groupId}:${senderId}`;
+  const dedupId = `${chainId}:${counter}`;
   // AEAD-authenticated + HMAC key (F4): attacker cannot clear dedup set or see group IDs
   const existing = await secureLoad(HMAC_TYPE.GROUP_DEDUP, originalKey);
   const set: string[] = existing ? JSON.parse(existing) : [];
   if (set.includes(dedupId)) return true; // Already seen — replay
   set.push(dedupId);
-  // FIFO cap at 10,000 entries per group
-  if (set.length > 10000) set.splice(0, set.length - 10000);
+  // V7-F10: 500 per sender (vs. 10,000 shared). Enough for out-of-order delivery,
+  // small enough that a malicious sender's own dedup doesn't consume excessive storage.
+  if (set.length > 500) set.splice(0, set.length - 500);
   await secureStore(HMAC_TYPE.GROUP_DEDUP, originalKey, JSON.stringify(set));
   return false;
 }

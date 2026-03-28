@@ -52,6 +52,7 @@ export interface PreKeyBundle {
     keyId: number;
     publicKey: Uint8Array; // 32 bytes X25519
     signature: Uint8Array; // 64 bytes Ed25519 signature
+    createdAt?: number;    // V7-F6: Unix ms — client validates SPK age
   };
   oneTimePreKey?: {
     // Optional — X3DH works without (3-DH fallback)

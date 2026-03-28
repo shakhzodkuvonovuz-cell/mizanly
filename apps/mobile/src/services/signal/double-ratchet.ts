@@ -394,12 +394,21 @@ function dhRatchetStep(state: SessionState, theirNewRatchetKey: Uint8Array): voi
 // 24 hours is enough for delayed message delivery on unreliable networks.
 const SKIPPED_KEY_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+/**
+ * V7-F9: Hard cap on total skipped keys per session, independent of time-based expiry.
+ * Clock manipulation (setting system time backwards) defeats the Date.now()-based expiry,
+ * allowing up to MAX_SKIPPED_KEYS (2000) to accumulate. This cap ensures at most 200
+ * skipped keys exist regardless of clock state. 200 is generous for real out-of-order
+ * delivery (typical: 0-5 skipped per session). Excess keys are evicted oldest-first.
+ */
+const HARD_SKIPPED_KEY_CAP = 200;
+
 function trySkippedKeys(
   state: SessionState,
   message: SignalMessage,
   headerBytes: Uint8Array,
 ): Uint8Array | null {
-  // Expire old skipped keys (older than 7 days)
+  // Expire old skipped keys (older than 24 hours)
   const now = Date.now();
   state.skippedKeys = state.skippedKeys.filter((sk) => {
     if (sk.createdAt && now - sk.createdAt > SKIPPED_KEY_MAX_AGE_MS) {
@@ -408,6 +417,15 @@ function trySkippedKeys(
     }
     return true;
   });
+
+  // V7-F9: Hard cap eviction — even if clock manipulation defeats time-based expiry,
+  // at most HARD_SKIPPED_KEY_CAP keys exist. Evict oldest (lowest createdAt) first.
+  if (state.skippedKeys.length > HARD_SKIPPED_KEY_CAP) {
+    // Sort by createdAt ascending, evict the excess oldest entries
+    state.skippedKeys.sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+    const evicted = state.skippedKeys.splice(0, state.skippedKeys.length - HARD_SKIPPED_KEY_CAP);
+    for (const sk of evicted) zeroOut(sk.messageKey);
+  }
 
   const idx = state.skippedKeys.findIndex(
     (sk) =>

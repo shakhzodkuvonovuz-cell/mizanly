@@ -144,6 +144,26 @@ export async function initiateX3DH(
     );
   }
 
+  // --- Step 1a (V7-F6): Validate signed pre-key age ---
+  // Previously: client verified SPK signature but not freshness. A compromised server
+  // could re-insert an old (previously compromised) SPK with a still-valid signature.
+  // The server rotates SPKs and cleans up after 30 days, but the CLIENT must enforce this
+  // independently. 45-day max = 30-day rotation + 15-day grace for delayed bundles.
+  if (bundle.signedPreKey.createdAt) {
+    const spkAgeMs = Date.now() - bundle.signedPreKey.createdAt;
+    const MAX_SPK_AGE_MS = 45 * 24 * 60 * 60 * 1000; // 45 days
+    if (spkAgeMs > MAX_SPK_AGE_MS) {
+      throw new Error(
+        `Signed pre-key is too old (${Math.floor(spkAgeMs / 86400000)} days). ` +
+        'The recipient may need to update their app or re-register keys.',
+      );
+    }
+    // Reject SPKs that claim to be from the future (>5 min clock skew tolerance)
+    if (spkAgeMs < -5 * 60 * 1000) {
+      throw new Error('Signed pre-key createdAt is in the future — possible manipulation.');
+    }
+  }
+
   // --- Step 1b: TOFU identity key check ---
   // V6-F3: `let` instead of `const` — PQXDH downgrade detection may override to 'changed'
   let identityTrust = await verifyIdentityKey(remoteUserId, bundle.identityKey);
@@ -189,11 +209,26 @@ export async function initiateX3DH(
   // Combine classical X3DH secret with ML-KEM shared secret for quantum resistance.
   // If ML-KEM isn't available, the classical secret is used as-is (protocol v1).
   let pqCiphertext: Uint8Array | undefined;
-  if (isPQXDHAvailable() && (bundle as any).pqPreKey) {
+  // V7-F5: Access pqPreKey with proper type narrowing instead of 4 separate `as any` casts.
+  const bundlePqPreKey = (bundle as unknown as Record<string, unknown>).pqPreKey;
+  if (isPQXDHAvailable() && bundlePqPreKey !== undefined && bundlePqPreKey !== null) {
+    // V7-F5 FIX: Validate pqPreKey type + length BEFORE the try/catch.
+    // Previously: `as any` casts bypassed type checking. A malicious server could send
+    // pqPreKey as a number, object, or short array → undefined behavior in ML-KEM-768.
+    // Validation errors must NOT be caught by the PQ encapsulation catch block (which
+    // silently downgrades to classical X3DH). Invalid types are a hard rejection.
+    let pqPubKey: Uint8Array;
+    if (typeof bundlePqPreKey === 'string') {
+      pqPubKey = new Uint8Array(Buffer.from(bundlePqPreKey, 'base64'));
+    } else if (bundlePqPreKey instanceof Uint8Array) {
+      pqPubKey = bundlePqPreKey;
+    } else {
+      throw new Error(`Invalid pqPreKey type: ${typeof bundlePqPreKey}`);
+    }
+    if (pqPubKey.length !== 1184) {
+      throw new Error(`Invalid ML-KEM-768 public key length: ${pqPubKey.length} (expected 1184)`);
+    }
     try {
-      const pqPubKey = typeof (bundle as any).pqPreKey === 'string'
-        ? new Uint8Array(Buffer.from((bundle as any).pqPreKey, 'base64'))
-        : (bundle as any).pqPreKey;
       const pqResult = pqEncapsulate(pqPubKey);
       if (pqResult) {
         const classicalSecret = sharedSecret;
@@ -214,7 +249,7 @@ export async function initiateX3DH(
         ).catch(() => {});
       }
     }
-  } else if (isPQXDHAvailable() && bundle.supportedVersions?.includes(2) && !(bundle as any).pqPreKey) {
+  } else if (isPQXDHAvailable() && bundle.supportedVersions?.includes(2) && !bundlePqPreKey) {
     // V5-F5: Both sides support PQ but bundle has no pqPreKey — possible strip attack.
     // V6-F3 FIX: Set identityTrust='changed' so the UI shows a safety number change
     // warning. Previously only emitted telemetry — the user was never informed of the

@@ -83,7 +83,12 @@ describe('V5-F2: Sealed sender rejects low-order DH outputs', () => {
 
   it('sealMessage succeeds with valid recipient key', async () => {
     const { sealMessage, resetSealedSenderState } = require('../sealed-sender');
+    const { storeIdentityKeyPair } = require('../storage');
     resetSealedSenderState();
+
+    // V7-F2: sealMessage now loads identity key for sender certificate
+    const senderKeyPair = generateEd25519KeyPair();
+    await storeIdentityKeyPair(senderKeyPair);
 
     const recipientKeyPair = generateEd25519KeyPair();
 
@@ -121,9 +126,12 @@ describe('V5-F2: Sealed sender rejects low-order DH outputs', () => {
     const { sealMessage, unsealMessage, resetSealedSenderState } = require('../sealed-sender');
     resetSealedSenderState();
 
+    // V7-F2: Store SENDER's key first (sealMessage loads it for sender certificate)
+    const senderKeyPair = generateEd25519KeyPair();
+    await SecureStore.setItemAsync('e2e_identity_private', toBase64(senderKeyPair.privateKey));
+    await SecureStore.setItemAsync('e2e_identity_public', toBase64(senderKeyPair.publicKey));
+
     const recipientKeyPair = generateEd25519KeyPair();
-    await SecureStore.setItemAsync('e2e_identity_private', toBase64(recipientKeyPair.privateKey));
-    await SecureStore.setItemAsync('e2e_identity_public', toBase64(recipientKeyPair.publicKey));
 
     const envelope = await sealMessage(
       'recipient_123',
@@ -132,6 +140,10 @@ describe('V5-F2: Sealed sender rejects low-order DH outputs', () => {
       1,
       'encrypted_signal_msg',
     );
+
+    // Switch to RECIPIENT's key pair for unsealMessage
+    await SecureStore.setItemAsync('e2e_identity_private', toBase64(recipientKeyPair.privateKey));
+    await SecureStore.setItemAsync('e2e_identity_public', toBase64(recipientKeyPair.publicKey));
 
     const unsealed = await unsealMessage(envelope);
     expect(unsealed.senderId).toBe('sender_456');

@@ -76,19 +76,14 @@ func (h *Handler) HandleRegisterIdentity(w http.ResponseWriter, r *http.Request)
 
 	// Rate limit identity key changes: max 2 per 24 hours per user.
 	// This prevents a stolen session token from rapidly cycling keys.
-	if h.rdb != nil {
+	// V7-F4 FIX: Use atomic Lua script via rateLimiter instead of bare INCR + Expire.
+	// Previously: INCR and Expire were separate Redis commands. If Expire failed
+	// (network error, Redis busy), the rate limit key had NO TTL and persisted forever.
+	// After 2 registrations, the user was PERMANENTLY locked out of identity key changes.
+	// Now: uses the same atomic Lua script pattern as CheckBundleFetch/CheckRateLimit.
+	if h.rateLimiter != nil {
 		identityRLKey := fmt.Sprintf("e2e:rl:identity:%s", userID)
-		count, rlErr := h.rdb.Incr(r.Context(), identityRLKey).Result()
-		if rlErr != nil {
-			// F12 FIX: Fail CLOSED on Redis error. Previously fail-open — Redis outage
-			// allowed unlimited identity key changes (rapid key cycling for MITM).
-			writeError(w, http.StatusTooManyRequests, "rate limiting unavailable — try again later")
-			return
-		}
-		if count == 1 {
-			h.rdb.Expire(r.Context(), identityRLKey, 24*time.Hour)
-		}
-		if count > 2 { // Allow 2 per day (initial registration + one rotation)
+		if _, err := h.rateLimiter.CheckRateLimit(r.Context(), identityRLKey, 2, 86400); err != nil {
 			writeError(w, http.StatusTooManyRequests, "identity key can only be changed twice per 24 hours")
 			return
 		}
@@ -354,11 +349,28 @@ func (h *Handler) HandleGetSenderKeys(w http.ResponseWriter, r *http.Request) {
 // --- Multi-device (C4) ---
 
 // HandleGetDevices returns all registered deviceIds for a user.
+// V7-F11: Rate limited to prevent mass device enumeration across all users.
 func (h *Handler) HandleGetDevices(w http.ResponseWriter, r *http.Request) {
+	requesterID := middleware.UserIDFromContext(r.Context())
+	if requesterID == "" {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	targetUserID := extractPathParam(r, "/api/v1/e2e/keys/devices/")
 	if err := validatePathParam(targetUserID); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid userId")
 		return
+	}
+
+	// V7-F11: Rate limit device enumeration — max 50 unique targets per hour per requester.
+	// Prevents a compromised JWT from enumerating device counts for all users.
+	if h.rateLimiter != nil {
+		rlKey := fmt.Sprintf("e2e:rl:devices:%s", requesterID)
+		if _, err := h.rateLimiter.CheckRateLimit(r.Context(), rlKey, 50, 3600); err != nil {
+			writeError(w, http.StatusTooManyRequests, "device enumeration rate limit exceeded")
+			return
+		}
 	}
 
 	deviceIDs, err := h.store.GetDeviceIDs(r.Context(), targetUserID)

@@ -52,6 +52,9 @@ import {
   fromBase64,
   zeroOut,
   assertNonZeroDH,
+  ed25519Sign,
+  ed25519Verify,
+  constantTimeEqual,
 } from './crypto';
 import { loadIdentityKeyPair, loadKnownIdentityKey, secureStore, secureLoad, HMAC_TYPE } from './storage';
 
@@ -141,16 +144,39 @@ export async function sealMessage(
 
   // F13: Include timestamp + counter for replay protection
   sealedSenderCounter++;
-  // V4-F4: Persist counter immediately (survives app kill between seal and send)
+  // V7-F8 FIX: Fail the seal on counter persist failure instead of swallowing.
+  // Previously: counter incremented in memory but persist failure silently ignored.
+  // On app restart, counter loaded old value → recipient rejected as replay → permanent DoS.
+  // Now: revert in-memory counter and throw, so caller retries or shows error.
   try {
     await secureStore(HMAC_TYPE.SEALED_CTR, 'sealed_sender_ctr_self', String(sealedSenderCounter));
-  } catch { /* Best-effort persist — counter still incremented in memory */ }
+  } catch {
+    sealedSenderCounter--; // Revert — don't let memory diverge from persisted state
+    throw new Error('Sealed sender counter persist failed — cannot send sealed message');
+  }
+
+  // V7-F2 FIX: Load sender's identity key and sign the inner content.
+  // Previously: senderId was a self-asserted JSON field with no cryptographic binding.
+  // Any party knowing the recipient's public key could forge sealed envelopes claiming
+  // any senderId. Now: sender signs (recipientId || innerContent || ts || ctr) with their
+  // Ed25519 identity key. Recipient verifies against TOFU-stored key for senderId.
+  const senderKeyPair = await loadIdentityKeyPair();
+  if (!senderKeyPair) throw new Error('Identity key not available for sealing');
+
+  const ts = Date.now();
+  const ctr = sealedSenderCounter;
+  const signData = utf8Encode(`${recipientId}|${innerContent}|${ts}|${ctr}`);
+  const senderSignature = ed25519Sign(senderKeyPair.privateKey, signData);
+
   const innerJson = JSON.stringify({
+    sv: 2,                   // Sealed sender protocol version — v2 requires certificate fields
     senderId,
     senderDeviceId,
     innerContent,
-    ts: Date.now(),         // F13: Reject envelopes older than 5 minutes
-    ctr: sealedSenderCounter, // F13: Reject envelopes with counter <= last seen
+    ts,                      // F13: Reject envelopes older than 5 minutes
+    ctr,                     // F13: Reject envelopes with counter <= last seen
+    senderIdentityKey: toBase64(senderKeyPair.publicKey), // V7-F2: Cryptographic sender binding
+    senderSignature: toBase64(senderSignature),           // V7-F2: Proves sender owns the identity key
   });
   const plaintext = utf8Encode(innerJson);
 
@@ -211,14 +237,77 @@ export async function unsealMessage(
 
   const raw = JSON.parse(utf8Decode(plaintext));
 
-  // F13: Replay protection — check timestamp and counter
-  const ts = raw.ts as number | undefined;
-  const ctr = raw.ctr as number | undefined;
+  // V7-F1 FIX: Validate all inner fields before processing. Previously, non-numeric
+  // ctr values (strings, objects, NaN) poisoned the replay counter permanently:
+  // NaN <= anyNumber is always false, so ALL future messages passed replay check.
+  // Now: reject envelopes with invalid types before any state mutation.
+  if (typeof raw.senderId !== 'string' || raw.senderId.length === 0 || raw.senderId.length > 128) {
+    throw new Error('Sealed sender envelope has invalid senderId — rejecting');
+  }
+  if (typeof raw.senderDeviceId !== 'number' || !Number.isInteger(raw.senderDeviceId) || raw.senderDeviceId < 1 || raw.senderDeviceId > 10) {
+    throw new Error('Sealed sender envelope has invalid senderDeviceId — rejecting');
+  }
+  if (typeof raw.innerContent !== 'string' || raw.innerContent.length === 0) {
+    throw new Error('Sealed sender envelope has invalid innerContent — rejecting');
+  }
 
+  // V7-F1: Validate ts and ctr types FIRST — before any code uses them.
+  // This must precede the V7-F2 signature verification which interpolates ts/ctr.
+  const ts: number | undefined = raw.ts;
+  const ctr: number | undefined = raw.ctr;
+
+  if (ts !== undefined) {
+    if (typeof ts !== 'number' || !Number.isFinite(ts)) {
+      throw new Error('Sealed sender envelope has invalid timestamp — rejecting');
+    }
+  }
+  if (ctr !== undefined) {
+    if (typeof ctr !== 'number' || !Number.isFinite(ctr) || ctr < 0 || !Number.isInteger(ctr)) {
+      throw new Error('Sealed sender envelope has invalid counter — rejecting');
+    }
+  }
+
+  // V7-F2 FIX: Verify sender certificate — cryptographic binding of senderId to identity key.
+  // Previously: senderId was a self-asserted JSON field. Any party knowing the recipient's
+  // public key could forge envelopes claiming any senderId, enabling counter poisoning (V7-F1)
+  // and DoS attacks attributed to innocent senders.
+  // Now: sender signs (recipientId || innerContent || ts || ctr) with their Ed25519 identity key.
+  // Recipient verifies against TOFU-stored identity key for the claimed senderId.
+  //
+  // Envelopes WITHOUT senderIdentityKey are REJECTED — the protocol version field 'sv'
+  // distinguishes old clients (sv absent) from attackers stripping fields (sv=2 but no cert).
+  // Old clients (no sv field) are accepted without certificate for backward compat.
+  // New clients (sv >= 2) MUST include certificate — stripping it triggers rejection.
+  const sealedVersion = typeof raw.sv === 'number' ? raw.sv : 0;
+
+  if (raw.senderIdentityKey && raw.senderSignature) {
+    const senderIdKey = fromBase64(raw.senderIdentityKey);
+    const senderSig = fromBase64(raw.senderSignature);
+    if (senderIdKey.length !== 32 || senderSig.length !== 64) {
+      throw new Error('Sealed sender certificate has invalid key/signature length — rejecting');
+    }
+
+    // Verify signature over the same data the sender signed (ts/ctr already type-validated above)
+    const signData = utf8Encode(`${envelope.recipientId}|${raw.innerContent}|${ts}|${ctr}`);
+    if (!ed25519Verify(senderIdKey, signData, senderSig)) {
+      throw new Error('Sealed sender certificate signature invalid — forged envelope');
+    }
+
+    // Verify the sender's identity key matches our TOFU-stored key for this senderId
+    const knownKey = await loadKnownIdentityKey(raw.senderId);
+    if (knownKey && !constantTimeEqual(knownKey, senderIdKey)) {
+      throw new Error('Sealed sender identity key does not match known key — possible impersonation');
+    }
+  } else if (sealedVersion >= 2) {
+    // Sender claims sv=2 (supports certificates) but omitted them — attacker stripping fields
+    throw new Error('Sealed sender v2 envelope missing certificate — possible downgrade attack');
+  }
+  // sealedVersion=0 (legacy client, no sv field): accepted without certificate
+
+  // F13: Replay protection — check timestamp and counter (types already validated above)
   if (ts !== undefined) {
     const age = Date.now() - ts;
     if (age > SEALED_REPLAY_MAX_AGE_MS || age < -60_000) {
-      // Too old (>5min) or too far in the future (>1min clock skew tolerance)
       throw new Error('Sealed sender envelope expired — possible replay attack');
     }
   }
@@ -229,7 +318,10 @@ export async function unsealMessage(
     try {
       const lastSeenStr = await secureLoad(HMAC_TYPE.SEALED_CTR, counterKey);
       const lastSeen = lastSeenStr ? parseInt(lastSeenStr, 10) : -1;
-      if (ctr <= lastSeen) {
+      // V7-F1: Additional guard — if persisted value parsed to NaN (from prior poisoning),
+      // treat as -1 (no prior counter seen). This self-heals previously poisoned state.
+      const safeLast = Number.isFinite(lastSeen) ? lastSeen : -1;
+      if (ctr <= safeLast) {
         throw new Error('Sealed sender envelope replayed — counter not advanced');
       }
       await secureStore(HMAC_TYPE.SEALED_CTR, counterKey, String(ctr));
