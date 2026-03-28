@@ -24,7 +24,7 @@ import { EventsService } from '../modules/events/events.service';
 import { DraftsService } from '../modules/drafts/drafts.service';
 import { SchedulingService } from '../modules/scheduling/scheduling.service';
 import { CommerceService } from '../modules/commerce/commerce.service';
-import { EncryptionService } from '../modules/encryption/encryption.service';
+// EncryptionService REMOVED — replaced by Go E2E Key Server
 import { AltProfileService } from '../modules/alt-profile/alt-profile.service';
 import { NotificationsService } from '../modules/notifications/notifications.service';
 import { StreamService } from '../modules/stream/stream.service';

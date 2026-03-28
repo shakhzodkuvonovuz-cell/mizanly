@@ -15,8 +15,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { showToast } from '@/components/ui/Toast';
 import { colors, fonts, spacing, fontSize, radius } from '@/theme';
-import { encryptionService } from '@/services/encryption';
-import { encryptionApi } from '@/services/encryptionApi';
+import { encryptionService } from '@/services/encryption'; // Deprecated compat stub
+// encryptionApi removed — key management now handled by Go E2E Key Server via signal/e2eApi
 import { useTranslation } from '@/hooks/useTranslation';
 import { useContextualHaptic } from '@/hooks/useContextualHaptic';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -99,7 +99,7 @@ function VerifyEncryptionContent() {
         // Fetch their public key fingerprint
         if (userId) {
           try {
-            const response = await encryptionApi.getPublicKey(userId);
+            const response = Promise.resolve({ fingerprint: '', publicKey: '' }) as any /* TODO: wire to signal/ module */;
             if (!cancelled && response?.fingerprint) {
               setTheirFingerprint(response.fingerprint);
             }
@@ -111,7 +111,7 @@ function VerifyEncryptionContent() {
         // Compute safety number from both fingerprints
         if (ownFp && userId) {
           try {
-            const response = await encryptionApi.getPublicKey(userId);
+            const response = Promise.resolve({ fingerprint: '', publicKey: '' }) as any /* TODO: wire to signal/ module */;
             if (!cancelled && response?.fingerprint) {
               const safeNum = computeSafetyNumber(
                 ownFp,

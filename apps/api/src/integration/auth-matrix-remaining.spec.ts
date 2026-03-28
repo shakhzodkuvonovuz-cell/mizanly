@@ -9,7 +9,7 @@ import { globalMockProviders } from '../common/test/mock-providers';
 
 import { CommerceService } from '../modules/commerce/commerce.service';
 import { CommunitiesService } from '../modules/communities/communities.service';
-import { EncryptionService } from '../modules/encryption/encryption.service';
+// EncryptionService REMOVED — replaced by Go E2E Key Server
 import { AltProfileService } from '../modules/alt-profile/alt-profile.service';
 
 describe('Auth Matrix — remaining services', () => {
@@ -91,62 +91,9 @@ describe('Auth Matrix — remaining services', () => {
     });
   });
 
-  // ── Task 39: EncryptionService auth ──
-  describe('EncryptionService — auth matrix', () => {
-    let service: EncryptionService;
-    let prisma: any;
-
-    beforeEach(async () => {
-      const module = await Test.createTestingModule({
-        providers: [
-          ...globalMockProviders,
-          EncryptionService,
-          {
-            provide: PrismaService,
-            useValue: {
-              encryptionKey: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },
-              conversationKeyEnvelope: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn() },
-              conversationMember: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-              message: { create: jest.fn() },
-              conversation: { findUnique: jest.fn() },
-            },
-          },
-        ],
-      }).compile();
-      service = module.get(EncryptionService);
-      prisma = module.get(PrismaService);
-    });
-
-    it('should reject empty public key', async () => {
-      await expect(service.registerKey('u1', '')).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject short public key', async () => {
-      await expect(service.registerKey('u1', 'short')).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw NotFoundException for non-existent user key', async () => {
-      prisma.encryptionKey.findUnique.mockResolvedValue(null);
-      await expect(service.getPublicKey('nonexistent')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should return empty for bulk keys with empty array', async () => {
-      const result = await service.getBulkKeys([]);
-      expect(result).toEqual([]);
-    });
-
-    it('should return null safety number when one user has no key', async () => {
-      prisma.encryptionKey.findMany.mockResolvedValue([{ userId: 'u1', keyFingerprint: 'abc' }]);
-      const result = await service.computeSafetyNumber('u1', 'u2');
-      expect(result).toBeNull();
-    });
-
-    it('should throw ForbiddenException for non-member storing envelope', async () => {
-      prisma.conversationMember.findUnique.mockResolvedValue(null);
-      await expect(service.storeEnvelope('u1', { conversationId: 'c-1', recipientId: 'u2', ciphertext: 'test', keyVersion: 1 } as any))
-        .rejects.toThrow(ForbiddenException);
-    });
-  });
+  // EncryptionService auth tests REMOVED — module replaced by Go E2E Key Server.
+  // E2E key management tests in apps/mobile/src/services/signal/__tests__/ (546 tests)
+  // and apps/api/src/modules/messages/messages.e2e-fields.spec.ts (65 tests).
 
   // ── Task 49: AltProfileService auth ──
   describe('AltProfileService — auth matrix', () => {

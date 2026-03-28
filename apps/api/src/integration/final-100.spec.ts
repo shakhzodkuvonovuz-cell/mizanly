@@ -16,7 +16,7 @@ import { NotificationsService } from '../modules/notifications/notifications.ser
 import { StreamService } from '../modules/stream/stream.service';
 import { DraftsService } from '../modules/drafts/drafts.service';
 import { SchedulingService } from '../modules/scheduling/scheduling.service';
-import { EncryptionService } from '../modules/encryption/encryption.service';
+// EncryptionService REMOVED — replaced by Go E2E Key Server
 
 describe('Final 100 — breaking 3800', () => {
   // Posts — feed scoring + enrichment
@@ -256,66 +256,10 @@ describe('Final 100 — breaking 3800', () => {
     }
   });
 
-  // Encryption — key operations
-  describe('EncryptionService — key operations', () => {
-    let service: EncryptionService; let prisma: any;
-    beforeEach(async () => {
-      const module = await Test.createTestingModule({
-        providers: [
-          ...globalMockProviders, EncryptionService,
-          { provide: PrismaService, useValue: {
-            encryptionKey: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },
-            conversationKeyEnvelope: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn() },
-            conversationMember: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
-            message: { create: jest.fn() }, conversation: { findUnique: jest.fn() },
-          }},
-        ],
-      }).compile();
-      service = module.get(EncryptionService); prisma = module.get(PrismaService);
-    });
-
-    it('registerKey — valid key succeeds', async () => {
-      prisma.encryptionKey.findUnique.mockResolvedValue(null);
-      prisma.encryptionKey.upsert.mockResolvedValue({ userId: 'u1', publicKey: 'a'.repeat(44), keyFingerprint: 'abc' });
-      const result = await service.registerKey('u1', 'a'.repeat(44));
-      expect(result).toBeDefined();
-      expect(result).toHaveProperty('publicKey');
-    });
-
-    it('registerKey — key change triggers notification', async () => {
-      prisma.encryptionKey.findUnique.mockResolvedValue({ userId: 'u1', keyFingerprint: 'old-fp' });
-      prisma.encryptionKey.upsert.mockResolvedValue({ userId: 'u1', keyFingerprint: 'new-fp' });
-      prisma.conversationMember.findMany.mockResolvedValue([]);
-      const result = await service.registerKey('u1', 'b'.repeat(44));
-      expect(result).toBeDefined();
-      expect(result).toHaveProperty('keyFingerprint', 'new-fp');
-    });
-
-    it('getPublicKey — found', async () => {
-      prisma.encryptionKey.findUnique.mockResolvedValue({ userId: 'u1', publicKey: 'key', keyFingerprint: 'fp' });
-      const result = await service.getPublicKey('u1');
-      expect(result.publicKey).toBe('key');
-    });
-
-    it('getBulkKeys — returns multiple', async () => {
-      prisma.encryptionKey.findMany.mockResolvedValue([
-        { userId: 'u1', publicKey: 'k1', keyFingerprint: 'f1' },
-        { userId: 'u2', publicKey: 'k2', keyFingerprint: 'f2' },
-      ]);
-      const result = await service.getBulkKeys(['u1', 'u2']);
-      expect(result).toHaveLength(2);
-    });
-
-    it('computeSafetyNumber — two valid keys', async () => {
-      prisma.encryptionKey.findMany.mockResolvedValue([
-        { userId: 'u1', keyFingerprint: 'abcdef1234567890abcdef1234567890' },
-        { userId: 'u2', keyFingerprint: '1234567890abcdef1234567890abcdef' },
-      ]);
-      const result = await service.computeSafetyNumber('u1', 'u2');
-      expect(result).not.toBeNull();
-      expect(typeof result).toBe('string');
-    });
-  });
+  // EncryptionService tests REMOVED — module replaced by Go E2E Key Server (apps/e2e-server/).
+  // E2E key management tests are now in:
+  // - apps/mobile/src/services/signal/__tests__/ (546 tests)
+  // - apps/api/src/modules/messages/messages.e2e-fields.spec.ts (65 tests)
 
   // Drafts — comprehensive
   describe('DraftsService — comprehensive', () => {
