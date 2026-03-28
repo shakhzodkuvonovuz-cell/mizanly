@@ -13,9 +13,11 @@
   <img src="https://img.shields.io/badge/React_Native-0.76-61DAFB?style=flat-square&logo=react&logoColor=white" />
   <img src="https://img.shields.io/badge/Expo_SDK-52-000020?style=flat-square&logo=expo&logoColor=white" />
   <img src="https://img.shields.io/badge/NestJS-10.4-E0234E?style=flat-square&logo=nestjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white" />
   <img src="https://img.shields.io/badge/Prisma-6.3-2D3748?style=flat-square&logo=prisma&logoColor=white" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Signal_Protocol-E2E-0A7B4F?style=flat-square&logo=signal&logoColor=white" />
   <img src="https://img.shields.io/badge/Socket.io-4.8-010101?style=flat-square&logo=socketdotio&logoColor=white" />
   <img src="https://img.shields.io/badge/Stripe-20.4-635BFF?style=flat-square&logo=stripe&logoColor=white" />
   <img src="https://img.shields.io/badge/License-Proprietary-C8963E?style=flat-square" />
@@ -41,7 +43,7 @@
 - [Database Schema](#database-schema-193-models-55-enums)
 - [WebSocket Gateway](#websocket-gateway)
 - [Internationalization](#internationalization-i18n)
-- [All Screens](#all-screens-212-total)
+- [All Screens](#all-screens-213-total)
 - [Getting Started](#getting-started)
 - [Development Scripts](#development-scripts)
 - [Local Development with Docker](#local-development-with-docker)
@@ -78,7 +80,7 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 | **Saf** | الصف | "The Row" (prayer row) | Instagram | Photo/video feed, stories, highlights, reels, visual sharing, creator storefronts |
 | **Bakra** | بكرة | "Tomorrow" | TikTok | Full-screen vertical video, duets, stitches, effects, trending audio, templates |
 | **Majlis** | المجلس | "The Gathering" | X/Twitter | Threaded discussions, replies, trending topics, polls, curated lists |
-| **Risalah** | رسالة | "The Message" | WhatsApp | 1:1 & group messaging, voice/video calls, broadcasts, stickers, encryption |
+| **Risalah** | رسالة | "The Message" | WhatsApp | 1:1 & group messaging, Signal Protocol E2E encryption (X3DH + Double Ratchet + Sender Keys), voice/video calls via LiveKit, broadcasts, stickers |
 | **Minbar** | المنبر | "The Pulpit" | YouTube | Long-form video, channels, subscriptions, playlists, live streaming, audio rooms |
 
 ---
@@ -87,32 +89,28 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Source Lines (TS/TSX) | 125,000+ |
-| Test Lines (*.spec.ts) | 60,000+ |
-| Total TypeScript | 185,000+ |
-| Mobile Screens | 212 |
-| Backend Modules | 79 |
-| Backend Controllers | 82 |
-| Backend Services | 86 |
-| Prisma Models | 193 |
+| Source Lines (TS/TSX/Go) | 140,000+ |
+| Test Lines | 70,000+ |
+| Total Code | 210,000+ |
+| Mobile Screens | 213 |
+| Backend Modules | ~80 |
+| Backend Endpoints | ~950 |
+| Prisma Models | ~200 (incl. 4 E2E models) |
 | Prisma Enums | 55 |
-| Prisma Schema Lines | 4,700+ |
-| Test Suites | 293 |
-| Tests Passing | 5,093 (100%) |
-| UI Components | 85 |
-| Custom Hooks | 23 |
-| API Service Files | 34 |
+| Tests Passing | 6,100+ (561 signal + 31 Go + ~5,500 API) |
+| UI Components | 85+ |
+| Custom Hooks | 28 |
+| API Service Files | 36+ |
+| Signal Protocol Files | 23 files, ~8,500 lines |
+| Go E2E Key Server | 13 endpoints, ~1,500 lines |
 | Translation Keys | 3,700+ per language |
-| Accessibility Coverage | 210/212 screens |
-| Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
-| REST Endpoints | 870+ |
-| Socket Events | 16 |
-| DTOs | 140+ |
+| Supported Languages | 8 (en, ar, tr, ur, bn, fr, id, ms) |
 | Story Sticker Types | 10 interactive + 2 static |
-| Audit Findings Fixed | 4,500+ (72 deep audit files + 11-wave remediation + 3 session-4 rounds) |
+| Audit Findings Fixed | 5,000+ across 12 sessions |
+| E2E Security Audit | 33 findings documented, A+ roadmap |
 | RTL Support | Complete (~430 replacements across 134 files) |
-| Git Commits | 1,060+ |
-| Development Time | 21 days (Mar 3–24, 2026) |
+| Git Commits | 1,100+ |
+| Development Time | 28 days (Mar 3-28, 2026) |
 
 ---
 
@@ -402,12 +400,28 @@ What makes Mizanly fundamentally different from any mainstream social platform �
 | **Fonts** | @expo-google-fonts/* | — | DM Sans, Noto Naskh Arabic, Playfair Display |
 | **Web** | react-native-web | 0.19 | Expo Web + PWA support |
 
+| **E2E Encryption** | @noble/curves + @noble/ciphers + @noble/hashes | 1.9/0.6/1.4 | Signal Protocol (X3DH, Double Ratchet, Sender Keys) |
+| **Post-Quantum** | @noble/post-quantum | 0.5.4 | ML-KEM-768 (PQXDH hybrid key agreement) |
+| **Video Editor** | ffmpeg-kit-react-native | full-gpl | 10-tab editor with undo/redo |
+
 | Dev Tool | Purpose |
 |----------|---------|
-| TypeScript 5.7 | Type safety |
+| TypeScript 5.9 | Type safety |
 | ESLint 9 | Linting |
-| Jest + jest-expo | Unit testing |
+| Jest + jest-expo | Unit testing (561 signal tests) |
 | @testing-library/react-native | Component testing |
+
+### E2E Key Server (`apps/e2e-server`)
+
+| Category | Technology | Version | Purpose |
+|----------|------------|---------|---------|
+| **Language** | Go | 1.25 | High-performance key server |
+| **Database** | pgx/v5 | 5.9 | PostgreSQL driver (Neon pooler compatible) |
+| **Auth** | clerk-sdk-go/v2 | 2.5 | Clerk JWT verification |
+| **Cache** | go-redis/v9 | 9.18 | Redis rate limiting (Lua scripts) |
+| **Monitoring** | sentry-go | 0.44 | Error tracking |
+
+13 endpoints: identity keys, signed pre-keys, OTP claim (SKIP LOCKED), bundle assembly, sender keys, device listing, Merkle transparency log. 31 unit tests.
 
 ### Backend API (`apps/api`)
 
@@ -437,7 +451,7 @@ What makes Mizanly fundamentally different from any mainstream social platform �
 
 | Dev Tool | Purpose |
 |----------|---------|
-| TypeScript 5.7 | Type safety |
+| TypeScript 5.9 | Type safety |
 | Jest + ts-jest | Unit + integration testing |
 | Supertest 7.2 | HTTP endpoint testing |
 | @nestjs/testing | Module testing utilities |
@@ -474,7 +488,7 @@ mizanly/
 ├── apps/
 │   ├── api/                          # NestJS backend (REST + WebSocket)
 │   │   ├── prisma/
-│   │   │   └── schema.prisma         # 188 models, 4,080 lines
+│   │   │   └── schema.prisma         # ~200 models (incl. E2E), 5,000+ lines
 │   │   ├── src/
 │   │   │   ├── config/
 │   │   │   │   └── prisma.service.ts # Prisma client singleton
@@ -489,7 +503,7 @@ mizanly/
 │   │   │   ├── gateways/
 │   │   │   │   ├── chat.gateway.ts   # Socket.io /chat namespace
 │   │   │   │   └── dto/              # WebSocket event DTOs
-│   │   │   └── modules/              # 79 feature modules
+│   │   │   └── modules/              # ~80 feature modules
 │   │   │       ├── admin/            # Admin dashboard endpoints
 │   │   │       ├── audio-rooms/      # Clubhouse-style audio rooms
 │   │   │       ├── audio-tracks/     # Music/nasheed library
@@ -507,7 +521,7 @@ mizanly/
 │   │   │       ├── creator/          # Creator dashboard + analytics
 │   │   │       ├── devices/          # Device management + push tokens
 │   │   │       ├── drafts/           # Draft post storage
-│   │   │       ├── encryption/       # E2E encryption keys
+│   │   │       ├── encryption/       # (Legacy — replaced by Go E2E server + signal/ client)
 │   │   │       ├── events/           # Event creation + RSVPs
 │   │   │       ├── feed/             # Feed algorithms + personalization
 │   │   │       ├── follows/          # Follow/unfollow + requests
@@ -591,24 +605,46 @@ mizanly/
 │       │   ├── components/
 │       │   │   ├── ui/              # 70 reusable UI components (Toast, ProgressiveImage, SocialProof, BrandedRefreshControl, etc.)
 │       │   │   └── islamic/         # Islamic-specific components
-│       │   ├── hooks/               # 23 custom hooks (useContextualHaptic, useStaggeredEntrance, useScrollLinkedHeader, etc.)
-│       │   ├── services/            # 32 API service files
+│       │   ├── hooks/               # 28 custom hooks
+│       │   ├── services/            # 36+ API service files
+│       │   ├── services/signal/     # Signal Protocol E2E encryption (23 files, ~8,500 lines)
+│       │   │   ├── crypto.ts        # @noble/* wrapper + padding + native adapter
+│       │   │   ├── x3dh.ts          # X3DH key agreement (with PQXDH hybrid)
+│       │   │   ├── double-ratchet.ts # Message encrypt/decrypt
+│       │   │   ├── session.ts       # Session lifecycle + clone-before-decrypt
+│       │   │   ├── sender-keys.ts   # Group encryption (Sender Keys)
+│       │   │   ├── sealed-sender.ts # Hide sender identity from server
+│       │   │   ├── key-transparency.ts # Merkle proof verification
+│       │   │   ├── pqxdh.ts         # Post-quantum ML-KEM-768 hybrid
+│       │   │   ├── multi-device.ts  # Per-device fanout + device linking
+│       │   │   ├── media-crypto.ts  # Chunked media encryption (1MB chunks)
+│       │   │   └── ...              # storage, prekeys, safety-numbers, etc.
 │       │   ├── stores/              # Zustand global store
 │       │   ├── theme/               # Design tokens
 │       │   ├── types/               # TypeScript interfaces
-│       │   ├── utils/               # Utility functions (Hijri dates, formatCount, navigation, RTL, etc.)
-│       │   └── i18n/                # Translations (8 languages: EN, AR, TR, UR, BN, FR, ID, MS)
-│       ├── assets/
-│       │   └── images/              # App icon, splash, adaptive icon
+│       │   ├── utils/               # Utilities (Hijri dates, formatCount, RTL, etc.)
+│       │   └── i18n/                # 8 languages (EN, AR, TR, UR, BN, FR, ID, MS)
+│       ├── plugins/                 # Expo config plugins
+│       │   ├── certificate-pinning/ # TLS cert pinning (Android + iOS)
+│       │   ├── ffmpeg-kit/          # Video editor (full-gpl variant)
+│       │   └── ...                  # giphy-sdk, notification-service-extension, etc.
 │       └── app.json                 # Expo configuration
 │
-├── packages/
-│   └── shared/                      # Shared types & constants
+│   └── e2e-server/                  # Go E2E Key Server (microservice)
+│       ├── cmd/server/main.go       # HTTP server + graceful shutdown
+│       ├── internal/
+│       │   ├── handler/             # 13 HTTP handlers + Merkle tree builder
+│       │   ├── store/               # PostgreSQL ops (pgx v5, SKIP LOCKED)
+│       │   ├── middleware/          # Clerk JWT auth + Redis rate limiting (Lua)
+│       │   └── model/               # Request/response types
+│       └── Dockerfile               # 15MB production image
+│
+├── workers/
+│   └── exif-stripper/               # Cloudflare Worker (EXIF metadata removal)
 │
 ├── docker-compose.yml               # Local dev: Postgres + Redis + Meilisearch
 ├── package.json                     # Workspace root
-├── CLAUDE.md                        # AI agent development guide
-└── ARCHITECT_INSTRUCTIONS.md        # Current batch blueprint
+└── CLAUDE.md                        # Development rules + integrity constraints
 ```
 
 ---
@@ -840,7 +876,7 @@ Alt text, Tag people, Collaborator, Who can comment, Share to feed, Allow remixe
 
 ## Custom Hooks
 
-23 hooks in `apps/mobile/src/hooks/`:
+28 hooks in `apps/mobile/src/hooks/`:
 
 | Hook | File | Description |
 |------|------|-------------|
@@ -884,8 +920,7 @@ Alt text, Tag people, Collaborator, Who can comment, Share to feed, Allow remixe
 | **Communities** | `communitiesApi.ts` | Community group endpoints |
 | **Creator** | `creatorApi.ts` | Creator dashboard, analytics, storefronts |
 | **Download Manager** | `downloadManager.ts` | Offline content download queue and storage management |
-| **Encryption** | `encryption.ts` | Client-side E2E encryption utilities |
-| **Encryption API** | `encryptionApi.ts` | Key exchange + envelope endpoints |
+| **Signal Protocol** | `services/signal/` | E2E encryption: X3DH, Double Ratchet, Sender Keys, sealed sender, PQXDH, media crypto (23 files, ~8,500 lines) |
 | **Events** | `eventsApi.ts` | Event CRUD + RSVP |
 | **Gifts** | `giftsApi.ts` | Virtual gift shop + sending |
 | **Islamic** | `islamicApi.ts` | All Islamic feature endpoints (prayer, Quran, dhikr, etc.) |
@@ -902,7 +937,7 @@ Alt text, Tag people, Collaborator, Who can comment, Share to feed, Allow remixe
 
 ## Backend Modules
 
-All 79 NestJS modules in `apps/api/src/modules/`:
+All ~80 NestJS modules in `apps/api/src/modules/`:
 
 <details>
 <summary>Click to expand full module list with descriptions</summary>
@@ -927,7 +962,7 @@ All 79 NestJS modules in `apps/api/src/modules/`:
 | `devices` | Device management — push tokens, active sessions |
 | `drafts` | Draft post auto-save and retrieval |
 | `embeddings` | Gemini text-embedding-004 — pgvector KNN similarity, content embedding pipeline, user interest vectors |
-| `encryption` | End-to-end encryption — key exchange, conversation envelopes |
+| `encryption` | (Legacy — replaced by Go E2E server + signal/ client module) |
 | `events` | Event creation — date, location, RSVPs, reminders |
 | `feed` | Feed algorithms — "For You" personalization, interaction tracking |
 | `follows` | Follow/unfollow — follow requests, mutual followers |
@@ -1042,7 +1077,8 @@ Real-time features are powered by a Socket.io gateway at the `/chat` namespace (
 
 | Event | Direction | Description |
 |-------|-----------|-------------|
-| `send_message` | Client -> Server | Send a message to a conversation |
+| `send_message` | Client -> Server | Send an E2E encrypted message (Signal Protocol fields passthrough) |
+| `send_sealed_message` | Client -> Server | Sealed sender: server can't see who sent it |
 | `join_conversation` | Client -> Server | Join a conversation room |
 | `typing` | Client -> Server | Typing indicator broadcast |
 | `read_receipt` | Client -> Server | Mark messages as read |
@@ -1059,7 +1095,7 @@ Real-time features are powered by a Socket.io gateway at the `/chat` namespace (
 | `call_answer` | Client -> Server | Accept a call |
 | `call_reject` | Client -> Server | Decline a call |
 | `call_end` | Client -> Server | End a call |
-| `call_signal` | Bidirectional | WebRTC signaling data |
+| `call_signal` | Bidirectional | LiveKit call signaling |
 
 ### Quran Room Events
 
@@ -1102,7 +1138,7 @@ Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. A
 
 ---
 
-## All Screens (212 Total)
+## All Screens (213 Total)
 
 <details>
 <summary>Click to expand complete screen list</summary>
@@ -1137,7 +1173,7 @@ Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. A
 | `2fa-setup.tsx` | Two-factor authentication setup with QR code |
 | `2fa-verify.tsx` | 2FA verification code entry |
 | `biometric-lock.tsx` | Face ID / fingerprint lock toggle |
-| `verify-encryption.tsx` | E2E encryption key verification |
+| `verify-encryption.tsx` | Safety number verification (Signal Protocol fingerprint comparison) |
 
 **Profile & Settings**
 | Screen | Description |
@@ -1529,11 +1565,24 @@ npm run lint                  # ESLint check
 cd apps/api
 npx prisma studio             # Visual database browser (http://localhost:5555)
 npx prisma db push            # Push schema to database
-npx prisma db pull            # Pull schema from database
 npx prisma generate           # Regenerate client from schema
 npx prisma migrate dev        # Create and apply migration
-npx prisma migrate deploy     # Apply pending migrations (production)
-npx prisma format             # Format schema file
+```
+
+### Go E2E Key Server (`apps/e2e-server`)
+
+```bash
+cd apps/e2e-server
+go run ./cmd/server            # Start E2E key server (port 8080)
+go build ./cmd/server          # Build binary
+go test ./internal/... -v      # Run 31 unit tests
+```
+
+### Signal Protocol Tests
+
+```bash
+cd apps/mobile
+npx jest --config src/services/signal/__tests__/jest.config.js --verbose  # 561 tests
 ```
 
 ---
@@ -1689,22 +1738,21 @@ Additional documentation in `docs/`:
 
 ## Security & Quality Hardening
 
-The codebase has undergone a comprehensive 72-agent deep audit with 4,300+ findings analyzed. As of files 01-16 (760+ findings fixed):
+The codebase has undergone 12 sessions of continuous auditing and hardening — 5,000+ findings fixed across API security, E2E encryption, and infrastructure.
 
 | Area | Status |
 |------|--------|
+| **E2E Encryption** | Signal Protocol (X3DH + Double Ratchet + Sender Keys) with XChaCha20-Poly1305. Go key server. 33-finding security audit with A+ roadmap. |
+| **Post-Quantum** | ML-KEM-768 (PQXDH) hybrid key agreement ready — activates when bundle includes PQ pre-key |
+| **Sealed Sender** | Ephemeral DH envelope hides sender identity from server |
+| **Key Transparency** | Merkle tree inclusion proofs — detect server-side key substitution |
+| **Certificate Pinning** | Android network_security_config.xml + iOS TrustKit Info.plist |
+| **MMKV AEAD** | All session/key/identity stores wrapped with XChaCha20-Poly1305 authentication |
 | **Auth Guards** | ClerkAuthGuard checks isBanned/isDeactivated/isDeleted + auto-unbans expired temp bans |
 | **SQL Injection** | All `$queryRawUnsafe` calls validated against enum whitelists |
-| **AI Moderation** | Fail-closed — returns WARNING/unsafe on ALL error paths (was fail-open) |
-| **Cascade Deletes** | 12+ financial records (tips, gifts, orders, donations) changed to SetNull — survive user deletion |
-| **DTO Validation** | 100+ inline types replaced with validated DTO classes (@IsUrl, @Min/@Max, @MaxLength, @ArrayMaxSize) |
-| **Feed Privacy** | Block/mute filtering on ALL feed endpoints (personalized, trending, featured, search) |
-| **Webhook Security** | Signature verification required, 5-minute replay protection, rejects when secret missing |
-| **Push Notifications** | Token hijacking prevention, per-type settings enforcement, correct data types |
-| **Database Indexes** | 20+ indexes added (notifications, reports, moderation logs, calls, events) |
-| **Word Filter** | Placeholder patterns replaced with real hate speech/NSFW/harassment detection |
-| **Rate Limiting** | Per-endpoint @Throttle on all 82 controllers (AI moderation: 5/min, feeds: 30/min) |
-| **Tests** | 284 suites, 4,429 tests, 100% pass rate |
+| **AI Moderation** | Fail-closed — returns WARNING/unsafe on ALL error paths |
+| **Rate Limiting** | Per-endpoint @Throttle on all controllers + Redis Lua rate limiting on Go server |
+| **Tests** | 6,100+ tests (561 signal + 31 Go + ~5,500 API), 0 TypeScript errors |
 
 ---
 
@@ -1735,8 +1783,13 @@ The codebase has undergone a comprehensive 72-agent deep audit with 4,300+ findi
 | 14 | 2026 Competitor Parity — Live, calls, video chapters, Quran audio, 8 languages | Complete |
 | 15 | Performance — Query caps, indexes, optimistic updates, memo, Sentry | Complete |
 | 16 | 72-Agent Deep Audit — 4,300+ findings across 72 files | Complete |
-| 17 | **11-Wave Remediation** — 85 agents, ~240 fixes, algorithm tuning, schema enums, RTL complete, accessibility, payments, new components | **Complete (4,740 tests)** |
-| **Next** | WebRTC calls, performance/latency, maps, audio, Apple IAP, App Store submission | **In Progress** |
+| 17 | 11-Wave Remediation — 85 agents, ~240 fixes, RTL, accessibility, payments | Complete |
+| 18 | Video Editor — FFmpeg-kit, 10 tabs, multi-clip, transitions | Complete |
+| 19 | Story Stickers — 10 interactive + GIPHY SDK + 5-tab nav rewrite | Complete |
+| 20 | WebRTC → LiveKit — rewrite from P2P to SFU, carousel, scheduledAt | Complete |
+| 21 | Deep Audit All Categories — A/B/C/D findings fixed, CI 7/7, Railway deployed | Complete |
+| 22 | **Signal Protocol E2E** — Go key server, 23 TS files, sealed sender, PQXDH, multi-device, key transparency, cert pinning | **Complete** |
+| **Next** | First EAS build, real-device E2E testing, Apple Developer enrollment, app icon, production keys | **Blocked (external)** |
 
 ---
 
