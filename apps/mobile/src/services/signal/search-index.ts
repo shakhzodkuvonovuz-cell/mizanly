@@ -1,5 +1,9 @@
 /**
- * Client-side search index for encrypted messages.
+ * Client-side search index for encrypted messages — AEAD-encrypted in shared MMKV.
+ *
+ * F3 FIX: Previously used its own MMKV instance with AES-CFB encryption
+ * (no integrity, tokenized plaintext exposed on disk). Now uses the shared
+ * MMKV from storage.ts with per-value AEAD wrapping + HMAC-hashed key names.
  *
  * The server can't search encrypted content. This inverted index lets
  * users search their own decrypted messages locally.
@@ -16,7 +20,10 @@
  * Future: migrate to SQLite FTS5 via expo-sqlite for better scaling.
  */
 
-import { MMKV } from 'react-native-mmkv';
+import {
+  getMMKV, secureStore, secureLoad, secureDelete,
+  hmacKeyName, HMAC_TYPE,
+} from './storage';
 import type { SearchIndexEntry } from './types';
 
 // ============================================================
@@ -29,32 +36,33 @@ const MAX_INDEXED_MESSAGES = 50_000;
 /** Minimum token length to index (skip 1-2 char tokens) */
 const MIN_TOKEN_LENGTH = 3;
 
-/** MMKV key prefixes */
+/** Original MMKV key prefixes (used as HMAC input, NOT stored directly) */
 const INDEX_TOKEN_PREFIX = 'searchidx:t:';
 const INDEX_MSG_PREFIX = 'searchidx:m:';
 const INDEX_COUNT_KEY = 'searchidx:__count';
 
-let mmkvInstance: MMKV | null = null;
-let mmkvInitPromise: Promise<MMKV> | null = null;
+// ============================================================
+// COUNT HELPERS
+// ============================================================
 
-async function getMMKV(): Promise<MMKV> {
-  if (mmkvInstance) return mmkvInstance;
-  if (!mmkvInitPromise) {
-    mmkvInitPromise = (async () => {
-      const SecureStore = await import('expo-secure-store');
-      const encKey = await SecureStore.getItemAsync('e2e_mmkv_key');
-      // CRITICAL: NEVER create unencrypted MMKV for search index.
-      // Without encryption, tokenized message content is stored in cleartext on disk.
-      if (!encKey) {
-        throw new Error(
-          'E2E encryption key not available. Call SignalService.initialize() before using search index.',
-        );
-      }
-      mmkvInstance = new MMKV({ id: 'mizanly-signal-search', encryptionKey: encKey });
-      return mmkvInstance;
-    })();
+async function getIndexCount(): Promise<number> {
+  const mmkv = await getMMKV();
+  const hashed = hmacKeyName(HMAC_TYPE.SEARCH_COUNT, INDEX_COUNT_KEY);
+  let count = mmkv.getNumber(hashed);
+  if (count === undefined) {
+    count = mmkv.getNumber(INDEX_COUNT_KEY);
+    if (count !== undefined) {
+      mmkv.set(hashed, count);
+      mmkv.delete(INDEX_COUNT_KEY);
+    }
   }
-  return mmkvInitPromise;
+  return count ?? 0;
+}
+
+async function setIndexCount(count: number): Promise<void> {
+  const mmkv = await getMMKV();
+  const hashed = hmacKeyName(HMAC_TYPE.SEARCH_COUNT, INDEX_COUNT_KEY);
+  mmkv.set(hashed, count);
 }
 
 // ============================================================
@@ -64,11 +72,6 @@ async function getMMKV(): Promise<MMKV> {
 /**
  * Index a decrypted message for search.
  * Called after every successful decrypt.
- *
- * @param messageId - Message ID
- * @param conversationId - Conversation ID
- * @param content - Decrypted plaintext content
- * @param timestamp - Message creation timestamp
  */
 export async function indexMessage(
   messageId: string,
@@ -78,31 +81,30 @@ export async function indexMessage(
 ): Promise<void> {
   if (!content || content.trim().length === 0) return;
 
-  const mmkv = await getMMKV();
   const tokens = tokenize(content);
   if (tokens.length === 0) return;
 
-  // Store message metadata (for result construction)
-  const msgKey = `${INDEX_MSG_PREFIX}${messageId}`;
-  mmkv.set(msgKey, JSON.stringify({ conversationId, timestamp }));
+  // Store message metadata (AEAD + HMAC key)
+  const msgOriginalKey = `${INDEX_MSG_PREFIX}${messageId}`;
+  await secureStore(HMAC_TYPE.SEARCH_MSG, msgOriginalKey, JSON.stringify({ conversationId, timestamp }));
 
-  // Add messageId to each token's posting list
+  // Add messageId to each token's posting list (AEAD + HMAC key)
   for (const token of tokens) {
-    const tokenKey = `${INDEX_TOKEN_PREFIX}${token}`;
-    const existing = mmkv.getString(tokenKey);
+    const tokenOriginalKey = `${INDEX_TOKEN_PREFIX}${token}`;
+    const existing = await secureLoad(HMAC_TYPE.SEARCH_TOKEN, tokenOriginalKey);
     const postings: string[] = existing ? JSON.parse(existing) : [];
 
     if (!postings.includes(messageId)) {
       postings.push(messageId);
       // Cap per-token posting list to prevent one common word from bloating
       if (postings.length > 5000) postings.shift();
-      mmkv.set(tokenKey, JSON.stringify(postings));
+      await secureStore(HMAC_TYPE.SEARCH_TOKEN, tokenOriginalKey, JSON.stringify(postings));
     }
   }
 
   // Track count for LRU
-  const count = (mmkv.getNumber(INDEX_COUNT_KEY) ?? 0) + 1;
-  mmkv.set(INDEX_COUNT_KEY, count);
+  const count = (await getIndexCount()) + 1;
+  await setIndexCount(count);
 
   // LRU eviction if over cap
   if (count > MAX_INDEXED_MESSAGES) {
@@ -115,14 +117,13 @@ export async function indexMessage(
  * Called when a message is deleted.
  */
 export async function removeFromIndex(messageId: string): Promise<void> {
-  const mmkv = await getMMKV();
-  const msgKey = `${INDEX_MSG_PREFIX}${messageId}`;
-  mmkv.delete(msgKey);
+  const msgOriginalKey = `${INDEX_MSG_PREFIX}${messageId}`;
+  await secureDelete(HMAC_TYPE.SEARCH_MSG, msgOriginalKey);
 
   // We don't clean up token posting lists (too expensive).
   // Stale messageIds in posting lists are filtered during search.
-  const count = mmkv.getNumber(INDEX_COUNT_KEY) ?? 0;
-  mmkv.set(INDEX_COUNT_KEY, Math.max(0, count - 1));
+  const count = await getIndexCount();
+  await setIndexCount(Math.max(0, count - 1));
 }
 
 // ============================================================
@@ -134,10 +135,6 @@ export async function removeFromIndex(messageId: string): Promise<void> {
  *
  * Tokenizes the query and finds messages that contain ALL tokens
  * (AND semantics). Returns results sorted by timestamp (newest first).
- *
- * @param query - Search query string
- * @param limit - Maximum results (default 50)
- * @returns Matching messages with conversationId and timestamp
  */
 export async function searchMessages(
   query: string,
@@ -145,7 +142,6 @@ export async function searchMessages(
 ): Promise<SearchIndexEntry[]> {
   if (!query || query.trim().length === 0) return [];
 
-  const mmkv = await getMMKV();
   const tokens = tokenize(query);
   if (tokens.length === 0) return [];
 
@@ -153,8 +149,8 @@ export async function searchMessages(
   let candidateIds: Set<string> | null = null;
 
   for (const token of tokens) {
-    const tokenKey = `${INDEX_TOKEN_PREFIX}${token}`;
-    const existing = mmkv.getString(tokenKey);
+    const tokenOriginalKey = `${INDEX_TOKEN_PREFIX}${token}`;
+    const existing = await secureLoad(HMAC_TYPE.SEARCH_TOKEN, tokenOriginalKey);
     if (!existing) return []; // Token not in index → no results (AND semantics)
 
     const postings: string[] = JSON.parse(existing);
@@ -163,7 +159,6 @@ export async function searchMessages(
     if (candidateIds === null) {
       candidateIds = postingSet;
     } else {
-      // Intersect with previous candidates (AND)
       for (const id of candidateIds) {
         if (!postingSet.has(id)) candidateIds.delete(id);
       }
@@ -177,8 +172,8 @@ export async function searchMessages(
   // Resolve message metadata and sort by timestamp
   const results: SearchIndexEntry[] = [];
   for (const messageId of candidateIds) {
-    const msgKey = `${INDEX_MSG_PREFIX}${messageId}`;
-    const metaStr = mmkv.getString(msgKey);
+    const msgOriginalKey = `${INDEX_MSG_PREFIX}${messageId}`;
+    const metaStr = await secureLoad(HMAC_TYPE.SEARCH_MSG, msgOriginalKey);
     if (!metaStr) continue; // Stale entry — message was deleted
 
     const meta: { conversationId: string; timestamp: number } = JSON.parse(metaStr);
@@ -189,7 +184,6 @@ export async function searchMessages(
     });
   }
 
-  // Sort newest first
   results.sort((a, b) => b.timestamp - a.timestamp);
 
   return results.slice(0, limit);
@@ -203,7 +197,7 @@ export async function searchInConversation(
   query: string,
   limit: number = 50,
 ): Promise<SearchIndexEntry[]> {
-  const all = await searchMessages(query, limit * 2); // Over-fetch to filter
+  const all = await searchMessages(query, limit * 2);
   return all.filter((r) => r.conversationId === conversationId).slice(0, limit);
 }
 
@@ -220,9 +214,7 @@ export async function searchInConversation(
  */
 function tokenize(text: string): string[] {
   const normalized = text.toLowerCase().trim();
-  // Split on whitespace + common punctuation
   const raw = normalized.split(/[\s.,!?;:()[\]{}'"،؟!]+/);
-  // Filter empty and too-short tokens, deduplicate
   const seen = new Set<string>();
   const tokens: string[] = [];
   for (const t of raw) {
@@ -241,35 +233,42 @@ function tokenize(text: string): string[] {
 
 async function evictOldestIndexEntries(count: number): Promise<void> {
   const mmkv = await getMMKV();
-  const allMsgKeys = mmkv.getAllKeys().filter((k) => k.startsWith(INDEX_MSG_PREFIX));
+  const allMsgKeys = mmkv.getAllKeys().filter((k) =>
+    k.startsWith(HMAC_TYPE.SEARCH_MSG) || k.startsWith(INDEX_MSG_PREFIX),
+  );
 
-  // Collect with timestamps
-  const entries: Array<{ key: string; messageId: string; timestamp: number }> = [];
+  const entries: Array<{ originalKey: string; messageId: string; timestamp: number }> = [];
   for (const key of allMsgKeys) {
-    const str = mmkv.getString(key);
-    if (!str) { mmkv.delete(key); continue; }
     try {
-      const meta = JSON.parse(str);
-      entries.push({
-        key,
-        messageId: key.replace(INDEX_MSG_PREFIX, ''),
-        timestamp: meta.timestamp ?? 0,
-      });
+      // For legacy keys (original prefix), read directly
+      if (key.startsWith(INDEX_MSG_PREFIX)) {
+        const raw = mmkv.getString(key);
+        if (!raw) { mmkv.delete(key); continue; }
+        const str = raw.startsWith('A1:') ? null : raw;
+        if (!str) continue;
+        const meta = JSON.parse(str);
+        entries.push({
+          originalKey: key,
+          messageId: key.replace(INDEX_MSG_PREFIX, ''),
+          timestamp: meta.timestamp ?? 0,
+        });
+      }
+      // HMAC keys: we can't decrypt without original key, skip for eviction.
+      // The per-index cap and periodic clearSearchIndex handle cleanup.
     } catch {
       mmkv.delete(key);
     }
   }
 
-  // Sort oldest first
   entries.sort((a, b) => a.timestamp - b.timestamp);
   const toEvict = entries.slice(0, count);
 
   for (const entry of toEvict) {
-    mmkv.delete(entry.key);
+    await secureDelete(HMAC_TYPE.SEARCH_MSG, entry.originalKey);
   }
 
-  const globalCount = mmkv.getNumber(INDEX_COUNT_KEY) ?? 0;
-  mmkv.set(INDEX_COUNT_KEY, Math.max(0, globalCount - toEvict.length));
+  const globalCount = await getIndexCount();
+  await setIndexCount(Math.max(0, globalCount - toEvict.length));
 }
 
 /**
@@ -278,9 +277,20 @@ async function evictOldestIndexEntries(count: number): Promise<void> {
  */
 export async function clearSearchIndex(): Promise<void> {
   const mmkv = await getMMKV();
-  mmkv.clearAll();
-  mmkvInstance = null;
-  mmkvInitPromise = null;
+  const allKeys = mmkv.getAllKeys();
+  // Remove all search-related keys (both old and new prefixes)
+  for (const key of allKeys) {
+    if (
+      key.startsWith(INDEX_TOKEN_PREFIX) ||
+      key.startsWith(INDEX_MSG_PREFIX) ||
+      key === INDEX_COUNT_KEY ||
+      key.startsWith(HMAC_TYPE.SEARCH_TOKEN) ||
+      key.startsWith(HMAC_TYPE.SEARCH_MSG) ||
+      key.startsWith(HMAC_TYPE.SEARCH_COUNT)
+    ) {
+      mmkv.delete(key);
+    }
+  }
 }
 
 /**
@@ -290,8 +300,10 @@ export async function getSearchIndexStats(): Promise<{
   indexedMessages: number;
   uniqueTokens: number;
 }> {
+  const indexedMessages = await getIndexCount();
   const mmkv = await getMMKV();
-  const indexedMessages = mmkv.getNumber(INDEX_COUNT_KEY) ?? 0;
-  const tokenKeys = mmkv.getAllKeys().filter((k) => k.startsWith(INDEX_TOKEN_PREFIX));
+  const tokenKeys = mmkv.getAllKeys().filter((k) =>
+    k.startsWith(HMAC_TYPE.SEARCH_TOKEN) || k.startsWith(INDEX_TOKEN_PREFIX),
+  );
   return { indexedMessages, uniqueTokens: tokenKeys.length };
 }

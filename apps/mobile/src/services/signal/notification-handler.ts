@@ -83,14 +83,31 @@ async function decryptNotificationPreview(
     const nonce = encryptedPreview.slice(0, 24);
     const ciphertext = encryptedPreview.slice(24);
 
-    // Load MMKV encryption key to access session state
+    // Load MMKV encryption key to derive AEAD key for preview key access
     const mmkvKey = await SecureStore.getItemAsync('e2e_mmkv_key');
     if (!mmkvKey) return null;
 
-    // Load the preview decryption key from the conversation's cached state
-    // The preview key is derived from the conversation ID + a shared secret
-    const mmkv = new MMKV({ id: 'mizanly-signal', encryptionKey: mmkvKey });
-    const previewKeyB64 = mmkv.getString(`previewkey:${conversationId}`);
+    // F11 FIX: Use the shared unencrypted MMKV with AEAD, matching storage.ts pattern.
+    // Previously created its own MMKV with AES-CFB encryptionKey (weaker protection).
+    // The preview key is AEAD-wrapped with HMAC-hashed key name (F4).
+    const { MMKV } = await import('react-native-mmkv');
+    const mmkv = new MMKV({ id: 'mizanly-signal' });
+    // Derive AEAD key (same derivation as storage.ts getAEADKey)
+    const { hkdfDeriveSecrets: hkdf } = await import('./crypto');
+    const encKey = fromBase64(mmkvKey);
+    const aeadKeyLocal = hkdf(encKey, new Uint8Array(32), 'MizanlyMMKVAEAD', 32);
+    // Compute HMAC key name for preview key
+    const { hmac } = await import('@noble/hashes/hmac');
+    const { sha256 } = await import('@noble/hashes/sha256');
+    const { utf8Encode: encode } = await import('./crypto');
+    const originalKey = `previewkey:${conversationId}`;
+    const hash = hmac(sha256, aeadKeyLocal, encode(originalKey));
+    const hashedKey = 'p:' + (await import('./crypto')).toBase64(hash.slice(0, 16));
+    // Try hashed key first, then legacy
+    let previewKeyB64 = mmkv.getString(hashedKey);
+    if (!previewKeyB64) {
+      previewKeyB64 = mmkv.getString(`previewkey:${conversationId}`);
+    }
     if (!previewKeyB64) return null;
 
     const previewKey = fromBase64(previewKeyB64);
@@ -113,11 +130,11 @@ export async function storePreviewKey(
   conversationId: string,
   key: Uint8Array,
 ): Promise<void> {
-  const mmkvKey = await SecureStore.getItemAsync('e2e_mmkv_key');
-  if (!mmkvKey) return;
-  const mmkv = new MMKV({ id: 'mizanly-signal', encryptionKey: mmkvKey });
+  // F4: Use shared MMKV + AEAD + HMAC key names (matches storage.ts pattern)
+  const { secureStore, HMAC_TYPE } = await import('./storage');
   const { toBase64 } = await import('./crypto');
-  mmkv.set(`previewkey:${conversationId}`, toBase64(key));
+  const originalKey = `previewkey:${conversationId}`;
+  await secureStore(HMAC_TYPE.PREVIEW_KEY, originalKey, toBase64(key));
 }
 
 /**

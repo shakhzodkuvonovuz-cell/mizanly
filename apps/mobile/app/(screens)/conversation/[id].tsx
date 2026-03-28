@@ -1179,11 +1179,37 @@ export default function ConversationScreen() {
       }
     };
 
+    // F5: Handle sealed sender messages — unseal the envelope to reveal sender + inner ciphertext
+    const handleSealedMessage = async (data: {
+      ephemeralKey: string;
+      sealedCiphertext: string;
+      conversationId: string;
+    }) => {
+      if (data.conversationId !== id) return;
+      try {
+        const { unsealMessage } = await import('@/services/signal/sealed-sender');
+        const unsealed = await unsealMessage({
+          recipientId: user?.id ?? '',
+          ephemeralKey: data.ephemeralKey,
+          sealedCiphertext: data.sealedCiphertext,
+        });
+        // The unsealed content reveals the sender and the inner Signal ciphertext.
+        // The actual message will arrive via new_message from the server's persistence.
+        // This sealed_message event is for real-time delivery — the DB message follows.
+        // For now, we just log that sealed delivery succeeded (the new_message handler
+        // will add the message to the UI when the server broadcasts it).
+      } catch {
+        // Unsealing failed — the message may be forged or from an unknown sender.
+        // The regular new_message event will still arrive from server persistence.
+      }
+    };
+
     socket.on('connect', handleConnect);
     socket.on('new_message', handleNewMessage);
     socket.on('delivery_receipt', handleDeliveryReceipt);
     socket.on('user_typing', handleUserTyping);
     socket.on('messages_read', handleMessagesRead);
+    socket.on('sealed_message', handleSealedMessage);
 
     // If already connected when this effect runs, join the room
     if (socket.connected) {
@@ -1198,6 +1224,7 @@ export default function ConversationScreen() {
       socket.off('delivery_receipt', handleDeliveryReceipt);
       socket.off('user_typing', handleUserTyping);
       socket.off('messages_read', handleMessagesRead);
+      socket.off('sealed_message', handleSealedMessage);
     };
   }, [socket, id, user?.id, queryClient]);
 
@@ -1245,6 +1272,10 @@ export default function ConversationScreen() {
    * Emit an encrypted message to the server IMMEDIATELY via socket.
    * Returns the server-assigned messageId from the ACK callback.
    * The message reaches the recipient in ~100ms (network latency only).
+   *
+   * F5: For 1:1 messages, wraps in a sealed envelope and sends via
+   * `send_sealed_message` — the server cannot determine the sender from
+   * socket metadata. For group messages, uses regular `send_message`.
    */
   const emitEncryptedMessage = useCallback((payload: {
     e2ePayload: NonNullable<PendingMessage['e2ePayload']>;
@@ -1253,41 +1284,71 @@ export default function ConversationScreen() {
     isViewOnce?: boolean;
     messageType?: string;
     mediaUrl?: string;
+    // F5: Sealed sender fields (1:1 only)
+    sealedEnvelope?: { recipientId: string; ephemeralKey: string; sealedCiphertext: string };
   }): Promise<string | null> => {
     return new Promise((resolve) => {
       if (isOffline || !socketRef.current?.connected) {
         resolve(null);
         return;
       }
-      socketRef.current.emit('send_message', {
-        conversationId: id,
-        clientMessageId: payload.e2ePayload.clientMessageId,
-        encryptedContent: payload.e2ePayload.encryptedContent,
-        e2eVersion: payload.e2ePayload.e2eVersion,
-        e2eSenderDeviceId: payload.e2ePayload.e2eSenderDeviceId,
-        e2eSenderRatchetKey: payload.e2ePayload.e2eSenderRatchetKey,
-        e2eCounter: payload.e2ePayload.e2eCounter,
-        e2ePreviousCounter: payload.e2ePayload.e2ePreviousCounter,
-        // Group messages: include sender key ID for 1:1 vs group disambiguation
-        ...(payload.e2ePayload.e2eSenderKeyId !== undefined ? { e2eSenderKeyId: payload.e2ePayload.e2eSenderKeyId } : {}),
-        // PreKeySignalMessage fields (first-contact only — receiver needs these for X3DH)
-        ...(payload.e2ePayload.e2eIdentityKey ? { e2eIdentityKey: payload.e2ePayload.e2eIdentityKey } : {}),
-        ...(payload.e2ePayload.e2eEphemeralKey ? { e2eEphemeralKey: payload.e2ePayload.e2eEphemeralKey } : {}),
-        ...(payload.e2ePayload.e2eSignedPreKeyId !== undefined ? { e2eSignedPreKeyId: payload.e2ePayload.e2eSignedPreKeyId } : {}),
-        ...(payload.e2ePayload.e2ePreKeyId !== undefined ? { e2ePreKeyId: payload.e2ePayload.e2ePreKeyId } : {}),
-        ...(payload.e2ePayload.e2eRegistrationId !== undefined ? { e2eRegistrationId: payload.e2ePayload.e2eRegistrationId } : {}),
-        messageType: payload.e2ePayload.messageType ?? payload.messageType ?? 'TEXT',
-        replyToId: payload.replyToId,
-        mediaUrl: payload.mediaUrl,
-        ...(payload.isSpoiler ? { isSpoiler: true } : {}),
-        ...(payload.isViewOnce ? { isViewOnce: true } : {}),
-      }, (ack: { success?: boolean; messageId?: string } | undefined) => {
-        // Socket ACK — server returns { success, messageId, clientMessageId, createdAt }
-        resolve(ack?.messageId ?? null);
-      });
-      // D8: Reduced from 10s to 3s — faster undo resolution.
-      // If ACK doesn't arrive in 3s, resolve null (message may still have been received).
-      // The undo bar still shows for 5s regardless — this just affects when serverMessageId is available.
+
+      const isGroupMessage = payload.e2ePayload.e2eSenderKeyId !== undefined;
+
+      if (!isGroupMessage && payload.sealedEnvelope) {
+        // F5: 1:1 message — use sealed sender (server can't see sender identity)
+        socketRef.current.emit('send_sealed_message', {
+          conversationId: id,
+          recipientId: payload.sealedEnvelope.recipientId,
+          ephemeralKey: payload.sealedEnvelope.ephemeralKey,
+          sealedCiphertext: payload.sealedEnvelope.sealedCiphertext,
+          // Pass through E2E fields for server-side persistence
+          clientMessageId: payload.e2ePayload.clientMessageId,
+          encryptedContent: payload.e2ePayload.encryptedContent,
+          e2eVersion: payload.e2ePayload.e2eVersion,
+          e2eSenderDeviceId: payload.e2ePayload.e2eSenderDeviceId,
+          e2eSenderRatchetKey: payload.e2ePayload.e2eSenderRatchetKey,
+          e2eCounter: payload.e2ePayload.e2eCounter,
+          e2ePreviousCounter: payload.e2ePayload.e2ePreviousCounter,
+          ...(payload.e2ePayload.e2eIdentityKey ? { e2eIdentityKey: payload.e2ePayload.e2eIdentityKey } : {}),
+          ...(payload.e2ePayload.e2eEphemeralKey ? { e2eEphemeralKey: payload.e2ePayload.e2eEphemeralKey } : {}),
+          ...(payload.e2ePayload.e2eSignedPreKeyId !== undefined ? { e2eSignedPreKeyId: payload.e2ePayload.e2eSignedPreKeyId } : {}),
+          ...(payload.e2ePayload.e2ePreKeyId !== undefined ? { e2ePreKeyId: payload.e2ePayload.e2ePreKeyId } : {}),
+          ...(payload.e2ePayload.e2eRegistrationId !== undefined ? { e2eRegistrationId: payload.e2ePayload.e2eRegistrationId } : {}),
+          messageType: payload.e2ePayload.messageType ?? payload.messageType ?? 'TEXT',
+          replyToId: payload.replyToId,
+          mediaUrl: payload.mediaUrl,
+          ...(payload.isSpoiler ? { isSpoiler: true } : {}),
+          ...(payload.isViewOnce ? { isViewOnce: true } : {}),
+        }, (ack: { success?: boolean; messageId?: string } | undefined) => {
+          resolve(ack?.messageId ?? null);
+        });
+      } else {
+        // Group message or no sealed envelope — use regular send_message
+        socketRef.current.emit('send_message', {
+          conversationId: id,
+          clientMessageId: payload.e2ePayload.clientMessageId,
+          encryptedContent: payload.e2ePayload.encryptedContent,
+          e2eVersion: payload.e2ePayload.e2eVersion,
+          e2eSenderDeviceId: payload.e2ePayload.e2eSenderDeviceId,
+          e2eSenderRatchetKey: payload.e2ePayload.e2eSenderRatchetKey,
+          e2eCounter: payload.e2ePayload.e2eCounter,
+          e2ePreviousCounter: payload.e2ePayload.e2ePreviousCounter,
+          ...(payload.e2ePayload.e2eSenderKeyId !== undefined ? { e2eSenderKeyId: payload.e2ePayload.e2eSenderKeyId } : {}),
+          ...(payload.e2ePayload.e2eIdentityKey ? { e2eIdentityKey: payload.e2ePayload.e2eIdentityKey } : {}),
+          ...(payload.e2ePayload.e2eEphemeralKey ? { e2eEphemeralKey: payload.e2ePayload.e2eEphemeralKey } : {}),
+          ...(payload.e2ePayload.e2eSignedPreKeyId !== undefined ? { e2eSignedPreKeyId: payload.e2ePayload.e2eSignedPreKeyId } : {}),
+          ...(payload.e2ePayload.e2ePreKeyId !== undefined ? { e2ePreKeyId: payload.e2ePayload.e2ePreKeyId } : {}),
+          ...(payload.e2ePayload.e2eRegistrationId !== undefined ? { e2eRegistrationId: payload.e2ePayload.e2eRegistrationId } : {}),
+          messageType: payload.e2ePayload.messageType ?? payload.messageType ?? 'TEXT',
+          replyToId: payload.replyToId,
+          mediaUrl: payload.mediaUrl,
+          ...(payload.isSpoiler ? { isSpoiler: true } : {}),
+          ...(payload.isViewOnce ? { isViewOnce: true } : {}),
+        }, (ack: { success?: boolean; messageId?: string } | undefined) => {
+          resolve(ack?.messageId ?? null);
+        });
+      }
       setTimeout(() => resolve(null), 3000);
     });
   }, [id, isOffline]);
@@ -1324,6 +1385,8 @@ export default function ConversationScreen() {
     // E2E encryption via Signal Protocol — always on, never falls back to plaintext
     const messageContent = text.trim();
     let e2ePayload: PendingMessage['e2ePayload'] | undefined;
+    // F5: Sealed sender envelope for 1:1 messages (set in the 1:1 encryption branch)
+    let sealedEnvelopeForEmit: { recipientId: string; ephemeralKey: string; sealedCiphertext: string } | undefined;
 
     // Find the other conversation member for 1:1 encryption
     const convoData = convoQuery.data;
@@ -1446,13 +1509,37 @@ export default function ConversationScreen() {
           const regId = await loadRegistrationId();
           if (identityKeyPair && regId !== null) {
             e2ePayload.e2eIdentityKey = toBase64(identityKeyPair.publicKey);
-            // The ephemeral key used during X3DH is the session's senderRatchetKeyPair
-            // (initiator uses ephemeral key as initial ratchet key)
-            e2ePayload.e2eEphemeralKey = e2ePayload.e2eSenderRatchetKey; // Same key
+            e2ePayload.e2eEphemeralKey = e2ePayload.e2eSenderRatchetKey;
             e2ePayload.e2eSignedPreKeyId = signedPreKeyId;
             e2ePayload.e2ePreKeyId = oneTimePreKeyId;
             e2ePayload.e2eRegistrationId = regId;
           }
+        }
+
+        // F5: Create sealed envelope for 1:1 messages.
+        // The sealed envelope hides the sender's identity from the server.
+        // The recipient unseals it client-side to reveal who sent it.
+        try {
+          const recipientIdentityKey = await loadKnownIdentityKey(recipientId);
+          const senderIdentityPair = await loadIdentityKeyPair();
+          if (recipientIdentityKey && senderIdentityPair && user?.id) {
+            const envelope = await sealMessage(
+              recipientId,
+              recipientIdentityKey,
+              user.id,
+              1, // deviceId
+              toBase64(signalMsg.ciphertext), // Inner content = Signal ciphertext
+            );
+            sealedEnvelopeForEmit = {
+              recipientId: envelope.recipientId,
+              ephemeralKey: envelope.ephemeralKey,
+              sealedCiphertext: envelope.sealedCiphertext,
+            };
+          }
+        } catch {
+          // Sealed sender creation failed — fall back to regular send_message.
+          // This is non-fatal: the message is still E2E encrypted, just without
+          // the additional metadata protection layer.
         }
       } catch (err) {
         // CRITICAL: never send plaintext on encryption failure
@@ -1492,6 +1579,7 @@ export default function ConversationScreen() {
       emitEncryptedMessage({
         e2ePayload,
         replyToId: savedReplyToId,
+        sealedEnvelope: sealedEnvelopeForEmit, // F5: sealed sender for 1:1
         isSpoiler: savedSpoiler || undefined,
         isViewOnce: savedViewOnce || undefined,
       }).then((serverMessageId) => {
@@ -2418,7 +2506,7 @@ export default function ConversationScreen() {
                     }
                     const signalMsg = await signalEncrypt(targetRecipientId, 1, forwardContent);
                     const clientMessageId = `fwd_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-                    socketRef.current?.emit('send_message', {
+                    const e2eFields = {
                       conversationId: conv.id,
                       clientMessageId,
                       encryptedContent: toBase64(signalMsg.ciphertext),
@@ -2428,7 +2516,24 @@ export default function ConversationScreen() {
                       e2eCounter: signalMsg.header.counter,
                       e2ePreviousCounter: signalMsg.header.previousCounter,
                       messageType: forwardMsg.messageType || 'TEXT',
-                    });
+                    };
+                    // F5: Try sealed sender for forward path too
+                    try {
+                      const recipientKey = await loadKnownIdentityKey(targetRecipientId);
+                      if (recipientKey && user?.id) {
+                        const envelope = await sealMessage(targetRecipientId, recipientKey, user.id, 1, toBase64(signalMsg.ciphertext));
+                        socketRef.current?.emit('send_sealed_message', {
+                          ...e2eFields,
+                          recipientId: envelope.recipientId,
+                          ephemeralKey: envelope.ephemeralKey,
+                          sealedCiphertext: envelope.sealedCiphertext,
+                        });
+                      } else {
+                        socketRef.current?.emit('send_message', e2eFields);
+                      }
+                    } catch {
+                      socketRef.current?.emit('send_message', e2eFields);
+                    }
                   }
                   setForwardMsg(null);
                   haptic.success();

@@ -23,7 +23,8 @@ import (
 
 // Store wraps the pgx connection pool.
 type Store struct {
-	pool *pgxpool.Pool
+	pool                   *pgxpool.Pool
+	transparencySigningKey ed25519.PrivateKey // F1: Ed25519 key for signing Merkle roots
 }
 
 // New creates a new Store with a connection pool configured for Neon.
@@ -56,7 +57,21 @@ func New(ctx context.Context) (*Store, error) {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
-	return &Store{pool: pool}, nil
+	s := &Store{pool: pool}
+
+	// F1: Load transparency signing key from env var.
+	// This Ed25519 key signs Merkle roots so clients can verify the tree
+	// was built by an authorized party, not a compromised server.
+	// The corresponding PUBLIC key is hardcoded in the mobile client.
+	if sigKeyB64 := os.Getenv("TRANSPARENCY_SIGNING_KEY"); sigKeyB64 != "" {
+		seed, err := base64.StdEncoding.DecodeString(sigKeyB64)
+		if err != nil || len(seed) != ed25519.SeedSize {
+			return nil, fmt.Errorf("TRANSPARENCY_SIGNING_KEY must be base64-encoded 32-byte Ed25519 seed")
+		}
+		s.transparencySigningKey = ed25519.NewKeyFromSeed(seed)
+	}
+
+	return s, nil
 }
 
 // Close shuts down the connection pool.
@@ -543,12 +558,23 @@ func (s *Store) GetTransparencyProof(ctx context.Context, targetUserID string) (
 		proofB64[j] = base64.StdEncoding.EncodeToString(p)
 	}
 
+	rootB64 := base64.StdEncoding.EncodeToString(root)
+
+	// F1: Sign the Merkle root with the transparency key.
+	// Clients verify this signature against a hardcoded public key.
+	// Without the signature, a compromised server could build a forged tree.
+	var rootSig string
+	if s.transparencySigningKey != nil {
+		sig := ed25519.Sign(s.transparencySigningKey, root)
+		rootSig = base64.StdEncoding.EncodeToString(sig)
+	}
+
 	return &TransparencyProof{
 		IdentityKey: base64.StdEncoding.EncodeToString(targetPubKey),
 		Proof:       proofB64,
 		LeafIndex:   targetLeafIndex,
-		Root:        base64.StdEncoding.EncodeToString(root),
-		RootSig:     "", // TODO: sign with server transparency key
+		Root:        rootB64,
+		RootSig:     rootSig,
 		TreeSize:    len(leaves),
 	}, nil
 }
@@ -579,10 +605,19 @@ func (s *Store) GetTransparencyRoot(ctx context.Context) (*TransparencyRoot, err
 	}
 
 	root := computeMerkleRoot(leaves)
+	rootB64 := base64.StdEncoding.EncodeToString(root)
+
+	// F1: Sign the Merkle root
+	var rootSig string
+	if s.transparencySigningKey != nil {
+		sig := ed25519.Sign(s.transparencySigningKey, root)
+		rootSig = base64.StdEncoding.EncodeToString(sig)
+	}
+
 	return &TransparencyRoot{
-		Root:     base64.StdEncoding.EncodeToString(root),
-		RootSig:  "", // TODO: sign with server transparency key
-		TreeSize: len(leaves),
+		Root:      rootB64,
+		RootSig:   rootSig,
+		TreeSize:  len(leaves),
 		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
 	}, nil
 }
@@ -650,6 +685,15 @@ func computeMerkleRoot(leaves [][]byte) []byte {
 		layer = next
 	}
 	return layer[0]
+}
+
+// TransparencyPublicKey returns the Ed25519 public key for root signature verification.
+// Used in tests and for generating the hardcoded client-side public key.
+func (s *Store) TransparencyPublicKey() []byte {
+	if s.transparencySigningKey == nil {
+		return nil
+	}
+	return s.transparencySigningKey.Public().(ed25519.PublicKey)
 }
 
 // --- Helpers ---

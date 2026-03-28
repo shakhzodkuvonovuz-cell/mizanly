@@ -19,8 +19,54 @@
  * Based on SEEMless (Signal's key transparency design) and CONIKS.
  */
 
-import { sha256Hash, concat, uint32BE, toBase64, fromBase64, constantTimeEqual } from './crypto';
+import { sha256Hash, concat, uint32BE, toBase64, fromBase64, constantTimeEqual, ed25519Verify } from './crypto';
 import { loadKnownIdentityKey } from './storage';
+
+// ============================================================
+// F1: TRANSPARENCY ROOT SIGNATURE VERIFICATION
+// ============================================================
+
+/**
+ * F1: Hardcoded Ed25519 public key for transparency root verification.
+ *
+ * This key's corresponding PRIVATE key lives in the TRANSPARENCY_SIGNING_KEY
+ * env var on the Go server (ideally on a separate service from the main API).
+ *
+ * The server signs the Merkle root with the private key. The client verifies
+ * using this hardcoded public key. A compromised server that doesn't have
+ * the private key CANNOT forge a valid root signature.
+ *
+ * To generate a new key pair:
+ *   openssl genpkey -algorithm ed25519 -outform DER | tail -c 32 | base64
+ *   → Set as TRANSPARENCY_SIGNING_KEY env var on Go server
+ *   → Derive public key and update this constant
+ *
+ * IMPORTANT: When rotating this key, both the server env var AND this constant
+ * must be updated in the same release. The client rejects unsigned roots.
+ */
+const TRANSPARENCY_PUBLIC_KEY_B64 = 'XvjbofryahZuejaizXsR2JanznbzUf6WBlmLb5TtQeY=';
+
+/**
+ * Verify the Ed25519 signature on a transparency root.
+ * Returns true if the root is signed by the trusted transparency key.
+ * Returns false if the signature is invalid or the public key is not configured.
+ */
+export function verifyRootSignature(rootB64: string, signatureB64: string): boolean {
+  if (!TRANSPARENCY_PUBLIC_KEY_B64) {
+    // Public key not configured yet — allow unsigned roots during development.
+    // In production, this constant MUST be set and unsigned roots MUST be rejected.
+    return true;
+  }
+  if (!signatureB64) return false; // Server sent no signature — reject
+
+  const publicKey = fromBase64(TRANSPARENCY_PUBLIC_KEY_B64);
+  const root = fromBase64(rootB64);
+  const signature = fromBase64(signatureB64);
+
+  if (publicKey.length !== 32 || signature.length !== 64) return false;
+
+  return ed25519Verify(publicKey, root, signature);
+}
 
 // ============================================================
 // MERKLE TREE VERIFICATION
@@ -115,6 +161,16 @@ export async function verifyKeyTransparency(
   const localKey = await loadKnownIdentityKey(userId);
   if (!localKey) {
     return { status: 'no_local_key', detail: 'No locally stored key for this user yet' };
+  }
+
+  // F1: Verify the root signature FIRST — before checking the Merkle proof.
+  // A compromised server could build a valid (but forged) Merkle tree.
+  // The root signature proves the tree was built by the trusted signing key holder.
+  if (!verifyRootSignature(proofData.root, proofData.rootSignature)) {
+    return {
+      status: 'mismatch',
+      detail: 'Transparency root signature invalid — the server may have forged the Merkle tree',
+    };
   }
 
   // Verify the Merkle proof

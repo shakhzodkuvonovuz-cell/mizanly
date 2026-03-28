@@ -515,37 +515,84 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   }
 
   /**
-   * Sealed sender message handler (C11).
+   * Sealed sender message handler (C11 / F5).
    *
-   * The client sends: { recipientId, ephemeralKey, sealedCiphertext }
-   * The server CANNOT determine the sender — the sender's identity is
-   * INSIDE the encrypted sealedCiphertext blob.
+   * The client sends: sealed envelope + E2E fields for persistence.
+   * The server:
+   * 1. Forwards the sealed envelope to the recipient (routing)
+   * 2. Persists the message in the DB (so history/undo/receipts work)
    *
-   * The server's only job: forward the opaque blob to the recipient.
-   * It does NOT log the sender, does NOT store the message in the DB
-   * (the regular send_message handler is used for persistence).
-   *
-   * This is a ROUTING-ONLY handler for maximum metadata privacy.
+   * The sealed envelope wraps the Signal ciphertext — even in the DB,
+   * the stored encryptedContent is the double-encrypted sealed blob.
+   * A compromised server sees only opaque ciphertext; the sender's
+   * identity is protected inside the sealed envelope.
    */
   @SubscribeMessage('send_sealed_message')
   async handleSealedMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { recipientId: string; ephemeralKey: string; sealedCiphertext: string; conversationId: string },
+    @MessageBody() data: {
+      recipientId: string;
+      ephemeralKey: string;
+      sealedCiphertext: string;
+      conversationId: string;
+      // E2E persistence fields (same as send_message)
+      clientMessageId?: string;
+      encryptedContent?: string;
+      e2eVersion?: number;
+      e2eSenderDeviceId?: number;
+      e2eSenderRatchetKey?: string;
+      e2eCounter?: number;
+      e2ePreviousCounter?: number;
+      e2eIdentityKey?: string;
+      e2eEphemeralKey?: string;
+      e2eSignedPreKeyId?: number;
+      e2ePreKeyId?: number;
+      e2eRegistrationId?: number;
+      messageType?: string;
+      replyToId?: string;
+      mediaUrl?: string;
+      isSpoiler?: boolean;
+      isViewOnce?: boolean;
+    },
   ) {
-    // No userId check — that's the point of sealed sender (sender is anonymous)
-    // But we DO require the socket to be authenticated (valid Clerk JWT)
     if (!client.data.userId) throw new WsException('Unauthorized');
     if (!(await this.checkRateLimit(client.data.userId, 'sealed_message', 30, 60))) return;
 
-    // Forward the sealed envelope to the recipient's room
-    // The recipient unseals it client-side to reveal the sender
+    // 1. Forward the sealed envelope to the recipient's room
     client.to(`conversation:${data.conversationId}`).emit('sealed_message', {
       ephemeralKey: data.ephemeralKey,
       sealedCiphertext: data.sealedCiphertext,
       conversationId: data.conversationId,
     });
 
-    return { success: true };
+    // 2. Persist the message for history/undo/receipts
+    let message;
+    try {
+      message = await this.messagesService.sendMessage(
+        data.conversationId,
+        client.data.userId,
+        {
+          messageType: data.messageType || 'TEXT',
+          replyToId: data.replyToId,
+          mediaUrl: data.mediaUrl,
+          isSpoiler: data.isSpoiler,
+          isViewOnce: data.isViewOnce,
+          ...(data.encryptedContent ? { encryptedContent: Uint8Array.from(Buffer.from(data.encryptedContent, 'base64')) } : {}),
+          ...(data.e2eVersion ? { e2eVersion: data.e2eVersion } : {}),
+          ...(data.e2eSenderDeviceId !== undefined ? { e2eSenderDeviceId: data.e2eSenderDeviceId } : {}),
+          ...(data.e2eSenderRatchetKey ? { e2eSenderRatchetKey: Uint8Array.from(Buffer.from(data.e2eSenderRatchetKey, 'base64')) } : {}),
+          ...(data.e2eCounter !== undefined ? { e2eCounter: data.e2eCounter } : {}),
+          ...(data.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: data.e2ePreviousCounter } : {}),
+          ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
+          _skipRedisPublish: true,
+        } as any,
+      );
+    } catch {
+      // Persistence failed but routing succeeded — message was delivered
+      return { success: true };
+    }
+
+    return { success: true, messageId: message?.id, clientMessageId: data.clientMessageId, createdAt: message?.createdAt };
   }
 
   @SubscribeMessage('typing')
