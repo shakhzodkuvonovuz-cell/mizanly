@@ -38,17 +38,31 @@ import type { SignalMessage } from './types';
 // ============================================================
 
 /**
- * Fetch all known device IDs for a user from the Go E2E server.
- * In single-device mode, returns [1]. Multi-device returns [1, 2, ...].
- *
- * TODO: Add GET /keys/devices/:userId endpoint to Go server
- * For now, returns [1] (single device).
+ * Fetch all registered device IDs for a user from the Go E2E server.
+ * The Go server queries DISTINCT deviceId from e2e_identity_keys.
+ * Falls back to [1] if the endpoint fails (backward compatibility).
  */
 export async function getDeviceIds(userId: string): Promise<number[]> {
-  // Future: fetch from Go server
-  // const response = await e2eFetch(`/api/v1/e2e/keys/devices/${userId}`);
-  // return response.json().then(r => r.deviceIds);
-  return [1]; // Single-device for now
+  try {
+    const response = await fetch(`${getE2EBaseUrl()}/api/v1/e2e/keys/devices/${encodeURIComponent(userId)}`, {
+      headers: await getAuthHeaders(),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.deviceIds ?? [1];
+    }
+  } catch {
+    // Endpoint not available or network error — fall back to single device
+  }
+  return [1];
+}
+
+// Internal helpers — reuse e2eApi's config
+import { getBaseUrl as getE2EBaseUrl, getAuthToken as getE2EToken } from './e2eApi';
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const token = await getE2EToken();
+  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
 // ============================================================

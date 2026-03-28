@@ -138,9 +138,12 @@ func main() {
 	mux.Handle("POST /api/v1/e2e/sender-keys", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleStoreSenderKey))))
 	mux.Handle("GET /api/v1/e2e/sender-keys/", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleGetSenderKeys))))
 
-	// Safety numbers: computed CLIENT-SIDE only (safety-numbers.ts).
-	// A server-side endpoint would allow a compromised server to return
-	// matching numbers even when keys are substituted, defeating MITM detection.
+	// Multi-device: list devices for a user (C4)
+	mux.Handle("GET /api/v1/e2e/keys/devices/", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleGetDevices))))
+
+	// Key transparency: Merkle proof for identity key verification (C6)
+	mux.Handle("GET /api/v1/e2e/transparency/", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleGetTransparencyProof))))
+	mux.Handle("GET /api/v1/e2e/transparency/root", auth(sentryHandler.Handle(http.HandlerFunc(h.HandleGetTransparencyRoot))))
 
 	// --- Startup cleanup: expired signed pre-keys ---
 	if deleted, err := db.CleanupExpiredSignedPreKeys(ctx); err != nil {

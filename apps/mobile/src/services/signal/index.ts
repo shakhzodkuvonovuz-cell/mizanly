@@ -181,13 +181,28 @@ export async function initialize(
   // Register the background notification handler for encrypted preview decryption
   registerNotificationHandler();
 
-  // C6: Key transparency — verify our own key is consistent with server log
-  // (non-blocking, runs in background)
+  // C6: Key transparency — verify our own key is consistent with the server's Merkle log.
+  // Runs in background after initialization. If the server returns a proof that doesn't
+  // match our locally stored key, it means the server substituted a different key (MITM).
   import('./key-transparency').then(({ verifyKeyTransparency }) => {
     if (!identityKeyPair) return;
-    // TODO: Replace with actual transparency endpoint when Go server implements it
-    // For now, this is a no-op that logs if the endpoint exists
-    verifyKeyTransparency('self', async () => null).catch(() => {});
+    verifyKeyTransparency('self', async (userId: string) => {
+      try {
+        const response = await fetch(
+          `${e2eServerUrl}/api/v1/e2e/transparency/${encodeURIComponent(userId)}`,
+          { headers: { Authorization: `Bearer ${await authTokenProvider()}` } },
+        );
+        if (!response.ok) return null;
+        return response.json();
+      } catch {
+        return null;
+      }
+    }).then(result => {
+      if (result.status === 'mismatch') {
+        // CRITICAL: server may be substituting keys
+        recordE2EEvent({ event: 'identity_key_changed', metadata: { transparency: 'mismatch' } });
+      }
+    }).catch(() => {});
   }).catch(() => {});
 
   initialized = true;

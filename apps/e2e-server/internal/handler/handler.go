@@ -334,10 +334,57 @@ func (h *Handler) HandleGetSenderKeys(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Safety numbers: REMOVED (Finding 7/12).
-// Server-side computation defeats the purpose of safety numbers.
-// A compromised server can substitute keys and return matching numbers.
-// Client-side computation in safety-numbers.ts is the authoritative source.
+// --- Multi-device (C4) ---
+
+// HandleGetDevices returns all registered deviceIds for a user.
+func (h *Handler) HandleGetDevices(w http.ResponseWriter, r *http.Request) {
+	targetUserID := extractPathParam(r, "/api/v1/e2e/keys/devices/")
+	if err := validatePathParam(targetUserID); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid userId")
+		return
+	}
+
+	deviceIDs, err := h.store.GetDeviceIDs(r.Context(), targetUserID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"userId":    targetUserID,
+		"deviceIds": deviceIDs,
+	})
+}
+
+// --- Key Transparency (C6) ---
+
+// HandleGetTransparencyProof returns a Merkle inclusion proof for a user's identity key.
+func (h *Handler) HandleGetTransparencyProof(w http.ResponseWriter, r *http.Request) {
+	targetUserID := extractPathParam(r, "/api/v1/e2e/transparency/")
+	if err := validatePathParam(targetUserID); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid userId")
+		return
+	}
+
+	proof, err := h.store.GetTransparencyProof(r.Context(), targetUserID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "transparency proof not available")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, proof)
+}
+
+// HandleGetTransparencyRoot returns the current Merkle tree root + signature.
+func (h *Handler) HandleGetTransparencyRoot(w http.ResponseWriter, r *http.Request) {
+	root, err := h.store.GetTransparencyRoot(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, root)
+}
 
 // --- Internal webhook ---
 

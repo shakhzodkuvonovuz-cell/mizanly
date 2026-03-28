@@ -63,33 +63,30 @@ let mlkemProvider: MLKEMProvider | null = null;
 let mlkemDetected = false;
 
 /**
- * Attempt to auto-detect and load ML-KEM-768 from @noble/post-quantum.
- * Called once on module load. If the package isn't installed, PQXDH
- * gracefully degrades to classical X3DH.
+ * Load ML-KEM-768 from @noble/post-quantum.
+ * The package is installed — this initializes the provider on first call.
  */
 async function detectMLKEM(): Promise<void> {
   if (mlkemDetected) return;
   mlkemDetected = true;
   try {
-    // Dynamic import — won't crash if package doesn't exist
-    const pq = await import('@noble/post-quantum/ml-kem' as string);
-    if (pq?.ml_kem768) {
+    const { ml_kem768 } = await import('@noble/post-quantum/ml-kem');
+    if (ml_kem768) {
       mlkemProvider = {
         keygen: () => {
-          const { publicKey, secretKey } = pq.ml_kem768.keygen();
-          return { publicKey, secretKey };
+          const { publicKey, secretKey } = ml_kem768.keygen();
+          return { publicKey: new Uint8Array(publicKey), secretKey: new Uint8Array(secretKey) };
         },
         encapsulate: (pk: Uint8Array) => {
-          const { cipherText, sharedSecret } = pq.ml_kem768.encapsulate(pk);
-          return { ciphertext: cipherText, sharedSecret };
+          const { cipherText, sharedSecret } = ml_kem768.encapsulate(pk);
+          return { ciphertext: new Uint8Array(cipherText), sharedSecret: new Uint8Array(sharedSecret) };
         },
         decapsulate: (ct: Uint8Array, sk: Uint8Array) => {
-          return pq.ml_kem768.decapsulate(ct, sk);
+          return new Uint8Array(ml_kem768.decapsulate(ct, sk));
         },
       };
     }
   } catch {
-    // @noble/post-quantum not installed — PQXDH not available
     mlkemProvider = null;
   }
 }

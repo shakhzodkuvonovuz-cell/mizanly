@@ -39,6 +39,14 @@ export function initE2EApi(
   getAuthToken = tokenProvider;
 }
 
+/** Get the configured base URL (for multi-device.ts) */
+export function getBaseUrl(): string {
+  return e2eBaseUrl;
+}
+
+/** Get a fresh auth token (for multi-device.ts) */
+export { getAuthToken };
+
 // ============================================================
 // HELPERS
 // ============================================================

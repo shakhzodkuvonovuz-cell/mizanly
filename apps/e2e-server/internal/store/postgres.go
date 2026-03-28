@@ -440,6 +440,218 @@ func (s *Store) CleanupExpiredSignedPreKeys(ctx context.Context) (int64, error) 
 	return result.RowsAffected(), nil
 }
 
+// --- Multi-device (C4) ---
+
+// GetDeviceIDs returns all registered device IDs for a user.
+// Each device registers its own identity key with a unique deviceId.
+func (s *Store) GetDeviceIDs(ctx context.Context, userID string) ([]int, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT DISTINCT "deviceId" FROM e2e_identity_keys WHERE "userId" = $1 ORDER BY "deviceId"`,
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		ids = []int{1} // Default to device 1 if no keys registered
+	}
+	return ids, rows.Err()
+}
+
+// --- Key Transparency (C6) ---
+
+// TransparencyProof is the Merkle inclusion proof for an identity key.
+type TransparencyProof struct {
+	IdentityKey string   `json:"identityKey"` // Base64
+	Proof       []string `json:"proof"`       // Array of base64 sibling hashes
+	LeafIndex   int      `json:"leafIndex"`
+	Root        string   `json:"root"`          // Base64 Merkle root
+	RootSig     string   `json:"rootSignature"` // Base64 Ed25519 signature of root
+	TreeSize    int      `json:"treeSize"`
+}
+
+// TransparencyRoot is the current Merkle tree state.
+type TransparencyRoot struct {
+	Root     string `json:"root"`          // Base64 Merkle root
+	RootSig  string `json:"rootSignature"` // Base64 Ed25519 signature
+	TreeSize int    `json:"treeSize"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
+// GetTransparencyProof returns a Merkle inclusion proof for a user's identity key.
+//
+// The transparency log is an append-only list of (userId, identityKey) entries.
+// Each time an identity key is registered or changed, a new leaf is appended.
+// The Merkle tree is rebuilt from the full leaf list.
+//
+// This implementation uses a simple in-DB approach: query all leaves,
+// build the tree in memory, compute the proof. For production scale (>100K users),
+// migrate to a dedicated transparency log service.
+func (s *Store) GetTransparencyProof(ctx context.Context, targetUserID string) (*TransparencyProof, error) {
+	// Fetch ALL identity keys (ordered by creation time = leaf order)
+	rows, err := s.pool.Query(ctx,
+		`SELECT "userId", "publicKey" FROM e2e_identity_keys ORDER BY "createdAt" ASC`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var leaves [][]byte
+	var targetLeafIndex int = -1
+	var targetPubKey []byte
+	i := 0
+	for rows.Next() {
+		var uid string
+		var pub []byte
+		if err := rows.Scan(&uid, &pub); err != nil {
+			return nil, err
+		}
+		// Leaf = SHA-256(userId || publicKey)
+		leafData := append([]byte(uid), pub...)
+		leaf := sha256.Sum256(leafData)
+		leaves = append(leaves, leaf[:])
+		if uid == targetUserID {
+			targetLeafIndex = i
+			targetPubKey = pub
+		}
+		i++
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if targetLeafIndex < 0 {
+		return nil, fmt.Errorf("user not found in transparency log")
+	}
+
+	// Build Merkle tree and compute proof
+	root, proof := buildMerkleProof(leaves, targetLeafIndex)
+
+	// Encode proof as base64 strings
+	proofB64 := make([]string, len(proof))
+	for j, p := range proof {
+		proofB64[j] = base64.StdEncoding.EncodeToString(p)
+	}
+
+	return &TransparencyProof{
+		IdentityKey: base64.StdEncoding.EncodeToString(targetPubKey),
+		Proof:       proofB64,
+		LeafIndex:   targetLeafIndex,
+		Root:        base64.StdEncoding.EncodeToString(root),
+		RootSig:     "", // TODO: sign with server transparency key
+		TreeSize:    len(leaves),
+	}, nil
+}
+
+// GetTransparencyRoot returns the current Merkle tree root.
+func (s *Store) GetTransparencyRoot(ctx context.Context) (*TransparencyRoot, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT "userId", "publicKey" FROM e2e_identity_keys ORDER BY "createdAt" ASC`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var leaves [][]byte
+	for rows.Next() {
+		var uid string
+		var pub []byte
+		if err := rows.Scan(&uid, &pub); err != nil {
+			return nil, err
+		}
+		leafData := append([]byte(uid), pub...)
+		leaf := sha256.Sum256(leafData)
+		leaves = append(leaves, leaf[:])
+	}
+	if len(leaves) == 0 {
+		return &TransparencyRoot{Root: "", TreeSize: 0, UpdatedAt: time.Now().UTC().Format(time.RFC3339)}, nil
+	}
+
+	root := computeMerkleRoot(leaves)
+	return &TransparencyRoot{
+		Root:     base64.StdEncoding.EncodeToString(root),
+		RootSig:  "", // TODO: sign with server transparency key
+		TreeSize: len(leaves),
+		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
+	}, nil
+}
+
+// buildMerkleProof computes the Merkle root and inclusion proof for a leaf.
+func buildMerkleProof(leaves [][]byte, targetIndex int) (root []byte, proof [][]byte) {
+	if len(leaves) == 0 {
+		return make([]byte, 32), nil
+	}
+
+	// Pad to power of 2
+	n := 1
+	for n < len(leaves) {
+		n *= 2
+	}
+	padded := make([][]byte, n)
+	copy(padded, leaves)
+	for i := len(leaves); i < n; i++ {
+		padded[i] = make([]byte, 32) // Zero hash for padding
+	}
+
+	// Build tree bottom-up, collecting proof along the way
+	proof = nil
+	index := targetIndex
+	layer := padded
+
+	for len(layer) > 1 {
+		var nextLayer [][]byte
+		sibling := index ^ 1 // XOR with 1 to get sibling index
+		if sibling < len(layer) {
+			proof = append(proof, layer[sibling])
+		}
+		for i := 0; i < len(layer); i += 2 {
+			combined := append(layer[i], layer[i+1]...)
+			h := sha256.Sum256(combined)
+			nextLayer = append(nextLayer, h[:])
+		}
+		layer = nextLayer
+		index /= 2
+	}
+
+	return layer[0], proof
+}
+
+// computeMerkleRoot computes just the root hash (no proof needed).
+func computeMerkleRoot(leaves [][]byte) []byte {
+	n := 1
+	for n < len(leaves) {
+		n *= 2
+	}
+	padded := make([][]byte, n)
+	copy(padded, leaves)
+	for i := len(leaves); i < n; i++ {
+		padded[i] = make([]byte, 32)
+	}
+
+	layer := padded
+	for len(layer) > 1 {
+		var next [][]byte
+		for i := 0; i < len(layer); i += 2 {
+			combined := append(layer[i], layer[i+1]...)
+			h := sha256.Sum256(combined)
+			next = append(next, h[:])
+		}
+		layer = next
+	}
+	return layer[0]
+}
+
 // --- Helpers ---
 
 func constantTimeEqual(a, b []byte) bool {
