@@ -296,8 +296,18 @@ export async function checkAndRotateSignedPreKey(
   const identityKeyPair = await loadIdentityKeyPair();
   if (!identityKeyPair) return false;
 
-  // Load current SPK metadata from SecureStore
-  const metadataStr = await SecureStore.getItemAsync(SPK_METADATA_KEY);
+  // F26 FIX: Load SPK metadata from AEAD-protected MMKV (was plaintext in SecureStore).
+  // Migration: try MMKV first, fall back to SecureStore, migrate on first read.
+  const { secureLoad, secureStore: secStore, HMAC_TYPE } = await import('./storage');
+  let metadataStr = await secureLoad(HMAC_TYPE.PREKEY_REGISTRY, SPK_METADATA_KEY);
+  if (!metadataStr) {
+    // Migration from SecureStore
+    metadataStr = await SecureStore.getItemAsync(SPK_METADATA_KEY);
+    if (metadataStr) {
+      await secStore(HMAC_TYPE.PREKEY_REGISTRY, SPK_METADATA_KEY, metadataStr);
+      await SecureStore.deleteItemAsync(SPK_METADATA_KEY);
+    }
+  }
   let metadata: SPKMetadata | null = metadataStr ? JSON.parse(metadataStr) : null;
 
   if (metadata && !shouldRotateSignedPreKey(metadata.createdAt)) {
@@ -324,10 +334,8 @@ export async function checkAndRotateSignedPreKey(
     previousKeyIds,
   };
 
-  await SecureStore.setItemAsync(
-    SPK_METADATA_KEY,
-    JSON.stringify(newMetadata),
-  );
+  // F26: Store in AEAD-protected MMKV (not plaintext SecureStore)
+  await secStore(HMAC_TYPE.PREKEY_REGISTRY, SPK_METADATA_KEY, JSON.stringify(newMetadata));
 
   // Cleanup old keys past 30-day retention
   await cleanupOldSignedPreKeys(newMetadata.previousKeyIds);

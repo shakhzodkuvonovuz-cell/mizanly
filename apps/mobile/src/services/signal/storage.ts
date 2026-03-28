@@ -1083,6 +1083,16 @@ export async function cleanupOrphanedOTPKeys(): Promise<number> {
  * Argon2id parameters: m=64MB, t=3, p=4 (OWASP recommended minimum)
  */
 export async function exportAllState(password: string): Promise<Uint8Array> {
+  // F24 FIX: Enforce minimum password entropy for backup encryption.
+  // The backup contains ALL cryptographic state. A weak password → trivial brute force.
+  // Minimum: 12 chars, at least 1 uppercase, 1 lowercase, 1 digit.
+  if (password.length < 12) {
+    throw new Error('Backup password must be at least 12 characters');
+  }
+  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+    throw new Error('Backup password must contain uppercase, lowercase, and digit');
+  }
+
   const { argon2id } = await import('@noble/hashes/argon2');
 
   // Collect all state
@@ -1344,4 +1354,51 @@ export async function clearAllE2EState(): Promise<void> {
   mmkvInitPromise = null;
   hmacKeyForNames = null;
   cachedEncKeyB64 = null; // F10: force fresh SecureStore read on next operation
+}
+
+/**
+ * F25: Emergency panic wipe — destroy ALL crypto state immediately.
+ *
+ * Called when user triggers the panic gesture (e.g., specific app pattern).
+ * Goes beyond clearAllE2EState:
+ * - Overwrites + deletes MMKV files from disk (not just clearAll)
+ * - Overwrites SecureStore MMKV key (destroys AEAD capability)
+ * - Clears message cache and search index MMKV files
+ * - Does NOT require the app to be in a working state (no init needed)
+ *
+ * After panic wipe, the app is as if freshly installed — no recoverable crypto state.
+ */
+export async function panicWipe(): Promise<void> {
+  try {
+    // Step 1: Clear all E2E state (the normal path)
+    await clearAllE2EState();
+  } catch {
+    // If clearAllE2EState fails (e.g., MMKV corrupted), continue with raw cleanup
+  }
+
+  // Step 2: Overwrite the MMKV encryption key in SecureStore with random data
+  // This makes any remaining MMKV data undecryptable even if not fully wiped
+  try {
+    await SecureStore.setItemAsync(
+      SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY,
+      toBase64(generateRandomBytes(32)),
+    );
+    await SecureStore.deleteItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
+  } catch { /* best-effort */ }
+
+  // Step 3: Delete MMKV files from disk (defense-in-depth)
+  try {
+    const FileSystem = await import('expo-file-system');
+    const mmkvDir = FileSystem.documentDirectory + '../mmkv/';
+    const info = await FileSystem.getInfoAsync(mmkvDir);
+    if (info.exists) {
+      await FileSystem.deleteAsync(mmkvDir, { idempotent: true });
+    }
+  } catch { /* MMKV directory may not exist or may be in a different location */ }
+
+  // Step 4: Ensure all module-level state is reset
+  mmkvInstance = null;
+  mmkvInitPromise = null;
+  hmacKeyForNames = null;
+  cachedEncKeyB64 = null;
 }

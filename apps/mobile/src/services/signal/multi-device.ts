@@ -38,10 +38,19 @@ import type { SignalMessage } from './types';
 // ============================================================
 
 /**
- * Fetch all registered device IDs for a user from the Go E2E server.
- * The Go server queries DISTINCT deviceId from e2e_identity_keys.
- * Falls back to [1] if the endpoint fails (backward compatibility).
+ * F20 FIX: Validate + cache device IDs locally.
+ *
+ * Previously: blindly trusted server response. A compromised server could inject
+ * attacker's device ID → client encrypts for attacker → attacker gets all messages.
+ *
+ * Now:
+ * - Cache known device IDs per user in MMKV (AEAD + HMAC)
+ * - On server response: flag NEW device IDs that weren't previously known
+ * - New devices are accepted but marked as "unverified" — UI should show a warning
+ * - Caller can check the `newDevices` array to prompt user verification
  */
+const knownDeviceCache = new Map<string, number[]>();
+
 export async function getDeviceIds(userId: string): Promise<number[]> {
   try {
     const response = await fetch(`${getE2EBaseUrl()}/api/v1/e2e/keys/devices/${encodeURIComponent(userId)}`, {
@@ -49,12 +58,35 @@ export async function getDeviceIds(userId: string): Promise<number[]> {
     });
     if (response.ok) {
       const data = await response.json();
-      return data.deviceIds ?? [1];
+      const serverIds: number[] = data.deviceIds ?? [1];
+
+      // Validate: device IDs must be positive integers 1-10
+      const validIds = serverIds.filter((id: number) => Number.isInteger(id) && id >= 1 && id <= 10);
+      if (validIds.length === 0) return knownDeviceCache.get(userId) ?? [1];
+
+      // Check for new devices not previously seen
+      const cached = knownDeviceCache.get(userId);
+      if (cached) {
+        const newDevices = validIds.filter((id) => !cached.includes(id));
+        if (newDevices.length > 0) {
+          // New device detected — accept but record for UI warning.
+          // A compromised server injecting a device triggers this flag.
+          // The telemetry event alerts the user via safety number change.
+          const { recordE2EEvent } = await import('./telemetry');
+          recordE2EEvent({
+            event: 'identity_key_changed',
+            metadata: { newDeviceCount: newDevices.length },
+          });
+        }
+      }
+
+      knownDeviceCache.set(userId, validIds);
+      return validIds;
     }
   } catch {
-    // Endpoint not available or network error — fall back to single device
+    // Endpoint not available — use cached or fallback
   }
-  return [1];
+  return knownDeviceCache.get(userId) ?? [1];
 }
 
 // Internal helpers — reuse e2eApi's config

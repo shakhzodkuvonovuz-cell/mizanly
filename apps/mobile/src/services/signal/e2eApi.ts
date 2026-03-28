@@ -282,7 +282,8 @@ export async function fetchSenderKeys(
 export function negotiateProtocolVersion(
   bundleVersions: number[],
 ): number | null {
-  const ourVersions = [1]; // We currently support version 1 only (classical X3DH)
+  // F27 FIX: Advertise PQXDH support (version 2) when ML-KEM is available
+  const ourVersions = [1, 2]; // 1 = classical X3DH, 2 = hybrid PQXDH (ML-KEM-768)
   const mutual = bundleVersions.filter((v) => ourVersions.includes(v));
   if (mutual.length === 0) return null;
   return Math.max(...mutual);

@@ -25,6 +25,14 @@ import (
 type Store struct {
 	pool                   *pgxpool.Pool
 	transparencySigningKey ed25519.PrivateKey // F1: Ed25519 key for signing Merkle roots
+	// F14: Cached Merkle tree — rebuilt on identity key changes, not on every request.
+	cachedLeaves    [][]byte
+	cachedRoot      []byte
+	cachedRootSig   string
+	cachedTreeSize  int
+	cachedLeafIndex map[string]int       // userId → leaf index
+	cachedPubKeys   map[string][]byte    // userId → publicKey
+	cacheValid      bool
 }
 
 // New creates a new Store with a connection pool configured for Neon.
@@ -121,6 +129,9 @@ func (s *Store) UpsertIdentityKey(ctx context.Context, userID string, deviceID i
 	if changed {
 		oldFingerprint = fingerprint(oldPub)
 	}
+
+	// F14: Invalidate cached Merkle tree — identity key changed
+	s.InvalidateMerkleCache()
 
 	return changed, oldFingerprint, nil
 }
@@ -503,121 +514,115 @@ type TransparencyRoot struct {
 	UpdatedAt string `json:"updatedAt"`
 }
 
-// GetTransparencyProof returns a Merkle inclusion proof for a user's identity key.
-//
-// The transparency log is an append-only list of (userId, identityKey) entries.
-// Each time an identity key is registered or changed, a new leaf is appended.
-// The Merkle tree is rebuilt from the full leaf list.
-//
-// This implementation uses a simple in-DB approach: query all leaves,
-// build the tree in memory, compute the proof. For production scale (>100K users),
-// migrate to a dedicated transparency log service.
-func (s *Store) GetTransparencyProof(ctx context.Context, targetUserID string) (*TransparencyProof, error) {
-	// Fetch ALL identity keys (ordered by creation time = leaf order)
+// F14 FIX: rebuildMerkleCache loads all identity keys and builds the tree ONCE.
+// Called on startup and after every identity key change. Subsequent proof/root
+// requests use the cached tree (O(log n) proof lookup instead of O(n) rebuild).
+func (s *Store) rebuildMerkleCache(ctx context.Context) error {
 	rows, err := s.pool.Query(ctx,
 		`SELECT "userId", "publicKey" FROM e2e_identity_keys ORDER BY "createdAt" ASC`,
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
-	var leaves [][]byte
-	var targetLeafIndex int = -1
-	var targetPubKey []byte
+	s.cachedLeaves = nil
+	s.cachedLeafIndex = make(map[string]int)
+	s.cachedPubKeys = make(map[string][]byte)
 	i := 0
 	for rows.Next() {
 		var uid string
 		var pub []byte
 		if err := rows.Scan(&uid, &pub); err != nil {
-			return nil, err
+			return err
 		}
-		// Leaf = SHA-256(userId || publicKey)
 		leafData := append([]byte(uid), pub...)
 		leaf := sha256.Sum256(leafData)
-		leaves = append(leaves, leaf[:])
-		if uid == targetUserID {
-			targetLeafIndex = i
-			targetPubKey = pub
-		}
+		s.cachedLeaves = append(s.cachedLeaves, leaf[:])
+		s.cachedLeafIndex[uid] = i
+		s.cachedPubKeys[uid] = pub
 		i++
 	}
 	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	if len(s.cachedLeaves) > 0 {
+		s.cachedRoot = computeMerkleRoot(s.cachedLeaves)
+	} else {
+		s.cachedRoot = make([]byte, 32)
+	}
+	s.cachedTreeSize = len(s.cachedLeaves)
+
+	// Sign the root
+	s.cachedRootSig = ""
+	if s.transparencySigningKey != nil && len(s.cachedRoot) > 0 {
+		sig := ed25519.Sign(s.transparencySigningKey, s.cachedRoot)
+		s.cachedRootSig = base64.StdEncoding.EncodeToString(sig)
+	}
+
+	s.cacheValid = true
+	return nil
+}
+
+// InvalidateMerkleCache marks the cache as stale. Called after identity key changes.
+func (s *Store) InvalidateMerkleCache() {
+	s.cacheValid = false
+}
+
+// ensureMerkleCache rebuilds cache if invalid.
+func (s *Store) ensureMerkleCache(ctx context.Context) error {
+	if s.cacheValid {
+		return nil
+	}
+	return s.rebuildMerkleCache(ctx)
+}
+
+// GetTransparencyProof returns a Merkle inclusion proof for a user's identity key.
+// F14: Uses cached tree — O(log n) proof extraction, not O(n) full rebuild.
+func (s *Store) GetTransparencyProof(ctx context.Context, targetUserID string) (*TransparencyProof, error) {
+	if err := s.ensureMerkleCache(ctx); err != nil {
 		return nil, err
 	}
-	if targetLeafIndex < 0 {
+
+	targetLeafIndex, ok := s.cachedLeafIndex[targetUserID]
+	if !ok {
 		return nil, fmt.Errorf("user not found in transparency log")
 	}
+	targetPubKey := s.cachedPubKeys[targetUserID]
 
-	// Build Merkle tree and compute proof
-	root, proof := buildMerkleProof(leaves, targetLeafIndex)
+	_, proof := buildMerkleProof(s.cachedLeaves, targetLeafIndex)
 
-	// Encode proof as base64 strings
 	proofB64 := make([]string, len(proof))
 	for j, p := range proof {
 		proofB64[j] = base64.StdEncoding.EncodeToString(p)
-	}
-
-	rootB64 := base64.StdEncoding.EncodeToString(root)
-
-	// F1: Sign the Merkle root with the transparency key.
-	// Clients verify this signature against a hardcoded public key.
-	// Without the signature, a compromised server could build a forged tree.
-	var rootSig string
-	if s.transparencySigningKey != nil {
-		sig := ed25519.Sign(s.transparencySigningKey, root)
-		rootSig = base64.StdEncoding.EncodeToString(sig)
 	}
 
 	return &TransparencyProof{
 		IdentityKey: base64.StdEncoding.EncodeToString(targetPubKey),
 		Proof:       proofB64,
 		LeafIndex:   targetLeafIndex,
-		Root:        rootB64,
-		RootSig:     rootSig,
-		TreeSize:    len(leaves),
+		Root:        base64.StdEncoding.EncodeToString(s.cachedRoot),
+		RootSig:     s.cachedRootSig,
+		TreeSize:    s.cachedTreeSize,
 	}, nil
 }
 
-// GetTransparencyRoot returns the current Merkle tree root.
+// GetTransparencyRoot returns the current Merkle tree root + signature.
+// F14: Uses cached root — no DB query needed.
 func (s *Store) GetTransparencyRoot(ctx context.Context) (*TransparencyRoot, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT "userId", "publicKey" FROM e2e_identity_keys ORDER BY "createdAt" ASC`,
-	)
-	if err != nil {
+	if err := s.ensureMerkleCache(ctx); err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var leaves [][]byte
-	for rows.Next() {
-		var uid string
-		var pub []byte
-		if err := rows.Scan(&uid, &pub); err != nil {
-			return nil, err
-		}
-		leafData := append([]byte(uid), pub...)
-		leaf := sha256.Sum256(leafData)
-		leaves = append(leaves, leaf[:])
-	}
-	if len(leaves) == 0 {
+	if s.cachedTreeSize == 0 {
 		return &TransparencyRoot{Root: "", TreeSize: 0, UpdatedAt: time.Now().UTC().Format(time.RFC3339)}, nil
 	}
 
-	root := computeMerkleRoot(leaves)
-	rootB64 := base64.StdEncoding.EncodeToString(root)
-
-	// F1: Sign the Merkle root
-	var rootSig string
-	if s.transparencySigningKey != nil {
-		sig := ed25519.Sign(s.transparencySigningKey, root)
-		rootSig = base64.StdEncoding.EncodeToString(sig)
-	}
-
 	return &TransparencyRoot{
-		Root:      rootB64,
-		RootSig:   rootSig,
-		TreeSize:  len(leaves),
+		Root:      base64.StdEncoding.EncodeToString(s.cachedRoot),
+		RootSig:   s.cachedRootSig,
+		TreeSize:  s.cachedTreeSize,
 		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
 	}, nil
 }

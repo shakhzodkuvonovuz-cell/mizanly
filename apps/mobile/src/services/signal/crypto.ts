@@ -24,6 +24,14 @@ import { getRandomBytes } from 'expo-crypto';
 
 import type { X25519KeyPair, Ed25519KeyPair } from './types';
 
+// F30 FIX: Hoist require() to module level. Previously called inside hot-path functions
+// (hmacSha256, sha256Hash, aeadEncrypt, aeadDecrypt) adding ~0.01ms per call.
+// require() is cached by the module system, but the lookup still has overhead.
+let nativeCryptoAdapter: { isNativeCryptoAvailable: () => boolean; hmacSha256?: (k: Uint8Array, d: Uint8Array) => Uint8Array; sha256?: (d: Uint8Array) => Uint8Array; aeadEncrypt?: (k: Uint8Array, n: Uint8Array, p: Uint8Array, a?: Uint8Array) => Uint8Array; aeadDecrypt?: (k: Uint8Array, n: Uint8Array, c: Uint8Array, a?: Uint8Array) => Uint8Array } | null = null;
+try {
+  nativeCryptoAdapter = require('./native-crypto-adapter');
+} catch { nativeCryptoAdapter = null; }
+
 // ============================================================
 // KEY GENERATION
 // ============================================================
@@ -136,23 +144,17 @@ export function hmacSha256(
   key: Uint8Array,
   data: Uint8Array,
 ): Uint8Array {
-  try {
-    const adapter = require('./native-crypto-adapter');
-    if (adapter.isNativeCryptoAvailable()) {
-      return adapter.hmacSha256(key, data);
-    }
-  } catch { /* fallback */ }
+  if (nativeCryptoAdapter?.isNativeCryptoAvailable() && nativeCryptoAdapter.hmacSha256) {
+    return nativeCryptoAdapter.hmacSha256(key, data);
+  }
   return hmac(sha256, key, data);
 }
 
 /** SHA-256 hash. Uses native OpenSSL when available (C13), @noble fallback. */
 export function sha256Hash(data: Uint8Array): Uint8Array {
-  try {
-    const adapter = require('./native-crypto-adapter');
-    if (adapter.isNativeCryptoAvailable()) {
-      return adapter.sha256(data);
-    }
-  } catch { /* fallback */ }
+  if (nativeCryptoAdapter?.isNativeCryptoAvailable() && nativeCryptoAdapter.sha256) {
+    return nativeCryptoAdapter.sha256(data);
+  }
   return sha256(data);
 }
 
@@ -322,14 +324,9 @@ export function utf8Decode(bytes: Uint8Array): string {
  * falls back to XOR accumulator otherwise.
  */
 export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  // Try native constant-time comparison first
-  try {
-    const adapter = require('./native-crypto-adapter');
-    if (adapter.isNativeCryptoAvailable()) {
-      return adapter.constantTimeCompare(a, b);
-    }
-  } catch { /* adapter not loaded yet — use fallback */ }
-
+  if (nativeCryptoAdapter?.isNativeCryptoAvailable() && (nativeCryptoAdapter as any).constantTimeCompare) {
+    return (nativeCryptoAdapter as any).constantTimeCompare(a, b);
+  }
   // Fallback: XOR accumulator (best-effort in JS)
   const len = Math.max(a.length, b.length);
   let diff = a.length ^ b.length;
@@ -345,13 +342,10 @@ export function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
  * falls back to random overwrite + zero fill otherwise.
  */
 export function zeroOut(arr: Uint8Array): void {
-  try {
-    const adapter = require('./native-crypto-adapter');
-    if (adapter.isNativeCryptoAvailable()) {
-      adapter.secureZero(arr);
-      return;
-    }
-  } catch { /* adapter not loaded yet */ }
+  if (nativeCryptoAdapter?.isNativeCryptoAvailable() && (nativeCryptoAdapter as any).secureZero) {
+    (nativeCryptoAdapter as any).secureZero(arr);
+    return;
+  }
 
   // Fallback: random overwrite then zero (defeats dead-store elimination)
   try {

@@ -31,6 +31,7 @@ import {
   concat,
   uint32BE,
   zeroOut,
+  toBase64,
 } from './crypto';
 import type { EncryptedMediaInfo, MediaFileHeader } from './types';
 
@@ -197,14 +198,20 @@ export async function encryptSmallMediaFile(
 
   const mediaSha256 = ctx.hasher.digest();
 
-  // Write to temp file
+  // F23 FIX: Use CSPRNG for temp filenames (Math.random is not cryptographically secure)
   const encryptedFileUri =
-    FileSystem.cacheDirectory + `encrypted_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    FileSystem.cacheDirectory + `encrypted_${toBase64(generateRandomBytes(16)).replace(/[/+=]/g, '_')}`;
 
   const fullBytes = concat(...segments);
   await FileSystem.writeAsStringAsync(encryptedFileUri, arrayBufferToBase64(fullBytes), {
     encoding: FileSystem.EncodingType.Base64,
   });
+
+  // F18: mediaKey is returned as Uint8Array. Callers MUST:
+  // 1. Convert to base64 for the E2E payload: toBase64(result.mediaKey)
+  // 2. Zero immediately after: zeroOut(result.mediaKey)
+  // Automated zeroing (microtask/timeout) conflicts with async callers.
+  // The zeroOut responsibility is documented in the EncryptedMediaInfo type.
 
   return {
     encryptedFileUri,
@@ -298,8 +305,9 @@ export async function decryptMediaFile(
   }
 
   const decryptedChunks: Uint8Array[] = [];
+  // F23 FIX: CSPRNG for temp filenames
   const decryptedFileUri =
-    FileSystem.cacheDirectory + `decrypted_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    FileSystem.cacheDirectory + `decrypted_${toBase64(generateRandomBytes(16)).replace(/[/+=]/g, '_')}`;
 
   for (let i = 0; i < totalChunks; i++) {
     const offset = HEADER_SIZE + i * encryptedChunkSize;
@@ -352,6 +360,19 @@ export async function decryptMediaFile(
   await FileSystem.writeAsStringAsync(decryptedFileUri, arrayBufferToBase64(fullDecrypted), {
     encoding: FileSystem.EncodingType.Base64,
   });
+
+  // F17 FIX: Schedule auto-cleanup of decrypted file after 60 seconds.
+  // Callers should also call cleanupTempFile() explicitly when done viewing.
+  // This timer is a safety net — if the caller forgets, the file is still cleaned up.
+  // 60s is enough time to display/render the media before deletion.
+  setTimeout(async () => {
+    try {
+      const info = await FileSystem.getInfoAsync(decryptedFileUri);
+      if (info.exists) {
+        await FileSystem.deleteAsync(decryptedFileUri, { idempotent: true });
+      }
+    } catch { /* best-effort cleanup */ }
+  }, 60_000);
 
   return decryptedFileUri;
 }

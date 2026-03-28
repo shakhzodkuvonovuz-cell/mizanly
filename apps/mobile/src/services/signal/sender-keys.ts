@@ -515,18 +515,34 @@ export async function distributeSenderKeyToMembers(
   const serialized = serializeSenderKeyForDistribution(state);
   const distributed: string[] = [];
 
+  const unacknowledged: string[] = [];
+
   for (const memberId of memberIds) {
     try {
-      // Encrypt with their pairwise session
       const encrypted = await encryptForMember(memberId, serialized);
-      // Upload to Go E2E server
       await uploadToServer(groupId, memberId, encrypted, state.chainId, state.generation);
       distributed.push(memberId);
-    } catch (err) {
-      // Skip failed members — they'll get "[Waiting for encryption keys...]"
-      // until we retry or they request re-distribution
-      console.warn(`Failed to distribute sender key to ${memberId}:`, err);
+    } catch {
+      // F29: Don't log member IDs
+      console.warn('Failed to distribute sender key to a group member');
+      unacknowledged.push(memberId);
     }
+  }
+
+  // F21 FIX: Retry distribution for unacknowledged members after 30 seconds.
+  // Members who were offline during distribution get a retry automatically.
+  // After retry, remaining failures are accepted (lazy re-distribution on first message).
+  if (unacknowledged.length > 0) {
+    setTimeout(async () => {
+      for (const memberId of unacknowledged) {
+        try {
+          const encrypted = await encryptForMember(memberId, serialized);
+          await uploadToServer(groupId, memberId, encrypted, state.chainId, state.generation);
+        } catch {
+          // Final failure — member will request re-distribution on join
+        }
+      }
+    }, 30_000);
   }
 
   return distributed;

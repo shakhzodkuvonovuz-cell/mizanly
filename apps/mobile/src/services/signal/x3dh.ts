@@ -27,8 +27,9 @@ import {
   hkdfDeriveSecrets,
   concat,
   zeroOut,
+  constantTimeEqual,
 } from './crypto';
-import { isPQXDHAvailable, pqEncapsulate, deriveHybridSecret } from './pqxdh';
+import { isPQXDHAvailable, pqEncapsulate, pqDecapsulate, deriveHybridSecret } from './pqxdh';
 import {
   loadIdentityKeyPair,
   loadSignedPreKeyPrivate,
@@ -73,8 +74,15 @@ const ZERO_SALT = new Uint8Array(32);
  * causes DH to produce a predictable all-zero output, completely breaking secrecy.
  * Both initiator AND responder must check every DH output.
  */
+/**
+ * F22 FIX: Constant-time all-zeros check for DH outputs.
+ * Previously used Array.every which short-circuits on first non-zero byte —
+ * timing leaked whether the output was "close to zero" (small-subgroup indicator).
+ * Now uses constantTimeEqual against an all-zero array (fixed timing regardless of input).
+ */
 function assertNonZeroDH(dh: Uint8Array, label: string): void {
-  if (dh.every((b) => b === 0)) {
+  const zeros = new Uint8Array(dh.length);
+  if (constantTimeEqual(dh, zeros)) {
     throw new Error(`X3DH ${label} produced all-zero shared secret. Keys may be malicious.`);
   }
 }
@@ -277,6 +285,9 @@ export async function respondX3DH(
   signedPreKeyId: number,
   oneTimePreKeyId: number | undefined,
   senderUserId: string,
+  // F16: PQXDH fields — present when initiator used hybrid PQXDH
+  pqCiphertext?: Uint8Array,
+  pqSecretKey?: Uint8Array,
 ): Promise<X3DHResponseResult> {
   // Load our identity key pair
   const identityKeyPair = await loadIdentityKeyPair();
@@ -334,8 +345,23 @@ export async function respondX3DH(
     dhConcat = concat(PADDING, dh1, dh2, dh3);
   }
 
-  // Derive shared secret — must produce the same 32 bytes as the initiator
-  const sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
+  // Derive classical shared secret
+  let sharedSecret = hkdfDeriveSecrets(dhConcat, ZERO_SALT, X3DH_INFO, 32);
+
+  // F16 FIX: PQXDH responder — decapsulate if the initiator sent PQ ciphertext.
+  // Previously the responder ignored PQ fields, causing both sides to compute
+  // DIFFERENT shared secrets when the initiator used PQXDH (silent session failure).
+  if (pqCiphertext && pqSecretKey) {
+    const pqSharedSecret = pqDecapsulate(pqCiphertext, pqSecretKey);
+    if (pqSharedSecret) {
+      // Hybrid derivation: combine classical DH secret with PQ shared secret
+      sharedSecret = deriveHybridSecret(sharedSecret, pqSharedSecret);
+      zeroOut(pqSharedSecret);
+    }
+    // If PQ decapsulation fails (library unavailable), fall back to classical-only.
+    // This matches the initiator behavior: initiator only sends PQ fields when
+    // both sides advertise version 2 (F27 version negotiation).
+  }
 
   // Clean up
   zeroOut(dh1);

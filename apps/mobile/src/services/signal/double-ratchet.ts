@@ -381,7 +381,10 @@ function dhRatchetStep(state: SessionState, theirNewRatchetKey: Uint8Array): voi
  *
  * @returns Decrypted plaintext, or null if no matching skipped key found
  */
-const SKIPPED_KEY_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+// F28 FIX: Reduced from 7 days to 24 hours for high-security posture.
+// Shorter expiry reduces the window for extracted skipped key attacks.
+// 24 hours is enough for delayed message delivery on unreliable networks.
+const SKIPPED_KEY_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function trySkippedKeys(
   state: SessionState,
