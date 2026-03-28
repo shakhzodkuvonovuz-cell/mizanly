@@ -82,6 +82,8 @@ import {
   hasIdentityKey,
   clearAllE2EState,
   cleanupOrphanedOTPKeys,
+  exportAllState,
+  importAllState,
 } from './storage';
 import {
   initE2EApi,
@@ -292,3 +294,6 @@ export { getE2ETelemetrySnapshot };
 
 // Lifecycle
 export { clearAllE2EState };
+
+// Key backup (C5)
+export { exportAllState, importAllState };

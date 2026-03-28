@@ -159,9 +159,31 @@ function withIOSCertPinning(config) {
         },
       },
     };
-    // NOTE: iOS does not natively support SPKI pinning in Info.plist.
-    // For full iOS pinning, integrate TrustKit via a native module (Phase 2).
-    // This ATS config enforces TLS 1.2+ and forward secrecy at minimum.
+
+    // TrustKit configuration for iOS certificate pinning (C12).
+    // TrustKit is a native iOS library that enforces SPKI pinning at the
+    // NSURLSession level. When installed via `npx expo install react-native-trustkit`,
+    // it reads this config from Info.plist and rejects connections to pinned domains
+    // if the certificate doesn't match any pin.
+    //
+    // Until TrustKit is installed, this config is harmless (just plist entries).
+    // Once installed, it activates automatically.
+    cfg.modResults.TSKConfiguration = {
+      TSKSwizzleNetworkDelegates: true,
+      TSKPinnedDomains: {},
+    };
+
+    // Add each pinned domain to TrustKit config
+    for (const domain of PINNED_DOMAINS) {
+      cfg.modResults.TSKConfiguration.TSKPinnedDomains[domain.domain] = {
+        TSKEnforcePinning: true,
+        TSKIncludesSubdomains: domain.includeSubdomains,
+        TSKPublicKeyHashes: domain.pins,
+        // Report URI for pin violation monitoring (optional)
+        // TSKReportUris: ['https://api.mizanly.app/api/v1/internal/pin-violation'],
+      };
+    }
+
     return cfg;
   });
 }

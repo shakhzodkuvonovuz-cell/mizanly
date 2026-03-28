@@ -869,6 +869,8 @@ export default function ConversationScreen() {
     };
   }, []);
 
+  // C7: Disappearing message enforcement is below, after convoQuery declaration.
+
   // Decrypt incoming E2E encrypted messages via Signal Protocol.
   // Handles 3 message types:
   //   1. PreKeySignalMessage (first contact — has e2eIdentityKey + e2eEphemeralKey)
@@ -938,16 +940,29 @@ export default function ConversationScreen() {
         );
       }
 
-      // Cache and index for search
+      // Cache and index for search.
+      // C7: Disappearing messages — if conversation has a timer, set expiresAt.
+      // The message cache enforces expiry on read (getCachedMessages filters expired).
+      const convo = convoQuery.data;
+      const disappearSec = (convo as any)?.disappearingDuration as number | undefined;
+      const createdAtMs = new Date(message.createdAt).getTime();
+      const expiresAt = disappearSec && disappearSec > 0
+        ? createdAtMs + disappearSec * 1000
+        : undefined;
+
       cacheDecryptedMessage({
         messageId: message.id,
         conversationId: id,
         senderId,
         content: decrypted,
         messageType: message.messageType ?? 'TEXT',
-        createdAt: new Date(message.createdAt).getTime(),
+        createdAt: createdAtMs,
+        expiresAt,
       }).catch(() => {});
-      indexMessage(message.id, id, decrypted, new Date(message.createdAt).getTime()).catch(() => {});
+      // Don't index disappearing messages for search (they should vanish completely)
+      if (!expiresAt) {
+        indexMessage(message.id, id, decrypted, createdAtMs).catch(() => {});
+      }
       return decrypted;
     } catch (err) {
       // Session auto-recovery: reset session on persistent failures
@@ -974,6 +989,16 @@ export default function ConversationScreen() {
     queryKey: ['conversation', id],
     queryFn: () => messagesApi.getConversation(id),
   });
+
+  // C7: Disappearing message enforcement — periodic cleanup of expired cached messages.
+  useEffect(() => {
+    const disappearSec = (convoQuery.data as any)?.disappearingDuration as number | undefined;
+    if (!disappearSec || disappearSec <= 0) return;
+    const interval = setInterval(() => {
+      setDecryptedContents(prev => new Map(prev)); // Force re-render → cache filters expired
+    }, Math.min(disappearSec * 1000, 30000));
+    return () => clearInterval(interval);
+  }, [convoQuery.data]);
 
   const messagesQuery = useInfiniteQuery({
     queryKey: ['messages', id],

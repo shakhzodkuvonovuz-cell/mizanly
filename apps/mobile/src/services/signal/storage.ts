@@ -838,27 +838,165 @@ export async function cleanupOrphanedOTPKeys(): Promise<number> {
 }
 
 // ============================================================
-// EXPORT / IMPORT (stubs for future key backup)
+// ENCRYPTED KEY BACKUP (C5: Argon2id + XChaCha20-Poly1305)
 // ============================================================
 
 /**
- * Export all cryptographic state for backup.
- * Returns serialized state that can be encrypted with a backup key.
- * STUB — implementation deferred to key backup phase.
+ * Export all cryptographic state, encrypted with a user-provided password.
+ *
+ * Flow:
+ * 1. Collect all SecureStore keys + MMKV entries
+ * 2. Serialize into versioned JSON
+ * 3. Derive 32-byte encryption key from password via Argon2id (memory-hard)
+ * 4. Encrypt with XChaCha20-Poly1305
+ * 5. Return: [salt:32][nonce:24][ciphertext+tag]
+ *
+ * The backup can be stored in iCloud/Google Drive — it's encrypted
+ * with a password only the user knows. Server never sees the password.
+ *
+ * Argon2id parameters: m=64MB, t=3, p=4 (OWASP recommended minimum)
  */
-export async function exportAllState(): Promise<Uint8Array> {
-  // Future: enumerate all SecureStore keys + all MMKV entries
-  // Serialize into a versioned binary format
-  // Return for encryption with Argon2id-derived key
-  throw new Error('Key backup not yet implemented');
+export async function exportAllState(password: string): Promise<Uint8Array> {
+  const { argon2id } = await import('@noble/hashes/argon2');
+
+  // Collect all state
+  const mmkv = await getMMKV();
+  const identityKeyPair = await loadIdentityKeyPair();
+  const registrationId = await loadRegistrationId();
+  const mmkvEncKey = await SecureStore.getItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY);
+
+  // Collect all MMKV entries
+  const allKeys = mmkv.getAllKeys();
+  const mmkvEntries: Record<string, string> = {};
+  for (const key of allKeys) {
+    const val = mmkv.getString(key);
+    if (val) mmkvEntries[key] = val;
+  }
+
+  // Collect pre-key private keys from SecureStore
+  const spkRegistry = mmkv.getString('prekey_registry:spk');
+  const opkRegistry = mmkv.getString('prekey_registry:opk');
+  const spkIds: number[] = spkRegistry ? JSON.parse(spkRegistry) : [];
+  const opkIds: number[] = opkRegistry ? JSON.parse(opkRegistry) : [];
+  const preKeyPrivates: Record<string, string> = {};
+  for (const kid of spkIds) {
+    const val = await SecureStore.getItemAsync(`${SPK_PREFIX}${kid}`);
+    if (val) preKeyPrivates[`${SPK_PREFIX}${kid}`] = val;
+  }
+  for (const kid of opkIds) {
+    const val = await SecureStore.getItemAsync(`${OPK_PREFIX}${kid}`);
+    if (val) preKeyPrivates[`${OPK_PREFIX}${kid}`] = val;
+  }
+
+  // Collect sender signing keys
+  const senderSigningKeys: Record<string, string> = {};
+  for (const key of allKeys) {
+    if (key.startsWith('senderkey:') && key.includes(':self')) {
+      const groupId = key.split(':')[1];
+      const val = await SecureStore.getItemAsync(`e2e_sender_signing_${groupId}`);
+      if (val) senderSigningKeys[groupId] = val;
+    }
+  }
+
+  const state = JSON.stringify({
+    version: 1,
+    exportedAt: Date.now(),
+    identityPrivate: identityKeyPair ? toBase64(identityKeyPair.privateKey) : null,
+    identityPublic: identityKeyPair ? toBase64(identityKeyPair.publicKey) : null,
+    registrationId,
+    mmkvEncryptionKey: mmkvEncKey,
+    mmkvEntries,
+    preKeyPrivates,
+    senderSigningKeys,
+  });
+
+  // Derive encryption key from password via Argon2id
+  const salt = generateRandomBytes(32);
+  const backupKey = argon2id(utf8Encode(password), salt, {
+    t: 3,      // 3 iterations
+    m: 65536,  // 64MB memory
+    p: 4,      // 4 parallel lanes
+    dkLen: 32, // 32-byte output
+  });
+
+  // Encrypt with XChaCha20-Poly1305
+  const nonce = generateRandomBytes(24);
+  const plaintext = utf8Encode(state);
+  const ciphertext = aeadEncrypt(backupKey, nonce, plaintext);
+
+  // Format: [version:1][salt:32][nonce:24][ciphertext+tag]
+  const result = new Uint8Array(1 + salt.length + nonce.length + ciphertext.length);
+  result[0] = 1; // Backup format version
+  result.set(salt, 1);
+  result.set(nonce, 33);
+  result.set(ciphertext, 57);
+  return result;
 }
 
 /**
- * Import cryptographic state from a backup.
- * STUB — implementation deferred to key backup phase.
+ * Import cryptographic state from an encrypted backup.
+ *
+ * @param data - Encrypted backup bytes from exportAllState
+ * @param password - User's backup password
  */
-export async function importAllState(_data: Uint8Array): Promise<void> {
-  throw new Error('Key backup restore not yet implemented');
+export async function importAllState(data: Uint8Array, password: string): Promise<void> {
+  const { argon2id } = await import('@noble/hashes/argon2');
+
+  if (data.length < 58) throw new Error('Backup data too short');
+  const version = data[0];
+  if (version !== 1) throw new Error(`Unsupported backup version: ${version}`);
+
+  const salt = data.slice(1, 33);
+  const nonce = data.slice(33, 57);
+  const ciphertext = data.slice(57);
+
+  // Derive key from password
+  const backupKey = argon2id(utf8Encode(password), salt, {
+    t: 3, m: 65536, p: 4, dkLen: 32,
+  });
+
+  // Decrypt
+  let plaintext: Uint8Array;
+  try {
+    plaintext = aeadDecrypt(backupKey, nonce, ciphertext);
+  } catch {
+    throw new Error('Wrong password or corrupted backup');
+  }
+
+  const state = JSON.parse(utf8Decode(plaintext));
+  if (state.version !== 1) throw new Error(`Unsupported state version: ${state.version}`);
+
+  // Restore identity key
+  if (state.identityPrivate && state.identityPublic) {
+    await SecureStore.setItemAsync(SECURE_STORE_KEYS.IDENTITY_PRIVATE, state.identityPrivate);
+    await SecureStore.setItemAsync(SECURE_STORE_KEYS.IDENTITY_PUBLIC, state.identityPublic);
+  }
+  if (state.registrationId !== null) {
+    await SecureStore.setItemAsync(SECURE_STORE_KEYS.REGISTRATION_ID, String(state.registrationId));
+  }
+  if (state.mmkvEncryptionKey) {
+    await SecureStore.setItemAsync(SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY, state.mmkvEncryptionKey);
+  }
+
+  // Restore MMKV entries
+  // Reset MMKV instance to use the restored encryption key
+  mmkvInstance = null;
+  mmkvInitPromise = null;
+  aeadKey = null;
+  const mmkv = await getMMKV();
+  for (const [key, val] of Object.entries(state.mmkvEntries ?? {})) {
+    mmkv.set(key, val as string);
+  }
+
+  // Restore pre-key private keys
+  for (const [key, val] of Object.entries(state.preKeyPrivates ?? {})) {
+    await SecureStore.setItemAsync(key, val as string);
+  }
+
+  // Restore sender signing keys
+  for (const [groupId, val] of Object.entries(state.senderSigningKeys ?? {})) {
+    await SecureStore.setItemAsync(`e2e_sender_signing_${groupId}`, val as string);
+  }
 }
 
 // ============================================================
