@@ -38,6 +38,8 @@ import {
   utf8Encode,
   utf8Decode,
   zeroOut,
+  padMessage,
+  unpadMessage,
 } from './crypto';
 import {
   withSessionLock,
@@ -185,8 +187,8 @@ export async function encryptGroupMessage(
     uint32BE(counter),
   );
 
-  // Encrypt
-  const plaintextBytes = utf8Encode(plaintext);
+  // Pad + encrypt (B4: group messages must also hide plaintext length)
+  const plaintextBytes = padMessage(utf8Encode(plaintext));
   const ciphertext = aeadEncrypt(encKey, nonce, plaintextBytes, aad);
 
   // Load signing private key from SecureStore (not MMKV — hardware-backed)
@@ -321,15 +323,16 @@ export async function decryptGroupMessage(
       uint32BE(message.generation),
       uint32BE(message.counter),
     );
-    let plaintext: Uint8Array;
+    let paddedPlaintext: Uint8Array;
     try {
-      plaintext = aeadDecrypt(encKey, nonce, message.ciphertext, aad);
+      paddedPlaintext = aeadDecrypt(encKey, nonce, message.ciphertext, aad);
     } catch {
       zeroOut(skipped.messageKey);
       zeroOut(encKey);
       zeroOut(nonce);
       throw new Error('Group message decryption with skipped key failed.');
     }
+    const plaintext = unpadMessage(paddedPlaintext);
     zeroOut(skipped.messageKey);
     zeroOut(encKey);
     zeroOut(nonce);
@@ -395,10 +398,10 @@ export async function decryptGroupMessage(
     uint32BE(message.counter),
   );
 
-  // Decrypt — AEAD catches tampering
-  let plaintext: Uint8Array;
+  // Decrypt + unpad — AEAD catches tampering
+  let paddedPlaintext: Uint8Array;
   try {
-    plaintext = aeadDecrypt(encKey, nonce, message.ciphertext, aad);
+    paddedPlaintext = aeadDecrypt(encKey, nonce, message.ciphertext, aad);
   } catch {
     // Don't update state on failure — chain is still at old position
     zeroOut(messageKey);
@@ -409,6 +412,8 @@ export async function decryptGroupMessage(
       'Group message decryption failed. The message may be tampered with or the key is wrong.',
     );
   }
+
+  const plaintext = unpadMessage(paddedPlaintext);
 
   // Decryption succeeded — commit the advanced chain state + skipped keys
   state.chainKey = currentChainKey;

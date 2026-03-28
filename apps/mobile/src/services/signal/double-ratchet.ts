@@ -29,6 +29,8 @@ import {
   uint32BE,
   zeroOut,
   constantTimeEqual,
+  padMessage,
+  unpadMessage,
 } from './crypto';
 import { MAX_SKIPPED_KEYS } from './storage';
 import type {
@@ -141,68 +143,7 @@ function deserializeHeader(bytes: Uint8Array): MessageHeader {
   };
 }
 
-// ============================================================
-// MESSAGE PADDING (Finding 8: hide plaintext length)
-// ============================================================
-
-/**
- * Minimum padded message size in bytes.
- * Messages shorter than this are padded to this length.
- * Hides content type: "yes", "no", "ok", "salam" all become 160 bytes.
- */
-const MIN_PADDED_SIZE = 160;
-
-/** Padding block alignment — PKCS#7 style, aligned to 16-byte boundaries */
-const PAD_BLOCK = 16;
-
-/**
- * Pad a plaintext message using PKCS#7-style padding.
- *
- * - Messages < 160 bytes → padded to 160 bytes
- * - Messages >= 160 bytes → padded to next 16-byte boundary
- * - Last byte always indicates pad length (1-255)
- * - All pad bytes have the same value (PKCS#7)
- *
- * This prevents ciphertext length from revealing plaintext length.
- * Without padding, an observer can distinguish "yes" (3 bytes) from
- * "I'll meet you at the café at 3pm" (32 bytes) by ciphertext size.
- */
-function padMessage(plaintext: Uint8Array): Uint8Array {
-  // Target: at least MIN_PADDED_SIZE, or plaintext + 1 (minimum 1 pad byte)
-  const targetLen = Math.max(MIN_PADDED_SIZE, plaintext.length + 1);
-  // Align up to next PAD_BLOCK boundary
-  const paddedLen = Math.ceil(targetLen / PAD_BLOCK) * PAD_BLOCK;
-  const padLen = paddedLen - plaintext.length;
-
-  const padded = new Uint8Array(paddedLen);
-  padded.set(plaintext);
-  // PKCS#7: all pad bytes equal the pad length
-  for (let i = plaintext.length; i < paddedLen; i++) {
-    padded[i] = padLen;
-  }
-  return padded;
-}
-
-/**
- * Remove PKCS#7 padding from a decrypted message.
- * Throws on invalid padding (detected tampering or corruption).
- */
-function unpadMessage(padded: Uint8Array): Uint8Array {
-  if (padded.length === 0) {
-    throw new Error('Empty padded message');
-  }
-  const padLen = padded[padded.length - 1];
-  if (padLen === 0 || padLen > padded.length || padLen > 255) {
-    throw new Error('Invalid message padding');
-  }
-  // Verify all pad bytes match the declared pad length
-  for (let i = padded.length - padLen; i < padded.length; i++) {
-    if (padded[i] !== padLen) {
-      throw new Error('Invalid message padding');
-    }
-  }
-  return padded.slice(0, padded.length - padLen);
-}
+// padMessage/unpadMessage imported from crypto.ts (shared with sender-keys.ts)
 
 // ============================================================
 // ENCRYPT

@@ -12,10 +12,11 @@
  * - Decrypted message cache -> encrypted MMKV
  * - Search index -> encrypted MMKV
  *
- * MMKV uses AES-CFB-128 for encryption (no authentication).
- * This is acceptable: if device is not rooted, the MMKV encryption key
- * (in SecureStore/Keychain) is hardware-protected. If device IS rooted,
- * the attacker can hook app memory directly — storage encryption is moot.
+ * MMKV uses AES-CFB-128 for base encryption. On top of that, all security-
+ * sensitive values (sessions, sender keys, identity keys, offline queue,
+ * group dedup, OTP registry) are wrapped with XChaCha20-Poly1305 AEAD
+ * (see aeadSet/aeadGet below). This AEAD layer provides integrity — a
+ * forensic attacker cannot flip bits in session state undetected.
  *
  * All session storage keys include deviceId for multi-device readiness.
  * Single-device phase: deviceId=1 everywhere.
@@ -95,8 +96,11 @@ async function getMMKV(): Promise<MMKV> {
       );
 
       if (!encryptionKey) {
-        // First run — generate and store a new MMKV encryption key
-        const keyBytes = generateRandomBytes(16); // MMKV uses AES-128
+        // First run — generate 256-bit key for maximum entropy (B6).
+        // MMKV truncates to 16 bytes for its AES-128, but we use the
+        // full 32 bytes via HKDF for the AEAD layer. 256-bit source
+        // ensures the AEAD key has full 256-bit entropy.
+        const keyBytes = generateRandomBytes(32);
         encryptionKey = toBase64(keyBytes);
         await SecureStore.setItemAsync(
           SECURE_STORE_KEYS.MMKV_ENCRYPTION_KEY,
@@ -514,26 +518,25 @@ export async function hasSession(
 
 /**
  * Store a known identity key for a user (Trust On First Use).
- * On subsequent fetches, compare against stored key.
- * If different -> "[Security code changed]" warning.
+ * AEAD-authenticated — a forensic attacker cannot modify the TOFU store
+ * to suppress "[Security code changed]" warnings (B1).
  */
 export async function storeKnownIdentityKey(
   userId: string,
   identityKey: Uint8Array,
 ): Promise<void> {
   const mmkv = await getMMKV();
-  mmkv.set(
-    `${MMKV_PREFIX.IDENTITY_KEY}${userId}`,
-    toBase64(identityKey),
-  );
+  const key = `${MMKV_PREFIX.IDENTITY_KEY}${userId}`;
+  await aeadSet(mmkv, key, toBase64(identityKey));
 }
 
-/** Load a previously stored identity key. Returns null on first encounter. */
+/** Load a previously stored identity key with AEAD verification. Returns null on first encounter. */
 export async function loadKnownIdentityKey(
   userId: string,
 ): Promise<Uint8Array | null> {
   const mmkv = await getMMKV();
-  const val = mmkv.getString(`${MMKV_PREFIX.IDENTITY_KEY}${userId}`);
+  const key = `${MMKV_PREFIX.IDENTITY_KEY}${userId}`;
+  const val = await aeadGet(mmkv, key);
   return val ? fromBase64(val) : null;
 }
 
@@ -650,18 +653,17 @@ export async function deleteSenderKeyState(
 // OFFLINE MESSAGE QUEUE (in encrypted MMKV)
 // ============================================================
 
-/** Add a message to the persistent offline queue. */
+/** Add a message to the persistent offline queue (AEAD-authenticated, B3). */
 export async function enqueueMessage(msg: QueuedMessage): Promise<void> {
   const mmkv = await getMMKV();
-  mmkv.set(
-    `${MMKV_PREFIX.OFFLINE_QUEUE}${msg.id}`,
-    JSON.stringify(msg, (_key, value) =>
-      value instanceof Uint8Array ? { __uint8: toBase64(value) } : value,
-    ),
+  const key = `${MMKV_PREFIX.OFFLINE_QUEUE}${msg.id}`;
+  const json = JSON.stringify(msg, (_k, value) =>
+    value instanceof Uint8Array ? { __uint8: toBase64(value) } : value,
   );
+  await aeadSet(mmkv, key, json);
 }
 
-/** Get all pending messages from the offline queue. */
+/** Get all pending messages from the offline queue (AEAD-verified). */
 export async function getPendingMessages(): Promise<QueuedMessage[]> {
   const mmkv = await getMMKV();
   const keys = mmkv.getAllKeys().filter((k) =>
@@ -669,34 +671,44 @@ export async function getPendingMessages(): Promise<QueuedMessage[]> {
   );
   const messages: QueuedMessage[] = [];
   for (const key of keys) {
-    const json = mmkv.getString(key);
-    if (json) {
-      const parsed = JSON.parse(json, (_k, value) => {
-        if (value && typeof value === 'object' && '__uint8' in value) {
-          return fromBase64(value.__uint8);
+    try {
+      const json = await aeadGet(mmkv, key);
+      if (json) {
+        const parsed = JSON.parse(json, (_k, value) => {
+          if (value && typeof value === 'object' && '__uint8' in value) {
+            return fromBase64(value.__uint8);
+          }
+          return value;
+        });
+        if (parsed.status === 'pending') {
+          messages.push(parsed);
         }
-        return value;
-      });
-      if (parsed.status === 'pending') {
-        messages.push(parsed);
       }
+    } catch {
+      // Tampered or corrupted queue entry — remove it
+      mmkv.delete(key);
     }
   }
   return messages.sort((a, b) => a.createdAt - b.createdAt);
 }
 
-/** Update a queued message status (e.g., pending -> sent). */
+/** Update a queued message status (e.g., pending -> sent). AEAD-authenticated. */
 export async function updateQueuedMessageStatus(
   messageId: string,
   status: QueuedMessage['status'],
 ): Promise<void> {
   const mmkv = await getMMKV();
   const key = `${MMKV_PREFIX.OFFLINE_QUEUE}${messageId}`;
-  const json = mmkv.getString(key);
-  if (!json) return;
-  const msg = JSON.parse(json);
-  msg.status = status;
-  mmkv.set(key, JSON.stringify(msg));
+  try {
+    const json = await aeadGet(mmkv, key);
+    if (!json) return;
+    const msg = JSON.parse(json);
+    msg.status = status;
+    await aeadSet(mmkv, key, JSON.stringify(msg));
+  } catch {
+    // Tampered entry — delete
+    mmkv.delete(key);
+  }
 }
 
 /** Remove a sent message from the queue. */
@@ -728,13 +740,14 @@ export async function checkGroupMessageDedup(
   const mmkv = await getMMKV();
   const key = `group_dedup:${groupId}`;
   const dedupId = `${senderId}:${chainId}:${counter}`;
-  const existing = mmkv.getString(key);
+  // AEAD-authenticated: attacker cannot clear dedup set to enable replays (B2)
+  const existing = await aeadGet(mmkv, key);
   const set: string[] = existing ? JSON.parse(existing) : [];
   if (set.includes(dedupId)) return true; // Already seen — replay
   set.push(dedupId);
   // FIFO cap at 10,000 entries per group
   if (set.length > 10000) set.splice(0, set.length - 10000);
-  mmkv.set(key, JSON.stringify(set));
+  await aeadSet(mmkv, key, JSON.stringify(set));
   return false;
 }
 
@@ -750,15 +763,19 @@ export async function checkGroupMessageDedup(
 export async function getAndIncrementOTPStartId(batchSize: number): Promise<number> {
   const mmkv = await getMMKV();
   const key = 'otp_next_start_id';
-  const current = mmkv.getNumber(key) ?? 0;
-  mmkv.set(key, current + batchSize);
+  // OTP start ID uses AEAD to prevent an attacker from resetting it
+  // (which would cause overlapping keyIds and OTP reuse)
+  const existing = await aeadGet(mmkv, key);
+  const current = existing ? parseInt(existing, 10) : 0;
+  await aeadSet(mmkv, key, String(current + batchSize));
   return current;
 }
 
 /** Get current OTP startId without incrementing (for checking). */
 export async function getCurrentOTPStartId(): Promise<number> {
   const mmkv = await getMMKV();
-  return mmkv.getNumber('otp_next_start_id') ?? 0;
+  const existing = await aeadGet(mmkv, 'otp_next_start_id');
+  return existing ? parseInt(existing, 10) : 0;
 }
 
 // ============================================================
@@ -910,8 +927,15 @@ export async function clearAllE2EState(): Promise<void> {
   // on disk are overwritten before the mapping is released.
   const allKeys = mmkv.getAllKeys();
   for (const key of allKeys) {
-    if (key.startsWith(MMKV_PREFIX.SESSION) || key.startsWith(MMKV_PREFIX.SENDER_KEY)) {
-      // Overwrite with empty JSON to zero the memory-mapped pages
+    // Overwrite ALL crypto-sensitive stores before deletion (memory-mapped pages)
+    if (
+      key.startsWith(MMKV_PREFIX.SESSION) ||
+      key.startsWith(MMKV_PREFIX.SENDER_KEY) ||
+      key.startsWith(MMKV_PREFIX.IDENTITY_KEY) ||
+      key.startsWith(MMKV_PREFIX.OFFLINE_QUEUE) ||
+      key.startsWith('group_dedup:') ||
+      key === 'otp_next_start_id'
+    ) {
       mmkv.set(key, '{}');
     }
   }

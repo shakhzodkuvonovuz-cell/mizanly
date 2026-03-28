@@ -200,6 +200,44 @@ export function generateRandomBytes(length: number): Uint8Array {
 }
 
 // ============================================================
+// MESSAGE PADDING (shared between Double Ratchet and Sender Keys)
+// ============================================================
+
+/** Minimum padded message size (hides short messages like "yes", "no", "ok") */
+const MIN_PADDED_SIZE = 160;
+/** Padding block alignment */
+const PAD_BLOCK = 16;
+
+/**
+ * Pad plaintext using PKCS#7-style padding to hide message length.
+ * Messages < 160 bytes pad to 160. Longer messages pad to next 16-byte boundary.
+ */
+export function padMessage(plaintext: Uint8Array): Uint8Array {
+  const targetLen = Math.max(MIN_PADDED_SIZE, plaintext.length + 1);
+  const paddedLen = Math.ceil(targetLen / PAD_BLOCK) * PAD_BLOCK;
+  const padLen = paddedLen - plaintext.length;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(plaintext);
+  for (let i = plaintext.length; i < paddedLen; i++) {
+    padded[i] = padLen;
+  }
+  return padded;
+}
+
+/**
+ * Remove PKCS#7-style padding. Throws on invalid padding (tampering detected).
+ */
+export function unpadMessage(padded: Uint8Array): Uint8Array {
+  if (padded.length === 0) throw new Error('Empty padded message');
+  const padLen = padded[padded.length - 1];
+  if (padLen === 0 || padLen > padded.length || padLen > 255) throw new Error('Invalid message padding');
+  for (let i = padded.length - padLen; i < padded.length; i++) {
+    if (padded[i] !== padLen) throw new Error('Invalid message padding');
+  }
+  return padded.slice(0, padded.length - padLen);
+}
+
+// ============================================================
 // UTILITY
 // ============================================================
 

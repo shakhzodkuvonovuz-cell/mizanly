@@ -248,15 +248,32 @@ function AuthGuard() {
     });
   }, [getToken, router]);
 
-  // Initialize Signal Protocol E2E encryption once signed in
+  // Initialize Signal Protocol E2E encryption once signed in.
+  // Pre-warm sessions with top contacts for instant first-message delivery (B5).
   useEffect(() => {
-    if (!isSignedIn) return;
+    if (!isSignedIn || !user?.id) return;
     const e2eUrl = process.env.EXPO_PUBLIC_E2E_URL ?? '';
     if (!e2eUrl) return;
-    initSignal(e2eUrl, () => getToken().then(t => t ?? ''), []).catch(() => {
-      // Non-fatal — E2E will retry on next message send
-    });
-  }, [isSignedIn, getToken]);
+
+    (async () => {
+      // Fetch top conversation member IDs for session pre-warming
+      let topContactIds: string[] = [];
+      try {
+        const { messagesApi } = await import('@/services/api');
+        const convos = await messagesApi.getConversations();
+        // Extract the OTHER member's userId from each 1:1 conversation (top 10)
+        topContactIds = (convos ?? [])
+          .filter((c: any) => !c.isGroup)
+          .slice(0, 10)
+          .map((c: any) => c.members?.find((m: any) => m.userId !== user.id)?.userId)
+          .filter(Boolean) as string[];
+      } catch {
+        // Non-fatal — pre-warming is an optimization, not a requirement
+      }
+
+      await initSignal(e2eUrl, () => getToken().then(t => t ?? ''), topContactIds).catch(() => {});
+    })();
+  }, [isSignedIn, getToken, user?.id]);
 
   // Register push notification token once signed in
   usePushNotifications(!!isSignedIn);
