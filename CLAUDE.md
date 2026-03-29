@@ -8,7 +8,9 @@ Prisma ORM, PostgreSQL (Neon), Redis (Upstash), Clerk auth, Cloudflare R2
 cd apps/api && pnpm test                    # API tests
 cd apps/mobile && npx tsc --noEmit          # Mobile typecheck
 cd apps/mobile && npx jest --config src/services/signal/__tests__/jest.config.js  # Signal tests
-cd apps/e2e-server && go test ./internal/... -v  # Go tests
+cd apps/mobile && npx jest --config src/hooks/__tests__/jest.config.js            # LiveKit call tests (49 tests)
+cd apps/e2e-server && go test ./internal/... -v  # Go E2E server tests
+cd apps/livekit-server && go test ./internal/... -v  # Go LiveKit server tests (123 tests)
 ```
 
 ## Integrity Rules
@@ -48,6 +50,7 @@ cd apps/e2e-server && go test ./internal/... -v  # Go tests
 apps/api/          — NestJS 10, ~80 modules, ~200 Prisma models
 apps/mobile/       — React Native Expo SDK 52, 213 screens
 apps/e2e-server/   — Go E2E Key Server (Signal Protocol)
+apps/livekit-server/ — Go LiveKit Call Server (16 endpoints, 123 tests)
 ```
 
 ## E2E Encryption — Current State (Session 13, 2026-03-28)
@@ -81,6 +84,84 @@ apps/e2e-server/   — Go E2E Key Server (Signal Protocol)
 - constantTimeEqual: CRYPTO_memcmp (hardware-guaranteed, not JIT-vulnerable)
 - zeroOut: OPENSSL_cleanse (defeats dead-store elimination)
 - Fallback: @noble/* pure JS when native unavailable (Jest, Expo Go)
+
+## LiveKit Calling System — Current State (Sessions 14-15, 2026-03-29)
+
+### Architecture
+```
+Mobile (useLiveKitCall hook)  ←WebRTC→  LiveKit Cloud (SFU)  ←webhooks→  Go livekit-server
+        ↕ CallKit/ConnectionService                                          ↕ pgx (Neon DB)
+        ↕ activeRoomRegistry                                                 ↕ HTTP→ NestJS (push)
+```
+
+### What's built
+- Go server: 16 endpoints (rooms, token, leave, kick, mute, egress, ingress, webhooks, history, active, session), 123 tests
+- Mobile hook: `useLiveKitCall` — Room lifecycle, SFrame E2EE, Krisp noise filter, media controls, data channels, speaker toggle, screen share
+- CallKit/ConnectionService: `callkit.ts` — native call UI, cold-start event queue, caller/callee role tracking, lock-screen end → Room disconnect
+- `activeRoomRegistry.ts` — zero-dependency bridge between CallKit (module scope) and React hook (Room ref)
+- Call screen: `VideoTrack` component, adaptive group grid with speaker spotlight, 30s ring timeout, callee-side poll timeout, vibration, quality indicator, E2EE verification overlay, reactions, raise hand, `useKeepAwake`
+- `CallActiveBar` — floating green bar when navigating away during active call
+- NestJS `InternalPushController` — Go→NestJS server-to-server push for incoming call + missed call notifications
+- `leaveRoom` endpoint — callee leaves without destroying the room (group calls survive)
+- Per-session E2EE salt (16 bytes, crypto/rand) — domain separation for SFrame ratcheting
+- Key material zeroing (`Uint8Array.fill(0)`) after handoff to native KeyProvider
+- E2EE failure aborts call entirely — no silent downgrade to unencrypted
+- Caller name resolved from DB for push notifications (not just user ID)
+- Composite cursor pagination (createdAt + id) for call history
+
+### Key files
+- `apps/mobile/src/hooks/useLiveKitCall.ts` — core hook (~700 lines)
+- `apps/mobile/app/(screens)/call/[id].tsx` — call UI screen
+- `apps/mobile/src/services/callkit.ts` — CallKit/ConnectionService integration
+- `apps/mobile/src/services/livekit.ts` — API client for Go server
+- `apps/mobile/src/services/activeRoomRegistry.ts` — Room cleanup bridge
+- `apps/mobile/src/components/ui/CallActiveBar.tsx` — floating call bar
+- `apps/livekit-server/` — Go service (handler, store, middleware, config, model)
+- `apps/api/src/modules/notifications/internal-push.controller.ts` — server-to-server push
+- `docs/plans/2026-03-29-livekit-calling-design.md` — architecture decisions
+- `docs/plans/2026-03-29-livekit-implementation-plan.md` — original task plan
+
+### Test counts
+- Go livekit-server: 123 tests (handler 105, config 10, middleware 5, request ID 3)
+- Mobile TS: 49 tests (base64 7, SAS emojis 7, emoji derivation 6, key zeroing 2, activeRoomRegistry 5, callkit 22)
+- API: 6 tests (internal push controller auth, delivery, cap, failure)
+
+### What's NOT done (blocked on Apple Developer $99)
+- **Zero runtime testing.** Everything compiles and passes unit tests. No call has ever been placed on a real device.
+- **VoIP Push (PushKit iOS).** Regular push notifications do NOT trigger CallKit's native ringtone. Need VoIP push entitlement for proper incoming call experience with system ringtone.
+- **EAS build.** LiveKit, CallKit, Krisp all require `expo-dev-client`. Cannot run in Expo Go.
+- **Cert pinning.** Configured but never enforced without a signed build.
+
+### Runtime verification checklist (first EAS build)
+| Item | What to verify |
+|------|---------------|
+| `room.connect()` → media flowing | Audio/video actually works between two devices |
+| `RNE2EEManager` + `RNKeyProvider` | SFrame encryption activates, emoji verification matches |
+| `AudioSession.selectAudioOutput('force_speaker')` | Speaker toggle works on both iOS and Android |
+| `KrispNoiseFilter()` | Noise suppression activates on LiveKit Cloud |
+| `VideoTrack` component | Renders video, `iosPIP` works on iOS 15+ |
+| `publication.mute()`/`unmute()` on background | Camera pauses/resumes without black-frame flash |
+| `RNCallKeep.displayIncomingCall` | Native call UI appears with caller name |
+| Cold start answer queue | Kill app → receive call → answer → navigates to call screen |
+| `disconnectActiveRoom()` from lock screen | End from lock screen → Room disconnects + mic stops |
+| 30s ring timeout (caller) | Auto-cancels, callee gets missed call push |
+| 45s poll timeout (callee) | Detects caller hangup, navigates back |
+| `HandleLeaveRoom` | Callee leaves group call without killing it for others |
+| Group call grid | 3+ people → speaker spotlight layout renders correctly |
+| `CallActiveBar` | Navigate away during call → green bar shows, tap returns |
+
+### Deferred code items (not blocked, lower priority)
+| Item | Effort | Notes |
+|------|--------|-------|
+| Bundled ringtone .mp3 | Small | Find/create royalty-free tone, play via expo-av for foreground calls |
+| Token refresh for 2h+ calls | Medium | LiveKit `TokenSource` or manual refresh timer before TTL expiry |
+| Call waiting (second incoming) | Medium | Handle CallKit transition, disconnect old Room, accept new |
+| WebRTC stats collection | Medium | `room.localParticipant.getStats()` → Sentry/analytics dashboard |
+| Call recording consent UI | Small | Toast/modal when someone starts recording, notify all participants |
+| Screen share iOS broadcast extension | Large | Requires App Group config + native broadcast upload extension |
+| Android PiP for video calls | Medium | Native Activity PiP mode via custom expo native module |
+| State machine extraction | Medium | Extract `useLiveKitCall` logic into pure `callStateMachine.ts` for Jest testing |
+| True E2EE via ECDH | Large | See "Call Encryption" section in Technical Debt below |
 
 ## Scale Rewrite Roadmap
 

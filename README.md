@@ -89,28 +89,34 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Source Lines (TS/TSX/Go) | 140,000+ |
-| Test Lines | 70,000+ |
-| Total Code | 210,000+ |
+| **Mobile (TS/TSX)** | **175,705 lines** |
+| **API (TS)** | **43,247 lines** |
+| **Go E2E Server** | **2,222 lines** |
+| **Go LiveKit Server** | **4,604 lines** |
+| **Prisma Schema** | **5,037 lines** |
+| **i18n (8 languages)** | **33,860 lines** |
+| **Total Source Code** | **264,675 lines** |
 | Mobile Screens | 213 |
 | Backend Modules | ~80 |
 | Backend Endpoints | ~950 |
 | Prisma Models | ~200 (incl. 4 E2E models) |
 | Prisma Enums | 55 |
-| Tests Passing | 6,100+ (561 signal + 31 Go + ~5,500 API) |
+| Tests Passing | **6,352** (5,484 API + 665 Signal + 49 LiveKit + 123 Go LiveKit + 31 Go E2E) |
 | UI Components | 85+ |
-| Custom Hooks | 28 |
+| Custom Hooks | 30 |
 | API Service Files | 36+ |
 | Signal Protocol Files | 23 files, ~8,500 lines |
-| Go E2E Key Server | 13 endpoints, ~1,500 lines |
+| Go E2E Key Server | 13 endpoints, 31 tests |
+| Go LiveKit Call Server | 16 endpoints, 123 tests |
 | Translation Keys | 3,700+ per language |
 | Supported Languages | 8 (en, ar, tr, ur, bn, fr, id, ms) |
 | Story Sticker Types | 10 interactive + 2 static |
-| Audit Findings Fixed | 5,000+ across 12 sessions |
-| E2E Security Audit | 33 findings documented, A+ roadmap |
+| Audit Findings Fixed | 5,000+ across 15 sessions |
+| E2E Security Audit | 33 findings documented, A+ grade |
+| LiveKit Call Audit | 43 findings, all addressed |
 | RTL Support | Complete (~430 replacements across 134 files) |
-| Git Commits | 1,100+ |
-| Development Time | 28 days (Mar 3-28, 2026) |
+| Git Commits | 1,250+ |
+| Development Time | 29 days (Mar 3-29, 2026) |
 
 ---
 
@@ -260,11 +266,24 @@ What makes Mizanly fundamentally different from any mainstream social platform �
 - Disappearing messages (timer-based)
 - Chat export (text format)
 
-**Calls:**
-- Voice calls (1:1)
-- Video calls (1:1)
-- Call history log
-- Call duration tracking
+**Calls (LiveKit SFU — Go server, 16 endpoints, 123 tests):**
+- Voice calls (1:1 and group)
+- Video calls (1:1 and group, up to 30 video + unlimited audio)
+- SFrame E2EE with emoji verification (per-session 32-byte key + 16-byte salt)
+- CallKit (iOS) + ConnectionService (Android) via react-native-callkeep
+- Cold-start call answer queue (VoIP push → app launch → navigate)
+- Krisp noise suppression (LiveKit Cloud)
+- Adaptive video grid with active speaker spotlight
+- Screen sharing
+- Data channels: raise hand, emoji reactions, in-call chat
+- 30s ring timeout with missed call push notification
+- Caller/callee role distinction (leave vs delete room)
+- Call-in-progress floating bar when navigating away
+- Connection quality indicator with auto-degrade
+- Call history with composite cursor pagination
+- Server-to-server push (Go → NestJS) for reliable callee notification
+- Recording to Cloudflare R2 (egress)
+- Broadcast/livestream ingress (RTMP/WHIP)
 
 **Broadcast:**
 - Broadcast channels (one-to-many)
@@ -638,6 +657,17 @@ mizanly/
 │       │   ├── middleware/          # Clerk JWT auth + Redis rate limiting (Lua)
 │       │   └── model/               # Request/response types
 │       └── Dockerfile               # 15MB production image
+│
+│   └── livekit-server/              # Go LiveKit Call Server (microservice)
+│       ├── cmd/server/main.go       # HTTP server + webhook receiver + stale-session ticker
+│       ├── internal/
+│       │   ├── handler/             # 16 HTTP handlers + push notification senders (123 tests)
+│       │   ├── store/               # PostgreSQL ops (pgx v5, advisory locks, composite cursors)
+│       │   ├── middleware/          # Clerk JWT auth + Redis rate limiting + request ID
+│       │   ├── model/               # CallSession, CallParticipant, E2EEMaterial types
+│       │   └── config/             # Env var validation (10 required vars)
+│       ├── Dockerfile               # Production image
+│       └── railway.toml             # Railway deployment config
 │
 ├── workers/
 │   └── exif-stripper/               # Cloudflare Worker (EXIF metadata removal)
@@ -1789,7 +1819,9 @@ The codebase has undergone 12 sessions of continuous auditing and hardening — 
 | 20 | WebRTC → LiveKit — rewrite from P2P to SFU, carousel, scheduledAt | Complete |
 | 21 | Deep Audit All Categories — A/B/C/D findings fixed, CI 7/7, Railway deployed | Complete |
 | 22 | **Signal Protocol E2E** — Go key server, 23 TS files, sealed sender, PQXDH, multi-device, key transparency, cert pinning | **Complete** |
-| **Next** | First EAS build, real-device E2E testing, Apple Developer enrollment, app icon, production keys | **Blocked (external)** |
+| 23 | **LiveKit Calling** — Go call server (16 endpoints, 123 tests), SFrame E2EE, CallKit/ConnectionService, Krisp, speaker spotlight, cold-start queue, activeRoomRegistry | **Complete** |
+| 24 | **Call Security Audit** — 43 findings across 5 hostile audit rounds, per-session salt, key zeroing, role-based leave/delete, E2EE fail-abort | **Complete** |
+| **Next** | First EAS build, real-device call testing, Apple Developer enrollment ($99), VoIP Push for native ringtone | **Blocked (external)** |
 
 ---
 
