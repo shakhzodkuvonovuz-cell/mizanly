@@ -1669,6 +1669,235 @@ func TestWebhookProcessing_MissedCallHasParticipants(t *testing.T) {
 	}
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// Additional call system tests — edge cases and lifecycle
+// ══════════════════════════════════════════════════════════════════════════════
+
+func TestCreateRoom_HandlerEndToEnd_Video(t *testing.T) {
+	h, _ := newTestHandler()
+	body := strings.NewReader(`{"targetUserId":"callee-1","callType":"VIDEO"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleCreateRoom(w, r)
+	if w.Code != 201 {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		t.Fatal("expected data object in response")
+	}
+	if data["callType"] != "VIDEO" {
+		t.Errorf("expected VIDEO, got %v", data["callType"])
+	}
+}
+
+func TestCreateRoom_HandlerEndToEnd_Broadcast(t *testing.T) {
+	h, _ := newTestHandler()
+	body := strings.NewReader(`{"callType":"BROADCAST"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleCreateRoom(w, r)
+	if w.Code != 201 {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	// Broadcast should have no calleeIds (solo)
+	calleeIds, ok := resp["calleeIds"].([]interface{})
+	if !ok {
+		t.Fatal("expected calleeIds array")
+	}
+	if len(calleeIds) != 0 {
+		t.Errorf("expected 0 calleeIds for broadcast, got %d", len(calleeIds))
+	}
+}
+
+func TestCreateRoom_GroupCall_HandlerEndToEnd(t *testing.T) {
+	h, _ := newTestHandler()
+	body := strings.NewReader(`{"participantIds":["callee-1","callee-2"],"callType":"VOICE"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleCreateRoom(w, r)
+	if w.Code != 201 {
+		t.Fatalf("expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	calleeIds, ok := resp["calleeIds"].([]interface{})
+	if !ok {
+		t.Fatal("expected calleeIds array")
+	}
+	if len(calleeIds) != 2 {
+		t.Errorf("expected 2 calleeIds, got %d", len(calleeIds))
+	}
+}
+
+func TestLeaveRoom_ActiveCall_EndsWhenLastParticipant(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-leave-last", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+	// Mark caller's livekitJoinedAt so they count as active
+	ms.MarkParticipantLivekitJoined(context.Background(), "room-leave-last", "caller-1")
+	ms.MarkParticipantLivekitJoined(context.Background(), "room-leave-last", "callee-1")
+
+	// Callee leaves
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-leave-last/leave", nil), "callee-1")
+	r.SetPathValue("id", "room-leave-last")
+	w := httptest.NewRecorder()
+	h.HandleLeaveRoom(w, r)
+	if w.Code != 200 {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Only caller remains — session should auto-end
+	s, _ := ms.GetSessionByRoomName(context.Background(), "room-leave-last")
+	if s.Status != "ENDED" {
+		t.Errorf("expected ENDED when last participant leaves, got %s", s.Status)
+	}
+}
+
+func TestGetSession_ReturnsCorrectStatus(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-status", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	r := withAuth(httptest.NewRequest("GET", "/api/v1/calls/sessions/"+session.ID, nil), "caller-1")
+	r.SetPathValue("id", session.ID)
+	w := httptest.NewRecorder()
+	h.HandleGetSession(w, r)
+	if w.Code != 200 {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	data := resp["data"].(map[string]interface{})
+	if data["status"] != "ACTIVE" {
+		t.Errorf("expected ACTIVE, got %v", data["status"])
+	}
+}
+
+func TestDeleteRoom_HandlerEndToEnd_VerifiesCleanup(t *testing.T) {
+	h, ms := newTestHandler()
+	// Create via handler
+	body := strings.NewReader(`{"targetUserId":"callee-1","callType":"VOICE"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleCreateRoom(w, r)
+	if w.Code != 201 {
+		t.Fatalf("create: expected 201, got %d", w.Code)
+	}
+
+	// Find session
+	var roomName string
+	for rn := range ms.sessions {
+		roomName = rn
+		break
+	}
+	session, _ := ms.GetSessionByRoomName(context.Background(), roomName)
+
+	// Delete via handler
+	r2 := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/rooms/"+roomName, nil), "caller-1")
+	r2.SetPathValue("id", roomName)
+	w2 := httptest.NewRecorder()
+	h.HandleDeleteRoom(w2, r2)
+	if w2.Code != 200 {
+		t.Fatalf("delete: expected 200, got %d: %s", w2.Code, w2.Body.String())
+	}
+
+	// Verify all cleanup happened
+	s, _ := ms.GetSessionByRoomName(context.Background(), roomName)
+	if s.Status != "ENDED" {
+		t.Errorf("expected ENDED, got %s", s.Status)
+	}
+
+	// E2EE material wiped
+	mat, _ := ms.GetSessionE2EEMaterial(context.Background(), roomName)
+	if mat != nil {
+		t.Error("expected nil E2EE material after delete")
+	}
+
+	// No active calls for either participant
+	callerActive, _ := ms.GetActiveCall(context.Background(), "caller-1")
+	if callerActive != nil {
+		t.Error("expected no active call for caller")
+	}
+	_ = session
+}
+
+func TestMuteParticipant_ValidTargetSucceeds(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-ok", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	body := strings.NewReader(`{"identity":"callee-1","trackSid":"TR_123","muted":true}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-mute-ok/mute", body), "caller-1")
+	r.SetPathValue("id", "room-mute-ok")
+	w := httptest.NewRecorder()
+	h.HandleMuteParticipant(w, r)
+	if w.Code != 200 {
+		t.Errorf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestStopEgress_CallerAllowed(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-stop-eg", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	body := strings.NewReader(`{"egressId":"eg_123","roomName":"room-stop-eg"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/egress/stop", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleStopEgress(w, r)
+	// 503 because egressClient is nil in tests — but it passes auth checks
+	if w.Code != 503 {
+		t.Errorf("expected 503 (no egress client in test), got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestStartEgress_CallerAllowed(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-start-eg", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	body := strings.NewReader(`{"roomName":"room-start-eg"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/egress/start", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleStartEgress(w, r)
+	// 503 because egressClient is nil — but passes all auth/status checks
+	if w.Code != 503 {
+		t.Errorf("expected 503 (no egress client in test), got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCreateIngress_CallerAllowed(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "BROADCAST", "room-ingress", "caller-1", []string{"caller-1"}, 10000)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	body := strings.NewReader(`{"roomName":"room-ingress","inputType":"rtmp"}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/ingress/create", body), "caller-1")
+	w := httptest.NewRecorder()
+	h.HandleCreateIngress(w, r)
+	if w.Code != 503 {
+		t.Errorf("expected 503 (no ingress client in test), got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestDeleteIngress_CallerAllowed(t *testing.T) {
+	h, ms := newTestHandler()
+	ms.CreateCallSession(context.Background(), "BROADCAST", "room-del-ingress", "caller-1", []string{"caller-1"}, 10000)
+
+	r := withAuth(httptest.NewRequest("DELETE", "/api/v1/calls/ingress/ig_123?roomName=room-del-ingress", nil), "caller-1")
+	r.SetPathValue("id", "ig_123")
+	w := httptest.NewRecorder()
+	h.HandleDeleteIngress(w, r)
+	if w.Code != 503 {
+		t.Errorf("expected 503 (no ingress client in test), got %d: %s", w.Code, w.Body.String())
+	}
+}
+
 // --- JSON helper ---
 
 func toJSON(v interface{}) string {
