@@ -110,7 +110,8 @@
       "./plugins/ffmpeg-kit/app.plugin",
       "./plugins/giphy-sdk/app.plugin",
       "./plugins/certificate-pinning/app.plugin",
-      "react-native-quick-crypto"
+      "react-native-quick-crypto",
+      "@livekit/react-native-expo-plugin"
     ],
     "experiments": {
       "typedRoutes": true

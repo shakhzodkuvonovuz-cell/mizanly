@@ -15,7 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { callsApi } from '@/services/api';
+import { livekitApi } from '@/services/livekit';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { CallSession } from '@/types';
@@ -46,7 +46,7 @@ export default function CallHistoryScreen() {
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: ['call-history'],
-    queryFn: ({ pageParam }) => callsApi.getHistory(pageParam as string | undefined),
+    queryFn: ({ pageParam }) => livekitApi.getHistory(pageParam as string | undefined),
     getNextPageParam: (lastPage: { meta: { hasMore: boolean; cursor: string | null } }) => lastPage.meta.hasMore ? lastPage.meta.cursor : undefined,
     initialPageParam: undefined as string | undefined,
   });
@@ -61,28 +61,29 @@ export default function CallHistoryScreen() {
   const calls = data?.pages.flatMap((page: { data: CallSession[] }) => page.data) ?? [];
 
   const renderItem = ({ item, index }: { item: CallSession; index: number }) => {
-    const isCaller = item.callerId === myUserId;
-    const otherUser = isCaller ? item.receiver : item.caller;
+    const myParticipant = item.participants?.find((p: { userId: string }) => p.userId === myUserId);
+    const isCaller = myParticipant?.role === 'caller';
+    const otherParticipant = item.participants?.find((p: { userId: string }) => p.userId !== myUserId);
+    const otherUser = otherParticipant?.user;
 
     if (!otherUser) return null;
 
-    const isMissed = item.status === 'missed' && !isCaller;
-    const isVideo = item.callType === 'video';
+    const isMissed = item.status === 'MISSED' && !isCaller;
+    const isVideo = item.callType === 'VIDEO';
 
     let durationText = '';
-    if (item.status === 'ended' && item.duration) {
+    if (item.status === 'ENDED' && item.duration) {
       const minutes = Math.floor(item.duration / 60);
       const seconds = item.duration % 60;
       durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
     const statusMap: Record<string, string> = {
-      missed: t('calls.missed'),
-      declined: t('calls.declined'),
-      ringing: t('calls.ringing'),
-      active: t('calls.ringing'),
-      connected: t('calls.connected'),
-      ended: durationText,
+      MISSED: t('calls.missed'),
+      DECLINED: t('calls.declined'),
+      RINGING: t('calls.ringing'),
+      ACTIVE: t('calls.ringing'),
+      ENDED: durationText,
     };
     const statusText = statusMap[item.status] || item.status;
 

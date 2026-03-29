@@ -28,6 +28,15 @@ cd apps/e2e-server && go test ./internal/... -v  # Go tests
 - All errors explicit, never silently swallowed.
 - No `@ts-ignore`, no `@ts-expect-error`. Fix the actual type.
 
+## Language Choice Rule
+- **TypeScript was the fast-start choice. At ~300K LOC it's legacy for scale-sensitive paths.**
+- For any NEW component that will bottleneck at scale, use the proper language:
+  - **Real-time / high-concurrency:** Elixir (BEAM VM)
+  - **CPU-bound / background workers:** Go
+  - **Crypto / memory-sensitive:** Rust
+  - **REST API CRUD / mobile UI:** TypeScript stays (DB is the bottleneck, not the framework)
+- Do NOT default to TypeScript for new services. Ask: "Will this be a bottleneck at 10M users?"
+
 ## What NOT to Do
 - Do not refactor files beyond the scope of the task.
 - Do not commit unless explicitly asked.
@@ -73,6 +82,38 @@ apps/e2e-server/   — Go E2E Key Server (Signal Protocol)
 - zeroOut: OPENSSL_cleanse (defeats dead-store elimination)
 - Fallback: @noble/* pure JS when native unavailable (Jest, Expo Go)
 
+## Scale Rewrite Roadmap
+
+### Today (0-50K users): Ship what exists
+NestJS monolith + Go E2E server. It works. No rewrites until users hit limits.
+
+### 50-100K users: WebSocket Gateway → Elixir/Phoenix
+**First thing that breaks.** Node.js WebSocket connections cost ~10KB each. 100K concurrent = 1GB connection state. Single-threaded event loop can't handle fan-out (1 message in 500-person group = 500 socket writes blocking the loop). Elixir BEAM VM: 2KB per process. WhatsApp handled 2M connections/server on Erlang.
+- **Moves to Elixir:** `chat.gateway.ts`, socket auth, typing indicators, presence, read receipts
+- **Stays in NestJS:** REST API, CRUD, Prisma queries, Clerk auth middleware
+- **LiveKit** (replacing custom WebRTC) is independent — separate service, separate signaling. Can migrate anytime.
+
+### 100-200K users: Feed Scoring + Workers → Go
+Feed ranking is CPU-bound (score calc, engagement decay, content boosting). Node does it on one core, Go does it on all cores with goroutines. Also: push notification fan-out, media moderation queue, scheduled post publishing, analytics aggregation, thumbnail generation, video transcoding prep, EXIF stripping at volume.
+
+### 500K+ users (maybe never): Signal Protocol → Rust core
+JS strings immutable, GC unpredictable, key material leaks to heap. Rust core (like Signal's libsignal) solves permanently. But: $100K+ project, only matters for forensics attacker model, react-native-quick-crypto already handles 90% in C++. Don't rewrite until professional audit demands it.
+
+### Never rewrite
+| Component | Why |
+|-----------|-----|
+| REST API CRUD | DB is the bottleneck, not the framework |
+| Prisma ORM | Fine until 500K. Raw SQL migration is a week when needed |
+| Auth (Clerk) | Third-party service |
+| Payments (Stripe) | Third-party service |
+| Search (Meilisearch) | Already Rust under the hood |
+| Mobile UI (React Native) | Only option unless native Swift/Kotlin rewrite |
+
+## Known Limitations
+
+### Go microservices: SQL queries untested without real DB
+`apps/livekit-server` and `apps/e2e-server` use raw SQL via pgx (no ORM). Unit tests use mock stores that validate handler logic, but the actual SQL (column names, JOINs, transactions) is only verified when deployed against real Neon PostgreSQL. CI integration tests (session 9) catch SQL errors at deploy time, not at build time. If you add new SQL queries, verify them against the real DB before claiming they work.
+
 ## Technical Debt — DO NOT FORGET
 
 ### Media Speed (NOT Telegram-fast yet)
@@ -85,11 +126,12 @@ apps/e2e-server/   — Go E2E Key Server (Signal Protocol)
   - **Streaming decrypt + display** — start showing media before full download completes
 - Current total: ~2-3s for 5MB photo (crypto fast, network slow). Telegram: <1s (custom CDN + pre-upload)
 
-### V7 Audit (14 findings, being fixed in separate session)
-- V7-F1 (CRITICAL): NaN counter poisoning bypasses sealed sender replay protection
-- V7-F2 (HIGH): No sender certificates in sealed sender (Signal has this, we don't)
-- V7-F3 (HIGH): Transparency root has no freshness/expiry check
-- V7-F4 to V7-F14: 11 medium/low findings (see docs/audit/MASTER_AUDIT_PROMPT_V2.md)
+### Call E2EE: base64 key string on JS heap (~5-30s window)
+- `connectToRoom` receives the E2EE key as a base64 string parameter. JS strings are immutable — cannot be zeroed.
+- The decoded `Uint8Array` IS zeroed after handoff to native `RNKeyProvider` (F5 fix).
+- The base64 string becomes unreachable after `connectToRoom` returns; V8 Scavenger GCs it within 5-30s.
+- **Exploitable only by:** root/jailbreak + memory dump during active call. Not remote-exploitable.
+- **Fix:** Small JSI C++ module (~2-3 days) that receives base64, decodes, configures SFrame, zeroes — never touches JS heap. Or defer to Rust core rewrite at 500K+ users.
 
 ### External Blockers (no code fix possible)
 - Apple Developer enrollment ($99) → EAS build → cert pinning activates → TestFlight

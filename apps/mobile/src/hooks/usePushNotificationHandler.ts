@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { navigate } from '@/utils/navigation';
+import { handleIncomingCallPush } from '@/services/callkit';
 
 type NotificationType =
   | 'like'
@@ -16,7 +17,8 @@ type NotificationType =
   | 'audio_room'
   | 'rsvp'
   | 'admin'
-  | 'system';
+  | 'system'
+  | 'incoming_call';
 
 type NotificationData = {
   type: NotificationType;
@@ -31,6 +33,11 @@ type NotificationData = {
   audioRoomId?: string;
   prayerName?: string;
   message?: string;
+  // Call notification fields
+  roomName?: string;
+  sessionId?: string;
+  callType?: string;
+  callerName?: string;
   // Additional metadata
   [key: string]: unknown;
 };
@@ -76,9 +83,14 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
 
         // Listener for notifications received while app is foregrounded
         notificationListener.current = Notifications.addNotificationReceivedListener(
-          () => {
+          (notification) => {
             // Foreground notification received — badge/count updates are handled
-            // by shouldSetBadge: true in the handler above
+            // by shouldSetBadge: true in the handler above.
+            // For incoming calls, display native CallKit/ConnectionService UI
+            const data = notification.request.content.data;
+            if (data && typeof data === 'object' && (data as Record<string, unknown>).type === 'incoming_call') {
+              handleIncomingCallPush(data as Record<string, string>);
+            }
           }
         );
 
@@ -204,6 +216,17 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
           navigate(`/(screens)/event-detail/${data.eventId}`);
         } else {
           navigate('/(screens)/events');
+        }
+        break;
+
+      case 'incoming_call':
+        if (data.roomName && data.sessionId) {
+          navigate(`/(screens)/call/${data.sessionId}`, {
+            roomName: data.roomName,
+            sessionId: data.sessionId,
+            callType: data.callType || 'VOICE',
+            callerName: data.callerName || '',
+          });
         }
         break;
 

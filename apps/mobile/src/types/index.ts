@@ -747,16 +747,25 @@ export interface LiveParticipant {
 // ── Calls ──
 export interface CallSession {
   id: string;
-  callType: 'voice' | 'video';
-  status: 'ringing' | 'active' | 'ended' | 'missed' | 'declined';
-  callerId: string;
-  caller?: User;
-  receiverId: string;
-  receiver?: User;
+  callType: 'VOICE' | 'VIDEO' | 'BROADCAST';
+  status: 'RINGING' | 'ACTIVE' | 'ENDED' | 'MISSED' | 'DECLINED';
   startedAt?: string;
   endedAt?: string;
   duration?: number;
+  maxParticipants: number;
+  livekitRoomName?: string;
+  livekitRoomSid?: string;
+  recordingUrl?: string;
   createdAt: string;
+  updatedAt: string;
+  participants: Array<{
+    sessionId: string;
+    userId: string;
+    role: string;
+    joinedAt: string;
+    leftAt?: string;
+    user?: { id: string; username?: string; displayName?: string; avatarUrl?: string };
+  }>;
 }
 
 // ── Stickers ──

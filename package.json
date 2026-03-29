@@ -29,6 +29,8 @@
     "fast-xml-parser": ">=4.4.1"
   },
   "dependencies": {
+    "@livekit/react-native-krisp-noise-filter": "^0.0.3",
+    "@noble/post-quantum": "^0.5.4",
     "expo-auth-session": "~6.0.3",
     "expo-speech": "^55.0.9",
     "expo-web-browser": "~14.0.2",

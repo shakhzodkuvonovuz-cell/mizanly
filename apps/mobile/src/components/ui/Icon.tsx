@@ -4,7 +4,7 @@ import { colors, iconSize as iconSizes } from '@/theme';
 import {
   Heart, MessageCircle, Bookmark, Send, Search, Home,
   Play, MoreHorizontal, Share2, CheckCircle, ArrowLeft, ArrowRight,
-  Plus, Camera, ImageIcon, Mic, Phone, Video, Settings,
+  Plus, Camera, ImageIcon, Mic, MicOff, Phone, PhoneOff, Video, VideoOff, Settings,
   Bell, User, Users, UserPlus, Globe, Lock, Flag, Trash2, Pencil,
   X, ChevronRight, ChevronLeft, ChevronDown, Repeat2, Eye, EyeOff,
   VolumeX, Mail, Hash, TrendingUp, TrendingDown, MapPin, Link, Clock,
@@ -15,6 +15,7 @@ import {
   Moon, Star, Gift, BookOpen, Calculator, Calendar,
   Scissors, Type, LayoutGrid, Archive, Briefcase, CreditCard,
   Radio, Info, FileText, Shield, Download, ThumbsDown, AlertCircle,
+  Monitor, Hand, Signal, SignalLow,
   type LucideProps,
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
@@ -35,7 +36,8 @@ export type IconName =
   | 'moon' | 'star' | 'gift' | 'book-open' | 'calculator' | 'calendar'
   | 'scissors' | 'type' | 'layout'
   | 'arrow-right' | 'user-plus' | 'radio' | 'info' | 'file-text' | 'shield' | 'download' | 'thumbs-down'
-  | 'trending-down' | 'minus' | 'square' | 'archive' | 'briefcase' | 'credit-card' | 'alert-circle';
+  | 'trending-down' | 'minus' | 'square' | 'archive' | 'briefcase' | 'credit-card' | 'alert-circle'
+  | 'mic-off' | 'video-off' | 'phone-off' | 'monitor' | 'hand' | 'signal' | 'signal-low';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -139,6 +141,13 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
   'briefcase': Briefcase,
   'credit-card': CreditCard,
   'alert-circle': AlertCircle,
+  'mic-off': MicOff,
+  'video-off': VideoOff,
+  'phone-off': PhoneOff,
+  'monitor': Monitor,
+  'hand': Hand,
+  'signal': Signal,
+  'signal-low': SignalLow,
 };
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);

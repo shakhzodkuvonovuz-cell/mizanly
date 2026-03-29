@@ -44,7 +44,6 @@ import { PrivacyModule } from './modules/privacy/privacy.module';
 import { DraftsModule } from './modules/drafts/drafts.module';
 import { BroadcastModule } from './modules/broadcast/broadcast.module';
 import { LiveModule } from './modules/live/live.module';
-import { CallsModule } from './modules/calls/calls.module';
 import { StickersModule } from './modules/stickers/stickers.module';
 import { CollabsModule } from './modules/collabs/collabs.module';
 import { ChannelPostsModule } from './modules/channel-posts/channel-posts.module';
@@ -150,7 +149,6 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     DraftsModule,
     BroadcastModule,
     LiveModule,
-    CallsModule,
     StickersModule,
     CollabsModule,
     ChannelPostsModule,

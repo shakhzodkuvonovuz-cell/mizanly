@@ -44,9 +44,13 @@ interface AppState {
   nasheedMode: boolean;
   setNasheedMode: (enabled: boolean) => void;
 
-  // Active call
+  // Active call (used by CallActiveBar floating indicator)
   activeCallId: string | null;
+  activeCallName: string | null;
+  activeCallDuration: number;
   setActiveCallId: (id: string | null) => void;
+  setActiveCall: (id: string | null, name: string | null) => void;
+  setActiveCallDuration: (duration: number) => void;
 
   // Live session
   activeLiveSessionId: string | null;
@@ -229,7 +233,11 @@ export const useStore = create<AppState>()(
 
       // Active call
       activeCallId: null,
+      activeCallName: null,
+      activeCallDuration: 0,
       setActiveCallId: (activeCallId) => set({ activeCallId }),
+      setActiveCall: (id, name) => set({ activeCallId: id, activeCallName: name, activeCallDuration: 0 }),
+      setActiveCallDuration: (duration) => set({ activeCallDuration: duration }),
 
       // Live session
       activeLiveSessionId: null,

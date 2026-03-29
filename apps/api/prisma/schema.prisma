@@ -209,6 +209,7 @@ enum FollowRequestStatus {
 enum CallType {
   VOICE
   VIDEO
+  BROADCAST
 }
 
 enum CallStatus {
@@ -2426,6 +2427,13 @@ model CallSession {
   isScreenSharing   Boolean           @default(false)
   screenShareUserId String?
   screenShareUser   User?             @relation("callScreenShare", fields: [screenShareUserId], references: [id], onDelete: SetNull)
+  livekitRoomName   String?
+  livekitRoomSid    String?
+  recordingUrl      String?
+  broadcastType     String?           @db.VarChar(10)
+  ingressId         String?
+  e2eeKey           Bytes?
+  e2eeSalt          Bytes?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   participants      CallParticipant[]
@@ -2433,21 +2441,28 @@ model CallSession {
   @@index([status])
   @@index([createdAt])
   @@index([endedAt])
+  @@index([livekitRoomName])
   @@map("call_sessions")
 }
 
 model CallParticipant {
-  sessionId String
-  userId    String
-  role      String      @default("caller")
-  joinedAt  DateTime    @default(now())
-  leftAt    DateTime?
-  session   CallSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId       String
+  userId          String
+  role            String      @default("caller")
+  joinedAt        DateTime    @default(now())
+  leftAt          DateTime?
+  livekitJoinedAt DateTime?
+  session         CallSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, userId])
   // @@index([sessionId]) — redundant: @@id already has sessionId as leading column
   @@index([userId])
+  // [F21 fix] Composite index for active-call lookup: WHERE userId = X AND leftAt IS NULL
+  // The active-call query JOINs call_sessions and filters on leftAt IS NULL.
+  // Without this, PostgreSQL does a full index scan on userId then filters leftAt in heap.
+  // With it, the planner can use the index to skip already-left participants directly.
+  @@index([userId, leftAt])
   @@map("call_participants")
 }
 

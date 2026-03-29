@@ -1,3 +1,6 @@
+import { registerGlobals } from '@livekit/react-native';
+registerGlobals(); // Must be called before any other LiveKit imports
+
 import { useEffect, useState, useCallback } from 'react';
 import { I18nManager, AppState, AppStateStatus, Platform, View, Text, StyleSheet, TextInput } from 'react-native';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
@@ -26,6 +29,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { CallActiveBar } from '@/components/ui/CallActiveBar';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ForceUpdateModal } from '@/components/ui/ForceUpdateModal';
@@ -40,6 +44,29 @@ import { initSentry, setSentryUser } from '@/config/sentry';
 import { navigate } from '@/utils/navigation';
 import { SocketProvider } from '@/providers/SocketProvider';
 import { initialize as initSignal } from '@/services/signal';
+import { initCallKit, setCallKitHandlers, setNavigationReady } from '@/services/callkit';
+
+// Initialize CallKit/ConnectionService for native call UI
+initCallKit();
+
+// Wire CallKit answer/end handlers to navigation
+setCallKitHandlers({
+  onAnswerCall: (callInfo) => {
+    navigate(`/(screens)/call/${callInfo.sessionId}`, {
+      roomName: callInfo.roomName,
+      sessionId: callInfo.sessionId,
+      callType: callInfo.callType,
+      callerName: callInfo.callerName,
+    });
+  },
+  // [F7] When user ends call from lock screen / notification center
+  onEndCall: () => {
+    // The callkit.ts handleEndCall already calls livekitApi.deleteRoom.
+    // We just need to clear global active call state.
+    const { setActiveCall } = useStore.getState();
+    setActiveCall(null, null);
+  },
+});
 
 // Allow the OS to flip layouts to RTL for Arabic and Urdu.
 I18nManager.allowRTL(true);
@@ -228,6 +255,15 @@ function AuthGuard() {
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
+
+  // [F12 fix] Signal navigation readiness so cold-start CallKit events can replay.
+  // On cold start, handleDidLoadWithEvents queues answered-call events. They replay
+  // here once the NavigationContainer has mounted and expo-router can accept navigate() calls.
+  useEffect(() => {
+    if (navigationState?.key) {
+      setNavigationReady();
+    }
+  }, [navigationState?.key]);
 
   // Wire Clerk token into the API client
   useEffect(() => {
@@ -583,6 +619,7 @@ export default function RootLayout() {
               <SocketProvider>
               <ThemeAwareStatusBar />
               <OfflineBanner />
+              <CallActiveBar />
               <IslamicThemeBanner />
               <AuthGuard />
               <AppStateHandler />

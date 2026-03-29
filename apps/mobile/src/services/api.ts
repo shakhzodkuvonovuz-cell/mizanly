@@ -1169,23 +1169,7 @@ export const liveApi = {
     api.patch(`/live/${id}/end-rehearsal`),
 };
 
-// ── Calls ──
-export const callsApi = {
-  initiate: (data: { targetUserId: string; callType: 'VOICE' | 'VIDEO' }) =>
-    api.post<CallSession>('/calls', data),
-  answer: (id: string) =>
-    api.post(`/calls/${id}/answer`),
-  decline: (id: string) =>
-    api.post(`/calls/${id}/decline`),
-  end: (id: string) =>
-    api.post(`/calls/${id}/end`),
-  getHistory: (cursor?: string) =>
-    api.get<PaginatedResponse<CallSession>>(`/calls/history${cursor ? `?cursor=${cursor}` : ''}`),
-  getActiveCall: () =>
-    api.get<CallSession | null>('/calls/active'),
-  getIceServers: () =>
-    api.get<{ iceServers: { urls: string; username?: string; credential?: string }[] }>('/calls/ice-servers'),
-};
+// Calls are handled by the Go livekit-server via apps/mobile/src/services/livekit.ts
 
 // ── Stickers ──
 export const stickersApi = {

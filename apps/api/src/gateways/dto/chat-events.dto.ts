@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsBoolean, IsIn, IsArray, ArrayMaxSize } from 'class-validator';
+import { IsString, IsUUID, IsBoolean } from 'class-validator';
 
 export class WsJoinConversationDto {
   @IsUUID()
@@ -16,51 +16,6 @@ export class WsTypingDto {
 export class WsReadDto {
   @IsUUID()
   conversationId: string;
-}
-
-export class WsCallInitiateDto {
-  @IsUUID()
-  targetUserId: string;
-
-  @IsIn(['VOICE', 'VIDEO'])
-  callType: string;
-
-  @IsUUID()
-  sessionId: string;
-}
-
-export class WsCallAnswerDto {
-  @IsUUID()
-  sessionId: string;
-
-  @IsUUID()
-  callerId: string;
-}
-
-export class WsCallRejectDto {
-  @IsUUID()
-  sessionId: string;
-
-  @IsUUID()
-  callerId: string;
-}
-
-export class WsCallEndDto {
-  @IsUUID()
-  sessionId: string;
-
-  @IsArray()
-  @IsString({ each: true })
-  @ArrayMaxSize(20)
-  participants: string[];
-}
-
-export class WsCallSignalDto {
-  @IsUUID()
-  targetUserId: string;
-
-  // signal is opaque WebRTC data — validated by size only
-  signal: unknown;
 }
 
 export class WsMessageDeliveredDto {
