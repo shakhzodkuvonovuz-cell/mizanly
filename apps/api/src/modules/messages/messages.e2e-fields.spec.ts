@@ -1097,6 +1097,11 @@ describe('InternalE2EController — identity-changed webhook', () => {
     return createHmac('sha256', secret).update(bodyStr).digest('hex');
   }
 
+  /** Create a mock Express request with rawBody matching JSON.stringify(body) */
+  function mockReq(body: Record<string, unknown>): any {
+    return { rawBody: Buffer.from(JSON.stringify(body)) };
+  }
+
   beforeEach(async () => {
     process.env.INTERNAL_WEBHOOK_SECRET = WEBHOOK_SECRET;
 
@@ -1136,7 +1141,7 @@ describe('InternalE2EController — identity-changed webhook', () => {
     ]);
     prisma.message.createMany.mockResolvedValue({ count: 3 });
 
-    const result = await controller.handleIdentityChanged(signature, body);
+    const result = await controller.handleIdentityChanged(signature, body, mockReq(body));
 
     expect(result).toEqual({ created: 3 });
     expect(prisma.message.createMany).toHaveBeenCalledWith({
@@ -1194,7 +1199,7 @@ describe('InternalE2EController — identity-changed webhook', () => {
     const wrongSig = createHmac('sha256', 'wrong-secret').update(JSON.stringify(body)).digest('hex');
 
     await expect(
-      controller.handleIdentityChanged(wrongSig, body),
+      controller.handleIdentityChanged(wrongSig, body, mockReq(body)),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -1203,7 +1208,7 @@ describe('InternalE2EController — identity-changed webhook', () => {
     // timingSafeEqual requires same length buffers — a non-hex string will produce
     // a different-length buffer
     await expect(
-      controller.handleIdentityChanged('not-hex-at-all-zzz', body),
+      controller.handleIdentityChanged('not-hex-at-all-zzz', body, mockReq(body)),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -1212,7 +1217,7 @@ describe('InternalE2EController — identity-changed webhook', () => {
     const signature = makeSignature(body);
 
     await expect(
-      controller.handleIdentityChanged(signature, body),
+      controller.handleIdentityChanged(signature, body, mockReq(body)),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -1221,7 +1226,7 @@ describe('InternalE2EController — identity-changed webhook', () => {
     const signature = makeSignature(body);
 
     await expect(
-      controller.handleIdentityChanged(signature, body),
+      controller.handleIdentityChanged(signature, body, mockReq(body)),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -1230,7 +1235,7 @@ describe('InternalE2EController — identity-changed webhook', () => {
     const signature = makeSignature(body);
     prisma.conversationMember.findMany.mockResolvedValue([]);
 
-    const result = await controller.handleIdentityChanged(signature, body);
+    const result = await controller.handleIdentityChanged(signature, body, mockReq(body));
 
     expect(result).toEqual({ created: 0 });
     // Should NOT call createMany when no conversations
