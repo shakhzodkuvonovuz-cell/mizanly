@@ -75,6 +75,7 @@ interface UseLiveKitCallOptions {
 
 interface UseLiveKitCallReturn {
   status: CallStatus;
+  sessionId: string | null; // [N1] Exposed for caller-side poll
   room: Room | null;
   localParticipant: LocalParticipant | null;
   remoteParticipants: CallParticipant[];
@@ -188,6 +189,7 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
   const roomRef = useRef<Room | null>(null);
   const keyProviderRef = useRef<RNKeyProvider | null>(null);
   const roomNameRef = useRef<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null); // [N1] Track session ID for caller-side poll
   const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dataMessageHandlersRef = useRef<Set<(msg: DataChannelMessage) => void>>(new Set());
   const mountedRef = useRef(true);
@@ -450,6 +452,7 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
       });
 
       roomNameRef.current = response.data.livekitRoomName;
+      sessionIdRef.current = response.data.id; // [N1]
       if (mountedRef.current) setStatus('ringing');
 
       // [F10] Set CallKit UUID BEFORE connectToRoom so the Connected handler has it
@@ -688,6 +691,7 @@ export function useLiveKitCall(options: UseLiveKitCallOptions = {}): UseLiveKitC
 
   return {
     status,
+    sessionId: sessionIdRef.current || incomingSessionId || null,
     room: roomState,
     localParticipant: roomState?.localParticipant ?? null,
     remoteParticipants,

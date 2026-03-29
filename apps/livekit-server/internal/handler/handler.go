@@ -524,6 +524,11 @@ func (h *Handler) HandleMuteParticipant(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	// [N2 fix] Validate the mute target is a participant (consistent with F11 kick validation)
+	if !isCallerOrParticipant(session, req.Identity) {
+		writeError(w, http.StatusBadRequest, "target is not a participant in this call")
+		return
+	}
 
 	if h.roomClient == nil {
 		writeJSON(w, http.StatusOK, map[string]interface{}{"success": true})

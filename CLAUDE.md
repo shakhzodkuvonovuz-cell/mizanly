@@ -116,6 +116,24 @@ JS strings immutable, GC unpredictable, key material leaks to heap. Rust core (l
 
 ## Technical Debt — DO NOT FORGET
 
+### Call Encryption: Server-Mediated, Not True E2EE
+- Current: Go server generates 32-byte key + 16-byte salt per session, distributes to both parties over HTTPS. SFrame encrypts media client-side. Server briefly holds key material (wiped on call end).
+- **What this protects against:** passive network observers, LiveKit Cloud (SFU), CDN/proxy MITM, DB breach of ended calls (keys wiped).
+- **What this does NOT protect against:** compromised Mizanly server (generates and knows the key).
+- **Path to true E2EE:** ECDH key exchange between clients. Options:
+  1. **Quick win (~1 week):** Use LiveKit's built-in key exchange (SFrame keyProvider supports participant-derived keys). Each client generates an ephemeral X25519 keypair, exchanges public keys via LiveKit data channel, derives shared secret. Server never sees the key.
+  2. **Full solution (~4 weeks):** Integrate with existing Signal Protocol infrastructure (apps/e2e-server). Use X3DH to establish a session key for calls, same as for messages. Requires call-specific prekey bundles.
+  3. **Not needed until:** professional security audit demands it. Current server-mediated approach is standard for LiveKit deployments and matches Zoom/Teams/Meet trust model.
+
+### Call Hook: No Automated State-Machine Tests
+- `useLiveKitCall` hook can't be tested in Jest — `@livekit/react-native` requires native modules.
+- Utilities (base64, emoji derivation, active room registry) ARE tested (49 tests).
+- **Path to testability:**
+  1. Extract state machine logic into a pure `callStateMachine.ts` (no native deps). Hook becomes a thin wrapper.
+  2. Test the state machine directly: idle→creating→ringing→connecting→connected→ended, plus all error/timeout paths.
+  3. Estimated effort: ~1 day refactor + ~1 day tests.
+- **Workaround until then:** real-device E2E test via Detox or Maestro covering the outgoing→answer→hangup flow.
+
 ### Media Speed (NOT Telegram-fast yet)
 - **Crypto is fast** — react-native-quick-crypto makes encrypt/decrypt ~5-20ms for 5MB (was ~200-500ms)
 - **Network is the bottleneck** — R2 upload/download is ~1-3s on 4G, unchanged by crypto speedup

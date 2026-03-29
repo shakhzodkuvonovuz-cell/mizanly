@@ -186,6 +186,10 @@ export default function CallScreen() {
     const isRinging = livekit.status === 'ringing' || livekit.status === 'creating';
     if (!isRinging || isIncoming) return;
 
+    // [N1 fix] Need the session ID to poll the specific session, not getActiveCall
+    const callerSessionId = livekit.sessionId;
+    if (!callerSessionId) return; // Session not created yet — will re-run when status changes
+
     ringStartRef.current = Date.now();
     let stopped = false;
 
@@ -193,7 +197,8 @@ export default function CallScreen() {
       if (stopped) return;
 
       try {
-        const result = await livekitApi.getActiveCall();
+        // [N1 fix] Poll the specific session by ID, consistent with callee-side (F16)
+        const result = await livekitApi.getSession(callerSessionId);
         const session = (result as { data: CallSession | null }).data;
 
         if (!session || session.status === 'ENDED' || session.status === 'MISSED' || session.status === 'DECLINED') {

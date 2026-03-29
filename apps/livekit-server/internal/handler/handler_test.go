@@ -458,6 +458,22 @@ func TestMuteParticipant_OnlyCallerCanMute(t *testing.T) {
 	}
 }
 
+// [N2 fix validation] Mute target must be a participant
+func TestMuteParticipant_NonParticipantTargetRejected(t *testing.T) {
+	h, ms := newTestHandler()
+	session, _ := ms.CreateCallSession(context.Background(), "VOICE", "room-mute-target", "caller-1", []string{"caller-1", "callee-1"}, 2)
+	ms.UpdateSessionStatus(context.Background(), session.ID, "ACTIVE")
+
+	body := strings.NewReader(`{"identity":"outsider","trackSid":"TR_123","muted":true}`)
+	r := withAuth(httptest.NewRequest("POST", "/api/v1/calls/rooms/room-mute-target/mute", body), "caller-1")
+	r.SetPathValue("id", "room-mute-target")
+	w := httptest.NewRecorder()
+	h.HandleMuteParticipant(w, r)
+	if w.Code != 400 {
+		t.Errorf("expected 400 for muting non-participant, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
 // --- C4+C5 fix validation: auth bypass prevention ---
 
 func TestStopEgress_MissingRoomNameRejected(t *testing.T) {
