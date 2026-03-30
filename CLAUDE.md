@@ -41,7 +41,7 @@ cd apps/livekit-server && go test ./internal/... -v  # Go LiveKit server tests (
 
 ## What NOT to Do
 - Do not refactor files beyond the scope of the task.
-- Do not commit unless explicitly asked.
+- ALWAYS commit after completing a logical batch of work (every 5-15 fixes, every completed module, every wave). Do NOT wait to be asked — commit proactively with descriptive messages. Push when a natural batch is done.
 - Do not use Sonnet or Haiku as subagent models. Opus only.
 - Do not add Co-Authored-By or AI references in commits.
 
