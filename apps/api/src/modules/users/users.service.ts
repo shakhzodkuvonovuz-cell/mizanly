@@ -20,6 +20,9 @@ import { sanitizeText } from '@/common/utils/sanitize';
 import { PublishWorkflowService } from '@/common/services/publish-workflow.service';
 import { QueueService } from '@/common/queue/queue.service';
 
+// A01-#7 / B01-#7: Remove sensitive/moderation fields from public select.
+// lastSeenAt is a privacy concern (shows exact activity time).
+// isDeleted/isBanned/isDeactivated are moderation internals (checked in code, not exposed to client).
 const PUBLIC_USER_FIELDS = {
   id: true,
   username: true,
@@ -36,10 +39,14 @@ const PUBLIC_USER_FIELDS = {
   postsCount: true,
   role: true,
   createdAt: true,
-  lastSeenAt: true,
+};
+
+// Internal fields needed for status checks but NOT sent to clients
+const INTERNAL_STATUS_FIELDS = {
   isDeleted: true,
   isBanned: true,
   isDeactivated: true,
+  lastSeenAt: true,
 };
 
 const CHANNEL_SELECT = {
@@ -84,6 +91,7 @@ export class UsersService {
         language: true,
         theme: true,
         lastSeenAt: true,
+        referralCode: true,
         profileLinks: { orderBy: { position: 'asc' } },
         settings: true,
       },
@@ -201,6 +209,7 @@ export class UsersService {
         where: { username },
         select: {
           ...PUBLIC_USER_FIELDS,
+          ...INTERNAL_STATUS_FIELDS,
           profileLinks: { orderBy: { position: 'asc' } },
           channel: { select: CHANNEL_SELECT },
         },
@@ -212,6 +221,7 @@ export class UsersService {
           where: { previousUsername: username },
           select: {
             ...PUBLIC_USER_FIELDS,
+            ...INTERNAL_STATUS_FIELDS,
             profileLinks: { orderBy: { position: 'asc' } },
             channel: { select: CHANNEL_SELECT },
           },
@@ -278,8 +288,13 @@ export class UsersService {
   }
 
   async getUserPosts(username: string, cursor?: string, viewerId?: string, limit = 20) {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+    // B01-#1/#21: Use select + check banned/deactivated/deleted status
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true, isDeleted: true, isBanned: true, isDeactivated: true, isPrivate: true },
+    });
     if (!user) throw new NotFoundException('User not found');
+    if (user.isDeleted || user.isBanned || user.isDeactivated) throw new NotFoundException('User not found');
 
     // Block check: prevent viewing posts of/by blocked users
     if (viewerId && viewerId !== user.id) {
@@ -336,8 +351,13 @@ export class UsersService {
   }
 
   async getUserThreads(username: string, cursor?: string, viewerId?: string, limit = 20) {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+    // B01-#2/#21: Use select + check banned/deactivated/deleted status
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true, isDeleted: true, isBanned: true, isDeactivated: true, isPrivate: true },
+    });
     if (!user) throw new NotFoundException('User not found');
+    if (user.isDeleted || user.isBanned || user.isDeactivated) throw new NotFoundException('User not found');
 
     // Block check: prevent viewing threads of/by blocked users
     if (viewerId && viewerId !== user.id) {
@@ -1099,7 +1119,7 @@ export class UsersService {
 
     // Fetch all users with non-null phone (limited to reasonable set)
     const usersWithPhone = await this.prisma.user.findMany({
-      where: { phone: { not: null }, id: { not: userId }, isDeleted: false, isBanned: false },
+      where: { phone: { not: null }, id: { not: userId }, isDeleted: false, isBanned: false, isDeactivated: false },
       select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true, phone: true },
       take: 10000,
     });

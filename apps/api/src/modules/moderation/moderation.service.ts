@@ -245,7 +245,8 @@ export class ModerationService {
       where: { id: reportId },
     });
     if (!report) throw new NotFoundException('Report not found');
-    if (report.status !== 'PENDING') throw new BadRequestException('Report already reviewed');
+    // B11-#8: Accept both PENDING and REVIEWING to match reports.service.ts behavior
+    if (report.status !== 'PENDING' && report.status !== 'REVIEWING') throw new BadRequestException('Report already reviewed');
 
     let status: ReportStatus = 'RESOLVED';
     let actionTaken: ModerationAction = 'NONE';

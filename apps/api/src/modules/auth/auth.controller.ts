@@ -52,6 +52,7 @@ export class AuthController {
   }
 
   @Post('interests')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Set interest categories (onboarding)' })

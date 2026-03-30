@@ -21,6 +21,7 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { NasheedModeDto } from './dto/nasheed-mode.dto';
+import { RequestVerificationDto } from './dto/request-verification.dto';
 
 @ApiTags('Users')
 @Throttle({ default: { limit: 60, ttl: 60000 } })
@@ -294,9 +295,9 @@ export class UsersController {
   @ApiOperation({ summary: 'Request account verification' })
   requestVerification(
     @CurrentUser('id') userId: string,
-    @Body() body: { category: string; reason: string; proofUrl?: string },
+    @Body() dto: RequestVerificationDto,
   ) {
-    return this.usersService.requestVerification(userId, body);
+    return this.usersService.requestVerification(userId, dto);
   }
 
   // currentUserId extracted from verified auth context — never from query params

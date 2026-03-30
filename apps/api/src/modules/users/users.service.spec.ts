@@ -588,7 +588,7 @@ describe('UsersService', () => {
     it('should return posts with visibility filtering', async () => {
       const username = 'testuser';
       const viewerId = 'viewer-123';
-      const mockUser = { id: 'user-456' };
+      const mockUser = { id: 'user-456', isDeleted: false, isBanned: false, isDeactivated: false, isPrivate: false };
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.block.findFirst.mockResolvedValue(null);
       prisma.follow.findUnique.mockResolvedValue(null);
@@ -599,7 +599,10 @@ describe('UsersService', () => {
 
       const result = await service.getUserPosts(username, undefined, viewerId);
 
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { username } });
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { username },
+        select: { id: true, isDeleted: true, isBanned: true, isDeactivated: true, isPrivate: true },
+      });
       expect(prisma.follow.findUnique).toHaveBeenCalledWith({
         where: { followerId_followingId: { followerId: viewerId, followingId: mockUser.id } },
       });

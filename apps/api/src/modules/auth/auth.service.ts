@@ -100,8 +100,9 @@ export class AuthService {
     try {
       clerkUser = await this.clerk.users.getUser(clerkId);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      throw new BadRequestException(`Failed to verify account: ${msg}`);
+      // A01-#6: Don't leak Clerk API error details to client
+      this.logger.error('Clerk user verification failed', error instanceof Error ? error.message : String(error));
+      throw new BadRequestException('Failed to verify account. Please try again later.');
     }
     const email = clerkUser.emailAddresses[0]?.emailAddress;
     if (!email) throw new BadRequestException('No email address found in Clerk account');
