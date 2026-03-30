@@ -13,7 +13,7 @@ import { QueueService } from '../../common/queue/queue.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { CreateReportDto } from './dto/create-report.dto';
-import { Prisma, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
+import { Prisma, ReportStatus, ReportReason, ModerationAction, UserRole } from '@prisma/client';
 import { createClerkClient } from '@clerk/backend';
 import Redis from 'ioredis';
 
@@ -122,7 +122,7 @@ export class ReportsService {
       });
 
       // Urgent report handling: CSAM, terrorism, violence (Findings 2, 3, 14)
-      // Immediately hide reported content pending manual review
+      // Auto-hide only after 3+ unique reporters to prevent weaponization (A10-#1)
       if (ReportsService.URGENT_REPORT_REASONS.has(dto.reason)) {
         this.logger.warn(
           `URGENT REPORT [${dto.reason}]: report ${report.id} from user ${userId}. ` +
@@ -130,18 +130,42 @@ export class ReportsService {
           `Comment: ${dto.reportedCommentId || 'none'}, Message: ${dto.reportedMessageId || 'none'}`,
         );
 
-        // Auto-hide content pending review — fail-closed for legal safety
-        if (dto.reportedPostId) {
-          await this.prisma.post.update({
-            where: { id: dto.reportedPostId },
-            data: { isRemoved: true, removedReason: `Urgent report: ${dto.reason} — pending review` },
-          }).catch(() => { /* post may already be removed */ });
-        }
-        if (dto.reportedCommentId) {
-          await this.prisma.comment.update({
-            where: { id: dto.reportedCommentId },
-            data: { isRemoved: true },
-          }).catch(() => { /* comment may already be removed */ });
+        // Count unique reporters for this target to prevent single-user weaponization
+        const urgentTargetWhere: Prisma.ReportWhereInput = {
+          reason: { in: [...ReportsService.URGENT_REPORT_REASONS] as ReportReason[] },
+        };
+        if (dto.reportedPostId) urgentTargetWhere.reportedPostId = dto.reportedPostId;
+        if (dto.reportedCommentId) urgentTargetWhere.reportedCommentId = dto.reportedCommentId;
+
+        const uniqueReporterCount = await this.prisma.report.groupBy({
+          by: ['reporterId'],
+          where: urgentTargetWhere,
+        }).then(groups => groups.length);
+
+        // Auto-hide after 3+ unique reporters (prevents single-user content takedown)
+        const shouldAutoHide = uniqueReporterCount >= 3;
+
+        if (shouldAutoHide) {
+          if (dto.reportedPostId) {
+            await this.prisma.post.update({
+              where: { id: dto.reportedPostId },
+              data: { isRemoved: true, removedReason: `Urgent report: ${dto.reason} — ${uniqueReporterCount} reporters — pending review` },
+            }).catch((err: unknown) => {
+              if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025')) {
+                this.logger.error(`Failed to auto-hide post ${dto.reportedPostId}`, err instanceof Error ? err.message : err);
+              }
+            });
+          }
+          if (dto.reportedCommentId) {
+            await this.prisma.comment.update({
+              where: { id: dto.reportedCommentId },
+              data: { isRemoved: true },
+            }).catch((err: unknown) => {
+              if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025')) {
+                this.logger.error(`Failed to auto-hide comment ${dto.reportedCommentId}`, err instanceof Error ? err.message : err);
+              }
+            });
+          }
         }
 
         // TODO: [LEGAL/CSAM] When reason is NUDITY with child involvement indicators:
@@ -370,6 +394,39 @@ export class ReportsService {
     if (!report) throw new NotFoundException('Report not found');
     if (report.status !== ReportStatus.PENDING && report.status !== ReportStatus.REVIEWING) {
       throw new BadRequestException('Report already resolved or dismissed');
+    }
+
+    // If the report was urgent and triggered auto-hide, restore the content on dismiss (A10-#2)
+    if (ReportsService.URGENT_REPORT_REASONS.has(report.reason as string)) {
+      // Only restore if no OTHER unresolved urgent reports exist for the same target
+      const otherUrgentReports = await this.prisma.report.count({
+        where: {
+          id: { not: reportId },
+          status: { in: [ReportStatus.PENDING, ReportStatus.REVIEWING] },
+          reason: { in: [...ReportsService.URGENT_REPORT_REASONS] as ReportReason[] },
+          ...(report.reportedPostId ? { reportedPostId: report.reportedPostId } : {}),
+          ...(report.reportedCommentId ? { reportedCommentId: report.reportedCommentId } : {}),
+        },
+      });
+
+      if (otherUrgentReports === 0) {
+        if (report.reportedPostId) {
+          await this.prisma.post.update({
+            where: { id: report.reportedPostId },
+            data: { isRemoved: false, removedReason: null },
+          }).catch((err: unknown) => {
+            this.logger.warn(`Failed to restore post ${report.reportedPostId} on dismiss`, err instanceof Error ? err.message : err);
+          });
+        }
+        if (report.reportedCommentId) {
+          await this.prisma.comment.update({
+            where: { id: report.reportedCommentId },
+            data: { isRemoved: false },
+          }).catch((err: unknown) => {
+            this.logger.warn(`Failed to restore comment ${report.reportedCommentId} on dismiss`, err instanceof Error ? err.message : err);
+          });
+        }
+      }
     }
 
     return this.prisma.report.update({

@@ -122,6 +122,7 @@ describe('AuthService', () => {
           displayName: data.displayName,
           avatarUrl: data.avatarUrl,
         },
+        select: { id: true, username: true, displayName: true, bio: true },
       });
       expect(result).toEqual(updatedUser);
     });
@@ -149,14 +150,15 @@ describe('AuthService', () => {
 
       const result = await service.syncClerkUser(clerkId, data);
 
-      expect(prisma.user.create).toHaveBeenCalledWith({
+      expect(prisma.user.create).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({
           clerkId,
           email: data.email,
           displayName: data.displayName,
           avatarUrl: data.avatarUrl,
         }),
-      });
+        select: { id: true, username: true, displayName: true, bio: true },
+      }));
       expect(result).toEqual(mockUser);
     });
   });

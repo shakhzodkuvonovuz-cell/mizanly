@@ -297,7 +297,10 @@ describe('FollowsService', () => {
 
       expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: userId }, select: { id: true, isPrivate: true } });
       expect(prisma.follow.findMany).toHaveBeenCalledWith({
-        where: { followingId: userId },
+        where: {
+          followingId: userId,
+          follower: { isDeactivated: false, isBanned: false, isDeleted: false },
+        },
         include: {
           follower: {
             select: {
@@ -311,8 +314,6 @@ describe('FollowsService', () => {
         },
         take: 21,
         orderBy: { createdAt: 'desc' },
-        cursor: undefined,
-        skip: undefined,
       });
       expect(result.data).toEqual(mockFollows.map(f => f.follower));
       expect(result.meta.hasMore).toBe(false);
@@ -349,7 +350,10 @@ describe('FollowsService', () => {
 
       expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: userId }, select: { id: true, isPrivate: true } });
       expect(prisma.follow.findMany).toHaveBeenCalledWith({
-        where: { followerId: userId },
+        where: {
+          followerId: userId,
+          following: { isDeactivated: false, isBanned: false, isDeleted: false },
+        },
         include: {
           following: {
             select: {
@@ -363,8 +367,6 @@ describe('FollowsService', () => {
         },
         take: 21,
         orderBy: { createdAt: 'desc' },
-        cursor: undefined,
-        skip: undefined,
       });
       expect(result.data).toEqual(mockFollows.map(f => f.following));
     });

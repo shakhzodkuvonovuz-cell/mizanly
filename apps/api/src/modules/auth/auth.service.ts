@@ -124,6 +124,20 @@ export class AuthService {
       throw new BadRequestException('This account was recently deleted. Please wait 30 days before re-registering.');
     }
 
+    // A01-#1: Use select to avoid returning internal fields (clerkId, email, reputationScore, etc.)
+    const SAFE_USER_SELECT = {
+      id: true,
+      username: true,
+      displayName: true,
+      bio: true,
+      avatarUrl: true,
+      language: true,
+      isVerified: true,
+      isPrivate: true,
+      createdAt: true,
+      referralCode: true,
+    };
+
     // Upsert: create on first call, update on subsequent calls
     const user = await this.prisma.user.upsert({
       where: { clerkId },
@@ -150,6 +164,7 @@ export class AuthService {
         avatarUrl: dto.avatarUrl,
         language: dto.language,
       },
+      select: SAFE_USER_SELECT,
     });
 
     // Ensure UserSettings exists
@@ -339,6 +354,7 @@ export class AuthService {
           ...(data.phone ? { phone: data.phone } : {}),
           ...usernameUpdate,
         },
+        select: { id: true, username: true, displayName: true, bio: true },
       });
 
       // Re-index updated user in search
@@ -376,9 +392,10 @@ export class AuthService {
         displayName: data.displayName,
         avatarUrl: data.avatarUrl,
         language: 'en',
-        tosAcceptedAt: new Date(), // Implicit acceptance via Clerk signup
+        // A01-#8: Remove auto-ToS for webhook users — require explicit acceptance on first app launch
         ...(data.phone ? { phone: data.phone } : {}),
       },
+      select: { id: true, username: true, displayName: true, bio: true },
     });
 
     // Ensure UserSettings record exists for new webhook-created users

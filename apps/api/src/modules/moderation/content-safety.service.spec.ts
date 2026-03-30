@@ -344,10 +344,11 @@ describe('ContentSafetyService', () => {
       expect(txLog.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            moderatorId: 'system',
+            moderatorId: null,
+            targetUserId: 'owner-1',
             action: 'CONTENT_REMOVED',
             reason: 'NSFW detected',
-            explanation: 'Auto-removed: nudity, suggestive',
+            explanation: '[SYSTEM AUTO-REMOVAL] nudity, suggestive',
           }),
         }),
       );

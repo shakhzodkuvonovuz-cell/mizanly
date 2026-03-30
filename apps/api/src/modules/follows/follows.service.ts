@@ -225,7 +225,11 @@ export class FollowsService {
     }
 
     const follows = await this.prisma.follow.findMany({
-      where: { followingId: userId },
+      where: {
+        followingId: userId,
+        // A10-#6: Filter out banned/deactivated/deleted followers
+        follower: { isDeactivated: false, isBanned: false, isDeleted: false },
+      },
       include: {
         follower: {
           select: {
@@ -276,7 +280,11 @@ export class FollowsService {
     }
 
     const follows = await this.prisma.follow.findMany({
-      where: { followerId: userId },
+      where: {
+        followerId: userId,
+        // A10-#6: Filter out banned/deactivated/deleted in following list
+        following: { isDeactivated: false, isBanned: false, isDeleted: false },
+      },
       include: {
         following: {
           select: {

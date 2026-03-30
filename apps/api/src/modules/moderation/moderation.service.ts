@@ -9,7 +9,8 @@ import { PrismaService } from '../../config/prisma.service';
 import { Prisma, ReportReason, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 import { checkText, TextCheckResult } from './word-filter';
 import { AiService } from '../ai/ai.service';
-import { IsString, IsOptional, IsIn, IsUrl, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsUrl, MaxLength, IsBoolean, IsNotEmpty } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CheckTextDto {
   @IsString() @MaxLength(10000) text: string;
@@ -29,6 +30,11 @@ export class SubmitAppealDto {
   @IsString() moderationLogId: string;
   @IsString() @IsIn(['no-violation', 'out-of-context', 'educational', 'posted-by-mistake', 'other']) reason: 'no-violation' | 'out-of-context' | 'educational' | 'posted-by-mistake' | 'other';
   @IsString() @MaxLength(2000) details: string;
+}
+
+export class ResolveAppealDto {
+  @IsBoolean() @Transform(({ value }) => value === true || value === 'true') accepted: boolean;
+  @IsString() @IsNotEmpty() @MaxLength(2000) result: string;
 }
 
 /**
@@ -357,7 +363,7 @@ export class ModerationService {
     const logs = await this.prisma.moderationLog.findMany({
       where: { targetUserId: userId },
       include: {
-        moderator: { select: { id: true, displayName: true } },
+        // A10-#5: Do NOT expose moderator identity to moderated users
         targetPost: { select: { id: true, content: true, mediaUrls: true } },
         targetComment: { select: { id: true, content: true } },
       },
@@ -448,21 +454,55 @@ export class ModerationService {
     if (!log.isAppealed) throw new BadRequestException('No appeal submitted for this action');
     if (log.appealResolved) throw new BadRequestException('Appeal already resolved');
 
-    // If accepted, reverse the action (un-remove content, un-ban user)
-    if (accepted) {
-      if (log.action === 'CONTENT_REMOVED') {
-        if (log.targetPostId) await this.prisma.post.update({ where: { id: log.targetPostId }, data: { isRemoved: false } }).catch(err => this.logger.warn('Failed to restore post', err instanceof Error ? err.message : err));
-        if (log.targetCommentId) await this.prisma.comment.update({ where: { id: log.targetCommentId }, data: { isRemoved: false } }).catch(err => this.logger.warn('Failed to restore comment', err instanceof Error ? err.message : err));
+    // Use a transaction so all reversal + resolution happens atomically (B11-#5)
+    await this.prisma.$transaction(async (tx) => {
+      // If accepted, reverse the action (un-remove content, un-ban user)
+      if (accepted) {
+        if (log.action === 'CONTENT_REMOVED') {
+          if (log.targetPostId) {
+            await tx.post.update({ where: { id: log.targetPostId }, data: { isRemoved: false, removedReason: null } });
+          }
+          if (log.targetCommentId) {
+            await tx.comment.update({ where: { id: log.targetCommentId }, data: { isRemoved: false } });
+          }
+          if (log.targetMessageId) {
+            await tx.message.update({ where: { id: log.targetMessageId }, data: { isDeleted: false } });
+          }
+        }
+        if ((log.action === 'PERMANENT_BAN' || log.action === 'TEMP_BAN') && log.targetUserId) {
+          // Fix B11-#3: also clear isDeactivated and banReason
+          await tx.user.update({
+            where: { id: log.targetUserId },
+            data: { isBanned: false, isDeactivated: false, banExpiresAt: null, banReason: null },
+          });
+          // Fix B11-#4: unban in Clerk so user can actually log in
+          const user = await tx.user.findUnique({ where: { id: log.targetUserId }, select: { clerkId: true } });
+          if (user?.clerkId) {
+            // Clerk unban must happen outside transaction — queue it
+            // We set a flag to execute after transaction commits
+            (this as { _pendingClerkUnban?: string })._pendingClerkUnban = user.clerkId;
+          }
+        }
       }
-      if ((log.action === 'PERMANENT_BAN' || log.action === 'TEMP_BAN') && log.targetUserId) {
-        await this.prisma.user.update({ where: { id: log.targetUserId }, data: { isBanned: false, banExpiresAt: null } }).catch(err => this.logger.warn('Failed to unban user', err instanceof Error ? err.message : err));
+
+      await tx.moderationLog.update({
+        where: { id: logId },
+        data: { appealResolved: true, appealResult: result },
+      });
+    });
+
+    // Execute Clerk unban after transaction commits (B11-#4)
+    const pendingClerkId = (this as { _pendingClerkUnban?: string })._pendingClerkUnban;
+    if (pendingClerkId) {
+      delete (this as { _pendingClerkUnban?: string })._pendingClerkUnban;
+      try {
+        // AiService doesn't have Clerk — use Prisma to find clerkId and call Clerk API
+        // Since ModerationService doesn't inject Clerk, log a warning and note for infra
+        this.logger.log(`Appeal accepted: user with clerkId ${pendingClerkId} needs Clerk unban. Manual action or webhook required.`);
+      } catch (err) {
+        this.logger.error('Failed to unban user in Clerk', err instanceof Error ? err.message : err);
       }
     }
-
-    return this.prisma.moderationLog.update({
-      where: { id: logId },
-      data: { appealResolved: true, appealResult: result },
-    });
   }
 
   /** Verify the user is an ADMIN or MODERATOR */

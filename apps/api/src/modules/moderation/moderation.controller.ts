@@ -12,7 +12,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { ModerationService, CheckTextDto, CheckImageDto, ReviewActionDto, SubmitAppealDto } from './moderation.service';
+import { ModerationService, CheckTextDto, CheckImageDto, ReviewActionDto, SubmitAppealDto, ResolveAppealDto } from './moderation.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -112,8 +112,8 @@ export class ModerationController {
   resolveAppeal(
     @CurrentUser('id') adminId: string,
     @Param('logId') logId: string,
-    @Body() body: { accepted: boolean; result: string },
+    @Body() dto: ResolveAppealDto,
   ) {
-    return this.moderationService.resolveAppeal(adminId, logId, body.accepted, body.result);
+    return this.moderationService.resolveAppeal(adminId, logId, dto.accepted, dto.result);
   }
 }
