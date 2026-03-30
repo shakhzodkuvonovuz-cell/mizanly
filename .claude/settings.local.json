@@ -11,7 +11,9 @@
       "mcp__plugin_context7_context7__resolve-library-id",
       "mcp__filesystem__list_directory",
       "mcp__filesystem__read_text_file",
-      "mcp__filesystem__write_file"
+      "mcp__filesystem__write_file",
+      "mcp__filesystem__directory_tree",
+      "mcp__plugin_context7_context7__query-docs"
     ]
   },
   "hooks": {
@@ -25,13 +27,13 @@
         ]
       }
     ],
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Bash(git commit*)",
         "hooks": [
           {
             "type": "command",
-            "command": "cd /c/dev/mizanly/apps/mobile && npx tsc --noEmit 2>&1 | tail -5 || true"
+            "command": "cd /c/dev/mizanly/apps/mobile && npx tsc --noEmit 2>&1 | tail -5"
           }
         ]
       }

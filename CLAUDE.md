@@ -239,6 +239,232 @@ JS strings immutable, GC unpredictable, key material leaks to heap. Rust core (l
 - Professional audit (Cure53/NCC/Trail of Bits) → $50-100K
 - Zero real-device testing — all E2E code untested on actual hardware
 
+## Post-Fix Testing Roadmap
+
+### Launch Sequence
+1. Fix all audit findings (~2,500 across 13 waves)
+2. Re-audit (quick verification pass)
+3. Apple Developer ($99) → App icon → EAS build → TestFlight
+4. Simulated user testing (below)
+5. Beta with real users (50-100 from waitlist)
+
+### AI-Driven Testing Agents (simulate real human behavior)
+These tools SEE the screen and decide what to tap — no scripted flows. They explore like real users, finding bugs scripts never would.
+
+| Tool | What It Does | Best For |
+|------|-------------|----------|
+| **QA Wolf** | AI agents explore app autonomously, see UI, make decisions, find bugs | Managed E2E testing service, discovers edge cases |
+| **Momentic** | Natural language test instructions ("sign up, post a photo, delete it") — AI figures out the taps | No-script testing, fast test creation |
+| **Octomind** | AI generates and maintains E2E tests by understanding UI visually | Auto-discovers flows, self-healing tests |
+| **Carbonate** | Natural language → AI executes as real interactions | Plain English test descriptions |
+| **Claude Computer Use** | Claude sees screenshots, reasons about UI, clicks like a human. Anthropic's own tool | Point at TestFlight build: "use this app like a Muslim teenager for 30 minutes" |
+| **BrowserBase** | Headless browser infrastructure for AI agents — run hundreds of parallel sessions | Pair with Claude Computer Use for scale |
+| **Devin / SWE-Agent** | AI coding agents that can also drive browsers/apps | Code-focused but can do UI exploration |
+| **AgentQL** | AI-powered web element detection — understands UI semantically, not by selectors | Resilient to UI changes |
+| **Magnitude** | AI test agent that plans, executes, and validates test scenarios autonomously | Full autonomous testing pipeline |
+| **Shortest (by Vercel)** | Natural language E2E tests powered by AI — "user logs in and creates a post" | Vercel ecosystem, simple setup |
+
+### Scripted E2E Testing (deterministic user flows)
+For repeatable regression tests — same flow, every build, guaranteed.
+
+| Tool | What It Does | Best For |
+|------|-------------|----------|
+| **Maestro** | YAML-based mobile E2E. Built for React Native/Expo. "Tap login, scroll feed, like post" | **#1 pick for Mizanly** — native RN support, fast, reliable |
+| **Detox** | Wix's RN testing framework. Gray-box, synchronizes with RN bridge | Deep native integration, CI-friendly |
+| **Appium** | Cross-platform Selenium-style. WebDriver protocol | Legacy support, broad device matrix |
+| **Playwright** | Microsoft's browser automation. Handles web + PWA | Expo Web testing when PWA launches |
+
+### API Load Testing (simulate thousands of concurrent users)
+Stress-test NestJS + Go services + Socket.io gateway before real users hit it.
+
+| Tool | What It Does | Best For |
+|------|-------------|----------|
+| **k6** | Grafana's load testing. Write tests in JS. "5,000 users hit /feed for 10 minutes" | **#1 pick** — JS-native, tests NestJS directly |
+| **Artillery** | YAML config, HTTP + WebSocket mixed load | **Socket.io gateway stress** — test chat.gateway.ts under 10K connections |
+| **Locust** | Python-based distributed load testing | Complex user behavior patterns |
+| **Gatling** | JVM-based, realistic traffic ramp-up/down curves | Production-like traffic simulation |
+| **Vegeta** | Go CLI, constant-rate HTTP load | Finding exact breaking points |
+| **autocannon** | Node.js HTTP benchmarking | Quick endpoint benchmarks |
+| **oha** | Rust HTTP load generator, beautiful terminal UI | Fast single-endpoint stress |
+
+### Recommended Testing Stack for Mizanly
+```
+Phase 1 (Post-fix, pre-TestFlight):
+  - Maestro: 50 critical user flows (signup → post → chat → call → delete account)
+  - k6: Load test top 20 API endpoints at 1K concurrent users
+
+Phase 2 (TestFlight beta):
+  - Claude Computer Use: 10 AI agents exploring the app for 1 hour each
+  - QA Wolf or Momentic: Ongoing AI-driven regression testing
+  - Artillery: WebSocket gateway stress at 5K concurrent connections
+
+Phase 3 (Pre-launch):
+  - k6: Full load test at 10K concurrent users
+  - Artillery: Socket.io at 50K connections
+  - Maestro: 200 flows covering every screen
+  - AI agents: "Use this as a 19-year-old Indonesian Muslim during Ramadan"
+
+Phase 4 (DDoS testing & hardening — before public launch):
+  - Build Go seed-bot for synthetic load (10K users, concurrent media, viral scenarios)
+  - Run DDoS simulation against own infrastructure (see checklist below)
+  - Fix every gap found, then re-test
+
+Phase 5 (User acquisition features — post-stability):
+  - One Tap Import: Instagram, TikTok, X/Twitter, YouTube, WhatsApp (spec: docs/features/DATA_IMPORT_ARCHITECTURE.md)
+  - Goodbye Story: shareable "I've moved to Mizanly" story for old platforms
+  - Contact sync: WhatsApp/phone contacts → "X is on Mizanly" suggestions
+  - Anti-bot: Play Integrity + App Attest + behavioral scoring (see Layer 2-3 below)
+```
+
+### One Tap Import & Goodbye Story
+**Spec:** `docs/features/DATA_IMPORT_ARCHITECTURE.md` (236 lines, complete architecture)
+**Status:** Zero code built. Schema, parsers, screens all designed but unimplemented.
+
+| Component | What It Does | Effort |
+|-----------|-------------|--------|
+| **Tier 1: OAuth Import** | Instagram Graph API, TikTok Display API, YouTube Data API, X API v2 → pull public posts/profile | Medium per platform |
+| **Tier 2: ZIP Import** | User uploads platform data export ZIP → parse JSON → reconstruct posts in Mizanly | Medium (primary approach, gives 95% of data) |
+| **ImportJob model** | Track import progress, source platform, status, error handling | Small |
+| **Content mapping** | Instagram posts→Saf, Reels→Bakra, Stories→Stories, DMs→Risalah, Videos→Minbar | Small |
+| **"Imported from" badge** | Visual indicator on imported content, prevents confusion with original posts | Small |
+| **Feed protection** | Imported posts don't spam followers' For You feed (use `originalCreatedAt`) | Small |
+| **ZIP security** | Zip bomb detection, media type validation, size limits, DM import requires explicit consent | Medium |
+| **Goodbye Story** | After import → generate shareable story image with stats ("3 years, 487 posts — I'm moving") | Medium |
+| **Contact sync** | WhatsApp contacts / phone contacts → match against Mizanly users → "X is here" suggestions | Medium |
+
+**Legal basis:** GDPR Article 20 (data portability) + EU Digital Markets Act (requires Meta/ByteDance to enable portability).
+
+**Build order:** ZIP import first (no API approval needed) → OAuth import second → Goodbye Story → Contact sync.
+
+### DDoS Testing Plan (attack your own infrastructure)
+Build a Go tool that simulates every attack vector. Run against staging, never production.
+
+| Test | What It Simulates | Tool | Target |
+|------|-------------------|------|--------|
+| Volumetric flood | 100K req/s GET /api/v1/feed | k6 / Vegeta | Cloudflare → Railway |
+| Slowloris | 10K connections opened, never closed | custom Go | Socket.io gateway |
+| Auth spray | 50K login attempts/min with random creds | k6 | /api/v1/auth |
+| Register bomb | 10K account creations/min | k6 | Clerk webhook → DB |
+| Large payload | 50MB JSON body on every POST endpoint | k6 | NestJS body parser |
+| WebSocket flood | 10K socket connections per user | Artillery | chat.gateway.ts |
+| Notification bomb | Post in 500 groups simultaneously → 500K notifications | seed-bot | notification fan-out |
+| Search abuse | 1K concurrent full-text searches with wildcards | k6 | Meilisearch |
+| Media upload flood | 1K concurrent 100MB file uploads | k6 | R2 upload endpoint |
+| Webhook replay | Replay 10K Stripe/Clerk webhooks | custom | webhook processor |
+| Rate limit bypass | Rotate IPs/tokens to evade per-user throttle | k6 | all endpoints |
+| E2E key exhaustion | Drain one-time prekey pools for all users | k6 | Go E2E server |
+
+### Anti-DDoS Hardening Checklist (fix before public launch)
+
+**Edge Layer (Cloudflare):**
+- [ ] Upgrade to Cloudflare Pro ($20/mo) — WAF + advanced DDoS + rate limiting at edge
+- [ ] WAF rule: block requests > 1MB body (except media upload endpoints)
+- [ ] WAF rule: rate limit /api/v1/auth/* to 10 req/min per IP
+- [ ] WAF rule: rate limit /api/v1/waitlist/* to 5 req/min per IP
+- [ ] Enable Bot Fight Mode (blocks known bot signatures)
+- [ ] Enable Under Attack Mode toggle (5s JS challenge during active attack)
+- [ ] Configure Page Rules: cache static assets aggressively
+
+**API Layer (NestJS):**
+- [ ] Global body size limit: 1MB default, 100MB for media upload only
+- [ ] `@Throttle()` on ALL mutation endpoints (25+ currently missing — audit finding)
+- [ ] Per-IP rate limiting on unauthenticated endpoints (register, login, waitlist)
+- [ ] Request timeout: 30s for API, 120s for media upload
+- [ ] Helmet middleware: security headers on all responses
+- [ ] CORS: strict origin whitelist (no wildcard)
+- [ ] Abuse detection: flag users with > 1K requests/hour
+
+**WebSocket Layer (Socket.io):**
+- [ ] Max 3 connections per user (audit finding — already implemented)
+- [ ] Connection rate limit: max 5 new connections/min per IP
+- [ ] Message rate limit: already done (13 events rate-limited)
+- [ ] Payload size limit on socket messages (max 64KB)
+- [ ] Disconnect idle connections after 5 minutes of no activity
+
+**Database Layer:**
+- [ ] Connection pool limits (Neon pooler handles this)
+- [ ] Query timeout: 10s max
+- [ ] Read replica for feed queries (when at 50K+ users)
+- [ ] Redis connection limits + maxmemory policy
+
+**Go Services:**
+- [ ] Rate limiter fails CLOSED on Redis error (already fixed — audit finding)
+- [ ] Request body limit: 1MB
+- [ ] Context timeout on all external calls: 10s
+- [ ] Graceful shutdown: drain connections on SIGTERM
+
+**Monitoring & Response:**
+- [ ] Sentry alerts on error rate > 5%
+- [ ] Railway metrics: CPU/memory alerts at 80%
+- [ ] Cloudflare analytics: traffic spike alerts
+- [ ] Incident runbook: "under DDoS attack" → enable Under Attack Mode → check Sentry → scale Railway
+
+## Feature Status Tracker — What's Built vs What's Not
+
+### Built and Working
+| Feature | Code Location | Tests | Notes |
+|---------|-------------|-------|-------|
+| Signal Protocol E2E | `apps/mobile/src/services/signal/` (23 files, ~10K lines) | 633 | Grade A+, 5 audit rounds |
+| LiveKit Calling | `apps/livekit-server/` + `useLiveKitCall.ts` + `callkit.ts` | 123 Go + 49 TS | Go server + mobile hook + CallKit + SFrame E2EE |
+| Video Editor | `video-editor.tsx` + `ffmpegEngine.ts` | 89 | 10 tool tabs, 35 edit fields, FFmpeg engine |
+| Landing Page | `apps/landing/index.html` | — | Emerald Noir design, not yet deployed to Cloudflare Pages |
+| Waitlist + Referral | `apps/api/src/modules/waitlist/` | 13 | Email via Resend, referral codes |
+| A/B Testing Service | `apps/api/src/common/services/ab-testing.service.ts` | Yes | Backend ready |
+| Feature Flags | `apps/api/src/common/services/feature-flags.service.ts` | Yes | 3-tier fallback: cache→Redis→DB |
+| Algorithm (3-stage) | `apps/api/src/modules/feed/`, `personalized-feed/` | Yes | KNN + scoring + diversity + Islamic boost |
+| i18n (8 languages) | `apps/mobile/src/i18n/*.json` | — | en, ar, tr, ur, bn, fr, id, ms |
+| GIPHY SDK | `apps/mobile/src/services/giphyService.ts` | 45 | Native dialog + fallback search |
+| 10 Story Stickers | `apps/mobile/src/components/story/` | 49 | GIF, Music, Location, Poll, Quiz, etc. |
+| Widget Data Service | `apps/mobile/src/services/widgetData.ts` | — | Data layer ready, no native widget yet |
+
+### Installed but Not Fully Wired
+| Feature | Package | What's Missing |
+|---------|---------|---------------|
+| nsfwjs client-side | `nsfwjs` + `@tensorflow/tfjs` in package.json | TensorFlow model not bundled in assets, `nsfwCheck.ts` service exists but gracefully degrades |
+| Video upload API | `streamApi.ts` exists | Never called from any create screen — videos can't upload from mobile |
+| google-services.json | File exists at `apps/mobile/google-services.json` | Unclear if Firebase project properly configured for FCM push |
+
+### NOT Built — Spec Exists, Zero Code
+| Feature | Spec | Effort | Priority |
+|---------|------|--------|----------|
+| **Data Import (One Tap Import)** | `docs/features/DATA_IMPORT_ARCHITECTURE.md` (236 lines) | 2-3 sessions | High — #1 user acquisition |
+| **Exit/Goodbye Story** | `docs/features/EXIT_STORY_SPEC.md` (165 lines) | 1 session | High — viral growth loop |
+| **Profile Theming + Configurator** | `docs/features/PROFILE_THEMING_SPEC.md` (340 lines) | 1-2 sessions | High — Creator Pro monetization, Porsche configurator model |
+| **Monetization (5 revenue streams)** | `docs/features/MONETIZATION_SPEC.md` (380 lines) | 3-4 sessions | **CRITICAL** — coins, subscriptions, tips, ads, commerce. Zero complete money flows currently. |
+| **Content Licensing Strategy** | `docs/features/CONTENT_LICENSING_SPEC.md` (300 lines) | Ongoing | Music, GIFs, fonts, UGC, DMCA — what's legal, what needs licensing, tiered approach |
+| **Business Gaps Checklist** | `docs/features/BUSINESS_GAPS_CHECKLIST.md` (550 lines) | Ongoing | 12 categories, 150+ items: legal, App Store, launch strategy, marketing, cold start, ops, analytics, financial, branding, partnerships, localization, infrastructure |
+| **Product Strategy Gaps** | `docs/features/PRODUCT_STRATEGY_GAPS.md` (750 lines) | Ongoing | 10 sections: Ramadan 2027 plan, gamification system (XP/levels/achievements/streaks), notification strategy (categories/batching/caps/Islamic-aware), cold start playbook (creator recruitment templates/content calendar), verification system (5 badge types), digital wellbeing, competitor response, performance budget, deep linking, Islamic design decisions (prayer methods/Asr/Quran translations/interfaith/gender) |
+| **Algorithm Deep Improvements** | Mentioned in `project_algorithm_roadmap.md` memory | 1-2 sessions | Medium — multi-cluster, exploration budget |
+
+### NOT Built — No Spec, Need Design + Build
+| Feature | Effort | Priority | Notes |
+|---------|--------|----------|-------|
+| **Apple IAP** | Medium | **BLOCKER** — App Store rejects without it | Coin purchases via Stripe violate guideline 3.1.1 |
+| **AR/Camera Effects** | Large | Medium | Snap Camera Kit recommended (free, RN wrapper) |
+| **pHash re-upload detection** | Small | Medium | Add `phash` column, compute via sharp, compare against `BannedHash` |
+| **Admin/Moderation web dashboard** | Large | Post-launch | Backend endpoints exist, no web UI |
+| **iOS/Android home screen widget** | Large | Post-launch | `widgetData.ts` exists, need native widget module |
+| **Contact sync (WhatsApp)** | Medium | Phase 5 | Phone contacts → match Mizanly users |
+| **Age gate (16+)** | Small | Pre-launch | Required for UGC apps, currently declared but not enforced |
+| **Privacy policy page** | Small | **BLOCKER** — required for App Store submission | Static page at mizanly.app/privacy |
+| **Terms of service page** | Small | **BLOCKER** — required for App Store submission | Static page at mizanly.app/terms |
+| **App Store screenshots** | Medium | **BLOCKER** — required for submission | 6.5" + 5.5" screenshots, at least 3 |
+| **App Store description + keywords** | Small | **BLOCKER** — ASO for discoverability | Title, subtitle, description, keywords |
+| **Real app icon** | Small | **BLOCKER** — current is 22KB placeholder | Need 1024x1024 PNG, adaptive icon for Android |
+| **GDPR consent flow** | Small | Pre-launch | Cookie/tracking consent for EU users |
+
+### Blocked on External Dependencies
+| Feature | Blocked On | Unblocks |
+|---------|-----------|---------|
+| iOS build (TestFlight) | Apple Developer ($99/yr) | Everything mobile |
+| Cert pinning enforcement | EAS build (needs Apple Developer) | TLS security |
+| Device attestation | Play Integrity / App Attest native modules + real device | Bot prevention |
+| VoIP push (iOS ringtone) | PushKit entitlement (needs Apple Developer) | Proper incoming call UI |
+| Formal verification | $50-100K (Tamarin/ProVerif) | Cryptographic proof |
+| Professional security audit | $50-100K (Cure53/NCC/Trail of Bits) | Certification |
+| CSAM reporting | NCMEC registration (US legal entity) | Legal compliance |
+| Real-device testing | Apple Developer + EAS build | Runtime verification |
+
 ## Standing Rules — DO NOT FORGET
 - **Prisma schema field names are FINAL** — never rename.
 - **Islamic data curated by user personally** — never AI-generate Quran, hadith, or prayer content.
