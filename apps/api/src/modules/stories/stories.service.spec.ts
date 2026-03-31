@@ -68,6 +68,11 @@ describe('StoriesService', () => {
               findMany: jest.fn().mockResolvedValue([]),
               create: jest.fn(),
               update: jest.fn(),
+              upsert: jest.fn(),
+            },
+            report: {
+              findFirst: jest.fn().mockResolvedValue(null),
+              create: jest.fn(),
             },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),

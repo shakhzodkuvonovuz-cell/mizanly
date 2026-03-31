@@ -16,7 +16,7 @@ describe('StoryChainsService', () => {
         {
           provide: PrismaService,
           useValue: {
-            storyChain: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+            storyChain: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn().mockResolvedValue({}) },
             storyChainEntry: { findMany: jest.fn(), findUnique: jest.fn(), upsert: jest.fn() },
             story: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             user: { findMany: jest.fn().mockResolvedValue([]) },

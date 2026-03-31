@@ -1594,7 +1594,8 @@ export class MessagesService {
   /**
    * Auto-send all scheduled messages whose scheduledAt has passed.
    * Runs every minute via @nestjs/schedule cron.
-   * Publishes up to 50 overdue messages per tick, updating conversation metadata.
+   * Publishes up to 200 overdue messages per tick, updating conversation metadata.
+   * 200/min = 12K/hour — handles post-outage backlog without DB overload.
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async publishScheduledMessages(): Promise<number> {
@@ -1612,7 +1613,7 @@ export class MessagesService {
           scheduledAt: { lte: now },
           isDeleted: false,
         },
-        take: 50,
+        take: 200,
         orderBy: { scheduledAt: 'asc' },
       });
 

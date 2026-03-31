@@ -184,31 +184,26 @@ export class VideosService {
       });
 
     // Publish workflow: search index, cache invalidation, real-time event
-    // Only trigger for immediately-published content (not scheduled)
-    if (!(dto as unknown as Record<string, unknown>).scheduledAt) {
-      this.publishWorkflow.onPublish({
-        contentType: 'video',
-        contentId: video[0].id,
+    this.publishWorkflow.onPublish({
+      contentType: 'video',
+      contentId: video[0].id,
+      userId,
+      indexDocument: {
+        id: video[0].id,
+        title: dto.title,
+        description: dto.description || '',
+        tags: dto.tags || [],
+        username: video[0].user?.username || '',
         userId,
-        indexDocument: {
-          id: video[0].id,
-          title: dto.title,
-          description: dto.description || '',
-          tags: dto.tags || [],
-          username: video[0].user?.username || '',
-          userId,
-          channelId: dto.channelId,
-          category: dto.category || 'OTHER',
-          status: 'PROCESSING',
-        },
-      }).catch(err => this.logger.warn('Publish workflow failed for video', err instanceof Error ? err.message : err));
-    }
+        channelId: dto.channelId,
+        category: dto.category || 'OTHER',
+        status: 'PROCESSING',
+      },
+    }).catch(err => this.logger.warn('Publish workflow failed for video', err instanceof Error ? err.message : err));
 
-    // Gamification: award XP + update streak (skip for scheduled — fires on publish)
-    if (!(dto as unknown as Record<string, unknown>).scheduledAt) {
-      this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' }).catch(err => this.logger.warn('Failed to queue gamification XP for video', err instanceof Error ? err.message : err));
-      this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Failed to queue gamification streak for video', err instanceof Error ? err.message : err));
-    }
+    // Gamification: award XP + update streak
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' }).catch(err => this.logger.warn('Failed to queue gamification XP for video', err instanceof Error ? err.message : err));
+    this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' }).catch(err => this.logger.warn('Failed to queue gamification streak for video', err instanceof Error ? err.message : err));
 
     // Invalidate video feed cache so new video appears immediately
     this.invalidateVideoFeedCache().catch(() => {});

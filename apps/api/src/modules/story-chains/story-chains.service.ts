@@ -64,6 +64,12 @@ export class StoryChainsService {
       throw new NotFoundException('Story chain not found');
     }
 
+    // LD-4: Increment viewsCount on chain view
+    this.prisma.storyChain.update({
+      where: { id: chainId },
+      data: { viewsCount: { increment: 1 } },
+    }).catch(() => {}); // Fire-and-forget, don't block response
+
     const entries = await this.prisma.storyChainEntry.findMany({
       where: {
         chainId,

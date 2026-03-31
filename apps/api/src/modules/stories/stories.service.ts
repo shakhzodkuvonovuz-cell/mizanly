@@ -9,7 +9,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AiService } from '../ai/ai.service';
 import { QueueService } from '../../common/queue/queue.service';
-import { Prisma, MessageType } from '@prisma/client';
+import { Prisma, MessageType, ReportReason } from '@prisma/client';
 import { sanitizeText } from '../../common/utils/sanitize';
 
 const STORY_SELECT = {
@@ -594,9 +594,16 @@ export class StoriesService {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story) throw new NotFoundException('Story not found');
 
-    // B07-#5: Check expiry, archived, blocked
+    // B07-#5: Check expiry, archived, visibility, blocked
     if (story.isArchived) throw new BadRequestException('Cannot respond to archived story');
     if (story.expiresAt && story.expiresAt < new Date()) throw new BadRequestException('Cannot respond to expired story');
+    // PF-2: closeFriendsOnly/subscribersOnly enforcement (no CloseFriend model — safe reject)
+    if (story.closeFriendsOnly && userId !== story.userId) {
+      throw new ForbiddenException('This story is for close friends only');
+    }
+    if ((story as any).subscribersOnly && userId !== story.userId) {
+      throw new ForbiddenException('This story is for subscribers only');
+    }
     if (story.userId && userId !== story.userId) {
       const blocked = await this.prisma.block.findFirst({
         where: {
@@ -644,5 +651,37 @@ export class StoriesService {
       summary[r.stickerType][answer] = (summary[r.stickerType][answer] || 0) + 1;
     }
     return summary;
+  }
+
+  async reportStory(storyId: string, userId: string, reason: string) {
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+      select: { id: true, userId: true },
+    });
+    if (!story) throw new NotFoundException('Story not found');
+    if (story.userId === userId) throw new BadRequestException('Cannot report your own story');
+
+    // Dedup: one report per user per story
+    const existing = await this.prisma.report.findFirst({
+      where: { reporterId: userId, description: { startsWith: `story:${storyId}` } },
+    });
+    if (existing) return { reported: true };
+
+    const reasonMap: Record<string, string> = {
+      SPAM: 'SPAM', HARASSMENT: 'HARASSMENT', HATE_SPEECH: 'HATE_SPEECH',
+      VIOLENCE: 'VIOLENCE', MISINFORMATION: 'MISINFORMATION', NUDITY: 'NUDITY',
+      IMPERSONATION: 'IMPERSONATION', OTHER: 'OTHER',
+    };
+
+    await this.prisma.report.create({
+      data: {
+        reporterId: userId,
+        reportedUserId: story.userId,
+        description: `story:${storyId} — ${reason}`,
+        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
+      },
+    });
+
+    return { reported: true };
   }
 }

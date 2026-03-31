@@ -17,7 +17,7 @@ import { StoriesService } from './stories.service';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { CreateHighlightDto } from './dto/create-highlight.dto';
 import { UpdateHighlightDto } from './dto/update-highlight.dto';
-import { IsString, IsObject, MaxLength } from 'class-validator';
+import { IsString, IsObject, MaxLength, MinLength } from 'class-validator';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -29,6 +29,10 @@ class StoryReplyDto {
 class StickerResponseDto {
   @IsString() @MaxLength(50) stickerType: string;
   @IsObject() responseData: Record<string, unknown>;
+}
+
+class ReportStoryDto {
+  @IsString() @MinLength(3) @MaxLength(500) reason: string;
 }
 
 @ApiTags('Stories (Saf)')
@@ -187,6 +191,20 @@ export class StoriesController {
     @CurrentUser('id') userId: string,
   ) {
     return this.storiesService.addStoryToHighlight(storyId, albumId, userId);
+  }
+
+  @Post(':id/report')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Report a story' })
+  reportStory(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: ReportStoryDto,
+  ) {
+    return this.storiesService.reportStory(id, userId, dto.reason);
   }
 
   @Throttle({ default: { limit: 30, ttl: 60000 } })
