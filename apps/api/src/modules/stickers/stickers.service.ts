@@ -27,13 +27,14 @@ export class StickersService {
     private config: ConfigService,
   ) {}
 
-  async createPack(data: { name: string; coverUrl?: string; isFree?: boolean; stickers: { url: string; name?: string }[] }, userId?: string) {
+  async createPack(data: { name: string; coverUrl?: string; isFree?: boolean; stickers: { url: string; name?: string }[] }, userId: string) {
     return this.prisma.stickerPack.create({
       data: {
         name: data.name,
         coverUrl: data.coverUrl,
         isFree: data.isFree ?? true,
         stickersCount: data.stickers.length,
+        ownerId: userId,
         stickers: {
           createMany: {
             data: data.stickers.map((s, i) => ({ url: s.url, name: s.name, position: i })),
@@ -132,9 +133,15 @@ export class StickersService {
     });
   }
 
-  async deletePack(packId: string, userId?: string) {
-    // Verify ownership or admin before deleting
-    if (userId) {
+  async deletePack(packId: string, userId: string) {
+    const pack = await this.prisma.stickerPack.findUnique({
+      where: { id: packId },
+      select: { ownerId: true },
+    });
+    if (!pack) throw new NotFoundException('Sticker pack not found');
+
+    // Allow pack creator or platform admin
+    if (pack.ownerId !== userId) {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         select: { role: true },
@@ -143,14 +150,8 @@ export class StickersService {
         throw new BadRequestException('Not authorized to delete this pack');
       }
     }
-    try {
-      await this.prisma.stickerPack.delete({ where: { id: packId } });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundException('Sticker pack not found');
-      }
-      throw error;
-    }
+
+    await this.prisma.stickerPack.delete({ where: { id: packId } });
     return { deleted: true };
   }
 

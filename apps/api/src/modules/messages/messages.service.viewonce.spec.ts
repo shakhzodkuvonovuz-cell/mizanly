@@ -270,6 +270,15 @@ describe('MessagesService — View-Once Message Security', () => {
         transcription: null,
         mediaType: null,
         fileSize: null,
+        // E2E crypto fields cleared for forward secrecy
+        encryptedContent: null,
+        encNonce: null,
+        e2eSenderRatchetKey: null,
+        e2eVersion: null,
+        e2eSenderDeviceId: null,
+        e2eCounter: null,
+        e2ePreviousCounter: null,
+        e2eSenderKeyId: null,
       });
     });
   });

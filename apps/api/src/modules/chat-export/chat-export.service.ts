@@ -75,7 +75,17 @@ export class ChatExportService {
       throw new NotFoundException('Conversation not found');
     }
 
-    // 3. Fetch messages in chunks (capped at MAX_EXPORT_MESSAGES to prevent OOM)
+    // 3. Filter blocked users from export (same as getMessages)
+    const blocks = await this.prisma.block.findMany({
+      where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+      select: { blockerId: true, blockedId: true },
+      take: 10000,
+    });
+    const blockedIds = blocks.map((b: { blockerId: string; blockedId: string }) =>
+      b.blockerId === userId ? b.blockedId : b.blockerId,
+    );
+
+    // 4. Fetch messages in chunks (capped at MAX_EXPORT_MESSAGES to prevent OOM)
     const CHUNK_SIZE = 500;
     const MAX_EXPORT_MESSAGES = 10_000;
     const allMessages: ExportedMessage[] = [];
@@ -86,7 +96,11 @@ export class ChatExportService {
       const takeSize = Math.min(CHUNK_SIZE, remaining);
 
       const messages = await this.prisma.message.findMany({
-        where: { conversationId, isDeleted: false },
+        where: {
+          conversationId,
+          isDeleted: false,
+          ...(blockedIds.length ? { senderId: { notIn: blockedIds } } : {}),
+        },
         select: {
           id: true,
           content: true,
@@ -190,7 +204,7 @@ export class ChatExportService {
         timestamp: m.createdAt.toISOString(),
       })),
       exportedAt: new Date().toISOString(),
-      exportedBy: userId,
+      exportedBy: 'you',
     };
   }
 

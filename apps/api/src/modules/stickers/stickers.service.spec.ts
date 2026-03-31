@@ -13,6 +13,7 @@ describe('StickersService', () => {
       stickerPack: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), delete: jest.fn() },
       sticker: { findMany: jest.fn().mockResolvedValue([]) },
       userStickerPack: { findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn(), delete: jest.fn() },
+      user: { findUnique: jest.fn() },
     };
     const module = await Test.createTestingModule({
       providers: [...globalMockProviders, StickersService, { provide: PrismaService, useValue: prisma }],
@@ -23,13 +24,13 @@ describe('StickersService', () => {
   describe('createPack', () => {
     it('should create pack with stickers', async () => {
       prisma.stickerPack.create.mockResolvedValue({ id: 'pack1', name: 'Test', stickersCount: 2, stickers: [] });
-      const result = await service.createPack({ name: 'Test', stickers: [{ url: 'a.png' }, { url: 'b.png' }] });
+      const result = await service.createPack({ name: 'Test', stickers: [{ url: 'a.png' }, { url: 'b.png' }] }, 'user-1');
       expect(result.stickersCount).toBe(2);
     });
 
     it('should create pack with single sticker', async () => {
       prisma.stickerPack.create.mockResolvedValue({ id: 'pack2', name: 'Solo', stickersCount: 1, stickers: [] });
-      const result = await service.createPack({ name: 'Solo', stickers: [{ url: 'a.png' }] });
+      const result = await service.createPack({ name: 'Solo', stickers: [{ url: 'a.png' }] }, 'user-1');
       expect(result.stickersCount).toBe(1);
     });
   });
@@ -138,10 +139,25 @@ describe('StickersService', () => {
   });
 
   describe('deletePack', () => {
-    it('should delete sticker pack', async () => {
+    it('should delete sticker pack when owner', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'user-1' });
       prisma.stickerPack.delete.mockResolvedValue({});
-      const result = await service.deletePack('p1');
+      const result = await service.deletePack('p1', 'user-1');
       expect(result).toEqual({ deleted: true });
+    });
+
+    it('should delete sticker pack when admin', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'other-user' });
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.stickerPack.delete.mockResolvedValue({});
+      const result = await service.deletePack('p1', 'admin-user');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw when non-owner non-admin tries to delete', async () => {
+      prisma.stickerPack.findUnique.mockResolvedValue({ ownerId: 'other-user' });
+      prisma.user.findUnique.mockResolvedValue({ role: 'USER' });
+      await expect(service.deletePack('p1', 'user-1')).rejects.toThrow();
     });
   });
 });

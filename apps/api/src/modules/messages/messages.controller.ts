@@ -55,6 +55,25 @@ class SetWallpaperDto {
 class SetToneDto {
   @IsOptional() @IsString() @MaxLength(100) tone?: string | null;
 }
+
+class PinConversationDto {
+  @IsBoolean() isPinned: boolean;
+}
+
+class SetMessageExpiryDto {
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(0) @Max(90)
+  expiryDays: number;
+}
+
+class ChangeGroupRoleDto {
+  @IsEnum(['admin', 'member']) role: 'admin' | 'member';
+}
+
+class CreateGroupTopicDto {
+  @IsString() @MaxLength(100) name: string;
+  @IsOptional() @IsString() @MaxLength(10) iconEmoji?: string;
+}
 import { MuteConversationDto } from './dto/mute-conversation.dto';
 import { ArchiveConversationDto } from './dto/archive-conversation.dto';
 import { CreateDmDto } from './dto/create-dm.dto';
@@ -629,9 +648,9 @@ export class MessagesController {
   async pinConversation(
     @Param('conversationId') conversationId: string,
     @CurrentUser('id') userId: string,
-    @Body('isPinned') isPinned: boolean,
+    @Body() dto: PinConversationDto,
   ) {
-    return this.messagesService.pinConversation(conversationId, userId, !!isPinned);
+    return this.messagesService.pinConversation(conversationId, userId, dto.isPinned);
   }
 
   @Patch(':conversationId/wallpaper')
@@ -691,13 +710,9 @@ export class MessagesController {
     @Param('conversationId') conversationId: string,
     @Param('targetUserId') targetUserId: string,
     @CurrentUser('id') userId: string,
-    @Body('role') role: string,
+    @Body() dto: ChangeGroupRoleDto,
   ) {
-    // Runtime validation — TypeScript types are erased at runtime
-    if (role !== 'admin' && role !== 'member') {
-      throw new BadRequestException('Role must be "admin" or "member"');
-    }
-    return this.messagesService.changeGroupRole(conversationId, userId, targetUserId, role);
+    return this.messagesService.changeGroupRole(conversationId, userId, targetUserId, dto.role);
   }
 
   // Finding #169: Generate group invite link
@@ -729,9 +744,9 @@ export class MessagesController {
   async createGroupTopic(
     @Param('conversationId') conversationId: string,
     @CurrentUser('id') userId: string,
-    @Body() body: { name: string; iconEmoji?: string },
+    @Body() dto: CreateGroupTopicDto,
   ) {
-    return this.messagesService.createGroupTopic(conversationId, userId, body.name, body.iconEmoji);
+    return this.messagesService.createGroupTopic(conversationId, userId, dto.name, dto.iconEmoji);
   }
 
   @Get(':conversationId/topics')
@@ -749,8 +764,8 @@ export class MessagesController {
   async setMessageExpiry(
     @Param('conversationId') conversationId: string,
     @CurrentUser('id') userId: string,
-    @Body('expiryDays') expiryDays: number,
+    @Body() dto: SetMessageExpiryDto,
   ) {
-    return this.messagesService.setMessageExpiry(conversationId, userId, expiryDays);
+    return this.messagesService.setMessageExpiry(conversationId, userId, dto.expiryDays);
   }
 }

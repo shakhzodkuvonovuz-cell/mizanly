@@ -91,30 +91,43 @@ describe('MessagesService — authorization matrix', () => {
 
   describe('deleteMessage — sender check', () => {
     it('should allow sender to delete', async () => {
-      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', senderId: userA });
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', senderId: userA, conversationId: convId });
       prisma.message.update.mockResolvedValue({});
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: userA, isBanned: false });
       const result = await service.deleteMessage('msg-1', userA);
       expect(result.deleted).toBe(true);
     });
 
     it('should throw ForbiddenException when non-sender deletes', async () => {
-      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', senderId: userA });
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', senderId: userA, conversationId: convId });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: userB, isBanned: false });
       await expect(service.deleteMessage('msg-1', userB))
         .rejects.toThrow(ForbiddenException);
     });
   });
 
-  describe('updateGroup — creator check', () => {
+  describe('updateGroup — creator/admin check', () => {
     it('should allow creator to update group', async () => {
       prisma.conversation.findUnique.mockResolvedValue({ id: convId, isGroup: true, createdById: userA });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: userA, role: 'owner', isBanned: false });
       prisma.conversation.update.mockResolvedValue({ id: convId, groupName: 'New Name' });
       const result = await service.updateGroup(convId, userA, { groupName: 'New Name' });
       expect(result).toBeDefined();
       expect(result.groupName).toBe('New Name');
     });
 
-    it('should throw ForbiddenException when non-creator updates', async () => {
-      prisma.conversation.findUnique.mockResolvedValue({ id: convId, isGroup: true, createdById: userA });
+    it('should allow admin to update group', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: convId, isGroup: true, createdById: 'other-user' });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: userA, role: 'admin', isBanned: false });
+      prisma.conversation.update.mockResolvedValue({ id: convId, groupName: 'Admin Update' });
+      const result = await service.updateGroup(convId, userA, { groupName: 'Admin Update' });
+      expect(result).toBeDefined();
+      expect(result.groupName).toBe('Admin Update');
+    });
+
+    it('should throw ForbiddenException when non-creator/non-admin updates', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: convId, isGroup: true, createdById: 'other-user' });
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: userB, role: 'member', isBanned: false });
       await expect(service.updateGroup(convId, userB, { groupName: 'Hacked' }))
         .rejects.toThrow(ForbiddenException);
     });

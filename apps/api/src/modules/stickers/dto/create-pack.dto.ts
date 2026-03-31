@@ -4,8 +4,7 @@ import { Type } from 'class-transformer';
 
 class StickerItemDto {
   @ApiProperty()
-  @IsString()
-  @MaxLength(500000)
+  @IsUrl()
   url: string;
 
   @ApiProperty({ required: false })

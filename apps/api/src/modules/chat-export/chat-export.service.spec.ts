@@ -19,6 +19,7 @@ describe('ChatExportService', () => {
             conversationMember: { findUnique: jest.fn().mockResolvedValue({ userId: 'u1' }) },
             conversation: { findUnique: jest.fn() },
             message: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) },
+            block: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
       ],
@@ -36,7 +37,7 @@ describe('ChatExportService', () => {
       const result = await service.generateExport('c1', 'u1', 'json', false) as any;
       expect(result.conversation).toBeDefined();
       expect(result.messages).toHaveLength(1);
-      expect(result.exportedBy).toBe('u1');
+      expect(result.exportedBy).toBe('you');
     });
 
     it('should export as text', async () => {

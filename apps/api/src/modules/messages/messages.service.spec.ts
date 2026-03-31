@@ -119,7 +119,7 @@ describe('MessagesService', () => {
 
       expect(prisma.conversationMember.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId },
+          where: { userId, isArchived: false, isBanned: false },
           orderBy: { conversation: { lastMessageAt: 'desc' } },
         }),
       );
@@ -199,7 +199,7 @@ describe('MessagesService', () => {
       const result = await service.getMessages(conversationId, userId, cursor, limit);
 
       expect(prisma.message.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { conversationId, isDeleted: false },
+        where: expect.objectContaining({ conversationId, isDeleted: false, isScheduled: false }),
         select: expect.any(Object),
         take: limit + 1,
         cursor: { id: cursor },
@@ -258,17 +258,22 @@ describe('MessagesService', () => {
     it('should soft-delete message if user is sender', async () => {
       const messageId = 'msg-123';
       const userId = 'user-123';
+      const conversationId = 'conv-1';
       const mockMessage = {
         id: messageId,
         senderId: userId,
-        isDeleted: false,
+        conversationId,
       };
       prisma.message.findUnique.mockResolvedValue(mockMessage);
       prisma.message.update.mockResolvedValue({ ...mockMessage, isDeleted: true });
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isBanned: false });
 
       const result = await service.deleteMessage(messageId, userId);
 
-      expect(prisma.message.findUnique).toHaveBeenCalledWith({ where: { id: messageId } });
+      expect(prisma.message.findUnique).toHaveBeenCalledWith({
+        where: { id: messageId },
+        select: { id: true, senderId: true, conversationId: true },
+      });
       expect(prisma.message.update).toHaveBeenCalledWith({
         where: { id: messageId },
         data: expect.objectContaining({ isDeleted: true, content: null, encryptedContent: null }),
@@ -282,9 +287,10 @@ describe('MessagesService', () => {
       const mockMessage = {
         id: messageId,
         senderId: 'different-user',
-        isDeleted: false,
+        conversationId: 'conv-1',
       };
       prisma.message.findUnique.mockResolvedValue(mockMessage);
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isBanned: false });
 
       await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(
         ForbiddenException,
@@ -462,7 +468,7 @@ describe('MessagesService', () => {
   });
 
   describe('createGroup', () => {
-    it('should create group conversation', async () => {
+    it('should create group conversation with owner role', async () => {
       const userId = 'user-123';
       const groupName = 'My Group';
       const memberIds = ['user-456', 'user-789'];
@@ -476,7 +482,14 @@ describe('MessagesService', () => {
         { id: 'user-123' }, { id: 'user-456' }, { id: 'user-789' },
       ]);
       prisma.block.findMany.mockResolvedValue([]); // no blocks
-      prisma.conversation.create.mockResolvedValue(mockConversation);
+
+      // Interactive transaction mock
+      const mockTx = {
+        conversation: {
+          create: jest.fn().mockResolvedValue(mockConversation),
+        },
+      };
+      prisma.$transaction.mockImplementation((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx));
 
       const result = await service.createGroup(userId, groupName, memberIds);
 
@@ -484,12 +497,18 @@ describe('MessagesService', () => {
         where: { id: { in: [userId, ...memberIds] } },
         select: { id: true },
       }));
-      expect(prisma.conversation.create).toHaveBeenCalledWith(
+      expect(mockTx.conversation.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             isGroup: true,
             groupName,
             createdById: userId,
+            members: {
+              create: expect.arrayContaining([
+                expect.objectContaining({ userId, role: 'owner' }),
+                expect.objectContaining({ userId: 'user-456', role: 'member' }),
+              ]),
+            },
           }),
         }),
       );

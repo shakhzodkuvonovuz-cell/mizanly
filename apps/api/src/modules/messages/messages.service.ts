@@ -125,7 +125,7 @@ export class MessagesService {
   async getConversations(userId: string, limit = 50) {
     limit = Math.min(Math.max(limit, 1), 100);
     const memberships = await this.prisma.conversationMember.findMany({
-      where: { userId },
+      where: { userId, isArchived: false, isBanned: false },
       include: {
         conversation: { select: CONVERSATION_SELECT },
       },
@@ -169,7 +169,7 @@ export class MessagesService {
     const blockedIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
 
     const messages = await this.prisma.message.findMany({
-      where: { conversationId, isDeleted: false, ...(blockedIds.length ? { senderId: { notIn: blockedIds } } : {}) },
+      where: { conversationId, isDeleted: false, isScheduled: false, ...(blockedIds.length ? { senderId: { notIn: blockedIds } } : {}) },
       select: MESSAGE_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -207,6 +207,8 @@ export class MessagesService {
       encryptedLastMessagePreview?: Uint8Array;
       // V6-F1b: Sealed sender — senderId is null, sender identity is inside encrypted envelope
       _sealedSender?: boolean;
+      // Internal: skip Redis publish when called from WebSocket gateway (prevents double delivery)
+      _skipRedisPublish?: boolean;
     },
   ) {
     // V6-F1b: Sealed sender fast path — senderId is null.
@@ -419,7 +421,7 @@ export class MessagesService {
           ...(data.e2eSenderRatchetKey ? { e2eSenderRatchetKey: new Uint8Array(data.e2eSenderRatchetKey) } : {}),
           ...(data.e2eCounter !== undefined ? { e2eCounter: data.e2eCounter } : {}),
           ...(data.e2ePreviousCounter !== undefined ? { e2ePreviousCounter: data.e2ePreviousCounter } : {}),
-          ...(data.e2eSenderKeyId ? { e2eSenderKeyId: data.e2eSenderKeyId } : {}),
+          ...(data.e2eSenderKeyId !== undefined ? { e2eSenderKeyId: data.e2eSenderKeyId } : {}),
           ...(data.clientMessageId ? { clientMessageId: data.clientMessageId } : {}),
           ...(convo?.disappearingDuration ? { expiresAt: new Date(Date.now() + convo.disappearingDuration * 1000) } : {}),
         },
@@ -490,7 +492,7 @@ export class MessagesService {
     // Publish to Redis so ChatGateway can broadcast to socket room.
     // Only for REST-sent messages — WebSocket messages are broadcast directly by the gateway.
     // The gateway sets skipRedisPublish=true to prevent double delivery.
-    if (!(data as any)._skipRedisPublish) {
+    if (!data._skipRedisPublish) {
       this.redis.publish('new_message', JSON.stringify({
         conversationId,
         message,
@@ -547,8 +549,13 @@ export class MessagesService {
   }
 
   async deleteMessage(messageId: string, userId: string) {
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, senderId: true, conversationId: true },
+    });
     if (!message) throw new NotFoundException('Message not found');
+    // Verify membership in the conversation
+    await this.requireMembership(message.conversationId, userId);
     if (message.senderId !== userId) throw new ForbiddenException();
 
     // Clear ALL content fields including E2E cryptographic material.
@@ -668,7 +675,7 @@ export class MessagesService {
     const existingUsers = await this.prisma.user.findMany({
       where: { id: { in: allMemberIds } },
       select: { id: true },
-      take: 50,
+      take: 200,
     });
     const existingIds = new Set(existingUsers.map((u) => u.id));
     const invalidIds = allMemberIds.filter((id) => !existingIds.has(id));
@@ -691,16 +698,22 @@ export class MessagesService {
       throw new BadRequestException('Cannot create group with blocked users');
     }
 
-    return this.prisma.conversation.create({
-      data: {
-        isGroup: true,
-        groupName,
-        createdById: userId,
-        members: {
-          create: allMemberIds.map((id) => ({ userId: id })),
+    return this.prisma.$transaction(async (tx) => {
+      const convo = await tx.conversation.create({
+        data: {
+          isGroup: true,
+          groupName,
+          createdById: userId,
+          members: {
+            create: allMemberIds.map((id) => ({
+              userId: id,
+              role: id === userId ? 'owner' : 'member',
+            })),
+          },
         },
-      },
-      select: CONVERSATION_SELECT,
+        select: CONVERSATION_SELECT,
+      });
+      return convo;
     });
   }
 
@@ -712,7 +725,11 @@ export class MessagesService {
     const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
     if (!convo) throw new NotFoundException('Conversation not found');
     if (!convo.isGroup) throw new BadRequestException('Not a group');
-    if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can update');
+
+    const member = await this.requireMembership(conversationId, userId);
+    if (member.role !== 'admin' && member.role !== 'owner' && convo.createdById !== userId) {
+      throw new ForbiddenException('Only admins can update group settings');
+    }
 
     return this.prisma.conversation.update({
       where: { id: conversationId },
@@ -806,11 +823,15 @@ export class MessagesService {
   async generateGroupInviteLink(conversationId: string, userId: string) {
     const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
-    await this.requireMembership(conversationId, userId);
+    const member = await this.requireMembership(conversationId, userId);
 
-    // Generate a unique invite code using crypto
-    const crypto = await import('crypto');
-    const inviteCode = crypto.randomBytes(16).toString('base64url');
+    // Only admins/owners/creator can generate invite links
+    if (member.role !== 'admin' && member.role !== 'owner' && convo.createdById !== userId) {
+      throw new ForbiddenException('Only admins can generate invite links');
+    }
+
+    // Use existing crypto import (randomBytes already imported at top of file)
+    const inviteCode = randomBytes(16).toString('base64url');
 
     // Store in Redis (cache) with 7-day expiry + DB (durable) for recovery on flush
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -819,7 +840,9 @@ export class MessagesService {
       this.prisma.conversation.update({
         where: { id: conversationId },
         data: { inviteCode, inviteExpiresAt: expiresAt },
-      }).catch(() => {}), // Best-effort DB persistence
+      }).catch((err) => {
+        this.logger.warn(`Failed to persist invite code to DB for conversation ${conversationId}: ${err?.message}`);
+      }),
     ]);
 
     return { inviteCode, expiresIn: '7 days' };
@@ -834,13 +857,13 @@ export class MessagesService {
     if (!conversationId) {
       const convo = await this.prisma.conversation.findFirst({
         where: { inviteCode, inviteExpiresAt: { gt: new Date() } },
-        select: { id: true },
+        select: { id: true, inviteExpiresAt: true },
       });
       if (convo) {
         conversationId = convo.id;
-        // Re-seed Redis cache
-        const ttl = Math.max(1, Math.floor((new Date().getTime() - Date.now()) / 1000));
-        await this.redis.setex(`group_invite:${inviteCode}`, ttl > 0 ? ttl : 3600, conversationId).catch(() => {});
+        // Re-seed Redis cache with remaining TTL
+        const ttl = Math.max(1, Math.floor((convo.inviteExpiresAt!.getTime() - Date.now()) / 1000));
+        await this.redis.setex(`group_invite:${inviteCode}`, ttl, conversationId).catch(() => {});
       }
     }
     if (!conversationId) throw new NotFoundException('Invite link expired or invalid');
@@ -1095,7 +1118,7 @@ export class MessagesService {
       return !convMembers.some(uid => blockedUserIds.has(uid));
     });
 
-    // Batch: create all forwarded messages + update conversations in one transaction
+    // Batch: create all forwarded messages + update conversations + increment unread in one transaction
     const now = new Date();
     const results = await this.prisma.$transaction(
       allowedTargets.flatMap(convId => [
@@ -1113,10 +1136,14 @@ export class MessagesService {
           where: { id: convId },
           data: { lastMessageText: original.content ?? '[Forwarded]', lastMessageAt: now, lastMessageById: userId },
         }),
+        this.prisma.conversationMember.updateMany({
+          where: { conversationId: convId, userId: { not: userId } },
+          data: { unreadCount: { increment: 1 } },
+        }),
       ]),
     );
-    // Extract only message results (every other item in the transaction)
-    const messages = results.filter((_, i) => i % 2 === 0);
+    // Extract only message results (every 3rd item in the transaction: msg, conv update, unread update)
+    const messages = results.filter((_, i) => i % 3 === 0);
 
     // Notify all target conversations (non-blocking)
     for (const convId of allowedTargets) {
@@ -1355,17 +1382,67 @@ export class MessagesService {
     data: { content?: string; mediaUrl: string; mediaType?: string; messageType?: string },
   ) {
     await this.requireMembership(conversationId, senderId);
-    return this.prisma.message.create({
-      data: {
-        conversationId,
-        senderId,
-        content: data.content,
-        mediaUrl: data.mediaUrl,
-        mediaType: data.mediaType,
-        messageType: (data.messageType as MessageType) ?? 'IMAGE',
-        isViewOnce: true,
-      },
-      select: MESSAGE_SELECT,
+
+    // Check blocks between sender and conversation members
+    const otherMembers = await this.prisma.conversationMember.findMany({
+      where: { conversationId, userId: { not: senderId } },
+      select: { userId: true },
+      take: 200,
+    });
+    const otherUserIds = otherMembers.map(m => m.userId);
+    if (otherUserIds.length > 0) {
+      const blockExists = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: senderId, blockedId: { in: otherUserIds } },
+            { blockedId: senderId, blockerId: { in: otherUserIds } },
+          ],
+        },
+      });
+      if (blockExists) {
+        throw new ForbiddenException('Cannot send messages due to a block');
+      }
+    }
+
+    // Check E2E enforcement
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { isE2E: true, disappearingDuration: true },
+    });
+    if (convo?.isE2E) {
+      throw new BadRequestException('This conversation requires end-to-end encryption. Use encrypted view-once messages.');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const msg = await tx.message.create({
+        data: {
+          conversationId,
+          senderId,
+          content: data.content,
+          mediaUrl: data.mediaUrl,
+          mediaType: data.mediaType,
+          messageType: (data.messageType as MessageType) ?? 'IMAGE',
+          isViewOnce: true,
+          ...(convo?.disappearingDuration ? { expiresAt: new Date(Date.now() + convo.disappearingDuration * 1000) } : {}),
+        },
+        select: MESSAGE_SELECT,
+      });
+
+      await tx.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessageAt: new Date(),
+          lastMessageText: 'View once media',
+          lastMessageById: senderId,
+        },
+      });
+
+      await tx.conversationMember.updateMany({
+        where: { conversationId, userId: { not: senderId } },
+        data: { unreadCount: { increment: 1 } },
+      });
+
+      return msg;
     });
   }
 
@@ -1495,9 +1572,18 @@ export class MessagesService {
     });
     const contactIds = [...new Set(otherMembers.map((m) => m.userId))];
 
+    // Filter out blocked users
+    const blocks = await this.prisma.block.findMany({
+      where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+      select: { blockerId: true, blockedId: true },
+      take: 10000,
+    });
+    const blockedIds = new Set(blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId));
+    const filteredContactIds = contactIds.filter(id => !blockedIds.has(id));
+
     return this.prisma.dMNote.findMany({
       where: {
-        userId: { in: contactIds },
+        userId: { in: filteredContactIds },
         expiresAt: { gt: new Date() },
       },
       take: 50,
@@ -1592,7 +1678,8 @@ export class MessagesService {
   async processExpiredMessages() {
     try {
       const now = new Date();
-      // Delete expired disappearing messages — clear all content metadata
+      // Delete expired disappearing messages — clear all content AND E2E crypto metadata.
+      // Ratchet keys + compromised identity key = message decryption (forward secrecy violation).
       await this.prisma.message.updateMany({
         where: { expiresAt: { lt: now }, isDeleted: false },
         data: {
@@ -1604,6 +1691,15 @@ export class MessagesService {
           transcription: null,
           mediaType: null,
           fileSize: null,
+          // E2E crypto fields — MUST be cleared for forward secrecy
+          encryptedContent: null,
+          encNonce: null,
+          e2eSenderRatchetKey: null,
+          e2eVersion: null,
+          e2eSenderDeviceId: null,
+          e2eCounter: null,
+          e2ePreviousCounter: null,
+          e2eSenderKeyId: null,
         },
       });
       // Delete viewed view-once messages older than 30 seconds
@@ -1619,6 +1715,15 @@ export class MessagesService {
           transcription: null,
           mediaType: null,
           fileSize: null,
+          // E2E crypto fields — MUST be cleared for forward secrecy
+          encryptedContent: null,
+          encNonce: null,
+          e2eSenderRatchetKey: null,
+          e2eVersion: null,
+          e2eSenderDeviceId: null,
+          e2eCounter: null,
+          e2ePreviousCounter: null,
+          e2eSenderKeyId: null,
         },
       });
     } catch (error) {
@@ -1637,7 +1742,7 @@ export class MessagesService {
       where: { conversationId_userId: { conversationId, userId } },
     });
     if (!member) throw new ForbiddenException('Not a member');
-    if (member.role !== 'ADMIN' && conv.createdById !== userId) {
+    if (member.role !== 'admin' && member.role !== 'owner' && conv.createdById !== userId) {
       throw new ForbiddenException('Only admins can create topics');
     }
 
@@ -1699,7 +1804,7 @@ export class MessagesService {
       where: { conversationId_userId: { conversationId, userId } },
     });
     if (!member) throw new ForbiddenException('Not a member');
-    if (conv.isGroup && member.role !== 'ADMIN' && conv.createdById !== userId) {
+    if (conv.isGroup && member.role !== 'admin' && member.role !== 'owner' && conv.createdById !== userId) {
       throw new ForbiddenException('Only admins can set message expiry');
     }
 
@@ -1711,7 +1816,7 @@ export class MessagesService {
 
     await this.prisma.conversation.update({
       where: { id: conversationId },
-      data: { disappearingDuration: expiryDays === 0 ? null : expiryDays * 24 * 60 },
+      data: { disappearingDuration: expiryDays === 0 ? null : expiryDays * 24 * 60 * 60 },
     });
 
     return { expiryDays, message: expiryDays === 0 ? 'Message expiry disabled' : `Messages will expire after ${expiryDays} days` };

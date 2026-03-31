@@ -260,7 +260,7 @@ export class CounterReconciliationService {
       const drifted = await this.prisma.$queryRaw<Array<{ conversationId: string; userId: string; actual: bigint }>>`
         SELECT cm."conversationId", cm."userId", COUNT(m.id)::bigint as actual
         FROM "conversation_members" cm
-        LEFT JOIN "Message" m ON m."conversationId" = cm."conversationId"
+        LEFT JOIN "messages" m ON m."conversationId" = cm."conversationId"
           AND m."senderId" != cm."userId"
           AND m."createdAt" > COALESCE(cm."lastReadAt", '1970-01-01')
           AND m."isDeleted" = false
