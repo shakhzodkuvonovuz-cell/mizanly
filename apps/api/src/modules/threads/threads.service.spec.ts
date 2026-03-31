@@ -540,13 +540,13 @@ describe('ThreadsService', () => {
 
   describe('getById', () => {
     const mockThread = {
-      id: 'thread-1', content: 'Test thread', isRemoved: false,
+      id: 'thread-1', content: 'Test thread', isRemoved: false, visibility: 'PUBLIC',
       likesCount: 10, repliesCount: 5, repostsCount: 2,
       user: { id: 'owner', username: 'owner', displayName: 'Owner', avatarUrl: null, isVerified: false },
     };
 
     it('should return thread with viewer reaction and bookmark status', async () => {
-      prisma.thread.findUnique.mockResolvedValue(mockThread);
+      prisma.thread.findFirst.mockResolvedValue(mockThread);
       prisma.block.findFirst.mockResolvedValue(null);
       prisma.threadReaction.findUnique.mockResolvedValue({ reaction: 'LIKE' });
       prisma.threadBookmark.findUnique.mockResolvedValue({ userId: 'viewer' });
@@ -558,25 +558,20 @@ describe('ThreadsService', () => {
     });
 
     it('should return thread without viewer context', async () => {
-      prisma.thread.findUnique.mockResolvedValue(mockThread);
+      prisma.thread.findFirst.mockResolvedValue(mockThread);
 
       const result = await service.getById('thread-1');
       expect(result.userReaction).toBeNull();
       expect(result.isBookmarked).toBe(false);
     });
 
-    it('should throw NotFoundException when not found', async () => {
-      prisma.thread.findUnique.mockResolvedValue(null);
+    it('should throw NotFoundException when not found (banned user)', async () => {
+      prisma.thread.findFirst.mockResolvedValue(null);
       await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw NotFoundException when removed', async () => {
-      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, isRemoved: true });
-      await expect(service.getById('thread-1')).rejects.toThrow(NotFoundException);
-    });
-
     it('should throw NotFoundException when viewer is blocked', async () => {
-      prisma.thread.findUnique.mockResolvedValue(mockThread);
+      prisma.thread.findFirst.mockResolvedValue(mockThread);
       prisma.block.findFirst.mockResolvedValue({ blockerId: 'viewer', blockedId: 'owner' });
       await expect(service.getById('thread-1', 'viewer')).rejects.toThrow(NotFoundException);
     });
@@ -906,6 +901,85 @@ describe('ThreadsService', () => {
       prisma.pollVote.findUnique.mockResolvedValue(null);
       prisma.pollVote.findFirst.mockResolvedValue({ userId: 'user-1', optionId: 'opt-2' });
       await expect(service.votePoll('opt-1', 'user-1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // AUDIT V2 — New tests for fixed findings
+  // ═══════════════════════════════════════════════════════
+
+  describe('Audit V2 — getById visibility enforcement', () => {
+    it('A04-#4: getById should use findFirst with banned filter', async () => {
+      prisma.thread.findFirst.mockResolvedValue(null);
+      await expect(service.getById('t1')).rejects.toThrow(NotFoundException);
+      expect(prisma.thread.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isRemoved: false,
+            user: { isBanned: false, isDeactivated: false, isDeleted: false },
+          }),
+        }),
+      );
+    });
+
+    it('A04-#4: getById should reject FOLLOWERS-only thread for anonymous', async () => {
+      prisma.thread.findFirst.mockResolvedValue({
+        id: 't1', visibility: 'FOLLOWERS', user: { id: 'author' }, isRemoved: false,
+      });
+      await expect(service.getById('t1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('A04-#4: getById should return PUBLIC thread for anonymous', async () => {
+      prisma.thread.findFirst.mockResolvedValue({
+        id: 't1', visibility: 'PUBLIC', user: { id: 'author' }, isRemoved: false,
+      });
+      const result = await service.getById('t1');
+      expect(result.id).toBe('t1');
+    });
+  });
+
+  describe('Audit V2 — content moderation', () => {
+    it('A04-#5: updateThread should run content moderation', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ userId: 'u1', isRemoved: false });
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: false, flags: ['HATE_SPEECH'], suggestion: 'Remove hate speech' });
+
+      await expect(service.updateThread('t1', 'u1', 'hate content')).rejects.toThrow(BadRequestException);
+    });
+
+    it('A04-#6: createContinuation should run content moderation', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 't1', userId: 'u1', isRemoved: false, chainId: null });
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: false, flags: ['SPAM'] });
+
+      await expect(service.createContinuation('u1', 't1', 'spam content')).rejects.toThrow(BadRequestException);
+    });
+
+    it('A04-#7: addReply should run content moderation', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 't1', userId: 'author', isRemoved: false, replyPermission: 'EVERYONE' });
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: false, flags: ['NSFW'] });
+
+      await expect(service.addReply('t1', 'u1', 'nsfw content')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Audit V2 — self-like guard', () => {
+    it('A04-#10: likeReply should reject self-likes', async () => {
+      prisma.threadReply.findUnique.mockResolvedValue({ id: 'r1', threadId: 't1', userId: 'u1' });
+      await expect(service.likeReply('t1', 'r1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Audit V2 — getUserThreads user status', () => {
+    it('B04-#12: getUserThreads should reject banned user', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isBanned: true, isDeactivated: false, isDeleted: false });
+      await expect(service.getUserThreads('banned-user')).rejects.toThrow(NotFoundException);
+    });
+
+    it('B04-#12: getUserThreads should reject deactivated user', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isBanned: false, isDeactivated: true, isDeleted: false });
+      await expect(service.getUserThreads('deactivated-user')).rejects.toThrow(NotFoundException);
     });
   });
 });

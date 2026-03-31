@@ -231,6 +231,22 @@ export class PushTriggerService {
         );
         break;
 
+      case NotificationType.COLLAB_INVITE:
+        await this.sendSafe(notification.userId, {
+          title: 'Collaboration invite',
+          body: `${actorName} invited you to collaborate`,
+          data: { type: 'collab_invite', actorName },
+        });
+        break;
+
+      case NotificationType.TAG:
+        await this.sendSafe(notification.userId, {
+          title: 'You were tagged',
+          body: `${actorName} tagged you`,
+          data: { type: 'tag', actorName },
+        });
+        break;
+
       case NotificationType.SYSTEM:
         if (notification.title || notification.body) {
           await this.sendSafe(notification.userId, {

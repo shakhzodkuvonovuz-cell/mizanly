@@ -86,6 +86,7 @@ describe('PostsService', () => {
               findUnique: jest.fn(),
               findMany: jest.fn().mockResolvedValue([]),
               upsert: jest.fn(),
+              update: jest.fn(),
             },
             circleMember: {
               findMany: jest.fn().mockResolvedValue([]),
@@ -1272,6 +1273,178 @@ describe('PostsService', () => {
       const result = await service.getComments('post-456', undefined, 20);
       expect(result.data).toHaveLength(20);
       expect(result.meta.hasMore).toBe(true);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // AUDIT V2 — New tests for fixed findings
+  // ═══════════════════════════════════════════════════════
+
+  describe('Audit V2 — visibility enforcement', () => {
+    it('A02-#2: getById should use findFirst with banned/removed filters', async () => {
+      prisma.post.findFirst.mockResolvedValue(null);
+      await expect(service.getById('post-1')).rejects.toThrow(NotFoundException);
+      expect(prisma.post.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            isRemoved: false,
+            user: { isBanned: false, isDeactivated: false, isDeleted: false },
+          }),
+        }),
+      );
+    });
+
+    it('A02-#2: getById should reject FOLLOWERS-only post for anonymous', async () => {
+      prisma.post.findFirst.mockResolvedValue({
+        id: 'p1', visibility: 'FOLLOWERS', user: { id: 'author' }, isRemoved: false,
+      });
+      await expect(service.getById('p1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('A02-#2: getById should return PUBLIC post for anonymous', async () => {
+      prisma.post.findFirst.mockResolvedValue({
+        id: 'p1', visibility: 'PUBLIC', user: { id: 'author' }, isRemoved: false,
+      });
+      const result = await service.getById('p1');
+      expect(result.id).toBe('p1');
+    });
+
+    it('A02-#2: getById should allow owner to see their own FOLLOWERS post', async () => {
+      prisma.post.findFirst.mockResolvedValue({
+        id: 'p1', visibility: 'FOLLOWERS', user: { id: 'owner' }, isRemoved: false,
+      });
+      prisma.postReaction.findUnique.mockResolvedValue(null);
+      prisma.savedPost.findUnique.mockResolvedValue(null);
+      const result = await service.getById('p1', 'owner');
+      expect(result.id).toBe('p1');
+    });
+  });
+
+  describe('Audit V2 — content moderation on edit', () => {
+    it('A02-#6: update should run moderation on content', async () => {
+      const post = { id: 'p1', userId: 'u1', isRemoved: false, createdAt: new Date() };
+      prisma.post.findUnique.mockResolvedValue(post);
+
+      // ContentSafety is mocked globally — moderateText should be called
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: true, flags: [] });
+      prisma.post.update.mockResolvedValue({ ...post, content: 'updated' });
+
+      await service.update('p1', 'u1', { content: 'updated' } as any);
+      expect(contentSafety.moderateText).toHaveBeenCalledWith('updated');
+    });
+
+    it('A02-#6: update should reject flagged content', async () => {
+      const post = { id: 'p1', userId: 'u1', isRemoved: false, createdAt: new Date() };
+      prisma.post.findUnique.mockResolvedValue(post);
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: false, flags: ['HATE_SPEECH'], suggestion: 'Remove hate speech' });
+
+      await expect(service.update('p1', 'u1', { content: 'bad content' } as any)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Audit V2 — comment moderation', () => {
+    it('B02-#17: addComment should run moderation', async () => {
+      const post = { id: 'p1', userId: 'owner', isRemoved: false, commentPermission: 'EVERYONE', commentsDisabled: false };
+      prisma.post.findUnique.mockResolvedValue(post);
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: false, flags: ['SPAM'], suggestion: 'No spam' });
+
+      await expect(service.addComment('p1', 'u1', { content: 'spam content' })).rejects.toThrow(BadRequestException);
+    });
+
+    it('B02-#17: editComment should run moderation', async () => {
+      prisma.comment.findUnique.mockResolvedValue({ id: 'c1', userId: 'u1', isRemoved: false });
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: false, flags: ['HATE_SPEECH'] });
+
+      await expect(service.editComment('c1', 'u1', 'hate speech')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Audit V2 — self-like prevention', () => {
+    it('B02-#16: likeComment should reject self-likes', async () => {
+      prisma.comment.findUnique.mockResolvedValue({ id: 'c1', userId: 'u1' });
+      await expect(service.likeComment('c1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Audit V2 — parentId validation', () => {
+    it('B02-#5: addComment should reject parentId from wrong post', async () => {
+      const post = { id: 'p1', userId: 'owner', isRemoved: false, commentPermission: 'EVERYONE', commentsDisabled: false };
+      prisma.post.findUnique.mockResolvedValue(post);
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: true, flags: [] });
+      prisma.comment.findUnique.mockResolvedValue({ id: 'parent-1', postId: 'OTHER-POST' });
+
+      await expect(service.addComment('p1', 'u1', { content: 'reply', parentId: 'parent-1' })).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Audit V2 — archivePost counter', () => {
+    it('B02-#11: archivePost should increment savesCount on new save', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'p1', userId: 'u1', isRemoved: false });
+      prisma.savedPost.findUnique.mockResolvedValue(null);
+      prisma.$transaction.mockResolvedValue([{}, {}]);
+
+      await service.archivePost('p1', 'u1');
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('B02-#11: archivePost should just update collection on existing save', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'p1', userId: 'u1', isRemoved: false });
+      prisma.savedPost.findUnique.mockResolvedValue({ userId: 'u1', postId: 'p1', collectionName: 'default' });
+      prisma.savedPost.update.mockResolvedValue({});
+
+      await service.archivePost('p1', 'u1');
+      expect(prisma.savedPost.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { collectionName: 'archive' } }),
+      );
+    });
+  });
+
+  describe('Audit V2 — shareAsStory checks', () => {
+    it('B02-#14: shareAsStory should reject scheduled post from non-owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({
+        id: 'p1', userId: 'author', isRemoved: false,
+        scheduledAt: new Date(Date.now() + 86400000), // tomorrow
+        user: { id: 'author', username: 'author' },
+      });
+      await expect(service.shareAsStory('p1', 'other-user')).rejects.toThrow(NotFoundException);
+    });
+
+    it('B02-#14: shareAsStory should reject when remixAllowed is false', async () => {
+      prisma.post.findUnique.mockResolvedValue({
+        id: 'p1', userId: 'author', isRemoved: false, remixAllowed: false,
+        mediaUrls: ['url'], mediaTypes: ['image'],
+        user: { id: 'author', username: 'author' },
+      });
+      await expect(service.shareAsStory('p1', 'other-user')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('Audit V2 — getShareLink visibility', () => {
+    it('A02-#23: getShareLink should only work for PUBLIC posts', async () => {
+      prisma.post.findFirst.mockResolvedValue(null);
+      await expect(service.getShareLink('p1')).rejects.toThrow(NotFoundException);
+      expect(prisma.post.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ visibility: 'PUBLIC' }),
+        }),
+      );
+    });
+  });
+
+  describe('Audit V2 — feed dismissal case', () => {
+    it('A02-#1: dismiss should write contentType as POST (uppercase)', async () => {
+      prisma.feedDismissal.upsert.mockResolvedValue({});
+      await service.dismiss('p1', 'u1');
+      expect(prisma.feedDismissal.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ contentType: 'POST' }),
+        }),
+      );
     });
   });
 

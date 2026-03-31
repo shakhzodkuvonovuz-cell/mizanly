@@ -102,6 +102,9 @@ describe('ReelsService', () => {
               findMany: jest.fn().mockResolvedValue([]),
               update: jest.fn(),
             },
+            follow: {
+              findUnique: jest.fn(),
+            },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
           },
@@ -992,6 +995,84 @@ describe('ReelsService', () => {
       const result = await service.getTrendingReels();
       expect(result.data).toEqual([]);
       expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // AUDIT V2 — New tests for fixed findings
+  // ═══════════════════════════════════════════════════════
+
+  describe('Audit V2 — updateReel moderation', () => {
+    it('A03-#2: updateReel should run content moderation on caption', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'r1', userId: 'u1', isRemoved: false });
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: false, flags: ['HATE_SPEECH'] });
+
+      await expect(service.updateReel('r1', 'u1', { caption: 'hate speech' })).rejects.toThrow(BadRequestException);
+      expect(contentSafety.moderateText).toHaveBeenCalledWith('hate speech');
+    });
+
+    it('A03-#2: updateReel should allow safe content', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'r1', userId: 'u1', isRemoved: false });
+      const contentSafety = (service as any).contentSafety;
+      contentSafety.moderateText = jest.fn().mockResolvedValue({ safe: true, flags: [] });
+      prisma.reel.update.mockResolvedValue({ id: 'r1', caption: 'safe', user: { username: 'u1' }, hashtags: [] });
+
+      const result = await service.updateReel('r1', 'u1', { caption: 'safe' });
+      expect(result.caption).toBe('safe');
+    });
+  });
+
+  describe('Audit V2 — getUserReels privacy', () => {
+    it('A03-#3: getUserReels should reject banned user', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isPrivate: false, isBanned: true, isDeactivated: false, isDeleted: false });
+      await expect(service.getUserReels('banned-user')).rejects.toThrow(NotFoundException);
+    });
+
+    it('A03-#3: getUserReels should reject private profile from non-follower', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isPrivate: true, isBanned: false, isDeactivated: false, isDeleted: false });
+      prisma.follow.findUnique.mockResolvedValue(null);
+      await expect(service.getUserReels('private-user', undefined, 20, 'viewer')).rejects.toThrow(NotFoundException);
+    });
+
+    it('A03-#3: getUserReels should allow owner to see their own reels', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isPrivate: true, isBanned: false, isDeactivated: false, isDeleted: false });
+      prisma.reel.findMany.mockResolvedValue([]);
+      const result = await service.getUserReels('private-user', undefined, 20, 'u1');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('Audit V2 — likeComment self-like guard', () => {
+    it('B03-#9: likeComment should reject self-likes', async () => {
+      prisma.reelComment.findUnique.mockResolvedValue({ id: 'c1', reelId: 'r1', userId: 'u1' });
+      await expect(service.likeComment('r1', 'c1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Audit V2 — getComments both-direction block filter', () => {
+    it('A03-#15: getComments should filter banned users', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.reelComment.findMany.mockResolvedValue([]);
+
+      await service.getComments('r1', 'u1');
+      expect(prisma.reelComment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            user: { isBanned: false, isDeactivated: false, isDeleted: false },
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('Audit V2 — recordView error logging', () => {
+    it('A03-#7: recordView should log errors instead of swallowing', async () => {
+      const logSpy = jest.spyOn((service as any).logger, 'warn');
+      prisma.reel.update.mockRejectedValue(new Error('DB error'));
+      await service.recordView('r1');
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to record view'), expect.any(String));
     });
   });
 });

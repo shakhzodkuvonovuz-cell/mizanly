@@ -42,13 +42,26 @@ export class WebhooksService {
     if (process.env.NODE_ENV !== 'test') {
       try {
         const dns = await import('dns');
-        const { resolve4 } = dns.promises;
-        const ips = await resolve4(parsed.hostname);
+        const { resolve4, resolve6 } = dns.promises;
 
-        for (const ip of ips) {
+        // Check IPv4 addresses
+        const ipv4s = await resolve4(parsed.hostname).catch(() => [] as string[]);
+        for (const ip of ipv4s) {
           if (this.isPrivateIP(ip)) {
             throw new BadRequestException('Webhook URL resolves to a private/reserved IP address');
           }
+        }
+
+        // Check IPv6 addresses
+        const ipv6s = await resolve6(parsed.hostname).catch(() => [] as string[]);
+        for (const ip of ipv6s) {
+          if (this.isPrivateIP(ip)) {
+            throw new BadRequestException('Webhook URL resolves to a private/reserved IPv6 address');
+          }
+        }
+
+        if (ipv4s.length === 0 && ipv6s.length === 0) {
+          throw new BadRequestException('Could not resolve webhook URL hostname');
         }
       } catch (err) {
         if (err instanceof BadRequestException) throw err;
@@ -58,6 +71,20 @@ export class WebhooksService {
   }
 
   private isPrivateIP(ip: string): boolean {
+    // IPv6 private ranges
+    if (ip.includes(':')) {
+      const lower = ip.toLowerCase();
+      return (
+        lower === '::1' ||                     // loopback
+        lower.startsWith('fc') ||              // fc00::/7 unique local
+        lower.startsWith('fd') ||              // fd00::/8 unique local
+        lower.startsWith('fe80') ||            // fe80::/10 link-local
+        lower.startsWith('::ffff:') ||         // IPv4-mapped IPv6 — check the mapped IPv4
+        lower === '::'                         // unspecified
+      );
+    }
+
+    // IPv4
     const parts = ip.split('.').map(Number);
     if (parts.length !== 4) return true; // Not valid IPv4 — block
     const [a, b] = parts;

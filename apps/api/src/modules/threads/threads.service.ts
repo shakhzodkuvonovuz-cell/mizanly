@@ -1151,11 +1151,16 @@ export class ThreadsService {
 
   // Finding #263: Share thread to story — creates a story from thread content
   async shareToStory(threadId: string, userId: string) {
-    const thread = await this.prisma.thread.findUnique({
-      where: { id: threadId },
+    const thread = await this.prisma.thread.findFirst({
+      where: { id: threadId, isRemoved: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
       select: { ...THREAD_SELECT, userId: true },
     });
-    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+    if (!thread) throw new NotFoundException('Thread not found');
+
+    // Enforce visibility — non-public threads can't be shared by non-owners
+    if (thread.userId !== userId && thread.visibility !== 'PUBLIC') {
+      throw new NotFoundException('Thread not found');
+    }
 
     // Create a story with the thread content as text overlay
     const storyContent = (thread.content || '').substring(0, 500);
@@ -1177,11 +1182,16 @@ export class ThreadsService {
 
   // Finding #381: Thread unroll — returns the full chain as a flat, ordered list
   async getThreadUnroll(threadId: string) {
-    const thread = await this.prisma.thread.findUnique({
-      where: { id: threadId },
+    const thread = await this.prisma.thread.findFirst({
+      where: { id: threadId, isRemoved: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
       select: { ...THREAD_SELECT, chainId: true },
     });
-    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+    if (!thread) throw new NotFoundException('Thread not found');
+
+    // Only PUBLIC threads can be unrolled by anyone
+    if (thread.visibility !== 'PUBLIC') {
+      throw new NotFoundException('Thread not found');
+    }
 
     // If no chain, return single thread
     if (!thread.chainId) {

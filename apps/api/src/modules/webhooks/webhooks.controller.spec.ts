@@ -49,7 +49,7 @@ describe('CommunityWebhooksController', () => {
     it('should call webhooksService.list with circleId', async () => {
       service.list.mockResolvedValue([{ id: 'wh-1' }] as any);
 
-      await controller.list(userId, 'circle-1');
+      await controller.list(userId, { circleId: 'circle-1' } as any);
 
       expect(service.list).toHaveBeenCalledWith('circle-1', userId);
     });

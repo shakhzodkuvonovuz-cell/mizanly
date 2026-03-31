@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../config/prisma.service';
 
 @Injectable()
@@ -117,6 +118,7 @@ export class DevicesService {
    * Clean up stale device tokens that have not been updated in the given number of days.
    * Tokens that haven't re-registered for a long time are likely expired.
    */
+  @Cron('0 0 4 * * *') // 4 AM daily
   async cleanupStaleTokens(olderThanDays = 90): Promise<number> {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - olderThanDays);

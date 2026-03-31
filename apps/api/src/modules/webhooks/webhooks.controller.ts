@@ -1,10 +1,14 @@
 import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsString, IsUrl, IsArray, ArrayMaxSize, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsUrl, IsArray, ArrayMaxSize, MaxLength } from 'class-validator';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { WebhooksService } from './webhooks.service';
+
+class ListWebhooksQueryDto {
+  @IsString() @IsNotEmpty() @MaxLength(50) circleId: string;
+}
 
 class CreateWebhookBodyDto {
   @IsString() @MaxLength(50) circleId: string;
@@ -32,8 +36,8 @@ export class CommunityWebhooksController {
 
   @Get()
   @ApiOperation({ summary: 'List webhooks for a community (requires membership)' })
-  async list(@CurrentUser('id') userId: string, @Query('circleId') circleId: string) {
-    return this.webhooks.list(circleId, userId);
+  async list(@CurrentUser('id') userId: string, @Query() query: ListWebhooksQueryDto) {
+    return this.webhooks.list(query.circleId, userId);
   }
 
   @Delete(':id')
