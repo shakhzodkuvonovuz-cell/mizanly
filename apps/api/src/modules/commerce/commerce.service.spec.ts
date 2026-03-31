@@ -68,7 +68,7 @@ describe('CommerceService', () => {
       prisma.product.create.mockResolvedValue(mockProduct);
       const result = await service.createProduct('seller-1', {
         title: 'Halal Snacks', description: 'Delicious', price: 15.99,
-        images: ['img.jpg'], category: 'food',
+        images: ['img.jpg'], category: 'FOOD',
       });
       expect(result.title).toBe('Halal Snacks');
     });

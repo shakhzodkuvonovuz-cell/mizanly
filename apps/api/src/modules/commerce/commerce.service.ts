@@ -44,6 +44,11 @@ export class CommerceService {
     if (dto.price <= 0) {
       throw new BadRequestException('Price must be positive');
     }
+    // Validate category against Prisma enum values
+    const validCategories = Object.values(ProductCategory);
+    if (!validCategories.includes(dto.category as ProductCategory)) {
+      throw new BadRequestException(`Invalid category. Must be one of: ${validCategories.join(', ')}`);
+    }
     return this.prisma.product.create({
       data: { sellerId: userId, ...dto, category: dto.category as ProductCategory, currency: dto.currency || 'USD', stock: dto.stock || 1 },
       include: { seller: { select: USER_SELECT } },

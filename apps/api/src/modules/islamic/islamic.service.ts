@@ -1,4 +1,5 @@
 import { Injectable, Inject, Logger, NotFoundException, BadRequestException, NotImplementedException, ConflictException } from '@nestjs/common';
+import { randomInt } from 'crypto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { ConfigService } from '@nestjs/config';
@@ -1340,7 +1341,7 @@ export class IslamicService {
     audioUrl: string;
   }> {
     // Pick a random surah:ayah
-    const randomIndex = Math.floor(Math.random() * TOTAL_AYAHS);
+    const randomIndex = randomInt(TOTAL_AYAHS);
     let cumulative = 0;
     let surahNumber = 1;
     let ayahNumber = 1;
@@ -1853,24 +1854,24 @@ export class IslamicService {
   }
 
   private getAyahSurahName(ayahIndex: number): string {
-    // Simplified mapping — maps cumulative ayah index to surah name
-    const surahAyahCounts = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6];
+    // Use SURAH_METADATA (single source of truth) instead of inline duplicate
+    const ayahCounts = SURAH_METADATA.map(s => s.ayahCount);
     let cumulative = 0;
-    for (let i = 0; i < surahAyahCounts.length; i++) {
-      cumulative += surahAyahCounts[i];
+    for (let i = 0; i < ayahCounts.length; i++) {
+      cumulative += ayahCounts[i];
       if (ayahIndex < cumulative) {
-        return `Surah ${i + 1}`;
+        return SURAH_METADATA[i].name;
       }
     }
-    return 'Surah 114';
+    return SURAH_METADATA[113].name; // An-Nas
   }
 
   private getAyahNumber(ayahIndex: number): number {
-    const surahAyahCounts = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6];
+    const ayahCounts = SURAH_METADATA.map(s => s.ayahCount);
     let cumulative = 0;
-    for (let i = 0; i < surahAyahCounts.length; i++) {
+    for (let i = 0; i < ayahCounts.length; i++) {
       const prev = cumulative;
-      cumulative += surahAyahCounts[i];
+      cumulative += ayahCounts[i];
       if (ayahIndex < cumulative) {
         return ayahIndex - prev + 1;
       }
@@ -1983,7 +1984,7 @@ export class IslamicService {
   async sendVerseOfTheDay() {
     try {
       // Pick a random surah (1-114), then fetch surah info for valid verse range
-      const surah = Math.floor(Math.random() * 114) + 1;
+      const surah = randomInt(1, 115); // 1-114 inclusive
 
       // Verse counts per surah (all 114 surahs)
       const SURAH_VERSE_COUNTS = [
@@ -1995,7 +1996,7 @@ export class IslamicService {
         11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6,
       ];
       const maxVerse = SURAH_VERSE_COUNTS[surah - 1] || 7;
-      const verse = Math.floor(Math.random() * maxVerse) + 1;
+      const verse = randomInt(1, maxVerse + 1);
 
       // Fetch from Quran.com API
       const response = await fetch(`https://api.quran.com/api/v4/verses/by_key/${surah}:${verse}?language=en&translations=131`);
@@ -2007,9 +2008,13 @@ export class IslamicService {
 
       if (!arabicText) return;
 
-      // Send to all users with push tokens — batched createMany
+      // Send to all active users with push tokens — filter out banned/deleted
       const usersWithTokens = await this.prisma.device.findMany({
-        where: { isActive: true, pushToken: { not: '' } },
+        where: {
+          isActive: true,
+          pushToken: { not: '' },
+          user: { isBanned: false, isDeactivated: false, isDeleted: false },
+        },
         select: { userId: true },
         take: 10000,
       });
