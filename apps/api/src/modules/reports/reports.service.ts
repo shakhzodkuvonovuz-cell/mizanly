@@ -358,18 +358,34 @@ export class ReportsService {
       // Remove banned user + their content from Meilisearch search index
       this.publishWorkflow.onUnpublish({ contentType: 'user', contentId: report.reportedUserId, userId: report.reportedUserId })
         .catch(err => this.logger.warn(`Failed to remove banned user from search: ${err instanceof Error ? err.message : err}`));
-      // Also remove their content from search indexes
-      const userContent = await this.prisma.post.findMany({ where: { userId: report.reportedUserId }, select: { id: true }, take: 1000 });
-      for (const post of userContent) {
-        this.queueService.addSearchIndexJob({ action: 'delete', indexName: 'posts', documentId: post.id }).catch(() => {});
-      }
-      const userReels = await this.prisma.reel.findMany({ where: { userId: report.reportedUserId }, select: { id: true }, take: 1000 });
-      for (const reel of userReels) {
-        this.queueService.addSearchIndexJob({ action: 'delete', indexName: 'reels', documentId: reel.id }).catch(() => {});
-      }
-      const userThreads = await this.prisma.thread.findMany({ where: { userId: report.reportedUserId }, select: { id: true }, take: 1000 });
-      for (const thread of userThreads) {
-        this.queueService.addSearchIndexJob({ action: 'delete', indexName: 'threads', documentId: thread.id }).catch(() => {});
+      // A10-#14 / B11-#18: Remove all content from search with cursor pagination (no cap)
+      // and log errors instead of silently swallowing
+      for (const contentType of ['post', 'reel', 'thread'] as const) {
+        const model = contentType === 'post' ? this.prisma.post
+          : contentType === 'reel' ? this.prisma.reel
+          : this.prisma.thread;
+        const indexName = `${contentType}s`;
+        let deindexCursor: string | undefined;
+        let deindexed = 0;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const items = await (model as { findMany: (args: unknown) => Promise<Array<{ id: string }>> }).findMany({
+            where: { userId: report.reportedUserId },
+            select: { id: true },
+            take: 500,
+            ...(deindexCursor ? { cursor: { id: deindexCursor }, skip: 1 } : {}),
+            orderBy: { id: 'asc' as const },
+          });
+          if (items.length === 0) break;
+          deindexCursor = items[items.length - 1].id;
+          for (const item of items) {
+            this.queueService.addSearchIndexJob({ action: 'delete', indexName, documentId: item.id })
+              .catch((err: unknown) => this.logger.warn(`Deindex failed for ${contentType} ${item.id}`, err instanceof Error ? err.message : err));
+          }
+          deindexed += items.length;
+          if (items.length < 500) break;
+        }
+        if (deindexed > 0) this.logger.log(`Deindexed ${deindexed} ${contentType}s for banned user ${report.reportedUserId}`);
       }
     }
 

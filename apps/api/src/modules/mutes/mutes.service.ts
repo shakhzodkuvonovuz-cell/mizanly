@@ -78,4 +78,14 @@ export class MutesService {
       },
     };
   }
+
+  // B01-#20: Shared helper for feed services (matches getBlockedIds/getRestrictedIds pattern)
+  async getMutedIds(userId: string): Promise<string[]> {
+    const mutes = await this.prisma.mute.findMany({
+      where: { userId },
+      select: { mutedId: true },
+      take: 10000,
+    });
+    return mutes.map((m) => m.mutedId);
+  }
 }
