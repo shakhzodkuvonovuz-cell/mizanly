@@ -174,7 +174,9 @@ export class WebhooksService {
       await this.requireCircleAdmin(webhook.circleId, userId);
     }
 
-    return this.prisma.webhook.delete({ where: { id: webhookId } });
+    // A08-#2: Don't return deleted webhook object (contains secret + token)
+    await this.prisma.webhook.delete({ where: { id: webhookId } });
+    return { deleted: true };
   }
 
   async test(webhookId: string, userId: string) {

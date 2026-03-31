@@ -62,7 +62,7 @@ describe('CommerceService — edge cases', () => {
         title: 'حلال عطور',
         price: 25,
         description: 'عطور حلال',
-        category: 'BEAUTY',
+        category: 'PRODUCT_OTHER',
       } as any);
 
       expect(result.title).toBe('حلال عطور');
