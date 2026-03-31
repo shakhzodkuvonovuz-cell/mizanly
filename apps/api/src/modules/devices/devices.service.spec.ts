@@ -174,18 +174,18 @@ describe('DevicesService', () => {
   });
 
   describe('touchSession', () => {
-    it('should update lastActiveAt and ipAddress', async () => {
-      prisma.device.update.mockResolvedValue({});
-      await service.touchSession('device-1', '192.168.1.1');
-      expect(prisma.device.update).toHaveBeenCalledWith({
-        where: { id: 'device-1' },
+    it('should update lastActiveAt and ipAddress using updateMany with userId', async () => {
+      prisma.device.updateMany.mockResolvedValue({ count: 1 });
+      await service.touchSession('device-1', '192.168.1.1', 'user-1');
+      expect(prisma.device.updateMany).toHaveBeenCalledWith({
+        where: { id: 'device-1', userId: 'user-1' },
         data: expect.objectContaining({ lastActiveAt: expect.any(Date), ipAddress: '192.168.1.1' }),
       });
     });
 
     it('should skip when deviceId is empty', async () => {
       await service.touchSession('');
-      expect(prisma.device.update).not.toHaveBeenCalled();
+      expect(prisma.device.updateMany).not.toHaveBeenCalled();
     });
   });
 
@@ -209,11 +209,11 @@ describe('DevicesService', () => {
     });
   });
 
-  describe('touchSession — with ip', () => {
-    it('should only set lastActiveAt when no ipAddress', async () => {
-      prisma.device.update.mockResolvedValue({});
+  describe('touchSession — without ip', () => {
+    it('should only set lastActiveAt when no ipAddress provided', async () => {
+      prisma.device.updateMany.mockResolvedValue({ count: 1 });
       await service.touchSession('device-1');
-      expect(prisma.device.update).toHaveBeenCalledWith({
+      expect(prisma.device.updateMany).toHaveBeenCalledWith({
         where: { id: 'device-1' },
         data: { lastActiveAt: expect.any(Date) },
       });

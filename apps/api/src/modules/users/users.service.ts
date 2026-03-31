@@ -101,11 +101,25 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const sanitizedData: Record<string, unknown> = { ...dto };
-    if (sanitizedData.displayName) sanitizedData.displayName = sanitizeText(sanitizedData.displayName as string);
-    if (sanitizedData.bio) sanitizedData.bio = sanitizeText(sanitizedData.bio as string);
-    if (sanitizedData.location) sanitizedData.location = sanitizeText(sanitizedData.location as string);
-    if (sanitizedData.website) sanitizedData.website = sanitizeText(sanitizedData.website as string);
+    // A01-#14: Explicitly destructure allowed fields instead of spreading entire DTO
+    const { username, displayName, bio, avatarUrl, coverUrl, website, location,
+      pronouns, statusText, creatorCategory, language, theme, isPrivate, madhab } = dto;
+    const sanitizedData: Record<string, unknown> = {
+      ...(displayName !== undefined ? { displayName: sanitizeText(displayName) } : {}),
+      ...(bio !== undefined ? { bio: sanitizeText(bio) } : {}),
+      ...(avatarUrl !== undefined ? { avatarUrl } : {}),
+      ...(coverUrl !== undefined ? { coverUrl } : {}),
+      ...(website !== undefined ? { website: sanitizeText(website) } : {}),
+      ...(location !== undefined ? { location: sanitizeText(location) } : {}),
+      ...(pronouns !== undefined ? { pronouns } : {}),
+      ...(statusText !== undefined ? { statusText } : {}),
+      ...(creatorCategory !== undefined ? { creatorCategory } : {}),
+      ...(language !== undefined ? { language } : {}),
+      ...(theme !== undefined ? { theme } : {}),
+      ...(isPrivate !== undefined ? { isPrivate } : {}),
+      ...(madhab !== undefined ? { madhab } : {}),
+      ...(username !== undefined ? { username } : {}),
+    };
 
     // Handle username change: save old username for redirect lookup
     let oldUsername: string | null = null;
@@ -894,7 +908,8 @@ export class UsersService {
     return target.id;
   }
 
-  private async queryFollowers(userId: string, cursor?: string, viewerId?: string, limit = 20) {
+  // B01-#18: Removed unused viewerId parameter (block/privacy checks done in resolveUsernameToUserId)
+  private async queryFollowers(userId: string, cursor?: string, _viewerId?: string, limit = 20) {
     const follows = await this.prisma.follow.findMany({
       where: { followingId: userId },
       include: {
@@ -914,7 +929,7 @@ export class UsersService {
     };
   }
 
-  private async queryFollowing(userId: string, cursor?: string, viewerId?: string, limit = 20) {
+  private async queryFollowing(userId: string, cursor?: string, _viewerId?: string, limit = 20) {
     const follows = await this.prisma.follow.findMany({
       where: { followerId: userId },
       include: {

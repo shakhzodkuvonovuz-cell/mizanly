@@ -116,68 +116,7 @@ describe('ContentSafetyService', () => {
 
   // ── moderateImage ───────────────────────────────────────────
 
-  describe('moderateImage', () => {
-    it('should return result with all required fields (safe, confidence, flags, action)', async () => {
-      const result = await service.moderateImage('https://media.mizanly.app/safe-image.jpg');
-      expect(typeof result.safe).toBe('boolean');
-      expect(typeof result.confidence).toBe('number');
-      expect(Array.isArray(result.flags)).toBe(true);
-      expect(['allow', 'flag', 'remove']).toContain(result.action);
-    });
-
-    it('should fail-closed when API call fails', async () => {
-      const result = await service.moderateImage('https://media.mizanly.app/image.jpg');
-      expect(result.safe).toBe(false);
-      expect(result.action).toBe('flag');
-    });
-
-    it('should reject non-HTTPS URLs with invalid_url flag', async () => {
-      const result = await service.moderateImage('http://example.com/image.jpg');
-      expect(result.safe).toBe(false);
-      expect(result.flags).toContain('invalid_url');
-      expect(result.action).toBe('flag');
-    });
-
-    it('should reject localhost URLs (SSRF prevention)', async () => {
-      const result = await service.moderateImage('https://localhost/image.jpg');
-      expect(result.safe).toBe(false);
-      expect(result.flags).toContain('invalid_url');
-    });
-
-    it('should reject private IP ranges (SSRF prevention)', async () => {
-      const result = await service.moderateImage('https://192.168.1.1/image.jpg');
-      expect(result.safe).toBe(false);
-      expect(result.flags).toContain('invalid_url');
-    });
-
-    it('should reject 127.0.0.1 (SSRF prevention)', async () => {
-      const result = await service.moderateImage('https://127.0.0.1/image.jpg');
-      expect(result.safe).toBe(false);
-      expect(result.flags).toContain('invalid_url');
-    });
-
-    it('should reject malformed URLs', async () => {
-      const result = await service.moderateImage('not-a-url');
-      expect(result.safe).toBe(false);
-      expect(result.flags).toContain('invalid_url');
-    });
-
-    it('should return moderation_unavailable when API key is missing', async () => {
-      const module = await Test.createTestingModule({
-        providers: [
-          ContentSafetyService,
-          { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(undefined) } },
-          { provide: 'REDIS', useValue: redis },
-          { provide: PrismaService, useValue: prisma },
-        ],
-      }).compile();
-      const noKeyService = module.get<ContentSafetyService>(ContentSafetyService);
-
-      const result = await noKeyService.moderateImage('https://media.mizanly.app/img.jpg');
-      expect(result.safe).toBe(false);
-      expect(result.flags).toContain('moderation_unavailable');
-    });
-  });
+  // A10-#21: moderateImage tests removed — deprecated method deleted (use AiService.moderateImage)
 
   // ── checkForwardLimit ───────────────────────────────────────
 

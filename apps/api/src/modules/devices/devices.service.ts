@@ -96,11 +96,13 @@ export class DevicesService {
   /**
    * Update session metadata (called on API requests to track activity).
    */
-  async touchSession(deviceId: string, ipAddress?: string) {
+  // B01-#17: Added userId parameter and use updateMany with both id+userId to prevent
+  // cross-user device metadata tampering
+  async touchSession(deviceId: string, ipAddress?: string, userId?: string) {
     if (!deviceId) return;
     try {
-      await this.prisma.device.update({
-        where: { id: deviceId },
+      await this.prisma.device.updateMany({
+        where: { id: deviceId, ...(userId ? { userId } : {}) },
         data: {
           lastActiveAt: new Date(),
           ...(ipAddress ? { ipAddress } : {}),

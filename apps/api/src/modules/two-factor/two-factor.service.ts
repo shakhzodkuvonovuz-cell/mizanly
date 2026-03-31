@@ -77,7 +77,9 @@ function verifyTotp(token: string, secret: string, window = 1): boolean {
     const hmac = createHmac('sha1', base32Decode(secret)).update(buf).digest();
     const offset = hmac[hmac.length - 1] & 0xf;
     const code = ((hmac[offset] & 0x7f) << 24 | hmac[offset + 1] << 16 | hmac[offset + 2] << 8 | hmac[offset + 3]) % (10 ** 6);
-    if (token === code.toString().padStart(6, '0')) return true;
+    // A01-#21: Use timing-safe comparison (theoretical side-channel prevention)
+    const expected = code.toString().padStart(6, '0');
+    if (token.length === expected.length && timingSafeEqual(Buffer.from(token), Buffer.from(expected))) return true;
   }
   return false;
 }
