@@ -141,6 +141,7 @@ export class StoriesController {
   @Post('highlights')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a highlight album' })
   createHighlight(
     @CurrentUser('id') userId: string,
@@ -152,6 +153,7 @@ export class StoriesController {
   @Patch('highlights/:albumId')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Update highlight album' })
   updateHighlight(
     @Param('albumId') albumId: string,
@@ -164,6 +166,7 @@ export class StoriesController {
   @Delete('highlights/:albumId')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a highlight album' })
   deleteHighlight(
@@ -176,6 +179,7 @@ export class StoriesController {
   @Post('highlights/:albumId/stories/:storyId')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Add story to highlight album' })
   addToHighlight(
     @Param('albumId') albumId: string,

@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { sanitizeText } from '../../common/utils/sanitize';
 
 @Injectable()
 export class StoryChainsService {
@@ -20,7 +21,7 @@ export class StoryChainsService {
 
     return this.prisma.storyChain.create({
       data: {
-        prompt,
+        prompt: sanitizeText(prompt),
         coverUrl: data.coverUrl,
         createdById: userId,
       },
@@ -93,7 +94,7 @@ export class StoryChainsService {
       take: 50,
     }),
       this.prisma.user.findMany({
-        where: { id: { in: userIds } },
+        where: { id: { in: userIds }, isBanned: false, isDeactivated: false, isDeleted: false },
         select: {
           id: true,
           username: true,
@@ -101,8 +102,8 @@ export class StoryChainsService {
           avatarUrl: true,
           isVerified: true,
         },
-      take: 50,
-    }),
+        take: 50,
+      }),
     ]);
 
     const storyMap = new Map(stories.map((s) => [s.id, s]));
@@ -147,27 +148,20 @@ export class StoryChainsService {
       throw new BadRequestException('Story does not belong to you');
     }
 
-    // Wrap upsert + participant count increment in a transaction
-    // to prevent race conditions where concurrent joins could
-    // produce an incorrect participantCount
+    // B07-#11: Reliable new-entry detection using findUnique before upsert
     const entry = await this.prisma.$transaction(async (tx) => {
-      const upserted = await tx.storyChainEntry.upsert({
-        where: {
-          chainId_userId: { chainId, userId },
-        },
-        create: {
-          chainId,
-          storyId,
-          userId,
-        },
-        update: {
-          storyId,
-        },
+      const existing = await tx.storyChainEntry.findUnique({
+        where: { chainId_userId: { chainId, userId } },
       });
 
-      // Only increment if this is a new entry (createdAt matches now)
-      const isNew = upserted.createdAt.getTime() > Date.now() - 1000;
-      if (isNew) {
+      const upserted = await tx.storyChainEntry.upsert({
+        where: { chainId_userId: { chainId, userId } },
+        create: { chainId, storyId, userId },
+        update: { storyId },
+      });
+
+      // Only increment participant count for genuinely new entries
+      if (!existing) {
         await tx.storyChain.update({
           where: { id: chainId },
           data: { participantCount: { increment: 1 } },

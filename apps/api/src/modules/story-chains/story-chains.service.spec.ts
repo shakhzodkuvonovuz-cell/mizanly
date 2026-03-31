@@ -17,7 +17,7 @@ describe('StoryChainsService', () => {
           provide: PrismaService,
           useValue: {
             storyChain: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
-            storyChainEntry: { findMany: jest.fn(), upsert: jest.fn() },
+            storyChainEntry: { findMany: jest.fn(), findUnique: jest.fn(), upsert: jest.fn() },
             story: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },
             user: { findMany: jest.fn().mockResolvedValue([]) },
             $transaction: jest.fn(),
@@ -76,8 +76,8 @@ describe('StoryChainsService', () => {
     it('should add entry to chain within a transaction', async () => {
       prisma.storyChain.findUnique.mockResolvedValue({ id: 'c1' });
       prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'u1' });
-      const now = new Date();
-      prisma.storyChainEntry.upsert.mockResolvedValue({ id: 'e1', createdAt: now });
+      prisma.storyChainEntry.findUnique.mockResolvedValue(null); // new entry
+      prisma.storyChainEntry.upsert.mockResolvedValue({ id: 'e1', createdAt: new Date() });
       prisma.storyChain.update.mockResolvedValue({});
       const result = await service.joinChain('c1', 'u1', 's1');
       expect(result.id).toBe('e1');
@@ -87,8 +87,8 @@ describe('StoryChainsService', () => {
     it('should increment participantCount for new entries', async () => {
       prisma.storyChain.findUnique.mockResolvedValue({ id: 'c1' });
       prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'u1' });
-      const now = new Date();
-      prisma.storyChainEntry.upsert.mockResolvedValue({ id: 'e1', createdAt: now });
+      prisma.storyChainEntry.findUnique.mockResolvedValue(null); // new entry
+      prisma.storyChainEntry.upsert.mockResolvedValue({ id: 'e1', createdAt: new Date() });
       prisma.storyChain.update.mockResolvedValue({});
       await service.joinChain('c1', 'u1', 's1');
       expect(prisma.storyChain.update).toHaveBeenCalledWith(
@@ -101,8 +101,8 @@ describe('StoryChainsService', () => {
     it('should not increment participantCount for existing entries', async () => {
       prisma.storyChain.findUnique.mockResolvedValue({ id: 'c1' });
       prisma.story.findUnique.mockResolvedValue({ id: 's1', userId: 'u1' });
-      const oldDate = new Date(Date.now() - 60000); // 1 minute ago
-      prisma.storyChainEntry.upsert.mockResolvedValue({ id: 'e1', createdAt: oldDate });
+      prisma.storyChainEntry.findUnique.mockResolvedValue({ id: 'e1', createdAt: new Date(Date.now() - 60000) }); // existing
+      prisma.storyChainEntry.upsert.mockResolvedValue({ id: 'e1', createdAt: new Date(Date.now() - 60000) });
       await service.joinChain('c1', 'u1', 's1');
       expect(prisma.storyChain.update).not.toHaveBeenCalled();
     });

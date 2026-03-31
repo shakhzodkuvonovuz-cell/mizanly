@@ -181,7 +181,7 @@ export class StoriesService {
         mediaType: data.mediaType,
         thumbnailUrl: data.thumbnailUrl,
         duration: data.duration,
-        textOverlay: data.textOverlay,
+        textOverlay: data.textOverlay ? sanitizeText(data.textOverlay) : data.textOverlay,
         textColor: data.textColor,
         bgColor: data.bgColor,
         stickerData: data.stickerData as Prisma.InputJsonValue,
@@ -260,12 +260,30 @@ export class StoriesService {
       if (story.isArchived) throw new NotFoundException('Story not found');
       if (story.expiresAt && story.expiresAt < new Date()) throw new NotFoundException('Story has expired');
 
+      // B07-#2: Block check on direct ID access
+      if (viewerId && story.userId) {
+        const blocked = await this.prisma.block.findFirst({
+          where: {
+            OR: [
+              { blockerId: viewerId, blockedId: story.userId },
+              { blockerId: story.userId, blockedId: viewerId },
+            ],
+          },
+        });
+        if (blocked) throw new NotFoundException('Story not found');
+      }
+
+      // B07-#3: closeFriendsOnly / subscribersOnly enforcement
+      if (story.closeFriendsOnly) throw new ForbiddenException('This story is for close friends only');
+      if ((story as any).subscribersOnly) throw new ForbiddenException('This story is for subscribers only');
+
       // Private account: only approved followers can view stories
       if (story.userId) {
         const author = await this.prisma.user.findUnique({
           where: { id: story.userId },
-          select: { isPrivate: true },
+          select: { isPrivate: true, isBanned: true, isDeactivated: true, isDeleted: true },
         });
+        if (author?.isBanned || author?.isDeactivated || author?.isDeleted) throw new NotFoundException('Story not found');
         if (author?.isPrivate) {
           if (!viewerId) throw new ForbiddenException('This account is private');
           const follow = await this.prisma.follow.findUnique({
@@ -276,13 +294,7 @@ export class StoriesService {
       }
 
       // Record view if viewer is authenticated and not the owner
-      if (viewerId) {
-        this.prisma.storyView.upsert({
-          where: { storyId_viewerId: { storyId, viewerId } },
-          create: { storyId, viewerId },
-          update: {},
-        }).catch(err => this.logger.warn('Failed to record story view', err instanceof Error ? err.message : err));
-      }
+      // Removed fire-and-forget upsert — clients should use markViewed endpoint (B07-#6)
     }
 
     return story;
@@ -317,6 +329,8 @@ export class StoriesService {
     if (!story) throw new NotFoundException('Story not found');
     if (story.expiresAt && story.expiresAt < new Date()) throw new BadRequestException('Story has expired');
     if (story.isArchived) throw new BadRequestException('Story is archived');
+    // A07-#3: Don't count self-views
+    if (story.userId === viewerId) return { viewed: true };
 
     const alreadyViewed = await this.prisma.storyView.findUnique({
       where: { storyId_viewerId: { storyId, viewerId } },
@@ -382,6 +396,10 @@ export class StoriesService {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story) throw new NotFoundException('Story not found');
 
+    // B07-#4: Check expiry and archived status
+    if (story.isArchived) throw new BadRequestException('Cannot reply to archived story');
+    if (story.expiresAt && story.expiresAt < new Date()) throw new BadRequestException('Cannot reply to expired story');
+
     const ownerId = story.userId;
     if (!ownerId) throw new NotFoundException('Story not found');
     if (senderId === ownerId) {
@@ -423,44 +441,46 @@ export class StoriesService {
       });
     }
 
-    // Create message with type STORY_REPLY
-    const message = await this.prisma.message.create({
-      data: {
-        conversationId: conversation.id,
-        senderId,
-        content: sanitizeText(content),
-        messageType: MessageType.STORY_REPLY,
-      },
-      select: {
-        id: true,
-        content: true,
-        messageType: true,
-        createdAt: true,
-        sender: {
-          select: {
-            id: true,
-            username: true,
-            displayName: true,
-            avatarUrl: true,
+    // Atomic: message create + story repliesCount + conversation lastMessage
+    const message = await this.prisma.$transaction(async (tx) => {
+      const msg = await tx.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId,
+          content: sanitizeText(content),
+          messageType: MessageType.STORY_REPLY,
+        },
+        select: {
+          id: true,
+          content: true,
+          messageType: true,
+          createdAt: true,
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    // Bug 46: Increment story repliesCount
-    await this.prisma.story.update({
-      where: { id: storyId },
-      data: { repliesCount: { increment: 1 } },
-    });
+      await tx.story.update({
+        where: { id: storyId },
+        data: { repliesCount: { increment: 1 } },
+      });
 
-    // Update conversation last message
-    await this.prisma.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        lastMessageAt: new Date(),
-        lastMessageText: content.slice(0, 100),
-        lastMessageById: senderId,
-      },
+      await tx.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessageAt: new Date(),
+          lastMessageText: content.slice(0, 100),
+          lastMessageById: senderId,
+        },
+      });
+
+      return msg;
     });
 
     // Create STORY_REPLY notification so the story owner gets a push notification
@@ -470,7 +490,7 @@ export class StoriesService {
       type: 'STORY_REPLY',
       conversationId: conversation.id,
       title: 'Story reply',
-      body: content.length > 100 ? content.slice(0, 99) + '\u2026' : content,
+      body: 'Replied to your story',
     }).catch(() => {});
 
     return message;
@@ -484,10 +504,10 @@ export class StoriesService {
     const results = await this.prisma.$queryRaw<
       Array<{ emoji: string; count: bigint }>
     >`
-      SELECT response_data->>'emoji' as emoji, COUNT(*) as count
-      FROM story_sticker_responses
-      WHERE story_id = ${storyId} AND sticker_type = 'emoji'
-      GROUP BY response_data->>'emoji'
+      SELECT "responseData"->>'emoji' as emoji, COUNT(*) as count
+      FROM "story_sticker_responses"
+      WHERE "storyId" = ${storyId} AND "stickerType" = 'emoji'
+      GROUP BY "responseData"->>'emoji'
       ORDER BY count DESC
     `;
 
@@ -535,6 +555,11 @@ export class StoriesService {
     if (!album) throw new NotFoundException('Highlight not found');
     if (album.userId !== userId) throw new ForbiddenException();
 
+    // Clear isHighlight on stories that were in this album before deleting
+    await this.prisma.story.updateMany({
+      where: { highlightAlbumId: albumId },
+      data: { isHighlight: false },
+    });
     await this.prisma.storyHighlightAlbum.delete({ where: { id: albumId } });
     return { deleted: true };
   }
@@ -568,11 +593,30 @@ export class StoriesService {
   async submitStickerResponse(storyId: string, userId: string, stickerType: string, responseData: Record<string, unknown>) {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story) throw new NotFoundException('Story not found');
-    const existing = await this.prisma.storyStickerResponse.findFirst({ where: { storyId, userId, stickerType } });
-    if (existing) {
-      return this.prisma.storyStickerResponse.update({ where: { id: existing.id }, data: { responseData: responseData as Prisma.InputJsonValue } });
+
+    // B07-#5: Check expiry, archived, blocked
+    if (story.isArchived) throw new BadRequestException('Cannot respond to archived story');
+    if (story.expiresAt && story.expiresAt < new Date()) throw new BadRequestException('Cannot respond to expired story');
+    if (story.userId && userId !== story.userId) {
+      const blocked = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: story.userId },
+            { blockerId: story.userId, blockedId: userId },
+          ],
+        },
+      });
+      if (blocked) throw new ForbiddenException('Cannot interact with this story');
     }
-    return this.prisma.storyStickerResponse.create({ data: { storyId, userId, stickerType, responseData: responseData as Prisma.InputJsonValue } });
+
+    // B07-#17: Use upsert to prevent P2002 race
+    return this.prisma.storyStickerResponse.upsert({
+      where: {
+        storyId_userId_stickerType: { storyId, userId, stickerType },
+      },
+      create: { storyId, userId, stickerType, responseData: responseData as Prisma.InputJsonValue },
+      update: { responseData: responseData as Prisma.InputJsonValue },
+    });
   }
 
   async getStickerResponses(storyId: string, ownerId: string, stickerType?: string) {
