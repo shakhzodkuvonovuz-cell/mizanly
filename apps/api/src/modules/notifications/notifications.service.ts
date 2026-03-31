@@ -104,9 +104,9 @@ export class NotificationsService {
     const unreadCount = await this.prisma.notification.count({
       where: { userId, isRead: false },
     });
-    this.redis.publish('notification:new', JSON.stringify({
+    this.redis.publish('notification:badge', JSON.stringify({
       userId,
-      notification: { type: 'UNREAD_COUNT_UPDATE', unreadCount },
+      unreadCount,
     })).catch((e) => this.logger.debug('Redis unread count publish failed', e));
 
     return updated;
@@ -119,9 +119,9 @@ export class NotificationsService {
     });
 
     // Emit unread count update (0) so badge updates in real-time
-    this.redis.publish('notification:new', JSON.stringify({
+    this.redis.publish('notification:badge', JSON.stringify({
       userId,
-      notification: { type: 'UNREAD_COUNT_UPDATE', unreadCount: 0 },
+      unreadCount: 0,
     })).catch((e) => this.logger.debug('Redis unread count publish failed', e));
 
     return { updated: true };
@@ -304,10 +304,22 @@ export class NotificationsService {
         // If re-marking a read notification as unread, invalidate the cached unread count
         const wasRead = existing.isRead;
 
+        // Build grammatically correct batched body
+        // "Alice and 3 others liked your post" instead of "Alice liked your post and 3 others"
+        const actionMap: Record<string, string> = {
+          LIKE: 'liked your post', REEL_LIKE: 'liked your reel', VIDEO_LIKE: 'liked your video',
+          COMMENT: 'commented on your post', REEL_COMMENT: 'commented on your reel',
+        };
+        const action = actionMap[params.type] || '';
+        const batchedBody = count > 0 && action
+          ? `and ${count} ${count === 1 ? 'other' : 'others'} ${action}`
+          : (params.body || '');
+
         await this.prisma.notification.update({
           where: { id: existing.id },
           data: {
-            body: `${params.body || ''} and ${count} others`,
+            body: batchedBody,
+            actorId: params.actorId, // Update to latest actor
             isRead: false, // Mark unread again
             createdAt: new Date(), // Bump to top
           },
