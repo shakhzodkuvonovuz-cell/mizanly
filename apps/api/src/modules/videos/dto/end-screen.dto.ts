@@ -2,7 +2,7 @@ import { IsString, IsOptional, IsIn, IsNumber, IsUrl, MaxLength, IsArray, Valida
 import { Type } from 'class-transformer';
 
 export class EndScreenItemDto {
-  @IsIn(['subscribe', 'watch_next', 'playlist', 'link']) type: string;
+  @IsIn(['SUBSCRIBE', 'WATCH_NEXT', 'PLAYLIST', 'LINK']) type: string;
   @IsOptional() @IsString() targetId?: string;
   @IsString() @MaxLength(60) label: string;
   @IsOptional() @IsUrl() url?: string;

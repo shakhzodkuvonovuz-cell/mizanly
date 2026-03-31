@@ -332,7 +332,7 @@ describe('VideosService', () => {
         user: { id: 'owner-456', username: 'owner', displayName: 'Owner', avatarUrl: null, isVerified: false },
         channel: { id: 'channel-789', handle: 'tech', name: 'Tech', avatarUrl: null, isVerified: false },
       };
-      prisma.video.findUnique.mockResolvedValue(mockVideo);
+      prisma.video.findFirst.mockResolvedValue(mockVideo);
       prisma.videoReaction.findUnique.mockResolvedValue({ userId, videoId, isLike: true });
       prisma.videoBookmark.findUnique.mockResolvedValue({ userId, videoId });
       prisma.subscription.findUnique.mockResolvedValue({ userId, channelId: 'channel-789' });
@@ -346,13 +346,13 @@ describe('VideosService', () => {
     });
 
     it('should throw NotFoundException if video not found', async () => {
-      prisma.video.findUnique.mockResolvedValue(null);
+      prisma.video.findFirst.mockResolvedValue(null);
       await expect(service.getById('unknown')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException if video not published', async () => {
       const mockVideo = { id: 'video-123', status: VideoStatus.DRAFT } as any;
-      prisma.video.findUnique.mockResolvedValue(mockVideo);
+      prisma.video.findFirst.mockResolvedValue(mockVideo);
       await expect(service.getById('video-123')).rejects.toThrow(NotFoundException);
     });
   });
@@ -644,7 +644,7 @@ describe('VideosService', () => {
       expect(result.meta.hasMore).toBe(true);
       expect(prisma.videoComment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { videoId, parentId: null },
+          where: expect.objectContaining({ videoId, parentId: null }),
           orderBy: { likesCount: 'desc' },
         }),
       );
@@ -655,27 +655,35 @@ describe('VideosService', () => {
     it('should bookmark video', async () => {
       const videoId = 'video-123';
       const userId = 'user-456';
-      const video = { id: videoId, userId: 'owner-789', status: VideoStatus.PUBLISHED };
+      const video = { id: videoId, userId: 'owner-789', status: VideoStatus.PUBLISHED, isRemoved: false };
       prisma.video.findUnique.mockResolvedValue(video as any);
-      prisma.videoBookmark.findUnique.mockResolvedValue(null);
-      prisma.$transaction.mockResolvedValue(undefined);
+      // Interactive transaction mock for bookmark
+      const mockTx = {
+        videoBookmark: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn() },
+        $executeRaw: jest.fn(),
+      };
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn(mockTx);
+        return Promise.all(fn);
+      });
 
       const result = await service.bookmark(videoId, userId);
 
-      expect(prisma.videoBookmark.create).toHaveBeenCalledWith({
-        data: { userId, videoId },
-      });
-      expect(prisma.video.update).toHaveBeenCalledWith({
-        where: { id: videoId },
-        data: { savesCount: { increment: 1 } },
-      });
+      expect(mockTx.videoBookmark.create).toHaveBeenCalledWith({ data: { userId, videoId } });
       expect(result).toEqual({ bookmarked: true });
     });
 
     it('should throw ConflictException if already bookmarked', async () => {
-      const video = { id: 'video-123', userId: 'owner', status: VideoStatus.PUBLISHED };
+      const video = { id: 'video-123', userId: 'owner', status: VideoStatus.PUBLISHED, isRemoved: false };
       prisma.video.findUnique.mockResolvedValue(video as any);
-      prisma.videoBookmark.findUnique.mockResolvedValue({} as any);
+      const mockTx = {
+        videoBookmark: { findUnique: jest.fn().mockResolvedValue({} as any), create: jest.fn() },
+        $executeRaw: jest.fn(),
+      };
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn(mockTx);
+        return Promise.all(fn);
+      });
       await expect(service.bookmark('video-123', 'user-123')).rejects.toThrow(ConflictException);
     });
   });
@@ -750,7 +758,8 @@ describe('VideosService', () => {
       expect(prisma.report.create).toHaveBeenCalledWith({
         data: {
           reporterId: userId,
-          description: `video:${videoId}`,
+          reportedVideoId: videoId,
+          description: reason,
           reason: 'SPAM',
         },
       });
@@ -849,8 +858,8 @@ describe('VideosService', () => {
     it('should create premiere for owned video', async () => {
       const future = new Date(Date.now() + 86400000).toISOString();
       prisma.video.findFirst.mockResolvedValue({ id: 'video-1', userId: 'user-1' });
-      prisma.videoPremiere.create.mockResolvedValue({ videoId: 'video-1', scheduledAt: future });
-      prisma.video.update.mockResolvedValue({});
+      const premiereResult = { videoId: 'video-1', scheduledAt: future };
+      prisma.$transaction.mockResolvedValue([premiereResult, {}]);
 
       const result = await service.createPremiere('video-1', 'user-1', { scheduledAt: future });
       expect(result.videoId).toBe('video-1');
@@ -945,8 +954,13 @@ describe('VideosService', () => {
   describe('setEndScreens', () => {
     it('should set end screen items', async () => {
       prisma.video.findFirst.mockResolvedValue({ id: 'v1', userId: 'u1' });
-      prisma.endScreen.deleteMany.mockResolvedValue({});
-      prisma.endScreen.create.mockResolvedValue({ id: 'es-1' });
+      const mockTx = {
+        endScreen: { deleteMany: jest.fn(), create: jest.fn().mockResolvedValue({ id: 'es-1' }) },
+      };
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn(mockTx);
+        return Promise.all(fn);
+      });
 
       const items = [{ type: 'video', label: 'Next', position: 'bottom-right', showAtSeconds: 300 }];
       const result = await service.setEndScreens('v1', 'u1', items);

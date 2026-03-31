@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
-import { IsString, IsArray, IsIn, ArrayMinSize, ArrayMaxSize, MaxLength } from 'class-validator';
+import { IsString, IsArray, IsIn, IsUrl, ArrayMinSize, ArrayMaxSize, MaxLength } from 'class-validator';
 import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
@@ -14,7 +14,7 @@ class TrackVariantDto {
 class CreateVariantsDto {
   @ApiProperty()
   @IsString()
-  @IsIn(['post', 'reel', 'video'])
+  @IsIn(['POST', 'REEL', 'VIDEO'])
   contentType!: string;
 
   @ApiProperty()
@@ -23,7 +23,7 @@ class CreateVariantsDto {
 
   @ApiProperty({ type: [String] })
   @IsArray()
-  @IsString({ each: true })
+  @IsUrl({}, { each: true })
   @ArrayMinSize(2)
   @ArrayMaxSize(3)
   thumbnailUrls!: string[];

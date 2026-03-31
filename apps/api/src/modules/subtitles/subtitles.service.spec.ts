@@ -108,13 +108,13 @@ describe('SubtitlesService', () => {
     it('should create a subtitle track when user is video owner', async () => {
       const videoId = 'video-123';
       const userId = 'owner-1';
-      const dto = { label: 'English', language: 'en', srtUrl: 'https://example.com/track.srt' };
+      const dto = { label: 'English', language: 'en', srtUrl: 'https://r2.mizanly.app/subtitles/track.srt' };
       const mockVideo = { id: videoId, userId };
       const mockTrack = {
         id: 'track-1',
         label: 'English',
         language: 'en',
-        url: 'https://example.com/track.srt',
+        url: 'https://r2.mizanly.app/subtitles/track.srt',
         isDefault: false,
         createdAt: new Date(),
       };
@@ -132,7 +132,7 @@ describe('SubtitlesService', () => {
           videoId,
           label: 'English',
           language: 'en',
-          url: 'https://example.com/track.srt',
+          url: 'https://r2.mizanly.app/subtitles/track.srt',
           isDefault: false,
         },
         select: {
@@ -150,7 +150,7 @@ describe('SubtitlesService', () => {
     it('should throw NotFoundException if video does not exist', async () => {
       const videoId = 'video-123';
       const userId = 'owner-1';
-      const dto = { label: 'English', language: 'en', srtUrl: 'https://example.com/track.srt' };
+      const dto = { label: 'English', language: 'en', srtUrl: 'https://r2.mizanly.app/subtitles/track.srt' };
       prisma.video.findUnique.mockResolvedValue(null);
 
       await expect(service.createTrack(videoId, userId, dto)).rejects.toThrow(
@@ -161,7 +161,7 @@ describe('SubtitlesService', () => {
     it('should throw ForbiddenException if user is not video owner', async () => {
       const videoId = 'video-123';
       const userId = 'user-456';
-      const dto = { label: 'English', language: 'en', srtUrl: 'https://example.com/track.srt' };
+      const dto = { label: 'English', language: 'en', srtUrl: 'https://r2.mizanly.app/subtitles/track.srt' };
       const mockVideo = { id: videoId, userId: 'owner-1' };
       prisma.video.findUnique.mockResolvedValue(mockVideo);
 
@@ -173,7 +173,7 @@ describe('SubtitlesService', () => {
     it('should throw BadRequestException for invalid language code', async () => {
       const videoId = 'video-123';
       const userId = 'owner-1';
-      const dto = { label: 'English', language: 'english', srtUrl: 'https://example.com/track.srt' };
+      const dto = { label: 'English', language: 'english', srtUrl: 'https://r2.mizanly.app/subtitles/track.srt' };
       const mockVideo = { id: videoId, userId };
       prisma.video.findUnique.mockResolvedValue(mockVideo);
 
@@ -197,7 +197,7 @@ describe('SubtitlesService', () => {
     it('should throw BadRequestException if label too long', async () => {
       const videoId = 'video-123';
       const userId = 'owner-1';
-      const dto = { label: 'A'.repeat(51), language: 'en', srtUrl: 'https://example.com/track.srt' };
+      const dto = { label: 'A'.repeat(51), language: 'en', srtUrl: 'https://r2.mizanly.app/subtitles/track.srt' };
       const mockVideo = { id: videoId, userId };
       prisma.video.findUnique.mockResolvedValue(mockVideo);
 
@@ -283,7 +283,7 @@ describe('SubtitlesService', () => {
       const mockTrack = {
         id: trackId,
         videoId,
-        url: 'https://example.com/track.srt',
+        url: 'https://r2.mizanly.app/subtitles/track.srt',
         video: { userId: 'owner-1', status: VideoStatus.PUBLISHED },
       };
       prisma.subtitleTrack.findUnique.mockResolvedValue(mockTrack);
@@ -294,7 +294,7 @@ describe('SubtitlesService', () => {
         where: { id: trackId },
         select: { id: true, videoId: true, url: true, video: { select: { userId: true, status: true } } },
       });
-      expect(result.url).toBe('https://example.com/track.srt');
+      expect(result.url).toBe('https://r2.mizanly.app/subtitles/track.srt');
     });
 
     it('should allow owner to access non‑published video track', async () => {
@@ -304,14 +304,14 @@ describe('SubtitlesService', () => {
       const mockTrack = {
         id: trackId,
         videoId,
-        url: 'https://example.com/track.srt',
+        url: 'https://r2.mizanly.app/subtitles/track.srt',
         video: { userId, status: VideoStatus.DRAFT },
       };
       prisma.subtitleTrack.findUnique.mockResolvedValue(mockTrack);
 
       const result = await service.getSrtRedirect(videoId, trackId, userId);
 
-      expect(result.url).toBe('https://example.com/track.srt');
+      expect(result.url).toBe('https://r2.mizanly.app/subtitles/track.srt');
     });
 
     it('should throw NotFoundException if track does not exist', async () => {

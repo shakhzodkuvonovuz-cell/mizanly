@@ -96,13 +96,11 @@ export class VideosService {
       this.prisma.videoReaction.findMany({
         where: { userId, videoId: { in: videoIds } },
         select: { videoId: true, isLike: true },
-      take: 50,
-    }),
+      }),
       this.prisma.videoBookmark.findMany({
         where: { userId, videoId: { in: videoIds } },
         select: { videoId: true },
-      take: 50,
-    }),
+      }),
     ]);
     const likedVideoIds = reactions.filter(r => r.isLike).map(r => r.videoId);
     const dislikedVideoIds = reactions.filter(r => !r.isLike).map(r => r.videoId);
@@ -353,8 +351,11 @@ export class VideosService {
   }
 
   async getById(videoId: string, userId?: string) {
-    const video = await this.prisma.video.findUnique({
-      where: { id: videoId },
+    const video = await this.prisma.video.findFirst({
+      where: {
+        id: videoId,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
+      },
       select: VIDEO_SELECT,
     });
     if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
@@ -483,7 +484,7 @@ export class VideosService {
         data: { isRemoved: true },
       }),
       this.prisma.$executeRaw`
-        UPDATE "Channel"
+        UPDATE "channels"
         SET "videosCount" = GREATEST("videosCount" - 1, 0)
         WHERE id = ${video.channelId}
       `,
@@ -511,7 +512,7 @@ export class VideosService {
 
   async like(videoId: string, userId: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
-    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
     if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
 
     try {
@@ -569,7 +570,7 @@ export class VideosService {
 
   async dislike(videoId: string, userId: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
-    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
     if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
 
     await this.prisma.$transaction(async (tx) => {
@@ -633,8 +634,25 @@ export class VideosService {
 
   async comment(videoId: string, userId: string, content: string, parentId?: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
-    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
     if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
+
+    // A05-#7: Content moderation on comments
+    const modResult = await this.contentSafety.moderateText(content);
+    if (!modResult.safe) {
+      throw new BadRequestException(`Comment flagged: ${modResult.flags?.join(', ') || 'policy violation'}`);
+    }
+
+    // A05-#8: Validate parentId belongs to same video
+    if (parentId) {
+      const parent = await this.prisma.videoComment.findUnique({
+        where: { id: parentId },
+        select: { videoId: true },
+      });
+      if (!parent || parent.videoId !== videoId) {
+        throw new BadRequestException('Parent comment does not belong to this video');
+      }
+    }
 
     const [comment] = await this.prisma.$transaction([
       this.prisma.videoComment.create({
@@ -680,7 +698,11 @@ export class VideosService {
 
   async getComments(videoId: string, cursor?: string, limit = 20) {
     const comments = await this.prisma.videoComment.findMany({
-      where: { videoId, parentId: null }, // top-level comments only
+      where: {
+        videoId,
+        parentId: null, // top-level comments only
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
+      },
       select: {
         id: true,
         content: true,
@@ -740,23 +762,26 @@ export class VideosService {
 
   async bookmark(videoId: string, userId: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
-    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
     if (video.scheduledAt && new Date(video.scheduledAt) > new Date() && video.userId !== userId) throw new NotFoundException('Video not found');
 
-    const existing = await this.prisma.videoBookmark.findUnique({
-      where: { userId_videoId: { userId, videoId } },
-    });
-    if (existing) throw new ConflictException('Already bookmarked');
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const existing = await tx.videoBookmark.findUnique({
+          where: { userId_videoId: { userId, videoId } },
+        });
+        if (existing) throw new ConflictException('Already bookmarked');
 
-    await this.prisma.$transaction([
-      this.prisma.videoBookmark.create({
-        data: { userId, videoId },
-      }),
-      this.prisma.video.update({
-        where: { id: videoId },
-        data: { savesCount: { increment: 1 } },
-      }),
-    ]);
+        await tx.videoBookmark.create({ data: { userId, videoId } });
+        await tx.$executeRaw`UPDATE "videos" SET "savesCount" = GREATEST(0, "savesCount" + 1) WHERE id = ${videoId}`;
+      });
+    } catch (err: unknown) {
+      if (err instanceof ConflictException) throw err;
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
+        return { bookmarked: true }; // Race condition — already bookmarked
+      }
+      throw err;
+    }
     return { bookmarked: true };
   }
 
@@ -777,7 +802,7 @@ export class VideosService {
 
   async view(videoId: string, userId: string) {
     const video = await this.prisma.video.findUnique({ where: { id: videoId } });
-    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+    if (!video || video.status !== VideoStatus.PUBLISHED || video.isRemoved) throw new NotFoundException('Video not found');
 
     const now = new Date();
 
@@ -824,7 +849,7 @@ export class VideosService {
     if (!video) throw new NotFoundException('Video not found');
 
     const existing = await this.prisma.report.findFirst({
-      where: { reporterId: userId, description: `video:${videoId}` },
+      where: { reporterId: userId, reportedVideoId: videoId },
     });
     if (existing) return { reported: true };
 
@@ -841,8 +866,9 @@ export class VideosService {
     await this.prisma.report.create({
       data: {
         reporterId: userId,
-        description: `video:${videoId}`,
-        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason, // Safe: reasonMap fallback guarantees valid ReportReason
+        reportedVideoId: videoId,
+        description: reason, // Store original user-provided reason text
+        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
       },
     });
     return { reported: true };
@@ -859,6 +885,7 @@ export class VideosService {
       id: { not: videoId },
       status: VideoStatus.PUBLISHED,
       isRemoved: false,
+      user: { isBanned: false, isDeactivated: false, isDeleted: false },
       AND: [
         { OR: [
           { channelId: video.channelId },
@@ -887,7 +914,10 @@ export class VideosService {
     if (!comment) throw new NotFoundException('Comment not found');
 
     const replies = await this.prisma.videoComment.findMany({
-      where: { parentId: commentId },
+      where: {
+        parentId: commentId,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
+      },
       select: {
         id: true,
         content: true,
@@ -933,20 +963,22 @@ export class VideosService {
     if (!video) throw new NotFoundException('Video not found');
     if (new Date(dto.scheduledAt) <= new Date()) throw new BadRequestException('Premiere must be in the future');
 
-    const premiere = await this.prisma.videoPremiere.create({
-      data: {
-        videoId,
-        scheduledAt: new Date(dto.scheduledAt),
-        chatEnabled: dto.chatEnabled ?? true,
-        countdownTheme: (dto.countdownTheme || 'EMERALD') as CountdownTheme,
-        trailerUrl: dto.trailerUrl,
-      },
-    });
-
-    await this.prisma.video.update({
-      where: { id: videoId },
-      data: { isPremiereEnabled: true, scheduledAt: new Date(dto.scheduledAt) },
-    });
+    // Atomic: create premiere + update video in single transaction
+    const [premiere] = await this.prisma.$transaction([
+      this.prisma.videoPremiere.create({
+        data: {
+          videoId,
+          scheduledAt: new Date(dto.scheduledAt),
+          chatEnabled: dto.chatEnabled ?? true,
+          countdownTheme: (dto.countdownTheme || 'EMERALD') as CountdownTheme,
+          trailerUrl: dto.trailerUrl,
+        },
+      }),
+      this.prisma.video.update({
+        where: { id: videoId },
+        data: { isPremiereEnabled: true, scheduledAt: new Date(dto.scheduledAt) },
+      }),
+    ]);
 
     return premiere;
   }
@@ -1034,25 +1066,26 @@ export class VideosService {
     if (!video) throw new NotFoundException();
     if (items.length > 4) throw new BadRequestException('Maximum 4 end screen items');
 
-    await this.prisma.endScreen.deleteMany({ where: { videoId } });
-
-    const endScreens = await Promise.all(
-      items.map(item =>
-        this.prisma.endScreen.create({
-          data: {
-            videoId,
-            type: item.type as EndScreenType,
-            targetId: item.targetId,
-            label: item.label,
-            url: item.url,
-            position: item.position,
-            showAtSeconds: item.showAtSeconds,
-          },
-        })
-      )
-    );
-
-    return endScreens;
+    // Atomic: delete + create in a single transaction to prevent partial state
+    return this.prisma.$transaction(async (tx) => {
+      await tx.endScreen.deleteMany({ where: { videoId } });
+      const endScreens = await Promise.all(
+        items.map(item =>
+          tx.endScreen.create({
+            data: {
+              videoId,
+              type: item.type as EndScreenType,
+              targetId: item.targetId,
+              label: item.label,
+              url: item.url,
+              position: item.position,
+              showAtSeconds: item.showAtSeconds,
+            },
+          })
+        )
+      );
+      return endScreens;
+    });
   }
 
   async getEndScreens(videoId: string) {
@@ -1102,15 +1135,17 @@ export class VideosService {
 
     if (chapters.length === 0) return [];
 
-    // Delete existing chapters and create new ones
-    await this.prisma.videoChapter.deleteMany({ where: { videoId } });
-    await this.prisma.videoChapter.createMany({
-      data: chapters.map((ch, i) => ({
-        videoId,
-        title: ch.title,
-        timestampSeconds: ch.timestampSeconds,
-        order: i,
-      })),
+    // Atomic: delete + create in a single transaction
+    await this.prisma.$transaction(async (tx) => {
+      await tx.videoChapter.deleteMany({ where: { videoId } });
+      await tx.videoChapter.createMany({
+        data: chapters.map((ch, i) => ({
+          videoId,
+          title: ch.title,
+          timestampSeconds: ch.timestampSeconds,
+          order: i,
+        })),
+      });
     });
 
     return this.getChapters(videoId);

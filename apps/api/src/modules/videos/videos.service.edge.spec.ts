@@ -201,8 +201,16 @@ describe('VideosService — edge cases', () => {
       prisma.video.findFirst.mockResolvedValue({
         description: '0:00 مقدمة\n2:30 الموضوع الرئيسي\n1:05:30 الخاتمة',
       });
-      prisma.videoChapter.deleteMany.mockResolvedValue({ count: 0 });
-      prisma.videoChapter.createMany.mockResolvedValue({ count: 3 });
+      const mockTx = {
+        videoChapter: {
+          deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+          createMany: jest.fn().mockResolvedValue({ count: 3 }),
+        },
+      };
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn(mockTx);
+        return Promise.all(fn);
+      });
       prisma.videoChapter.findMany.mockResolvedValue([
         { title: 'مقدمة', timestampSeconds: 0, order: 0 },
         { title: 'الموضوع الرئيسي', timestampSeconds: 150, order: 1 },
@@ -211,7 +219,7 @@ describe('VideosService — edge cases', () => {
 
       const result = await service.parseChaptersFromDescription('video-1', userId);
       expect(result).toHaveLength(3);
-      expect(prisma.videoChapter.createMany).toHaveBeenCalledWith(
+      expect(mockTx.videoChapter.createMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.arrayContaining([
             expect.objectContaining({ title: 'مقدمة', timestampSeconds: 0 }),

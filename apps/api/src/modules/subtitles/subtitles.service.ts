@@ -131,7 +131,26 @@ export class SubtitlesService {
       }
     }
 
-    // Return the URL for redirection (controller will handle redirect)
+    // Validate URL domain against allowlist to prevent open redirect attacks
+    const ALLOWED_DOMAINS = [
+      'mizanly.app',
+      'r2.mizanly.app',
+      'pub-',
+      'r2.dev',
+      'cloudflare.com',
+      'r2.cloudflarestorage.com',
+    ];
+    try {
+      const parsed = new URL(track.url);
+      const isAllowed = ALLOWED_DOMAINS.some(domain => parsed.hostname.endsWith(domain) || parsed.hostname.includes(domain));
+      if (!isAllowed) {
+        throw new BadRequestException('Subtitle URL must be hosted on an allowed domain');
+      }
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException('Invalid subtitle URL');
+    }
+
     return { url: track.url };
   }
 }

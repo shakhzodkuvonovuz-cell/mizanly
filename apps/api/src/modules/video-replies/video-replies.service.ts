@@ -108,7 +108,7 @@ export class VideoRepliesService {
     // Fetch user data for all unique userIds
     const userIds = [...new Set(items.map((vr) => vr.userId))];
     const users = await this.prisma.user.findMany({
-      where: { id: { in: userIds } },
+      where: { id: { in: userIds }, isBanned: false, isDeactivated: false, isDeleted: false },
       select: {
         id: true,
         username: true,

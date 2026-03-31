@@ -61,7 +61,7 @@ export class VideosController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    const limitNum = limit ? parseInt(limit, 10) : 20;
+    const limitNum = Math.min(limit ? parseInt(limit, 10) : 20, 100);
     return this.videosService.getCommentReplies(commentId, cursor, limitNum);
   }
 
@@ -78,6 +78,7 @@ export class VideosController {
   @Patch(':id')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Update video details' })
   update(
     @Param('id') id: string,
@@ -90,6 +91,7 @@ export class VideosController {
   @Delete(':id')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Delete a video' })
   delete(
     @Param('id') id: string,
@@ -229,7 +231,7 @@ export class VideosController {
     @Query('limit') limit?: string,
     @CurrentUser('id') userId?: string,
   ) {
-    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const limitNum = Math.min(limit ? parseInt(limit, 10) : 10, 50);
     return this.videosService.getRecommended(id, limitNum, userId);
   }
 
@@ -244,6 +246,7 @@ export class VideosController {
 
   @Post(':id/premiere')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create video premiere' })
   createPremiere(
     @CurrentUser('id') userId: string,
@@ -262,6 +265,7 @@ export class VideosController {
 
   @Post(':id/premiere/reminder')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Set premiere reminder' })
   setPremiereReminder(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.videosService.setPremiereReminder(id, userId);
@@ -269,6 +273,7 @@ export class VideosController {
 
   @Delete(':id/premiere/reminder')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Remove premiere reminder' })
   removePremiereReminder(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.videosService.removePremiereReminder(id, userId);
@@ -276,6 +281,7 @@ export class VideosController {
 
   @Post(':id/premiere/start')
   @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @ApiOperation({ summary: 'Start premiere' })
   startPremiere(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.videosService.startPremiere(id, userId);
@@ -302,6 +308,7 @@ export class VideosController {
   @Put(':id/end-screens')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Set end screens for a video (max 4)' })
   setEndScreens(
     @CurrentUser('id') userId: string,
@@ -321,6 +328,7 @@ export class VideosController {
   @Delete(':id/end-screens')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Delete all end screens for a video' })
   deleteEndScreens(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.videosService.deleteEndScreens(id, userId);

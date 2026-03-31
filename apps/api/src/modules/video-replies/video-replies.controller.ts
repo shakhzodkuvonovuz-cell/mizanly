@@ -10,10 +10,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { IsString, IsOptional, IsEnum, IsUrl, IsNumber, Min, Max, MaxLength } from 'class-validator';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { VideoRepliesService } from './video-replies.service';
+
+class CreateVideoReplyDto {
+  @IsString() commentId: string;
+  @IsEnum(['POST', 'REEL']) commentType: 'POST' | 'REEL';
+  @IsUrl() @MaxLength(2000) mediaUrl: string;
+  @IsOptional() @IsUrl() @MaxLength(2000) thumbnailUrl?: string;
+  @IsOptional() @IsNumber() @Min(0) @Max(300) duration?: number;
+}
 
 @ApiTags('video-replies')
 @ApiBearerAuth()
@@ -27,16 +36,9 @@ export class VideoRepliesController {
   @ApiOperation({ summary: 'Create a video reply to a comment' })
   create(
     @CurrentUser('id') userId: string,
-    @Body()
-    body: {
-      commentId: string;
-      commentType: 'POST' | 'REEL';
-      mediaUrl: string;
-      thumbnailUrl?: string;
-      duration?: number;
-    },
+    @Body() dto: CreateVideoReplyDto,
   ) {
-    return this.videoRepliesService.create(userId, body);
+    return this.videoRepliesService.create(userId, dto);
   }
 
   @Get('comment/:commentId')
