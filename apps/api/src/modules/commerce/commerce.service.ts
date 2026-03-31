@@ -23,7 +23,8 @@ export class CommerceService {
     if (!secretKey) {
       this.logger.warn('STRIPE_SECRET_KEY not set — order payment processing will fail');
     }
-    this.stripe = new Stripe(secretKey || '', {
+    // Placeholder key when not configured — ensureStripeAvailable() prevents any API calls
+    this.stripe = new Stripe(secretKey || 'sk_not_configured', {
       apiVersion: '2025-02-24.acacia' as Stripe.LatestApiVersion,
     });
   }
