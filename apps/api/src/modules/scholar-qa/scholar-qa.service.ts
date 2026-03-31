@@ -70,7 +70,6 @@ export class ScholarQAService {
     const qa = await this.prisma.scholarQA.findUnique({ where: { id: qaId } });
     if (!qa) throw new NotFoundException('Q&A session not found');
     if (qa.status === 'QA_ENDED') throw new BadRequestException('This Q&A session has ended');
-    if (qa.status === 'QA_CANCELLED') throw new BadRequestException('This Q&A session was cancelled');
 
     return this.prisma.scholarQuestion.create({
       data: { qaId, userId, question },

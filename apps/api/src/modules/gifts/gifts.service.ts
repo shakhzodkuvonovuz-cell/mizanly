@@ -40,7 +40,7 @@ const GIFT_CATALOG: GiftCatalogItem[] = [
   { type: 'galaxy', name: 'Galaxy', coins: 5000, animation: 'explode' },
 ];
 
-import { DIAMOND_RATE, MIN_CASHOUT_DIAMONDS } from '../../common/constants/financial';
+import { DIAMOND_RATE, MIN_CASHOUT_DIAMONDS, DIAMONDS_PER_USD_CENT } from '../../common/constants/financial';
 
 // BALANCE TRUTH: CoinBalance table is the SOLE source of truth for coin/diamond balances.
 // The legacy User.coinBalance field was REMOVED from the schema in Session 7.

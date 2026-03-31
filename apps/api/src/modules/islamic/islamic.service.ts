@@ -1860,10 +1860,10 @@ export class IslamicService {
     for (let i = 0; i < ayahCounts.length; i++) {
       cumulative += ayahCounts[i];
       if (ayahIndex < cumulative) {
-        return SURAH_METADATA[i].name;
+        return SURAH_METADATA[i].nameEnglish;
       }
     }
-    return SURAH_METADATA[113].name; // An-Nas
+    return SURAH_METADATA[113].nameEnglish; // An-Nas
   }
 
   private getAyahNumber(ayahIndex: number): number {

@@ -15,7 +15,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, IsInt, Min, Max, MaxLength, IsIn } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsInt, Min, Max, IsIn, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IslamicService } from './islamic.service';
 import {
@@ -36,7 +36,7 @@ import { CreateHajjProgressDto, UpdateHajjProgressDto } from './dto/hajj.dto';
 import { ApplyScholarVerificationDto } from './dto/scholar-verification.dto';
 import { UpdateContentFilterDto } from './dto/content-filter.dto';
 import { SaveDhikrSessionDto, CreateDhikrChallengeDto, ContributeDhikrDto } from './dto/dhikr.dto';
-import { IsBoolean, IsDateString, MaxLength } from 'class-validator';
+import { IsBoolean, IsDateString } from 'class-validator';
 
 class LogFastDto {
   @IsDateString() date: string;
