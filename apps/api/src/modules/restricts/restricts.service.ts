@@ -11,9 +11,12 @@ export class RestrictsService {
       throw new BadRequestException('Cannot restrict yourself');
     }
 
-    // Verify target user exists
-    const targetUser = await this.prisma.user.findUnique({ where: { id: restrictedId } });
-    if (!targetUser) {
+    // B01-#5 / A10-#9: Verify target exists AND is active, use select for efficiency
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: restrictedId },
+      select: { id: true, isDeactivated: true, isBanned: true, isDeleted: true },
+    });
+    if (!targetUser || targetUser.isDeactivated || targetUser.isBanned || targetUser.isDeleted) {
       throw new NotFoundException('User not found');
     }
 
@@ -103,11 +106,12 @@ export class RestrictsService {
    * Get all user IDs that the given user has restricted.
    * Used by feed/story/comment services to filter restricted users' content.
    */
+  // B01-#6 / A10-#12: Raised from 50 to 10000 to match excluded-users.ts cap
   async getRestrictedIds(userId: string): Promise<string[]> {
     const restricts = await this.prisma.restrict.findMany({
       where: { restricterId: userId },
       select: { restrictedId: true },
-      take: 50,
+      take: 10000,
     });
     return restricts.map((r) => r.restrictedId);
   }

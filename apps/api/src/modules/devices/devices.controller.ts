@@ -57,7 +57,9 @@ export class DevicesController {
     return this.devicesService.logoutSession(sessionId, userId);
   }
 
-  @Delete('sessions')
+  // A01-#9: Changed from DELETE to POST — DELETE with body is discouraged by RFC 7231
+  // and some proxies strip the body, which would cause all sessions to be logged out
+  @Post('sessions/logout-others')
   @ApiOperation({ summary: 'Log out all other device sessions' })
   logoutAllOtherSessions(
     @CurrentUser('id') userId: string,

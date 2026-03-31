@@ -140,7 +140,7 @@ describe('RestrictsService', () => {
       expect(prisma.restrict.findMany).toHaveBeenCalledWith({
         where: { restricterId: 'u1' },
         select: { restrictedId: true },
-        take: 50,
+        take: 10000,
       });
     });
 

@@ -16,7 +16,7 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Mutes')
-@Throttle({ default: { limit: 60, ttl: 60000 } })
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('mutes')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

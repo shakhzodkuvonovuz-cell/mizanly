@@ -22,6 +22,7 @@ describe('TwoFactorController', () => {
             setup: jest.fn(),
             verify: jest.fn(),
             validate: jest.fn(),
+            validateStrict: jest.fn(),
             disable: jest.fn(),
             getStatus: jest.fn(),
             useBackupCode: jest.fn(),
@@ -65,13 +66,33 @@ describe('TwoFactorController', () => {
   });
 
   describe('validate', () => {
-    it('should call twoFactorService.validate with authenticated userId and code', async () => {
-      service.validate.mockResolvedValue(true as any);
+    it('should return twoFactorEnabled false when 2FA not enabled', async () => {
+      service.getStatus.mockResolvedValue(false as any);
 
       const result = await controller.validate(userId, { code: '123456' } as any);
 
-      expect(service.validate).toHaveBeenCalledWith(userId, '123456');
-      expect(result).toEqual({ valid: true });
+      expect(service.getStatus).toHaveBeenCalledWith(userId);
+      expect(result).toEqual({ valid: true, twoFactorEnabled: false, message: '2FA not enabled — no code required' });
+    });
+
+    it('should call validateStrict when 2FA is enabled', async () => {
+      service.getStatus.mockResolvedValue(true as any);
+      service.validateStrict.mockResolvedValue(true as any);
+
+      const result = await controller.validate(userId, { code: '123456' } as any);
+
+      expect(service.getStatus).toHaveBeenCalledWith(userId);
+      expect(service.validateStrict).toHaveBeenCalledWith(userId, '123456');
+      expect(result).toEqual({ valid: true, twoFactorEnabled: true });
+    });
+
+    it('should return valid false for wrong code when 2FA enabled', async () => {
+      service.getStatus.mockResolvedValue(true as any);
+      service.validateStrict.mockResolvedValue(false as any);
+
+      const result = await controller.validate(userId, { code: '000000' } as any);
+
+      expect(result).toEqual({ valid: false, twoFactorEnabled: true });
     });
   });
 

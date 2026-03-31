@@ -16,12 +16,14 @@ export class MutesService {
       throw new BadRequestException('Cannot mute yourself');
     }
 
-    // Verify target user exists
+    // B01-#4: Verify target exists and is active (prevent orphan mute records)
     const targetUser = await this.prisma.user.findUnique({
       where: { id: mutedId },
-      select: { id: true },
+      select: { id: true, isDeactivated: true, isBanned: true, isDeleted: true },
     });
-    if (!targetUser) throw new NotFoundException('User not found');
+    if (!targetUser || targetUser.isDeactivated || targetUser.isBanned || targetUser.isDeleted) {
+      throw new NotFoundException('User not found');
+    }
 
     // Idempotent — return success if already muted
     try {

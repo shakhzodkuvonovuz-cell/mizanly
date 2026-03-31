@@ -94,8 +94,14 @@ export class TwoFactorController {
   @ApiOperation({ summary: 'Validate TOTP code (5 attempts per 5 min)' })
   @ApiResponse({ status: 200, description: 'Returns validation result' })
   async validate(@CurrentUser('id') userId: string, @Body() dto: VerifyDto) {
-    const valid = await this.twoFactorService.validate(userId, dto.code);
-    return { valid };
+    // A01-#10: Use validateStrict so callers know if 2FA was actually checked.
+    // validate() returns true when 2FA is not enabled, which is misleading.
+    const isEnabled = await this.twoFactorService.getStatus(userId);
+    if (!isEnabled) {
+      return { valid: true, twoFactorEnabled: false, message: '2FA not enabled — no code required' };
+    }
+    const valid = await this.twoFactorService.validateStrict(userId, dto.code);
+    return { valid, twoFactorEnabled: true };
   }
 
   @Delete('disable')
