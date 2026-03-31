@@ -601,7 +601,15 @@ export class IslamicController {
     @Query('maghrib') maghrib: string,
     @Query('isha') isha: string,
   ) {
-    return this.islamicService.getCurrentPrayerWindow({ fajr, dhuhr, asr, maghrib, isha });
+    // Validate HH:MM format for all prayer times
+    const timeRegex = /^\d{1,2}:\d{2}$/;
+    const times = { fajr, dhuhr, asr, maghrib, isha };
+    for (const [name, value] of Object.entries(times)) {
+      if (!value || !timeRegex.test(value)) {
+        throw new NotFoundException(`Invalid time format for ${name}. Expected HH:MM`);
+      }
+    }
+    return this.islamicService.getCurrentPrayerWindow(times);
   }
 
   // ============================================================

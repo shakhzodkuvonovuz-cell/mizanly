@@ -168,9 +168,14 @@ export class QueueService implements OnModuleDestroy {
     };
 
     // Dual storage: Redis (fast retrieval for admin dashboard) + DB (durable, survives flush)
+    // Track failures explicitly — .catch() converts rejections to fulfilled, breaking allSettled checks
+    let redisFailed = false;
+    let dbFailed = false;
+
     const redisDone = this.redis.lpush(QueueService.DLQ_KEY, JSON.stringify(entry))
       .then(() => this.redis.ltrim(QueueService.DLQ_KEY, 0, QueueService.DLQ_MAX_SIZE - 1))
       .catch((dlqError) => {
+        redisFailed = true;
         this.logger.error(`Redis DLQ storage failed for job ${job.id}: ${dlqError instanceof Error ? dlqError.message : 'unknown'}`);
       });
 
@@ -184,15 +189,15 @@ export class QueueService implements OnModuleDestroy {
         attempts: job.attemptsMade,
       },
     }).catch((dbError) => {
+      dbFailed = true;
       this.logger.error(`DB DLQ storage failed for job ${job.id}: ${dbError instanceof Error ? dbError.message : 'unknown'}`);
     });
 
-    // Wait for at least one to succeed
+    // Wait for both to complete
     await Promise.allSettled([redisDone, dbDone]);
 
     // If both failed, capture to Sentry as absolute last resort
-    const [redisResult, dbResult] = await Promise.allSettled([redisDone, dbDone]);
-    if (redisResult.status === 'rejected' && dbResult.status === 'rejected') {
+    if (redisFailed && dbFailed) {
       Sentry.captureException(error, {
         tags: { queue: queueName, jobName: job.name },
         extra: { jobId: job.id, jobData: job.data, attempts: job.attemptsMade },

@@ -24,31 +24,32 @@ export class HalalService {
       ...(filters?.cuisine ? { cuisineType: filters.cuisine } : {}),
       ...(filters?.priceRange ? { priceRange: filters.priceRange } : {}),
       ...(filters?.certified ? { halalCertified: true } : {}),
-      ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
     };
+
+    // Use offset pagination for distance-sorted results (cursor+distance sort creates inconsistent pages)
+    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
 
     const restaurants = await this.prisma.halalRestaurant.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      skip: offset,
       take: limit + 1,
     });
 
     const hasMore = restaurants.length > limit;
     if (hasMore) restaurants.pop();
 
-    // Calculate distances
+    // Calculate distances and sort by nearest
     const withDistance = restaurants.map((r) => ({
       ...r,
       distanceKm: this.haversineDistance(lat, lng, r.latitude, r.longitude),
     }));
-
-    // Sort by distance
     withDistance.sort((a, b) => a.distanceKm - b.distanceKm);
+
     return {
       data: withDistance,
       meta: {
         hasMore,
-        cursor: hasMore ? restaurants[restaurants.length - 1].createdAt.toISOString() : undefined,
+        cursor: hasMore ? String(offset + limit) : undefined,
       },
     };
   }
