@@ -192,12 +192,14 @@ describe('PaymentsService', () => {
 
     it('should default to tip handler (legacy) when no type in metadata', async () => {
       redis.get.mockResolvedValue('tip-1');
-      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<void>) =>
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { update: jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 10, platformFee: 1 }) },
+          tip: { update: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 10, platformFee: 1 }) },
           coinBalance: { upsert: jest.fn().mockResolvedValue({}) },
+          coinTransaction: { create: jest.fn().mockResolvedValue({}) },
         }),
       );
+      prisma.user.findUnique.mockResolvedValue({ username: 'sender' });
       redis.del.mockResolvedValue(1);
       await service.handlePaymentIntentSucceeded({ id: 'pi_test', metadata: {} } as any);
       expect(prisma.$transaction).toHaveBeenCalled();
@@ -206,12 +208,15 @@ describe('PaymentsService', () => {
     it('should credit receiver diamonds on tip completion (Bug 16)', async () => {
       redis.get.mockResolvedValue('tip-1');
       const mockUpsert = jest.fn().mockResolvedValue({});
-      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<void>) =>
+      const mockTxCreate = jest.fn().mockResolvedValue({});
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
-          tip: { update: jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 10, platformFee: 1 }) },
+          tip: { update: jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 10, platformFee: 1 }) },
           coinBalance: { upsert: mockUpsert },
+          coinTransaction: { create: mockTxCreate },
         }),
       );
+      prisma.user.findUnique.mockResolvedValue({ username: 'sender' });
       redis.del.mockResolvedValue(1);
       await service.handlePaymentIntentSucceeded({ id: 'pi_tip', metadata: {} } as any);
       // Net amount = 10 - 1 = 9, diamonds = floor(9 / 0.007) = 1285
@@ -220,6 +225,12 @@ describe('PaymentsService', () => {
           where: { userId: 'u2' },
           update: { diamonds: { increment: 1285 } },
           create: expect.objectContaining({ userId: 'u2', diamonds: 1285 }),
+        }),
+      );
+      // Verify CoinTransaction audit trail created (B08#1 fix)
+      expect(mockTxCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ userId: 'u2', type: 'TIP_RECEIVED', amount: 1285 }),
         }),
       );
     });
@@ -304,13 +315,15 @@ describe('PaymentsService', () => {
     it('should fall back to DB when Redis mapping missing for tip', async () => {
       redis.get.mockResolvedValue(null);
       prisma.tip = { ...prisma.tip, findFirst: jest.fn().mockResolvedValue({ id: 'tip-fallback' }) };
-      const mockTipUpdate = jest.fn().mockResolvedValue({ receiverId: 'u2', amount: 5, platformFee: 0.5 });
-      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<void>) =>
+      const mockTipUpdate = jest.fn().mockResolvedValue({ receiverId: 'u2', senderId: 'u1', amount: 5, platformFee: 0.5 });
+      prisma.$transaction = jest.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
         fn({
           tip: { update: mockTipUpdate },
           coinBalance: { upsert: jest.fn().mockResolvedValue({}) },
+          coinTransaction: { create: jest.fn().mockResolvedValue({}) },
         }),
       );
+      prisma.user.findUnique.mockResolvedValue({ username: 'sender' });
       redis.del.mockResolvedValue(1);
       await service.handlePaymentIntentSucceeded({
         id: 'pi_test', metadata: { senderId: 'u1' },

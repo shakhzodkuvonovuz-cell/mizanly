@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, NotImplementedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -291,12 +291,13 @@ export class CommerceService {
    * Finding #134: Seller analytics — total sales, revenue, top products.
    */
   async getSellerAnalytics(sellerId: string) {
-    const [products, orderCount, totalRevenue] = await Promise.all([
+    const [productCount, topProducts, orderCount, totalRevenue] = await Promise.all([
+      this.prisma.product.count({ where: { sellerId, status: 'ACTIVE' } }),
       this.prisma.product.findMany({
         where: { sellerId, status: 'ACTIVE' },
         select: { id: true, title: true, salesCount: true, price: true, rating: true, images: true },
         orderBy: { salesCount: 'desc' },
-        take: 10,
+        take: 5,
       }),
       this.prisma.order.count({ where: { product: { sellerId } } }),
       this.prisma.order.aggregate({
@@ -306,10 +307,10 @@ export class CommerceService {
     ]);
 
     return {
-      totalProducts: products.length,
+      totalProducts: productCount,
       totalOrders: orderCount,
       totalRevenue: Number(totalRevenue._sum.totalAmount ?? 0),
-      topProducts: products.slice(0, 5),
+      topProducts,
     };
   }
 
@@ -321,9 +322,9 @@ export class CommerceService {
     if (!order) throw new NotFoundException();
     if (order.product.sellerId !== sellerId) throw new ForbiddenException();
 
-    // Validate status transitions
+    // Validate status transitions (PAID only via webhook, not seller)
     const VALID_TRANSITIONS: Record<string, string[]> = {
-      PENDING: ['PAID', 'CANCELLED'],
+      PENDING: ['CANCELLED'],
       PAID: ['SHIPPED', 'REFUNDED'],
       SHIPPED: ['DELIVERED'],
       DELIVERED: [],
@@ -468,7 +469,7 @@ export class CommerceService {
   }
 
   async donateZakat(userId: string, fundId: string, dto: { amount: number; isAnonymous?: boolean }) {
-    throw new BadRequestException('Zakat donations require payment integration. Coming soon.');
+    throw new NotImplementedException('Zakat donations require Stripe payment integration. Coming soon.');
 
     if (!dto.amount || dto.amount <= 0 || dto.amount > 1_000_000) {
       throw new BadRequestException('Invalid donation amount');
@@ -524,7 +525,7 @@ export class CommerceService {
   }
 
   async contributeTreasury(userId: string, treasuryId: string, amount: number) {
-    throw new BadRequestException('Treasury contributions require payment integration. Coming soon.');
+    throw new NotImplementedException('Treasury contributions require Stripe payment integration. Coming soon.');
 
     if (!amount || amount <= 0 || amount > 1_000_000) {
       throw new BadRequestException('Invalid contribution amount');
@@ -600,7 +601,7 @@ export class CommerceService {
   }
 
   async contributeWaqf(userId: string, fundId: string, amount: number) {
-    throw new BadRequestException('Waqf contributions require payment integration. Coming soon.');
+    throw new NotImplementedException('Waqf contributions require Stripe payment integration. Coming soon.');
 
     if (!amount || amount <= 0 || amount > 1_000_000) {
       throw new BadRequestException('Invalid contribution amount');

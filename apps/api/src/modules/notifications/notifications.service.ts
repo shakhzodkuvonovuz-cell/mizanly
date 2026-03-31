@@ -46,6 +46,8 @@ export class NotificationsService {
             displayName: true,
             avatarUrl: true,
             isVerified: true,
+            isBanned: true,
+            isDeactivated: true,
           },
         },
         ...contentIncludes,
@@ -68,12 +70,17 @@ export class NotificationsService {
       : [];
     const followingSet = new Set(followedActors.map((f) => f.followingId));
 
-    const enrichedItems = items.map((n) => ({
-      ...n,
-      actor: n.actor
-        ? { ...n.actor, isFollowing: followingSet.has(n.actor.id) }
-        : n.actor,
-    }));
+    const enrichedItems = items
+      .filter((n) => !n.actor?.isBanned && !n.actor?.isDeactivated)
+      .map((n) => {
+        const { isBanned: _b, isDeactivated: _d, ...actorFields } = n.actor ?? {} as Record<string, unknown>;
+        return {
+          ...n,
+          actor: n.actor
+            ? { ...actorFields, isFollowing: followingSet.has(n.actor.id) }
+            : n.actor,
+        };
+      });
 
     return {
       data: enrichedItems,
@@ -110,6 +117,13 @@ export class NotificationsService {
       where: { userId, isRead: false },
       data: { isRead: true, readAt: new Date() },
     });
+
+    // Emit unread count update (0) so badge updates in real-time
+    this.redis.publish('notification:new', JSON.stringify({
+      userId,
+      notification: { type: 'UNREAD_COUNT_UPDATE', unreadCount: 0 },
+    })).catch((e) => this.logger.debug('Redis unread count publish failed', e));
+
     return { updated: true };
   }
 
@@ -190,6 +204,15 @@ export class NotificationsService {
     if (!validTypes.includes(params.type as NotificationType)) {
       this.logger.warn(`Invalid notification type: ${params.type}`);
       return null;
+    }
+
+    // Check actor is not banned/deleted before creating notification
+    if (params.actorId) {
+      const actor = await this.prisma.user.findUnique({
+        where: { id: params.actorId },
+        select: { isBanned: true, isDeleted: true },
+      });
+      if (actor?.isBanned || actor?.isDeleted) return null;
     }
 
     // Fetch all pre-creation checks in parallel: settings, user prefs, block/mute
@@ -386,6 +409,12 @@ export class NotificationsService {
   // Finding #363: Group notification summary — aggregate notifications by type+content
   async getGroupedNotifications(userId: string, cursor?: string, limit = 20) {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    // Validate cursor is a valid date string
+    if (cursor && isNaN(new Date(cursor).getTime())) {
+      throw new NotFoundException('Invalid cursor');
+    }
+
     const notifications = await this.prisma.notification.findMany({
       where: {
         userId,
@@ -441,17 +470,21 @@ export class NotificationsService {
   @Cron('0 30 3 * * *') // 3:30 AM daily (staggered from other 3 AM crons)
   async cleanupOldNotifications(): Promise<number> {
     try {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 90);
+      const readCutoff = new Date();
+      readCutoff.setDate(readCutoff.getDate() - 90);
+
+      // Also clean up unread notifications older than 1 year to prevent unbounded growth (B10#3)
+      const unreadCutoff = new Date();
+      unreadCutoff.setDate(unreadCutoff.getDate() - 365);
 
       const BATCH_SIZE = 10000;
       let totalDeleted = 0;
 
-      // Delete in chunks to avoid unbounded deleteMany on large tables
+      // Delete old read notifications (90 days)
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const batch = await this.prisma.notification.findMany({
-          where: { isRead: true, createdAt: { lt: cutoff } },
+          where: { isRead: true, createdAt: { lt: readCutoff } },
           select: { id: true },
           take: BATCH_SIZE,
         });
@@ -463,11 +496,30 @@ export class NotificationsService {
         });
         totalDeleted += result.count;
 
-        if (batch.length < BATCH_SIZE) break; // Last batch
+        if (batch.length < BATCH_SIZE) break;
+      }
+
+      // Delete old unread notifications (1 year) — prevents unbounded growth
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const batch = await this.prisma.notification.findMany({
+          where: { isRead: false, createdAt: { lt: unreadCutoff } },
+          select: { id: true },
+          take: BATCH_SIZE,
+        });
+
+        if (batch.length === 0) break;
+
+        const result = await this.prisma.notification.deleteMany({
+          where: { id: { in: batch.map(n => n.id) } },
+        });
+        totalDeleted += result.count;
+
+        if (batch.length < BATCH_SIZE) break;
       }
 
       if (totalDeleted > 0) {
-        this.logger.log(`Cleaned up ${totalDeleted} old read notification(s)`);
+        this.logger.log(`Cleaned up ${totalDeleted} old notification(s)`);
       }
 
       return totalDeleted;

@@ -97,20 +97,34 @@ export class PushService {
     await this.sendBatch(messages);
   }
 
-  // Send push to multiple users
+  // Send push to multiple users with per-user badge counts
   async sendToUsers(userIds: string[], notification: { title: string; body: string; data?: Record<string, string> }): Promise<void> {
-    const tokens = await this.getActiveTokensForUsers(userIds);
-    if (tokens.length === 0) {
+    // Fetch tokens grouped by userId so we can assign correct badge per user
+    const devices = await this.prisma.device.findMany({
+      where: { userId: { in: userIds }, isActive: true, pushToken: { not: '' } },
+      select: { pushToken: true, userId: true },
+    });
+    if (devices.length === 0) {
       this.logger.debug(`No active device tokens for users ${userIds.join(',')}`);
       return;
     }
-    const messages = tokens.map(token => ({
-      to: token,
+
+    // Batch-fetch unread counts for all users
+    const uniqueUserIds = [...new Set(devices.map(d => d.userId))];
+    const unreadCounts = await this.prisma.notification.groupBy({
+      by: ['userId'],
+      where: { userId: { in: uniqueUserIds }, isRead: false },
+      _count: true,
+    });
+    const countMap = new Map(unreadCounts.map(c => [c.userId, c._count]));
+
+    const messages = devices.map(device => ({
+      to: device.pushToken,
       title: notification.title,
       body: notification.body,
       data: notification.data,
       sound: 'default' as const,
-      badge: 1,
+      badge: countMap.get(device.userId) ?? 1,
       priority: 'high' as const,
     }));
     await this.sendBatch(messages);

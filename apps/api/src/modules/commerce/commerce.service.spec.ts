@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException, NotImplementedException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CommerceService } from './commerce.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -113,22 +113,19 @@ describe('CommerceService', () => {
   });
 
   describe('donateZakat', () => {
-    it('should throw BadRequestException (zakat donations temporarily unavailable)', async () => {
+    it('should throw NotImplementedException (zakat donations not yet available)', async () => {
       await expect(service.donateZakat('user-1', 'fund-1', { amount: 100 }))
-        .rejects.toThrow(BadRequestException);
+        .rejects.toThrow(NotImplementedException);
     });
 
-    it('should throw BadRequestException for closed fund (donations unavailable)', async () => {
+    it('should throw NotImplementedException for any input (dead code after throw)', async () => {
       await expect(service.donateZakat('user-1', 'fund-1', { amount: 100 }))
-        .rejects.toThrow(BadRequestException);
+        .rejects.toThrow(NotImplementedException);
     });
 
-    it('should prevent self-donation', async () => {
-      prisma.zakatFund.findUnique.mockResolvedValue({
-        id: 'fund-1', status: 'active', recipientId: 'user-1',
-      });
+    it('should throw NotImplementedException even for self-donation (dead code after throw)', async () => {
       await expect(service.donateZakat('user-1', 'fund-1', { amount: 100 }))
-        .rejects.toThrow(BadRequestException);
+        .rejects.toThrow(NotImplementedException);
     });
   });
 

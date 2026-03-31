@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import { MonetizationService } from './monetization.service';
-import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ForbiddenException, NotImplementedException } from '@nestjs/common';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('MonetizationService', () => {
@@ -64,7 +64,7 @@ describe('MonetizationService', () => {
       await expect(service.sendTip('sender1', 'receiver1', 100, 'Thank you'))
         .rejects.toThrow(BadRequestException);
       await expect(service.sendTip('sender1', 'receiver1', 100, 'Thank you'))
-        .rejects.toThrow('Tips require payment integration. Coming soon.');
+        .rejects.toThrow('Tips require Stripe integration');
     });
 
     it('should throw BadRequestException for zero amount', async () => {
@@ -709,80 +709,38 @@ describe('MonetizationService', () => {
   describe('requestCashout', () => {
     const validDto = { amount: 200, payoutSpeed: 'standard' as const, paymentMethodId: 'acct_123' };
 
-    it('should throw BadRequestException (cashout temporarily unavailable)', async () => {
+    it('should throw NotImplementedException (cashout not yet available)', async () => {
       await expect(
         service.requestCashout('user1', validDto),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(NotImplementedException);
     });
 
-    it('should throw for non-integer diamond amount', async () => {
+    it('should throw NotImplementedException for any input (dead code after throw)', async () => {
+      // All validation code is unreachable — the throw happens first
       await expect(
         service.requestCashout('user1', { ...validDto, amount: 150.5 }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw for zero diamond amount', async () => {
+      ).rejects.toThrow(NotImplementedException);
       await expect(
         service.requestCashout('user1', { ...validDto, amount: 0 }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw for negative diamond amount', async () => {
+      ).rejects.toThrow(NotImplementedException);
       await expect(
         service.requestCashout('user1', { ...validDto, amount: -100 }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw when below minimum cashout (100 diamonds)', async () => {
+      ).rejects.toThrow(NotImplementedException);
       await expect(
         service.requestCashout('user1', { ...validDto, amount: 50 }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw for empty payment method', async () => {
+      ).rejects.toThrow(NotImplementedException);
       await expect(
         service.requestCashout('user1', { ...validDto, paymentMethodId: '' }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw for invalid payout speed', async () => {
+      ).rejects.toThrow(NotImplementedException);
       await expect(
         service.requestCashout('user1', { ...validDto, payoutSpeed: 'express' as any }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw when user has no balance record', async () => {
-      mockPrismaService.coinBalance.findUnique.mockResolvedValue(null);
-      await expect(
-        service.requestCashout('user1', validDto),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw when insufficient diamonds', async () => {
-      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 50 });
-      await expect(
-        service.requestCashout('user1', validDto),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw on race condition (updateMany returns 0)', async () => {
-      mockPrismaService.coinBalance.findUnique.mockResolvedValue({ diamonds: 500 });
-      mockPrismaService.coinBalance.updateMany.mockResolvedValue({ count: 0 });
-      await expect(
-        service.requestCashout('user1', validDto),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw for instant payout speed (cashout temporarily unavailable)', async () => {
+      ).rejects.toThrow(NotImplementedException);
       await expect(
         service.requestCashout('user1', { ...validDto, payoutSpeed: 'instant' }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw for exact minimum (cashout temporarily unavailable)', async () => {
+      ).rejects.toThrow(NotImplementedException);
       await expect(
         service.requestCashout('user1', { ...validDto, amount: 100 }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(NotImplementedException);
     });
   });
 

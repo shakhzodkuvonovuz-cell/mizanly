@@ -99,9 +99,10 @@ describe('WebhooksService', () => {
       await expect(service.delete('invalid', 'u1')).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw NotFoundException when user does not own webhook', async () => {
-      prisma.webhook.findUnique.mockResolvedValueOnce({ id: 'wh-1', createdById: 'other-user' });
-      await expect(service.delete('wh-1', 'u1')).rejects.toThrow(NotFoundException);
+    it('should throw ForbiddenException when non-owner non-admin tries to delete webhook', async () => {
+      prisma.webhook.findUnique.mockResolvedValueOnce({ id: 'wh-1', createdById: 'other-user', circleId: 'c1' });
+      prisma.circleMember.findUnique.mockResolvedValueOnce({ role: 'MEMBER' });
+      await expect(service.delete('wh-1', 'u1')).rejects.toThrow(ForbiddenException);
     });
   });
 

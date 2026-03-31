@@ -89,8 +89,12 @@ describe('PushService', () => {
   describe('sendToUsers', () => {
     it('should send to multiple users', async () => {
       prisma.device.findMany.mockResolvedValue([
-        { pushToken: 'ExponentPushToken[aaa]' },
-        { pushToken: 'ExponentPushToken[bbb]' },
+        { pushToken: 'ExponentPushToken[aaa]', userId: 'u1' },
+        { pushToken: 'ExponentPushToken[bbb]', userId: 'u2' },
+      ]);
+      prisma.notification.groupBy = jest.fn().mockResolvedValue([
+        { userId: 'u1', _count: 3 },
+        { userId: 'u2', _count: 1 },
       ]);
 
       await service.sendToUsers(['u1', 'u2'], { title: 'Broadcast', body: 'Test' });

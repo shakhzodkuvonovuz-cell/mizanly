@@ -34,6 +34,7 @@ class CashoutDto {
 @Controller('gifts')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 export class GiftsController {
   constructor(private giftsService: GiftsService) {}
 

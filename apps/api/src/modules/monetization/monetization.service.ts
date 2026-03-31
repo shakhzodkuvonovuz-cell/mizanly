@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  NotImplementedException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
@@ -44,7 +45,7 @@ export class MonetizationService {
   constructor(private prisma: PrismaService) {}
 
   async sendTip(senderId: string, receiverId: string, amount: number, message?: string) {
-    throw new BadRequestException('Tips require payment integration. Coming soon.');
+    throw new BadRequestException('Tips require Stripe integration. Use POST /api/v1/payments/create-payment-intent instead.');
 
     // Validate amount — enforce real minimum ($0.50 is typical Stripe minimum)
     if (amount < MIN_TIP_AMOUNT || amount > MAX_TIP_AMOUNT) {
@@ -464,7 +465,7 @@ export class MonetizationService {
   }
 
   async requestCashout(userId: string, dto: CashoutRequestDto) {
-    throw new BadRequestException('Cashout is temporarily unavailable. Stripe payout integration coming soon.');
+    throw new NotImplementedException('Cashout requires Stripe Connect payout integration. Coming soon.');
 
     const { amount: diamonds, payoutSpeed, paymentMethodId } = dto;
 

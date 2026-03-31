@@ -104,7 +104,7 @@ export class DonateZakatDto {
 // ── Community Treasury ──────────────────────────────────
 
 export class CreateTreasuryDto {
-  @ApiProperty() @IsString() circleId: string;
+  @ApiProperty() @IsString() @MaxLength(50) circleId: string;
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(1000) description?: string;
   @ApiProperty() @IsNumber() @Min(1) @Max(10_000_000) goalAmount: number;

@@ -101,6 +101,8 @@ describe('NotificationsService', () => {
               displayName: true,
               avatarUrl: true,
               isVerified: true,
+              isBanned: true,
+              isDeactivated: true,
             },
           },
           // Conditional content includes — all 4 relations for unfiltered queries
@@ -743,9 +745,13 @@ describe('NotificationsService', () => {
   });
 
   describe('cleanupOldNotifications', () => {
-    it('should delete read notifications older than 90 days', async () => {
-      const mockIds = Array.from({ length: 42 }, (_, i) => ({ id: `notif-${i}` }));
-      prisma.notification.findMany.mockResolvedValueOnce(mockIds);
+    it('should delete read notifications older than 90 days and unread older than 1 year', async () => {
+      const mockReadIds = Array.from({ length: 42 }, (_, i) => ({ id: `notif-${i}` }));
+      // First call: read notifications batch, second call: no more read, third call: unread batch, fourth: no more unread
+      prisma.notification.findMany
+        .mockResolvedValueOnce(mockReadIds) // read batch
+        .mockResolvedValueOnce([])           // no more unread (365-day pass)
+      ;
       prisma.notification.deleteMany.mockResolvedValue({ count: 42 });
 
       const result = await service.cleanupOldNotifications();
@@ -768,31 +774,38 @@ describe('NotificationsService', () => {
     });
 
     it('should return 0 when no old notifications exist', async () => {
-      prisma.notification.findMany.mockResolvedValueOnce([]);
+      prisma.notification.findMany.mockResolvedValue([]);
 
       const result = await service.cleanupOldNotifications();
 
       expect(result).toBe(0);
     });
 
-    it('should only target read notifications (not unread)', async () => {
-      prisma.notification.findMany.mockResolvedValueOnce([{ id: 'n1' }]);
+    it('should target read (90d) and unread (1y) notifications', async () => {
+      prisma.notification.findMany
+        .mockResolvedValueOnce([{ id: 'n1' }]) // read batch
+        .mockResolvedValueOnce([])              // no more unread
+      ;
       prisma.notification.deleteMany.mockResolvedValue({ count: 1 });
 
       await service.cleanupOldNotifications();
 
+      // First call should query read notifications
       const findArgs = prisma.notification.findMany.mock.calls[0][0];
       expect(findArgs.where.isRead).toBe(true);
     });
 
     it('should log when notifications are cleaned up', async () => {
-      prisma.notification.findMany.mockResolvedValueOnce([{ id: 'n1' }, { id: 'n2' }]);
+      prisma.notification.findMany
+        .mockResolvedValueOnce([{ id: 'n1' }, { id: 'n2' }])
+        .mockResolvedValueOnce([]) // no unread to clean
+      ;
       prisma.notification.deleteMany.mockResolvedValue({ count: 10 });
       const loggerSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
       await service.cleanupOldNotifications();
 
-      expect(loggerSpy).toHaveBeenCalledWith('Cleaned up 10 old read notification(s)');
+      expect(loggerSpy).toHaveBeenCalledWith('Cleaned up 10 old notification(s)');
       loggerSpy.mockRestore();
     });
 

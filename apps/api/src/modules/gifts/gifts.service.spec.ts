@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, NotImplementedException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { GiftsService } from './gifts.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -116,17 +116,13 @@ describe('GiftsService', () => {
   });
 
   describe('cashout', () => {
-    it('should throw BadRequestException (cashout temporarily unavailable)', async () => {
-      await expect(service.cashout('u1', 200)).rejects.toThrow(BadRequestException);
+    it('should throw NotImplementedException (cashout not yet available)', async () => {
+      await expect(service.cashout('u1', 200)).rejects.toThrow(NotImplementedException);
     });
 
-    it('should throw for minimum cashout', async () => {
-      await expect(service.cashout('u1', 50)).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw for insufficient diamonds', async () => {
-      prisma.coinBalance.findUnique.mockResolvedValue({ diamonds: 10 });
-      await expect(service.cashout('u1', 100)).rejects.toThrow(BadRequestException);
+    it('should throw NotImplementedException for any input (dead code after throw)', async () => {
+      await expect(service.cashout('u1', 50)).rejects.toThrow(NotImplementedException);
+      await expect(service.cashout('u1', 100)).rejects.toThrow(NotImplementedException);
     });
   });
 

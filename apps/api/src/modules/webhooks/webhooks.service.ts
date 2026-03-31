@@ -124,11 +124,9 @@ export class WebhooksService {
     });
   }
 
-  async list(circleId: string, userId?: string) {
+  async list(circleId: string, userId: string) {
     // Verify user is at least a member of the circle
-    if (userId) {
-      await this.requireCircleMember(circleId, userId);
-    }
+    await this.requireCircleMember(circleId, userId);
     return this.prisma.webhook.findMany({
       where: { circleId, isActive: true },
       select: { id: true, name: true, url: true, events: true, isActive: true, lastUsedAt: true, createdAt: true },
@@ -140,7 +138,12 @@ export class WebhooksService {
   async delete(webhookId: string, userId: string) {
     const webhook = await this.prisma.webhook.findUnique({ where: { id: webhookId } });
     if (!webhook) throw new NotFoundException('Webhook not found');
-    if (webhook.createdById !== userId) throw new NotFoundException('Webhook not found');
+
+    // Allow deletion if: creator OR circle admin/owner
+    if (webhook.createdById !== userId) {
+      await this.requireCircleAdmin(webhook.circleId, userId);
+    }
+
     return this.prisma.webhook.delete({ where: { id: webhookId } });
   }
 

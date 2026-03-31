@@ -17,7 +17,7 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class CreatePaymentIntentDto {
-  @IsNumber() @Min(50) @Max(10000000) amount: number;
+  @IsNumber() @Min(0.50) @Max(10000) amount: number; // amount in dollars
   @IsIn(['usd', 'gbp', 'eur', 'aud', 'cad']) currency: string;
   @IsString() @MaxLength(50) receiverId: string;
 }
@@ -25,6 +25,10 @@ class CreatePaymentIntentDto {
 class CreateSubscriptionDto {
   @IsString() @MaxLength(50) tierId: string;
   @IsString() @MaxLength(100) paymentMethodId: string;
+}
+
+class CancelSubscriptionDto {
+  @IsString() @MaxLength(100) subscriptionId: string;
 }
 
 class AttachPaymentMethodDto {
@@ -89,9 +93,9 @@ export class PaymentsController {
   @ApiResponse({ status: 404, description: 'Subscription not found' })
   cancelSubscription(
     @CurrentUser('id') userId: string,
-    @Body('subscriptionId') subscriptionId: string,
+    @Body() dto: CancelSubscriptionDto,
   ) {
-    return this.paymentsService.cancelSubscription(userId, subscriptionId);
+    return this.paymentsService.cancelSubscription(userId, dto.subscriptionId);
   }
 
   // === Payment Methods ===

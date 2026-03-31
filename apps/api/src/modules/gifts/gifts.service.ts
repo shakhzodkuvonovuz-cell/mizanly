@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  NotImplementedException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
@@ -121,13 +122,16 @@ export class GiftsService {
       throw new NotFoundException(`Gift type "${giftType}" not found in catalog`);
     }
 
-    // Validate receiver exists
+    // Validate receiver exists and is active
     const receiver = await this.prisma.user.findUnique({
       where: { id: receiverId },
-      select: { id: true },
+      select: { id: true, isBanned: true, isDeactivated: true },
     });
     if (!receiver) {
       throw new NotFoundException('Receiver not found');
+    }
+    if (receiver.isBanned || receiver.isDeactivated) {
+      throw new BadRequestException('Receiver account is not available');
     }
 
     const diamondsEarned = Math.floor(catalogItem.coins * DIAMOND_RATE);
@@ -257,25 +261,27 @@ export class GiftsService {
       data: {
         giftsSent: giftsSent.map((g) => {
           const catalogItem = GIFT_CATALOG.find((c) => c.type === g.giftType);
+          const receiver = 'receiver' in g ? g.receiver as { displayName: string | null; username: string } | null : null;
           return {
             id: g.id,
             giftType: g.giftType,
             giftName: catalogItem?.name || g.giftType,
             coins: g.coinCost,
             receiverId: g.receiverId,
-            receiverName: (g as any).receiver?.displayName || (g as any).receiver?.username,
+            receiverName: receiver?.displayName || receiver?.username || null,
             createdAt: g.createdAt,
           };
         }),
         giftsReceived: giftsReceived.map((g) => {
           const catalogItem = GIFT_CATALOG.find((c) => c.type === g.giftType);
+          const sender = 'sender' in g ? g.sender as { displayName: string | null; username: string } | null : null;
           return {
             id: g.id,
             giftType: g.giftType,
             giftName: catalogItem?.name || g.giftType,
             coins: g.coinCost,
             senderId: g.senderId,
-            senderName: (g as any).sender?.displayName || (g as any).sender?.username,
+            senderName: sender?.displayName || sender?.username || null,
             createdAt: g.createdAt,
           };
         }),
@@ -289,7 +295,7 @@ export class GiftsService {
   }
 
   async cashout(userId: string, diamonds: number): Promise<CashoutResult> {
-    throw new BadRequestException('Cashout is temporarily unavailable. Stripe payout integration coming soon.');
+    throw new NotImplementedException('Cashout requires Stripe Connect payout integration. Coming soon.');
 
     if (!Number.isInteger(diamonds) || diamonds <= 0) {
       throw new BadRequestException('Diamonds must be a positive integer');

@@ -6,6 +6,9 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+  HttpException,
   Logger,
   Inject,
 } from '@nestjs/common';
@@ -133,6 +136,22 @@ export class StripeWebhookController {
       }
     } catch (error) {
       this.logger.error(`Stripe webhook handler failed for ${event.type} (${event.id})`, error);
+
+      // Deterministic errors (bad data, not found, validation) will fail identically on every retry.
+      // Return 200 to stop Stripe's 3-day retry loop. Log for investigation.
+      const isDeterministic = error instanceof HttpException
+        && (error instanceof BadRequestException
+        || error instanceof NotFoundException
+        || error instanceof ForbiddenException);
+      if (isDeterministic) {
+        this.logger.warn(`Deterministic webhook error for ${event.id} — returning 200 to stop retries`);
+        // Mark as processed to prevent future retries
+        await this.prisma.processedWebhookEvent.create({
+          data: { eventId: event.id },
+        }).catch(() => {});
+        return { received: true, error: 'deterministic_failure' };
+      }
+
       throw error;
     }
 

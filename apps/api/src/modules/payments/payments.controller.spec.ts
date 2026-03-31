@@ -60,7 +60,7 @@ describe('PaymentsController', () => {
     it('should call paymentsService.cancelSubscription with userId and subscriptionId', async () => {
       service.cancelSubscription.mockResolvedValue({ cancelled: true } as any);
 
-      await controller.cancelSubscription(userId, 'sub-1');
+      await controller.cancelSubscription(userId, { subscriptionId: 'sub-1' } as any);
 
       expect(service.cancelSubscription).toHaveBeenCalledWith(userId, 'sub-1');
     });

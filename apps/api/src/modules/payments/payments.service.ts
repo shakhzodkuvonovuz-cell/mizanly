@@ -87,11 +87,11 @@ export class PaymentsService {
   private async storePaymentIntentMapping(paymentIntentId: string, tipId: string) {
     // Dual write: Redis (fast cache, 30d TTL) + DB (durable, no TTL)
     await this.redis.setex(`payment_intent:${paymentIntentId}`, 60 * 60 * 24 * 30, tipId);
-    this.prisma.paymentMapping.upsert({
+    await this.prisma.paymentMapping.upsert({
       where: { stripeId: paymentIntentId },
       create: { stripeId: paymentIntentId, internalId: tipId, type: 'tip' },
       update: { internalId: tipId },
-    }).catch(err => this.logger.warn(`Failed to persist payment mapping: ${err instanceof Error ? err.message : err}`));
+    });
   }
 
   /**
@@ -102,11 +102,11 @@ export class PaymentsService {
     const ONE_YEAR = 60 * 60 * 24 * 365;
     await this.redis.setex(`subscription:${stripeSubscriptionId}`, ONE_YEAR, subscriptionId);
     await this.redis.setex(`subscription:internal:${subscriptionId}`, ONE_YEAR, stripeSubscriptionId);
-    this.prisma.paymentMapping.upsert({
+    await this.prisma.paymentMapping.upsert({
       where: { stripeId: stripeSubscriptionId },
       create: { stripeId: stripeSubscriptionId, internalId: subscriptionId, type: 'subscription' },
       update: { internalId: subscriptionId },
-    }).catch(err => this.logger.warn(`Failed to persist subscription mapping: ${err instanceof Error ? err.message : err}`));
+    });
   }
 
   /**
@@ -161,7 +161,8 @@ export class PaymentsService {
     }
 
     // Price: 100 coins = $0.99 → amount in cents = coinAmount * 0.99
-    const priceInCents = Math.round(coinAmount * 0.99);
+    // Use Math.ceil to avoid giving more coins for the same price (50 and 51 coins both $0.50 with Math.round)
+    const priceInCents = Math.ceil(coinAmount * 0.99);
     if (priceInCents < 50) {
       throw new BadRequestException('Minimum purchase amount is $0.50');
     }
@@ -202,10 +203,16 @@ export class PaymentsService {
       throw new BadRequestException('Cannot tip yourself');
     }
 
-    // Verify receiver exists
-    const receiver = await this.prisma.user.findUnique({ where: { id: receiverId } });
+    // Verify receiver exists and is active
+    const receiver = await this.prisma.user.findUnique({
+      where: { id: receiverId },
+      select: { id: true, isBanned: true, isDeactivated: true },
+    });
     if (!receiver) {
       throw new NotFoundException('Receiver not found');
+    }
+    if (receiver.isBanned || receiver.isDeactivated) {
+      throw new BadRequestException('Receiver account is not available');
     }
 
     // Get Stripe customer for sender
@@ -651,14 +658,14 @@ export class PaymentsService {
     }
 
     // Atomically: update tip status + credit receiver
-    await this.prisma.$transaction(async (tx) => {
+    const completedTip = await this.prisma.$transaction(async (tx) => {
       const tip = await tx.tip.update({
         where: { id: tipId as string },
         data: {
           status: 'completed',
           stripePaymentId: paymentIntent.id,
         },
-        select: { receiverId: true, amount: true, platformFee: true },
+        select: { receiverId: true, senderId: true, amount: true, platformFee: true },
       });
 
       // Credit receiver's diamond balance (amount minus platform fee, converted to diamonds)
@@ -673,15 +680,23 @@ export class PaymentsService {
             update: { diamonds: { increment: diamondsEarned } },
             create: { userId: tip.receiverId, coins: 0, diamonds: diamondsEarned },
           });
+
+          // Create audit trail for diamond credit (required by reconciliation)
+          await tx.coinTransaction.create({
+            data: {
+              userId: tip.receiverId,
+              type: 'TIP_RECEIVED',
+              amount: diamondsEarned,
+              description: `Tip received (+${diamondsEarned} diamonds) — Stripe PI: ${paymentIntent.id}`,
+            },
+          });
         }
       }
+
+      return tip;
     });
 
-    // Notify receiver they received a tip
-    const completedTip = await this.prisma.tip.findFirst({
-      where: { stripePaymentId: paymentIntent.id },
-      select: { receiverId: true, senderId: true, amount: true },
-    });
+    // Notify receiver they received a tip (use returned tip from $transaction)
     if (completedTip?.receiverId) {
       const sender = completedTip.senderId
         ? await this.prisma.user.findUnique({ where: { id: completedTip.senderId }, select: { username: true } })

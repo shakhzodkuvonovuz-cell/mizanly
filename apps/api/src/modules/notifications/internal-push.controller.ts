@@ -10,13 +10,23 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
+import { IsArray, IsString, IsOptional, MaxLength, ArrayMaxSize } from 'class-validator';
+import { timingSafeEqual, createHmac } from 'crypto';
 import { PushService } from './push.service';
 
-interface InternalPushBody {
+class InternalPushDto {
+  @IsArray() @IsString({ each: true }) @ArrayMaxSize(100)
   userIds: string[];
+
+  @IsString() @MaxLength(200)
   title: string;
+
+  @IsString() @MaxLength(1000)
   body: string;
+
+  @IsOptional()
   data?: Record<string, string>;
 }
 
@@ -41,14 +51,20 @@ export class InternalPushController {
 
   @Post('push-to-users')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Server-to-server push notification (Go → NestJS)' })
   @ApiExcludeEndpoint()
   async pushToUsers(
     @Headers('x-internal-key') internalKey: string,
-    @Body() body: InternalPushBody,
+    @Body() body: InternalPushDto,
   ) {
-    // Validate service key
-    if (!this.serviceKey || internalKey !== this.serviceKey) {
+    // Timing-safe key comparison to prevent brute-force via timing attack
+    if (!this.serviceKey || !internalKey) {
+      throw new UnauthorizedException('Invalid internal service key');
+    }
+    const keyBuf = Buffer.from(this.serviceKey, 'utf8');
+    const inputBuf = Buffer.from(internalKey, 'utf8');
+    if (keyBuf.length !== inputBuf.length || !timingSafeEqual(keyBuf, inputBuf)) {
       throw new UnauthorizedException('Invalid internal service key');
     }
 
@@ -56,7 +72,7 @@ export class InternalPushController {
       return { success: true, sent: 0 };
     }
 
-    // Cap at 100 users per request to prevent abuse
+    // Cap at 100 users per request (defense-in-depth, DTO also enforces)
     const userIds = body.userIds.slice(0, 100);
 
     try {

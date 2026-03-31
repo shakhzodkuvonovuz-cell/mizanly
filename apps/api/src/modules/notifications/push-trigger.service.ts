@@ -16,7 +16,7 @@ export class PushTriggerService {
   async triggerPush(notificationId: string): Promise<void> {
     const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
-      include: { actor: true },
+      include: { actor: { select: { displayName: true } } },
     });
     if (!notification) {
       this.logger.warn(`Notification ${notificationId} not found`);
