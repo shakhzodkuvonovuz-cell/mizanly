@@ -40,6 +40,7 @@ describe('MajlisListsService', () => {
               findMany: jest.fn(),
             },
             $transaction: jest.fn(),
+            $executeRaw: jest.fn(),
           },
         },
       ],
@@ -449,7 +450,7 @@ describe('MajlisListsService', () => {
       const listId = 'list-1';
       const dto: AddMemberDto = { userId: 'user-456' };
       const mockList = { ownerId: userId, isPrivate: false };
-      const mockTargetUser = { id: 'user-456' };
+      const mockTargetUser = { id: 'user-456', isBanned: false, isDeactivated: false, isDeleted: false };
       prisma.majlisList.findUnique.mockResolvedValue(mockList);
       prisma.user.findUnique.mockResolvedValue(mockTargetUser);
       prisma.majlisListMember.findUnique.mockResolvedValue(null);
@@ -463,7 +464,7 @@ describe('MajlisListsService', () => {
       });
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user-456' },
-        select: { id: true },
+        select: { id: true, isBanned: true, isDeactivated: true, isDeleted: true },
       });
       expect(prisma.majlisListMember.findUnique).toHaveBeenCalledWith({
         where: { listId_userId: { listId, userId: 'user-456' } },
@@ -626,11 +627,11 @@ describe('MajlisListsService', () => {
         select: { isPrivate: true, ownerId: true, members: { select: { userId: true } } },
       });
       expect(prisma.thread.findMany).toHaveBeenCalledWith({
-        where: {
+        where: expect.objectContaining({
           userId: { in: ['user-456', 'user-789'] },
           isChainHead: true,
           isRemoved: false,
-        },
+        }),
         select: expect.any(Object),
         take: 21,
         orderBy: { createdAt: 'desc' },

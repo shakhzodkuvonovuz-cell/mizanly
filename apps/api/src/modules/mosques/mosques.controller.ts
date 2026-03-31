@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -44,10 +44,15 @@ export class MosquesController {
     @Query('lng') lng: string,
     @Query('radius') radius?: string,
   ) {
+    const parsedLat = parseFloat(lat);
+    const parsedLng = parseFloat(lng);
+    if (isNaN(parsedLat) || isNaN(parsedLng) || parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
+      throw new BadRequestException('lat must be -90..90 and lng must be -180..180');
+    }
     return this.mosquesService.findNearby(
-      parseFloat(lat),
-      parseFloat(lng),
-      radius ? parseInt(radius, 10) : 15,
+      parsedLat,
+      parsedLng,
+      radius ? Math.min(Math.max(parseInt(radius, 10) || 15, 1), 100) : 15,
     );
   }
 

@@ -13,6 +13,26 @@ export class CollabsService {
     if (!post) throw new NotFoundException('Post not found');
     if (post.userId !== userId) throw new ForbiddenException('Only post owner can invite collaborators');
 
+    // Verify target user exists and is active
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, isBanned: true, isDeactivated: true, isDeleted: true },
+    });
+    if (!targetUser || targetUser.isBanned || targetUser.isDeactivated || targetUser.isDeleted) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check block relationships — cannot invite if either party has blocked the other
+    const blocked = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: targetUserId },
+          { blockerId: targetUserId, blockedId: userId },
+        ],
+      },
+    });
+    if (blocked) throw new NotFoundException('User not found');
+
     // Use create + P2002 handling for race-condition-safe idempotency
     try {
       return await this.prisma.postCollab.create({
@@ -80,7 +100,7 @@ export class CollabsService {
 
   async getPostCollabs(postId: string) {
     return this.prisma.postCollab.findMany({
-      where: { postId },
+      where: { postId, status: { in: [CollabStatus.ACCEPTED, CollabStatus.PENDING] } },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
       orderBy: { createdAt: 'asc' },
       take: 50,
@@ -89,7 +109,7 @@ export class CollabsService {
 
   async getAcceptedCollabs(userId: string, cursor?: string, limit = 20) {
     const collabs = await this.prisma.postCollab.findMany({
-      where: { userId, status: CollabStatus.ACCEPTED, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: { userId, status: CollabStatus.ACCEPTED },
       include: {
         post: {
           select: { id: true, content: true, mediaUrls: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
@@ -97,10 +117,11 @@ export class CollabsService {
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     const hasMore = collabs.length > limit;
-    if (hasMore) collabs.pop();
-    return { data: collabs, meta: { cursor: collabs[collabs.length - 1]?.id ?? null, hasMore } };
+    const items = hasMore ? collabs.slice(0, limit) : collabs;
+    return { data: items, meta: { cursor: items[items.length - 1]?.id ?? null, hasMore } };
   }
 
   private async getCollab(collabId: string) {

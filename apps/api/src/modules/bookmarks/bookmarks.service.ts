@@ -200,7 +200,11 @@ export class BookmarksService {
 
   // Get saved posts with optional collection filter
   async getSavedPosts(userId: string, collectionName?: string, cursor?: string, limit = 20) {
-    const where: Prisma.SavedPostWhereInput = { userId };
+    limit = Math.min(Math.max(Number(limit) || 20, 1), 50);
+    const where: Prisma.SavedPostWhereInput = {
+      userId,
+      post: { isRemoved: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
+    };
     if (collectionName) where.collectionName = collectionName;
 
     const saved = await this.prisma.savedPost.findMany({
@@ -254,8 +258,9 @@ export class BookmarksService {
 
   // Get saved threads
   async getSavedThreads(userId: string, cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(Number(limit) || 20, 1), 50);
     const saved = await this.prisma.threadBookmark.findMany({
-      where: { userId },
+      where: { userId, thread: { isRemoved: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } } },
       include: {
         thread: {
           select: {
@@ -302,8 +307,9 @@ export class BookmarksService {
 
   // Get saved videos
   async getSavedVideos(userId: string, cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(Number(limit) || 20, 1), 50);
     const saved = await this.prisma.videoBookmark.findMany({
-      where: { userId },
+      where: { userId, video: { isRemoved: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } } },
       include: {
         video: {
           select: {

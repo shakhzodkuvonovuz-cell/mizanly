@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Body, UseGuards, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -54,8 +54,11 @@ export class HalalController {
     @Query('certified') certified?: string,
     @Query('cursor') cursor?: string,
   ) {
-    const parsedLat = Math.max(-90, Math.min(90, parseFloat(lat) || 0));
-    const parsedLng = Math.max(-180, Math.min(180, parseFloat(lng) || 0));
+    const parsedLat = parseFloat(lat);
+    const parsedLng = parseFloat(lng);
+    if (isNaN(parsedLat) || isNaN(parsedLng) || parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
+      throw new BadRequestException('lat must be -90..90 and lng must be -180..180');
+    }
     const parsedRadius = Math.max(1, Math.min(500, radius ? parseFloat(radius) : 10));
     return this.halalService.findNearby(
       parsedLat,

@@ -12,6 +12,8 @@ describe('CollabsService', () => {
     prisma = {
       post: { findUnique: jest.fn() },
       postCollab: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
+      user: { findUnique: jest.fn() },
+      block: { findFirst: jest.fn() },
     };
     const module = await Test.createTestingModule({
       providers: [
@@ -23,6 +25,8 @@ describe('CollabsService', () => {
   describe('invite', () => {
     it('creates collab invite', async () => {
       prisma.post.findUnique.mockResolvedValue({ id: 'post1', userId: 'user1' });
+      prisma.user.findUnique.mockResolvedValue({ id: 'user2', isBanned: false, isDeactivated: false, isDeleted: false });
+      prisma.block.findFirst.mockResolvedValue(null);
       prisma.postCollab.findUnique.mockResolvedValue(null);
       prisma.postCollab.create.mockResolvedValue({ id: 'c1', status: 'PENDING' });
       const result = await service.invite('user1', 'post1', 'user2');
@@ -41,6 +45,8 @@ describe('CollabsService', () => {
     it('rejects duplicate invite (P2002)', async () => {
       const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
       prisma.post.findUnique.mockResolvedValue({ id: 'post1', userId: 'user1' });
+      prisma.user.findUnique.mockResolvedValue({ id: 'user2', isBanned: false, isDeactivated: false, isDeleted: false });
+      prisma.block.findFirst.mockResolvedValue(null);
       prisma.postCollab.create.mockRejectedValue(
         new PrismaClientKnownRequestError('Unique', { code: 'P2002', clientVersion: '0' }),
       );

@@ -234,23 +234,25 @@ describe('BookmarksService', () => {
       const result = await service.getSavedPosts(userId, undefined, cursor, limit);
       expect(result.data).toHaveLength(2);
       expect(result.meta.hasMore).toBe(false);
-      expect(prisma.savedPost.findMany).toHaveBeenCalledWith({
-        where: { userId },
-        include: expect.any(Object),
-        take: limit + 1,
-        orderBy: { createdAt: 'desc' },
-      });
+      expect(prisma.savedPost.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId }),
+          take: limit + 1,
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
     });
 
     it('should filter by collection', async () => {
       prisma.savedPost.findMany.mockResolvedValue([]);
       await service.getSavedPosts(userId, 'favorites', cursor, limit);
-      expect(prisma.savedPost.findMany).toHaveBeenCalledWith({
-        where: { userId, collectionName: 'favorites' },
-        include: expect.any(Object),
-        take: limit + 1,
-        orderBy: { createdAt: 'desc' },
-      });
+      expect(prisma.savedPost.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId, collectionName: 'favorites' }),
+          take: limit + 1,
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
     });
   });
 

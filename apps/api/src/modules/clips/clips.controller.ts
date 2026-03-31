@@ -42,7 +42,7 @@ export class ClipsController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.clipsService.getByVideo(videoId, cursor, limit ? parseInt(limit) : undefined);
+    return this.clipsService.getByVideo(videoId, cursor, limit ? parseInt(limit, 10) || 20 : undefined);
   }
 
   @Get('me')
@@ -54,7 +54,7 @@ export class ClipsController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.clipsService.getByUser(userId, cursor, limit ? parseInt(limit) : undefined);
+    return this.clipsService.getByUser(userId, cursor, limit ? parseInt(limit, 10) || 20 : undefined);
   }
 
   @Delete(':id')

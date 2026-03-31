@@ -8,6 +8,7 @@ import { ReelsService } from './reels.service';
 import { CreateReelDto } from './dto/create-reel.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { ReportDto } from './dto/report.dto';
+import { UpdateReelDto } from './dto/update-reel.dto';
 
 @ApiTags('reels')
 @ApiBearerAuth()
@@ -103,7 +104,7 @@ export class ReelsController {
   updateReel(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body() dto: { caption?: string; hashtags?: string[] },
+    @Body() dto: UpdateReelDto,
   ) {
     return this.reelsService.updateReel(id, userId, dto);
   }
@@ -134,6 +135,7 @@ export class ReelsController {
     return this.reelsService.like(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Delete(':id/like')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Unlike a reel' })
@@ -214,6 +216,7 @@ export class ReelsController {
     return this.reelsService.bookmark(id, userId);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Delete(':id/bookmark')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Remove bookmark from a reel' })

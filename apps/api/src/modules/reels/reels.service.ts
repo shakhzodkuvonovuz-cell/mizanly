@@ -483,6 +483,14 @@ export class ReelsService {
     if (reel.userId !== userId) throw new ForbiddenException();
     if (reel.isRemoved) throw new BadRequestException('Reel has been removed');
 
+    // Content moderation on edit — prevent bait-and-switch
+    if (data.caption) {
+      const modResult = await this.contentSafety.moderateText(data.caption);
+      if (!modResult.safe) {
+        throw new BadRequestException(`Content flagged: ${modResult.flags?.join(', ') || 'policy violation'}`);
+      }
+    }
+
     const updated = await this.prisma.reel.update({
       where: { id: reelId },
       data: {
@@ -558,14 +566,18 @@ export class ReelsService {
     await this.prisma.reel.update({
       where: { id: reelId },
       data: { viewsCount: { increment: 1 } },
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      this.logger.warn(`Failed to record view for reel ${reelId}`, err instanceof Error ? err.message : err);
+    });
   }
 
   async recordLoop(reelId: string): Promise<void> {
     await this.prisma.reel.update({
       where: { id: reelId },
       data: { loopsCount: { increment: 1 } },
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      this.logger.warn(`Failed to record loop for reel ${reelId}`, err instanceof Error ? err.message : err);
+    });
   }
 
   async delete(reelId: string, userId: string) {
@@ -580,6 +592,12 @@ export class ReelsService {
       }),
       this.prisma.$executeRaw`UPDATE "users" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
+
+    // Decrement audio track reel count if applicable
+    if (reel.audioTrackId) {
+      this.prisma.$executeRaw`UPDATE "audio_tracks" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${reel.audioTrackId}`
+        .catch((err: unknown) => this.logger.warn(`Failed to decrement audio track count`, err instanceof Error ? err.message : err));
+    }
 
     // Decrement hashtag counters for removed reel
     if (reel.hashtags && reel.hashtags.length > 0) {
@@ -757,7 +775,7 @@ export class ReelsService {
       }),
       this.prisma.$executeRaw`
         UPDATE "reels"
-        SET "commentsCount" = "commentsCount" + 1
+        SET "commentsCount" = GREATEST(0, "commentsCount" + 1)
         WHERE id = ${reelId}
       `,
     ]);
@@ -796,6 +814,11 @@ export class ReelsService {
     const comment = await this.prisma.reelComment.findUnique({ where: { id: commentId } });
     if (!comment || comment.reelId !== reelId) throw new NotFoundException('Comment not found');
 
+    // Prevent self-liking
+    if (comment.userId === userId) {
+      throw new BadRequestException('Cannot like your own comment');
+    }
+
     try {
       await this.prisma.$transaction([
         this.prisma.reelCommentReaction.create({
@@ -808,7 +831,7 @@ export class ReelsService {
       ]);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return { liked: true };
+        throw new ConflictException('Already liked');
       }
       throw error;
     }
@@ -830,19 +853,17 @@ export class ReelsService {
   }
 
   async getComments(reelId: string, userId: string | undefined, cursor?: string, limit = 20) {
-    // Build excluded user IDs from blocks/mutes
+    // Build excluded user IDs from blocks (both directions) + mutes
     let excludedUserIds: string[] = [];
     if (userId) {
-      const [blocks, mutes] = await Promise.all([
-        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
-    }),
-        this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
-      take: 50,
-    }),
+      const [blocks, reverseBlocks, mutes] = await Promise.all([
+        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true }, take: 50 }),
+        this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true }, take: 50 }),
+        this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true }, take: 50 }),
       ]);
       excludedUserIds = [
         ...blocks.map(b => b.blockedId),
+        ...reverseBlocks.map(b => b.blockerId),
         ...mutes.map(m => m.mutedId),
       ];
     }
@@ -850,6 +871,7 @@ export class ReelsService {
     const comments = await this.prisma.reelComment.findMany({
       where: {
         reelId,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
         ...(excludedUserIds.length ? { userId: { notIn: excludedUserIds } } : {}),
       },
       select: {
@@ -897,7 +919,7 @@ export class ReelsService {
       });
       await tx.$executeRaw`
         UPDATE "reels"
-        SET "sharesCount" = "sharesCount" + 1
+        SET "sharesCount" = GREATEST(0, "sharesCount" + 1)
         WHERE id = ${reelId}
       `;
     });
@@ -988,15 +1010,31 @@ export class ReelsService {
   }
 
   async getUserReels(username: string, cursor?: string, limit = 20, userId?: string) {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true, isPrivate: true, isBanned: true, isDeactivated: true, isDeleted: true },
+    });
     if (!user) throw new NotFoundException('User not found');
+    // Block access to banned/deactivated/deleted users
+    if (user.isBanned || user.isDeactivated || user.isDeleted) throw new NotFoundException('User not found');
 
     const isOwn = userId === user.id;
+
+    // Private account check — non-followers can't see reels
+    if (!isOwn && user.isPrivate && userId) {
+      const follows = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId, followingId: user.id } },
+      });
+      if (!follows) throw new NotFoundException('User not found');
+    } else if (!isOwn && user.isPrivate) {
+      throw new NotFoundException('User not found');
+    }
+
     // Owner sees all reels (including trial + scheduled); others see only published non-trial
     const trialFilter = isOwn ? {} : { isTrial: false };
     const scheduledFilter = isOwn ? {} : { OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] };
     const reels = await this.prisma.reel.findMany({
-      where: { userId: user.id, status: ReelStatus.READY, isRemoved: false, ...trialFilter, ...scheduledFilter },
+      where: { userId: user.id, status: ReelStatus.READY, isRemoved: false, isArchived: false, ...trialFilter, ...scheduledFilter },
       select: REEL_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -1064,7 +1102,7 @@ export class ReelsService {
 
   async getByAudioTrack(audioTrackId: string, cursor?: string, limit = 20, userId?: string) {
     const reels = await this.prisma.reel.findMany({
-      where: { audioTrackId, status: ReelStatus.READY, isRemoved: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+      where: { audioTrackId, status: ReelStatus.READY, isRemoved: false, isArchived: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }], user: { isPrivate: false, isBanned: false, isDeactivated: false, isDeleted: false } },
       select: REEL_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -1114,7 +1152,7 @@ export class ReelsService {
     if (!parent) throw new NotFoundException('Reel not found');
 
     const reels = await this.prisma.reel.findMany({
-      where: { duetOfId: reelId, status: ReelStatus.READY, isRemoved: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+      where: { duetOfId: reelId, status: ReelStatus.READY, isRemoved: false, isArchived: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }], user: { isPrivate: false, isBanned: false, isDeactivated: false, isDeleted: false } },
       select: REEL_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -1164,7 +1202,7 @@ export class ReelsService {
     if (!parent) throw new NotFoundException('Reel not found');
 
     const reels = await this.prisma.reel.findMany({
-      where: { stitchOfId: reelId, status: ReelStatus.READY, isRemoved: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }] },
+      where: { stitchOfId: reelId, status: ReelStatus.READY, isRemoved: false, isArchived: false, isTrial: false, OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }], user: { isPrivate: false, isBanned: false, isDeactivated: false, isDeleted: false } },
       select: REEL_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

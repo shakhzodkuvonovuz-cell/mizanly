@@ -42,6 +42,7 @@ export class ClipsService {
   }
 
   async getByVideo(videoId: string, cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(Number(limit) || 20, 1), 50);
     const where: Record<string, unknown> = { sourceVideoId: videoId };
     if (cursor) where.id = { lt: cursor };
 
@@ -64,6 +65,7 @@ export class ClipsService {
   }
 
   async getByUser(userId: string, cursor?: string, limit = 20) {
+    limit = Math.min(Math.max(Number(limit) || 20, 1), 50);
     const where: Record<string, unknown> = { userId };
     if (cursor) where.id = { lt: cursor };
 
@@ -87,7 +89,7 @@ export class ClipsService {
 
   async delete(clipId: string, userId: string) {
     const clip = await this.prisma.videoClip.findFirst({ where: { id: clipId, userId } });
-    if (!clip) throw new NotFoundException();
+    if (!clip) throw new NotFoundException('Clip not found');
     return this.prisma.videoClip.delete({ where: { id: clipId } });
   }
 

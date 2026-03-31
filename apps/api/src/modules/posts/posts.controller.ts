@@ -13,45 +13,21 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { ReportDto } from './dto/report.dto';
 import { CrossPostDto } from './dto/cross-post.dto';
+import { SaveToCollectionDto } from './dto/save-to-collection.dto';
+import { PinPostDto } from './dto/pin-post.dto';
+import { ReactDto } from './dto/react.dto';
+import { EditCommentDto } from './dto/edit-comment.dto';
+import { RespondToTagDto } from './dto/respond-to-tag.dto';
+import { ShareDto } from './dto/share.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-
-class ReactDto {
-  @IsEnum(['LIKE', 'LOVE', 'SUPPORT', 'INSIGHTFUL'])
-  reaction: string;
-}
-
-class EditCommentDto {
-  @IsString()
-  @MaxLength(1000)
-  content: string;
-}
-
-class RespondToTagDto {
-  @IsEnum(['APPROVED', 'DECLINED'])
-  status: 'APPROVED' | 'DECLINED';
-}
-
-class ShareDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  content?: string;
-}
-
-class UpdatePostDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(2000)
-  content?: string;
-}
 
 @ApiTags('Posts (Saf)')
 @Controller('posts')
@@ -309,6 +285,7 @@ export class PostsController {
     return this.postsService.report(id, userId, dto.reason);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/dismiss')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -447,9 +424,9 @@ export class PostsController {
   saveToCollection(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('collection') collection: string,
+    @Body() dto: SaveToCollectionDto,
   ) {
-    return this.postsService.saveToCollection(id, userId, collection || 'default');
+    return this.postsService.saveToCollection(id, userId, dto.collection || 'default');
   }
 
   // Finding #274: Related posts
@@ -469,9 +446,9 @@ export class PostsController {
   pinPost(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('isPinned') isPinned: boolean,
+    @Body() dto: PinPostDto,
   ) {
-    return this.postsService.pinPost(id, userId, !!isPinned);
+    return this.postsService.pinPost(id, userId, dto.isPinned);
   }
 
   // Finding #251: Content performance comparison

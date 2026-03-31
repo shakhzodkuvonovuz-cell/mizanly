@@ -39,10 +39,13 @@ export class ScholarQAService {
   }
 
   async getUpcoming() {
+    // Scheduled sessions: future scheduledAt. Live sessions: any scheduledAt (already started).
     return this.prisma.scholarQA.findMany({
       where: {
-        status: { in: ['QA_SCHEDULED', 'QA_LIVE'] },
-        scheduledAt: { gte: new Date() },
+        OR: [
+          { status: 'QA_SCHEDULED', scheduledAt: { gte: new Date() } },
+          { status: 'QA_LIVE' },
+        ],
       },
       orderBy: { scheduledAt: 'asc' },
       take: 20,
@@ -66,6 +69,8 @@ export class ScholarQAService {
   async submitQuestion(userId: string, qaId: string, question: string) {
     const qa = await this.prisma.scholarQA.findUnique({ where: { id: qaId } });
     if (!qa) throw new NotFoundException('Q&A session not found');
+    if (qa.status === 'QA_ENDED') throw new BadRequestException('This Q&A session has ended');
+    if (qa.status === 'QA_CANCELLED') throw new BadRequestException('This Q&A session was cancelled');
 
     return this.prisma.scholarQuestion.create({
       data: { qaId, userId, question },

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, NotImplementedException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { IslamicService } from './islamic.service';
 import { PrismaService } from '../../config/prisma.service';
@@ -1434,31 +1434,22 @@ describe('IslamicService', () => {
   });
 
   describe('createDonation', () => {
-    it('should throw BadRequestException (charity donations temporarily unavailable)', async () => {
+    it('should throw NotImplementedException (charity donations not yet available)', async () => {
       await expect(service.createDonation('user-1', { amount: 100 } as any))
-        .rejects.toThrow(BadRequestException);
+        .rejects.toThrow(NotImplementedException);
     });
 
-    it('should throw BadRequestException with campaign (donations unavailable)', async () => {
+    it('should throw NotImplementedException for any input (dead code after throw)', async () => {
       await expect(service.createDonation('user-1', { amount: 50, campaignId: 'camp-1' } as any))
-        .rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for zero amount', async () => {
-      await expect(service.createDonation('user-1', { amount: 0 } as any)).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for amount > 1,000,000', async () => {
-      await expect(service.createDonation('user-1', { amount: 1000001 } as any)).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for negative amount', async () => {
-      await expect(service.createDonation('user-1', { amount: -10 } as any)).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for non-existent campaign (donations unavailable)', async () => {
+        .rejects.toThrow(NotImplementedException);
+      await expect(service.createDonation('user-1', { amount: 0 } as any))
+        .rejects.toThrow(NotImplementedException);
+      await expect(service.createDonation('user-1', { amount: 1000001 } as any))
+        .rejects.toThrow(NotImplementedException);
+      await expect(service.createDonation('user-1', { amount: -10 } as any))
+        .rejects.toThrow(NotImplementedException);
       await expect(service.createDonation('user-1', { amount: 100, campaignId: 'fake' } as any))
-        .rejects.toThrow(BadRequestException);
+        .rejects.toThrow(NotImplementedException);
     });
   });
 

@@ -59,7 +59,8 @@ export class IslamicNotificationsService {
         if (!timeStr) continue;
         const [h, m] = timeStr.split(':').map(Number);
         const prayerMinute = h * 60 + m;
-        if (Math.abs(currentTime - prayerMinute) <= 15) {
+        // DND during prayer: at prayer time and up to 15 min after (not before)
+        if (currentTime >= prayerMinute && currentTime <= prayerMinute + 15) {
           return true;
         }
       }

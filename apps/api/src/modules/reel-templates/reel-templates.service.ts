@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 
 interface TemplateSegment {
   startMs: number;
@@ -47,7 +48,7 @@ export class ReelTemplatesService {
         userId,
         name: data.name.trim(),
         sourceReelId: data.sourceReelId,
-        segments: JSON.parse(JSON.stringify(data.segments)),
+        segments: data.segments as unknown as Prisma.InputJsonValue,
       },
     });
   }
@@ -56,6 +57,10 @@ export class ReelTemplatesService {
     const take = Math.min(Math.max(limit, 1), 50);
 
     const templates = await this.prisma.reelTemplate.findMany({
+      where: {
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
+        sourceReel: { isRemoved: false },
+      },
       orderBy: trending
         ? { useCount: 'desc' }
         : { createdAt: 'desc' },

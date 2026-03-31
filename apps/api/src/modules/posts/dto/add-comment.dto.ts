@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, IsUUID } from 'class-validator';
+import { IsString, IsOptional, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AddCommentDto {
@@ -7,8 +7,8 @@ export class AddCommentDto {
   @MaxLength(1000)
   content: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, description: 'Parent comment ID (CUID format)' })
   @IsOptional()
-  @IsUUID()
+  @IsString()
   parentId?: string;
 }

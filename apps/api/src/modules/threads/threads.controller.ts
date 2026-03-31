@@ -18,6 +18,9 @@ import { ThreadsService } from './threads.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { ReportDto } from './dto/report.dto';
 import { AddReplyDto } from './dto/add-reply.dto';
+import { SetReplyPermissionDto } from './dto/set-reply-permission.dto';
+import { UpdateThreadDto } from './dto/update-thread.dto';
+import { CreateContinuationDto } from './dto/create-continuation.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -52,7 +55,7 @@ export class ThreadsController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.threadsService.getFeed('', 'trending', cursor, limit ? parseInt(limit, 10) : 20);
+    return this.threadsService.getFeed('', 'trending', cursor, Math.min(parseInt(limit ?? '20', 10) || 20, 50));
   }
 
   @Get('user/:username')
@@ -256,9 +259,9 @@ export class ThreadsController {
   setReplyPermission(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('permission') permission: 'everyone' | 'following' | 'mentioned' | 'none',
+    @Body() dto: SetReplyPermissionDto,
   ) {
-    return this.threadsService.setReplyPermission(id, userId, permission);
+    return this.threadsService.setReplyPermission(id, userId, dto.permission);
   }
 
   @Get(':id/can-reply')
@@ -298,9 +301,9 @@ export class ThreadsController {
   createContinuation(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('content') content: string,
+    @Body() dto: CreateContinuationDto,
   ) {
-    return this.threadsService.createContinuation(userId, id, content);
+    return this.threadsService.createContinuation(userId, id, dto.content);
   }
 
   // Bug 38: updateThread existed in service but had no controller route
@@ -312,9 +315,9 @@ export class ThreadsController {
   updateThread(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('content') content: string,
+    @Body() dto: UpdateThreadDto,
   ) {
-    return this.threadsService.updateThread(id, userId, content);
+    return this.threadsService.updateThread(id, userId, dto.content);
   }
 
   // Finding #263: Share thread content for story creation

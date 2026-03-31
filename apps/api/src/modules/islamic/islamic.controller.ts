@@ -15,7 +15,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, IsInt, Min, Max, IsIn } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsInt, Min, Max, MaxLength, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IslamicService } from './islamic.service';
 import {
@@ -121,6 +121,16 @@ class RamadanInfoQueryDto {
   lng?: number;
 }
 
+class FollowMosqueDto {
+  @IsString() @MaxLength(200) mosqueName: string;
+  @IsNumber() @Min(-90) @Max(90) lat: number;
+  @IsNumber() @Min(-180) @Max(180) lng: number;
+}
+
+class ClassifyContentDto {
+  @IsString() @MaxLength(10000) content: string;
+}
+
 @ApiTags('Islamic')
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('islamic')
@@ -192,7 +202,7 @@ export class IslamicController {
   @ApiOperation({ summary: 'Follow a mosque to get its specific prayer times' })
   async followMosque(
     @CurrentUser('id') userId: string,
-    @Body() body: { mosqueName: string; lat: number; lng: number },
+    @Body() body: FollowMosqueDto,
   ) {
     return this.islamicService.followMosque(userId, body.mosqueName, body.lat, body.lng);
   }
@@ -806,8 +816,8 @@ export class IslamicController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Classify text into Islamic content categories' })
-  classifyContent(@Body('content') content: string) {
-    return this.islamicService.classifyIslamicContent(content || '');
+  classifyContent(@Body() dto: ClassifyContentDto) {
+    return this.islamicService.classifyIslamicContent(dto.content);
   }
 
   // Finding #323: Hadith grade detection
@@ -816,7 +826,7 @@ export class IslamicController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Detect hadith grade and collection from text' })
-  detectHadithGrade(@Body('content') content: string) {
-    return this.islamicService.detectHadithGrade(content || '');
+  detectHadithGrade(@Body() dto: ClassifyContentDto) {
+    return this.islamicService.detectHadithGrade(dto.content);
   }
 }

@@ -26,6 +26,7 @@ import { enrichPostsForUser } from '../../common/utils/enrich';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
 import { ScoredFeedCache, ScoredItem } from '../../common/utils/scored-feed-cache';
+import { createHash } from 'crypto';
 
 const POST_SELECT = {
   id: true,
@@ -160,7 +161,7 @@ export class PostsService {
         async (): Promise<ScoredItem[]> => {
           const [excludedIds, dismissals] = await Promise.all([
             getExcludedUserIds(this.prisma, this.redis, userId),
-            this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'post' }, select: { contentId: true }, take: 200 }),
+            this.prisma.feedDismissal.findMany({ where: { userId, contentType: 'POST' }, select: { contentId: true }, take: 200 }),
           ]);
           const dismissedPostIds = dismissals.map(d => d.contentId);
 
@@ -316,6 +317,9 @@ export class PostsService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         userId: { in: visibleUserIds },
         user: { isBanned: false, isDeactivated: false, isDeleted: false },
+        AND: [
+          { OR: [{ visibility: 'PUBLIC' }, { visibility: 'FOLLOWERS' }, { userId }] },
+        ],
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: POST_SELECT,
@@ -430,6 +434,7 @@ export class PostsService {
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         visibility: { in: ['PUBLIC', 'FOLLOWERS'] },
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
       },
       select: POST_SELECT,
       take: limit + 1,
@@ -498,11 +503,8 @@ export class PostsService {
           skipDuplicates: true,
         });
         if (!isScheduled) {
-          // Batch increment postsCount using parameterized query (safe from SQL injection)
-          await tx.$executeRawUnsafe(
-            `UPDATE hashtags SET "postsCount" = "postsCount" + 1 WHERE name = ANY($1::text[])`,
-            hashtagNames,
-          );
+          // Batch increment postsCount using tagged template (safe from SQL injection)
+          await tx.$executeRaw`UPDATE hashtags SET "postsCount" = "postsCount" + 1 WHERE name = ANY(${hashtagNames}::text[])`;
         }
       }
 
@@ -543,7 +545,7 @@ export class PostsService {
           topics: dto.topics ?? [],
           scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
           // Finding #418: Content hash for legal evidence
-          contentHash: dto.content ? (await import('crypto')).createHash('sha256').update(dto.content).digest('hex') : undefined,
+          contentHash: dto.content ? createHash('sha256').update(dto.content).digest('hex') : undefined,
         },
         select: POST_SELECT,
       });
@@ -743,19 +745,44 @@ export class PostsService {
   }
 
   async getById(postId: string, viewerId?: string) {
-    const post = await this.prisma.post.findUnique({
-      where: { id: postId },
+    const post = await this.prisma.post.findFirst({
+      where: {
+        id: postId,
+        isRemoved: false,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
+      },
       select: {
         ...POST_SELECT,
         isRemoved: true,
         sharedPost: { select: { id: true, content: true, user: { select: { username: true } } } },
       },
     });
-    if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+    if (!post) throw new NotFoundException('Post not found');
 
     // Hide future-scheduled content from non-owners
     if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.user?.id !== viewerId) {
       throw new NotFoundException('Post not found');
+    }
+
+    // Enforce visibility — CIRCLE and FOLLOWERS posts require viewer checks
+    const isOwner = viewerId && post.user?.id === viewerId;
+    if (!isOwner && post.visibility !== 'PUBLIC') {
+      if (post.visibility === 'FOLLOWERS' && viewerId && post.user?.id) {
+        const follows = await this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: viewerId, followingId: post.user.id } },
+        });
+        if (!follows) throw new NotFoundException('Post not found');
+      } else if (post.visibility === 'CIRCLE') {
+        // CIRCLE posts require circle membership — non-members can't see
+        if (!viewerId || !post.circle) throw new NotFoundException('Post not found');
+        const member = await this.prisma.circleMember.findFirst({
+          where: { circleId: post.circle.id, userId: viewerId },
+        });
+        if (!member) throw new NotFoundException('Post not found');
+      } else if (!viewerId) {
+        // FOLLOWERS/CIRCLE not visible to anonymous users
+        throw new NotFoundException('Post not found');
+      }
     }
 
     // Check block status
@@ -812,6 +839,16 @@ export class PostsService {
     const postAge = Date.now() - new Date(post.createdAt).getTime();
     if (postAge > fifteenMinutesMs && data.content !== undefined) {
       throw new BadRequestException('Posts can only be edited within 15 minutes of creation');
+    }
+
+    // Content moderation on edit — prevent bait-and-switch (clean create → harmful edit)
+    if (data.content) {
+      const moderationResult = await this.contentSafety.moderateText(data.content);
+      if (!moderationResult.safe) {
+        throw new BadRequestException(
+          `Content flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise your post.'}`,
+        );
+      }
     }
 
     const updated = await this.prisma.post.update({
@@ -1004,6 +1041,7 @@ export class PostsService {
   async saveToCollection(postId: string, userId: string, collectionName: string) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+    if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.userId !== userId) throw new NotFoundException('Post not found');
 
     // Update or create the saved post with collection name
     const existing = await this.prisma.savedPost.findUnique({
@@ -1141,6 +1179,16 @@ export class PostsService {
     });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
 
+    // Hide future-scheduled content from non-owners
+    if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.userId !== userId) {
+      throw new NotFoundException('Post not found');
+    }
+
+    // Check remixAllowed — respect author's sharing preference
+    if (post.userId !== userId && !post.remixAllowed) {
+      throw new ForbiddenException('Post author has disabled sharing');
+    }
+
     // Block check: cannot share posts from users who blocked you or whom you blocked
     if (post.userId && post.userId !== userId) {
       const blocked = await this.prisma.block.findFirst({
@@ -1197,7 +1245,7 @@ export class PostsService {
 
   async getComments(postId: string, cursor?: string, limit = 20) {
     const comments = await this.prisma.comment.findMany({
-      where: { postId, parentId: null, isRemoved: false, isHidden: false },
+      where: { postId, parentId: null, isRemoved: false, isHidden: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
       include: {
         user: {
           select: {
@@ -1225,7 +1273,7 @@ export class PostsService {
 
   async getCommentReplies(commentId: string, cursor?: string, limit = 20) {
     const replies = await this.prisma.comment.findMany({
-      where: { parentId: commentId, isRemoved: false },
+      where: { parentId: commentId, isRemoved: false, isHidden: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
       include: {
         user: {
           select: {
@@ -1254,6 +1302,27 @@ export class PostsService {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
     if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.userId !== userId) throw new NotFoundException('Post not found');
+
+    // Content moderation on comments — prevent abusive content
+    if (dto.content) {
+      const moderationResult = await this.contentSafety.moderateText(dto.content);
+      if (!moderationResult.safe) {
+        throw new BadRequestException(
+          `Comment flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise your comment.'}`,
+        );
+      }
+    }
+
+    // Validate parentId belongs to the same post (prevent cross-post orphaned replies)
+    if (dto.parentId) {
+      const parent = await this.prisma.comment.findUnique({
+        where: { id: dto.parentId },
+        select: { postId: true },
+      });
+      if (!parent || parent.postId !== postId) {
+        throw new BadRequestException('Parent comment does not belong to this post');
+      }
+    }
 
     // Enforce commentPermission — owner always allowed (supersedes legacy commentsDisabled)
     const perm = post.commentPermission ?? 'EVERYONE';
@@ -1359,6 +1428,16 @@ export class PostsService {
     if (!comment || comment.isRemoved) throw new NotFoundException('Comment not found');
     if (comment.userId !== userId) throw new ForbiddenException();
 
+    // Content moderation on edit — prevent bait-and-switch
+    if (content) {
+      const moderationResult = await this.contentSafety.moderateText(content);
+      if (!moderationResult.safe) {
+        throw new BadRequestException(
+          `Comment flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise your comment.'}`,
+        );
+      }
+    }
+
     return this.prisma.comment.update({
       where: { id: commentId },
       data: { content: sanitizeText(content) },
@@ -1390,6 +1469,11 @@ export class PostsService {
   async likeComment(commentId: string, userId: string) {
     const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
     if (!comment) throw new NotFoundException('Comment not found');
+
+    // Prevent self-liking (consistent with post self-like guard)
+    if (comment.userId === userId) {
+      throw new BadRequestException('Cannot like your own comment');
+    }
 
     const existing = await this.prisma.commentReaction.findUnique({
       where: { userId_commentId: { userId, commentId } },
@@ -1469,11 +1553,22 @@ export class PostsService {
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
     if (post.userId !== userId) throw new ForbiddenException();
 
-    await this.prisma.savedPost.upsert({
+    // Check if already saved — only increment savesCount on new save
+    const existing = await this.prisma.savedPost.findUnique({
       where: { userId_postId: { userId, postId } },
-      update: { collectionName: 'archive' },
-      create: { userId, postId, collectionName: 'archive' },
     });
+
+    if (existing) {
+      await this.prisma.savedPost.update({
+        where: { userId_postId: { userId, postId } },
+        data: { collectionName: 'archive' },
+      });
+    } else {
+      await this.prisma.$transaction([
+        this.prisma.savedPost.create({ data: { userId, postId, collectionName: 'archive' } }),
+        this.prisma.post.update({ where: { id: postId }, data: { savesCount: { increment: 1 } } }),
+      ]);
+    }
     return { archived: true };
   }
 
@@ -1484,9 +1579,10 @@ export class PostsService {
     if (!existing || existing.collectionName !== 'archive') {
       throw new NotFoundException('Post not archived');
     }
-    await this.prisma.savedPost.delete({
-      where: { userId_postId: { userId, postId } },
-    });
+    await this.prisma.$transaction([
+      this.prisma.savedPost.delete({ where: { userId_postId: { userId, postId } } }),
+      this.prisma.$executeRaw`UPDATE "posts" SET "savesCount" = GREATEST("savesCount" - 1, 0) WHERE id = ${postId}`,
+    ]);
     return { archived: false };
   }
 
@@ -1599,8 +1695,11 @@ export class PostsService {
   }
 
   async getShareLink(postId: string) {
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
-    if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+    const post = await this.prisma.post.findFirst({
+      where: { id: postId, isRemoved: false, visibility: 'PUBLIC' },
+      select: { id: true },
+    });
+    if (!post) throw new NotFoundException('Post not found');
     return { url: `https://mizanly.app/post/${postId}` };
   }
 
@@ -1621,31 +1720,36 @@ export class PostsService {
     const targets = dto.targetSpaces.filter(s => validSpaces.includes(s) && s !== post.space);
     if (targets.length === 0) throw new BadRequestException('No valid target spaces');
 
-    const newPosts = [];
-    for (const space of targets) {
-      const newPost = await this.prisma.post.create({
-        data: {
-          userId,
-          content: dto.captionOverride ?? post.content,
-          mediaUrls: post.mediaUrls,
-          mediaTypes: post.mediaTypes,
-          thumbnailUrl: post.thumbnailUrl,
-          mediaWidth: post.mediaWidth,
-          mediaHeight: post.mediaHeight,
-          postType: post.postType,
-          space: space as ContentSpace, // Safe: filtered by validSpaces whitelist above
-          hashtags: post.hashtags,
-          mentions: post.mentions,
-        },
-        select: POST_SELECT,
-      });
-      newPosts.push(newPost);
-    }
+    // Wrap all cross-posts + counter in a transaction to prevent partial failures
+    const newPosts = await this.prisma.$transaction(async (tx) => {
+      const posts = [];
+      for (const space of targets) {
+        const newPost = await tx.post.create({
+          data: {
+            userId,
+            content: dto.captionOverride ?? post.content,
+            mediaUrls: post.mediaUrls,
+            mediaTypes: post.mediaTypes,
+            thumbnailUrl: post.thumbnailUrl,
+            mediaWidth: post.mediaWidth,
+            mediaHeight: post.mediaHeight,
+            postType: post.postType,
+            space: space as ContentSpace, // Safe: filtered by validSpaces whitelist above
+            hashtags: post.hashtags,
+            mentions: post.mentions,
+          },
+          select: POST_SELECT,
+        });
+        posts.push(newPost);
+      }
 
-    // Increment user's post count for the cross-posted items
-    if (newPosts.length > 0) {
-      await this.prisma.$executeRaw`UPDATE "users" SET "postsCount" = "postsCount" + ${newPosts.length} WHERE id = ${userId}`;
-    }
+      // Increment user's post count atomically with GREATEST protection
+      if (posts.length > 0) {
+        await tx.$executeRaw`UPDATE "users" SET "postsCount" = "postsCount" + ${posts.length} WHERE id = ${userId}`;
+      }
+
+      return posts;
+    });
 
     return newPosts;
   }

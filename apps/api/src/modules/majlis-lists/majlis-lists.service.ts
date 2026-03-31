@@ -261,12 +261,12 @@ export class MajlisListsService {
       throw new ForbiddenException('Only the list owner can add members');
     }
 
-    // Check if user exists
+    // Check if user exists and is active
     const targetUser = await this.prisma.user.findUnique({
       where: { id: dto.userId },
-      select: { id: true },
+      select: { id: true, isBanned: true, isDeactivated: true, isDeleted: true },
     });
-    if (!targetUser) {
+    if (!targetUser || targetUser.isBanned || targetUser.isDeactivated || targetUser.isDeleted) {
       throw new NotFoundException('User not found');
     }
 
@@ -314,15 +314,12 @@ export class MajlisListsService {
       throw new NotFoundException('User is not a member of this list');
     }
 
-    // Use transaction to remove member and decrement count
+    // Use transaction to remove member and decrement count (with GREATEST to prevent negative)
     await this.prisma.$transaction([
       this.prisma.majlisListMember.delete({
         where: { listId_userId: { listId, userId: memberUserId } },
       }),
-      this.prisma.majlisList.update({
-        where: { id: listId },
-        data: { membersCount: { decrement: 1 } },
-      }),
+      this.prisma.$executeRaw`UPDATE "majlis_lists" SET "membersCount" = GREATEST("membersCount" - 1, 0) WHERE id = ${listId}`,
     ]);
 
     return { success: true };
@@ -362,6 +359,9 @@ export class MajlisListsService {
         userId: { in: memberIds },
         isChainHead: true,
         isRemoved: false,
+        OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+        visibility: { in: ['PUBLIC', 'FOLLOWERS'] },
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
       },
       select: {
         id: true,

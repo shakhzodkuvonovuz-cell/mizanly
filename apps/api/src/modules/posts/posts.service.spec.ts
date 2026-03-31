@@ -45,6 +45,7 @@ describe('PostsService', () => {
             },
             follow: {
               findMany: jest.fn(),
+              findUnique: jest.fn(),
             },
             block: {
               findMany: jest.fn().mockResolvedValue([]),
@@ -374,17 +375,18 @@ describe('PostsService', () => {
       const mockPost = {
         id: postId,
         content: 'Test post',
+        visibility: 'PUBLIC',
         user: { id: 'owner', username: 'owner' },
         isRemoved: false,
       };
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.post.findFirst.mockResolvedValue(mockPost);
       prisma.postReaction.findUnique.mockResolvedValue({ reaction: 'LIKE' });
       prisma.savedPost.findUnique.mockResolvedValue(null);
 
       const result = await service.getById(postId, viewerId);
 
-      expect(prisma.post.findUnique).toHaveBeenCalledWith({
-        where: { id: postId },
+      expect(prisma.post.findFirst).toHaveBeenCalledWith({
+        where: expect.objectContaining({ id: postId, isRemoved: false }),
         select: expect.any(Object),
       });
       expect(result).toEqual({
@@ -399,15 +401,16 @@ describe('PostsService', () => {
       const mockPost = {
         id: postId,
         content: 'Test post',
+        visibility: 'PUBLIC',
         user: { id: 'owner', username: 'owner' },
         isRemoved: false,
       };
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.post.findFirst.mockResolvedValue(mockPost);
 
       const result = await service.getById(postId);
 
-      expect(prisma.post.findUnique).toHaveBeenCalledWith({
-        where: { id: postId },
+      expect(prisma.post.findFirst).toHaveBeenCalledWith({
+        where: expect.objectContaining({ id: postId, isRemoved: false }),
         select: expect.any(Object),
       });
       expect(result).toEqual({
@@ -417,15 +420,39 @@ describe('PostsService', () => {
       });
     });
 
-    it('should throw NotFoundException if post is removed', async () => {
-      const postId = 'post-456';
-      const mockPost = {
-        id: postId,
-        isRemoved: true,
-      };
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+    it('should throw NotFoundException if post not found (banned user)', async () => {
+      prisma.post.findFirst.mockResolvedValue(null);
+      await expect(service.getById('post-456')).rejects.toThrow(NotFoundException);
+    });
 
-      await expect(service.getById(postId)).rejects.toThrow(NotFoundException);
+    it('should throw NotFoundException for FOLLOWERS-only post from non-follower', async () => {
+      const mockPost = {
+        id: 'post-456',
+        visibility: 'FOLLOWERS',
+        user: { id: 'author-1' },
+        isRemoved: false,
+      };
+      prisma.post.findFirst.mockResolvedValue(mockPost);
+      prisma.follow.findUnique.mockResolvedValue(null);
+
+      await expect(service.getById('post-456', 'viewer-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return FOLLOWERS-only post for actual follower', async () => {
+      const mockPost = {
+        id: 'post-456',
+        visibility: 'FOLLOWERS',
+        user: { id: 'author-1' },
+        isRemoved: false,
+      };
+      prisma.post.findFirst.mockResolvedValue(mockPost);
+      prisma.follow.findUnique.mockResolvedValue({ followerId: 'viewer-1', followingId: 'author-1' });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.postReaction.findUnique.mockResolvedValue(null);
+      prisma.savedPost.findUnique.mockResolvedValue(null);
+
+      const result = await service.getById('post-456', 'viewer-1');
+      expect(result.id).toBe('post-456');
     });
   });
 
@@ -942,13 +969,13 @@ describe('PostsService', () => {
 
   describe('getById — additional', () => {
     it('should throw NotFoundException if post not found', async () => {
-      prisma.post.findUnique.mockResolvedValue(null);
+      prisma.post.findFirst.mockResolvedValue(null);
       await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
     });
 
     it('should return post with isSaved=true when user has saved', async () => {
-      const mockPost = { id: 'post-456', content: 'Test', user: { id: 'owner' }, isRemoved: false };
-      prisma.post.findUnique.mockResolvedValue(mockPost);
+      const mockPost = { id: 'post-456', content: 'Test', visibility: 'PUBLIC', user: { id: 'owner' }, isRemoved: false };
+      prisma.post.findFirst.mockResolvedValue(mockPost);
       prisma.postReaction.findUnique.mockResolvedValue(null);
       prisma.savedPost.findUnique.mockResolvedValue({ userId: 'user-1', postId: 'post-456' });
 
@@ -1192,19 +1219,19 @@ describe('PostsService', () => {
   // ═══════════════════════════════════════════════════════
 
   describe('getShareLink', () => {
-    it('should return share URL for existing post', async () => {
-      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', isRemoved: false });
+    it('should return share URL for existing public post', async () => {
+      prisma.post.findFirst.mockResolvedValue({ id: 'post-1' });
       const result = await service.getShareLink('post-1');
       expect(result.url).toContain('post-1');
     });
 
-    it('should throw NotFoundException for removed post', async () => {
-      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', isRemoved: true });
+    it('should throw NotFoundException for non-public or removed post', async () => {
+      prisma.post.findFirst.mockResolvedValue(null);
       await expect(service.getShareLink('post-1')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException for nonexistent post', async () => {
-      prisma.post.findUnique.mockResolvedValue(null);
+      prisma.post.findFirst.mockResolvedValue(null);
       await expect(service.getShareLink('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });

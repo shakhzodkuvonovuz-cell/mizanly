@@ -351,7 +351,7 @@ export class CounterReconciliationService {
       const driftedThreads = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT u.id, COUNT(t.id)::bigint as actual
         FROM "users" u
-        LEFT JOIN "Thread" t ON t."userId" = u.id AND t."isRemoved" = false
+        LEFT JOIN "threads" t ON t."userId" = u.id AND t."isRemoved" = false
         WHERE u."isDeleted" = false
         GROUP BY u.id
         HAVING COUNT(t.id) != u."threadsCount"
@@ -462,7 +462,7 @@ export class CounterReconciliationService {
         await this.prisma.$executeRaw`
           UPDATE "threads" SET "likesCount" = v.actual::int
           FROM (VALUES ${Prisma.join(driftedLikes.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
-          WHERE "Thread".id = v.id
+          WHERE "threads".id = v.id
         `;
       }
 
@@ -479,7 +479,7 @@ export class CounterReconciliationService {
         await this.prisma.$executeRaw`
           UPDATE "threads" SET "repliesCount" = v.actual::int
           FROM (VALUES ${Prisma.join(driftedReplies.map(r => Prisma.sql`(${r.id}, ${Number(r.actual)})`))} ) AS v(id, actual)
-          WHERE "Thread".id = v.id
+          WHERE "threads".id = v.id
         `;
       }
 

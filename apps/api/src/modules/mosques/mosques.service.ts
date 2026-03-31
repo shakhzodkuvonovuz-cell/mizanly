@@ -99,6 +99,16 @@ export class MosquesService {
     });
     if (!membership) throw new NotFoundException('Not a member of this mosque');
 
+    // Prevent last admin from leaving
+    if (membership.role === 'admin') {
+      const adminCount = await this.prisma.mosqueMembership.count({
+        where: { mosqueId, role: 'admin' },
+      });
+      if (adminCount <= 1) {
+        throw new BadRequestException('Cannot leave — you are the last admin. Transfer admin role first.');
+      }
+    }
+
     await this.prisma.$transaction([
       this.prisma.mosqueMembership.delete({
         where: { mosqueId_userId: { mosqueId, userId } },
@@ -148,7 +158,11 @@ export class MosquesService {
     const members = await this.prisma.mosqueMembership.findMany({
       where: {
         mosqueId,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
         ...(cursor ? { createdAt: { gt: new Date(cursor) } } : {}),
+      },
+      include: {
+        user: { select: { id: true, displayName: true, avatarUrl: true, username: true } },
       },
       orderBy: { createdAt: 'asc' },
       take: limit + 1,

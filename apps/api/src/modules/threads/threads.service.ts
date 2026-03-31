@@ -74,6 +74,7 @@ const THREAD_SELECT = {
     select: {
       id: true,
       content: true,
+      isRemoved: true,
       user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
     },
   },
@@ -466,15 +467,38 @@ export class ThreadsService {
   }
 
   async getById(threadId: string, viewerId?: string) {
-    const thread = await this.prisma.thread.findUnique({
-      where: { id: threadId },
+    const thread = await this.prisma.thread.findFirst({
+      where: {
+        id: threadId,
+        isRemoved: false,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
+      },
       select: THREAD_SELECT,
     });
-    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+    if (!thread) throw new NotFoundException('Thread not found');
 
     // Hide future-scheduled content from non-owners
     if (thread.scheduledAt && new Date(thread.scheduledAt) > new Date() && thread.user?.id !== viewerId) {
       throw new NotFoundException('Thread not found');
+    }
+
+    // Enforce visibility — CIRCLE and FOLLOWERS threads require viewer checks
+    const isOwner = viewerId && thread.user?.id === viewerId;
+    if (!isOwner && thread.visibility !== 'PUBLIC') {
+      if (thread.visibility === 'FOLLOWERS' && viewerId && thread.user?.id) {
+        const follows = await this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: viewerId, followingId: thread.user.id } },
+        });
+        if (!follows) throw new NotFoundException('Thread not found');
+      } else if (thread.visibility === 'CIRCLE') {
+        if (!viewerId || !thread.circle) throw new NotFoundException('Thread not found');
+        const member = await this.prisma.circleMember.findFirst({
+          where: { circleId: thread.circle.id, userId: viewerId },
+        });
+        if (!member) throw new NotFoundException('Thread not found');
+      } else if (!viewerId) {
+        throw new NotFoundException('Thread not found');
+      }
     }
 
     let userReaction: string | null = null;
@@ -519,10 +543,18 @@ export class ThreadsService {
   }
 
   async updateThread(threadId: string, userId: string, content: string) {
-    const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId }, select: { userId: true, isRemoved: true } });
     if (!thread) throw new NotFoundException('Thread not found');
     if (thread.userId !== userId) throw new ForbiddenException();
     if (thread.isRemoved) throw new BadRequestException('Thread has been removed');
+
+    // Content moderation on edit — prevent bait-and-switch
+    if (content) {
+      const moderationResult = await this.contentSafety.moderateText(content);
+      if (!moderationResult.safe) {
+        throw new BadRequestException(`Content flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise.'}`);
+      }
+    }
 
     const updated = await this.prisma.thread.update({
       where: { id: threadId },
@@ -557,6 +589,14 @@ export class ThreadsService {
     if (!parent) throw new NotFoundException('Thread not found');
     if (parent.userId !== userId) throw new ForbiddenException('Only the author can add continuations');
     if (parent.isRemoved) throw new BadRequestException('Thread has been removed');
+
+    // Content moderation on continuation
+    if (content) {
+      const moderationResult = await this.contentSafety.moderateText(content);
+      if (!moderationResult.safe) {
+        throw new BadRequestException(`Content flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise.'}`);
+      }
+    }
 
     // Determine chainId — if parent is already in a chain, use its chainId; otherwise start a new chain
     const chainId = parent.chainId || parent.id;
@@ -775,7 +815,11 @@ export class ThreadsService {
   async getReplies(threadId: string, cursor?: string, limit = 20, viewerId?: string) {
     // Filter out replies from blocked/muted users
     const excludedIds = viewerId ? await this.getExcludedUserIds(viewerId) : [];
-    const whereClause: Prisma.ThreadReplyWhereInput = { threadId, parentId: null };
+    const whereClause: Prisma.ThreadReplyWhereInput = {
+      threadId,
+      parentId: null,
+      user: { isBanned: false, isDeactivated: false, isDeleted: false },
+    };
     if (excludedIds.length) whereClause.userId = { notIn: excludedIds };
 
     const replies = await this.prisma.threadReply.findMany({
@@ -814,6 +858,11 @@ export class ThreadsService {
     const reply = await this.prisma.threadReply.findUnique({ where: { id: replyId } });
     if (!reply || reply.threadId !== threadId) throw new NotFoundException('Reply not found');
 
+    // Prevent self-liking (consistent with thread like guard)
+    if (reply.userId === userId) {
+      throw new BadRequestException('Cannot like your own reply');
+    }
+
     const existing = await this.prisma.threadReplyLike.findUnique({
       where: { userId_replyId: { userId, replyId } },
     });
@@ -848,6 +897,14 @@ export class ThreadsService {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
     if (thread.scheduledAt && new Date(thread.scheduledAt) > new Date() && thread.userId !== userId) throw new NotFoundException('Thread not found');
+
+    // Content moderation on reply
+    if (content) {
+      const moderationResult = await this.contentSafety.moderateText(content);
+      if (!moderationResult.safe) {
+        throw new BadRequestException(`Reply flagged: ${moderationResult.flags.join(', ')}. ${moderationResult.suggestion || 'Please revise.'}`);
+      }
+    }
 
     // Enforce reply permission — owner always allowed
     if (thread.replyPermission && thread.replyPermission !== 'EVERYONE' && thread.userId !== userId) {
@@ -956,8 +1013,11 @@ export class ThreadsService {
   }
 
   async getUserThreads(username: string, cursor?: string, limit = 20, viewerId?: string) {
-    const user = await this.prisma.user.findUnique({ where: { username } });
-    if (!user) throw new NotFoundException('User not found');
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true, isBanned: true, isDeactivated: true, isDeleted: true },
+    });
+    if (!user || user.isBanned || user.isDeactivated || user.isDeleted) throw new NotFoundException('User not found');
 
     // If viewer is authenticated, check if blocked in either direction
     if (viewerId && viewerId !== user.id) {

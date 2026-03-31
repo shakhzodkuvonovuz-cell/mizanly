@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, BadRequestException, NotImplementedException, ConflictException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { ConfigService } from '@nestjs/config';
@@ -672,7 +672,7 @@ export class IslamicService {
   }
 
   async createDonation(userId: string, dto: CreateDonationDto) {
-    throw new BadRequestException('Charity donations require payment integration. Coming soon.');
+    throw new NotImplementedException('Charity donations require Stripe payment integration. Coming soon.');
 
     if (dto.amount <= 0 || dto.amount > 1000000) {
       throw new BadRequestException('Donation amount must be between $0.01 and $1,000,000');
@@ -851,7 +851,7 @@ export class IslamicService {
           where: { userId_achievementId: { userId, achievementId: m.badge } },
           update: {},
           create: { userId, achievementId: m.badge },
-        }).catch(() => {}); // Silently skip if achievement not seeded
+        }).catch((err: unknown) => this.logger.debug(`Achievement upsert skipped: ${err instanceof Error ? err.message : err}`));
       }
     }
 
@@ -1727,9 +1727,8 @@ export class IslamicService {
     const hadith = this.getDailyHadith();
     const dua = this.getDuaOfTheDay();
 
-    // Ayah of the day — deterministic based on date
+    // Ayah of the day — deterministic based on date (uses imported TOTAL_AYAHS)
     const daysSinceEpoch = Math.floor(today.getTime() / 86400000);
-    const TOTAL_AYAHS = 6236;
     const ayahIndex = daysSinceEpoch % TOTAL_AYAHS;
     const ayahOfTheDay = {
       surah: this.getAyahSurahName(ayahIndex),
