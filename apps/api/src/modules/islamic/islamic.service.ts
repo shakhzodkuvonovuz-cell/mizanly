@@ -1931,12 +1931,12 @@ export class IslamicService {
     await this.redis.hset(key, { name: mosqueName, lat: String(lat), lng: String(lng) });
     await this.redis.expire(key, 365 * 24 * 3600);
 
-    // DB persistence — survives Redis flush
+    // DB persistence — survives Redis flush (awaited to ensure durability)
     await this.prisma.prayerNotificationSetting.upsert({
       where: { userId },
       create: { userId, mosqueName, mosqueLat: lat, mosqueLng: lng },
       update: { mosqueName, mosqueLat: lat, mosqueLng: lng },
-    }).catch(err => this.logger.warn(`Failed to persist mosque data for user ${userId}`, err instanceof Error ? err.message : err));
+    });
 
     return { followed: true, mosqueName };
   }

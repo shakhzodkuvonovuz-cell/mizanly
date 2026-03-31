@@ -121,6 +121,9 @@ export class WebhooksService {
         events: validatedEvents,
         createdById: userId,
       },
+      // Return secret once on creation (user needs it to verify deliveries)
+      // But exclude internal fields like token
+      select: { id: true, name: true, url: true, events: true, secret: true, isActive: true, createdAt: true },
     });
   }
 

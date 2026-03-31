@@ -16,6 +16,9 @@ import {
 
 @ApiTags('Commerce')
 @ApiBearerAuth()
+// Note: No route prefix intentionally — routes like /products, /orders are at API root.
+// Adding 'commerce' prefix would break mobile clients. Route collision risk is low
+// since each route path is unique across the codebase. (A09#13 — documented, not changed)
 @Controller()
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 export class CommerceController {

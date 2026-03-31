@@ -40,15 +40,7 @@ const GIFT_CATALOG: GiftCatalogItem[] = [
   { type: 'galaxy', name: 'Galaxy', coins: 5000, animation: 'explode' },
 ];
 
-/**
- * Single source of truth for diamond/coin conversion rates.
- * 100 diamonds = $0.70 USD → 1 diamond = $0.007 USD
- * Creators receive 70% of coin cost as diamonds.
- */
-const DIAMOND_TO_USD = 0.007; // 1 diamond = $0.007
-const DIAMONDS_PER_USD_CENT = 100 / 70; // for converting diamonds → cents
-const MIN_CASHOUT_DIAMONDS = 100;
-const DIAMOND_RATE = 0.7; // Creator receives 70% of coin cost as diamonds
+import { DIAMOND_RATE, MIN_CASHOUT_DIAMONDS } from '../../common/constants/financial';
 
 // BALANCE TRUTH: CoinBalance table is the SOLE source of truth for coin/diamond balances.
 // The legacy User.coinBalance field was REMOVED from the schema in Session 7.

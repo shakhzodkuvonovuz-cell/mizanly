@@ -23,17 +23,10 @@ export interface CashoutRequestDto {
   paymentMethodId: string;
 }
 
-// Single source of truth for platform fee rates
-const PLATFORM_FEE_RATE = 0.10; // 10% platform fee on tips
-const MIN_TIP_AMOUNT = 0.50; // Minimum $0.50 (Stripe minimum for card payments)
-const MAX_TIP_AMOUNT = 10000;
-
-// Single source of truth for diamond-to-USD conversion
-// 1 diamond = $0.007 USD (100 diamonds = $0.70)
-// Must be kept in sync with gifts.service.ts DIAMOND_TO_USD
-const DIAMOND_TO_USD = 0.007;
-const DIAMONDS_PER_USD_CENT = 100 / 70;
-const MIN_CASHOUT_DIAMONDS = 100;
+import {
+  PLATFORM_FEE_RATE, MIN_TIP_AMOUNT, MAX_TIP_AMOUNT,
+  DIAMOND_TO_USD, DIAMONDS_PER_USD_CENT, MIN_CASHOUT_DIAMONDS,
+} from '../../common/constants/financial';
 
 // Valid tier levels
 const VALID_TIER_LEVELS = ['bronze', 'silver', 'gold', 'platinum'] as const;
@@ -490,7 +483,7 @@ export class MonetizationService {
     const balance = await this.prisma.coinBalance.findUnique({
       where: { userId },
     });
-    if (!balance || balance!.diamonds < diamonds) {
+    if (!balance || balance.diamonds < diamonds) {
       throw new BadRequestException('Insufficient diamonds');
     }
 

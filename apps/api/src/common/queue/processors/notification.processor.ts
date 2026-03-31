@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { PushTriggerService } from '../../../modules/notifications/push-trigger.service';
 import { PushService } from '../../../modules/notifications/push.service';
 import { PrismaService } from '../../../config/prisma.service';
+import { NotificationType } from '@prisma/client';
 import { QueueService } from '../queue.service';
 import { attachCorrelationId } from '../with-correlation';
 
@@ -100,7 +101,7 @@ export class NotificationProcessor implements OnModuleInit, OnModuleDestroy {
       await this.prisma.notification.createMany({
         data: userIds.map(userId => ({
           userId,
-          type: 'SYSTEM' as any,
+          type: NotificationType.SYSTEM,
           title,
           body,
         })),

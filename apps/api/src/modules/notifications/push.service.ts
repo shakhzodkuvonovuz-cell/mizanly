@@ -72,7 +72,11 @@ export class PushService {
   constructor(
     private prisma: PrismaService,
     private circuitBreaker: CircuitBreakerService,
-  ) {}
+  ) {
+    if (!EXPO_ACCESS_TOKEN) {
+      this.logger.warn('EXPO_ACCESS_TOKEN not set — push notifications will use unauthenticated mode (higher rate limits from Expo)');
+    }
+  }
 
   // Send push to a specific user (fetches their device tokens)
   async sendToUser(userId: string, notification: { title: string; body: string; data?: Record<string, string> }): Promise<void> {
@@ -287,11 +291,13 @@ export class PushService {
     };
   }
 
-  buildMessageNotification(senderName: string, conversationId: string, preview: string): { title: string; body: string; data: Record<string, string> } {
+  buildMessageNotification(senderName: string, conversationId: string, preview: string, isE2E = false): { title: string; body: string; data: Record<string, string> } {
+    // E2E-encrypted conversations: generic body to avoid leaking plaintext to APNs/FCM
+    const body = isE2E ? `${senderName} sent you a message` : `${senderName}: ${preview}`;
     return {
       title: 'New message',
-      body: `${senderName}: ${preview}`,
-      data: { type: 'message', conversationId, senderName, preview },
+      body,
+      data: { type: 'message', conversationId, senderName },
     };
   }
 
@@ -375,11 +381,12 @@ export class PushService {
     };
   }
 
-  buildStoryReplyNotification(actorName: string, preview: string): { title: string; body: string; data: Record<string, string> } {
+  buildStoryReplyNotification(actorName: string, _preview: string): { title: string; body: string; data: Record<string, string> } {
+    // Generic body — story replies may contain sensitive content
     return {
       title: 'Story reply',
-      body: `${actorName} replied to your story: ${preview}`,
-      data: { type: 'message', actorName, preview },
+      body: `${actorName} replied to your story`,
+      data: { type: 'message', actorName },
     };
   }
 
