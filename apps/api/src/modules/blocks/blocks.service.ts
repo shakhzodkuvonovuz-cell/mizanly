@@ -23,12 +23,14 @@ export class BlocksService {
       throw new BadRequestException('Cannot block yourself');
     }
 
-    // Validate target user exists
+    // B01-#14 / A10-#19: Validate target exists AND is active
     const target = await this.prisma.user.findUnique({
       where: { id: blockedId },
-      select: { id: true, username: true },
+      select: { id: true, username: true, isDeactivated: true, isBanned: true, isDeleted: true },
     });
-    if (!target) throw new NotFoundException('User not found');
+    if (!target || target.isDeactivated || target.isBanned || target.isDeleted) {
+      throw new NotFoundException('User not found');
+    }
 
     // Idempotent: if already blocked, return success
     const existing = await this.prisma.block.findUnique({
@@ -230,6 +232,8 @@ export class BlocksService {
     return !!block;
   }
 
+  // A10-#11: Raised cap from 1000 to 10000 to match excluded-users.ts
+  // Blocks are safety-critical — incomplete list means blocked content leaks into feeds
   async getBlockedIds(userId: string): Promise<string[]> {
     const blocks = await this.prisma.block.findMany({
       where: {
@@ -239,7 +243,7 @@ export class BlocksService {
         ],
       },
       select: { blockerId: true, blockedId: true },
-      take: 1000,
+      take: 10000,
     });
     const ids = new Set<string>();
     for (const b of blocks) {

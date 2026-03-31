@@ -324,7 +324,12 @@ export class FollowsService {
 
   async getOwnRequests(userId: string, cursor?: string, limit = 20) {
     const requests = await this.prisma.followRequest.findMany({
-      where: { receiverId: userId, status: 'PENDING' },
+      where: {
+        receiverId: userId,
+        status: 'PENDING',
+        // A10-#15: Filter out banned/deactivated senders
+        sender: { isDeactivated: false, isBanned: false, isDeleted: false },
+      },
       include: {
         sender: {
           select: {

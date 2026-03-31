@@ -196,7 +196,8 @@ export class ReportsService {
         }
       }
 
-      return report;
+      // A10-#17: Return only safe fields, not full schema
+      return { id: report.id, status: report.status, createdAt: report.createdAt };
     } catch (error) {
       // Handle P2002 (unique constraint violation) as a race-condition duplicate
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -277,7 +278,8 @@ export class ReportsService {
     }
 
     // Build transaction operations
-    const ops: any[] = [
+    // A10-#10 / B11-#17: Type properly instead of any[]
+    const ops: Prisma.PrismaPromise<unknown>[] = [
       this.prisma.report.update({
         where: { id: reportId },
         data: {

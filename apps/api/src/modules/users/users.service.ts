@@ -728,30 +728,43 @@ export class UsersService {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const users = await this.prisma.user.findMany({
-        where: { followersCount: { gt: 0 }, isDeleted: false, isBanned: false },
-        select: { id: true, followersCount: true },
-        take: 5000, // Snapshot in manageable batches to prevent OOM
-      });
+      // B01-#9/#10: Add isDeactivated filter, use cursor pagination instead of take cap
+      let cursor: string | undefined;
+      let totalCreated = 0;
+      const FETCH_BATCH = 1000;
 
-      // Process in parallel batches of 100 instead of sequential
-      const BATCH_SIZE = 100;
-      let created = 0;
-      for (let i = 0; i < users.length; i += BATCH_SIZE) {
-        const batch = users.slice(i, i + BATCH_SIZE);
-        const results = await Promise.allSettled(
-          batch.map(user =>
-            this.prisma.creatorStat.upsert({
-              where: { userId_date_space: { userId: user.id, date: today, space: 'SAF' } },
-              update: { followers: user.followersCount },
-              create: { userId: user.id, date: today, space: 'SAF', followers: user.followersCount },
-            }),
-          ),
-        );
-        created += results.filter(r => r.status === 'fulfilled').length;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const users = await this.prisma.user.findMany({
+          where: { followersCount: { gt: 0 }, isDeleted: false, isBanned: false, isDeactivated: false },
+          select: { id: true, followersCount: true },
+          take: FETCH_BATCH,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          orderBy: { id: 'asc' },
+        });
+        if (users.length === 0) break;
+        cursor = users[users.length - 1].id;
+
+        // Process in parallel batches of 100 instead of sequential
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < users.length; i += BATCH_SIZE) {
+          const batch = users.slice(i, i + BATCH_SIZE);
+          const results = await Promise.allSettled(
+            batch.map(user =>
+              this.prisma.creatorStat.upsert({
+                where: { userId_date_space: { userId: user.id, date: today, space: 'SAF' } },
+                update: { followers: user.followersCount },
+                create: { userId: user.id, date: today, space: 'SAF', followers: user.followersCount },
+              }),
+            ),
+          );
+          totalCreated += results.filter(r => r.status === 'fulfilled').length;
+        }
+
+        if (users.length < FETCH_BATCH) break; // Last page
       }
 
-      this.logger.log(`Follower snapshot: ${created} users snapshotted (batched)`);
+      this.logger.log(`Follower snapshot: ${totalCreated} users snapshotted (cursor-paginated)`);
     } catch (error) {
       this.logger.error('snapshotFollowerCounts cron failed', error instanceof Error ? error.message : error);
       Sentry.captureException(error);
@@ -1004,7 +1017,8 @@ export class UsersService {
 
   async getLikedPosts(userId: string, cursor?: string, limit = 20) {
     const reactions = await this.prisma.postReaction.findMany({
-      where: { userId, reaction: "LIKE" },
+      // B01-#15: Filter out removed/moderated posts from liked list
+      where: { userId, reaction: "LIKE", post: { isRemoved: false } },
       include: {
         post: {
           select: {

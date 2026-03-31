@@ -293,6 +293,13 @@ export class ModerationService {
             data: { isRemoved: true },
           });
         }
+        // B11-#14: Also handle message soft-delete (was missing)
+        if (report.reportedMessageId) {
+          await tx.message.update({
+            where: { id: report.reportedMessageId },
+            data: { isDeleted: true },
+          });
+        }
       }
 
       // Create moderation log for non-dismiss actions
@@ -429,20 +436,22 @@ export class ModerationService {
   async getPendingAppeals(adminId: string, cursor?: string) {
     await this.verifyAdminOrModerator(adminId);
 
-    const where: Record<string, unknown> = { isAppealed: true, appealResolved: false };
-    if (cursor) where.id = { lt: cursor };
+    const limit = 20;
+    // A10-#8 / B11-#12: Use standard Prisma cursor pagination instead of manual id < cursor
+    const where: Prisma.ModerationLogWhereInput = { isAppealed: true, appealResolved: false };
 
     const appeals = await this.prisma.moderationLog.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      take: 21,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
         targetUser: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       },
     });
 
-    const hasMore = appeals.length > 20;
-    const data = hasMore ? appeals.slice(0, 20) : appeals;
+    const hasMore = appeals.length > limit;
+    const data = hasMore ? appeals.slice(0, limit) : appeals;
     return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
   }
 

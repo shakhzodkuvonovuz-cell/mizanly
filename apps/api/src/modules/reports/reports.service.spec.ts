@@ -72,6 +72,8 @@ describe('ReportsService', () => {
       const createdReport = {
         id: 'report123',
         reporterId: userId,
+        status: 'PENDING',
+        createdAt: new Date('2026-03-31'),
         ...dto,
       };
 
@@ -81,7 +83,8 @@ describe('ReportsService', () => {
       const result = await service.create(userId, dto);
       expect(prisma.report.findFirst).toHaveBeenCalled();
       expect(prisma.report.create).toHaveBeenCalled();
-      expect(result).toEqual(createdReport);
+      // Returns only safe fields (id, status, createdAt)
+      expect(result).toEqual({ id: 'report123', status: 'PENDING', createdAt: new Date('2026-03-31') });
     });
 
     it('should throw ConflictException if duplicate pending report exists', async () => {
