@@ -22,6 +22,7 @@ import { QueueService } from '../../common/queue/queue.service';
 import { ContentSafetyService } from '../moderation/content-safety.service';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { ScoredFeedCache, ScoredItem } from '../../common/utils/scored-feed-cache';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
 
 const REEL_SELECT = {
   id: true,
@@ -337,18 +338,7 @@ export class ReelsService {
       limit,
       60,
       async (): Promise<ScoredItem[]> => {
-        const [blocks, mutes] = userId ? await Promise.all([
-          this.prisma.block.findMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] }, select: { blockerId: true, blockedId: true }, take: 10000 }),
-          this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true }, take: 10000 }),
-        ]) : [[], []];
-
-        const excludedSet = new Set<string>();
-        for (const b of blocks) {
-          if (b.blockerId === userId) excludedSet.add(b.blockedId);
-          else excludedSet.add(b.blockerId);
-        }
-        for (const m of mutes) excludedSet.add(m.mutedId);
-        const excludedIds = [...excludedSet];
+        const excludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
 
         const where: Prisma.ReelWhereInput = {
           status: ReelStatus.READY,

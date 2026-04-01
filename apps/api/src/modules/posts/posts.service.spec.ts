@@ -53,6 +53,7 @@ describe('PostsService', () => {
             },
             mute: {
               findMany: jest.fn().mockResolvedValue([]),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             hashtag: {
               upsert: jest.fn(),

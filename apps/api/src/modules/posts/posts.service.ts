@@ -931,17 +931,30 @@ export class PostsService {
       throw new BadRequestException('Cannot react to your own post');
     }
 
-    // Block check: prevent blocked users from reacting
+    // Block + mute check: prevent blocked/muted users from reacting
     if (post.userId && post.userId !== userId) {
-      const block = await this.prisma.block.findFirst({
-        where: {
-          OR: [
-            { blockerId: userId, blockedId: post.userId },
-            { blockerId: post.userId, blockedId: userId },
-          ],
-        },
-      });
+      const [block, mute] = await Promise.all([
+        this.prisma.block.findFirst({
+          where: {
+            OR: [
+              { blockerId: userId, blockedId: post.userId },
+              { blockerId: post.userId, blockedId: userId },
+            ],
+          },
+          select: { blockerId: true },
+        }),
+        this.prisma.mute.findFirst({
+          where: {
+            OR: [
+              { userId: post.userId, mutedId: userId },
+              { userId, mutedId: post.userId },
+            ],
+          },
+          select: { userId: true },
+        }),
+      ]);
       if (block) throw new ForbiddenException('Cannot interact with this user');
+      if (mute) throw new ForbiddenException('Cannot interact with this user');
     }
 
     const existing = await this.prisma.postReaction.findUnique({
@@ -1318,17 +1331,30 @@ export class PostsService {
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
     if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.userId !== userId) throw new NotFoundException('Post not found');
 
-    // Block check: prevent blocked/muted users from commenting
+    // Block + mute check: prevent blocked/muted users from commenting
     if (post.userId && post.userId !== userId) {
-      const block = await this.prisma.block.findFirst({
-        where: {
-          OR: [
-            { blockerId: userId, blockedId: post.userId },
-            { blockerId: post.userId, blockedId: userId },
-          ],
-        },
-      });
+      const [block, mute] = await Promise.all([
+        this.prisma.block.findFirst({
+          where: {
+            OR: [
+              { blockerId: userId, blockedId: post.userId },
+              { blockerId: post.userId, blockedId: userId },
+            ],
+          },
+          select: { blockerId: true },
+        }),
+        this.prisma.mute.findFirst({
+          where: {
+            OR: [
+              { userId: post.userId, mutedId: userId },
+              { userId, mutedId: post.userId },
+            ],
+          },
+          select: { userId: true },
+        }),
+      ]);
       if (block) throw new ForbiddenException('Cannot interact with this user');
+      if (mute) throw new ForbiddenException('Cannot interact with this user');
     }
 
     // Content moderation on comments — prevent abusive content

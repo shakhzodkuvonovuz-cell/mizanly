@@ -34,7 +34,7 @@ export class SearchController {
   @UseGuards(OptionalClerkAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 20 } })
   @ApiOperation({ summary: 'Get trending hashtags and topics' })
-  trending() { return this.searchService.trending(); }
+  trending(@CurrentUser('id') userId?: string) { return this.searchService.trending(userId); }
 
   @Get('hashtag/:tag')
   @UseGuards(OptionalClerkAuthGuard)
@@ -43,8 +43,9 @@ export class SearchController {
   getHashtagPosts(
     @Param('tag') tag: string,
     @Query('cursor') cursor?: string,
+    @CurrentUser('id') userId?: string,
   ) {
-    return this.searchService.getHashtagPosts(tag, cursor);
+    return this.searchService.getHashtagPosts(tag, cursor, undefined, userId);
   }
 
   @Get('suggested-users')

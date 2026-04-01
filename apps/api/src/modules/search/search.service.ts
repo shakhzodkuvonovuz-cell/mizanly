@@ -185,15 +185,18 @@ export class SearchService {
       if (indexName) {
         const result = await this.meilisearch.search(indexName, query, { limit: safeLimit * 2 });
         if (result && result.hits.length > 0) {
-          // Post-filter Meilisearch hits: exclude blocked/muted users and removed content
+          // Post-filter Meilisearch hits: exclude blocked/muted users, removed/private content
           let filtered = result.hits;
-          if (excludedIds.length > 0) {
-            const excludedSet = new Set(excludedIds);
-            filtered = filtered.filter((hit: Record<string, unknown>) => {
-              const hitUserId = (hit as Record<string, unknown>).userId as string | undefined;
-              return !hitUserId || !excludedSet.has(hitUserId);
-            });
-          }
+          const excludedSet = new Set(excludedIds);
+          filtered = filtered.filter((hit: Record<string, unknown>) => {
+            const h = hit as Record<string, unknown>;
+            if (h.isRemoved === true) return false;
+            if (h.visibility && h.visibility !== 'PUBLIC') return false;
+            if (h.isBanned === true) return false;
+            const hitUserId = h.userId as string | undefined;
+            if (hitUserId && excludedSet.has(hitUserId)) return false;
+            return true;
+          });
           const page = filtered.slice(0, safeLimit);
           return { data: page, meta: { hasMore: filtered.length > safeLimit, cursor: undefined } };
         }
@@ -212,7 +215,7 @@ export class SearchService {
             visibility: 'PUBLIC',
             isRemoved: false,
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userExcludeFilter },
           },
           select: POST_SEARCH_SELECT,
           take,
@@ -234,7 +237,7 @@ export class SearchService {
             isChainHead: true,
             isRemoved: false,
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userExcludeFilter },
           },
           select: THREAD_SEARCH_SELECT,
           take,
@@ -257,7 +260,7 @@ export class SearchService {
             ],
             status: 'PUBLISHED',
             isRemoved: false,
-            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userExcludeFilter },
           },
           select: VIDEO_SEARCH_SELECT,
           take,
@@ -279,8 +282,7 @@ export class SearchService {
               { name: { contains: query, mode: 'insensitive' } },
               { description: { contains: query, mode: 'insensitive' } },
             ],
-            // Filter out channels owned by banned or deleted users
-            user: { isBanned: false, isDeleted: false, isDeactivated: false },
+            user: { isBanned: false, isDeleted: false, isDeactivated: false, ...userExcludeFilter },
           },
           select: CHANNEL_SEARCH_SELECT,
           take,
@@ -302,7 +304,7 @@ export class SearchService {
             isRemoved: false,
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
             isTrial: false,
-            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userExcludeFilter },
           },
           select: REEL_SEARCH_SELECT,
           take,
@@ -451,7 +453,7 @@ export class SearchService {
     return results;
   }
 
-  async trending() {
+  async trending(userId?: string) {
     // Trending hashtags: SQL aggregation using unnest across Posts AND Threads
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const topTags = await this.prisma.$queryRaw<Array<{ tag: string; cnt: bigint }>>`
@@ -493,7 +495,9 @@ export class SearchService {
       return { ...record, recentCount, trend };
     }).sort((a, b) => b.recentCount - a.recentCount);
 
-    // Threads stays the same (already engagement-sorted)
+    // Threads filtered by block/mute when userId present
+    const trendingExcludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
+    const trendingUserFilter = trendingExcludedIds.length > 0 ? { id: { notIn: trendingExcludedIds } } : {};
     const threads = await this.prisma.thread.findMany({
       where: {
         visibility: 'PUBLIC',
@@ -501,7 +505,7 @@ export class SearchService {
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-        user: { isDeactivated: false, isBanned: false, isDeleted: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...trendingUserFilter },
       },
       select: THREAD_SEARCH_SELECT,
       take: 10,
@@ -511,9 +515,10 @@ export class SearchService {
     return { hashtags, threads };
   }
 
-  async getHashtagPosts(tag: string, cursor?: string, limit = 20) {
-    // Try exact hashtag record first for metadata
+  async getHashtagPosts(tag: string, cursor?: string, limit = 20, userId?: string) {
     const hashtag = await this.prisma.hashtag.findUnique({ where: { name: tag.toLowerCase() } });
+    const hashtagExcludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
+    const hashtagUserFilter = hashtagExcludedIds.length > 0 ? { id: { notIn: hashtagExcludedIds } } : {};
 
     const posts = await this.prisma.post.findMany({
       where: {
@@ -521,7 +526,7 @@ export class SearchService {
         visibility: 'PUBLIC',
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, isBanned: false, isDeleted: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...hashtagUserFilter },
       },
       select: POST_SEARCH_SELECT,
       take: limit + 1,

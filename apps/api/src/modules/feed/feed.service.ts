@@ -148,13 +148,14 @@ export class FeedService {
    * Finding #402: Trending in your community — posts from followed hashtags trending in last 24h.
    */
   async getCommunityTrending(userId: string, limit = 10) {
-    const [followedTags, excludedIds] = await Promise.all([
+    const [followedTags, excludedIds, dismissedIds] = await Promise.all([
       this.prisma.hashtagFollow.findMany({
         where: { userId },
         select: { hashtagId: true },
         take: 50,
       }),
       this.getExcludedUserIds(userId),
+      this.getDismissedIds(userId, 'POST'),
     ]);
     const hashtagIds = followedTags.map(h => h.hashtagId);
     const hashtags = hashtagIds.length > 0
@@ -175,6 +176,7 @@ export class FeedService {
           isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false,
           ...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
         },
+        ...(dismissedIds.length > 0 ? { id: { notIn: dismissedIds } } : {}),
       },
       select: { id: true, content: true, mediaUrls: true, likesCount: true, commentsCount: true, sharesCount: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       take: CANDIDATE_POOL_SIZE.COMMUNITY,
@@ -575,13 +577,18 @@ export class FeedService {
     // STUB: Currently returns all geo-tagged posts without actual distance filtering.
     // The Post model lacks lat/lng fields, so true proximity search is not possible.
 
-    // Build block/mute exclusion when authenticated
+    // Build block/mute exclusion + dismissed IDs when authenticated
     let userFilter: Record<string, unknown> = {};
+    let dismissedIds: string[] = [];
     if (userId) {
-      const excludedIds = await this.getExcludedUserIds(userId);
+      const [excludedIds, dismissed] = await Promise.all([
+        this.getExcludedUserIds(userId),
+        this.getDismissedIds(userId, 'POST'),
+      ]);
       if (excludedIds.length > 0) {
         userFilter = { id: { notIn: excludedIds } };
       }
+      dismissedIds = dismissed;
     }
 
     const posts = await this.prisma.post.findMany({
@@ -591,6 +598,7 @@ export class FeedService {
         visibility: PostVisibility.PUBLIC,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
+        ...(dismissedIds.length > 0 ? { id: { notIn: dismissedIds } } : {}),
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       select: {

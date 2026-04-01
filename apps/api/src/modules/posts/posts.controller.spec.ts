@@ -149,7 +149,7 @@ describe('PostsController', () => {
     it('should call service.getComments with id and cursor', async () => {
       mockService.getComments.mockResolvedValue({ data: [] });
       await controller.getComments('post-1', 'cursor-1');
-      expect(mockService.getComments).toHaveBeenCalledWith('post-1', 'cursor-1');
+      expect(mockService.getComments).toHaveBeenCalledWith('post-1', 'cursor-1', undefined, undefined);
     });
   });
 

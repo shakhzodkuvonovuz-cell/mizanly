@@ -439,9 +439,10 @@ export class ReportsService {
         .catch(err => this.logger.warn(`Failed to remove banned user from search: ${err instanceof Error ? err.message : err}`));
       // A10-#14 / B11-#18: Remove all content from search with cursor pagination (no cap)
       // and log errors instead of silently swallowing
-      for (const contentType of ['post', 'reel', 'thread'] as const) {
+      for (const contentType of ['post', 'reel', 'thread', 'video'] as const) {
         const model = contentType === 'post' ? this.prisma.post
           : contentType === 'reel' ? this.prisma.reel
+          : contentType === 'video' ? this.prisma.video
           : this.prisma.thread;
         const indexName = `${contentType}s`;
         let deindexCursor: string | undefined;

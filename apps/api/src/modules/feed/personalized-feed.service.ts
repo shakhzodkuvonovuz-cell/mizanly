@@ -828,23 +828,26 @@ export class PersonalizedFeedService {
     // Include user data for scholar boost (#258) and creator boost (#302)
     const userSelect = { isVerified: true, isScholarVerified: true, postsCount: true };
 
+    const safeUserFilter = { isBanned: false, isDeactivated: false, isDeleted: false };
+    const safeScheduleFilter = [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }];
+
     if (contentType === EmbeddingContentType.POST) {
       const items = await this.prisma.post.findMany({
-        where: { id: { in: ids } },
+        where: { id: { in: ids }, isRemoved: false, visibility: 'PUBLIC', OR: safeScheduleFilter, user: safeUserFilter },
         select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, savesCount: true, viewsCount: true, hashtags: true, createdAt: true, user: { select: userSelect } },
         take: 500,
       });
       items.forEach(i => map.set(i.id, { ...i, userId: i.userId ?? undefined, isVerified: i.user?.isVerified, isScholarVerified: i.user?.isScholarVerified, postsCount: i.user?.postsCount }));
     } else if (contentType === EmbeddingContentType.REEL) {
       const items = await this.prisma.reel.findMany({
-        where: { id: { in: ids } },
+        where: { id: { in: ids }, isRemoved: false, OR: safeScheduleFilter, user: safeUserFilter },
         select: { id: true, userId: true, likesCount: true, commentsCount: true, sharesCount: true, savesCount: true, viewsCount: true, hashtags: true, createdAt: true, user: { select: userSelect } },
         take: 500,
       });
       items.forEach(i => map.set(i.id, { ...i, userId: i.userId ?? undefined, isVerified: i.user?.isVerified, isScholarVerified: i.user?.isScholarVerified, postsCount: i.user?.postsCount }));
     } else if (contentType === EmbeddingContentType.THREAD) {
       const items = await this.prisma.thread.findMany({
-        where: { id: { in: ids } },
+        where: { id: { in: ids }, isRemoved: false, visibility: 'PUBLIC', OR: safeScheduleFilter, user: safeUserFilter },
         select: { id: true, userId: true, likesCount: true, repliesCount: true, repostsCount: true, viewsCount: true, hashtags: true, createdAt: true, user: { select: userSelect } },
         take: 500,
       });
@@ -870,9 +873,12 @@ export class PersonalizedFeedService {
     const ids = items.map(i => i.id);
     const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 
+    const hSafeUser = { isBanned: false, isDeactivated: false, isDeleted: false };
+    const hSafeSchedule = [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }];
+
     if (contentType === EmbeddingContentType.POST) {
       const posts = await this.prisma.post.findMany({
-        where: { id: { in: ids } },
+        where: { id: { in: ids }, isRemoved: false, visibility: 'PUBLIC', OR: hSafeSchedule, user: hSafeUser },
         select: { id: true, content: true, mediaUrls: true, mediaTypes: true, postType: true, likesCount: true, commentsCount: true, createdAt: true, user: { select: USER_SELECT } },
         take: 50,
       });
@@ -881,7 +887,7 @@ export class PersonalizedFeedService {
     }
     if (contentType === EmbeddingContentType.REEL) {
       const reels = await this.prisma.reel.findMany({
-        where: { id: { in: ids } },
+        where: { id: { in: ids }, isRemoved: false, OR: hSafeSchedule, user: hSafeUser },
         select: { id: true, caption: true, videoUrl: true, thumbnailUrl: true, duration: true, likesCount: true, viewsCount: true, createdAt: true, user: { select: USER_SELECT } },
         take: 50,
       });
@@ -890,7 +896,7 @@ export class PersonalizedFeedService {
     }
     if (contentType === EmbeddingContentType.VIDEO) {
       const videos = await this.prisma.video.findMany({
-        where: { id: { in: ids } },
+        where: { id: { in: ids }, isRemoved: false, status: 'PUBLISHED', OR: hSafeSchedule, user: hSafeUser },
         select: { id: true, title: true, description: true, thumbnailUrl: true, duration: true, viewsCount: true, likesCount: true, createdAt: true, user: { select: USER_SELECT } },
         take: 50,
       });
@@ -899,7 +905,7 @@ export class PersonalizedFeedService {
     }
     // THREAD (default)
     const threads = await this.prisma.thread.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids }, isRemoved: false, visibility: 'PUBLIC', OR: hSafeSchedule, user: hSafeUser },
       select: { id: true, content: true, mediaUrls: true, likesCount: true, repliesCount: true, createdAt: true, user: { select: USER_SELECT } },
       take: 50,
     });

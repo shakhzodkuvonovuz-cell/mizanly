@@ -44,6 +44,9 @@ describe('ChannelsService', () => {
             mute: {
               findMany: jest.fn(),
             },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
             videoReaction: {
               findMany: jest.fn(),
             },
@@ -390,13 +393,15 @@ describe('ChannelsService', () => {
       expect(result.meta.hasMore).toBe(false);
     });
 
-    it('should exclude blocked/muted users', async () => {
+    it('should exclude blocked/muted users via getExcludedUserIds', async () => {
       const handle = 'tech';
       const channelId = 'channel-456';
       const channel = { id: channelId };
       prisma.channel.findUnique.mockResolvedValue(channel as any);
+      // getExcludedUserIds uses block/mute/restrict — mock all three
       prisma.block.findMany.mockResolvedValue([{ blockerId: 'user-123', blockedId: 'blocked-user' }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted-user' }]);
+      prisma.restrict.findMany.mockResolvedValue([]);
       prisma.video.findMany.mockResolvedValue([]);
       prisma.videoReaction.findMany.mockResolvedValue([]);
       prisma.videoBookmark.findMany.mockResolvedValue([]);
@@ -406,7 +411,7 @@ describe('ChannelsService', () => {
       expect(prisma.video.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            userId: { notIn: ['blocked-user', 'muted-user'] },
+            userId: { notIn: expect.arrayContaining(['blocked-user', 'muted-user']) },
           }),
         }),
       );

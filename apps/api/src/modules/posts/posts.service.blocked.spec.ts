@@ -44,6 +44,7 @@ describe('PostsService — Blocked User Content Access', () => {
             },
             mute: {
               findMany: jest.fn().mockResolvedValue([]),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             follow: {
               findMany: jest.fn().mockResolvedValue([]),

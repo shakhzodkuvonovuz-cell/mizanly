@@ -84,7 +84,7 @@ describe('SearchController', () => {
 
       await controller.getHashtagPosts('ramadan', 'cursor-1');
 
-      expect(service.getHashtagPosts).toHaveBeenCalledWith('ramadan', 'cursor-1');
+      expect(service.getHashtagPosts).toHaveBeenCalledWith('ramadan', 'cursor-1', undefined, undefined);
     });
   });
 
