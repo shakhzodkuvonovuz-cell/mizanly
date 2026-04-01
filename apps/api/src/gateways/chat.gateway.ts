@@ -31,7 +31,6 @@ import {
   JoinQuranRoomDto,
   LeaveQuranRoomDto,
   QuranRoomVerseSyncDto,
-  QuranRoomReciterChangeDto,
 } from './dto/quran-room-events.dto';
 
 @WebSocketGateway({
@@ -767,27 +766,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       .emit('messages_read', { userId: client.data.userId });
   }
 
-  @SubscribeMessage('get_online_status')
-  async handleGetOnlineStatus(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { userIds: string[] },
-  ) {
-    if (!client.data.userId) throw new WsException('Unauthorized');
-    if (!(await this.checkRateLimit(client.data.userId, 'online', 10, 60))) return;
-    // Cap at 50 user IDs to prevent abuse
-    const userIds = (data.userIds || []).slice(0, 50);
-    const pipeline = this.redis.pipeline();
-    for (const id of userIds) {
-      pipeline.scard(`presence:${id}`);
-    }
-    const results = await pipeline.exec();
-    const statuses = userIds.map((id, i) => ({
-      userId: id,
-      isOnline: (results?.[i]?.[1] as number) > 0,
-    }));
-    client.emit('online_status', statuses);
-  }
-
   @SubscribeMessage('message_delivered')
   async handleMessageDelivered(@ConnectedSocket() client: Socket, @MessageBody() data: { messageId: string; conversationId: string }) {
     if (!client.data.userId) throw new WsException('Unauthorized');
@@ -963,132 +941,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       surahNumber: dto.surahNumber,
       verseNumber: dto.verseNumber,
     });
-  }
-
-  @SubscribeMessage('quran_reciter_change')
-  async handleQuranReciterChange(
-    @MessageBody() data: { roomId: string; reciterId: string },
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (!client.data.userId) throw new WsException('Unauthorized');
-    if (!(await this.checkRateLimit(client.data.userId, 'quran_reciter', 10, 60))) return;
-    const dto = plainToInstance(QuranRoomReciterChangeDto, data);
-    const errors = await validate(dto);
-    if (errors.length > 0) {
-      client.emit('error', { message: 'Invalid quran_reciter_change data' });
-      return;
-    }
-
-    const userId = client.data.userId;
-    const room = await this.getQuranRoom(dto.roomId);
-    if (!room || room.hostId !== userId) return; // Only host
-
-    await this.redis.hset(this.quranRoomKey(dto.roomId), 'reciterId', dto.reciterId);
-
-    this.server.to(`quran:${dto.roomId}`).emit('quran_reciter_updated', {
-      reciterId: dto.reciterId,
-    });
-  }
-
-  // Finding #350-351: Join/leave content rooms for real-time updates
-  @SubscribeMessage('join_content')
-  async handleJoinContent(
-    @MessageBody() data: { contentId: string },
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (!client.data.userId || !data?.contentId) return;
-    if (!(await this.checkRateLimit(client.data.userId, 'content_join', 30, 60))) return;
-
-    // Verify the content exists and is accessible (not removed, not from banned user)
-    const contentId = data.contentId;
-    const [post, reel, thread] = await Promise.all([
-      this.prisma.post.findUnique({ where: { id: contentId }, select: { isRemoved: true, visibility: true, user: { select: { isBanned: true, isDeleted: true } } } }).catch(() => null),
-      this.prisma.reel.findUnique({ where: { id: contentId }, select: { isRemoved: true, user: { select: { isBanned: true, isDeleted: true } } } }).catch(() => null),
-      this.prisma.thread.findUnique({ where: { id: contentId }, select: { isRemoved: true, visibility: true, user: { select: { isBanned: true, isDeleted: true } } } }).catch(() => null),
-    ]);
-    const content = post || reel || thread;
-    if (!content || content.isRemoved || content.user?.isBanned || content.user?.isDeleted) {
-      client.emit('error', { message: 'Content not found' });
-      return;
-    }
-
-    client.join(`content:${contentId}`);
-  }
-
-  @SubscribeMessage('leave_content')
-  async handleLeaveContent(
-    @MessageBody() data: { contentId: string },
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (!client.data.userId || !data?.contentId) return;
-    if (!(await this.checkRateLimit(client.data.userId, 'content_leave', 30, 60))) return;
-    client.leave(`content:${data.contentId}`);
-  }
-
-  /**
-   * Subscribe to presence updates for specific users.
-   * Clients join `user:{targetUserId}` rooms to receive presence events.
-   * This replaces per-conversation fan-out with targeted subscriptions.
-   */
-  @SubscribeMessage('subscribe_presence')
-  async handleSubscribePresence(
-    @MessageBody() data: { userIds: string[] },
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (!client.data.userId) return;
-    if (!Array.isArray(data?.userIds)) return;
-    if (!(await this.checkRateLimit(client.data.userId, 'sub_presence', 10, 60))) return;
-
-    // Limit to 200 subscriptions per request to prevent abuse
-    const ids = data.userIds.slice(0, 200);
-
-    // X07-#6 / X02-#1 FIX: Only allow subscribing to presence of users who share a conversation.
-    // Prevents: blocked users tracking victims, arbitrary presence surveillance.
-    // Get all conversation partners of the requesting user.
-    const memberships = await this.prisma.conversationMember.findMany({
-      where: { userId: client.data.userId },
-      select: { conversationId: true },
-      take: 500,
-    });
-    const conversationIds = memberships.map(m => m.conversationId);
-
-    // Find which of the requested userIds share at least one conversation
-    const allowedPartners = conversationIds.length > 0
-      ? await this.prisma.conversationMember.findMany({
-          where: {
-            conversationId: { in: conversationIds },
-            userId: { in: ids, not: client.data.userId },
-          },
-          select: { userId: true },
-          distinct: ['userId'],
-        })
-      : [];
-    const allowedSet = new Set(allowedPartners.map(p => p.userId));
-
-    for (const targetId of ids) {
-      if (typeof targetId === 'string' && targetId.length > 0 && allowedSet.has(targetId)) {
-        client.join(`user:${targetId}`);
-      }
-    }
-  }
-
-  /**
-   * Unsubscribe from presence updates for specific users.
-   */
-  @SubscribeMessage('unsubscribe_presence')
-  async handleUnsubscribePresence(
-    @MessageBody() data: { userIds: string[] },
-    @ConnectedSocket() client: Socket,
-  ) {
-    if (!client.data.userId) return;
-    if (!Array.isArray(data?.userIds)) return;
-    if (!(await this.checkRateLimit(client.data.userId, 'unsub_presence', 10, 60))) return;
-
-    for (const targetId of data.userIds) {
-      if (typeof targetId === 'string' && targetId.length > 0) {
-        client.leave(`user:${targetId}`);
-      }
-    }
   }
 
   private extractToken(client: Socket): string | undefined {

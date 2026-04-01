@@ -456,44 +456,7 @@ export const useStore = create<AppState>()(
   )
 );
 
-// Granular selectors
+// Granular selectors (only hooks with external consumers)
 export const useUser = () => useStore((s) => s.user);
-export const useTheme = () => useStore((s) => s.theme);
-export const useUnreadNotifications = () => useStore((s) => s.unreadNotifications);
-export const useUnreadMessages = () => useStore((s) => s.unreadMessages);
 export const useSafFeedType = () => useStore((s) => s.safFeedType);
 export const useMajlisFeedType = () => useStore((s) => s.majlisFeedType);
-export const useFollowedHashtags = () => useStore(s => s.followedHashtags);
-export const useActiveCallId = () => useStore((s) => s.activeCallId);
-export const useActiveLiveSessionId = () => useStore((s) => s.activeLiveSessionId);
-export const useIsLiveStreaming = () => useStore((s) => s.isLiveStreaming);
-export const useRecentStickerPackIds = () => useStore((s) => s.recentStickerPackIds);
-export const useMutedChannelIds = () => useStore((s) => s.mutedChannelIds);
-export const useFeedDismissedIds = () => useStore((s) => s.feedDismissedIds);
-export const useSearchHistory = () => useStore((s) => s.searchHistory);
-export const useArchivedConversationsCount = () => useStore((s) => s.archivedConversationsCount);
-export const useIsRecording = () => useStore((s) => s.isRecording);
-export const useMiniPlayerVideo = () => useStore((s) => s.miniPlayerVideo);
-export const useMiniPlayerProgress = () => useStore((s) => s.miniPlayerProgress);
-export const useMiniPlayerPlaying = () => useStore((s) => s.miniPlayerPlaying);
-export const useNasheedMode = () => useStore((s) => s.nasheedMode);
-export const useBiometricLockEnabled = () => useStore((s) => s.biometricLockEnabled);
-export const useScreenTimeSessionStart = () => useStore((s) => s.screenTimeSessionStart);
-export const useScreenTimeLimitMinutes = () => useStore((s) => s.screenTimeLimitMinutes);
-export const useAutoPlaySetting = () => useStore((s) => s.autoPlaySetting);
-export const useDownloadQueue = () => useStore((s) => s.downloadQueue);
-export const useIsPiPActive = () => useStore((s) => s.isPiPActive);
-export const usePiPVideoId = () => useStore((s) => s.pipVideoId);
-export const useAmbientModeEnabled = () => useStore((s) => s.ambientModeEnabled);
-export const useIsChildAccount = () => useStore((s) => s.isChildAccount);
-export const useParentalRestrictions = () => useStore((s) => s.parentalRestrictions);
-export const useIslamicThemeEnabled = () => useStore((s) => s.islamicThemeEnabled);
-export const useDiscoveredFeatures = () => useStore((s) => s.discoveredFeatures);
-export const useUserRole = () => useStore((s) => s.userRole);
-export const useCachedFeedData = () => useStore((s) => s.cachedFeedData);
-export const useLastDetectedLink = () => useStore((s) => s.lastDetectedLink);
-export const useTTSActive = () => useStore((s) => !!s.ttsText);
-export const useTTSPlaying = () => useStore((s) => s.ttsPlaying);
-export const useSafScrollOffset = () => useStore((s) => s.safScrollOffset);
-export const useMajlisScrollOffset = () => useStore((s) => s.majlisScrollOffset);
-export const useBakraScrollOffset = () => useStore((s) => s.bakraScrollOffset);

@@ -40,8 +40,6 @@
     "@nestjs/swagger": "^8.1.0",
     "@nestjs/throttler": "^6.3.0",
     "@nestjs/websockets": "^10.4.0",
-    "@noble/curves": "^1.9.7",
-    "@noble/hashes": "^1.4.0",
     "@prisma/client": "^6.3.0",
     "@sentry/nestjs": "^10.42.0",
     "@sentry/node": "^10.42.0",
