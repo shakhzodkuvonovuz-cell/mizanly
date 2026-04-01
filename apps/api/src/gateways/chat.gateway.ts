@@ -239,8 +239,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   private async checkRateLimit(userId: string, event = 'message', limit = 30, windowSec = 60): Promise<boolean> {
     const key = `ws:ratelimit:${event}:${userId}`;
-    const count = await this.redis.incr(key);
-    if (count === 1) await this.redis.expire(key, windowSec);
+    // J07-H6: Atomic INCR + conditional EXPIRE via Lua script to eliminate crash-between race
+    const count = await this.redis.eval(
+      "local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; return c",
+      1, key, windowSec,
+    ) as number;
     return count <= limit;
   }
 
@@ -250,8 +253,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       const ip = client.handshake.headers['x-forwarded-for']?.toString().split(',')[0]?.trim()
         || client.handshake.address || 'unknown';
       const connKey = `ws:conn:${ip}`;
-      const connCount = await this.redis.incr(connKey);
-      if (connCount === 1) await this.redis.expire(connKey, 60);
+      // J07-H6: Atomic INCR + conditional EXPIRE via Lua script to eliminate crash-between race
+      const connCount = await this.redis.eval(
+        "local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; return c",
+        1, connKey, 60,
+      ) as number;
       if (connCount > 10) {
         this.logger.warn(`WebSocket connection flood from IP ${ip}: ${connCount}/min`);
         client.disconnect();
@@ -784,7 +790,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     }
 
     const now = new Date();
-    this.prisma.message.updateMany({
+    // X07-#3: Await the delivery update instead of fire-and-forget to ensure data consistency
+    await this.prisma.message.updateMany({
       where: { id: dto.messageId, conversationId: dto.conversationId },
       data: { deliveredAt: now },
     }).catch((e) => this.logger.error('Failed to update delivery', e));

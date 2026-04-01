@@ -137,7 +137,7 @@ describe('CirclesService', () => {
 
       const result = await service.update(circleId, userId, newName);
 
-      expect(prisma.circle.findUnique).toHaveBeenCalledWith({ where: { id: circleId } });
+      expect(prisma.circle.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: circleId } }));
       expect(prisma.circle.update).toHaveBeenCalledWith({
         where: { id: circleId },
         data: { name: newName },
@@ -171,7 +171,7 @@ describe('CirclesService', () => {
 
       const result = await service.delete(circleId, userId);
 
-      expect(prisma.circle.findUnique).toHaveBeenCalledWith({ where: { id: circleId } });
+      expect(prisma.circle.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: circleId } }));
       expect(prisma.circle.delete).toHaveBeenCalledWith({ where: { id: circleId } });
       expect(result).toEqual(existingCircle);
     });
@@ -203,7 +203,7 @@ describe('CirclesService', () => {
 
       const result = await service.addMembers(circleId, userId, memberIds);
 
-      expect(prisma.circle.findUnique).toHaveBeenCalledWith({ where: { id: circleId } });
+      expect(prisma.circle.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: circleId } }));
       expect(prisma.circleMember.createMany).toHaveBeenCalledWith({
         data: [
           { circleId, userId: 'user-456' },
@@ -268,7 +268,7 @@ describe('CirclesService', () => {
 
       const result = await service.removeMembers(circleId, userId, memberIds);
 
-      expect(prisma.circle.findUnique).toHaveBeenCalledWith({ where: { id: circleId } });
+      expect(prisma.circle.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: circleId } }));
       expect(prisma.circleMember.deleteMany).toHaveBeenCalledWith({
         where: { circleId, userId: { in: memberIds } },
       });
@@ -296,7 +296,7 @@ describe('CirclesService', () => {
 
       const result = await service.getMembers(circleId, userId);
 
-      expect(prisma.circle.findUnique).toHaveBeenCalledWith({ where: { id: circleId } });
+      expect(prisma.circle.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: circleId } }));
       expect(prisma.circleMember.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { circleId },
         include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },

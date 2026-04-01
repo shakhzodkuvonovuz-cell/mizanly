@@ -34,6 +34,17 @@ export class DraftsService {
     return draft;
   }
 
+  /** J08-#25: Lightweight ownership check — fetches only id + userId instead of full draft */
+  private async verifyDraftOwnership(draftId: string, userId: string) {
+    const draft = await this.prisma.draftPost.findUnique({
+      where: { id: draftId },
+      select: { id: true, userId: true },
+    });
+    if (!draft) throw new NotFoundException('Draft not found');
+    if (draft.userId !== userId) throw new ForbiddenException();
+    return draft;
+  }
+
   async saveDraft(userId: string, space: string = 'SAF', data: Record<string, unknown>) {
     if (!VALID_SPACES.includes(space)) {
       throw new BadRequestException(`Invalid space: ${space}`);
@@ -48,9 +59,8 @@ export class DraftsService {
   }
 
   async updateDraft(draftId: string, userId: string, data: Record<string, unknown>) {
-    const draft = await this.prisma.draftPost.findUnique({ where: { id: draftId } });
-    if (!draft) throw new NotFoundException('Draft not found');
-    if (draft.userId !== userId) throw new ForbiddenException();
+    // J08-#25: Use lightweight ownership check instead of fetching full draft
+    await this.verifyDraftOwnership(draftId, userId);
 
     return this.prisma.draftPost.update({
       where: { id: draftId },
@@ -59,9 +69,8 @@ export class DraftsService {
   }
 
   async deleteDraft(draftId: string, userId: string) {
-    const draft = await this.prisma.draftPost.findUnique({ where: { id: draftId } });
-    if (!draft) throw new NotFoundException('Draft not found');
-    if (draft.userId !== userId) throw new ForbiddenException();
+    // J08-#25: Use lightweight ownership check instead of fetching full draft
+    await this.verifyDraftOwnership(draftId, userId);
 
     await this.prisma.draftPost.delete({ where: { id: draftId } });
     return { deleted: true };

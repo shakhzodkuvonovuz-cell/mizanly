@@ -169,9 +169,10 @@ export class AudioRoomsService {
 
   // End room (host only)
   async endRoom(id: string, userId: string) {
+    // J08-#17: Select only safe host fields to prevent PII leak
     const room = await this.prisma.audioRoom.findUnique({
       where: { id },
-      include: { host: true },
+      select: { id: true, hostId: true, status: true, startedAt: true },
     });
 
     if (!room) {
@@ -288,9 +289,10 @@ export class AudioRoomsService {
 
   // Change participant role (host only)
   async changeRole(id: string, userId: string, dto: RoleChangeDto) {
+    // J08-#18: Select only safe host fields to prevent PII leak
     const room = await this.prisma.audioRoom.findUnique({
       where: { id },
-      include: { host: true },
+      select: { id: true, hostId: true, status: true, maxSpeakers: true },
     });
 
     if (!room) {

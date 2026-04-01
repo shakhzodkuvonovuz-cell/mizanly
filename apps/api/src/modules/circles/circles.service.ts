@@ -76,22 +76,35 @@ export class CirclesService {
     throw new InternalServerErrorException('Failed to create circle');
   }
 
-  async update(circleId: string, userId: string, name?: string) {
-    const circle = await this.prisma.circle.findUnique({ where: { id: circleId } });
+  /** J08-#36: Lightweight ownership check — fetches only id + ownerId instead of full Circle */
+  private async verifyCircleOwnership(circleId: string, userId: string) {
+    const circle = await this.prisma.circle.findUnique({
+      where: { id: circleId },
+      select: { id: true, ownerId: true },
+    });
     if (!circle) throw new NotFoundException('Circle not found');
-    if (circle.ownerId !== userId) throw new ForbiddenException('Only the circle owner can update');
+    if (circle.ownerId !== userId) throw new ForbiddenException('Only the circle owner can manage this circle');
+    return circle;
+  }
+
+  async update(circleId: string, userId: string, name?: string) {
+    // J08-#36: Use lightweight ownership check instead of fetching full Circle
+    await this.verifyCircleOwnership(circleId, userId);
     return this.prisma.circle.update({ where: { id: circleId }, data: { ...(name && { name }) } });
   }
 
   async delete(circleId: string, userId: string) {
-    const circle = await this.prisma.circle.findUnique({ where: { id: circleId } });
-    if (!circle) throw new NotFoundException('Circle not found');
-    if (circle.ownerId !== userId) throw new ForbiddenException('Only the circle owner can delete');
+    // J08-#36: Use lightweight ownership check instead of fetching full Circle
+    await this.verifyCircleOwnership(circleId, userId);
     return this.prisma.circle.delete({ where: { id: circleId } });
   }
 
   async addMembers(circleId: string, userId: string, memberIds: string[]) {
-    const circle = await this.prisma.circle.findUnique({ where: { id: circleId } });
+    // J08-#36: Select only needed fields (name needed for notification body)
+    const circle = await this.prisma.circle.findUnique({
+      where: { id: circleId },
+      select: { id: true, ownerId: true, name: true },
+    });
     if (!circle) throw new NotFoundException('Circle not found');
     if (circle.ownerId !== userId) throw new ForbiddenException('Only the circle owner can manage members');
 
@@ -150,7 +163,11 @@ export class CirclesService {
   }
 
   async removeMembers(circleId: string, userId: string, memberIds: string[]) {
-    const circle = await this.prisma.circle.findUnique({ where: { id: circleId } });
+    // J08-#36: Use lightweight ownership check for removeMembers
+    const circle = await this.prisma.circle.findUnique({
+      where: { id: circleId },
+      select: { id: true, ownerId: true },
+    });
     if (!circle) throw new NotFoundException('Circle not found');
     if (circle.ownerId !== userId) throw new ForbiddenException('Only the circle owner can manage members');
 
@@ -173,7 +190,11 @@ export class CirclesService {
   }
 
   async getMembers(circleId: string, userId: string, cursor?: string, limit = 20) {
-    const circle = await this.prisma.circle.findUnique({ where: { id: circleId } });
+    // J08-#36: Use lightweight ownership check instead of fetching full Circle
+    const circle = await this.prisma.circle.findUnique({
+      where: { id: circleId },
+      select: { id: true, ownerId: true },
+    });
     if (!circle) throw new NotFoundException('Circle not found');
     if (circle.ownerId !== userId) throw new ForbiddenException('Only the circle owner can view members');
 

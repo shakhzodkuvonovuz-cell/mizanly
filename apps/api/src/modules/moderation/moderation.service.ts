@@ -507,16 +507,19 @@ export class ModerationService {
     });
 
     // Execute Clerk unban after transaction commits (B11-#4)
+    // X04-#19: ModerationService does not inject Clerk SDK. The _pendingClerkUnban mechanism
+    // correctly identifies the clerkId, but cannot call clerk.users.unbanUser() without DI.
+    // TODO: Inject ClerkClient (from @clerk/backend) into ModerationService to call
+    //   clerk.users.unbanUser(clerkId) here. Until then, log a warning so admins know
+    //   manual Clerk unban is required after accepting an appeal.
     const pendingClerkId = (this as { _pendingClerkUnban?: string })._pendingClerkUnban;
     if (pendingClerkId) {
       delete (this as { _pendingClerkUnban?: string })._pendingClerkUnban;
-      try {
-        // AiService doesn't have Clerk — use Prisma to find clerkId and call Clerk API
-        // Since ModerationService doesn't inject Clerk, log a warning and note for infra
-        this.logger.log(`Appeal accepted: user with clerkId ${pendingClerkId} needs Clerk unban. Manual action or webhook required.`);
-      } catch (err) {
-        this.logger.error('Failed to unban user in Clerk', err instanceof Error ? err.message : err);
-      }
+      this.logger.warn(
+        `X04-#19: Appeal accepted — user with clerkId ${pendingClerkId} needs Clerk unban. ` +
+        `ModerationService does not inject Clerk SDK. Manual unban required via Clerk dashboard ` +
+        `or inject ClerkClient into this service.`,
+      );
     }
   }
 

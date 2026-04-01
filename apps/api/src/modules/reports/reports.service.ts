@@ -146,10 +146,11 @@ export class ReportsService {
         const shouldAutoHide = uniqueReporterCount >= 3;
 
         if (shouldAutoHide) {
+          const hideReason = `Urgent report: ${dto.reason} — ${uniqueReporterCount} reporters — pending review`;
           if (dto.reportedPostId) {
             await this.prisma.post.update({
               where: { id: dto.reportedPostId },
-              data: { isRemoved: true, removedReason: `Urgent report: ${dto.reason} — ${uniqueReporterCount} reporters — pending review` },
+              data: { isRemoved: true, removedReason: hideReason },
             }).catch((err: unknown) => {
               if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025')) {
                 this.logger.error(`Failed to auto-hide post ${dto.reportedPostId}`, err instanceof Error ? err.message : err);
@@ -163,6 +164,37 @@ export class ReportsService {
             }).catch((err: unknown) => {
               if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025')) {
                 this.logger.error(`Failed to auto-hide comment ${dto.reportedCommentId}`, err instanceof Error ? err.message : err);
+              }
+            });
+          }
+          // X08-#23: Auto-hide thread/reel/video on urgent reports (not just post/comment)
+          if (report.reportedThreadId) {
+            await this.prisma.thread.update({
+              where: { id: report.reportedThreadId },
+              data: { isRemoved: true },
+            }).catch((err: unknown) => {
+              if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025')) {
+                this.logger.error(`Failed to auto-hide thread ${report.reportedThreadId}`, err instanceof Error ? err.message : err);
+              }
+            });
+          }
+          if (report.reportedReelId) {
+            await this.prisma.reel.update({
+              where: { id: report.reportedReelId },
+              data: { isRemoved: true },
+            }).catch((err: unknown) => {
+              if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025')) {
+                this.logger.error(`Failed to auto-hide reel ${report.reportedReelId}`, err instanceof Error ? err.message : err);
+              }
+            });
+          }
+          if (report.reportedVideoId) {
+            await this.prisma.video.update({
+              where: { id: report.reportedVideoId },
+              data: { isRemoved: true },
+            }).catch((err: unknown) => {
+              if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025')) {
+                this.logger.error(`Failed to auto-hide video ${report.reportedVideoId}`, err instanceof Error ? err.message : err);
               }
             });
           }

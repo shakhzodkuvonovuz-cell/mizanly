@@ -103,6 +103,8 @@ export class AnalyticsService implements OnModuleDestroy {
       }
       // Keep only last 100K events in Redis (older ones should be consumed by worker)
       pipeline.ltrim(this.EVENTS_KEY, 0, 99_999);
+      // J07-C3: Set 7-day TTL on analytics events list to prevent unbounded Redis memory
+      pipeline.expire(this.EVENTS_KEY, 7 * 86400);
       await pipeline.exec();
     } catch (err) {
       this.logger.error(`Failed to flush ${events.length} analytics events`, err);

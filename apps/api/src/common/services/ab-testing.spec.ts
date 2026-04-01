@@ -9,6 +9,7 @@ const mockRedis = {
   keys: jest.fn().mockResolvedValue([]),
   mget: jest.fn().mockResolvedValue([]),
   incr: jest.fn().mockResolvedValue(1),
+  expire: jest.fn().mockResolvedValue(1),
   scan: jest.fn().mockResolvedValue(['0', []]),
 };
 

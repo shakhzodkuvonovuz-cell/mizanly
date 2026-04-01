@@ -272,10 +272,10 @@ describe('AudioRoomsService', () => {
       const result = await service.endRoom(roomId, userId);
 
       expect(result).toEqual(mockUpdatedRoom);
-      expect(mockPrismaService.audioRoom.findUnique).toHaveBeenCalledWith({
+      // J08-#17: Now uses select instead of include: { host: true } to avoid PII leak
+      expect(mockPrismaService.audioRoom.findUnique).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: roomId },
-        include: { host: true },
-      });
+      }));
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
       expect(mockPrismaService.audioRoomParticipant.deleteMany).toHaveBeenCalledWith({
         where: { roomId },

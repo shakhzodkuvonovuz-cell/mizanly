@@ -122,6 +122,7 @@ describe('ChatGateway', () => {
           provide: 'REDIS',
           useValue: {
             incr: jest.fn().mockResolvedValue(1),
+            eval: jest.fn().mockResolvedValue(1),
             expire: jest.fn().mockResolvedValue(1),
             get: jest.fn().mockResolvedValue(null),
             set: jest.fn().mockResolvedValue('OK'),
@@ -255,8 +256,8 @@ describe('ChatGateway', () => {
         data: { userId: 'user-123' },
         emit: jest.fn(),
       };
-      // Exceed rate limit
-      redis.incr.mockResolvedValue(31);
+      // Exceed rate limit — J07-H6: now uses redis.eval (Lua) instead of redis.incr
+      redis.eval.mockResolvedValue(31);
       await gateway.handleMessage(client as any, { conversationId: UUID1, content: 'test' });
 
       expect(client.emit).toHaveBeenCalledWith('error', { message: 'Rate limit exceeded' });

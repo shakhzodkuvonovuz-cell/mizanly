@@ -174,6 +174,8 @@ export class QueueService implements OnModuleDestroy {
 
     const redisDone = this.redis.lpush(QueueService.DLQ_KEY, JSON.stringify(entry))
       .then(() => this.redis.ltrim(QueueService.DLQ_KEY, 0, QueueService.DLQ_MAX_SIZE - 1))
+      // J07-H2: Set 7-day TTL on DLQ list to prevent unbounded Redis memory
+      .then(() => this.redis.expire(QueueService.DLQ_KEY, 7 * 86400))
       .catch((dlqError) => {
         redisFailed = true;
         this.logger.error(`Redis DLQ storage failed for job ${job.id}: ${dlqError instanceof Error ? dlqError.message : 'unknown'}`);

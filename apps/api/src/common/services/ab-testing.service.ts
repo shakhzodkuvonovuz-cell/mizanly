@@ -222,7 +222,9 @@ export class ABTestingService implements OnModuleInit {
   async trackConversion(experimentId: string, userId: string, eventName: string): Promise<void> {
     const variant = await this.getVariant(experimentId, userId);
     const key = `ab:conversions:${experimentId}:${variant}:${eventName}`;
-    await this.redis.incr(key);
+    const count = await this.redis.incr(key);
+    // J07-H1: Set 90-day TTL on first increment to prevent unbounded key accumulation
+    if (count === 1) await this.redis.expire(key, 90 * 24 * 3600);
   }
 
   /**

@@ -398,6 +398,8 @@ export class AuthService {
         language: 'en',
         // A01-#8: Remove auto-ToS for webhook users — require explicit acceptance on first app launch
         ...(data.phone ? { phone: data.phone } : {}),
+        // X04-#20: Generate referralCode for webhook-created users (same as register())
+        referralCode: randomBytes(8).toString('base64url').slice(0, 10),
       },
       select: { id: true, username: true, displayName: true, bio: true },
     });

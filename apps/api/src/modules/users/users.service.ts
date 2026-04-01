@@ -101,6 +101,12 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
+    // X08-#13: TODO — Inject ContentSafetyService and call contentSafety.moderateText()
+    // on bio, displayName, and location fields before persisting. Currently, these fields
+    // are only sanitized (XSS prevention) but not moderated for hate speech, slurs, etc.
+    // ContentSafetyService exists at modules/moderation/content-safety.service.ts but is
+    // not injected into UsersService. Add it to UsersModule providers + constructor.
+
     // A01-#14: Explicitly destructure allowed fields instead of spreading entire DTO
     const { username, displayName, bio, avatarUrl, coverUrl, website, location,
       pronouns, statusText, creatorCategory, language, theme, isPrivate, madhab } = dto;
