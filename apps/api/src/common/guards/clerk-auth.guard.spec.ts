@@ -358,6 +358,88 @@ describe('ClerkAuthGuard', () => {
     });
   });
 
+  describe('Deletion cancellation (X04-#2)', () => {
+    it('should allow deactivated user with future scheduledDeletionAt', async () => {
+      const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+      mockVerifyToken.mockResolvedValue({ sub: 'clerk_user_abc' } as any);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        ...activeUser,
+        isDeactivated: true,
+        isDeleted: false,
+        scheduledDeletionAt: futureDate,
+      });
+
+      const { context, request } = createMockContext({
+        authorization: 'Bearer valid-jwt-token',
+      });
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+      expect(request.user).toBeDefined();
+      expect(request.user.id).toBe('user-abc-123');
+    });
+
+    it('should block deactivated user without scheduledDeletionAt', async () => {
+      mockVerifyToken.mockResolvedValue({ sub: 'clerk_user_abc' } as any);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        ...activeUser,
+        isDeactivated: true,
+        isDeleted: false,
+        scheduledDeletionAt: null,
+      });
+
+      const { context } = createMockContext({
+        authorization: 'Bearer valid-jwt-token',
+      });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        'Account has been deactivated',
+      );
+    });
+
+    it('should block deactivated user with past scheduledDeletionAt (already expired)', async () => {
+      const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 day ago
+      mockVerifyToken.mockResolvedValue({ sub: 'clerk_user_abc' } as any);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        ...activeUser,
+        isDeactivated: true,
+        isDeleted: false,
+        scheduledDeletionAt: pastDate,
+      });
+
+      const { context } = createMockContext({
+        authorization: 'Bearer valid-jwt-token',
+      });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should block deleted user even with future scheduledDeletionAt', async () => {
+      const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      mockVerifyToken.mockResolvedValue({ sub: 'clerk_user_abc' } as any);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        ...activeUser,
+        isDeactivated: true,
+        isDeleted: true,
+        scheduledDeletionAt: futureDate,
+      });
+
+      const { context } = createMockContext({
+        authorization: 'Bearer valid-jwt-token',
+      });
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+  });
+
   describe('extractToken (private method, tested through canActivate)', () => {
     it('should extract token from valid "Bearer <token>" format', async () => {
       mockVerifyToken.mockResolvedValue({ sub: 'clerk_user_abc' } as any);

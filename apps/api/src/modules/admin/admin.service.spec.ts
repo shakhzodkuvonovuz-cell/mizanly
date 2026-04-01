@@ -477,6 +477,72 @@ describe('AdminService', () => {
     });
   });
 
+  describe('banUser search deindex (X04-#9)', () => {
+    it('should deindex user from search on ban via publishWorkflow.onUnpublish', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: 'clerk-user-1' });
+      prisma.user.update.mockResolvedValue({
+        id: 'user-1', username: 'u1', displayName: 'U1',
+        isBanned: true, banExpiresAt: null, banReason: 'Spam',
+      });
+      // Mock content queries to return empty (no content to deindex)
+      prisma.post.findMany = jest.fn().mockResolvedValue([]);
+      prisma.thread.findMany = jest.fn().mockResolvedValue([]);
+      prisma.reel.findMany = jest.fn().mockResolvedValue([]);
+      prisma.video.findMany = jest.fn().mockResolvedValue([]);
+
+      const publishWorkflow = (service as any).publishWorkflow;
+
+      await service.banUser('admin-id', 'user-1', 'Spam');
+
+      // publishWorkflow.onUnpublish should be called for the user itself
+      expect(publishWorkflow.onUnpublish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contentType: 'user',
+          contentId: 'user-1',
+          userId: 'user-1',
+        }),
+      );
+    });
+
+    it('should deindex user content from search on ban', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' })
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER', clerkId: null });
+      prisma.user.update.mockResolvedValue({
+        id: 'user-1', username: 'u1', displayName: 'U1',
+        isBanned: true, banExpiresAt: null, banReason: 'Bad actor',
+      });
+
+      // Mock content queries — user has posts and threads
+      const mockPosts = [{ id: 'post-1' }, { id: 'post-2' }];
+      const mockThreads = [{ id: 'thread-1' }];
+      prisma.post.findMany = jest.fn()
+        .mockResolvedValueOnce(mockPosts) // first page
+        .mockResolvedValueOnce([]); // second page (empty = done)
+      prisma.thread.findMany = jest.fn()
+        .mockResolvedValueOnce(mockThreads)
+        .mockResolvedValueOnce([]);
+      prisma.reel.findMany = jest.fn().mockResolvedValue([]);
+      prisma.video.findMany = jest.fn().mockResolvedValue([]);
+
+      const publishWorkflow = (service as any).publishWorkflow;
+
+      await service.banUser('admin-id', 'user-1', 'Bad actor');
+
+      // Wait for the async deindex to complete
+      // The removeUserContentFromSearch is fire-and-forget with .catch
+      // We need to allow microtasks to flush
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // publishWorkflow.onUnpublish should have been called for user + their content
+      expect(publishWorkflow.onUnpublish).toHaveBeenCalledWith(
+        expect.objectContaining({ contentType: 'user', contentId: 'user-1' }),
+      );
+    });
+  });
+
   describe('unbanUser', () => {
     it('should reactivate user and lift Clerk ban', async () => {
       prisma.user.findUnique

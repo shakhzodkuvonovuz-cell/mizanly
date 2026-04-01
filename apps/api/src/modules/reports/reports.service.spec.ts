@@ -27,6 +27,7 @@ describe('ReportsService', () => {
             },
             post: {
               findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
               update: jest.fn(),
             },
             comment: {
@@ -43,6 +44,21 @@ describe('ReportsService', () => {
             },
             moderationLog: {
               create: jest.fn(),
+            },
+            thread: {
+              findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              update: jest.fn().mockResolvedValue({}),
+            },
+            reel: {
+              findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              update: jest.fn().mockResolvedValue({}),
+            },
+            video: {
+              findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              update: jest.fn().mockResolvedValue({}),
             },
             notification: {
               create: jest.fn(),
@@ -280,6 +296,133 @@ describe('ReportsService', () => {
     it('should throw ForbiddenException for non-admin', async () => {
       prisma.user.findUnique.mockResolvedValue({ role: 'USER' });
       await expect(service.getStats('user1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('Content removal for thread/reel/video (X08-#2)', () => {
+    it('resolve should remove reported thread on CONTENT_REMOVED', async () => {
+      const report = {
+        id: 'r-thread',
+        status: 'PENDING',
+        reason: 'HARASSMENT',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: null,
+        reportedThreadId: 'thread-1',
+        reportedReelId: null,
+        reportedVideoId: null,
+      };
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.$transaction.mockImplementation((ops: unknown[]) => Promise.all(ops));
+      prisma.report.update.mockResolvedValue({ ...report, status: 'RESOLVED' });
+      prisma.moderationLog.create.mockResolvedValue({ id: 'log-1' });
+
+      await service.resolve('r-thread', 'admin1', 'CONTENT_REMOVED' as ModerationAction);
+
+      expect(prisma.thread.update).toHaveBeenCalledWith({
+        where: { id: 'thread-1' },
+        data: { isRemoved: true },
+      });
+    });
+
+    it('resolve should remove reported reel on CONTENT_REMOVED', async () => {
+      const report = {
+        id: 'r-reel',
+        status: 'PENDING',
+        reason: 'NUDITY',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: null,
+        reportedThreadId: null,
+        reportedReelId: 'reel-1',
+        reportedVideoId: null,
+      };
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.$transaction.mockImplementation((ops: unknown[]) => Promise.all(ops));
+      prisma.report.update.mockResolvedValue({ ...report, status: 'RESOLVED' });
+      prisma.moderationLog.create.mockResolvedValue({ id: 'log-2' });
+
+      await service.resolve('r-reel', 'admin1', 'CONTENT_REMOVED' as ModerationAction);
+
+      expect(prisma.reel.update).toHaveBeenCalledWith({
+        where: { id: 'reel-1' },
+        data: { isRemoved: true },
+      });
+    });
+
+    it('resolve should remove reported video on CONTENT_REMOVED', async () => {
+      const report = {
+        id: 'r-video',
+        status: 'PENDING',
+        reason: 'VIOLENCE',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: null,
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: 'video-1',
+      };
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.$transaction.mockImplementation((ops: unknown[]) => Promise.all(ops));
+      prisma.report.update.mockResolvedValue({ ...report, status: 'RESOLVED' });
+      prisma.moderationLog.create.mockResolvedValue({ id: 'log-3' });
+
+      await service.resolve('r-video', 'admin1', 'CONTENT_REMOVED' as ModerationAction);
+
+      expect(prisma.video.update).toHaveBeenCalledWith({
+        where: { id: 'video-1' },
+        data: { isRemoved: true },
+      });
+    });
+  });
+
+  describe('Temp ban banExpiresAt (X04-#3)', () => {
+    it('should set banExpiresAt to ~72 hours on TEMP_BAN', async () => {
+      const report = {
+        id: 'r-ban',
+        status: 'PENDING',
+        reason: 'HARASSMENT',
+        reportedPostId: null,
+        reportedCommentId: null,
+        reportedMessageId: null,
+        reportedUserId: 'target-user',
+        reportedThreadId: null,
+        reportedReelId: null,
+        reportedVideoId: null,
+      };
+      const beforeTime = Date.now();
+      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue(report);
+      prisma.$transaction.mockImplementation((ops: unknown[]) => Promise.all(ops));
+      prisma.report.update.mockResolvedValue({ ...report, status: 'RESOLVED' });
+      prisma.moderationLog.create.mockResolvedValue({ id: 'log-ban' });
+      prisma.user.update.mockResolvedValue({ id: 'target-user', isBanned: true });
+
+      await service.resolve('r-ban', 'admin1', 'TEMP_BAN' as ModerationAction);
+
+      // Verify user.update was called with banExpiresAt
+      expect(prisma.user.update).toHaveBeenCalled();
+      const userUpdateCalls = prisma.user.update.mock.calls;
+      // Find the call that sets isBanned (not the Clerk-related one)
+      const banCall = userUpdateCalls.find(
+        (call: any[]) => call[0]?.data?.isBanned === true,
+      );
+      expect(banCall).toBeDefined();
+      const banData = banCall[0].data;
+      expect(banData.isBanned).toBe(true);
+      expect(banData.banExpiresAt).toBeInstanceOf(Date);
+
+      // banExpiresAt should be ~72 hours from now (within 1 minute tolerance)
+      const expectedMs = 72 * 3600000;
+      const actualDiff = banData.banExpiresAt.getTime() - beforeTime;
+      expect(actualDiff).toBeGreaterThan(expectedMs - 60000);
+      expect(actualDiff).toBeLessThan(expectedMs + 60000);
     });
   });
 });

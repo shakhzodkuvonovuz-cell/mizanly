@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PrismaService } from '../../config/prisma.service';
 import { PrivacyService } from '../privacy/privacy.service';
@@ -110,6 +110,60 @@ describe('UsersService — audit fixes', () => {
           }),
         }),
       );
+    });
+  });
+
+  describe('Profile moderation (X08-#13)', () => {
+    let contentSafety: { moderateText: jest.Mock };
+    let redis: { get: jest.Mock; setex: jest.Mock; del: jest.Mock };
+
+    beforeEach(() => {
+      // Get the injected mocks from the module
+      contentSafety = (service as any).contentSafety;
+      redis = (service as any).redis;
+    });
+
+    it('should call moderateText for bio updates', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user1', username: 'testuser', isBanned: false, isDeleted: false, isDeactivated: false,
+      });
+      prisma.user.update.mockResolvedValue({ id: 'user1', bio: 'hello world' });
+
+      await service.updateProfile('user1', { bio: 'hello world' } as any);
+
+      expect(contentSafety.moderateText).toHaveBeenCalledWith('hello world');
+    });
+
+    it('should reject profile update when bio is flagged', async () => {
+      contentSafety.moderateText.mockResolvedValueOnce({ safe: false, flags: ['hate'] });
+
+      await expect(
+        service.updateProfile('user1', { bio: 'bad content' } as any),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should moderate displayName', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user1', username: 'testuser', isBanned: false, isDeleted: false, isDeactivated: false,
+      });
+      prisma.user.update.mockResolvedValue({ id: 'user1', displayName: 'New Name' });
+
+      await service.updateProfile('user1', { displayName: 'New Name' } as any);
+
+      expect(contentSafety.moderateText).toHaveBeenCalledWith('New Name');
+    });
+
+    it('should skip moderation when no text fields changed', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user1', username: 'testuser', isBanned: false, isDeleted: false, isDeactivated: false,
+      });
+      prisma.user.update.mockResolvedValue({ id: 'user1', avatarUrl: 'https://example.com/avatar.jpg' });
+
+      await service.updateProfile('user1', { avatarUrl: 'https://example.com/avatar.jpg' } as any);
+
+      expect(contentSafety.moderateText).not.toHaveBeenCalled();
     });
   });
 });

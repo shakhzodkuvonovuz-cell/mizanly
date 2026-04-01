@@ -295,4 +295,69 @@ describe('ParentalControlsService', () => {
         .rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('PIN security (A15 audit fixes)', () => {
+    it('updateControls should NOT pass raw pin to Prisma update data', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(mockControl);
+      prisma.parentalControl.update.mockResolvedValue({ ...mockControl, restrictedMode: false });
+
+      await service.updateControls('parent-1', 'child-1', '1234', { pin: '123456', restrictedMode: false } as any);
+
+      expect(prisma.parentalControl.update).toHaveBeenCalled();
+      const updateCall = prisma.parentalControl.update.mock.calls[0][0];
+      // The raw pin must be destructured out — data should NOT contain 'pin'
+      expect(updateCall.data).not.toHaveProperty('pin');
+      expect(updateCall.data).toHaveProperty('restrictedMode', false);
+    });
+
+    it('linkChild response should NOT include pin field', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ isChildAccount: false })
+        .mockResolvedValueOnce({ id: 'child-1', isChildAccount: false });
+      prisma.parentalControl.findUnique.mockResolvedValue(null);
+
+      // Mock $transaction to return the create result
+      const controlWithoutPin = {
+        id: 'pc-new',
+        parentUserId: 'parent-1',
+        childUserId: 'child-1',
+        restrictedMode: false,
+        maxAgeRating: 'PG',
+        dailyLimitMinutes: null,
+        dmRestriction: 'none',
+        canGoLive: false,
+        canPost: true,
+        canComment: true,
+        activityDigest: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prisma.$transaction.mockResolvedValue([controlWithoutPin, {}]);
+
+      const result = await service.linkChild('parent-1', { childUserId: 'child-1', pin: '1234' });
+
+      // The create call should use select which excludes pin
+      const txArg = prisma.$transaction.mock.calls[0][0];
+      // Result should NOT have a pin field
+      expect(result).not.toHaveProperty('pin');
+    });
+
+    it('changePin should store hashed pin, not plaintext', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(mockControl);
+      prisma.parentalControl.update.mockResolvedValue({ ...mockControl, pin: 'newhash' });
+
+      await service.changePin('parent-1', 'child-1', '1234', '654321');
+
+      expect(prisma.parentalControl.update).toHaveBeenCalled();
+      const updateCall = prisma.parentalControl.update.mock.calls[0][0];
+      // Hashed pin contains ':' separator (salt:hash format), never the raw string
+      expect(updateCall.data.pin).toContain(':');
+      expect(updateCall.data.pin).not.toBe('654321');
+      // Verify it's a proper scrypt hash: salt (32 hex chars) + ':' + hash (128 hex chars)
+      const parts = updateCall.data.pin.split(':');
+      expect(parts).toHaveLength(2);
+      expect(parts[0]).toHaveLength(32); // 16 bytes = 32 hex chars
+      expect(parts[1]).toHaveLength(128); // 64 bytes = 128 hex chars
+    });
+  });
 });
