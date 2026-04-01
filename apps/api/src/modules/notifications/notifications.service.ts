@@ -6,6 +6,7 @@ import { PushTriggerService } from './push-trigger.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { NotificationType, Prisma } from '@prisma/client';
 import Redis from 'ioredis';
+import { atomicIncr } from '../../common/utils/redis-atomic';
 
 @Injectable()
 export class NotificationsService {
@@ -303,8 +304,7 @@ export class NotificationsService {
       if (existing) {
         // Batch: update the existing notification body to show aggregated count
         const countKey = `notif_batch:${existing.id}`;
-        const count = await this.redis.incr(countKey);
-        if (count === 1) await this.redis.expire(countKey, 1800);
+        const count = await atomicIncr(this.redis, countKey, 1800);
 
         // If re-marking a read notification as unread, invalidate the cached unread count
         const wasRead = existing.isRead;

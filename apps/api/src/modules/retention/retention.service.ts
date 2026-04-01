@@ -1,6 +1,7 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
+import { atomicIncr } from '../../common/utils/redis-atomic';
 
 /**
  * Retention & Engagement service — handles push notification triggers
@@ -199,11 +200,7 @@ export class RetentionService {
    */
   async trackNotificationSent(userId: string): Promise<void> {
     const key = `notif_count:${userId}:${new Date().toISOString().slice(0, 10)}`;
-    const count = await this.redis.incr(key);
-    // Only set TTL on first increment — prevents TTL reset on every notification
-    if (count === 1) {
-      await this.redis.expire(key, 86400);
-    }
+    await atomicIncr(this.redis, key, 86400);
   }
 
   // ── 76.7: Weekly analytics summary for creators ──────────

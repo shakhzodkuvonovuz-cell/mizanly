@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { assertNotPrivateUrl } from '../../common/utils/ssrf';
+import { atomicIncr } from '../../common/utils/redis-atomic';
 
 /**
  * ContentSafetyService — Automated content safety pipeline (AI analysis, rate limiting, auto-removal).
@@ -157,8 +158,7 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
 
   async incrementForwardCount(messageId: string): Promise<void> {
     const key = `forward_count:${messageId}`;
-    await this.redis.incr(key);
-    await this.redis.expire(key, 86400 * 30); // 30 day TTL
+    await atomicIncr(this.redis, key, 86400 * 30);
   }
 
   // ── 82.4: Kindness reminder ───────────────────────────────
@@ -309,8 +309,7 @@ Respond as JSON: {"safe": boolean, "flags": ["hate"|"islamophobia"|"sectarian"|"
 
   async trackShare(contentId: string): Promise<void> {
     const key = `viral_shares:${contentId}`;
-    await this.redis.incr(key);
-    await this.redis.expire(key, 3600); // 1 hour window
+    await atomicIncr(this.redis, key, 3600);
 
     const ageKey = `content_age:${contentId}`;
     const exists = await this.redis.exists(ageKey);

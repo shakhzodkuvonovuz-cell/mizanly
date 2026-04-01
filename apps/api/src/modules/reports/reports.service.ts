@@ -84,6 +84,31 @@ export class ReportsService {
       if (!message) throw new NotFoundException('Reported message not found');
       if (message.senderId === userId) throw new BadRequestException('You cannot report your own content');
     }
+    // P2-2.1: Ownership checks for thread/reel/video
+    if (dto.reportedThreadId) {
+      const thread = await this.prisma.thread.findUnique({
+        where: { id: dto.reportedThreadId },
+        select: { userId: true },
+      });
+      if (!thread) throw new NotFoundException('Reported thread not found');
+      if (thread.userId === userId) throw new BadRequestException('You cannot report your own content');
+    }
+    if (dto.reportedReelId) {
+      const reel = await this.prisma.reel.findUnique({
+        where: { id: dto.reportedReelId },
+        select: { userId: true },
+      });
+      if (!reel) throw new NotFoundException('Reported reel not found');
+      if (reel.userId === userId) throw new BadRequestException('You cannot report your own content');
+    }
+    if (dto.reportedVideoId) {
+      const video = await this.prisma.video.findUnique({
+        where: { id: dto.reportedVideoId },
+        select: { userId: true },
+      });
+      if (!video) throw new NotFoundException('Reported video not found');
+      if (video.userId === userId) throw new BadRequestException('You cannot report your own content');
+    }
 
     // Mass-report abuse detection: flag if user submits >10 reports in 1 hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -104,6 +129,9 @@ export class ReportsService {
     if (dto.reportedUserId) duplicateWhere.reportedUserId = dto.reportedUserId;
     if (dto.reportedCommentId) duplicateWhere.reportedCommentId = dto.reportedCommentId;
     if (dto.reportedMessageId) duplicateWhere.reportedMessageId = dto.reportedMessageId;
+    if (dto.reportedThreadId) duplicateWhere.reportedThreadId = dto.reportedThreadId;
+    if (dto.reportedReelId) duplicateWhere.reportedReelId = dto.reportedReelId;
+    if (dto.reportedVideoId) duplicateWhere.reportedVideoId = dto.reportedVideoId;
 
     const existing = await this.prisma.report.findFirst({ where: duplicateWhere });
     if (existing) throw new ConflictException('You already reported this');
@@ -118,6 +146,9 @@ export class ReportsService {
           reportedUserId: dto.reportedUserId,
           reportedCommentId: dto.reportedCommentId,
           reportedMessageId: dto.reportedMessageId,
+          reportedThreadId: dto.reportedThreadId,
+          reportedReelId: dto.reportedReelId,
+          reportedVideoId: dto.reportedVideoId,
         },
       });
 
@@ -136,6 +167,9 @@ export class ReportsService {
         };
         if (dto.reportedPostId) urgentTargetWhere.reportedPostId = dto.reportedPostId;
         if (dto.reportedCommentId) urgentTargetWhere.reportedCommentId = dto.reportedCommentId;
+        if (dto.reportedThreadId) urgentTargetWhere.reportedThreadId = dto.reportedThreadId;
+        if (dto.reportedReelId) urgentTargetWhere.reportedReelId = dto.reportedReelId;
+        if (dto.reportedVideoId) urgentTargetWhere.reportedVideoId = dto.reportedVideoId;
 
         const uniqueReporterCount = await this.prisma.report.groupBy({
           by: ['reporterId'],

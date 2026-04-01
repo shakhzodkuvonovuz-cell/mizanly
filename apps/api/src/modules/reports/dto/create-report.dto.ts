@@ -32,4 +32,19 @@ export class CreateReportDto {
   @IsOptional()
   @IsString()
   reportedMessageId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  reportedThreadId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  reportedReelId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  reportedVideoId?: string;
 }

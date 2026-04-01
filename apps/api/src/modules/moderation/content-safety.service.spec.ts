@@ -29,6 +29,7 @@ describe('ContentSafetyService', () => {
       set: jest.fn().mockResolvedValue('OK'),
       setex: jest.fn().mockResolvedValue('OK'),
       incr: jest.fn().mockResolvedValue(1),
+      eval: jest.fn().mockResolvedValue(1),
       expire: jest.fn().mockResolvedValue(1),
       exists: jest.fn().mockResolvedValue(0),
     };
@@ -162,12 +163,16 @@ describe('ContentSafetyService', () => {
   describe('incrementForwardCount', () => {
     it('should increment the forward count in Redis', async () => {
       await service.incrementForwardCount('msg-1');
-      expect(redis.incr).toHaveBeenCalledWith('forward_count:msg-1');
+      expect(redis.eval).toHaveBeenCalled(); // atomicIncr for forward_count:msg-1
     });
 
-    it('should set TTL of 30 days on the forward count key', async () => {
+    it('should set TTL atomically via Lua script (30 days)', async () => {
       await service.incrementForwardCount('msg-1');
-      expect(redis.expire).toHaveBeenCalledWith('forward_count:msg-1', 86400 * 30);
+      // atomicIncr uses redis.eval with Lua that includes conditional EXPIRE
+      expect(redis.eval).toHaveBeenCalledWith(
+        expect.stringContaining('EXPIRE'),
+        1, 'forward_count:msg-1', 86400 * 30,
+      );
     });
   });
 
@@ -329,8 +334,11 @@ describe('ContentSafetyService', () => {
       redis.exists.mockResolvedValue(1); // age key already exists
       await service.trackShare('content-1');
 
-      expect(redis.incr).toHaveBeenCalledWith('viral_shares:content-1');
-      expect(redis.expire).toHaveBeenCalledWith('viral_shares:content-1', 3600);
+      // atomicIncr uses redis.eval with Lua that includes conditional EXPIRE
+      expect(redis.eval).toHaveBeenCalledWith(
+        expect.stringContaining('EXPIRE'),
+        1, 'viral_shares:content-1', 3600,
+      );
     });
 
     it('should create age tracking key on first share', async () => {

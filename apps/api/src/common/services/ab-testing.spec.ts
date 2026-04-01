@@ -9,6 +9,7 @@ const mockRedis = {
   keys: jest.fn().mockResolvedValue([]),
   mget: jest.fn().mockResolvedValue([]),
   incr: jest.fn().mockResolvedValue(1),
+  eval: jest.fn().mockResolvedValue(1),
   expire: jest.fn().mockResolvedValue(1),
   scan: jest.fn().mockResolvedValue(['0', []]),
 };
@@ -154,7 +155,11 @@ describe('ABTestingService', () => {
         .mockResolvedValueOnce('treatment');
 
       await service.trackConversion('feed_ranking_v2', 'user-1', 'click_post');
-      expect(mockRedis.incr).toHaveBeenCalledWith('ab:conversions:feed_ranking_v2:treatment:click_post');
+      // atomicIncr uses redis.eval instead of incr+expire
+      expect(mockRedis.eval).toHaveBeenCalledWith(
+        expect.stringContaining('INCR'),
+        1, 'ab:conversions:feed_ranking_v2:treatment:click_post', 90 * 24 * 3600,
+      );
     });
   });
 

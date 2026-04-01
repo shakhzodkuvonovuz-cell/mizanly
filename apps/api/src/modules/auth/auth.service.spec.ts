@@ -70,6 +70,7 @@ describe('AuthService', () => {
           provide: 'REDIS',
           useValue: {
             incr: jest.fn().mockResolvedValue(1),
+            eval: jest.fn().mockResolvedValue(1),
             expire: jest.fn().mockResolvedValue(1),
             del: jest.fn().mockResolvedValue(1),
             get: jest.fn().mockResolvedValue(null),
@@ -476,7 +477,7 @@ describe('AuthService', () => {
     });
 
     it('should reject registration when device has 5+ accounts', async () => {
-      const redis = { incr: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn().mockResolvedValue('5') } as any;
+      const redis = { incr: jest.fn().mockResolvedValue(1), eval: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn().mockResolvedValue('5') } as any;
       // Access the private redis field to override it for this test
       (service as any).redis = redis;
 
@@ -494,7 +495,7 @@ describe('AuthService', () => {
 
     it('should allow registration when device has fewer than 5 accounts', async () => {
       const clerkId = 'clerk-new';
-      const redis = { incr: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn().mockResolvedValue('3') } as any;
+      const redis = { incr: jest.fn().mockResolvedValue(1), eval: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn().mockResolvedValue('3') } as any;
       (service as any).redis = redis;
       mockClerkClient.users.getUser.mockResolvedValue({
         emailAddresses: [{ emailAddress: 'new@example.com' }],
@@ -518,7 +519,7 @@ describe('AuthService', () => {
 
     it('should skip device check when deviceId is not provided', async () => {
       const clerkId = 'clerk-no-device';
-      const redis = { incr: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn() } as any;
+      const redis = { incr: jest.fn().mockResolvedValue(1), eval: jest.fn().mockResolvedValue(1), expire: jest.fn(), del: jest.fn(), get: jest.fn() } as any;
       (service as any).redis = redis;
       mockClerkClient.users.getUser.mockResolvedValue({
         emailAddresses: [{ emailAddress: 'nodevice@example.com' }],

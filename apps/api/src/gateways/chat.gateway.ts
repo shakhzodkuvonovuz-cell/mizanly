@@ -19,6 +19,7 @@ import { plainToInstance } from 'class-transformer';
 import { PrismaService } from '../config/prisma.service';
 import { MessagesService } from '../modules/messages/messages.service';
 import { WsSendMessageDto } from './dto/send-message.dto';
+import { atomicIncr } from '../common/utils/redis-atomic';
 import {
   WsJoinConversationDto,
   WsTypingDto,
@@ -239,11 +240,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   private async checkRateLimit(userId: string, event = 'message', limit = 30, windowSec = 60): Promise<boolean> {
     const key = `ws:ratelimit:${event}:${userId}`;
-    // J07-H6: Atomic INCR + conditional EXPIRE via Lua script to eliminate crash-between race
-    const count = await this.redis.eval(
-      "local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; return c",
-      1, key, windowSec,
-    ) as number;
+    const count = await atomicIncr(this.redis, key, windowSec);
     return count <= limit;
   }
 
@@ -254,10 +251,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         || client.handshake.address || 'unknown';
       const connKey = `ws:conn:${ip}`;
       // J07-H6: Atomic INCR + conditional EXPIRE via Lua script to eliminate crash-between race
-      const connCount = await this.redis.eval(
-        "local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; return c",
-        1, connKey, 60,
-      ) as number;
+      const connCount = await atomicIncr(this.redis, connKey, 60);
       if (connCount > 10) {
         this.logger.warn(`WebSocket connection flood from IP ${ip}: ${connCount}/min`);
         client.disconnect();
@@ -605,6 +599,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     if (data.encryptedContent && (typeof data.encryptedContent !== 'string' || data.encryptedContent.length > 120000)) {
       client.emit('error', { message: 'encryptedContent too large' });
       return;
+    }
+
+    // P2-2.2: Validate ALL remaining optional string fields to prevent OOM
+    const stringFieldLimits: Record<string, number> = {
+      e2eSenderRatchetKey: 500,
+      e2eIdentityKey: 500,
+      e2eEphemeralKey: 500,
+      messageType: 50,
+      replyToId: 50,
+      mediaUrl: 2000,
+      clientMessageId: 100,
+    };
+    for (const [field, maxLen] of Object.entries(stringFieldLimits)) {
+      const val = (data as Record<string, unknown>)[field];
+      if (val !== undefined && val !== null && (typeof val !== 'string' || (val as string).length > maxLen)) {
+        client.emit('error', { message: `Invalid ${field}` });
+        return;
+      }
     }
 
     // X07-#2 FIX: Verify SENDER is a member of the conversation (not just recipient)

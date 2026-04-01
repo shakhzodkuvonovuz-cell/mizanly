@@ -378,23 +378,39 @@ export class AdminService {
     return updatedUser;
   }
 
-  /** X04-#9: Remove a user's content from search indexes on ban */
+  /** X04-#9: Remove a user's content from search indexes on ban (cursor-paginated, no cap) */
   private async removeUserContentFromSearch(userId: string): Promise<void> {
-    const [posts, threads, reels, videos] = await Promise.all([
-      this.prisma.post.findMany({ where: { userId }, select: { id: true }, take: 1000 }),
-      this.prisma.thread.findMany({ where: { userId }, select: { id: true }, take: 1000 }),
-      this.prisma.reel.findMany({ where: { userId }, select: { id: true }, take: 1000 }),
-      this.prisma.video.findMany({ where: { userId }, select: { id: true }, take: 1000 }),
-    ]);
-
-    const unpublishOps = [
-      ...posts.map(p => this.publishWorkflow.onUnpublish({ contentType: 'post', contentId: p.id, userId })),
-      ...threads.map(t => this.publishWorkflow.onUnpublish({ contentType: 'thread', contentId: t.id, userId })),
-      ...reels.map(r => this.publishWorkflow.onUnpublish({ contentType: 'reel', contentId: r.id, userId })),
-      ...videos.map(v => this.publishWorkflow.onUnpublish({ contentType: 'video', contentId: v.id, userId })),
+    const contentTypes: Array<{ model: 'post' | 'thread' | 'reel' | 'video'; type: 'post' | 'thread' | 'reel' | 'video' }> = [
+      { model: 'post', type: 'post' },
+      { model: 'thread', type: 'thread' },
+      { model: 'reel', type: 'reel' },
+      { model: 'video', type: 'video' },
     ];
 
-    await Promise.allSettled(unpublishOps);
-    this.logger.log(`Removed ${unpublishOps.length} content items from search for banned user ${userId}`);
+    let totalRemoved = 0;
+    for (const ct of contentTypes) {
+      let cursor: string | undefined;
+      while (true) {
+        const items = await (this.prisma[ct.model] as { findMany: (args: Record<string, unknown>) => Promise<Array<{ id: string }>> }).findMany({
+          where: { userId },
+          select: { id: true },
+          take: 500,
+          orderBy: { id: 'asc' },
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        });
+        if (items.length === 0) break;
+
+        await Promise.allSettled(
+          items.map(item =>
+            this.publishWorkflow.onUnpublish({ contentType: ct.type, contentId: item.id, userId }).catch(() => {}),
+          ),
+        );
+        totalRemoved += items.length;
+        cursor = items[items.length - 1].id;
+        if (items.length < 500) break;
+      }
+    }
+
+    this.logger.log(`Removed ${totalRemoved} content items from search for banned user ${userId}`);
   }
 }

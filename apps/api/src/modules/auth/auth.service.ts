@@ -16,6 +16,7 @@ import { AnalyticsService } from '../../common/services/analytics.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { randomBytes } from 'crypto';
 import Redis from 'ioredis';
+import { atomicIncr } from '../../common/utils/redis-atomic';
 
 /** Minimum age required to register (COPPA compliance) */
 const MINIMUM_AGE = 13;
@@ -65,8 +66,7 @@ export class AuthService {
   async register(clerkId: string, dto: RegisterDto) {
     // Rate-limit registration attempts per Clerk ID (brute-force prevention)
     const attemptKey = `register_attempts:${clerkId}`;
-    const attempts = await this.redis.incr(attemptKey);
-    if (attempts === 1) await this.redis.expire(attemptKey, 900); // 15 min window
+    const attempts = await atomicIncr(this.redis, attemptKey, 900);
     if (attempts > 5) {
       throw new ForbiddenException('Too many registration attempts. Try again in 15 minutes.');
     }

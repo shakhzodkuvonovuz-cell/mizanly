@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
+import { atomicIncr } from '../utils/redis-atomic';
 
 /**
  * Finding #47: A/B Testing Framework
@@ -222,9 +223,7 @@ export class ABTestingService implements OnModuleInit {
   async trackConversion(experimentId: string, userId: string, eventName: string): Promise<void> {
     const variant = await this.getVariant(experimentId, userId);
     const key = `ab:conversions:${experimentId}:${variant}:${eventName}`;
-    const count = await this.redis.incr(key);
-    // J07-H1: Set 90-day TTL on first increment to prevent unbounded key accumulation
-    if (count === 1) await this.redis.expire(key, 90 * 24 * 3600);
+    await atomicIncr(this.redis, key, 90 * 24 * 3600);
   }
 
   /**
