@@ -1,7 +1,9 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 import { MeilisearchService } from './meilisearch.service';
+import { getExcludedUserIds } from '../../common/utils/excluded-users';
+import Redis from 'ioredis';
 
 const USER_SEARCH_SELECT = {
   id: true,
@@ -148,6 +150,7 @@ export class SearchService {
   constructor(
     private prisma: PrismaService,
     private meilisearch: MeilisearchService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   async search(
@@ -155,6 +158,7 @@ export class SearchService {
     type?: 'people' | 'threads' | 'posts' | 'tags' | 'reels' | 'videos' | 'channels',
     cursor?: string,
     limit = 20,
+    userId?: string,
   ) {
     if (!query || query.trim().length === 0) {
       throw new BadRequestException('Search query is required');
@@ -166,17 +170,32 @@ export class SearchService {
     const numLimit = typeof limit === 'string' ? parseInt(limit as unknown as string, 10) || 20 : limit;
     const safeLimit = Math.min(Math.max(numLimit, 1), 50);
 
+    // Build block/mute exclusion for authenticated users
+    const excludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
+    const userExcludeFilter = excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {};
+
     // Try Meilisearch first (faster, typo tolerant, Arabic-aware)
     if (this.meilisearch.isAvailable() && type && !cursor) {
       const indexMap: Record<string, string> = {
         people: 'users', posts: 'posts', threads: 'threads',
         reels: 'reels', videos: 'videos', tags: 'hashtags',
+        channels: 'channels',
       };
       const indexName = indexMap[type];
       if (indexName) {
-        const result = await this.meilisearch.search(indexName, query, { limit: safeLimit });
+        const result = await this.meilisearch.search(indexName, query, { limit: safeLimit * 2 });
         if (result && result.hits.length > 0) {
-          return { data: result.hits, meta: { hasMore: result.hits.length === safeLimit, cursor: undefined } };
+          // Post-filter Meilisearch hits: exclude blocked/muted users and removed content
+          let filtered = result.hits;
+          if (excludedIds.length > 0) {
+            const excludedSet = new Set(excludedIds);
+            filtered = filtered.filter((hit: Record<string, unknown>) => {
+              const hitUserId = (hit as Record<string, unknown>).userId as string | undefined;
+              return !hitUserId || !excludedSet.has(hitUserId);
+            });
+          }
+          const page = filtered.slice(0, safeLimit);
+          return { data: page, meta: { hasMore: filtered.length > safeLimit, cursor: undefined } };
         }
       }
       // Fall through to Prisma if Meilisearch returns no results
@@ -321,6 +340,7 @@ export class SearchService {
             isBanned: false,
             isDeactivated: false,
             isDeleted: false,
+            ...userExcludeFilter,
           },
           select: USER_SEARCH_SELECT,
           take: 5,
@@ -333,7 +353,7 @@ export class SearchService {
             isChainHead: true,
             isRemoved: false,
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userExcludeFilter },
           },
           select: THREAD_SEARCH_SELECT,
           take: 5,
@@ -345,7 +365,7 @@ export class SearchService {
             visibility: 'PUBLIC',
             isRemoved: false,
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userExcludeFilter },
           },
           select: POST_SEARCH_SELECT,
           take: 5,
@@ -358,7 +378,7 @@ export class SearchService {
             isRemoved: false,
             OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
             isTrial: false,
-            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userExcludeFilter },
           },
           select: REEL_SEARCH_SELECT,
           take: 5,
@@ -372,7 +392,7 @@ export class SearchService {
             ],
             status: 'PUBLISHED',
             isRemoved: false,
-            user: { isDeactivated: false, isBanned: false, isDeleted: false },
+            user: { isDeactivated: false, isBanned: false, isDeleted: false, ...userExcludeFilter },
           },
           select: VIDEO_SEARCH_SELECT,
           take: 5,
@@ -385,7 +405,7 @@ export class SearchService {
               { name: { contains: query, mode: 'insensitive' } },
               { description: { contains: query, mode: 'insensitive' } },
             ],
-            user: { isBanned: false, isDeleted: false, isDeactivated: false },
+            user: { isBanned: false, isDeleted: false, isDeactivated: false, ...userExcludeFilter },
           },
           select: CHANNEL_SEARCH_SELECT,
           take: 5,
@@ -414,6 +434,7 @@ export class SearchService {
           isBanned: false,
           isDeactivated: false,
           isDeleted: false,
+          ...userExcludeFilter,
         },
         select: USER_SEARCH_SELECT,
         take: safeLimit,
@@ -554,27 +575,29 @@ export class SearchService {
   async searchPosts(query: string, userId?: string, cursor?: string, limit = 20) {
     const safeLim = Math.min(Math.max(typeof limit === 'string' ? parseInt(limit as unknown as string, 10) : limit, 1), 50);
     const take = safeLim + 1;
+    const excludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
     const posts = await this.prisma.post.findMany({
       where: {
         content: { contains: query, mode: 'insensitive' },
         visibility: 'PUBLIC',
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, isBanned: false, isDeleted: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}) },
       },
       select: POST_SEARCH_SELECT,
       take,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { likesCount: 'desc' },
     });
-    const hasMore = posts.length > limit;
-    const data = hasMore ? posts.slice(0, limit) : posts;
+    const hasMore = posts.length > safeLim;
+    const data = hasMore ? posts.slice(0, safeLim) : posts;
     return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
   }
 
-  async searchThreads(query: string, cursor?: string, limit = 20) {
+  async searchThreads(query: string, cursor?: string, limit = 20, userId?: string) {
     const safeLim = Math.min(Math.max(typeof limit === 'string' ? parseInt(limit as unknown as string, 10) : limit, 1), 50);
     const take = safeLim + 1;
+    const excludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
     const threads = await this.prisma.thread.findMany({
       where: {
         content: { contains: query, mode: 'insensitive' },
@@ -582,21 +605,22 @@ export class SearchService {
         isChainHead: true,
         isRemoved: false,
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        user: { isDeactivated: false, isBanned: false, isDeleted: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}) },
       },
       select: THREAD_SEARCH_SELECT,
       take,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { likesCount: 'desc' },
     });
-    const hasMore = threads.length > limit;
-    const data = hasMore ? threads.slice(0, limit) : threads;
+    const hasMore = threads.length > safeLim;
+    const data = hasMore ? threads.slice(0, safeLim) : threads;
     return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
   }
 
-  async searchReels(query: string, cursor?: string, limit = 20) {
+  async searchReels(query: string, cursor?: string, limit = 20, userId?: string) {
     const safeLim = Math.min(Math.max(limit, 1), 50);
     const take = safeLim + 1;
+    const excludedIds = userId ? await getExcludedUserIds(this.prisma, this.redis, userId) : [];
     const reels = await this.prisma.reel.findMany({
       where: {
         AND: [
@@ -606,44 +630,27 @@ export class SearchService {
         status: 'READY',
         isRemoved: false,
         isTrial: false,
-        user: { isDeactivated: false, isBanned: false, isDeleted: false },
+        user: { isDeactivated: false, isBanned: false, isDeleted: false, ...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}) },
       },
       select: REEL_SEARCH_SELECT,
       take,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { createdAt: 'desc' },
     });
-    const hasMore = reels.length > limit;
-    const data = hasMore ? reels.slice(0, limit) : reels;
+    const hasMore = reels.length > safeLim;
+    const data = hasMore ? reels.slice(0, safeLim) : reels;
     return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
   }
 
   async getExploreFeed(cursor?: string, limit = 20, userId?: string) {
     const take = limit + 1;
 
-    // Exclude blocked/muted users when authenticated
+    // Exclude blocked/muted/restricted users via cached utility
     let userFilter = {};
     if (userId) {
-      const [blocks, mutes] = await Promise.all([
-        this.prisma.block.findMany({
-          where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
-          select: { blockerId: true, blockedId: true },
-          take: 10000,
-        }),
-        this.prisma.mute.findMany({
-          where: { userId },
-          select: { mutedId: true },
-          take: 10000,
-        }),
-      ]);
-      const excluded = new Set<string>();
-      for (const b of blocks) {
-        if (b.blockerId === userId) excluded.add(b.blockedId);
-        else excluded.add(b.blockerId);
-      }
-      for (const m of mutes) excluded.add(m.mutedId);
-      if (excluded.size > 0) {
-        userFilter = { id: { notIn: [...excluded] } };
+      const excludedIds = await getExcludedUserIds(this.prisma, this.redis, userId);
+      if (excludedIds.length > 0) {
+        userFilter = { id: { notIn: excludedIds } };
       }
     }
 

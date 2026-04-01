@@ -23,10 +23,11 @@ export class SearchController {
     @Query('type') type?: string,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @CurrentUser('id') userId?: string,
   ) {
     const safeType = type && VALID_TYPES.includes(type as SearchType) ? type as SearchType : undefined;
     const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 20 : 20), 50);
-    return this.searchService.search(query, safeType, cursor, safeLimit);
+    return this.searchService.search(query, safeType, cursor, safeLimit, userId);
   }
 
   @Get('trending')
@@ -73,9 +74,10 @@ export class SearchController {
     @Query('q') query: string,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @CurrentUser('id') userId?: string,
   ) {
     const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 20 : 20), 50);
-    return this.searchService.searchThreads(query, cursor, safeLimit);
+    return this.searchService.searchThreads(query, cursor, safeLimit, userId);
   }
 
   @Get('reels')
@@ -86,9 +88,10 @@ export class SearchController {
     @Query('q') query: string,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @CurrentUser('id') userId?: string,
   ) {
     const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 20 : 20), 50);
-    return this.searchService.searchReels(query, cursor, safeLimit);
+    return this.searchService.searchReels(query, cursor, safeLimit, userId);
   }
 
   @Get('explore')

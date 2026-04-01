@@ -47,7 +47,7 @@ describe('SearchController', () => {
 
       await controller.search('islam', 'posts', 'cursor-1');
 
-      expect(service.search).toHaveBeenCalledWith('islam', 'posts', 'cursor-1', 20);
+      expect(service.search).toHaveBeenCalledWith('islam', 'posts', 'cursor-1', 20, undefined);
     });
 
     it('should cap limit at 50', async () => {
@@ -55,7 +55,7 @@ describe('SearchController', () => {
 
       await controller.search('islam', 'posts', undefined, '999');
 
-      expect(service.search).toHaveBeenCalledWith('islam', 'posts', undefined, 50);
+      expect(service.search).toHaveBeenCalledWith('islam', 'posts', undefined, 50, undefined);
     });
 
     it('should reject invalid type', async () => {
@@ -63,7 +63,7 @@ describe('SearchController', () => {
 
       await controller.search('islam', 'invalid');
 
-      expect(service.search).toHaveBeenCalledWith('islam', undefined, undefined, 20);
+      expect(service.search).toHaveBeenCalledWith('islam', undefined, undefined, 20, undefined);
     });
   });
 

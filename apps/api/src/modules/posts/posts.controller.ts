@@ -184,8 +184,8 @@ export class PostsController {
   @Get(':id/comments')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get top-level comments (cursor paginated)' })
-  getComments(@Param('id') id: string, @Query('cursor') cursor?: string) {
-    return this.postsService.getComments(id, cursor);
+  getComments(@Param('id') id: string, @Query('cursor') cursor?: string, @CurrentUser('id') userId?: string) {
+    return this.postsService.getComments(id, cursor, undefined, userId);
   }
 
   @Throttle({ default: { limit: 30, ttl: 60000 } })

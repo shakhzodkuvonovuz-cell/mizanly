@@ -3,6 +3,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { EmbeddingContentType, PostVisibility, ReelStatus } from '@prisma/client';
 import Redis from 'ioredis';
+import { randomInt } from 'crypto';
 import { calculatePrayerTimes } from '../islamic/prayer-calculator';
 import { getExcludedUserIds } from '../../common/utils/excluded-users';
 import { TIME_WINDOWS } from '../../common/constants/feed-scoring';
@@ -438,8 +439,8 @@ export class PersonalizedFeedService {
     // Partial Fisher-Yates: swap ~30% of items to mix trending with Islamic picks
     const swapCount = Math.floor(merged.length * 0.3);
     for (let k = 0; k < swapCount; k++) {
-      const i = Math.floor(Math.random() * merged.length);
-      const j = Math.floor(Math.random() * merged.length);
+      const i = randomInt(merged.length);
+      const j = randomInt(merged.length);
       [merged[i], merged[j]] = [merged[j], merged[i]];
     }
 
@@ -607,6 +608,7 @@ export class PersonalizedFeedService {
             status: 'PUBLISHED',
             isRemoved: false,
             createdAt: { gte: since },
+            OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
             user: { isDeactivated: false, isBanned: false, isDeleted: false, isPrivate: false, ...userFilter },
             ...(cursor ? { id: { lt: cursor } } : {}),
           },
@@ -719,7 +721,7 @@ export class PersonalizedFeedService {
       });
       // Shuffle and pick
       for (let i = posts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = randomInt(i + 1);
         [posts[i], posts[j]] = [posts[j], posts[i]];
       }
       return posts.slice(0, count).map(p => ({ id: p.id, type: 'post' as const, score: 0.5, reasons: ['Fresh from the community'] }));
@@ -740,7 +742,7 @@ export class PersonalizedFeedService {
         take: count * 3,
       });
       for (let i = reels.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = randomInt(i + 1);
         [reels[i], reels[j]] = [reels[j], reels[i]];
       }
       return reels.slice(0, count).map(r => ({ id: r.id, type: 'reel' as const, score: 0.5, reasons: ['Fresh from the community'] }));
@@ -751,6 +753,7 @@ export class PersonalizedFeedService {
         where: {
           status: 'PUBLISHED', isRemoved: false,
           createdAt: { gte: freshCutoff },
+          OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
           viewsCount: { lt: 50 },
           id: { notIn: excludeIds },
           user: baseUserFilter,
@@ -760,7 +763,7 @@ export class PersonalizedFeedService {
         take: count * 3,
       });
       for (let i = videos.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = randomInt(i + 1);
         [videos[i], videos[j]] = [videos[j], videos[i]];
       }
       return videos.slice(0, count).map(v => ({ id: v.id, type: 'video' as const, score: 0.5, reasons: ['Fresh from the community'] }));
@@ -781,7 +784,7 @@ export class PersonalizedFeedService {
       take: count * 3,
     });
     for (let i = threads.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = randomInt(i + 1);
       [threads[i], threads[j]] = [threads[j], threads[i]];
     }
     return threads.slice(0, count).map(t => ({ id: t.id, type: 'thread' as const, score: 0.5, reasons: ['Fresh from the community'] }));

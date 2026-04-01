@@ -27,10 +27,11 @@ describe('CommunityNotesService', () => {
               create: jest.fn().mockResolvedValue({ noteId: 'cn-1', userId: 'u1', rating: 'NOTE_HELPFUL' }),
               upsert: jest.fn().mockResolvedValue({}),
             },
-            post: { findUnique: jest.fn().mockResolvedValue({ id: 'p1' }) },
-            thread: { findUnique: jest.fn().mockResolvedValue({ id: 't1' }) },
-            reel: { findUnique: jest.fn().mockResolvedValue({ id: 'r1' }) },
+            post: { findUnique: jest.fn().mockResolvedValue({ id: 'p1' }), findFirst: jest.fn().mockResolvedValue({ id: 'p1' }) },
+            thread: { findUnique: jest.fn().mockResolvedValue({ id: 't1' }), findFirst: jest.fn().mockResolvedValue({ id: 't1' }) },
+            reel: { findUnique: jest.fn().mockResolvedValue({ id: 'r1' }), findFirst: jest.fn().mockResolvedValue({ id: 'r1' }) },
             $executeRaw: jest.fn().mockResolvedValue(1),
+            $transaction: jest.fn(),
           },
         },
       ],
@@ -38,6 +39,8 @@ describe('CommunityNotesService', () => {
 
     service = module.get(CommunityNotesService);
     prisma = module.get(PrismaService) as any;
+    // Make interactive $transaction pass the prisma mock as tx
+    prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
   });
 
   it('should create a community note', async () => {
@@ -55,6 +58,7 @@ describe('CommunityNotesService', () => {
   });
 
   it('should rate a note', async () => {
+    prisma.communityNote.findUnique.mockResolvedValue({ id: 'cn-1', authorId: 'other-user', helpfulVotes: 5, notHelpfulVotes: 2 });
     prisma.communityNote.update.mockResolvedValue({ id: 'cn-1', helpfulVotes: 6, notHelpfulVotes: 2 });
     const result = await service.rateNote('u1', 'cn-1', 'NOTE_HELPFUL');
     expect(prisma.communityNoteRating.create).toHaveBeenCalled();

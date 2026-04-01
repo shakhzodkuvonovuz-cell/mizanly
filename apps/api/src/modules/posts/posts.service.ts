@@ -935,6 +935,19 @@ export class PostsService {
       throw new BadRequestException('Cannot react to your own post');
     }
 
+    // Block check: prevent blocked users from reacting
+    if (post.userId && post.userId !== userId) {
+      const block = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: post.userId },
+            { blockerId: post.userId, blockedId: userId },
+          ],
+        },
+      });
+      if (block) throw new ForbiddenException('Cannot interact with this user');
+    }
+
     const existing = await this.prisma.postReaction.findUnique({
       where: { userId_postId: { userId, postId } },
     });
@@ -1155,6 +1168,8 @@ export class PostsService {
         where: { id: postId },
         data: { sharesCount: { increment: 1 } },
       }),
+      // Increment sharer's postsCount (share creates a new post record)
+      this.prisma.$executeRaw`UPDATE "users" SET "postsCount" = "postsCount" + 1 WHERE id = ${userId}`,
     ]);
 
     // Notify original post owner about the share (not self)
@@ -1243,9 +1258,13 @@ export class PostsService {
     return story;
   }
 
-  async getComments(postId: string, cursor?: string, limit = 20) {
+  async getComments(postId: string, cursor?: string, limit = 20, viewerId?: string) {
+    const excludedIds = viewerId ? await getExcludedUserIds(this.prisma, this.redis, viewerId) : [];
     const comments = await this.prisma.comment.findMany({
-      where: { postId, parentId: null, isRemoved: false, isHidden: false, user: { isBanned: false, isDeactivated: false, isDeleted: false } },
+      where: {
+        postId, parentId: null, isRemoved: false, isHidden: false,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false, ...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}) },
+      },
       include: {
         user: {
           select: {
@@ -1302,6 +1321,19 @@ export class PostsService {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
     if (post.scheduledAt && new Date(post.scheduledAt) > new Date() && post.userId !== userId) throw new NotFoundException('Post not found');
+
+    // Block check: prevent blocked/muted users from commenting
+    if (post.userId && post.userId !== userId) {
+      const block = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: userId, blockedId: post.userId },
+            { blockerId: post.userId, blockedId: userId },
+          ],
+        },
+      });
+      if (block) throw new ForbiddenException('Cannot interact with this user');
+    }
 
     // Content moderation on comments — prevent abusive content
     if (dto.content) {

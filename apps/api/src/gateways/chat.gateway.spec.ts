@@ -1001,25 +1001,28 @@ describe('ChatGateway', () => {
         ...sealedPayload,
         conversationId: '',
       } as any);
-      expect(client.emit).toHaveBeenCalledWith('error', expect.objectContaining({ message: expect.stringContaining('recipientId') }));
+      // X07-#1: Now validates conversationId separately
+      expect(client.emit).toHaveBeenCalledWith('error', expect.objectContaining({ message: 'Invalid conversationId' }));
     });
 
     it('should emit error when recipient is not a conversation member', async () => {
       const client = { ...mockSocket, data: { userId: 'sender-1' }, emit: jest.fn() };
-      prisma.conversationMember.findUnique.mockResolvedValue(null);
+      // X07-#2: Now checks sender first, then recipient
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ userId: 'sender-1' }) // sender IS a member
+        .mockResolvedValueOnce(null); // recipient NOT a member
 
       await gateway.handleSealedMessage(client as any, sealedPayload);
 
-      expect(prisma.conversationMember.findUnique).toHaveBeenCalledWith({
-        where: { conversationId_userId: { conversationId: UUID1, userId: 'user-recipient' } },
-        select: { userId: true },
-      });
       expect(client.emit).toHaveBeenCalledWith('error', { message: 'Recipient is not a member of this conversation' });
     });
 
     it('should route sealed envelope to recipient user room (NOT conversation room)', async () => {
       const client = { ...mockSocket, data: { userId: 'sender-1' }, emit: jest.fn() };
-      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-recipient' });
+      // X07-#2: Now checks sender membership first, then recipient
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ userId: 'sender-1' }) // sender membership
+        .mockResolvedValueOnce({ userId: 'user-recipient' }); // recipient membership
       const mockMessage = { id: 'msg-sealed', createdAt: new Date() };
       messagesService.sendMessage.mockResolvedValue(mockMessage);
 
@@ -1176,22 +1179,34 @@ describe('ChatGateway', () => {
   // ══════════════════════════════════════════════════════════════════════════════
 
   describe('handleSubscribePresence', () => {
-    it('should join user rooms for requested user IDs', async () => {
+    // X07-#6: subscribe_presence now requires shared conversations with target users
+    it('should join user rooms only for users who share a conversation', async () => {
       const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn() };
+      // Mock: user-1 is in conv-1
+      prisma.conversationMember.findMany
+        .mockResolvedValueOnce([{ conversationId: 'conv-1' }]) // user's conversations
+        .mockResolvedValueOnce([{ userId: 'user-a' }]); // only user-a shares conv-1
       await gateway.handleSubscribePresence({ userIds: ['user-a', 'user-b'] }, client as any);
       expect(client.join).toHaveBeenCalledWith('user:user-a');
-      expect(client.join).toHaveBeenCalledWith('user:user-b');
+      expect(client.join).not.toHaveBeenCalledWith('user:user-b');
     });
 
     it('should cap subscriptions at 200', async () => {
       const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn() };
       const manyIds = Array.from({ length: 300 }, (_, i) => `user-${i}`);
+      // Mock: all 200 (capped) are conversation partners
+      prisma.conversationMember.findMany
+        .mockResolvedValueOnce([{ conversationId: 'conv-1' }])
+        .mockResolvedValueOnce(manyIds.slice(0, 200).map(id => ({ userId: id })));
       await gateway.handleSubscribePresence({ userIds: manyIds }, client as any);
       expect(client.join).toHaveBeenCalledTimes(200);
     });
 
-    it('should skip empty strings', async () => {
+    it('should skip empty strings and non-partners', async () => {
       const client = { ...mockSocket, data: { userId: 'user-1' }, join: jest.fn() };
+      prisma.conversationMember.findMany
+        .mockResolvedValueOnce([{ conversationId: 'conv-1' }])
+        .mockResolvedValueOnce([{ userId: 'user-a' }, { userId: 'user-b' }]);
       await gateway.handleSubscribePresence({ userIds: ['user-a', '', 'user-b'] }, client as any);
       expect(client.join).toHaveBeenCalledTimes(2);
     });

@@ -1,31 +1,50 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
+import { ContentSafetyService } from '../moderation/content-safety.service';
+import { sanitizeText } from '@/common/utils/sanitize';
 
 @Injectable()
 export class ChannelPostsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(ChannelPostsService.name);
+  constructor(
+    private prisma: PrismaService,
+    private contentSafety: ContentSafetyService,
+  ) {}
 
   async create(channelId: string, userId: string, data: { content: string; mediaUrls?: string[] }) {
-    const channel = await this.prisma.channel.findUnique({ where: { id: channelId } });
+    const channel = await this.prisma.channel.findUnique({ where: { id: channelId }, select: { id: true, userId: true } });
     if (!channel) throw new NotFoundException('Channel not found');
     if (channel.userId !== userId) throw new ForbiddenException('Only channel owner can post');
+
+    // Sanitize + moderate content before persisting
+    const sanitized = sanitizeText(data.content);
+    const moderation = await this.contentSafety.moderateText(sanitized);
+    if (!moderation.safe) {
+      throw new BadRequestException(`Content flagged: ${moderation.flags.join(', ')}`);
+    }
+
     return this.prisma.channelPost.create({
-      data: { channelId, userId, content: data.content, mediaUrls: data.mediaUrls ?? [] },
+      data: { channelId, userId, content: sanitized, mediaUrls: data.mediaUrls ?? [] },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
     });
   }
 
   async getFeed(channelId: string, cursor?: string, limit = 20) {
+    const safeLim = Math.min(Math.max(limit, 1), 50);
     const posts = await this.prisma.channelPost.findMany({
-      where: { channelId, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: {
+        channelId,
+        user: { isBanned: false, isDeactivated: false, isDeleted: false },
+      },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
       orderBy: { createdAt: 'desc' },
-      take: limit + 1,
+      take: safeLim + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
-    const hasMore = posts.length > limit;
-    if (hasMore) posts.pop();
-    return { data: posts, meta: { cursor: posts[posts.length - 1]?.id ?? null, hasMore } };
+    const hasMore = posts.length > safeLim;
+    const data = hasMore ? posts.slice(0, safeLim) : posts;
+    return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
   }
 
   async getById(postId: string) {

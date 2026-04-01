@@ -145,14 +145,17 @@ export class PrivacyService {
   async processScheduledDeletions() {
     try {
       const now = new Date();
+      // X04-#1 FIX: Include Clerk-deleted users (isDeleted: true) that have scheduledDeletionAt set.
+      // Previously `isDeleted: false` excluded Clerk-webhook deletions whose data was never purged.
+      // Use username NOT starting with 'deleted_' to skip already-purged users.
       const usersToDelete = await this.prisma.user.findMany({
         where: {
           scheduledDeletionAt: { lte: now },
           isDeactivated: true,
-          isDeleted: false,
+          username: { not: { startsWith: 'deleted_' } },
         },
         select: { id: true },
-        take: 50, // Process in batches to avoid OOM
+        take: 50,
       });
 
       if (usersToDelete.length === 0) return;

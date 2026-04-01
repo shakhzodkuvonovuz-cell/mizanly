@@ -304,7 +304,7 @@ export class ReportsService {
       }),
     ];
 
-    // Actually remove content when action is CONTENT_REMOVED (Finding 07, Audit 13)
+    // X08-#2 FIX: Handle ALL content types including thread/reel/video
     if (actionTaken === ModerationAction.CONTENT_REMOVED) {
       if (report.reportedPostId) {
         ops.push(this.prisma.post.update({ where: { id: report.reportedPostId }, data: { isRemoved: true } }));
@@ -315,14 +315,27 @@ export class ReportsService {
       if (report.reportedMessageId) {
         ops.push(this.prisma.message.update({ where: { id: report.reportedMessageId }, data: { isDeleted: true } }));
       }
+      if (report.reportedThreadId) {
+        ops.push(this.prisma.thread.update({ where: { id: report.reportedThreadId }, data: { isRemoved: true } }));
+      }
+      if (report.reportedReelId) {
+        ops.push(this.prisma.reel.update({ where: { id: report.reportedReelId }, data: { isRemoved: true } }));
+      }
+      if (report.reportedVideoId) {
+        ops.push(this.prisma.video.update({ where: { id: report.reportedVideoId }, data: { isRemoved: true } }));
+      }
     }
 
     // Actually ban user when action is PERMANENT_BAN or TEMP_BAN
     // Match admin.service.ts pattern: set both isBanned + isDeactivated, then revoke Clerk sessions
     if ((actionTaken === ModerationAction.PERMANENT_BAN || actionTaken === ModerationAction.TEMP_BAN) && report.reportedUserId) {
+      // X04-#3 FIX: Set banExpiresAt for TEMP_BAN (72h) so auth guard auto-unban works
+      const banExpiresAt = actionTaken === ModerationAction.TEMP_BAN
+        ? new Date(Date.now() + 72 * 3600000) // 72 hours
+        : null;
       ops.push(this.prisma.user.update({
         where: { id: report.reportedUserId },
-        data: { isBanned: true, isDeactivated: true, banReason: `Report ${reportId}: ${report.reason}` },
+        data: { isBanned: true, isDeactivated: true, banReason: `Report ${reportId}: ${report.reason}`, banExpiresAt },
       }));
     }
 

@@ -71,6 +71,7 @@ export class ChannelsController {
   @Patch(':handle')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Update channel details' })
   update(
     @Param('handle') handle: string,
@@ -83,6 +84,7 @@ export class ChannelsController {
   @Delete(':handle')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Delete a channel' })
   delete(
     @Param('handle') handle: string,

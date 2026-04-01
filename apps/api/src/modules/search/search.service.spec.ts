@@ -51,6 +51,15 @@ describe('SearchService', () => {
             channel: {
               findMany: jest.fn(),
             },
+            block: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            mute: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            restrict: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
             $queryRaw: jest.fn().mockResolvedValue([]),
           },
         },

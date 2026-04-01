@@ -27,7 +27,7 @@ describe('PostsService — concurrency (Task 86)', () => {
             post: { create: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn(), findMany: jest.fn() },
             postReaction: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]), delete: jest.fn() },
             follow: { findMany: jest.fn() },
-            block: { findMany: jest.fn() },
+            block: { findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
             mute: { findMany: jest.fn() },
             hashtag: { upsert: jest.fn() },
             user: { update: jest.fn(), findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn() },

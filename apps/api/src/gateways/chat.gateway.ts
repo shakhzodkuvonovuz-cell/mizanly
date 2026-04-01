@@ -571,12 +571,39 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     if (!client.data.userId) throw new WsException('Unauthorized');
     if (!(await this.checkRateLimit(client.data.userId, 'sealed_message', 30, 60))) return;
 
-    // V6-F1: Validate inputs + verify recipient is a member of this conversation.
-    // Without this check, a malicious client could route sealed envelopes to any userId.
-    if (!data.recipientId || !data.conversationId) {
-      client.emit('error', { message: 'recipientId and conversationId required for sealed messages' });
+    // X07-#1 FIX: Validate field types and sizes (class-validator not available on raw WS)
+    if (!data.recipientId || typeof data.recipientId !== 'string' || data.recipientId.length > 50) {
+      client.emit('error', { message: 'Invalid recipientId' });
       return;
     }
+    if (!data.conversationId || typeof data.conversationId !== 'string' || data.conversationId.length > 50) {
+      client.emit('error', { message: 'Invalid conversationId' });
+      return;
+    }
+    if (data.ephemeralKey && (typeof data.ephemeralKey !== 'string' || data.ephemeralKey.length > 10000)) {
+      client.emit('error', { message: 'ephemeralKey too large' });
+      return;
+    }
+    if (data.sealedCiphertext && (typeof data.sealedCiphertext !== 'string' || data.sealedCiphertext.length > 120000)) {
+      client.emit('error', { message: 'sealedCiphertext too large' });
+      return;
+    }
+    if (data.encryptedContent && (typeof data.encryptedContent !== 'string' || data.encryptedContent.length > 120000)) {
+      client.emit('error', { message: 'encryptedContent too large' });
+      return;
+    }
+
+    // X07-#2 FIX: Verify SENDER is a member of the conversation (not just recipient)
+    const senderMembership = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId: data.conversationId, userId: client.data.userId } },
+      select: { userId: true },
+    });
+    if (!senderMembership) {
+      client.emit('error', { message: 'You are not a member of this conversation' });
+      return;
+    }
+
+    // Verify recipient is also a member
     const recipientMembership = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId: data.conversationId, userId: data.recipientId } },
       select: { userId: true },
@@ -985,8 +1012,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
     // Limit to 200 subscriptions per request to prevent abuse
     const ids = data.userIds.slice(0, 200);
+
+    // X07-#6 / X02-#1 FIX: Only allow subscribing to presence of users who share a conversation.
+    // Prevents: blocked users tracking victims, arbitrary presence surveillance.
+    // Get all conversation partners of the requesting user.
+    const memberships = await this.prisma.conversationMember.findMany({
+      where: { userId: client.data.userId },
+      select: { conversationId: true },
+      take: 500,
+    });
+    const conversationIds = memberships.map(m => m.conversationId);
+
+    // Find which of the requested userIds share at least one conversation
+    const allowedPartners = conversationIds.length > 0
+      ? await this.prisma.conversationMember.findMany({
+          where: {
+            conversationId: { in: conversationIds },
+            userId: { in: ids, not: client.data.userId },
+          },
+          select: { userId: true },
+          distinct: ['userId'],
+        })
+      : [];
+    const allowedSet = new Set(allowedPartners.map(p => p.userId));
+
     for (const targetId of ids) {
-      if (typeof targetId === 'string' && targetId.length > 0) {
+      if (typeof targetId === 'string' && targetId.length > 0 && allowedSet.has(targetId)) {
         client.join(`user:${targetId}`);
       }
     }

@@ -153,6 +153,15 @@ export class ChannelsService {
     if (!channel) throw new NotFoundException('Channel not found');
     if (channel.userId !== userId) throw new ForbiddenException();
 
+    // Content moderation on update (same as create path)
+    const moderationText = [dto.name, dto.description].filter(Boolean).join('\n');
+    if (moderationText) {
+      const moderationResult = await this.contentSafety.moderateText(moderationText);
+      if (!moderationResult.safe) {
+        throw new BadRequestException(`Content flagged: ${moderationResult.flags.join(', ')}`);
+      }
+    }
+
     const updated = await this.prisma.channel.update({
       where: { handle },
       data: {
@@ -386,6 +395,7 @@ export class ChannelsService {
         where: {
           channelId: channel.id,
           isRemoved: false,
+          status: VideoStatus.PUBLISHED,
           OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
         },
         select: {

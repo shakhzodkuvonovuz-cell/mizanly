@@ -12,14 +12,14 @@ export class CommunityNotesService {
       throw new BadRequestException(`contentType must be one of: ${validTypes.join(', ')}`);
     }
 
-    // Verify content exists
+    // Verify content exists and is not removed
     let contentExists = false;
     if (contentType === 'post') {
-      contentExists = !!(await this.prisma.post.findUnique({ where: { id: contentId }, select: { id: true } }));
+      contentExists = !!(await this.prisma.post.findFirst({ where: { id: contentId, isRemoved: false }, select: { id: true } }));
     } else if (contentType === 'thread') {
-      contentExists = !!(await this.prisma.thread.findUnique({ where: { id: contentId }, select: { id: true } }));
+      contentExists = !!(await this.prisma.thread.findFirst({ where: { id: contentId, isRemoved: false }, select: { id: true } }));
     } else if (contentType === 'reel') {
-      contentExists = !!(await this.prisma.reel.findUnique({ where: { id: contentId }, select: { id: true } }));
+      contentExists = !!(await this.prisma.reel.findFirst({ where: { id: contentId, isRemoved: false }, select: { id: true } }));
     }
     if (!contentExists) throw new NotFoundException('Content not found');
 
@@ -29,8 +29,12 @@ export class CommunityNotesService {
   }
 
   async getNotesForContent(contentType: string, contentId: string) {
+    const validTypes = ['post', 'thread', 'reel'];
+    if (!validTypes.includes(contentType)) {
+      throw new BadRequestException(`contentType must be one of: ${validTypes.join(', ')}`);
+    }
     return this.prisma.communityNote.findMany({
-      where: { contentType: contentType as EmbeddingContentType, contentId },
+      where: { contentType: contentType as EmbeddingContentType, contentId, status: { in: [CommunityNoteStatus.HELPFUL, CommunityNoteStatus.PROPOSED] } },
       orderBy: { helpfulVotes: 'desc' },
       take: 10,
     });
@@ -54,37 +58,45 @@ export class CommunityNotesService {
     });
     if (existing) throw new ConflictException('Already rated this note');
 
-    await this.prisma.communityNoteRating.create({
-      data: { noteId, userId, rating: rating as NoteRating },
-    });
-
-    // Update vote counts
-    // Only fully 'helpful' ratings count toward helpfulVotes; 'somewhat_helpful' is neutral
-    const incrementField = rating === 'NOTE_HELPFUL' ? 'helpfulVotes' : rating === 'NOTE_NOT_HELPFUL' ? 'notHelpfulVotes' : null;
-    const updated = incrementField
-      ? await this.prisma.communityNote.update({
-          where: { id: noteId },
-          data: { [incrementField]: { increment: 1 } },
-        })
-      : await this.prisma.communityNote.findUnique({ where: { id: noteId } });
-
-    if (!updated) return { rated: true };
-
-    // Auto-promote or dismiss based on voting threshold
-    const totalVotes = updated.helpfulVotes + updated.notHelpfulVotes;
-    if (totalVotes >= 5) {
-      const helpfulRatio = updated.helpfulVotes / totalVotes;
-      const newStatus = helpfulRatio >= 0.6 ? CommunityNoteStatus.HELPFUL : CommunityNoteStatus.NOT_HELPFUL;
-      await this.prisma.communityNote.update({
-        where: { id: noteId },
-        data: { status: newStatus },
+    // Use $transaction to atomically create rating + update vote counts + auto-promote
+    const updated = await this.prisma.$transaction(async (tx) => {
+      await tx.communityNoteRating.create({
+        data: { noteId, userId, rating: rating as NoteRating },
       });
-    }
+
+      // Only fully 'helpful' ratings count toward helpfulVotes; 'somewhat_helpful' is neutral
+      const incrementField = rating === 'NOTE_HELPFUL' ? 'helpfulVotes' : rating === 'NOTE_NOT_HELPFUL' ? 'notHelpfulVotes' : null;
+      const noteData = incrementField
+        ? await tx.communityNote.update({
+            where: { id: noteId },
+            data: { [incrementField]: { increment: 1 } },
+          })
+        : await tx.communityNote.findUnique({ where: { id: noteId } });
+
+      if (!noteData) return null;
+
+      // Auto-promote or dismiss based on voting threshold
+      const totalVotes = noteData.helpfulVotes + noteData.notHelpfulVotes;
+      if (totalVotes >= 5) {
+        const helpfulRatio = noteData.helpfulVotes / totalVotes;
+        const newStatus = helpfulRatio >= 0.6 ? CommunityNoteStatus.HELPFUL : CommunityNoteStatus.NOT_HELPFUL;
+        await tx.communityNote.update({
+          where: { id: noteId },
+          data: { status: newStatus },
+        });
+      }
+
+      return noteData;
+    });
 
     return { rated: true };
   }
 
   async getHelpfulNotes(contentType: string, contentId: string) {
+    const validTypes = ['post', 'thread', 'reel'];
+    if (!validTypes.includes(contentType)) {
+      throw new BadRequestException(`contentType must be one of: ${validTypes.join(', ')}`);
+    }
     return this.prisma.communityNote.findMany({
       where: { contentType: contentType as EmbeddingContentType, contentId, status: CommunityNoteStatus.HELPFUL },
       orderBy: { helpfulVotes: 'desc' },

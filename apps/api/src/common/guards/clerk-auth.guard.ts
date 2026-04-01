@@ -34,6 +34,7 @@ export class ClerkAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid token');
     }
 
+    // X04-#2: Also fetch scheduledDeletionAt so users with pending deletion can cancel
     let user = await this.prisma.user.findUnique({
       where: { clerkId },
       select: {
@@ -46,6 +47,7 @@ export class ClerkAuthGuard implements CanActivate {
         isDeleted: true,
         banExpiresAt: true,
         deactivatedAt: true,
+        scheduledDeletionAt: true,
       },
     });
 
@@ -58,7 +60,7 @@ export class ClerkAuthGuard implements CanActivate {
         select: {
           id: true, clerkId: true, username: true, displayName: true,
           isBanned: true, isDeactivated: true, isDeleted: true,
-          banExpiresAt: true, deactivatedAt: true,
+          banExpiresAt: true, deactivatedAt: true, scheduledDeletionAt: true,
         },
       });
     }
@@ -99,8 +101,14 @@ export class ClerkAuthGuard implements CanActivate {
       }
     }
 
+    // X04-#2 FIX: Allow users with pending scheduled deletion to cancel.
+    // They are isDeactivated=true but have a scheduledDeletionAt in the future.
+    // Without this exception, users cannot cancel their own deletion (broken promise).
     if (user.isDeactivated || user.isDeleted) {
-      throw new ForbiddenException('Account has been deactivated');
+      const hasPendingDeletion = user.scheduledDeletionAt && user.scheduledDeletionAt > new Date() && !user.isDeleted;
+      if (!hasPendingDeletion) {
+        throw new ForbiddenException('Account has been deactivated');
+      }
     }
 
     request.user = user;
