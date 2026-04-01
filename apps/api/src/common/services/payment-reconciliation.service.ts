@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/node';
 import Stripe from 'stripe';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
+import { acquireCronLock } from '../utils/cron-lock';
 
 /**
  * Payment Reconciliation Service
@@ -64,6 +65,9 @@ export class PaymentReconciliationService {
     membershipSubscriptions: number;
     coinBalanceDiscrepancies: number;
   }> {
+    if (!await acquireCronLock(this.redis, 'cron:paymentReconcileAll', 3500, this.logger)) {
+      return { tips: 0, orders: 0, premiumSubscriptions: 0, membershipSubscriptions: 0, coinBalanceDiscrepancies: 0 };
+    }
     this.logger.log('Payment reconciliation cron started');
 
     const tips = await this.reconcileTips();

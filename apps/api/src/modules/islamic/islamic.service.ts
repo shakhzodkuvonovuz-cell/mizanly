@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/node';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import Redis from 'ioredis';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { QueueService } from '../../common/queue/queue.service';
@@ -1985,6 +1986,7 @@ export class IslamicService {
   @Cron('0 6 * * *') // 6:00 AM daily
   async sendVerseOfTheDay() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:sendVerseOfTheDay', 3500, this.logger)) return;
       // Pick a random surah (1-114), then fetch surah info for valid verse range
       const surah = randomInt(1, 115); // 1-114 inclusive
 
@@ -2000,15 +2002,24 @@ export class IslamicService {
       const maxVerse = SURAH_VERSE_COUNTS[surah - 1] || 7;
       const verse = randomInt(1, maxVerse + 1);
 
-      // Fetch from Quran.com API
-      const response = await fetch(`https://api.quran.com/api/v4/verses/by_key/${surah}:${verse}?language=en&translations=131`);
-      if (!response.ok) return;
+      // Fetch from Quran.com API with timeout
+      const response = await fetch(`https://api.quran.com/api/v4/verses/by_key/${surah}:${verse}?language=en&translations=131`, {
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) {
+        this.logger.warn(`Quran API returned ${response.status} for ${surah}:${verse} — verse of the day skipped`);
+        Sentry.captureMessage(`Verse of the day: Quran API returned ${response.status}`, 'warning');
+        return;
+      }
 
       const data = await response.json() as { verse?: { text_uthmani?: string; translations?: Array<{ text?: string }> } };
       const arabicText = data.verse?.text_uthmani ?? '';
       const translationText = data.verse?.translations?.[0]?.text?.replace(/<[^>]*>/g, '') ?? '';
 
-      if (!arabicText) return;
+      if (!arabicText) {
+        this.logger.warn(`Quran API returned empty text for ${surah}:${verse} — verse of the day skipped`);
+        return;
+      }
 
       // Send to all active users with push tokens — filter out banned/deleted
       const usersWithTokens = await this.prisma.device.findMany({
@@ -2064,6 +2075,7 @@ export class IslamicService {
   @Cron('0 8 * * *')
   async checkIslamicEventReminders() {
     try {
+    if (!await acquireCronLock(this.redis, 'cron:checkIslamicEventReminders', 3500, this.logger)) return;
     // Key Islamic events with approximate Hijri month/day
     const events = [
       { month: 9, day: 1, name: 'Ramadan begins', key: 'ramadan_start' },
@@ -2082,10 +2094,10 @@ export class IslamicService {
 
     if (!todayEvent) return;
 
-    // Dedup: check Redis to avoid sending same event twice
-    const dedup = await this.redis.get(`islamic_event:${todayEvent.key}:${today.toISOString().slice(0, 10)}`);
-    if (dedup) return;
-    await this.redis.setex(`islamic_event:${todayEvent.key}:${today.toISOString().slice(0, 10)}`, 86400, '1');
+    // Dedup: atomic set-if-not-exists to avoid TOCTOU race on multi-instance
+    const dedupKey = `islamic_event:${todayEvent.key}:${today.toISOString().slice(0, 10)}`;
+    const acquired = await this.redis.set(dedupKey, '1', 'EX', 86400, 'NX');
+    if (!acquired) return;
 
     // Send notification to all users — batched to avoid blocking event loop
     const users = await this.prisma.user.findMany({

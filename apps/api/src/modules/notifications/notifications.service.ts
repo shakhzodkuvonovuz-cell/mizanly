@@ -7,6 +7,7 @@ import { QueueService } from '../../common/queue/queue.service';
 import { NotificationType, Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 import { atomicIncr } from '../../common/utils/redis-atomic';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 
 @Injectable()
 export class NotificationsService {
@@ -487,6 +488,7 @@ export class NotificationsService {
   @Cron('0 30 3 * * *') // 3:30 AM daily (staggered from other 3 AM crons)
   async cleanupOldNotifications(): Promise<number> {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:cleanupOldNotifications', 3500, this.logger)) return 0;
       const readCutoff = new Date();
       readCutoff.setDate(readCutoff.getDate() - 90);
 

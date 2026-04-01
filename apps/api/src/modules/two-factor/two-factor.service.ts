@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   BadRequestException,
   Logger,
@@ -9,7 +10,9 @@ import { Cron } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import * as qrcode from 'qrcode';
 import { createHash, createHmac, randomBytes, createCipheriv, createDecipheriv, timingSafeEqual } from 'crypto';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 
 // ── Native TOTP implementation (replaces otplib) ──
 
@@ -205,6 +208,7 @@ export class TwoFactorService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    @Inject('REDIS') private redis: Redis,
   ) {
     this.encryptionKey = this.config.get<string>('TOTP_ENCRYPTION_KEY');
     this.oldEncryptionKey = this.config.get<string>('TOTP_ENCRYPTION_KEY_OLD');
@@ -454,6 +458,7 @@ export class TwoFactorService {
    */
   @Cron('0 30 5 * * *')
   async rotateEncryptionKeys(): Promise<void> {
+    if (!await acquireCronLock(this.redis, 'cron:rotateEncryptionKeys', 3500, this.logger)) return;
     const hasCurrentKey = !!this.encryptionKey;
     const hasOldKey = !!this.oldEncryptionKey;
 

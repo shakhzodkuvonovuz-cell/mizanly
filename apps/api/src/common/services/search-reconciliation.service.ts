@@ -1,8 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { QueueService } from '../queue/queue.service';
+import { acquireCronLock } from '../utils/cron-lock';
 
 /**
  * Phase 3, Workstream 5: Search index reconciliation.
@@ -23,11 +25,13 @@ export class SearchReconciliationService {
   constructor(
     private prisma: PrismaService,
     private queueService: QueueService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   @Cron('0 5 * * 0') // Every Sunday at 5 AM
   async reconcileSearchIndex() {
     try {
+    if (!await acquireCronLock(this.redis, 'cron:reconcileSearchIndex', 3500, this.logger)) return { indexed: 0, deleted: 0 };
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     let indexed = 0;
     let deleted = 0;

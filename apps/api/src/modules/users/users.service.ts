@@ -15,6 +15,7 @@ import { PrivacyService } from '../privacy/privacy.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PostVisibility, ThreadVisibility, ReportReason } from '@prisma/client';
 import { sanitizeText } from '@/common/utils/sanitize';
@@ -755,6 +756,7 @@ export class UsersService {
   @Cron('0 2 * * *')
   async snapshotFollowerCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:snapshotFollowerCounts', 3500, this.logger)) return;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 

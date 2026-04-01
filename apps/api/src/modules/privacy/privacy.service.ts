@@ -6,6 +6,7 @@ import { UploadService } from '../upload/upload.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 
 @Injectable()
 export class PrivacyService {
@@ -64,6 +65,7 @@ export class PrivacyService {
     const cutoffDate = new Date(Date.now() - NINETY_DAYS_MS);
 
     try {
+      if (!await acquireCronLock(this.redis, 'cron:hardDeletePurgedUsers', 3500, this.logger)) return 0;
       const candidates = await this.prisma.user.findMany({
         where: {
           isDeleted: true,
@@ -144,6 +146,7 @@ export class PrivacyService {
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async processScheduledDeletions() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:processScheduledDeletions', 3500, this.logger)) return;
       const now = new Date();
       // X04-#1 FIX: Include Clerk-deleted users (isDeleted: true) that have scheduledDeletionAt set.
       // Previously `isDeleted: false` excluded Clerk-webhook deletions whose data was never purged.
@@ -186,6 +189,7 @@ export class PrivacyService {
   async purgeOldIpAddresses() {
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     try {
+      if (!await acquireCronLock(this.redis, 'cron:purgeOldIpAddresses', 3500, this.logger)) return;
       // Clear IP from device records older than 90 days
       const result = await this.prisma.device.updateMany({
         where: { lastActiveAt: { lt: ninetyDaysAgo } },

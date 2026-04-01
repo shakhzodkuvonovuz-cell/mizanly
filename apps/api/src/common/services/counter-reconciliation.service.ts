@@ -1,8 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
 import { Prisma } from '@prisma/client';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
+import { acquireCronLock } from '../utils/cron-lock';
 
 /**
  * Phase 2, Workstream 5: Counter reconciliation service.
@@ -24,7 +26,10 @@ import { PrismaService } from '../../config/prisma.service';
 export class CounterReconciliationService {
   private readonly logger = new Logger(CounterReconciliationService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
+  ) {}
 
   /**
    * Reconcile user follower/following counts.
@@ -33,6 +38,7 @@ export class CounterReconciliationService {
   @Cron('0 4 * * *') // 4 AM daily
   async reconcileUserFollowCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileUserFollowCounts', 3500, this.logger)) return 0;
       const drifted = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint; stored: number }>>`
         SELECT u.id, COUNT(f."followingId")::bigint as actual, u."followersCount" as stored
         FROM "users" u
@@ -94,6 +100,7 @@ export class CounterReconciliationService {
   @Cron('0 4 15 * *') // 15th of each month at 4 AM (less frequent — posts are high volume)
   async reconcilePostCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcilePostCounts', 3500, this.logger)) return 0;
       // Fix likesCount
       const driftedLikes = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT p.id, COUNT(r."postId")::bigint as actual
@@ -154,6 +161,7 @@ export class CounterReconciliationService {
   @Cron('30 4 * * 0') // Every Sunday at 4:30 AM
   async reconcileUserPostCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileUserPostCounts', 3500, this.logger)) return 0;
       const drifted = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT u.id, COUNT(p.id)::bigint as actual
         FROM "users" u
@@ -188,6 +196,7 @@ export class CounterReconciliationService {
   @Cron('15 4 15 * *') // 15th of each month at 4:15 AM
   async reconcilePostSavesCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcilePostSavesCounts', 3500, this.logger)) return 0;
       const drifted = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT p.id, COUNT(sp."postId")::bigint as actual
         FROM "posts" p
@@ -222,6 +231,7 @@ export class CounterReconciliationService {
   @Cron('30 4 15 * *') // 15th of each month at 4:30 AM
   async reconcilePostSharesCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcilePostSharesCounts', 3500, this.logger)) return 0;
       const drifted = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT p.id, COUNT(s.id)::bigint as actual
         FROM "posts" p
@@ -257,6 +267,7 @@ export class CounterReconciliationService {
   @Cron('45 4 * * *') // Daily at 4:45 AM
   async reconcileUnreadCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileUnreadCounts', 3500, this.logger)) return 0;
       const drifted = await this.prisma.$queryRaw<Array<{ conversationId: string; userId: string; actual: bigint }>>`
         SELECT cm."conversationId", cm."userId", COUNT(m.id)::bigint as actual
         FROM "conversation_members" cm
@@ -299,6 +310,7 @@ export class CounterReconciliationService {
   @Cron('0 5 * * *') // Daily at 5 AM
   async reconcileCoinBalances() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileCoinBalances', 3500, this.logger)) return 0;
       // Find any negative coin or diamond balances (should never happen, but guard against bugs)
       const negative = await this.prisma.coinBalance.findMany({
         where: {
@@ -347,6 +359,7 @@ export class CounterReconciliationService {
   @Cron('35 4 * * 0') // Every Sunday at 4:35 AM
   async reconcileUserContentCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileUserContentCounts', 3500, this.logger)) return 0;
       // threadsCount
       const driftedThreads = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT u.id, COUNT(t.id)::bigint as actual
@@ -399,6 +412,7 @@ export class CounterReconciliationService {
   @Cron('0 5 15 * *') // 15th of each month at 5 AM
   async reconcileReelCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileReelCounts', 3500, this.logger)) return 0;
       const driftedLikes = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT r.id, COUNT(rr."reelId")::bigint as actual
         FROM "reels" r
@@ -449,6 +463,7 @@ export class CounterReconciliationService {
   @Cron('15 5 15 * *') // 15th of each month at 5:15 AM
   async reconcileThreadCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileThreadCounts', 3500, this.logger)) return 0;
       const driftedLikes = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT t.id, COUNT(tr."threadId")::bigint as actual
         FROM "threads" t
@@ -499,6 +514,7 @@ export class CounterReconciliationService {
   @Cron('30 5 15 * *') // 15th of each month at 5:30 AM
   async reconcileVideoCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileVideoCounts', 3500, this.logger)) return 0;
       const driftedLikes = await this.prisma.$queryRaw<Array<{ id: string; actual: bigint }>>`
         SELECT v.id, COUNT(vr."videoId")::bigint as actual
         FROM "videos" v
@@ -549,6 +565,7 @@ export class CounterReconciliationService {
   @Cron('45 5 15 * *') // 15th of each month at 5:45 AM
   async reconcileHashtagCounts() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:reconcileHashtagCounts', 3500, this.logger)) return 0;
       // Count posts that contain each hashtag (PostgreSQL array containment)
       const drifted = await this.prisma.$queryRaw<Array<{ id: string; name: string; actual: bigint }>>`
         SELECT h.id, h.name, COUNT(p.id)::bigint as actual

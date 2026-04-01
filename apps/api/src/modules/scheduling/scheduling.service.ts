@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   BadRequestException,
   ForbiddenException,
   NotFoundException,
@@ -7,12 +8,14 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as Sentry from '@sentry/node';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { Post, Thread, Reel, Video } from '@prisma/client';
 import { PublishWorkflowService } from '../../common/services/publish-workflow.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { extractHashtags } from '../../common/utils/hashtag';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 
 export interface ScheduledItem {
   id: string;
@@ -37,6 +40,7 @@ export class SchedulingService {
     private publishWorkflow: PublishWorkflowService,
     private notifications: NotificationsService,
     private queueService: QueueService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   private getModel(type: string): ContentModel {
@@ -383,6 +387,9 @@ export class SchedulingService {
   @Cron(CronExpression.EVERY_MINUTE)
   async publishOverdueContent(): Promise<{ posts: number; threads: number; reels: number; videos: number }> {
     try {
+    if (!await acquireCronLock(this.redis, 'cron:publishOverdueContent', 55, this.logger)) {
+      return { posts: 0, threads: 0, reels: 0, videos: 0 };
+    }
     const now = new Date();
     const overdueWhere = { scheduledAt: { not: null, lte: now } as { not: null; lte: Date }, isRemoved: false };
 

@@ -18,6 +18,7 @@ import { ContentSafetyService } from '../moderation/content-safety.service';
 import { MessageType } from '@prisma/client';
 import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
+import { acquireCronLock } from '../../common/utils/cron-lock';
 
 const scryptAsync = promisify(scrypt);
 const LOCK_KEY_LENGTH = 64;
@@ -1726,6 +1727,7 @@ export class MessagesService {
   @Cron(CronExpression.EVERY_MINUTE)
   async processExpiredMessages() {
     try {
+      if (!await acquireCronLock(this.redis, 'cron:processExpiredMessages', 55, this.logger)) return;
       const now = new Date();
       // Delete expired disappearing messages — clear all content AND E2E crypto metadata.
       // Ratchet keys + compromised identity key = message decryption (forward secrecy violation).

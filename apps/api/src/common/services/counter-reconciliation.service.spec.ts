@@ -21,6 +21,13 @@ describe('CounterReconciliationService', () => {
             },
           },
         },
+        {
+          provide: 'REDIS',
+          useValue: {
+            set: jest.fn().mockResolvedValue('OK'),
+            get: jest.fn().mockResolvedValue(null),
+          },
+        },
       ],
     }).compile();
 
