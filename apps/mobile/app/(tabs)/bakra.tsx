@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, useWindowDimensions, type ViewToken } from 'react-native';
+import { View, Text, StyleSheet, Pressable, useWindowDimensions, Share, type ViewToken } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop, useFocusEffect } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -493,8 +493,11 @@ const ReelItem = memo(function ReelItem({
             icon={<Icon name="send" size="sm" color={colors.text.primary} />}
             onPress={async () => {
               setShowMoreMenu(false);
-              const { Share } = require('react-native');
-              try { await Share.share({ message: `Check out this reel on Mizanly: https://mizanly.app/reel/${item.id}` }); } catch {}
+              try {
+                await Share.share({ message: `Check out this reel on Mizanly: https://mizanly.app/reel/${item.id}` });
+              } catch {
+                showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+              }
             }}
           />
           <BottomSheetItem
@@ -603,6 +606,7 @@ export default function BakraScreen() {
     }
   }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
+  // D41-#17: Stable handleViewableItemsChanged — use refs only, no changing deps
   const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<{ item: Reel; index: number | null }>; changed: Array<{ item: Reel; index: number | null }> }) => {
     if (viewableItems.length > 0) {
       const rawIndex = viewableItems[0].index;
@@ -633,7 +637,7 @@ export default function BakraScreen() {
         if (currentUrl) markPlaying(currentUrl);
       }
     }
-  }, [currentIndex, reels, onViewableChange, markPlaying]);
+  }, [onViewableChange, markPlaying]);
 
   const queryClient = useQueryClient();
   const likeInFlight = useRef(false);
@@ -707,9 +711,13 @@ export default function BakraScreen() {
 
   const handleShare = useCallback(async (reel: Reel) => {
     haptic.navigate();
-    await reelsApi.share(reel.id);
-    feedQuery.refetch();
-  }, [haptic, feedQuery]);
+    try {
+      await reelsApi.share(reel.id);
+      feedQuery.refetch();
+    } catch {
+      showToast({ message: t('common.somethingWentWrong'), variant: 'error' });
+    }
+  }, [haptic, feedQuery, t]);
 
   const handleComment = useCallback((reel: Reel) => {
     haptic.tick();
@@ -754,18 +762,21 @@ export default function BakraScreen() {
 
   const handleNavigate = useCallback((path: string) => {
     navigate(path);
-  }, [router]);
+  }, []);
 
+  // D41-#27: Use refs for reels/currentIndex so gesture stays stable
+  const handleLikeRef = useRef(handleLike);
+  useEffect(() => { handleLikeRef.current = handleLike; }, [handleLike]);
   const doubleTapGesture = useMemo(() => Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
       haptic.like();
-      const reel = reels[currentIndex];
+      const reel = reelsRef.current[currentIndexRef.current];
       if (reel && !reel.isLiked) {
-        handleLike(reel);
+        handleLikeRef.current(reel);
       }
       setHeartTrigger((prev) => prev + 1);
-    }), [haptic, reels, currentIndex, handleLike]);
+    }), [haptic]);
 
   const renderItem = useCallback(({ item, index }: { item: Reel; index: number }) => (
     <ReelItem
@@ -1185,7 +1196,7 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     overflow: 'hidden',
     marginStart: spacing.sm,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.dark.surface,
     shadowColor: colors.emerald,
     shadowOpacity: 0.3,
     shadowRadius: 6,
