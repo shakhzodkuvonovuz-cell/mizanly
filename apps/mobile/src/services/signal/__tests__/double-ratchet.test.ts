@@ -58,6 +58,7 @@ function createBobBundle(): {
       keyId: 1,
       publicKey: signedPreKeyPair.publicKey,
       signature,
+      createdAt: Date.now(),
     },
     oneTimePreKey: {
       keyId: 100,
@@ -516,7 +517,7 @@ describe('Double Ratchet message exchange', () => {
       identityKey: charlieIdentity.publicKey,
       registrationId: 33333,
       deviceId: 1,
-      signedPreKey: { keyId: 2, publicKey: charlieSPK.publicKey, signature: charlieSig },
+      signedPreKey: { keyId: 2, publicKey: charlieSPK.publicKey, signature: charlieSig, createdAt: Date.now() },
       supportedVersions: [1],
     };
 

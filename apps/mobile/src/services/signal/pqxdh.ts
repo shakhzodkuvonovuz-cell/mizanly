@@ -8,24 +8,25 @@
  * Signal deployed PQXDH in September 2023. We follow the same spec:
  * https://signal.org/docs/specifications/pqxdh/
  *
+ * CURRENT STATUS: STUB / PLANNED — NOT OPERATIONAL.
+ * F04-#16: The interface definitions and wrappers are structurally correct,
+ * but PQXDH cannot function because:
+ * 1. @noble/post-quantum is not installed (isPQXDHAvailable() returns false)
+ * 2. No PQ prekey generation/upload code exists in prekeys.ts
+ * 3. Go server has no PQ support (hardcodes SupportedVersions: [1])
+ * 4. API adapter drops PQ fields from server responses
+ *
+ * The integration points in x3dh.ts are unreachable until the full pipeline
+ * (keygen → upload → server support → signature verification) is built.
+ *
  * ARCHITECTURE:
  * - The PQXDH layer wraps the existing X3DH (x3dh.ts)
  * - ML-KEM-768 primitives are provided via a pluggable interface
  * - When @noble/post-quantum is installed, it auto-detects and uses it
  * - Until then, PQXDH negotiation falls back to classical X3DH (protocol v1)
- *
- * The hybrid shared secret is:
- *   HKDF(X3DH_shared_secret || ML-KEM_shared_secret, salt, "MizanlyPQXDH", 32)
- *
- * This ensures the shared secret is at least as strong as the stronger of the two.
  */
 
 import {
-  hkdfDeriveSecrets,
-  concat,
-  generateRandomBytes,
-  toBase64,
-  fromBase64,
   zeroOut,
 } from './crypto';
 
@@ -61,27 +62,36 @@ export interface MLKEMProvider {
 
 let mlkemProvider: MLKEMProvider | null = null;
 
-// V6-F9 FIX: Synchronous require() instead of async import().
-// Same rationale as native-crypto-adapter.ts: the first X3DH handshake after
-// app launch must know whether PQXDH is available BEFORE computing the shared
-// secret. Previously, the async detection could lose the race, causing the
-// initiator to skip PQ encapsulation even when ML-KEM is installed.
 try {
   const { ml_kem768 } = require('@noble/post-quantum/ml-kem');
   if (ml_kem768) {
     mlkemProvider = {
       keygen: () => {
-        const { publicKey, secretKey } = ml_kem768.keygen();
-        return { publicKey: new Uint8Array(publicKey), secretKey: new Uint8Array(secretKey) };
+        const result = ml_kem768.keygen();
+        // F04-#14: Copy arrays and zero the originals from Noble
+        const publicKey = new Uint8Array(result.publicKey);
+        const secretKey = new Uint8Array(result.secretKey);
+        if (result.secretKey instanceof Uint8Array) {
+          result.secretKey.fill(0);
+        }
+        return { publicKey, secretKey };
       },
       encapsulate: (pk: Uint8Array) => {
-        const { cipherText, sharedSecret } = ml_kem768.encapsulate(pk);
-        return { ciphertext: new Uint8Array(cipherText), sharedSecret: new Uint8Array(sharedSecret) };
+        const result = ml_kem768.encapsulate(pk);
+        const ciphertext = new Uint8Array(result.cipherText);
+        const sharedSecret = new Uint8Array(result.sharedSecret);
+        if (result.sharedSecret instanceof Uint8Array) {
+          result.sharedSecret.fill(0);
+        }
+        return { ciphertext, sharedSecret };
       },
       decapsulate: (ct: Uint8Array, sk: Uint8Array) => {
-        return new Uint8Array(ml_kem768.decapsulate(ct, sk));
+        const result = ml_kem768.decapsulate(ct, sk);
+        return new Uint8Array(result);
       },
     };
+    // F04-#6: Freeze provider to prevent runtime replacement via supply-chain attack
+    Object.freeze(mlkemProvider);
   }
 } catch {
   mlkemProvider = null;
@@ -92,8 +102,16 @@ export function isPQXDHAvailable(): boolean {
   return mlkemProvider !== null;
 }
 
-/** Manually set an ML-KEM provider (for testing or alternative implementations) */
+/**
+ * F04-#6: setMLKEMProvider restricted to __DEV__ / test environments only.
+ * In production, the provider is set at module load time and frozen.
+ * A supply-chain attack that calls setMLKEMProvider with a malicious provider
+ * could control KEM shared secrets for all subsequent PQXDH sessions.
+ */
 export function setMLKEMProvider(provider: MLKEMProvider | null): void {
+  if (typeof __DEV__ !== 'undefined' && !__DEV__) {
+    throw new Error('setMLKEMProvider is only available in development/test');
+  }
   mlkemProvider = provider;
 }
 
@@ -128,32 +146,8 @@ export function generatePQPreKey(): MLKEMKeyPair | null {
 }
 
 // ============================================================
-// PQXDH SHARED SECRET DERIVATION
+// PQXDH ENCAPSULATION / DECAPSULATION
 // ============================================================
-
-const PQXDH_INFO = 'MizanlyPQXDH';
-
-/**
- * Combine a classical X3DH shared secret with an ML-KEM shared secret.
- *
- * The hybrid construction ensures:
- * - If X25519 is broken (quantum), ML-KEM still protects
- * - If ML-KEM is broken (classical), X25519 still protects
- * - Both must be broken simultaneously to compromise the shared secret
- *
- * @param classicalSecret - 32-byte X3DH shared secret
- * @param pqSecret - 32-byte ML-KEM shared secret
- * @returns 32-byte hybrid shared secret
- */
-export function deriveHybridSecret(
-  classicalSecret: Uint8Array,
-  pqSecret: Uint8Array,
-): Uint8Array {
-  const combined = concat(classicalSecret, pqSecret);
-  const hybrid = hkdfDeriveSecrets(combined, new Uint8Array(32), PQXDH_INFO, 32);
-  zeroOut(combined);
-  return hybrid;
-}
 
 /**
  * PQXDH initiator: encapsulate with recipient's PQ pre-key.
@@ -161,13 +155,18 @@ export function deriveHybridSecret(
  * Called during X3DH initiation when the bundle includes PQ fields.
  * Produces: ML-KEM ciphertext (sent to recipient) + shared secret (kept local).
  *
- * @param pqPublicKey - Recipient's ML-KEM-768 public key
+ * F04-#12: Input length validated before passing to ML-KEM.
+ *
+ * @param pqPublicKey - Recipient's ML-KEM-768 public key (must be 1184 bytes)
  * @returns { ciphertext, sharedSecret } or null if ML-KEM unavailable
  */
 export function pqEncapsulate(
   pqPublicKey: Uint8Array,
 ): MLKEMEncapsulation | null {
   if (!mlkemProvider) return null;
+  if (pqPublicKey.length !== 1184) {
+    throw new Error(`ML-KEM-768 public key must be 1184 bytes, got ${pqPublicKey.length}`);
+  }
   return mlkemProvider.encapsulate(pqPublicKey);
 }
 
@@ -177,7 +176,11 @@ export function pqEncapsulate(
  * Called during X3DH response when the PreKeySignalMessage includes PQ fields.
  * Recovers the same shared secret the initiator derived.
  *
- * @param ciphertext - ML-KEM ciphertext from the initiator
+ * F04-#3/#4 FIX: When both parties advertise v2 AND PQ ciphertext is present,
+ * decapsulation failure MUST abort — not silently fall back to classical.
+ * F04-#13: Ciphertext length validated before passing to ML-KEM.
+ *
+ * @param ciphertext - ML-KEM ciphertext from the initiator (must be 1088 bytes)
  * @param secretKey - Our ML-KEM secret key
  * @returns 32-byte shared secret, or null if ML-KEM unavailable
  */
@@ -186,20 +189,19 @@ export function pqDecapsulate(
   secretKey: Uint8Array,
 ): Uint8Array | null {
   if (!mlkemProvider) return null;
-  return mlkemProvider.decapsulate(ciphertext, secretKey);
+  if (ciphertext.length !== 1088) {
+    throw new Error(`ML-KEM-768 ciphertext must be 1088 bytes, got ${ciphertext.length}`);
+  }
+  const result = mlkemProvider.decapsulate(ciphertext, secretKey);
+  // F04-#5: Zero secretKey after decapsulation (caller should also zero)
+  zeroOut(secretKey);
+  return result;
 }
 
-/**
- * Determine the protocol version to use based on both parties' capabilities.
- *
- * @param localPQAvailable - Whether we have ML-KEM support
- * @param remoteSupportedVersions - Versions the remote party supports
- * @returns 2 if both support PQXDH, 1 if classical only
- */
-export function negotiatePQVersion(
-  localPQAvailable: boolean,
-  remoteSupportedVersions: number[],
-): number {
-  if (localPQAvailable && remoteSupportedVersions.includes(2)) return 2;
-  return 1;
-}
+// F04-#2: deriveHybridSecret was dead code — used a different HKDF info
+// string ("MizanlyPQXDH") than the actual protocol path ("MizanlySignal").
+// x3dh.ts was refactored (V8-F11) to use single-pass HKDF, making this
+// function unreachable and misleading. DELETED.
+
+// F04-#10: negotiatePQVersion was dead code — never called. The actual
+// version decision in initiateX3DH uses inline logic. DELETED.

@@ -149,19 +149,24 @@ export async function initiateX3DH(
   // could re-insert an old (previously compromised) SPK with a still-valid signature.
   // The server rotates SPKs and cleans up after 30 days, but the CLIENT must enforce this
   // independently. 45-day max = 30-day rotation + 15-day grace for delayed bundles.
-  if (bundle.signedPreKey.createdAt) {
-    const spkAgeMs = Date.now() - bundle.signedPreKey.createdAt;
-    const MAX_SPK_AGE_MS = 45 * 24 * 60 * 60 * 1000; // 45 days
-    if (spkAgeMs > MAX_SPK_AGE_MS) {
-      throw new Error(
-        `Signed pre-key is too old (${Math.floor(spkAgeMs / 86400000)} days). ` +
-        'The recipient may need to update their app or re-register keys.',
-      );
-    }
-    // Reject SPKs that claim to be from the future (>5 min clock skew tolerance)
-    if (spkAgeMs < -5 * 60 * 1000) {
-      throw new Error('Signed pre-key createdAt is in the future — possible manipulation.');
-    }
+  // F03-#5 FIX: Reject bundles WITHOUT createdAt instead of silently bypassing.
+  // A compromised server could omit createdAt to replay an arbitrarily old SPK
+  // whose private key may have been exfiltrated. The Ed25519 signature is still
+  // valid regardless of age.
+  if (!bundle.signedPreKey.createdAt) {
+    throw new Error('Signed pre-key missing createdAt — possible server manipulation.');
+  }
+  const spkAgeMs = Date.now() - bundle.signedPreKey.createdAt;
+  const MAX_SPK_AGE_MS = 45 * 24 * 60 * 60 * 1000; // 45 days
+  if (spkAgeMs > MAX_SPK_AGE_MS) {
+    throw new Error(
+      `Signed pre-key is too old (${Math.floor(spkAgeMs / 86400000)} days). ` +
+      'The recipient may need to update their app or re-register keys.',
+    );
+  }
+  // Reject SPKs that claim to be from the future (>5 min clock skew tolerance)
+  if (spkAgeMs < -5 * 60 * 1000) {
+    throw new Error('Signed pre-key createdAt is in the future — possible manipulation.');
   }
 
   // --- Step 1b: TOFU identity key check ---
@@ -234,17 +239,18 @@ export async function initiateX3DH(
         pqCiphertext = pqResult.ciphertext;
         zeroOut(pqResult.sharedSecret);
       }
-    } catch {
-      // V5-F5: Emit telemetry on PQXDH failure instead of silently downgrading.
-      // V6-F3: Also set identityTrust='changed' to trigger safety number change warning.
-      // If both parties advertise version 2 but PQ encapsulation fails,
-      // an attacker may be stripping PQ fields to force classical-only.
+    } catch (encapError) {
+      // F04-#3 FIX: When both parties advertise v2 AND a PQ prekey is present AND
+      // encapsulation fails, ABORT session establishment entirely. Do not fall back
+      // to classical. A malformed PQ public key could be an attacker-controlled
+      // downgrade attempt.
       if (bundle.supportedVersions?.includes(2)) {
-        identityTrust = 'changed';
         import('./telemetry').then(({ recordE2EEvent }) =>
           recordE2EEvent({ event: 'session_establishment_failed', metadata: { reason: 'pqxdh_encapsulation_failed' } }),
         ).catch(() => {});
+        throw new Error('PQXDH encapsulation failed — both parties advertise v2 but PQ key is invalid. Aborting to prevent downgrade.');
       }
+      // If remote only supports v1, PQ failure is non-critical — continue classical
     }
   } else if (isPQXDHAvailable() && bundle.supportedVersions?.includes(2) && !bundlePqPreKey) {
     // V5-F5: Both sides support PQ but bundle has no pqPreKey — possible strip attack.
@@ -268,6 +274,7 @@ export async function initiateX3DH(
   zeroOut(dh3);
   zeroOut(dhConcat);
   zeroOut(ourIdentityX25519Private);
+  zeroOut(theirIdentityX25519Public); // F03-#1: zero converted X25519 form
 
   return {
     sharedSecret,
@@ -377,7 +384,8 @@ export async function respondX3DH(
     assertNonZeroDH(dh4, 'responder-DH4');
     dhConcat = concat(PADDING, dh1, dh2, dh3, dh4);
     zeroOut(dh4);
-    // NOTE: Do NOT delete OTP private key here.
+    zeroOut(otpPrivate); // F03-#6: zero loaded OTP private key (storage copy unaffected)
+    // NOTE: Do NOT delete OTP private key FROM STORAGE here.
     // It's deleted only after sessionEstablished = true (in session.ts).
     // This survives crashes between X3DH and session persist.
   } else {
@@ -394,7 +402,16 @@ export async function respondX3DH(
       // Zero the old classical-only dhConcat — it contains DH key material
       zeroOut(oldDhConcat);
       zeroOut(pqSharedSecret);
+    } else {
+      // F04-#4: PQ ciphertext is present but decapsulation failed (provider unavailable).
+      // The initiator included PQ in their derivation — our shared secret will NOT match.
+      // Abort with a clear error instead of silently computing a mismatched secret.
+      throw new Error('PQXDH decapsulation failed: ML-KEM provider unavailable but PQ ciphertext present in message');
     }
+  } else if (pqCiphertext && !pqSecretKey) {
+    // F04-#4: PQ ciphertext present but we don't have the PQ secret key.
+    // Our shared secret will not match the initiator's. Abort.
+    throw new Error('PQXDH decapsulation failed: PQ secret key not found but PQ ciphertext present in message');
   }
 
   // Single-pass HKDF over all key material: F || DH1..DH4 || [PQ_shared_secret]
@@ -406,6 +423,7 @@ export async function respondX3DH(
   zeroOut(dh3);
   zeroOut(dhConcat);
   zeroOut(ourIdentityX25519Private);
+  zeroOut(theirIdentityX25519Public); // F03-#1: zero converted X25519 form
 
   return {
     sharedSecret,
@@ -445,6 +463,7 @@ export function createInitiatorSessionState(
     x3dhResult.ephemeralKeyPair.privateKey,
     x3dhResult.remoteSignedPreKey,
   );
+  assertNonZeroDH(dhOutput, 'initiator-initial-KDF_RK'); // F03-#4
   const derived = hkdfDeriveSecrets(
     dhOutput,
     x3dhResult.sharedSecret, // X3DH shared secret as HKDF salt
@@ -455,10 +474,14 @@ export function createInitiatorSessionState(
 
   const rootKey = derived.slice(0, 32);
   const sendingChainKey = derived.slice(32, 64);
+  zeroOut(derived); // F03-#2: zero the contiguous 64-byte HKDF output
+
+  // F04-#11: Set protocolVersion 2 when PQXDH was used
+  const usedPQXDH = x3dhResult.pqCiphertext !== undefined;
 
   return {
     version: 1,
-    protocolVersion: 1,
+    protocolVersion: usedPQXDH ? 2 : 1,
     rootKey,
     sendingChain: {
       chainKey: sendingChainKey,
@@ -503,6 +526,7 @@ export function createResponderSessionState(
   // Step 1: Derive receiving chain (mirrors initiator's sending chain)
   // KDF_RK(sharedSecret, DH(SPK_B, EK_A)) — same DH as initiator's initial step
   const dhReceive = x25519DH(signedPreKeyPrivate, senderEphemeralKey);
+  assertNonZeroDH(dhReceive, 'responder-receive-KDF_RK'); // F03-#4
   const derivedReceive = hkdfDeriveSecrets(
     dhReceive,
     x3dhResult.sharedSecret,
@@ -513,11 +537,13 @@ export function createResponderSessionState(
 
   const rootKeyAfterReceive = derivedReceive.slice(0, 32);
   const receivingChainKey = derivedReceive.slice(32, 64);
+  zeroOut(derivedReceive); // F03-#2: zero contiguous 64-byte HKDF output
 
   // Step 2: Generate new ratchet key pair and derive sending chain
   // KDF_RK(rootKey1, DH(newKeyPair, EK_A))
   const senderRatchetKeyPair = generateX25519KeyPair();
   const dhSend = x25519DH(senderRatchetKeyPair.privateKey, senderEphemeralKey);
+  assertNonZeroDH(dhSend, 'responder-send-KDF_RK'); // F03-#4
   const derivedSend = hkdfDeriveSecrets(
     dhSend,
     rootKeyAfterReceive,
@@ -528,6 +554,7 @@ export function createResponderSessionState(
 
   const rootKey = derivedSend.slice(0, 32);
   const sendingChainKey = derivedSend.slice(32, 64);
+  zeroOut(derivedSend); // F03-#2: zero contiguous 64-byte HKDF output
 
   return {
     version: 1,

@@ -179,6 +179,7 @@ describe('V5-F5: PQXDH downgrade emits telemetry', () => {
         keyId: 1,
         publicKey: spkKeyPair.publicKey,
         signature: spkSig,
+        createdAt: Date.now(),
       },
       oneTimePreKey: undefined,
       supportedVersions: [1, 2], // Claims PQ support but no pqPreKey

@@ -64,6 +64,7 @@ function buildBundle(keys: Awaited<ReturnType<typeof createUserKeys>>): PreKeyBu
       keyId: keys.signedPreKeyId,
       publicKey: keys.signedPreKeyPair.publicKey,
       signature: keys.signedPreKeySignature,
+      createdAt: Date.now(),
     },
     oneTimePreKey: {
       keyId: keys.otpKeyId,

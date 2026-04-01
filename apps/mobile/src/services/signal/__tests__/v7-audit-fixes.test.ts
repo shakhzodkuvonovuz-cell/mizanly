@@ -465,7 +465,7 @@ describe('V7-F5: PQXDH pqPreKey type safety', () => {
       identityKey: remoteKp.publicKey,
       registrationId: 1234,
       deviceId: 1,
-      signedPreKey: { keyId: 1, publicKey: spkKp.publicKey, signature: sig },
+      signedPreKey: { keyId: 1, publicKey: spkKp.publicKey, signature: sig, createdAt: Date.now() },
       supportedVersions: [1, 2],
       pqPreKey: 42, // Invalid — should be string or Uint8Array
     };
@@ -488,12 +488,42 @@ describe('V7-F5: PQXDH pqPreKey type safety', () => {
       identityKey: remoteKp.publicKey,
       registrationId: 1234,
       deviceId: 1,
-      signedPreKey: { keyId: 1, publicKey: spkKp.publicKey, signature: sig },
+      signedPreKey: { keyId: 1, publicKey: spkKp.publicKey, signature: sig, createdAt: Date.now() },
       supportedVersions: [1, 2],
       pqPreKey: toBase64(generateRandomBytes(32)), // 32 bytes, should be 1184
     };
 
     await expect(initiateX3DH(bundle as any, 'remote_user')).rejects.toThrow('Invalid ML-KEM-768');
+  });
+});
+
+// ============================================================
+// V7-F6: Signed pre-key missing createdAt rejection
+// ============================================================
+
+describe('V7-F6: Signed pre-key missing createdAt rejection', () => {
+  it('rejects bundle when signedPreKey has no createdAt', async () => {
+    const { initiateX3DH } = require('../x3dh');
+    const { storeIdentityKeyPair } = require('../storage');
+
+    const identityKp = generateEd25519KeyPair();
+    await storeIdentityKeyPair(identityKp);
+
+    const remoteKp = generateEd25519KeyPair();
+    const spkKp = generateX25519KeyPair();
+    const sig = ed25519Sign(remoteKp.privateKey, spkKp.publicKey);
+
+    const bundle = {
+      identityKey: remoteKp.publicKey,
+      registrationId: 1234,
+      deviceId: 1,
+      signedPreKey: { keyId: 1, publicKey: spkKp.publicKey, signature: sig },
+      supportedVersions: [1],
+    };
+
+    await expect(initiateX3DH(bundle, 'remote_user')).rejects.toThrow(
+      'Signed pre-key missing createdAt — possible server manipulation.',
+    );
   });
 });
 
@@ -727,7 +757,7 @@ describe('V7-F13: constantTimeEqual handles different-length arrays', () => {
 // ============================================================
 
 describe('V7-F14: PQXDH responder propagates SecureStore errors', () => {
-  it('null PQ key result triggers classical fallback (no throw)', async () => {
+  it('F04-#4: PQ ciphertext present with missing secret key throws instead of silent fallback', async () => {
     const { createResponderSession } = require('../session');
     const { storeIdentityKeyPair, storeSignedPreKeyPrivate } = require('../storage');
 
@@ -754,8 +784,9 @@ describe('V7-F14: PQXDH responder propagates SecureStore errors', () => {
       pqPreKeyId: 9999,
     };
 
-    // Should NOT throw — null PQ key means classical fallback
-    const result = await createResponderSession('sender_id', 1, preKeyMsg);
-    expect(result.sessionState).toBeDefined();
+    // F04-#4: MUST throw — PQ ciphertext present means initiator used PQXDH.
+    // Silent fallback to classical would compute a mismatched shared secret.
+    await expect(createResponderSession('sender_id', 1, preKeyMsg))
+      .rejects.toThrow('PQ secret key not found but PQ ciphertext present');
   });
 });

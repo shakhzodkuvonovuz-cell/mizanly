@@ -417,7 +417,8 @@ export { exportAllState, importAllState };
 export { sealMessage, unsealMessage } from './sealed-sender';
 
 // PQXDH (C10)
-export { isPQXDHAvailable, deriveHybridSecret, negotiatePQVersion } from './pqxdh';
+// F04-#2/#10: deriveHybridSecret and negotiatePQVersion were dead code — removed
+export { isPQXDHAvailable } from './pqxdh';
 
 // Multi-device (C4)
 export { encryptForRecipient, getDeviceIds, generateDeviceLinkCode, verifyDeviceLinkCode } from './multi-device';
