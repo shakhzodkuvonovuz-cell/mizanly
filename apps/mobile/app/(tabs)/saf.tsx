@@ -48,6 +48,7 @@ import { formatCount } from '@/utils/formatCount';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BrandedRefreshControl } from '@/components/ui/BrandedRefreshControl';
 import type { Post, StoryGroup, SuggestedUser, PaginatedResponse } from '@/types';
+import { showToast } from '@/components/ui/Toast';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -72,7 +73,7 @@ function SuggestedUserCard({
 
   return (
     <View style={[suggestedStyles.container, { backgroundColor: tc.bgCard }]}>
-      <Text style={[suggestedStyles.title, { textAlign: rtlTextAlign(isRTL) }]}>
+      <Text style={[suggestedStyles.title, { textAlign: rtlTextAlign(isRTL), color: tc.text.primary }]}>
         {t('feed.suggestedForYou')}
       </Text>
       {users.map((user) => (
@@ -129,16 +130,16 @@ const SuggestedUserRow = memo(function SuggestedUserRow({
         <Avatar uri={user.avatarUrl ?? null} name={user.displayName ?? user.username} size="md" />
         <View style={suggestedStyles.userText}>
           <View style={[suggestedStyles.nameRow, { flexDirection: rtlFlexRow(isRTL) }]}>
-            <Text style={suggestedStyles.displayName} numberOfLines={1}>
+            <Text style={[suggestedStyles.displayName, { color: tc.text.primary }]} numberOfLines={1}>
               {user.displayName ?? user.username}
             </Text>
             {user.isVerified && <VerifiedBadge size={13} />}
           </View>
-          <Text style={suggestedStyles.bio} numberOfLines={1}>
+          <Text style={[suggestedStyles.bio, { color: tc.text.secondary }]} numberOfLines={1}>
             {user.bio || `${formatCount(user.followersCount)} ${t('common.followers').toLowerCase()}`}
           </Text>
           {/* Finding #349: Suggestion reason */}
-          <Text style={{ color: tc.text.tertiary, fontSize: 10, marginTop: 1 }}>
+          <Text style={{ color: tc.text.tertiary, fontSize: fontSize.xs, marginTop: 1 }}>
             {(t as (key: string, opts?: Record<string, unknown>) => string)('saf.suggestedForYou', { defaultValue: 'Suggested based on people you follow' })}
           </Text>
         </View>
@@ -153,7 +154,7 @@ const SuggestedUserRow = memo(function SuggestedUserRow({
         accessibilityRole="button"
         hitSlop={8}
       >
-        <Text style={suggestedStyles.followBtnText}>{t('common.follow')}</Text>
+        <Text style={[suggestedStyles.followBtnText, { color: '#FFFFFF' }]}>{t('common.follow')}</Text>
       </Pressable>
       <Pressable
         onPress={onDismiss}
@@ -184,7 +185,7 @@ function ExploreFirstBanner({ onDismiss }: { onDismiss: () => void }) {
           <Text style={[bannerStyles.title, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('feed.exploreFirstTitle')}
           </Text>
-          <Text style={[bannerStyles.subtitle, { textAlign: rtlTextAlign(isRTL) }]}>
+          <Text style={[bannerStyles.subtitle, { textAlign: rtlTextAlign(isRTL), color: tc.text.secondary }]}>
             {t('feed.exploreFirstSubtitle')}
           </Text>
         </View>
@@ -217,6 +218,11 @@ export default function SafScreen() {
   const unreadMessages = useStore((s) => s.unreadMessages);
   const [bannerDismissed, setBannerDismissed] = useState(true);
   const [dismissedUserIds, setDismissedUserIds] = useState<Set<string>>(new Set());
+  // D41-#2: Replace globalThis dwell tracking with bounded Map ref
+  const dwellTimers = useRef(new Map<string, number>());
+  const userIdRef = useRef(user?.id);
+
+  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
 
   // First-visit coach mark
   const [showCoachMark, setShowCoachMark] = useState(false);
@@ -224,16 +230,16 @@ export default function SafScreen() {
     AsyncStorage.getItem('saf_coach_seen').then(val => {
       if (!val) {
         setShowCoachMark(true);
-        AsyncStorage.setItem('saf_coach_seen', '1');
+        AsyncStorage.setItem('saf_coach_seen', '1').catch(() => {});
       }
-    });
+    }).catch(() => {});
   }, []);
 
   // Check if explore banner was previously dismissed
   useEffect(() => {
     AsyncStorage.getItem(EXPLORE_BANNER_KEY).then((val) => {
       if (val !== 'true') setBannerDismissed(false);
-    });
+    }).catch(() => {});
   }, []);
 
   const dismissBanner = useCallback(() => {
@@ -487,6 +493,33 @@ export default function SafScreen() {
     );
   }, [user?.id, user?.username, followMutation, router, tc.text.secondary, t]);
 
+  // D41-#15: Memoize hijri greeting (recalc only when hour or locale changes)
+  const hijriGreeting = useMemo(() => {
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? t('islamic.sabahalKhair', 'Sabah al-Khair')
+      : hour < 17 ? t('islamic.masaAlKhair', 'Masa al-Khair')
+      : t('islamic.masaAlNoor', 'Masa al-Noor');
+    return `${greeting} · ${formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}`;
+  }, [t, isRTL]);
+
+  // D41-#1: Stable onViewableItemsChanged via useRef (FlashList requires stable function)
+  const onViewableItemsChangedRef = useRef(({ changed }: { changed: Array<{ isViewable?: boolean; item: FeedItem; index: number | null }> }) => {
+    changed.forEach(item => {
+      if (item.isViewable && item.item?.id) {
+        dwellTimers.current.set(item.item.id, Date.now());
+      } else if (!item.isViewable && item.item?.id) {
+        const start = dwellTimers.current.get(item.item.id);
+        if (start) {
+          const dwellMs = Date.now() - start;
+          dwellTimers.current.delete(item.item.id);
+          if (dwellMs > 2000 && userIdRef.current) {
+            feedApi.trackSessionSignal({ contentId: item.item.id, action: 'view', scrollPosition: dwellMs }).catch(() => {});
+          }
+        }
+      }
+    });
+  });
+
   const storyGroups: StoryGroup[] = (storiesQuery.data) ?? [];
 
   // Feed type animation
@@ -593,7 +626,7 @@ export default function SafScreen() {
       {showCoachMark && (
         <Animated.View entering={FadeInDown.duration(400)} style={{ backgroundColor: colors.emerald, padding: spacing.base, borderRadius: radius.md, margin: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <Icon name="trending-up" size="sm" color="#FFF" />
-          <Text style={{ color: '#FFF', fontSize: fontSize.sm, flex: 1, fontFamily: 'DMSans_500Medium' }}>
+          <Text style={{ color: '#FFF', fontSize: fontSize.sm, flex: 1, fontFamily: fonts.bodyMedium }}>
             {t('onboarding.safTip', 'Welcome to Saf! Swipe between Following and For You feeds. Double-tap to like!')}
           </Text>
           <Pressable onPress={() => setShowCoachMark(false)} hitSlop={8}>
@@ -605,14 +638,8 @@ export default function SafScreen() {
       <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
         <Animated.View style={titleAnimatedStyle}>
           <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Mizanly</Text>
-          <Text style={styles.hijriDate}>
-            {(() => {
-              const hour = new Date().getHours();
-              const greeting = hour < 12 ? t('islamic.sabahalKhair', 'Sabah al-Khair')
-                : hour < 17 ? t('islamic.masaAlKhair', 'Masa al-Khair')
-                : t('islamic.masaAlNoor', 'Masa al-Noor');
-              return `${greeting} · ${formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}`;
-            })()}
+          <Text style={[styles.hijriDate, { color: tc.text.tertiary }]}>
+            {hijriGreeting}
           </Text>
         </Animated.View>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -715,24 +742,7 @@ export default function SafScreen() {
         contentContainerStyle={{ paddingBottom: tabBar.height + spacing.base }}
         refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-        onViewableItemsChanged={({ changed }: { changed: Array<{ isViewable?: boolean; item: FeedItem; index: number | null }> }) => {
-          // Finding #297: Dwell time tracking
-          changed.forEach(item => {
-            if (item.isViewable && item.item?.id) {
-              (globalThis as Record<string, unknown>)[`dwell_${item.item.id}`] = Date.now();
-            } else if (!item.isViewable && item.item?.id) {
-              const start = (globalThis as Record<string, unknown>)[`dwell_${item.item.id}`] as number;
-              if (start) {
-                const dwellMs = Date.now() - start;
-                delete (globalThis as Record<string, unknown>)[`dwell_${item.item.id}`];
-                // Only report meaningful dwell (>2s)
-                if (dwellMs > 2000 && user?.id) {
-                  feedApi.trackSessionSignal({ contentId: item.item.id, action: 'view', scrollPosition: dwellMs }).catch(() => {});
-                }
-              }
-            }
-          });
-        }}
+        onViewableItemsChanged={onViewableItemsChangedRef.current}
         getItemType={(item: { _type?: string }) => (item._type === 'suggested' ? 'suggested' : 'post')}
       />
     </SafeAreaView>
