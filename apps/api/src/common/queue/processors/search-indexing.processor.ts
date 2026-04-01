@@ -51,17 +51,14 @@ export class SearchIndexingProcessor implements OnModuleInit, OnModuleDestroy {
 
     this.worker.on('completed', (job: Job) => {
       this.logger.debug(`Search index job ${job.id} completed`);
+      const duration = job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 0;
+      if (duration > 5000) this.logger.warn(`Job ${job.id} (${job.name}) took ${duration}ms`);
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`Search index job ${job?.id} failed: ${err.message}`);
       Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
       this.queueService.moveToDlq(job, err, 'search-indexing').catch(() => {});
-    });
-
-    this.worker.on('completed', (job) => {
-      const duration = job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 0;
-      if (duration > 5000) this.logger.warn(`Job ${job.id} (${job.name}) took ${duration}ms`);
     });
     this.logger.log('Search indexing worker started');
   }

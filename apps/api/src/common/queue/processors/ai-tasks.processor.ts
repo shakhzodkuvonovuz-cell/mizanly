@@ -72,17 +72,14 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
 
     this.worker.on('completed', (job: Job) => {
       this.logger.debug(`AI task ${job.id} completed`);
+      const duration = job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 0;
+      if (duration > 5000) this.logger.warn(`Job ${job.id} (${job.name}) took ${duration}ms`);
     });
 
     this.worker.on('failed', (job: Job | undefined, err: Error) => {
       this.logger.error(`AI task ${job?.id} failed: ${err.message}`);
       Sentry.captureException(err, { tags: { queue: job?.queueName, jobId: job?.id } });
       this.queueService.moveToDlq(job, err, 'ai-tasks').catch(() => {});
-    });
-
-    this.worker.on('completed', (job) => {
-      const duration = job.finishedOn && job.processedOn ? job.finishedOn - job.processedOn : 0;
-      if (duration > 5000) this.logger.warn(`Job ${job.id} (${job.name}) took ${duration}ms`);
     });
     this.logger.log('AI tasks worker started');
   }
